@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+
 import { DataPsmAssociationEnd } from '@dataspecer/core/data-psm/model/data-psm-association-end';
 import { DataPsmAttribute } from '@dataspecer/core/data-psm/model/data-psm-attribute';
 import { DataPsmClass } from '@dataspecer/core/data-psm/model/data-psm-class';
@@ -65,6 +67,178 @@ describe('mapDataspecerSpecificationToMetadata', () => {
         },
       ],
     });
+  });
+
+  it('maps inline association target classes to nested fields', () => {
+    const fixture = dataspecerFixture();
+    fixture.aggregatedSemanticModel.push(
+      semanticClass('class-publisher', 'https://example.org/class/publisher', 'Publisher'),
+      semanticRelationship(
+        'relationship-publisher',
+        'Publisher',
+        'class-book',
+        'class-publisher',
+        [0, 1]
+      ),
+      semanticRelationship(
+        'relationship-publisher-name',
+        'Publisher name',
+        'class-publisher',
+        'http://www.w3.org/2001/XMLSchema#string',
+        [1, 1]
+      )
+    );
+    const bookClass = fixture.structureModels[0].find(
+      (resource) => resource.iri === 'https://example.org/psm/book'
+    ) as DataPsmClass;
+    bookClass.dataPsmParts = [...bookClass.dataPsmParts, 'https://example.org/psm/book-publisher'];
+    fixture.structureModels[0].push(
+      association(
+        'https://example.org/psm/book-publisher',
+        'publisher',
+        'relationship-publisher',
+        'https://example.org/psm/publisher',
+        [0, 1]
+      ),
+      psmClass('https://example.org/psm/publisher', 'class-publisher', [
+        'https://example.org/psm/publisher-name',
+      ]),
+      attribute(
+        'https://example.org/psm/publisher-name',
+        'name',
+        'relationship-publisher-name',
+        [1, 1]
+      )
+    );
+
+    const metadata = mapDataspecerSpecificationToMetadata(specificationIri, fixture);
+    const book = metadata.aggregates.find(
+      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail'
+    );
+    const publisher = book?.fields.find((field) => field.path === 'publisher');
+
+    expect(publisher).toMatchObject({
+      kind: FieldKind.Association,
+      targetClassIri: 'https://example.org/class/publisher',
+      fields: [
+        expect.objectContaining({
+          path: 'name',
+          kind: FieldKind.Primitive,
+          datatype: 'http://www.w3.org/2001/XMLSchema#string',
+        }),
+      ],
+    });
+    expect(publisher?.targetAggregateIri).toBeUndefined();
+  });
+
+  it('rejects circular inline structures', () => {
+    const fixture = dataspecerFixture();
+    fixture.aggregatedSemanticModel.push(
+      semanticClass('class-publisher', 'https://example.org/class/publisher', 'Publisher'),
+      semanticRelationship(
+        'relationship-publisher',
+        'Publisher',
+        'class-book',
+        'class-publisher',
+        [0, 1]
+      ),
+      semanticRelationship(
+        'relationship-parent',
+        'Parent',
+        'class-publisher',
+        'class-publisher',
+        [0, 1]
+      )
+    );
+    const bookClass = fixture.structureModels[0].find(
+      (resource) => resource.iri === 'https://example.org/psm/book'
+    ) as DataPsmClass;
+    bookClass.dataPsmParts = [...bookClass.dataPsmParts, 'https://example.org/psm/book-publisher'];
+    fixture.structureModels[0].push(
+      association(
+        'https://example.org/psm/book-publisher',
+        'publisher',
+        'relationship-publisher',
+        'https://example.org/psm/publisher',
+        [0, 1]
+      ),
+      psmClass('https://example.org/psm/publisher', 'class-publisher', [
+        'https://example.org/psm/publisher-parent',
+      ]),
+      association(
+        'https://example.org/psm/publisher-parent',
+        'parent',
+        'relationship-parent',
+        'https://example.org/psm/publisher',
+        [0, 1]
+      )
+    );
+
+    try {
+      mapDataspecerSpecificationToMetadata(specificationIri, fixture);
+      expect.unreachable('Expected mapping to fail on a circular inline structure.');
+    } catch (error) {
+      expect(error).toBeInstanceOf(DataspecerMetadataMappingError);
+      expect((error as DataspecerMetadataMappingError).issues).toContainEqual(
+        expect.objectContaining({
+          code: DataspecerMetadataMappingIssueCode.CircularStructure,
+        })
+      );
+    }
+  });
+
+  it('maps a real getSpecification payload', () => {
+    const source = JSON.parse(
+      readFileSync(
+        new URL('./fixtures/metadata/real-specification-source.json', import.meta.url),
+        'utf8'
+      )
+    ) as DataspecerSpecificationSource;
+
+    const metadata = mapDataspecerSpecificationToMetadata(specificationIri, source);
+
+    expect(metadata.aggregates.map((aggregate) => aggregate.iri)).toEqual([
+      '5f96e8ca-d6b0-4d7f-81d7-957bdefef4f5',
+      'd32203ad-189d-4a1c-ab53-3741edca0b0a',
+    ]);
+
+    const destination = metadata.aggregates.find(
+      (aggregate) => aggregate.iri === 'd32203ad-189d-4a1c-ab53-3741edca0b0a'
+    );
+    const inlineContact = destination?.fields.find((field) => field.path === 'kontakt_non_ref_0_N');
+    const referencedContact = destination?.fields.find((field) => field.path === 'kontakt_ref_0_1');
+
+    expect(inlineContact).toMatchObject({ kind: FieldKind.Association });
+    expect(inlineContact?.targetAggregateIri).toBeUndefined();
+    expect(inlineContact?.fields?.map((field) => field.path)).toEqual([
+      'má_e-mailovou_adresu',
+      'má_url',
+    ]);
+    expect(referencedContact).toMatchObject({
+      kind: FieldKind.Association,
+      targetAggregateIri: '5f96e8ca-d6b0-4d7f-81d7-957bdefef4f5',
+    });
+    expect(referencedContact?.fields).toBeUndefined();
+  });
+
+  it('surfaces multi-root schemas as mapping issues', () => {
+    const fixture = dataspecerFixture();
+    const bookSchema = fixture.structureModels[0].find((resource) =>
+      DataPsmSchema.is(resource)
+    ) as DataPsmSchema;
+    bookSchema.dataPsmRoots = [...bookSchema.dataPsmRoots, 'https://example.org/psm/chapter'];
+
+    try {
+      mapDataspecerSpecificationToMetadata(specificationIri, fixture);
+      expect.unreachable('Expected mapping to fail on a multi-root schema.');
+    } catch (error) {
+      expect(error).toBeInstanceOf(DataspecerMetadataMappingError);
+      expect((error as DataspecerMetadataMappingError).issues).toContainEqual(
+        expect.objectContaining({
+          code: DataspecerMetadataMappingIssueCode.UnsupportedMultiRootSchema,
+        })
+      );
+    }
   });
 
   it('surfaces missing association targets as mapping issues', () => {

@@ -7,6 +7,7 @@ import {
 } from '../graph/types.ts';
 import {
   type AggregateFieldMetadata,
+  type AggregateMetadata,
   type DataspecerSpecificationMetadata,
   FieldKind,
 } from './types.ts';
@@ -31,17 +32,19 @@ export interface GraphAssociationKindResolution {
   issues: GraphAssociationKindResolutionIssue[];
 }
 
-interface ResolvedAssociationKind {
-  kind: AssociationKind;
-}
-
+/**
+ * Association config paths address association fields within the node aggregate's own structure
+ * tree. Nested segments descend into the inline fields of the parent association and never cross
+ * into another aggregate. Resolved kinds are keyed by aggregate IRI and full dotted field path
+ * and stamped onto the corresponding, possibly nested, metadata fields.
+ */
 export function resolveGraphAssociationKinds(
   graph: ApplicationGraph,
   metadata: DataspecerSpecificationMetadata
 ): GraphAssociationKindResolution {
   const issues: GraphAssociationKindResolutionIssue[] = [];
   const aggregates = new Map(metadata.aggregates.map((aggregate) => [aggregate.iri, aggregate]));
-  const resolvedKinds = new Map<string, ResolvedAssociationKind>();
+  const resolvedKinds = new Map<string, AssociationKind>();
 
   for (const node of graph.nodes) {
     const associations = associationConfigFrom(node.config);
@@ -49,7 +52,8 @@ export function resolveGraphAssociationKinds(
       continue;
     }
 
-    const entries = sortBy(Object.entries(associations), [([path]) => pathDepth(path)]);
+    const aggregate = aggregates.get(node.aggregateIri);
+    const entries = sortBy(Object.entries(associations), [([path]) => pathSegments(path).length]);
 
     for (const [path, value] of entries) {
       const kind = associationKindFrom(value);
@@ -64,32 +68,36 @@ export function resolveGraphAssociationKinds(
         continue;
       }
 
-      const resolvedPath = resolveAssociationPath(
-        node.aggregateIri,
-        path,
-        node.id,
-        aggregates,
-        resolvedKinds,
-        issues
-      );
-      if (!resolvedPath) {
+      if (!aggregate) {
+        // Unknown aggregates are reported by semantic validation.
         continue;
       }
 
-      const key = associationKey(resolvedPath.aggregateIri, resolvedPath.field.path);
+      const normalizedPath = resolveAssociationPath(
+        node.id,
+        aggregate,
+        path,
+        resolvedKinds,
+        issues
+      );
+      if (!normalizedPath) {
+        continue;
+      }
+
+      const key = associationKey(aggregate.iri, normalizedPath);
       const previous = resolvedKinds.get(key);
-      if (previous && previous.kind !== kind) {
+      if (previous && previous !== kind) {
         issues.push({
           code: GraphAssociationKindResolutionIssueCode.ConflictingAssociationKind,
-          message: `Association config path "${path}" has conflicting kinds "${previous.kind}" and "${kind}".`,
+          message: `Association config path "${path}" has conflicting kinds "${previous}" and "${kind}".`,
           nodeId: node.id,
-          aggregateIri: resolvedPath.aggregateIri,
+          aggregateIri: aggregate.iri,
           path,
         });
         continue;
       }
 
-      resolvedKinds.set(key, { kind });
+      resolvedKinds.set(key, kind);
     }
   }
 
@@ -98,79 +106,81 @@ export function resolveGraphAssociationKinds(
       ...metadata,
       aggregates: metadata.aggregates.map((aggregate) => ({
         ...aggregate,
-        fields: aggregate.fields.map((field) =>
-          withResolvedAssociationKind(
-            field,
-            resolvedKinds.get(associationKey(aggregate.iri, field.path))
-          )
-        ),
+        fields: withResolvedAssociationKinds(aggregate.fields, aggregate.iri, '', resolvedKinds),
       })),
     },
     issues,
   };
 }
 
-function withResolvedAssociationKind(
-  field: AggregateFieldMetadata,
-  resolved: ResolvedAssociationKind | undefined
-): AggregateFieldMetadata {
-  if (!resolved || field.kind !== FieldKind.Association) {
-    return field;
-  }
-  return {
-    ...field,
-    associationKind: resolved.kind,
-  };
+function withResolvedAssociationKinds(
+  fields: AggregateFieldMetadata[],
+  aggregateIri: string,
+  pathPrefix: string,
+  resolvedKinds: Map<string, AssociationKind>
+): AggregateFieldMetadata[] {
+  return fields.map((field) => {
+    if (field.kind !== FieldKind.Association) {
+      return field;
+    }
+
+    const fieldPath = pathPrefix ? `${pathPrefix}.${field.path}` : field.path;
+    const resolvedKind = resolvedKinds.get(associationKey(aggregateIri, fieldPath));
+    const children = field.fields
+      ? withResolvedAssociationKinds(field.fields, aggregateIri, fieldPath, resolvedKinds)
+      : undefined;
+
+    if (!resolvedKind && children === field.fields) {
+      return field;
+    }
+    return {
+      ...field,
+      ...(resolvedKind ? { associationKind: resolvedKind } : {}),
+      ...(children ? { fields: children } : {}),
+    };
+  });
 }
 
+/**
+ * Walks the config path through the aggregate's field tree. Returns the normalized dotted path
+ * when every segment is an association field and all intermediate segments are already configured
+ * as compositions.
+ */
 function resolveAssociationPath(
-  rootAggregateIri: string,
-  path: string,
   nodeId: string,
-  aggregates: Map<string, DataspecerSpecificationMetadata['aggregates'][number]>,
-  resolvedKinds: Map<string, ResolvedAssociationKind>,
+  aggregate: AggregateMetadata,
+  path: string,
+  resolvedKinds: Map<string, AssociationKind>,
   issues: GraphAssociationKindResolutionIssue[]
-):
-  | {
-      aggregateIri: string;
-      field: AggregateFieldMetadata;
-    }
-  | undefined {
-  const segments = path.split('.').filter((segment) => segment.length > 0);
-  let aggregate = aggregates.get(rootAggregateIri);
+): string | undefined {
+  const segments = pathSegments(path);
+  if (segments.length === 0) {
+    issues.push(notAssociationIssue(nodeId, aggregate, path));
+    return undefined;
+  }
+
+  let fields = aggregate.fields;
+  const resolvedSegments: string[] = [];
 
   for (const [index, segment] of segments.entries()) {
-    if (!aggregate) {
-      return undefined;
-    }
-
-    const field = aggregate.fields.find((candidate) => candidate.path === segment);
+    const field = fields.find((candidate) => candidate.path === segment);
     if (!field || field.kind !== FieldKind.Association) {
-      issues.push({
-        code: GraphAssociationKindResolutionIssueCode.AssociationPathNotAssociation,
-        message: `Association config path "${path}" is not an association on aggregate "${aggregate.name}".`,
-        nodeId,
-        aggregateIri: aggregate.iri,
-        path,
-      });
+      issues.push(notAssociationIssue(nodeId, aggregate, path));
       return undefined;
     }
 
-    const isLastSegment = index === segments.length - 1;
-    if (isLastSegment) {
-      return {
-        aggregateIri: aggregate.iri,
-        field,
-      };
+    resolvedSegments.push(segment);
+    if (index === segments.length - 1) {
+      return resolvedSegments.join('.');
     }
 
-    const resolvedParent = resolvedKinds.get(associationKey(aggregate.iri, field.path));
-    if (resolvedParent?.kind !== AssociationKind.Composition) {
+    const parentKind = resolvedKinds.get(associationKey(aggregate.iri, resolvedSegments.join('.')));
+    if (parentKind !== AssociationKind.Composition) {
       issues.push({
         code: GraphAssociationKindResolutionIssueCode.NestedAssociationRequiresComposition,
-        message: `Nested association config path "${path}" requires "${segments
-          .slice(0, index + 1)
-          .join('.')}" to be configured as a composition.`,
+        message: `Nested association config path "${path}" requires "${resolvedSegments.join(
+          '.'
+        )}" to be configured as a composition.`,
         nodeId,
         aggregateIri: aggregate.iri,
         path,
@@ -178,20 +188,24 @@ function resolveAssociationPath(
       return undefined;
     }
 
-    aggregate = field.targetAggregateIri ? aggregates.get(field.targetAggregateIri) : undefined;
-    if (!aggregate) {
-      issues.push({
-        code: GraphAssociationKindResolutionIssueCode.AssociationPathNotAssociation,
-        message: `Association config path "${path}" cannot resolve target aggregate for "${field.path}".`,
-        nodeId,
-        aggregateIri: rootAggregateIri,
-        path,
-      });
-      return undefined;
-    }
+    fields = field.fields ?? [];
   }
 
   return undefined;
+}
+
+function notAssociationIssue(
+  nodeId: string,
+  aggregate: AggregateMetadata,
+  path: string
+): GraphAssociationKindResolutionIssue {
+  return {
+    code: GraphAssociationKindResolutionIssueCode.AssociationPathNotAssociation,
+    message: `Association config path "${path}" is not an association on aggregate "${aggregate.name}".`,
+    nodeId,
+    aggregateIri: aggregate.iri,
+    path,
+  };
 }
 
 function associationConfigFrom(
@@ -215,6 +229,6 @@ function associationKey(aggregateIri: string, path: string): string {
   return `${aggregateIri}\u0000${path}`;
 }
 
-function pathDepth(path: string): number {
-  return path.split('.').length;
+function pathSegments(path: string): string[] {
+  return path.split('.').filter((segment) => segment.length > 0);
 }

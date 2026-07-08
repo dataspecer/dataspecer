@@ -48,6 +48,8 @@ export enum DataspecerMetadataMappingIssueCode {
   MissingAssociationTarget = 'missing_association_target',
   MissingTargetAggregate = 'missing_target_aggregate',
   UnsupportedFieldResource = 'unsupported_field_resource',
+  UnsupportedMultiRootSchema = 'unsupported_multi_root_schema',
+  CircularStructure = 'circular_structure',
 }
 
 export class DataspecerMetadataMappingError extends Error {
@@ -177,6 +179,15 @@ function mapStructureModel(
     return [];
   }
 
+  if (schema.dataPsmRoots.length > 1) {
+    addIssue(context, {
+      code: DataspecerMetadataMappingIssueCode.UnsupportedMultiRootSchema,
+      message: `Structure model "${schema.iri}" has ${schema.dataPsmRoots.length} roots; multi-root (OR) schemas are not supported.`,
+      path: `${path}.dataPsmRoots`,
+    });
+    return [];
+  }
+
   const rootClassIri = schema.dataPsmRoots[0];
   const rootClass = rootClassIri ? context.resourcesByIri.get(rootClassIri) : undefined;
 
@@ -216,7 +227,7 @@ function mapStructureModel(
         labelFrom(semanticClass?.name) ??
         localName(schema.iri),
       classIri: classIri ?? '',
-      fields: mapClassFields(rootClass, context, `${path}.root`),
+      fields: mapClassFields(rootClass, context, `${path}.root`, visitedClasses(rootClass)),
     },
   ];
 }
@@ -224,7 +235,8 @@ function mapStructureModel(
 function mapClassFields(
   psmClass: DataPsmClass,
   context: MappingContext,
-  path: string
+  path: string,
+  visited: ReadonlySet<string>
 ): AggregateFieldMetadata[] {
   return psmClass.dataPsmParts.flatMap((partIri, index) => {
     const part = context.resourcesByIri.get(partIri);
@@ -244,7 +256,7 @@ function mapClassFields(
     }
 
     if (DataPsmAssociationEnd.is(part)) {
-      const field = mapAssociationField(part, context, fieldPath);
+      const field = mapAssociationField(part, context, fieldPath, visited);
       return field ? [field] : [];
     }
 
@@ -291,7 +303,8 @@ function mapAttributeField(
 function mapAssociationField(
   association: DataPsmAssociationEnd,
   context: MappingContext,
-  path: string
+  path: string,
+  visited: ReadonlySet<string>
 ): AggregateFieldMetadata | null {
   const relationship = getSemanticRelationship(association.dataPsmInterpretation, context);
   const targetEnd = association.dataPsmIsReverse ? relationship?.ends[0] : relationship?.ends[1];
@@ -319,36 +332,87 @@ function mapAssociationField(
     return null;
   }
 
-  const targetAggregateIri = targetAggregateIriFrom(targetResource, context);
-  if (!targetAggregateIri) {
-    addIssue(context, {
-      code: DataspecerMetadataMappingIssueCode.MissingTargetAggregate,
-      message: `Association "${association.iri ?? fieldPath}" target does not resolve to a structure schema.`,
-      path,
-    });
-  }
-
   const targetClassIri = targetClassIriFrom(targetResource, targetEnd, context);
+  const target = resolveAssociationTarget(association, targetResource, fieldPath, context, visited);
 
   return {
     path: fieldPath,
     label: fieldLabelFrom(association, relationship, targetEnd, fieldPath),
     kind: FieldKind.Association,
     ...(propertyIri ? { propertyIri } : {}),
-    ...(targetAggregateIri ? { targetAggregateIri } : {}),
+    ...(target.targetAggregateIri ? { targetAggregateIri: target.targetAggregateIri } : {}),
     ...(targetClassIri ? { targetClassIri } : {}),
     ...cardinalityFlags(cardinality),
+    ...(target.fields ? { fields: target.fields } : {}),
   };
 }
 
-function targetAggregateIriFrom(
+interface ResolvedAssociationTarget {
+  targetAggregateIri?: string;
+  fields?: AggregateFieldMetadata[];
+}
+
+/**
+ * An association target is either a reference to another aggregate (a class reference or the root
+ * class of another structure model) or a class defined inline within the current aggregate's
+ * structure tree. Inline classes contribute nested fields. References contribute a target
+ * aggregate IRI.
+ */
+function resolveAssociationTarget(
+  association: DataPsmAssociationEnd,
   targetResource: DataPsmClass | DataPsmClassReference,
-  context: MappingContext
-): string | undefined {
+  fieldPath: string,
+  context: MappingContext,
+  visited: ReadonlySet<string>
+): ResolvedAssociationTarget {
   if (DataPsmClassReference.is(targetResource)) {
-    return targetResource.dataPsmSpecification ?? undefined;
+    const referencedSchemaIri = targetResource.dataPsmClass
+      ? context.schemaIriByRootClassIri.get(targetResource.dataPsmClass)
+      : undefined;
+    const targetAggregateIri = referencedSchemaIri ?? targetResource.dataPsmSpecification;
+    if (!targetAggregateIri) {
+      addIssue(context, {
+        code: DataspecerMetadataMappingIssueCode.MissingTargetAggregate,
+        message: `Association "${association.iri ?? fieldPath}" class reference does not resolve to a structure schema.`,
+        path: fieldPath,
+      });
+      return {};
+    }
+    return { targetAggregateIri };
   }
-  return targetResource.iri ? context.schemaIriByRootClassIri.get(targetResource.iri) : undefined;
+
+  const rootSchemaIri = targetResource.iri
+    ? context.schemaIriByRootClassIri.get(targetResource.iri)
+    : undefined;
+  if (rootSchemaIri) {
+    return { targetAggregateIri: rootSchemaIri };
+  }
+
+  if (targetResource.iri && visited.has(targetResource.iri)) {
+    addIssue(context, {
+      code: DataspecerMetadataMappingIssueCode.CircularStructure,
+      message: `Association "${association.iri ?? fieldPath}" creates a circular inline structure.`,
+      path: fieldPath,
+    });
+    return {};
+  }
+
+  return {
+    fields: mapClassFields(
+      targetResource,
+      context,
+      `${fieldPath}.target`,
+      visitedClasses(targetResource, visited)
+    ),
+  };
+}
+
+function visitedClasses(psmClass: DataPsmClass, visited?: ReadonlySet<string>): Set<string> {
+  const next = new Set(visited);
+  if (psmClass.iri) {
+    next.add(psmClass.iri);
+  }
+  return next;
 }
 
 function targetClassIriFrom(

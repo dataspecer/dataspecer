@@ -12,11 +12,21 @@ export interface AggregateFieldMetadata {
   kind: FieldKind;
   propertyIri?: string;
   datatype?: string;
+  /**
+   * Set only when the association target is another aggregate (a class reference or the root
+   * class of another structure model). Mutually exclusive with {@link fields}.
+   */
   targetAggregateIri?: string;
   targetClassIri?: string;
   associationKind?: AssociationKind;
   many?: boolean;
   required?: boolean;
+  /**
+   * Fields exposed inline by the association target class within this aggregate's structure
+   * tree. Present only for associations whose target is defined inline, not for references to
+   * other aggregates.
+   */
+  fields?: AggregateFieldMetadata[];
 }
 
 export interface AggregateMetadata {

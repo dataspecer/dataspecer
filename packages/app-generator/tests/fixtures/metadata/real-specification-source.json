@@ -1,0 +1,2608 @@
+{
+  "aggregatedSemanticModel": [
+    {
+      "id": "kcuro80kqvomp3rhv4n",
+      "iri": "věc",
+      "name": {
+        "en": "Thing",
+        "cs": "Věc"
+      },
+      "description": {},
+      "nameProperty": null,
+      "descriptionProperty": null,
+      "type": ["class", "class-profile"],
+      "externalDocumentationUrl": null,
+      "nameFromProfiled": "https://slovník.gov.cz/generický/věci/pojem/věc",
+      "descriptionFromProfiled": "https://slovník.gov.cz/generický/věci/pojem/věc",
+      "usageNote": null,
+      "usageNoteFromProfiled": null,
+      "profiling": ["https://slovník.gov.cz/generický/věci/pojem/věc"],
+      "tags": [],
+      "order": null,
+      "conceptIris": ["https://slovník.gov.cz/generický/věci/pojem/věc"]
+    },
+    {
+      "ends": [
+        {
+          "name": {},
+          "nameFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/týká-se-pojmu",
+          "description": {},
+          "descriptionFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/týká-se-pojmu",
+          "iri": null,
+          "cardinality": [0, null],
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": [],
+          "externalDocumentationUrl": null,
+          "tags": [],
+          "concept": "rlubm4a4nw9mp36skux",
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": []
+        },
+        {
+          "cardinality": [0, null],
+          "name": {
+            "cs": "týká se pojmu"
+          },
+          "description": {},
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "concept": "43vmr736bammp3nhaer",
+          "iri": "týká-se-pojmu",
+          "externalDocumentationUrl": null,
+          "nameFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/týká-se-pojmu",
+          "descriptionFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/týká-se-pojmu",
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": ["https://slovník.gov.cz/veřejný-sektor/pojem/týká-se-pojmu"],
+          "tags": [],
+          "order": null,
+          "conceptIris": ["https://slovník.gov.cz/veřejný-sektor/pojem/týká-se-pojmu"]
+        }
+      ],
+      "id": "s0hu958qudkmp3nhaes",
+      "type": ["relationship", "relationship-profile"]
+    },
+    {
+      "id": "43vmr736bammp3nhaer",
+      "iri": "pojem",
+      "name": {
+        "cs": "Pojem"
+      },
+      "description": {
+        "cs": "Pojem, který reprezentuje typ subjektu práva, typ objektu práva, vlastnost nebo vztah."
+      },
+      "nameProperty": null,
+      "descriptionProperty": null,
+      "type": ["class", "class-profile"],
+      "externalDocumentationUrl": null,
+      "nameFromProfiled": "https://slovník.gov.cz/generický/datový-slovník-ofn-slovníků/pojem/pojem",
+      "descriptionFromProfiled": "https://slovník.gov.cz/generický/datový-slovník-ofn-slovníků/pojem/pojem",
+      "usageNote": null,
+      "usageNoteFromProfiled": null,
+      "profiling": ["https://slovník.gov.cz/generický/datový-slovník-ofn-slovníků/pojem/pojem"],
+      "tags": [],
+      "order": null,
+      "conceptIris": ["https://slovník.gov.cz/generický/datový-slovník-ofn-slovníků/pojem/pojem"]
+    },
+    {
+      "id": "rlubm4a4nw9mp36skux",
+      "iri": "datová-sada",
+      "name": {
+        "cs": "Datová sada",
+        "en": "Dataset"
+      },
+      "description": {
+        "cs": "Datová sada označuje množinu souvisejících dat.",
+        "en": "Dataset is a set of related data."
+      },
+      "nameProperty": null,
+      "descriptionProperty": null,
+      "type": ["class", "class-profile"],
+      "externalDocumentationUrl": null,
+      "nameFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/datová-sada",
+      "descriptionFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/datová-sada",
+      "usageNote": null,
+      "usageNoteFromProfiled": null,
+      "profiling": ["https://slovník.gov.cz/veřejný-sektor/pojem/datová-sada"],
+      "tags": [],
+      "order": null,
+      "conceptIris": ["https://slovník.gov.cz/veřejný-sektor/pojem/datová-sada"]
+    },
+    {
+      "id": "9s9c75ais99mp36s7jy",
+      "iri": "informační-systém",
+      "name": {
+        "cs": "Informační systém",
+        "en": "Information System"
+      },
+      "description": {
+        "cs": "Informační systém je systém vzájemně propojených prostředků a procesů, které slouží k ukládání, zpracovávání a poskytování informací.",
+        "en": "Information System is an organized system for the collection, organization, storage and communication of information."
+      },
+      "nameProperty": null,
+      "descriptionProperty": null,
+      "type": ["class", "class-profile"],
+      "externalDocumentationUrl": null,
+      "nameFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/informační-systém",
+      "descriptionFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/informační-systém",
+      "usageNote": null,
+      "usageNoteFromProfiled": null,
+      "profiling": ["https://slovník.gov.cz/veřejný-sektor/pojem/informační-systém"],
+      "tags": [],
+      "order": null,
+      "conceptIris": ["https://slovník.gov.cz/veřejný-sektor/pojem/informační-systém"]
+    },
+    {
+      "id": "pojhi19ykemp36rvka",
+      "iri": "datová-sada",
+      "name": {
+        "cs": "Datová sada",
+        "en": "Dataset"
+      },
+      "description": {
+        "cs": "Datová sada označuje množinu souvisejících dat.",
+        "en": "Dataset is a set of related data."
+      },
+      "nameProperty": null,
+      "descriptionProperty": null,
+      "type": ["class", "class-profile"],
+      "externalDocumentationUrl": null,
+      "nameFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/datová-sada",
+      "descriptionFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/datová-sada",
+      "usageNote": null,
+      "usageNoteFromProfiled": null,
+      "profiling": ["https://slovník.gov.cz/veřejný-sektor/pojem/datová-sada"],
+      "tags": [],
+      "order": null,
+      "conceptIris": ["https://slovník.gov.cz/veřejný-sektor/pojem/datová-sada"]
+    },
+    {
+      "id": "0ucq6995eolbmmv4qxbo",
+      "iri": "člověk",
+      "name": {
+        "cs": "Člověk",
+        "en": "Human"
+      },
+      "description": {
+        "cs": "Člověk je rod živočichů.",
+        "en": "Human is the genus that encompasses the species Homo sapiens."
+      },
+      "nameProperty": null,
+      "descriptionProperty": null,
+      "type": ["class", "class-profile"],
+      "externalDocumentationUrl": null,
+      "nameFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/člověk",
+      "descriptionFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/člověk",
+      "usageNote": null,
+      "usageNoteFromProfiled": null,
+      "profiling": ["https://slovník.gov.cz/veřejný-sektor/pojem/člověk"],
+      "tags": [],
+      "order": null,
+      "conceptIris": ["https://slovník.gov.cz/veřejný-sektor/pojem/člověk"]
+    },
+    {
+      "ends": [
+        {
+          "name": {},
+          "nameFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/příjmení",
+          "description": {},
+          "descriptionFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/příjmení",
+          "iri": null,
+          "cardinality": [0, null],
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": [],
+          "externalDocumentationUrl": null,
+          "tags": [],
+          "concept": "fxl8wj6m86mmmv4im1y",
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": []
+        },
+        {
+          "cardinality": [0, null],
+          "name": {
+            "en": "Surname",
+            "cs": "Příjmení"
+          },
+          "description": {
+            "cs": "Příjmení člověka",
+            "en": "Human Surname"
+          },
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "concept": "http://www.w3.org/2000/01/rdf-schema#Literal",
+          "iri": "příjmení",
+          "externalDocumentationUrl": null,
+          "nameFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/příjmení",
+          "descriptionFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/příjmení",
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": ["https://slovník.gov.cz/veřejný-sektor/pojem/příjmení"],
+          "tags": [],
+          "order": null,
+          "conceptIris": ["https://slovník.gov.cz/veřejný-sektor/pojem/příjmení"]
+        }
+      ],
+      "id": "erqlxslyc1mmv4psx1",
+      "type": ["relationship", "relationship-profile"]
+    },
+    {
+      "ends": [
+        {
+          "name": {},
+          "nameFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/křestní-jméno",
+          "description": {},
+          "descriptionFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/křestní-jméno",
+          "iri": null,
+          "cardinality": [0, null],
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": [],
+          "externalDocumentationUrl": null,
+          "tags": [],
+          "concept": "fxl8wj6m86mmmv4im1y",
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": []
+        },
+        {
+          "cardinality": [0, null],
+          "name": {
+            "en": "First name",
+            "cs": "Křestní jméno"
+          },
+          "description": {
+            "cs": "Křestní jméno člověka",
+            "en": "Human First name"
+          },
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "concept": "http://www.w3.org/2000/01/rdf-schema#Literal",
+          "iri": "křestní-jméno",
+          "externalDocumentationUrl": null,
+          "nameFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/křestní-jméno",
+          "descriptionFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/křestní-jméno",
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": ["https://slovník.gov.cz/veřejný-sektor/pojem/křestní-jméno"],
+          "tags": [],
+          "order": null,
+          "conceptIris": ["https://slovník.gov.cz/veřejný-sektor/pojem/křestní-jméno"]
+        }
+      ],
+      "id": "4d9l069kgz1mmv4psx1",
+      "type": ["relationship", "relationship-profile"]
+    },
+    {
+      "id": "fre0ujht6y9mmv4p8lb",
+      "iri": "člověk",
+      "name": {
+        "cs": "Člověk",
+        "en": "Human"
+      },
+      "description": {
+        "cs": "Člověk je rod živočichů.",
+        "en": "Human is the genus that encompasses the species Homo sapiens."
+      },
+      "nameProperty": null,
+      "descriptionProperty": null,
+      "type": ["class", "class-profile"],
+      "externalDocumentationUrl": null,
+      "nameFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/člověk",
+      "descriptionFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/člověk",
+      "usageNote": null,
+      "usageNoteFromProfiled": null,
+      "profiling": ["https://slovník.gov.cz/veřejný-sektor/pojem/člověk"],
+      "tags": [],
+      "order": null,
+      "conceptIris": ["https://slovník.gov.cz/veřejný-sektor/pojem/člověk"]
+    },
+    {
+      "id": "fxl8wj6m86mmmv4im1y",
+      "iri": "fyzická-osoba",
+      "name": {
+        "cs": "Fyzická osoba",
+        "en": "Natural Person"
+      },
+      "description": {
+        "cs": "Fyzická osoba je člověkem, který je subjektem práva.",
+        "en": "Natural Person is a human as a legal subject."
+      },
+      "nameProperty": null,
+      "descriptionProperty": null,
+      "type": ["class", "class-profile"],
+      "externalDocumentationUrl": null,
+      "nameFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/fyzická-osoba",
+      "descriptionFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/fyzická-osoba",
+      "usageNote": null,
+      "usageNoteFromProfiled": null,
+      "profiling": ["https://slovník.gov.cz/veřejný-sektor/pojem/fyzická-osoba"],
+      "tags": [],
+      "order": null,
+      "conceptIris": ["https://slovník.gov.cz/veřejný-sektor/pojem/fyzická-osoba"]
+    },
+    {
+      "ends": [
+        {
+          "name": {},
+          "nameFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/příjmení",
+          "description": {},
+          "descriptionFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/příjmení",
+          "iri": null,
+          "cardinality": [0, null],
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": [],
+          "externalDocumentationUrl": null,
+          "tags": [],
+          "concept": "bwv9ujdp1j7mmv4gfem",
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": []
+        },
+        {
+          "cardinality": [0, null],
+          "name": {
+            "en": "Surname",
+            "cs": "Příjmení"
+          },
+          "description": {
+            "cs": "Příjmení člověka",
+            "en": "Human Surname"
+          },
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "concept": "http://www.w3.org/2000/01/rdf-schema#Literal",
+          "iri": "příjmení",
+          "externalDocumentationUrl": null,
+          "nameFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/příjmení",
+          "descriptionFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/příjmení",
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": ["https://slovník.gov.cz/veřejný-sektor/pojem/příjmení"],
+          "tags": [],
+          "order": null,
+          "conceptIris": ["https://slovník.gov.cz/veřejný-sektor/pojem/příjmení"]
+        }
+      ],
+      "id": "ym0e7tdnv7jmmv4icph",
+      "type": ["relationship", "relationship-profile"]
+    },
+    {
+      "ends": [
+        {
+          "name": {},
+          "nameFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/křestní-jméno",
+          "description": {},
+          "descriptionFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/křestní-jméno",
+          "iri": null,
+          "cardinality": [0, null],
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": [],
+          "externalDocumentationUrl": null,
+          "tags": [],
+          "concept": "bwv9ujdp1j7mmv4gfem",
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": []
+        },
+        {
+          "cardinality": [0, null],
+          "name": {
+            "en": "First name",
+            "cs": "Křestní jméno"
+          },
+          "description": {
+            "cs": "Křestní jméno člověka",
+            "en": "Human First name"
+          },
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "concept": "http://www.w3.org/2000/01/rdf-schema#Literal",
+          "iri": "křestní-jméno",
+          "externalDocumentationUrl": null,
+          "nameFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/křestní-jméno",
+          "descriptionFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/křestní-jméno",
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": ["https://slovník.gov.cz/veřejný-sektor/pojem/křestní-jméno"],
+          "tags": [],
+          "order": null,
+          "conceptIris": ["https://slovník.gov.cz/veřejný-sektor/pojem/křestní-jméno"]
+        }
+      ],
+      "id": "gqeengrof5rmmv4icph",
+      "type": ["relationship", "relationship-profile"]
+    },
+    {
+      "id": "bwv9ujdp1j7mmv4gfem",
+      "iri": "fyzická-osoba",
+      "name": {
+        "cs": "Fyzická osoba",
+        "en": "Natural Person"
+      },
+      "description": {
+        "cs": "Fyzická osoba je člověkem, který je subjektem práva.",
+        "en": "Natural Person is a human as a legal subject."
+      },
+      "nameProperty": null,
+      "descriptionProperty": null,
+      "type": ["class", "class-profile"],
+      "externalDocumentationUrl": null,
+      "nameFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/fyzická-osoba",
+      "descriptionFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/fyzická-osoba",
+      "usageNote": null,
+      "usageNoteFromProfiled": null,
+      "profiling": ["https://slovník.gov.cz/veřejný-sektor/pojem/fyzická-osoba"],
+      "tags": [],
+      "order": null,
+      "conceptIris": ["https://slovník.gov.cz/veřejný-sektor/pojem/fyzická-osoba"]
+    },
+    {
+      "ends": [
+        {
+          "name": {},
+          "nameFromProfiled": "https://slovník.gov.cz/datový/turistické-cíle/pojem/eviduje-typ-turistického-cíle",
+          "description": {},
+          "descriptionFromProfiled": "https://slovník.gov.cz/datový/turistické-cíle/pojem/eviduje-typ-turistického-cíle",
+          "iri": null,
+          "cardinality": [0, null],
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": [],
+          "externalDocumentationUrl": null,
+          "tags": [],
+          "concept": "lpcdsk1jgvmmv4bab0",
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": []
+        },
+        {
+          "cardinality": [0, null],
+          "name": {
+            "cs": "eviduje typ turistického cíle",
+            "en": "records the type of tourist destination"
+          },
+          "description": {
+            "en": "Inclusion of the type of tourist destination in the codelist of types of tourist destinations.",
+            "cs": "Zařazení typu turistického cíle do číselníku typů turistických cílů."
+          },
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "concept": "d4rt1opycklmmv4bhiz",
+          "iri": "eviduje-typ-turistického-cíle",
+          "externalDocumentationUrl": null,
+          "nameFromProfiled": "https://slovník.gov.cz/datový/turistické-cíle/pojem/eviduje-typ-turistického-cíle",
+          "descriptionFromProfiled": "https://slovník.gov.cz/datový/turistické-cíle/pojem/eviduje-typ-turistického-cíle",
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": [
+            "https://slovník.gov.cz/datový/turistické-cíle/pojem/eviduje-typ-turistického-cíle"
+          ],
+          "tags": [],
+          "order": null,
+          "conceptIris": [
+            "https://slovník.gov.cz/datový/turistické-cíle/pojem/eviduje-typ-turistického-cíle"
+          ]
+        }
+      ],
+      "id": "v8r0npq09jpmmv4bhj0",
+      "type": ["relationship", "relationship-profile"]
+    },
+    {
+      "id": "d4rt1opycklmmv4bhiz",
+      "iri": "typ-turistického-cíle",
+      "name": {
+        "en": "Touristic destination type",
+        "cs": "Typ turistického cíle"
+      },
+      "description": {
+        "cs": "Typ turistického cíle (např. přírodní nebo kulturní) reprezentovaný jako položka číselníku typů turistických cílů.",
+        "en": "The type of tourist destination (e.g. natural or cultural) represented as an entry in the tourist destination type codelist."
+      },
+      "nameProperty": null,
+      "descriptionProperty": null,
+      "type": ["class", "class-profile"],
+      "isCodelist": true,
+      "codelistUrl": [],
+      "externalDocumentationUrl": null,
+      "nameFromProfiled": "https://slovník.gov.cz/datový/turistické-cíle/pojem/typ-turistického-cíle",
+      "descriptionFromProfiled": "https://slovník.gov.cz/datový/turistické-cíle/pojem/typ-turistického-cíle",
+      "usageNote": null,
+      "usageNoteFromProfiled": null,
+      "profiling": ["https://slovník.gov.cz/datový/turistické-cíle/pojem/typ-turistického-cíle"],
+      "tags": [],
+      "order": null,
+      "conceptIris": ["https://slovník.gov.cz/datový/turistické-cíle/pojem/typ-turistického-cíle"]
+    },
+    {
+      "id": "lpcdsk1jgvmmv4bab0",
+      "iri": "číselník-typů-turistických-cílů",
+      "name": {
+        "cs": "Číselník typů turistických cílů",
+        "en": "Codelist of types of tourist destinations"
+      },
+      "description": {
+        "cs": "Číselník, jehož položky reprezentují jednotlivé typy turistických cílů.",
+        "en": "A codelist whose entries represent different types of tourist destinations."
+      },
+      "nameProperty": null,
+      "descriptionProperty": null,
+      "type": ["class", "class-profile"],
+      "externalDocumentationUrl": null,
+      "nameFromProfiled": "https://slovník.gov.cz/datový/turistické-cíle/pojem/číselník-typů-turistických-cílů",
+      "descriptionFromProfiled": "https://slovník.gov.cz/datový/turistické-cíle/pojem/číselník-typů-turistických-cílů",
+      "usageNote": null,
+      "usageNoteFromProfiled": null,
+      "profiling": [
+        "https://slovník.gov.cz/datový/turistické-cíle/pojem/číselník-typů-turistických-cílů"
+      ],
+      "tags": [],
+      "order": null,
+      "conceptIris": [
+        "https://slovník.gov.cz/datový/turistické-cíle/pojem/číselník-typů-turistických-cílů"
+      ]
+    },
+    {
+      "ends": [
+        {
+          "name": {},
+          "nameFromProfiled": "https://slovník.gov.cz/datový/turistické-cíle/pojem/bezbariérovost",
+          "description": {},
+          "descriptionFromProfiled": "https://slovník.gov.cz/datový/turistické-cíle/pojem/bezbariérovost",
+          "iri": null,
+          "cardinality": [0, null],
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": [],
+          "externalDocumentationUrl": null,
+          "tags": [],
+          "concept": "nwjiqow20jamgr1xphj",
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": []
+        },
+        {
+          "cardinality": [0, null],
+          "name": {
+            "cs": "bezbariérovost"
+          },
+          "description": {},
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "concept": "uizh0xlj8zmmuxq65g",
+          "iri": "bezbariérovost",
+          "externalDocumentationUrl": null,
+          "nameFromProfiled": "https://slovník.gov.cz/datový/turistické-cíle/pojem/bezbariérovost",
+          "descriptionFromProfiled": "https://slovník.gov.cz/datový/turistické-cíle/pojem/bezbariérovost",
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": ["https://slovník.gov.cz/datový/turistické-cíle/pojem/bezbariérovost"],
+          "tags": [],
+          "order": null,
+          "conceptIris": ["https://slovník.gov.cz/datový/turistické-cíle/pojem/bezbariérovost"]
+        }
+      ],
+      "id": "w1i3m5pn4aommuxq65g",
+      "type": ["relationship", "relationship-profile"]
+    },
+    {
+      "id": "uizh0xlj8zmmuxq65g",
+      "iri": "bezbariérový-přístup",
+      "name": {
+        "cs": "Bezbariérový přístup",
+        "en": "Barrier-free access"
+      },
+      "description": {
+        "cs": "Popis bezbariérovosti objektu z uživatelského hlediska.",
+        "en": "Description of the barrier-free accessibility of the building from the user's point of view."
+      },
+      "nameProperty": null,
+      "descriptionProperty": null,
+      "type": ["class", "class-profile"],
+      "externalDocumentationUrl": null,
+      "nameFromProfiled": "https://slovník.gov.cz/generický/bezbariérové-přístupy/pojem/bezbariérový-přístup",
+      "descriptionFromProfiled": "https://slovník.gov.cz/generický/bezbariérové-přístupy/pojem/bezbariérový-přístup",
+      "usageNote": null,
+      "usageNoteFromProfiled": null,
+      "profiling": [
+        "https://slovník.gov.cz/generický/bezbariérové-přístupy/pojem/bezbariérový-přístup"
+      ],
+      "tags": [],
+      "order": null,
+      "conceptIris": [
+        "https://slovník.gov.cz/generický/bezbariérové-přístupy/pojem/bezbariérový-přístup"
+      ]
+    },
+    {
+      "ends": [
+        {
+          "name": {},
+          "nameFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-účet-na-facebooku",
+          "description": {},
+          "descriptionFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-účet-na-facebooku",
+          "iri": null,
+          "cardinality": [0, null],
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": [],
+          "externalDocumentationUrl": null,
+          "tags": [],
+          "concept": "v69grljcwktmmuxoih8",
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": []
+        },
+        {
+          "cardinality": [0, 1],
+          "name": {
+            "cs": "má účet na Facebooku",
+            "en": "facebook"
+          },
+          "description": {
+            "cs": "Uživatelské jméno na Facebooku."
+          },
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "concept": "http://www.w3.org/2000/01/rdf-schema#Literal",
+          "iri": "má-účet-na-facebooku",
+          "externalDocumentationUrl": null,
+          "nameFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-účet-na-facebooku",
+          "descriptionFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-účet-na-facebooku",
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": ["https://slovník.gov.cz/generický/kontakty/pojem/má-účet-na-facebooku"],
+          "tags": [],
+          "order": null,
+          "conceptIris": ["https://slovník.gov.cz/generický/kontakty/pojem/má-účet-na-facebooku"]
+        }
+      ],
+      "id": "uydbdb2uwtmmuxor2m",
+      "type": ["relationship", "relationship-profile"]
+    },
+    {
+      "ends": [
+        {
+          "name": {},
+          "nameFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-účet-na-instagramu",
+          "description": {},
+          "descriptionFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-účet-na-instagramu",
+          "iri": null,
+          "cardinality": [0, null],
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": [],
+          "externalDocumentationUrl": null,
+          "tags": [],
+          "concept": "v69grljcwktmmuxoih8",
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": []
+        },
+        {
+          "cardinality": [0, 1],
+          "name": {
+            "cs": "má účet na Instagramu",
+            "en": "instagram"
+          },
+          "description": {
+            "cs": "Uživatelské jméno na Instagramu."
+          },
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "concept": "http://www.w3.org/2000/01/rdf-schema#Literal",
+          "iri": "má-účet-na-instagramu",
+          "externalDocumentationUrl": null,
+          "nameFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-účet-na-instagramu",
+          "descriptionFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-účet-na-instagramu",
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": ["https://slovník.gov.cz/generický/kontakty/pojem/má-účet-na-instagramu"],
+          "tags": [],
+          "order": null,
+          "conceptIris": ["https://slovník.gov.cz/generický/kontakty/pojem/má-účet-na-instagramu"]
+        }
+      ],
+      "id": "v677prf5asqmmuxor2l",
+      "type": ["relationship", "relationship-profile"]
+    },
+    {
+      "id": "v69grljcwktmmuxoih8",
+      "iri": "kontakt",
+      "name": {
+        "en": "Contact",
+        "cs": "Kontakt"
+      },
+      "description": {
+        "cs": "Kontaktní údaje, např. na člověka, společnost, apod."
+      },
+      "type": ["class", "class-profile"],
+      "externalDocumentationUrl": null,
+      "nameFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/kontakt",
+      "descriptionFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/kontakt",
+      "usageNote": null,
+      "usageNoteFromProfiled": null,
+      "profiling": ["https://slovník.gov.cz/generický/kontakty/pojem/kontakt"],
+      "tags": [],
+      "order": null,
+      "nameProperty": null,
+      "descriptionProperty": null,
+      "conceptIris": ["https://slovník.gov.cz/generický/kontakty/pojem/kontakt"]
+    },
+    {
+      "ends": [
+        {
+          "name": {},
+          "nameFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-telefonní-číslo-na-mobilní-telefon",
+          "description": {},
+          "descriptionFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-telefonní-číslo-na-mobilní-telefon",
+          "iri": null,
+          "cardinality": [0, null],
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": [],
+          "externalDocumentationUrl": null,
+          "tags": [],
+          "concept": "eys7psnid1vmmuvcful",
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": []
+        },
+        {
+          "cardinality": [0, 1],
+          "name": {
+            "en": "mobile phone number",
+            "cs": "má telefonní číslo na mobilní telefon"
+          },
+          "description": {
+            "cs": "Telefonní číslo na mobilní telefon."
+          },
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "concept": "http://www.w3.org/2001/XMLSchema#string",
+          "iri": "má-telefonní-číslo-na-mobilní-telefon",
+          "externalDocumentationUrl": null,
+          "nameFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-telefonní-číslo-na-mobilní-telefon",
+          "descriptionFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-telefonní-číslo-na-mobilní-telefon",
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": [
+            "https://slovník.gov.cz/generický/kontakty/pojem/má-telefonní-číslo-na-mobilní-telefon"
+          ],
+          "tags": [],
+          "languageStringRequiredLanguages": [],
+          "order": null,
+          "conceptIris": [
+            "https://slovník.gov.cz/generický/kontakty/pojem/má-telefonní-číslo-na-mobilní-telefon"
+          ]
+        }
+      ],
+      "id": "1920a04dgxgmmuvcnoq",
+      "type": ["relationship", "relationship-profile"]
+    },
+    {
+      "ends": [
+        {
+          "name": {},
+          "nameFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-e-mailovou-adresu",
+          "description": {},
+          "descriptionFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-e-mailovou-adresu",
+          "iri": null,
+          "cardinality": [0, null],
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": [],
+          "externalDocumentationUrl": null,
+          "tags": [],
+          "concept": "eys7psnid1vmmuvcful",
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": []
+        },
+        {
+          "cardinality": [0, 1],
+          "name": {
+            "cs": "má E-mailovou adresu",
+            "en": "e-mail"
+          },
+          "description": {
+            "cs": "Kontaktní e-mailová adresa."
+          },
+          "concept": "http://www.w3.org/2001/XMLSchema#string",
+          "iri": "má-e-mailovou-adresu",
+          "externalDocumentationUrl": null,
+          "nameFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-e-mailovou-adresu",
+          "descriptionFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-e-mailovou-adresu",
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": ["https://slovník.gov.cz/generický/kontakty/pojem/má-e-mailovou-adresu"],
+          "tags": [],
+          "languageStringRequiredLanguages": [],
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": ["https://slovník.gov.cz/generický/kontakty/pojem/má-e-mailovou-adresu"]
+        }
+      ],
+      "id": "9iyznj8y5lmmuvcnoq",
+      "type": ["relationship", "relationship-profile"]
+    },
+    {
+      "id": "eys7psnid1vmmuvcful",
+      "iri": "kontakt",
+      "name": {
+        "en": "Contact",
+        "cs": "Kontakt"
+      },
+      "description": {
+        "cs": "Kontaktní údaje, např. na člověka, společnost, apod."
+      },
+      "type": ["class", "class-profile"],
+      "externalDocumentationUrl": null,
+      "nameFromProfiled": "5hu7simatyimgr1xzi2",
+      "descriptionFromProfiled": "5hu7simatyimgr1xzi2",
+      "usageNote": null,
+      "usageNoteFromProfiled": "5hu7simatyimgr1xzi2",
+      "profiling": ["5hu7simatyimgr1xzi2"],
+      "tags": [],
+      "order": null,
+      "nameProperty": null,
+      "descriptionProperty": null,
+      "conceptIris": ["https://slovník.gov.cz/generický/kontakty/pojem/kontakt"]
+    },
+    {
+      "ends": [
+        {
+          "name": {},
+          "nameFromProfiled": "https://slovník.gov.cz/generický/adresy/pojem/text-adresy",
+          "description": {},
+          "descriptionFromProfiled": "https://slovník.gov.cz/generický/adresy/pojem/text-adresy",
+          "iri": null,
+          "cardinality": [0, null],
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": [],
+          "externalDocumentationUrl": null,
+          "tags": [],
+          "concept": "wwd8u6lufjcmmuj0g5a",
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": []
+        },
+        {
+          "cardinality": [0, null],
+          "name": {
+            "cs": "text adresy"
+          },
+          "description": {
+            "cs": "Celá adresa jako jeden řetězec. Text se řídí Přílohou č. 1 k vyhlášce č. 359/2011 Sb., o základním registru územní identifikace, adres a nemovitostí. Tato vlastnost odpovídá vlastnosti fullAddress z ISA2 Core Location Vocabulary."
+          },
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "concept": "http://www.w3.org/2001/XMLSchema#string",
+          "iri": "text-adresy",
+          "externalDocumentationUrl": null,
+          "nameFromProfiled": "https://slovník.gov.cz/generický/adresy/pojem/text-adresy",
+          "descriptionFromProfiled": "https://slovník.gov.cz/generický/adresy/pojem/text-adresy",
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": ["https://slovník.gov.cz/generický/adresy/pojem/text-adresy"],
+          "tags": [],
+          "languageStringRequiredLanguages": [],
+          "order": null,
+          "conceptIris": ["https://slovník.gov.cz/generický/adresy/pojem/text-adresy"]
+        }
+      ],
+      "id": "z1p5a6oi9ymmuvaq8t",
+      "type": ["relationship", "relationship-profile"]
+    },
+    {
+      "ends": [
+        {
+          "name": {},
+          "nameFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-e-mailovou-adresu",
+          "description": {},
+          "descriptionFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-e-mailovou-adresu",
+          "iri": null,
+          "cardinality": [0, null],
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": [],
+          "externalDocumentationUrl": null,
+          "tags": [],
+          "concept": "5hu7simatyimgr1xzi2",
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": []
+        },
+        {
+          "cardinality": [0, 1],
+          "name": {
+            "cs": "má E-mailovou adresu",
+            "en": "e-mail"
+          },
+          "description": {
+            "cs": "Kontaktní e-mailová adresa."
+          },
+          "concept": "http://www.w3.org/2001/XMLSchema#string",
+          "iri": "má-e-mailovou-adresu",
+          "externalDocumentationUrl": null,
+          "nameFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-e-mailovou-adresu",
+          "descriptionFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-e-mailovou-adresu",
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": ["https://slovník.gov.cz/generický/kontakty/pojem/má-e-mailovou-adresu"],
+          "tags": [],
+          "languageStringRequiredLanguages": [],
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": ["https://slovník.gov.cz/generický/kontakty/pojem/má-e-mailovou-adresu"]
+        }
+      ],
+      "id": "bkoxt2moh1smmuutmue",
+      "type": ["relationship", "relationship-profile"]
+    },
+    {
+      "ends": [
+        {
+          "name": {},
+          "nameFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/příjmení",
+          "description": {},
+          "descriptionFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/příjmení",
+          "iri": null,
+          "cardinality": [0, null],
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": [],
+          "externalDocumentationUrl": null,
+          "tags": [],
+          "concept": "dl9njqopzkcmmujshvv",
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": []
+        },
+        {
+          "cardinality": [0, null],
+          "name": {
+            "en": "Surname",
+            "cs": "Příjmení"
+          },
+          "description": {
+            "cs": "Příjmení člověka",
+            "en": "Human Surname"
+          },
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "concept": "http://www.w3.org/2000/01/rdf-schema#Literal",
+          "iri": "příjmení",
+          "externalDocumentationUrl": null,
+          "nameFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/příjmení",
+          "descriptionFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/příjmení",
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": ["https://slovník.gov.cz/veřejný-sektor/pojem/příjmení"],
+          "tags": [],
+          "order": null,
+          "conceptIris": ["https://slovník.gov.cz/veřejný-sektor/pojem/příjmení"]
+        }
+      ],
+      "id": "2zvcl8mhshgmmujsr52",
+      "type": ["relationship", "relationship-profile"]
+    },
+    {
+      "ends": [
+        {
+          "name": {},
+          "nameFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/křestní-jméno",
+          "description": {},
+          "descriptionFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/křestní-jméno",
+          "iri": null,
+          "cardinality": [0, null],
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": [],
+          "externalDocumentationUrl": null,
+          "tags": [],
+          "concept": "dl9njqopzkcmmujshvv",
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": []
+        },
+        {
+          "cardinality": [0, null],
+          "name": {
+            "en": "First name",
+            "cs": "Křestní jméno"
+          },
+          "description": {
+            "cs": "Křestní jméno člověka",
+            "en": "Human First name"
+          },
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "concept": "http://www.w3.org/2000/01/rdf-schema#Literal",
+          "iri": "křestní-jméno",
+          "externalDocumentationUrl": null,
+          "nameFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/křestní-jméno",
+          "descriptionFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/křestní-jméno",
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": ["https://slovník.gov.cz/veřejný-sektor/pojem/křestní-jméno"],
+          "tags": [],
+          "order": null,
+          "conceptIris": ["https://slovník.gov.cz/veřejný-sektor/pojem/křestní-jméno"]
+        }
+      ],
+      "id": "5ou6jf4jpv7mmujsr52",
+      "type": ["relationship", "relationship-profile"]
+    },
+    {
+      "id": "dl9njqopzkcmmujshvv",
+      "iri": "fyzická-osoba",
+      "name": {
+        "cs": "Fyzická osoba",
+        "en": "Natural Person"
+      },
+      "description": {
+        "cs": "Fyzická osoba je člověkem, který je subjektem práva.",
+        "en": "Natural Person is a human as a legal subject."
+      },
+      "nameProperty": null,
+      "descriptionProperty": null,
+      "type": ["class", "class-profile"],
+      "externalDocumentationUrl": null,
+      "nameFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/fyzická-osoba",
+      "descriptionFromProfiled": "https://slovník.gov.cz/veřejný-sektor/pojem/fyzická-osoba",
+      "usageNote": null,
+      "usageNoteFromProfiled": null,
+      "profiling": ["https://slovník.gov.cz/veřejný-sektor/pojem/fyzická-osoba"],
+      "tags": [],
+      "order": null,
+      "conceptIris": ["https://slovník.gov.cz/veřejný-sektor/pojem/fyzická-osoba"]
+    },
+    {
+      "ends": [
+        {
+          "name": {},
+          "nameFromProfiled": "https://slovník.gov.cz/generický/zaměstnání/pojem/má-kontakt",
+          "description": {},
+          "descriptionFromProfiled": "https://slovník.gov.cz/generický/zaměstnání/pojem/má-kontakt",
+          "iri": null,
+          "cardinality": [0, null],
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": [],
+          "externalDocumentationUrl": null,
+          "tags": [],
+          "concept": "2m84ps09ot9mmuj0sb0",
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": []
+        },
+        {
+          "cardinality": [0, null],
+          "name": {
+            "cs": "má kontakt"
+          },
+          "description": {
+            "cs": "Kontaktní údaje k pracovní pozici."
+          },
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "concept": "5hu7simatyimgr1xzi2",
+          "iri": "má-kontakt",
+          "externalDocumentationUrl": null,
+          "nameFromProfiled": "https://slovník.gov.cz/generický/zaměstnání/pojem/má-kontakt",
+          "descriptionFromProfiled": "https://slovník.gov.cz/generický/zaměstnání/pojem/má-kontakt",
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": ["https://slovník.gov.cz/generický/zaměstnání/pojem/má-kontakt"],
+          "tags": [],
+          "order": null,
+          "conceptIris": ["https://slovník.gov.cz/generický/zaměstnání/pojem/má-kontakt"]
+        }
+      ],
+      "id": "ir80pf1hb1gmmuj0sb0",
+      "type": ["relationship", "relationship-profile"]
+    },
+    {
+      "id": "2m84ps09ot9mmuj0sb0",
+      "iri": "pracovní-místo",
+      "name": {
+        "cs": "Pracovní místo"
+      },
+      "description": {
+        "cs": "Pracovní místo"
+      },
+      "nameProperty": null,
+      "descriptionProperty": null,
+      "type": ["class", "class-profile"],
+      "externalDocumentationUrl": null,
+      "nameFromProfiled": "https://slovník.gov.cz/generický/zaměstnání/pojem/pracovní-místo",
+      "descriptionFromProfiled": "https://slovník.gov.cz/generický/zaměstnání/pojem/pracovní-místo",
+      "usageNote": null,
+      "usageNoteFromProfiled": null,
+      "profiling": ["https://slovník.gov.cz/generický/zaměstnání/pojem/pracovní-místo"],
+      "tags": [],
+      "order": null,
+      "conceptIris": ["https://slovník.gov.cz/generický/zaměstnání/pojem/pracovní-místo"]
+    },
+    {
+      "ends": [
+        {
+          "name": {},
+          "nameFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-kontaktní-místo",
+          "description": {},
+          "descriptionFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-kontaktní-místo",
+          "iri": null,
+          "cardinality": [0, null],
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": [],
+          "externalDocumentationUrl": null,
+          "tags": [],
+          "concept": "5hu7simatyimgr1xzi2",
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": []
+        },
+        {
+          "cardinality": [0, null],
+          "name": {
+            "en": "has contact place",
+            "cs": "má kontaktní místo"
+          },
+          "description": {
+            "en": "A place where the subject can be contacted.",
+            "cs": "Místo, na kterém lze subjekt kontaktovat."
+          },
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "concept": "jcxz5v77iwmmuj0a8d",
+          "iri": "má-kontaktní-místo",
+          "externalDocumentationUrl": null,
+          "nameFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-kontaktní-místo",
+          "descriptionFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-kontaktní-místo",
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": ["https://slovník.gov.cz/generický/kontakty/pojem/má-kontaktní-místo"],
+          "tags": [],
+          "order": null,
+          "conceptIris": ["https://slovník.gov.cz/generický/kontakty/pojem/má-kontaktní-místo"]
+        }
+      ],
+      "id": "tbsw8mlapjdmmuj0mq6",
+      "type": ["relationship", "relationship-profile"]
+    },
+    {
+      "ends": [
+        {
+          "name": {},
+          "nameFromProfiled": "https://slovník.gov.cz/generický/umístění/pojem/má-budovu",
+          "description": {},
+          "descriptionFromProfiled": "https://slovník.gov.cz/generický/umístění/pojem/má-budovu",
+          "iri": null,
+          "cardinality": [0, null],
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": [],
+          "externalDocumentationUrl": null,
+          "tags": [],
+          "concept": "jcxz5v77iwmmuj0a8d",
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": []
+        },
+        {
+          "cardinality": [0, null],
+          "name": {
+            "cs": "má budovu",
+            "en": "has building"
+          },
+          "description": {
+            "cs": "Označení budovy objektu."
+          },
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "concept": "zr6tty9dgscmmuj0g5a",
+          "iri": "má-budovu",
+          "externalDocumentationUrl": null,
+          "nameFromProfiled": "https://slovník.gov.cz/generický/umístění/pojem/má-budovu",
+          "descriptionFromProfiled": "https://slovník.gov.cz/generický/umístění/pojem/má-budovu",
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": ["https://slovník.gov.cz/generický/umístění/pojem/má-budovu"],
+          "tags": [],
+          "order": null,
+          "conceptIris": ["https://slovník.gov.cz/generický/umístění/pojem/má-budovu"]
+        }
+      ],
+      "id": "4zofr78fuzpmmuj0g5a",
+      "type": ["relationship", "relationship-profile"]
+    },
+    {
+      "id": "zr6tty9dgscmmuj0g5a",
+      "iri": "budova",
+      "name": {
+        "en": "Building",
+        "cs": "Budova"
+      },
+      "description": {
+        "cs": "Označení budovy jejím názvem, číslem apod."
+      },
+      "nameProperty": null,
+      "descriptionProperty": null,
+      "type": ["class", "class-profile"],
+      "externalDocumentationUrl": null,
+      "nameFromProfiled": "https://slovník.gov.cz/generický/umístění/pojem/budova",
+      "descriptionFromProfiled": "https://slovník.gov.cz/generický/umístění/pojem/budova",
+      "usageNote": null,
+      "usageNoteFromProfiled": null,
+      "profiling": ["https://slovník.gov.cz/generický/umístění/pojem/budova"],
+      "tags": [],
+      "order": null,
+      "conceptIris": ["https://slovník.gov.cz/generický/umístění/pojem/budova"]
+    },
+    {
+      "ends": [
+        {
+          "name": {},
+          "nameFromProfiled": "https://slovník.gov.cz/generický/umístění/pojem/má-adresu",
+          "description": {},
+          "descriptionFromProfiled": "https://slovník.gov.cz/generický/umístění/pojem/má-adresu",
+          "iri": null,
+          "cardinality": [0, null],
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": [],
+          "externalDocumentationUrl": null,
+          "tags": [],
+          "concept": "jcxz5v77iwmmuj0a8d",
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": []
+        },
+        {
+          "cardinality": [0, null],
+          "name": {
+            "cs": "má adresu"
+          },
+          "description": {},
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "concept": "wwd8u6lufjcmmuj0g5a",
+          "iri": "má-adresu",
+          "externalDocumentationUrl": null,
+          "nameFromProfiled": "https://slovník.gov.cz/generický/umístění/pojem/má-adresu",
+          "descriptionFromProfiled": "https://slovník.gov.cz/generický/umístění/pojem/má-adresu",
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": ["https://slovník.gov.cz/generický/umístění/pojem/má-adresu"],
+          "tags": [],
+          "order": null,
+          "conceptIris": ["https://slovník.gov.cz/generický/umístění/pojem/má-adresu"]
+        }
+      ],
+      "id": "at4h7ro98d5mmuj0g5a",
+      "type": ["relationship", "relationship-profile"]
+    },
+    {
+      "id": "wwd8u6lufjcmmuj0g5a",
+      "iri": "adresa",
+      "name": {
+        "cs": "adresa"
+      },
+      "description": {
+        "cs": "Adresou se rozumí kombinace názvu okresu, názvu obce nebo vojenského újezdu, názvu části obce nebo v případě hlavního města Prahy názvu katastrálního území a názvu městského obvodu, čísla popisného nebo evidenčního, názvu ulice a čísla orientačního a dále zvláštních údajů pro doručování prostřednictvím poštovních služeb, která jednoznačně určuje adresní místo."
+      },
+      "nameProperty": null,
+      "descriptionProperty": null,
+      "type": ["class", "class-profile"],
+      "externalDocumentationUrl": null,
+      "nameFromProfiled": "https://slovník.gov.cz/legislativní/sbírka/111/2009/pojem/adresa",
+      "descriptionFromProfiled": "https://slovník.gov.cz/legislativní/sbírka/111/2009/pojem/adresa",
+      "usageNote": null,
+      "usageNoteFromProfiled": null,
+      "profiling": ["https://slovník.gov.cz/legislativní/sbírka/111/2009/pojem/adresa"],
+      "tags": [],
+      "order": null,
+      "conceptIris": ["https://slovník.gov.cz/legislativní/sbírka/111/2009/pojem/adresa"]
+    },
+    {
+      "ends": [
+        {
+          "name": {},
+          "nameFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-kontaktní-místo",
+          "description": {},
+          "descriptionFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-kontaktní-místo",
+          "iri": null,
+          "cardinality": [0, null],
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": [],
+          "externalDocumentationUrl": null,
+          "tags": [],
+          "concept": "5hu7simatyimgr1xzi2",
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": []
+        },
+        {
+          "cardinality": [0, null],
+          "name": {
+            "en": "has contact place",
+            "cs": "má kontaktní místo"
+          },
+          "description": {
+            "en": "A place where the subject can be contacted.",
+            "cs": "Místo, na kterém lze subjekt kontaktovat."
+          },
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "concept": "jcxz5v77iwmmuj0a8d",
+          "iri": "má-kontaktní-místo",
+          "externalDocumentationUrl": null,
+          "nameFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-kontaktní-místo",
+          "descriptionFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-kontaktní-místo",
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": ["https://slovník.gov.cz/generický/kontakty/pojem/má-kontaktní-místo"],
+          "tags": [],
+          "order": null,
+          "conceptIris": ["https://slovník.gov.cz/generický/kontakty/pojem/má-kontaktní-místo"]
+        }
+      ],
+      "id": "hgrj45k4pyammuj0a8d",
+      "type": ["relationship", "relationship-profile"]
+    },
+    {
+      "id": "jcxz5v77iwmmuj0a8d",
+      "iri": "místo",
+      "name": {
+        "cs": "Místo",
+        "en": "Place"
+      },
+      "description": {
+        "cs": "Objekt, který je geografický umístěn.",
+        "en": "An object that is geographically located."
+      },
+      "nameProperty": null,
+      "descriptionProperty": null,
+      "type": ["class", "class-profile"],
+      "externalDocumentationUrl": null,
+      "nameFromProfiled": "https://slovník.gov.cz/generický/umístění/pojem/místo",
+      "descriptionFromProfiled": "https://slovník.gov.cz/generický/umístění/pojem/místo",
+      "usageNote": null,
+      "usageNoteFromProfiled": null,
+      "profiling": ["https://slovník.gov.cz/generický/umístění/pojem/místo"],
+      "tags": [],
+      "order": null,
+      "conceptIris": ["https://slovník.gov.cz/generický/umístění/pojem/místo"]
+    },
+    {
+      "ends": [
+        {
+          "name": {},
+          "nameFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-datovou-schránku",
+          "description": {},
+          "descriptionFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-datovou-schránku",
+          "iri": null,
+          "cardinality": [0, null],
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": [],
+          "externalDocumentationUrl": null,
+          "tags": [],
+          "concept": "5hu7simatyimgr1xzi2",
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": []
+        },
+        {
+          "cardinality": [0, 1],
+          "name": {
+            "en": "has databox",
+            "cs": "má datovou schránku"
+          },
+          "description": {
+            "en": "Contact data box.",
+            "cs": "Kontaktní datová schránka"
+          },
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "concept": "aevfyvbag5wmmuizx2l",
+          "iri": "má-datovou-schránku",
+          "externalDocumentationUrl": null,
+          "nameFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-datovou-schránku",
+          "descriptionFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-datovou-schránku",
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": ["https://slovník.gov.cz/generický/kontakty/pojem/má-datovou-schránku"],
+          "tags": [],
+          "order": null,
+          "conceptIris": ["https://slovník.gov.cz/generický/kontakty/pojem/má-datovou-schránku"]
+        }
+      ],
+      "id": "abg45fmzukmmuizx2l",
+      "type": ["relationship", "relationship-profile"]
+    },
+    {
+      "id": "aevfyvbag5wmmuizx2l",
+      "iri": "datová-schránka",
+      "name": {
+        "cs": "Datová schránka",
+        "en": "Data box"
+      },
+      "description": {
+        "cs": "Datová schránka je elektronické úložiště, které je určeno k doručování orgány veřejné moci, provádění úkonů vůči orgánům veřejné moci, dodávání dokumentů fyzických osob, podnikajících fyzických osob a právnických osob."
+      },
+      "nameProperty": null,
+      "descriptionProperty": null,
+      "type": ["class", "class-profile"],
+      "externalDocumentationUrl": null,
+      "nameFromProfiled": "https://slovník.gov.cz/legislativní/sbírka/300/2008/pojem/datová-schránka",
+      "descriptionFromProfiled": "https://slovník.gov.cz/legislativní/sbírka/300/2008/pojem/datová-schránka",
+      "usageNote": null,
+      "usageNoteFromProfiled": null,
+      "profiling": ["https://slovník.gov.cz/legislativní/sbírka/300/2008/pojem/datová-schránka"],
+      "tags": [],
+      "order": null,
+      "conceptIris": ["https://slovník.gov.cz/legislativní/sbírka/300/2008/pojem/datová-schránka"]
+    },
+    {
+      "id": "vy790gewcnmgr5ypnu",
+      "iri": "turistický-cíl",
+      "name": {
+        "en": "Tourist destination",
+        "cs": "Turistický cíl"
+      },
+      "description": {
+        "cs": "Samostatný turistický cíl.",
+        "en": "A separate tourist destination"
+      },
+      "type": ["class", "class-profile"],
+      "externalDocumentationUrl": null,
+      "nameFromProfiled": "nwjiqow20jamgr1xphj",
+      "descriptionFromProfiled": "nwjiqow20jamgr1xphj",
+      "usageNote": null,
+      "usageNoteFromProfiled": "nwjiqow20jamgr1xphj",
+      "profiling": ["nwjiqow20jamgr1xphj"],
+      "tags": [],
+      "order": null,
+      "nameProperty": null,
+      "descriptionProperty": null,
+      "conceptIris": ["https://slovník.gov.cz/datový/turistické-cíle/pojem/turistický-cíl"]
+    },
+    {
+      "ends": [
+        {
+          "name": {},
+          "nameFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-url",
+          "description": {},
+          "descriptionFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-url",
+          "iri": null,
+          "cardinality": [0, null],
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": [],
+          "externalDocumentationUrl": null,
+          "tags": [],
+          "concept": "5hu7simatyimgr1xzi2",
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": []
+        },
+        {
+          "cardinality": [0, 1],
+          "name": {
+            "cs": "má URL",
+            "en": "URL"
+          },
+          "description": {
+            "cs": "Webová kontaktní adresa: webová stránka či WebID."
+          },
+          "concept": "http://www.w3.org/2000/01/rdf-schema#Literal",
+          "iri": "má-url",
+          "externalDocumentationUrl": null,
+          "nameFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-url",
+          "descriptionFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-url",
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": ["https://slovník.gov.cz/generický/kontakty/pojem/má-url"],
+          "tags": [],
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": ["https://slovník.gov.cz/generický/kontakty/pojem/má-url"]
+        }
+      ],
+      "id": "b236aigwd6tmgr1y4h4",
+      "type": ["relationship", "relationship-profile"]
+    },
+    {
+      "ends": [
+        {
+          "name": {},
+          "nameFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-e-mailovou-adresu",
+          "description": {},
+          "descriptionFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-e-mailovou-adresu",
+          "iri": null,
+          "cardinality": [0, null],
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": [],
+          "externalDocumentationUrl": null,
+          "tags": [],
+          "concept": "5hu7simatyimgr1xzi2",
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": []
+        },
+        {
+          "cardinality": [0, 1],
+          "name": {
+            "cs": "má E-mailovou adresu",
+            "en": "e-mail"
+          },
+          "description": {
+            "cs": "Kontaktní e-mailová adresa."
+          },
+          "concept": "http://www.w3.org/2001/XMLSchema#string",
+          "iri": "má-e-mailovou-adresu",
+          "externalDocumentationUrl": null,
+          "nameFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-e-mailovou-adresu",
+          "descriptionFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/má-e-mailovou-adresu",
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": ["https://slovník.gov.cz/generický/kontakty/pojem/má-e-mailovou-adresu"],
+          "tags": [],
+          "languageStringRequiredLanguages": [],
+          "regex": " ^[0-9]+$",
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": ["https://slovník.gov.cz/generický/kontakty/pojem/má-e-mailovou-adresu"]
+        }
+      ],
+      "id": "br0foirq8oumgr1y4h3",
+      "type": ["relationship", "relationship-profile"]
+    },
+    {
+      "ends": [
+        {
+          "name": {},
+          "nameFromProfiled": "https://slovník.gov.cz/datový/turistické-cíle/pojem/má-jazyk",
+          "description": {},
+          "descriptionFromProfiled": "https://slovník.gov.cz/datový/turistické-cíle/pojem/má-jazyk",
+          "iri": null,
+          "cardinality": [0, null],
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": [],
+          "externalDocumentationUrl": null,
+          "tags": [],
+          "concept": "nwjiqow20jamgr1xphj",
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": []
+        },
+        {
+          "cardinality": [0, null],
+          "name": {
+            "cs": "má jazyk"
+          },
+          "description": {},
+          "concept": "ne8yx9814gmgr1xzi2",
+          "iri": "má-jazyk",
+          "externalDocumentationUrl": null,
+          "nameFromProfiled": "https://slovník.gov.cz/datový/turistické-cíle/pojem/má-jazyk",
+          "descriptionFromProfiled": "https://slovník.gov.cz/datový/turistické-cíle/pojem/má-jazyk",
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": ["https://slovník.gov.cz/datový/turistické-cíle/pojem/má-jazyk"],
+          "tags": [],
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": ["https://slovník.gov.cz/datový/turistické-cíle/pojem/má-jazyk"]
+        }
+      ],
+      "id": "ens3lm3g7prmgr1xzi2",
+      "type": ["relationship", "relationship-profile"]
+    },
+    {
+      "id": "ne8yx9814gmgr1xzi2",
+      "iri": "jazyk",
+      "name": {
+        "cs": "Jazyk"
+      },
+      "description": {},
+      "type": ["class", "class-profile"],
+      "externalDocumentationUrl": null,
+      "nameFromProfiled": "https://slovník.gov.cz/datový/turistické-cíle/pojem/jazyk",
+      "descriptionFromProfiled": "https://slovník.gov.cz/datový/turistické-cíle/pojem/jazyk",
+      "usageNote": null,
+      "usageNoteFromProfiled": null,
+      "profiling": ["https://slovník.gov.cz/datový/turistické-cíle/pojem/jazyk"],
+      "tags": [],
+      "order": null,
+      "nameProperty": null,
+      "descriptionProperty": null,
+      "conceptIris": ["https://slovník.gov.cz/datový/turistické-cíle/pojem/jazyk"]
+    },
+    {
+      "ends": [
+        {
+          "name": {},
+          "nameFromProfiled": "https://slovník.gov.cz/datový/turistické-cíle/pojem/kontakt",
+          "description": {},
+          "descriptionFromProfiled": "https://slovník.gov.cz/datový/turistické-cíle/pojem/kontakt",
+          "iri": null,
+          "cardinality": [0, null],
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": [],
+          "externalDocumentationUrl": null,
+          "tags": [],
+          "concept": "nwjiqow20jamgr1xphj",
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": []
+        },
+        {
+          "cardinality": [0, null],
+          "name": {
+            "cs": "kontakt"
+          },
+          "description": {},
+          "concept": "5hu7simatyimgr1xzi2",
+          "iri": "kontakt",
+          "externalDocumentationUrl": null,
+          "nameFromProfiled": "https://slovník.gov.cz/datový/turistické-cíle/pojem/kontakt",
+          "descriptionFromProfiled": "https://slovník.gov.cz/datový/turistické-cíle/pojem/kontakt",
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": ["https://slovník.gov.cz/datový/turistické-cíle/pojem/kontakt"],
+          "tags": [],
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": ["https://slovník.gov.cz/datový/turistické-cíle/pojem/kontakt"]
+        }
+      ],
+      "id": "ezjn1byvmcbmgr1xzi2",
+      "type": ["relationship", "relationship-profile"]
+    },
+    {
+      "id": "5hu7simatyimgr1xzi2",
+      "iri": "kontakt",
+      "name": {
+        "en": "Contact",
+        "cs": "Kontakt"
+      },
+      "description": {
+        "cs": "Kontaktní údaje, např. na člověka, společnost, apod."
+      },
+      "type": ["class", "class-profile"],
+      "externalDocumentationUrl": null,
+      "nameFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/kontakt",
+      "descriptionFromProfiled": "https://slovník.gov.cz/generický/kontakty/pojem/kontakt",
+      "usageNote": null,
+      "usageNoteFromProfiled": null,
+      "profiling": ["https://slovník.gov.cz/generický/kontakty/pojem/kontakt"],
+      "tags": [],
+      "order": null,
+      "nameProperty": null,
+      "descriptionProperty": null,
+      "conceptIris": ["https://slovník.gov.cz/generický/kontakty/pojem/kontakt"]
+    },
+    {
+      "ends": [
+        {
+          "name": {},
+          "nameFromProfiled": "https://slovník.gov.cz/datový/turistické-cíle/pojem/kouření-povoleno",
+          "description": {},
+          "descriptionFromProfiled": "https://slovník.gov.cz/datový/turistické-cíle/pojem/kouření-povoleno",
+          "iri": null,
+          "cardinality": [0, null],
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": [],
+          "externalDocumentationUrl": null,
+          "tags": [],
+          "concept": "nwjiqow20jamgr1xphj",
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": []
+        },
+        {
+          "cardinality": [0, 1],
+          "name": {
+            "en": "smoking allowed",
+            "cs": "kouření povoleno"
+          },
+          "description": {
+            "en": "Determines whether it is possible to smoke tobacco products in the tourist destination.",
+            "cs": "Určuje, zda je možné v turistickém cíli kouření tabákových výrobků."
+          },
+          "concept": "http://www.w3.org/2001/XMLSchema#boolean",
+          "iri": "kouření-povoleno",
+          "externalDocumentationUrl": null,
+          "nameFromProfiled": "https://slovník.gov.cz/datový/turistické-cíle/pojem/kouření-povoleno",
+          "descriptionFromProfiled": "https://slovník.gov.cz/datový/turistické-cíle/pojem/kouření-povoleno",
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": ["https://slovník.gov.cz/datový/turistické-cíle/pojem/kouření-povoleno"],
+          "tags": [],
+          "languageStringRequiredLanguages": [],
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": ["https://slovník.gov.cz/datový/turistické-cíle/pojem/kouření-povoleno"]
+        }
+      ],
+      "id": "lv4yce25rmgr1xzi2",
+      "type": ["relationship", "relationship-profile"]
+    },
+    {
+      "ends": [
+        {
+          "name": {},
+          "nameFromProfiled": "https://slovník.gov.cz/datový/sportoviště/pojem/kapacita",
+          "description": {},
+          "descriptionFromProfiled": "https://slovník.gov.cz/datový/sportoviště/pojem/kapacita",
+          "iri": null,
+          "cardinality": [0, null],
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": [],
+          "externalDocumentationUrl": null,
+          "tags": [],
+          "concept": "nwjiqow20jamgr1xphj",
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": []
+        },
+        {
+          "cardinality": [0, null],
+          "name": {
+            "cs": "kapacita"
+          },
+          "description": {},
+          "concept": "http://www.w3.org/2001/XMLSchema#string",
+          "iri": "kapacita",
+          "externalDocumentationUrl": null,
+          "nameFromProfiled": "https://slovník.gov.cz/datový/sportoviště/pojem/kapacita",
+          "descriptionFromProfiled": "https://slovník.gov.cz/datový/sportoviště/pojem/kapacita",
+          "usageNote": null,
+          "usageNoteFromProfiled": null,
+          "profiling": ["https://slovník.gov.cz/datový/sportoviště/pojem/kapacita"],
+          "tags": [],
+          "languageStringRequiredLanguages": [],
+          "regex": null,
+          "order": null,
+          "nameProperty": null,
+          "descriptionProperty": null,
+          "conceptIris": ["https://slovník.gov.cz/datový/sportoviště/pojem/kapacita"]
+        }
+      ],
+      "id": "q811xyg3lugmgr1xzi2",
+      "type": ["relationship", "relationship-profile"]
+    },
+    {
+      "id": "nwjiqow20jamgr1xphj",
+      "iri": "turistický-cíl",
+      "name": {
+        "en": "Tourist destination",
+        "cs": "Turistický cíl"
+      },
+      "description": {
+        "cs": "Samostatný turistický cíl.",
+        "en": "A separate tourist destination"
+      },
+      "type": ["class", "class-profile"],
+      "externalDocumentationUrl": null,
+      "nameFromProfiled": "https://slovník.gov.cz/datový/turistické-cíle/pojem/turistický-cíl",
+      "descriptionFromProfiled": "https://slovník.gov.cz/datový/turistické-cíle/pojem/turistický-cíl",
+      "usageNote": null,
+      "usageNoteFromProfiled": null,
+      "profiling": ["https://slovník.gov.cz/datový/turistické-cíle/pojem/turistický-cíl"],
+      "tags": [],
+      "order": null,
+      "nameProperty": null,
+      "descriptionProperty": null,
+      "conceptIris": ["https://slovník.gov.cz/datový/turistické-cíle/pojem/turistický-cíl"]
+    }
+  ],
+  "structureModels": [
+    [
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Schema"],
+        "iri": "5f96e8ca-d6b0-4d7f-81d7-957bdefef4f5",
+        "dataPsmHumanLabel": {
+          "cs": "Kontakt",
+          "en": "Contact"
+        },
+        "dataPsmHumanDescription": {
+          "cs": "Datová struktura pro Kontakt. Kontaktní údaje, např. na člověka, společnost, apod.",
+          "en": "Data structure for Contact. Kontaktní údaje, např. na člověka, společnost, apod."
+        },
+        "dataPsmTechnicalLabel": null,
+        "dataPsmRoots": ["https://ofn.gov.cz/class/1773767455307-186f-73b3-b429"],
+        "dataPsmParts": [
+          "https://ofn.gov.cz/class/1773767417820-d340-aede-9f58",
+          "https://ofn.gov.cz/class/1773767455307-186f-73b3-b429",
+          "https://ofn.gov.cz/attribute/1773767465459-251f-e6f5-bdd4",
+          "https://ofn.gov.cz/attribute/1773767465539-e20a-585f-9726"
+        ]
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Class"],
+        "iri": "https://ofn.gov.cz/class/1773767417820-d340-aede-9f58",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "kontakt",
+        "dataPsmInterpretation": "5hu7simatyimgr1xzi2",
+        "dataPsmExtends": [],
+        "dataPsmParts": [],
+        "dataPsmIsClosed": null
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Class"],
+        "iri": "https://ofn.gov.cz/class/1773767455307-186f-73b3-b429",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "kontakt",
+        "dataPsmInterpretation": "eys7psnid1vmmuvcful",
+        "dataPsmExtends": [],
+        "dataPsmParts": [
+          "https://ofn.gov.cz/attribute/1773767465459-251f-e6f5-bdd4",
+          "https://ofn.gov.cz/attribute/1773767465539-e20a-585f-9726"
+        ],
+        "dataPsmIsClosed": null
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Attribute"],
+        "iri": "https://ofn.gov.cz/attribute/1773767465459-251f-e6f5-bdd4",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "má_e-mailovou_adresu",
+        "dataPsmInterpretation": "9iyznj8y5lmmuvcnoq",
+        "dataPsmDatatype": "http://www.w3.org/2001/XMLSchema#string"
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Attribute"],
+        "iri": "https://ofn.gov.cz/attribute/1773767465539-e20a-585f-9726",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "má_telefonní_číslo_na_mobilní_telefon",
+        "dataPsmInterpretation": "1920a04dgxgmmuvcnoq",
+        "dataPsmDatatype": "http://www.w3.org/2001/XMLSchema#string"
+      }
+    ],
+    [
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Schema"],
+        "iri": "d32203ad-189d-4a1c-ab53-3741edca0b0a",
+        "dataPsmHumanLabel": {
+          "cs": "Turistický cíl detail",
+          "en": "Tourist destination detail"
+        },
+        "dataPsmHumanDescription": {
+          "cs": "Datová struktura pro Turistický cíl. Samostatný turistický cíl.",
+          "en": "Data structure for Tourist destination. A separate tourist destination"
+        },
+        "dataPsmTechnicalLabel": "tourist_destination_detail",
+        "dataPsmRoots": ["https://ofn.gov.cz/class/1760475966549-15ef-bf86-b5bd"],
+        "dataPsmParts": [
+          "https://ofn.gov.cz/class/1760475966549-15ef-bf86-b5bd",
+          "https://ofn.gov.cz/attribute/1760475979520-86e9-c381-8ea6",
+          "https://ofn.gov.cz/attribute/1760475979637-e30c-fb84-a9a4",
+          "https://ofn.gov.cz/class/1760475979748-b519-c734-a297",
+          "https://ofn.gov.cz/association/1760475979850-24b2-70f8-bce6",
+          "https://ofn.gov.cz/class/1760475979926-722b-1089-8463",
+          "https://ofn.gov.cz/attribute/1760475985966-89c9-b8a2-94fa",
+          "https://ofn.gov.cz/attribute/1760475986112-40ab-f855-ade6",
+          "https://ofn.gov.cz/class/1773746663010-36f3-b0c5-94e6",
+          "https://ofn.gov.cz/class/1773746676795-3628-85db-8847",
+          "https://ofn.gov.cz/class/1773746690019-b407-6452-951b",
+          "https://ofn.gov.cz/attribute/1773746715703-f639-c9d9-be65",
+          "https://ofn.gov.cz/class/1773746715817-5859-4f61-9b4c",
+          "https://ofn.gov.cz/class/1773746732762-4135-05a0-b39e",
+          "https://ofn.gov.cz/association/1773746732895-e215-2a25-aba1",
+          "https://ofn.gov.cz/class/1773746740421-6386-3c86-8db9",
+          "https://ofn.gov.cz/association/1773746740529-689e-0546-97dd",
+          "https://ofn.gov.cz/class/1773746740621-e6da-6b62-ac9e",
+          "https://ofn.gov.cz/association/1773746740677-b1a3-16bc-b4e6",
+          "https://ofn.gov.cz/class/1773746748953-1379-ec9f-bc15",
+          "https://ofn.gov.cz/class/1773746756180-083d-9a35-a48f",
+          "https://ofn.gov.cz/association/1773746756265-9eed-276f-8a36",
+          "https://ofn.gov.cz/class/1773767266713-a3e9-5e77-b149",
+          "https://ofn.gov.cz/association/1773767493728-3826-9474-9d67",
+          "https://ofn.gov.cz/class-reference/1773767501872-5369-451a-964d",
+          "https://ofn.gov.cz/attribute/1773770473077-333f-91e7-a599",
+          "https://ofn.gov.cz/attribute/1773770488840-42a6-d5fd-b6c9",
+          "https://ofn.gov.cz/attribute/1773770503564-dc53-d31f-a008",
+          "https://ofn.gov.cz/attribute/1773770544359-9ccc-fa46-83c7",
+          "https://ofn.gov.cz/class/1773770604737-52f9-7c44-a0f2",
+          "https://ofn.gov.cz/association/1773770604832-ebf0-fffe-a48e",
+          "https://ofn.gov.cz/class/1773770622848-9ddb-3be8-b2c5",
+          "https://ofn.gov.cz/association/1773770622942-e8b0-7ab3-bf3b",
+          "https://ofn.gov.cz/association/1773770635362-14a2-d952-99ca",
+          "https://ofn.gov.cz/class-reference/1773770638184-5347-6179-bc40",
+          "https://ofn.gov.cz/class/1773770690447-cfd4-f48f-8172",
+          "https://ofn.gov.cz/association/1773770690563-229f-1e52-92ef",
+          "https://ofn.gov.cz/class/1773770703051-6545-e5d2-86c7",
+          "https://ofn.gov.cz/class/1773771363589-19e0-537b-92ce",
+          "https://ofn.gov.cz/or/1773771377804-b4b5-4ebb-9bea",
+          "https://ofn.gov.cz/class/1773771377935-7725-e9b9-97d8",
+          "https://ofn.gov.cz/include/1773771378017-eb0c-bdef-b772",
+          "https://ofn.gov.cz/class/1773771383428-0cec-4bfe-b681",
+          "https://ofn.gov.cz/include/1773771383564-ba9a-360f-8582",
+          "https://ofn.gov.cz/attribute/1773771388952-ba46-b3b9-a4a2",
+          "https://ofn.gov.cz/attribute/1773771389101-2a45-0afa-9726",
+          "https://ofn.gov.cz/attribute/1773771406784-9aad-4302-a735",
+          "https://ofn.gov.cz/class/1773771406922-3840-def0-85f1",
+          "https://ofn.gov.cz/association/1773771407054-f4e9-3d7a-a245",
+          "https://ofn.gov.cz/class/1773771455148-1e7d-4730-846c",
+          "https://ofn.gov.cz/class/1773778262910-7b0a-4416-8248",
+          "https://ofn.gov.cz/attribute/1773778324652-434d-35ea-8943",
+          "https://ofn.gov.cz/class/1773781036986-c22d-1ac6-a1a8",
+          "https://ofn.gov.cz/class/1773781316801-cfab-69bb-b14d",
+          "https://ofn.gov.cz/association/1773781316923-5084-cbba-98d7",
+          "https://ofn.gov.cz/attribute/1773781321721-37c1-b462-bd86",
+          "https://ofn.gov.cz/class-reference/1783352803379-6d65-ef5f-9950"
+        ],
+        "jsonEnforceContext": "no"
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Class"],
+        "iri": "https://ofn.gov.cz/class/1760475966549-15ef-bf86-b5bd",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "turistický_cíl",
+        "dataPsmInterpretation": "nwjiqow20jamgr1xphj",
+        "dataPsmExtends": [],
+        "dataPsmParts": [
+          "https://ofn.gov.cz/attribute/1760475979520-86e9-c381-8ea6",
+          "https://ofn.gov.cz/attribute/1760475979637-e30c-fb84-a9a4",
+          "https://ofn.gov.cz/association/1760475979850-24b2-70f8-bce6",
+          "https://ofn.gov.cz/association/1773767493728-3826-9474-9d67",
+          "https://ofn.gov.cz/attribute/1773770473077-333f-91e7-a599",
+          "https://ofn.gov.cz/attribute/1773770488840-42a6-d5fd-b6c9",
+          "https://ofn.gov.cz/attribute/1773770503564-dc53-d31f-a008",
+          "https://ofn.gov.cz/attribute/1773770544359-9ccc-fa46-83c7",
+          "https://ofn.gov.cz/association/1773770604832-ebf0-fffe-a48e",
+          "https://ofn.gov.cz/association/1773770622942-e8b0-7ab3-bf3b",
+          "https://ofn.gov.cz/association/1773770635362-14a2-d952-99ca",
+          "https://ofn.gov.cz/association/1773770690563-229f-1e52-92ef",
+          "https://ofn.gov.cz/association/1773781316923-5084-cbba-98d7"
+        ],
+        "dataPsmIsClosed": null
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Attribute"],
+        "iri": "https://ofn.gov.cz/attribute/1760475979520-86e9-c381-8ea6",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "kapacita_0_N",
+        "dataPsmInterpretation": "q811xyg3lugmgr1xzi2",
+        "dataPsmDatatype": "http://www.w3.org/2001/XMLSchema#integer"
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Attribute"],
+        "iri": "https://ofn.gov.cz/attribute/1760475979637-e30c-fb84-a9a4",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "kouření_povoleno",
+        "dataPsmInterpretation": "lv4yce25rmgr1xzi2",
+        "dataPsmDatatype": "http://www.w3.org/2001/XMLSchema#boolean"
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Class"],
+        "iri": "https://ofn.gov.cz/class/1760475979748-b519-c734-a297",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "kontakt",
+        "dataPsmInterpretation": "5hu7simatyimgr1xzi2",
+        "dataPsmExtends": [],
+        "dataPsmParts": [
+          "https://ofn.gov.cz/attribute/1760475985966-89c9-b8a2-94fa",
+          "https://ofn.gov.cz/attribute/1760475986112-40ab-f855-ade6"
+        ],
+        "dataPsmIsClosed": null
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/AssociationEnd"],
+        "iri": "https://ofn.gov.cz/association/1760475979850-24b2-70f8-bce6",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "kontakt_non_ref_0_N",
+        "dataPsmInterpretation": "ezjn1byvmcbmgr1xzi2",
+        "dataPsmPart": "https://ofn.gov.cz/class/1760475979748-b519-c734-a297",
+        "dataPsmIsReverse": false,
+        "dataPsmIsDematerialize": null
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Class"],
+        "iri": "https://ofn.gov.cz/class/1760475979926-722b-1089-8463",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "jazyk",
+        "dataPsmInterpretation": "ne8yx9814gmgr1xzi2",
+        "dataPsmExtends": [],
+        "dataPsmParts": [],
+        "dataPsmIsClosed": null
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Attribute"],
+        "iri": "https://ofn.gov.cz/attribute/1760475985966-89c9-b8a2-94fa",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "má_e-mailovou_adresu",
+        "dataPsmInterpretation": "br0foirq8oumgr1y4h3",
+        "dataPsmDatatype": "http://www.w3.org/2001/XMLSchema#string"
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Attribute"],
+        "iri": "https://ofn.gov.cz/attribute/1760475986112-40ab-f855-ade6",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "má_url",
+        "dataPsmInterpretation": "b236aigwd6tmgr1y4h4",
+        "dataPsmDatatype": "http://www.w3.org/2000/01/rdf-schema#Literal"
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Class"],
+        "iri": "https://ofn.gov.cz/class/1773746663010-36f3-b0c5-94e6",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "jazyk",
+        "dataPsmInterpretation": "ne8yx9814gmgr1xzi2",
+        "dataPsmExtends": [],
+        "dataPsmParts": [],
+        "dataPsmIsClosed": null
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Class"],
+        "iri": "https://ofn.gov.cz/class/1773746676795-3628-85db-8847",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "kontakt",
+        "dataPsmInterpretation": "5hu7simatyimgr1xzi2",
+        "dataPsmExtends": [],
+        "dataPsmParts": [],
+        "dataPsmIsClosed": null
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Class"],
+        "iri": "https://ofn.gov.cz/class/1773746690019-b407-6452-951b",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "kontakt",
+        "dataPsmInterpretation": "5hu7simatyimgr1xzi2",
+        "dataPsmExtends": [],
+        "dataPsmParts": [
+          "https://ofn.gov.cz/attribute/1773746715703-f639-c9d9-be65",
+          "https://ofn.gov.cz/association/1773746732895-e215-2a25-aba1",
+          "https://ofn.gov.cz/association/1773746756265-9eed-276f-8a36"
+        ],
+        "dataPsmIsClosed": null
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Attribute"],
+        "iri": "https://ofn.gov.cz/attribute/1773746715703-f639-c9d9-be65",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "má_url",
+        "dataPsmInterpretation": "b236aigwd6tmgr1y4h4",
+        "dataPsmDatatype": "http://www.w3.org/2000/01/rdf-schema#Literal"
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Class"],
+        "iri": "https://ofn.gov.cz/class/1773746715817-5859-4f61-9b4c",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "datová_schránka",
+        "dataPsmInterpretation": "aevfyvbag5wmmuizx2l",
+        "dataPsmExtends": [],
+        "dataPsmParts": [],
+        "dataPsmIsClosed": null
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Class"],
+        "iri": "https://ofn.gov.cz/class/1773746732762-4135-05a0-b39e",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "místo",
+        "dataPsmInterpretation": "jcxz5v77iwmmuj0a8d",
+        "dataPsmExtends": [],
+        "dataPsmParts": [
+          "https://ofn.gov.cz/association/1773746740529-689e-0546-97dd",
+          "https://ofn.gov.cz/association/1773746740677-b1a3-16bc-b4e6"
+        ],
+        "dataPsmIsClosed": null
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/AssociationEnd"],
+        "iri": "https://ofn.gov.cz/association/1773746732895-e215-2a25-aba1",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "má_kontaktní_místo",
+        "dataPsmInterpretation": "hgrj45k4pyammuj0a8d",
+        "dataPsmPart": "https://ofn.gov.cz/class/1773746732762-4135-05a0-b39e",
+        "dataPsmIsReverse": false,
+        "dataPsmIsDematerialize": null
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Class"],
+        "iri": "https://ofn.gov.cz/class/1773746740421-6386-3c86-8db9",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "adresa",
+        "dataPsmInterpretation": "wwd8u6lufjcmmuj0g5a",
+        "dataPsmExtends": [],
+        "dataPsmParts": [],
+        "dataPsmIsClosed": null
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/AssociationEnd"],
+        "iri": "https://ofn.gov.cz/association/1773746740529-689e-0546-97dd",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "má_adresu",
+        "dataPsmInterpretation": "at4h7ro98d5mmuj0g5a",
+        "dataPsmPart": "https://ofn.gov.cz/class/1773746740421-6386-3c86-8db9",
+        "dataPsmIsReverse": false,
+        "dataPsmIsDematerialize": null
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Class"],
+        "iri": "https://ofn.gov.cz/class/1773746740621-e6da-6b62-ac9e",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "budova",
+        "dataPsmInterpretation": "zr6tty9dgscmmuj0g5a",
+        "dataPsmExtends": [],
+        "dataPsmParts": [],
+        "dataPsmIsClosed": null
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/AssociationEnd"],
+        "iri": "https://ofn.gov.cz/association/1773746740677-b1a3-16bc-b4e6",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "má_budovu",
+        "dataPsmInterpretation": "4zofr78fuzpmmuj0g5a",
+        "dataPsmPart": "https://ofn.gov.cz/class/1773746740621-e6da-6b62-ac9e",
+        "dataPsmIsReverse": false,
+        "dataPsmIsDematerialize": null
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Class"],
+        "iri": "https://ofn.gov.cz/class/1773746748953-1379-ec9f-bc15",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "místo",
+        "dataPsmInterpretation": "jcxz5v77iwmmuj0a8d",
+        "dataPsmExtends": [],
+        "dataPsmParts": [],
+        "dataPsmIsClosed": null
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Class"],
+        "iri": "https://ofn.gov.cz/class/1773746756180-083d-9a35-a48f",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "pracovní_místo",
+        "dataPsmInterpretation": "2m84ps09ot9mmuj0sb0",
+        "dataPsmExtends": [],
+        "dataPsmParts": [],
+        "dataPsmIsClosed": null
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/AssociationEnd"],
+        "iri": "https://ofn.gov.cz/association/1773746756265-9eed-276f-8a36",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "má_kontakt",
+        "dataPsmInterpretation": "ir80pf1hb1gmmuj0sb0",
+        "dataPsmPart": "https://ofn.gov.cz/class/1773746756180-083d-9a35-a48f",
+        "dataPsmIsReverse": true,
+        "dataPsmIsDematerialize": null
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Class"],
+        "iri": "https://ofn.gov.cz/class/1773767266713-a3e9-5e77-b149",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "kontakt",
+        "dataPsmInterpretation": "5hu7simatyimgr1xzi2",
+        "dataPsmExtends": [],
+        "dataPsmParts": [],
+        "dataPsmIsClosed": null
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/AssociationEnd"],
+        "iri": "https://ofn.gov.cz/association/1773767493728-3826-9474-9d67",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "kontakt_ref_0_1",
+        "dataPsmInterpretation": "ezjn1byvmcbmgr1xzi2",
+        "dataPsmPart": "https://ofn.gov.cz/class-reference/1773767501872-5369-451a-964d",
+        "dataPsmIsReverse": false,
+        "dataPsmIsDematerialize": null,
+        "dataPsmCardinality": [0, 1]
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/ClassReference"],
+        "iri": "https://ofn.gov.cz/class-reference/1773767501872-5369-451a-964d",
+        "dataPsmSpecification": "5f96e8ca-d6b0-4d7f-81d7-957bdefef4f5",
+        "dataPsmClass": "https://ofn.gov.cz/class/1773767455307-186f-73b3-b429"
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Attribute"],
+        "iri": "https://ofn.gov.cz/attribute/1773770473077-333f-91e7-a599",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "kapacita_1_N",
+        "dataPsmInterpretation": "q811xyg3lugmgr1xzi2",
+        "dataPsmDatatype": "http://www.w3.org/2001/XMLSchema#integer",
+        "dataPsmCardinality": [1, null]
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Attribute"],
+        "iri": "https://ofn.gov.cz/attribute/1773770488840-42a6-d5fd-b6c9",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "kapacita_0_1",
+        "dataPsmInterpretation": "q811xyg3lugmgr1xzi2",
+        "dataPsmDatatype": "http://www.w3.org/2001/XMLSchema#integer",
+        "dataPsmCardinality": [0, 1]
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Attribute"],
+        "iri": "https://ofn.gov.cz/attribute/1773770503564-dc53-d31f-a008",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "kapacita_1_1",
+        "dataPsmInterpretation": "q811xyg3lugmgr1xzi2",
+        "dataPsmDatatype": "http://www.w3.org/2001/XMLSchema#integer",
+        "dataPsmCardinality": [1, 1]
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Attribute"],
+        "iri": "https://ofn.gov.cz/attribute/1773770544359-9ccc-fa46-83c7",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "kapacita_2_4",
+        "dataPsmInterpretation": "q811xyg3lugmgr1xzi2",
+        "dataPsmDatatype": "http://www.w3.org/2001/XMLSchema#integer",
+        "dataPsmCardinality": [2, 4]
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Class"],
+        "iri": "https://ofn.gov.cz/class/1773770604737-52f9-7c44-a0f2",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "kontakt",
+        "dataPsmInterpretation": "5hu7simatyimgr1xzi2",
+        "dataPsmExtends": [],
+        "dataPsmParts": [],
+        "dataPsmIsClosed": null
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/AssociationEnd"],
+        "iri": "https://ofn.gov.cz/association/1773770604832-ebf0-fffe-a48e",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "kontakt_1_1",
+        "dataPsmInterpretation": "ezjn1byvmcbmgr1xzi2",
+        "dataPsmPart": "https://ofn.gov.cz/class/1773770604737-52f9-7c44-a0f2",
+        "dataPsmIsReverse": false,
+        "dataPsmIsDematerialize": null,
+        "dataPsmCardinality": [1, 1]
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Class"],
+        "iri": "https://ofn.gov.cz/class/1773770622848-9ddb-3be8-b2c5",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "kontakt",
+        "dataPsmInterpretation": "5hu7simatyimgr1xzi2",
+        "dataPsmExtends": [],
+        "dataPsmParts": [],
+        "dataPsmIsClosed": null
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/AssociationEnd"],
+        "iri": "https://ofn.gov.cz/association/1773770622942-e8b0-7ab3-bf3b",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "kontakt_1_N",
+        "dataPsmInterpretation": "ezjn1byvmcbmgr1xzi2",
+        "dataPsmPart": "https://ofn.gov.cz/class/1773770622848-9ddb-3be8-b2c5",
+        "dataPsmIsReverse": false,
+        "dataPsmIsDematerialize": null,
+        "dataPsmCardinality": [1, null]
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/AssociationEnd"],
+        "iri": "https://ofn.gov.cz/association/1773770635362-14a2-d952-99ca",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "kontakt_ref_1_N",
+        "dataPsmInterpretation": "ezjn1byvmcbmgr1xzi2",
+        "dataPsmPart": "https://ofn.gov.cz/class-reference/1773770638184-5347-6179-bc40",
+        "dataPsmIsReverse": false,
+        "dataPsmIsDematerialize": null,
+        "dataPsmCardinality": [1, null]
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/ClassReference"],
+        "iri": "https://ofn.gov.cz/class-reference/1773770638184-5347-6179-bc40",
+        "dataPsmSpecification": "5f96e8ca-d6b0-4d7f-81d7-957bdefef4f5",
+        "dataPsmClass": "https://ofn.gov.cz/class/1773767455307-186f-73b3-b429"
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Class"],
+        "iri": "https://ofn.gov.cz/class/1773770690447-cfd4-f48f-8172",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "kontakt",
+        "dataPsmInterpretation": "5hu7simatyimgr1xzi2",
+        "dataPsmExtends": [],
+        "dataPsmParts": [],
+        "dataPsmIsClosed": null
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/AssociationEnd"],
+        "iri": "https://ofn.gov.cz/association/1773770690563-229f-1e52-92ef",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "kontakt_non_ref_1_1",
+        "dataPsmInterpretation": "ezjn1byvmcbmgr1xzi2",
+        "dataPsmPart": "https://ofn.gov.cz/class/1773770690447-cfd4-f48f-8172",
+        "dataPsmIsReverse": false,
+        "dataPsmIsDematerialize": null,
+        "dataPsmCardinality": [1, 1]
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Class"],
+        "iri": "https://ofn.gov.cz/class/1773770703051-6545-e5d2-86c7",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "kontakt",
+        "dataPsmInterpretation": "5hu7simatyimgr1xzi2",
+        "dataPsmExtends": [],
+        "dataPsmParts": [],
+        "dataPsmIsClosed": null
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Class"],
+        "iri": "https://ofn.gov.cz/class/1773771363589-19e0-537b-92ce",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "kontakt",
+        "dataPsmInterpretation": "5hu7simatyimgr1xzi2",
+        "dataPsmExtends": [],
+        "dataPsmParts": [],
+        "dataPsmIsClosed": null
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Or"],
+        "iri": "https://ofn.gov.cz/or/1773771377804-b4b5-4ebb-9bea",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": null,
+        "dataPsmInterpretation": null,
+        "dataPsmChoices": [
+          "https://ofn.gov.cz/class/1773771363589-19e0-537b-92ce",
+          "https://ofn.gov.cz/class/1773771377935-7725-e9b9-97d8",
+          "https://ofn.gov.cz/class/1773771383428-0cec-4bfe-b681"
+        ]
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Class"],
+        "iri": "https://ofn.gov.cz/class/1773771377935-7725-e9b9-97d8",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "kontakt_spec1",
+        "dataPsmInterpretation": "v69grljcwktmmuxoih8",
+        "dataPsmExtends": [],
+        "dataPsmParts": [
+          "https://ofn.gov.cz/include/1773771378017-eb0c-bdef-b772",
+          "https://ofn.gov.cz/attribute/1773771388952-ba46-b3b9-a4a2",
+          "https://ofn.gov.cz/attribute/1773771389101-2a45-0afa-9726"
+        ],
+        "dataPsmIsClosed": null
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Include"],
+        "iri": "https://ofn.gov.cz/include/1773771378017-eb0c-bdef-b772",
+        "dataPsmIncludes": "https://ofn.gov.cz/class/1773771363589-19e0-537b-92ce"
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Class"],
+        "iri": "https://ofn.gov.cz/class/1773771383428-0cec-4bfe-b681",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "kontakt_spec2",
+        "dataPsmInterpretation": "5hu7simatyimgr1xzi2",
+        "dataPsmExtends": [],
+        "dataPsmParts": [
+          "https://ofn.gov.cz/include/1773771383564-ba9a-360f-8582",
+          "https://ofn.gov.cz/attribute/1773771406784-9aad-4302-a735",
+          "https://ofn.gov.cz/association/1773771407054-f4e9-3d7a-a245"
+        ],
+        "dataPsmIsClosed": null
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Include"],
+        "iri": "https://ofn.gov.cz/include/1773771383564-ba9a-360f-8582",
+        "dataPsmIncludes": "https://ofn.gov.cz/class/1773771363589-19e0-537b-92ce"
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Attribute"],
+        "iri": "https://ofn.gov.cz/attribute/1773771388952-ba46-b3b9-a4a2",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "má_účet_na_instagramu",
+        "dataPsmInterpretation": "v677prf5asqmmuxor2l",
+        "dataPsmDatatype": "http://www.w3.org/2000/01/rdf-schema#Literal"
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Attribute"],
+        "iri": "https://ofn.gov.cz/attribute/1773771389101-2a45-0afa-9726",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "má_účet_na_facebooku",
+        "dataPsmInterpretation": "uydbdb2uwtmmuxor2m",
+        "dataPsmDatatype": "http://www.w3.org/2000/01/rdf-schema#Literal"
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Attribute"],
+        "iri": "https://ofn.gov.cz/attribute/1773771406784-9aad-4302-a735",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "má_url",
+        "dataPsmInterpretation": "b236aigwd6tmgr1y4h4",
+        "dataPsmDatatype": "http://www.w3.org/2000/01/rdf-schema#Literal"
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Class"],
+        "iri": "https://ofn.gov.cz/class/1773771406922-3840-def0-85f1",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "datová_schránka",
+        "dataPsmInterpretation": "aevfyvbag5wmmuizx2l",
+        "dataPsmExtends": [],
+        "dataPsmParts": [],
+        "dataPsmIsClosed": null
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/AssociationEnd"],
+        "iri": "https://ofn.gov.cz/association/1773771407054-f4e9-3d7a-a245",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "má_datovou_schránku",
+        "dataPsmInterpretation": "abg45fmzukmmuizx2l",
+        "dataPsmPart": "https://ofn.gov.cz/class/1773771406922-3840-def0-85f1",
+        "dataPsmIsReverse": false,
+        "dataPsmIsDematerialize": null
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Class"],
+        "iri": "https://ofn.gov.cz/class/1773771455148-1e7d-4730-846c",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "bezbariérový_přístup",
+        "dataPsmInterpretation": "uizh0xlj8zmmuxq65g",
+        "dataPsmExtends": [],
+        "dataPsmParts": [],
+        "dataPsmIsClosed": null
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Class"],
+        "iri": "https://ofn.gov.cz/class/1773778262910-7b0a-4416-8248",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "kontakt",
+        "dataPsmInterpretation": "5hu7simatyimgr1xzi2",
+        "dataPsmEmptyAsComplex": false,
+        "dataPsmExtends": [],
+        "dataPsmParts": ["https://ofn.gov.cz/attribute/1773778324652-434d-35ea-8943"],
+        "dataPsmIsClosed": null
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Attribute"],
+        "iri": "https://ofn.gov.cz/attribute/1773778324652-434d-35ea-8943",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "má_e-mailovou_adresu",
+        "dataPsmInterpretation": "bkoxt2moh1smmuutmue",
+        "dataPsmDatatype": "http://www.w3.org/2001/XMLSchema#string"
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Class"],
+        "iri": "https://ofn.gov.cz/class/1773781036986-c22d-1ac6-a1a8",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "kontakt",
+        "dataPsmInterpretation": "5hu7simatyimgr1xzi2",
+        "dataPsmExtends": [],
+        "dataPsmParts": [],
+        "dataPsmIsClosed": null
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Class"],
+        "iri": "https://ofn.gov.cz/class/1773781316801-cfab-69bb-b14d",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "kontakt",
+        "dataPsmInterpretation": "5hu7simatyimgr1xzi2",
+        "dataPsmExtends": [],
+        "dataPsmParts": ["https://ofn.gov.cz/attribute/1773781321721-37c1-b462-bd86"],
+        "dataPsmIsClosed": null
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/AssociationEnd"],
+        "iri": "https://ofn.gov.cz/association/1773781316923-5084-cbba-98d7",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "kontakt",
+        "dataPsmInterpretation": "ezjn1byvmcbmgr1xzi2",
+        "dataPsmPart": "https://ofn.gov.cz/class/1773781316801-cfab-69bb-b14d",
+        "dataPsmIsReverse": false,
+        "dataPsmIsDematerialize": false
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/Attribute"],
+        "iri": "https://ofn.gov.cz/attribute/1773781321721-37c1-b462-bd86",
+        "dataPsmHumanLabel": null,
+        "dataPsmHumanDescription": null,
+        "dataPsmTechnicalLabel": "má_url",
+        "dataPsmInterpretation": "b236aigwd6tmgr1y4h4",
+        "dataPsmDatatype": "http://www.w3.org/2000/01/rdf-schema#Literal"
+      },
+      {
+        "types": ["https://ofn.gov.cz/slovník/psm/ClassReference"],
+        "iri": "https://ofn.gov.cz/class-reference/1783352803379-6d65-ef5f-9950",
+        "dataPsmSpecification": "5f96e8ca-d6b0-4d7f-81d7-957bdefef4f5",
+        "dataPsmClass": "https://ofn.gov.cz/class/1773767455307-186f-73b3-b429"
+      }
+    ]
+  ]
+}
