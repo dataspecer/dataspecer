@@ -6,7 +6,7 @@ import type {
 } from '../generation-model/types.ts';
 
 import { FieldKind } from '../metadata/types.ts';
-import { toModuleName, toPropertyName } from '../utils/naming.ts';
+import { toModuleName, toNestedModelTypeName, toPropertyName } from '../utils/naming.ts';
 import { datatypeMapping } from './datatypes.ts';
 import { hasNestedSchema } from './field-shape.ts';
 import { buildLdkitSchema, toLdkitSchemaSource } from './ldkit-schema.ts';
@@ -17,6 +17,7 @@ export interface RenderedAggregate extends GeneratedAggregateDescriptor {
   modelName: string;
   schemaName: string;
   fields: RenderedField[];
+  nestedModels: RenderedNestedModel[];
   /**
    * Recursive plain objects matching the generated runtime `FieldDescriptor` shape, ready to be
    * emitted as JSON in the aggregate descriptor template.
@@ -37,11 +38,17 @@ export interface RenderedAggregate extends GeneratedAggregateDescriptor {
 export interface RenderedField extends GeneratedFieldDescriptor {
   propertyName: string;
   modelType: string;
+  nestedModelName?: string;
   /** The field as a TypeScript member declaration, for example `name?: string | null`. */
   modelDeclaration: string;
   /** TypeScript expression producing the default value for required fields. */
   emptyValue: string;
   fields?: RenderedField[];
+}
+
+export interface RenderedNestedModel {
+  name: string;
+  fields: RenderedField[];
 }
 
 interface DescriptorField {
@@ -61,33 +68,55 @@ interface DescriptorField {
 }
 
 export function toRenderedAggregate(aggregate: GeneratedAggregateDescriptor): RenderedAggregate {
-  const fields = aggregate.fields.map(toRenderedField);
+  const modelName = `${aggregate.safeName}Model`;
+  const fields = aggregate.fields.map((field) => toRenderedField(field, aggregate.safeName));
   const schema = buildLdkitSchema(aggregate.classIri, fields);
   return {
     ...aggregate,
     moduleName: toModuleName(aggregate.name),
     descriptorName: `${aggregate.safeName}AggregateDescriptor`,
-    modelName: `${aggregate.safeName}Model`,
+    modelName,
     schemaName: `${aggregate.safeName}LdkitSchema`,
     fields,
+    nestedModels: collectNestedModels(fields),
     descriptorFields: fields.map(toDescriptorField),
     ldkitSchema: schema,
     ldkitSchemaSource: toLdkitSchemaSource(schema),
   };
 }
 
-function toRenderedField(field: GeneratedFieldDescriptor): RenderedField {
-  const children = field.fields?.map(toRenderedField);
+function toRenderedField(
+  field: GeneratedFieldDescriptor,
+  aggregateTypeName: string,
+  pathPrefix = ''
+): RenderedField {
+  const fieldPath = pathPrefix ? `${pathPrefix}.${field.path}` : field.path;
+  const children = field.fields?.map((child) =>
+    toRenderedField(child, aggregateTypeName, fieldPath)
+  );
   const propertyName = toPropertyName(field.path);
-  const modelType = toModelType(field, children);
+  const nestedModelName = hasNestedSchema(field)
+    ? toNestedModelTypeName(aggregateTypeName, fieldPath)
+    : undefined;
+  const modelType = toModelType(field, children, nestedModelName);
   return {
     ...field,
     fields: children,
     propertyName,
+    ...(nestedModelName ? { nestedModelName } : {}),
     modelType,
     modelDeclaration: toModelDeclaration(propertyName, field.required, modelType),
     emptyValue: toEmptyValue(field, children),
   };
+}
+
+function collectNestedModels(fields: RenderedField[]): RenderedNestedModel[] {
+  return fields.flatMap((field) => [
+    ...(field.fields ? collectNestedModels(field.fields) : []),
+    ...(field.nestedModelName && field.fields
+      ? [{ name: field.nestedModelName, fields: field.fields }]
+      : []),
+  ]);
 }
 
 /**
@@ -116,12 +145,13 @@ function toDescriptorField(field: RenderedField): DescriptorField {
   };
 }
 
-function toModelType(field: GeneratedFieldDescriptor, children?: RenderedField[]): string {
+function toModelType(
+  field: GeneratedFieldDescriptor,
+  children?: RenderedField[],
+  nestedModelName?: string
+): string {
   if (field.kind === FieldKind.Association) {
-    const baseType =
-      hasNestedSchema(field) && children
-        ? `{ id?: string; ${children.map((child) => child.modelDeclaration).join('; ')} }`
-        : 'string';
+    const baseType = hasNestedSchema(field) && children ? (nestedModelName as string) : 'string';
     return field.many ? `${baseType}[]` : baseType;
   }
 

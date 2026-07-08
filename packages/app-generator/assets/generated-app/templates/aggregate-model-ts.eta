@@ -1,15 +1,23 @@
 import type { EntityModel } from "../../shared/types/aggregate.ts";
 
-export interface <%= it.aggregate.modelName %> extends EntityModel {
-<% it.aggregate.fields.forEach((field) => { %>
+<% it.aggregate.nestedModels.forEach((model) => { -%>
+export interface <%= model.name %> extends EntityModel {
+<% model.fields.forEach((field) => { -%>
   <%~ field.modelDeclaration %>;
-<% }) %>
+<% }) -%>
+}
+
+<% }) -%>
+export interface <%= it.aggregate.modelName %> extends EntityModel {
+<% it.aggregate.fields.forEach((field) => { -%>
+  <%~ field.modelDeclaration %>;
+<% }) -%>
 }
 
 export function createEmpty<%= it.aggregate.modelName %>(): <%= it.aggregate.modelName %> {
   return {
-<% it.aggregate.fields.filter((field) => field.required).forEach((field) => { %>
+<% it.aggregate.fields.filter((field) => field.required).forEach((field) => { -%>
     <%= field.propertyName %>: <%~ field.emptyValue %>,
-<% }) %>
+<% }) -%>
   };
 }

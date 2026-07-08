@@ -9,11 +9,9 @@ import { dataSource, operations } from "../generated/operation-registry.ts";
 import type { <%= it.page.modelName %> } from "../modules/<%= it.page.moduleName %>/model.ts";
 
 const operation = operations[<%~ it.json(it.page.operation.id) %>];
-const navigation = <%~ it.json(it.page.operation.navigation) %> as const;
 
 // TODO: Make this more pretty (styling)
-export function <%= it.page.componentName %>() {
-<% if (it.page.operation.operation === "ReadList") { %>
+export function <%= it.page.componentName %>() {<% if (it.page.operation.operation === "ReadList") { %>
   const [items, setItems] = useState<<%= it.page.modelName %>[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,9 +41,9 @@ export function <%= it.page.componentName %>() {
         title={operation.title}
         fields={operation.aggregate.fields}
         items={items}
-        pageActions={navigation.pageActions}
-        rowActions={navigation.rowActions}
-        associationActions={navigation.associationActions}
+        pageActions={operation.navigation.pageActions}
+        rowActions={operation.navigation.rowActions}
+        associationActions={operation.navigation.associationActions}
       />
     </>
   );
@@ -55,6 +53,12 @@ export function <%= it.page.componentName %>() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!id) {
+      setItem(null);
+      setError("Missing required entity id.");
+      return;
+    }
+
     invokeOperation(operation.strategy, {
       aggregate: operation.aggregate,
       datasource: dataSource,
@@ -81,16 +85,16 @@ export function <%= it.page.componentName %>() {
           title={operation.title}
           fields={operation.aggregate.fields}
           item={item}
-          pageActions={navigation.pageActions}
-          associationActions={navigation.associationActions}
+          pageActions={operation.navigation.pageActions}
+          associationActions={operation.navigation.associationActions}
         />
       ) : (
-        <p>No item loaded.</p>
+        error ? null : <p>No item loaded.</p>
       )}
     </>
   );
 <% } else { %>
   // TODO: Implement Create and Update forms and the Delete confirmation page with redirects
   return <PlaceholderOperationView title={operation.title} operation={operation.operation} />;
-<% } %>
+<% } -%>
 }

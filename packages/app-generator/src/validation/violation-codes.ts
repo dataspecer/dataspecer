@@ -1,4 +1,5 @@
 export enum ViolationCode {
+  GenerateFormatFailed = 'GENERATE_FORMAT_FAILED',
   GenerateWriteFailed = 'GENERATE_WRITE_FAILED',
   GraphDuplicateDatasourceId = 'GRAPH_DUPLICATE_DATASOURCE_ID',
   GraphDuplicateEdgeId = 'GRAPH_DUPLICATE_EDGE_ID',

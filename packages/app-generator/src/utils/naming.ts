@@ -26,6 +26,11 @@ export function toAggregateTypeName(aggregateName: string): string {
   return toPascalName(aggregateName);
 }
 
+/** Names a generated model interface for an inline nested association target. */
+export function toNestedModelTypeName(aggregateTypeName: string, fieldPath: string): string {
+  return `${aggregateTypeName}${toPascalName(fieldPath)}Model`;
+}
+
 /** Names the React page component generated for a graph node. */
 export function toPageComponentName(nodeId: string): string {
   return `${toPascalName(nodeId)}Page`;

@@ -1,5 +1,6 @@
+import type { Schema } from "ldkit";
 import { xsd } from "ldkit/namespaces";
 
 // LDKit schema derived from the aggregate field metadata. Property keys match the generated
 // model, so the read result maps directly onto it.
-export const <%= it.aggregate.schemaName %> = <%~ it.aggregate.ldkitSchemaSource %> as const;
+export const <%= it.aggregate.schemaName %>: Schema = <%~ it.aggregate.ldkitSchemaSource %>;

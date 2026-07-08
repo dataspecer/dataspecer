@@ -12,6 +12,7 @@ import { writeFileTree } from './rendering/write-file-tree.ts';
 import type { FileTreeContent } from './rendering/file-tree.ts';
 import { renderGeneratedApp } from './rendering/render-generated-app.ts';
 import { analyzeGraphSemantics } from './validation/analyze-semantics.ts';
+import { formatGeneratedApp } from './rendering/format-generated-app.ts';
 
 export interface GenerateAppInput {
   graph: unknown;
@@ -54,7 +55,24 @@ export async function generateApp(input: GenerateAppInput): Promise<GenerateAppR
   }
 
   const generationModel = buildGenerationModel(graph, analysis.enrichedMetadata);
-  const fileTree = renderGeneratedApp(generationModel);
+  let fileTree = renderGeneratedApp(generationModel);
+  try {
+    fileTree = await formatGeneratedApp(fileTree);
+  } catch (error) {
+    return {
+      success: false,
+      violations: [
+        {
+          code: ViolationCode.GenerateFormatFailed,
+          message: error instanceof Error ? error.message : String(error),
+          severity: ViolationSeverity.Error,
+        },
+      ],
+      files: {},
+      writtenFiles: [],
+      generationModel,
+    };
+  }
   const files = fileTree.toObject();
   const writtenFiles: string[] = [];
 

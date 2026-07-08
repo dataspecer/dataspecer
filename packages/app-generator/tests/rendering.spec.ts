@@ -50,9 +50,13 @@ describe('renderGeneratedApp', () => {
     const model = buildGenerationModel(graphFixture(), basicMetadata);
     const tree = renderGeneratedApp(model);
 
-    expect(tree.get('src/modules/book-detail/model.ts')).toContain(
-      'chapters?: { id?: string; editor?: string | null; footnotes?: { id?: string; text?: string | null }[] | null; name?: string | null }[] | null;'
+    const modelSource = tree.get('src/modules/book-detail/model.ts');
+    expect(modelSource).toContain('export interface BookDetailChaptersModel extends EntityModel');
+    expect(modelSource).toContain(
+      'export interface BookDetailChaptersFootnotesModel extends EntityModel'
     );
+    expect(modelSource).toContain('chapters?: BookDetailChaptersModel[] | null;');
+    expect(modelSource).toContain('footnotes?: BookDetailChaptersFootnotesModel[] | null;');
     const descriptor = tree.get('src/modules/book-detail/descriptor.ts');
     expect(descriptor).toContain('"path": "chapters"');
     expect(descriptor).toContain('"path": "footnotes"');
@@ -141,18 +145,21 @@ describe('renderGeneratedApp', () => {
     const tree = renderGeneratedApp(buildGenerationModel(graph, basicMetadata));
     const listPage = tree.get('src/pages/BookReadListPage.tsx');
     const detailPage = tree.get('src/pages/BookReadDetailPage.tsx');
+    const registry = tree.get('src/generated/operation-registry.ts');
 
-    expect(listPage).toContain('pageActions={navigation.pageActions}');
-    expect(listPage).toContain('rowActions={navigation.rowActions}');
-    expect(listPage).toContain('"targetPath": "/book-create"');
-    expect(listPage).toContain('"targetPath": "/book-update"');
-    expect(listPage).toContain('"targetPath": "/book-delete"');
-    expect(listPage).toContain('"fieldPath": "author"');
+    expect(listPage).toContain('pageActions={operation.navigation.pageActions}');
+    expect(listPage).toContain('rowActions={operation.navigation.rowActions}');
+    expect(registry).toContain('export const operations = defineOperations');
+    expect(registry).toContain('navigation: {');
+    expect(registry).toContain('"targetPath": "/book-create"');
+    expect(registry).toContain('"targetPath": "/book-update"');
+    expect(registry).toContain('"targetPath": "/book-delete"');
+    expect(registry).toContain('"fieldPath": "author"');
 
     expect(detailPage).toContain('readRouteEntityId(window.location.search)');
-    expect(detailPage).toContain('pageActions={navigation.pageActions}');
-    expect(detailPage).toContain('"targetPath": "/book-read-list"');
-    expect(detailPage).toContain('"fieldPath": "author"');
+    expect(detailPage).toContain('setError("Missing required entity id.")');
+    expect(detailPage).toContain('pageActions={operation.navigation.pageActions}');
+    expect(registry).toContain('"targetPath": "/book-read-list"');
 
     expect(tree.get('src/shared/components/list-view.tsx')).toContain('rowActions');
     expect(tree.get('src/shared/components/detail-view.tsx')).toContain('associationActions');
@@ -206,7 +213,7 @@ describe('renderGeneratedApp', () => {
     });
     const schema = renderGeneratedApp(model).get('src/modules/place/ldkit-schema.ts');
 
-    expect(schema).toContain('export const PlaceLdkitSchema');
+    expect(schema).toContain('export const PlaceLdkitSchema: Schema');
     expect(schema).toContain('"@type": "https://example.org/class/place"');
     // Datatypes are emitted as xsd namespace references so the schema matches LDKit's Schema type.
     expect(schema).toContain('import { xsd } from "ldkit/namespaces";');
@@ -215,7 +222,6 @@ describe('renderGeneratedApp', () => {
     expect(schema).toContain('"@schema"');
     expect(schema).toContain('"@type": "https://example.org/class/contact"');
     expect(schema).toContain('"@array": true');
-    expect(schema).toContain('as const;');
   });
 });
 

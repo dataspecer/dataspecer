@@ -1,4 +1,4 @@
-interface RoutableActionDescriptor {
+export interface RoutableActionDescriptor {
   targetPath: string;
   requiresEntityId: boolean;
 }
@@ -11,6 +11,12 @@ export interface NavigationActionDescriptor extends RoutableActionDescriptor {
 export interface AssociationNavigationActionDescriptor extends RoutableActionDescriptor {
   id: string;
   fieldPath: string;
+}
+
+export interface OperationNavigationDescriptor {
+  pageActions: readonly NavigationActionDescriptor[];
+  rowActions: readonly NavigationActionDescriptor[];
+  associationActions: readonly AssociationNavigationActionDescriptor[];
 }
 
 export function toEntityPath(routePath: string, id: string): string {

@@ -1,12 +1,8 @@
 import { RdfLdkitDataSource } from "../shared/datasource/rdf-ldkit-data-source.ts";
-<% it.aggregates.forEach((aggregate) => { %>
-import { <%= aggregate.schemaName %> } from "../modules/<%= aggregate.moduleName %>/ldkit-schema.ts";
-<% }) %>
+<%~ it.aggregates.map((aggregate) => `import { ${aggregate.schemaName} } from "../modules/${aggregate.moduleName}/ldkit-schema.ts";`).join("\n") %>
 
 export function createDataSource() {
   return new RdfLdkitDataSource(<%~ it.json(it.model.datasource.endpoint) %>, {
-<% it.aggregates.forEach((aggregate) => { %>
-    <%~ it.json(aggregate.iri) %>: <%= aggregate.schemaName %>,
-<% }) %>
+<%~ it.aggregates.map((aggregate) => `    ${it.json(aggregate.iri)}: ${aggregate.schemaName},`).join("\n") %>
   });
 }

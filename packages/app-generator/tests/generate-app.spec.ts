@@ -146,6 +146,12 @@ describe('generateApp', () => {
     expect(result.success).toBe(true);
     expect(result.writtenFiles).toEqual([]);
     expect(Object.keys(result.files)).toContain('src/routes.tsx');
+    expect(result.files['src/generated/operation-registry.ts']).toContain(
+      'targetPath: "/book-read-detail"'
+    );
+    expect(result.files['src/generated/operation-registry.ts']).not.toContain('"targetPath":');
+    expect(result.files['src/modules/book-detail/descriptor.ts']).toContain('path: "chapters"');
+    expect(result.files['src/modules/book-detail/descriptor.ts']).not.toContain('"path":');
     expect(result.generationModel?.operations).toHaveLength(2);
   });
 

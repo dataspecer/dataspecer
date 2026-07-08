@@ -20,7 +20,8 @@
     "ajv": "8.20.0",
     "ajv-formats": "3.0.1",
     "es-toolkit": "^1.49.0",
-    "eta": "^4.6.0"
+    "eta": "^4.6.0",
+    "prettier": "^3.8.3"
   },
   "exports": {
     ".": "./lib/index.js"
@@ -34,7 +35,6 @@
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.6.0",
     "ldkit": "^2.6.0",
-    "prettier": "^3.8.3",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "rimraf": "^6.1.3",

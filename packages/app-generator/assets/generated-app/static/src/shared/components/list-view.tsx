@@ -70,20 +70,21 @@ function FieldCell(props: FieldCellProps) {
     return <>{formatFieldValue(props.field, props.value)}</>;
   }
 
+  const action = props.action;
   if (Array.isArray(props.value)) {
     return (
       <>
         {(props.value as unknown[]).map((entry, index) => (
           <span key={index}>
             {index > 0 ? ', ' : null}
-            <LinkedFieldValue field={props.field} value={entry} action={props.action} />
+            <LinkedFieldValue field={props.field} value={entry} action={action} />
           </span>
         ))}
       </>
     );
   }
 
-  return <LinkedFieldValue field={props.field} value={props.value} action={props.action} />;
+  return <LinkedFieldValue field={props.field} value={props.value} action={action} />;
 }
 
 interface LinkedFieldValueProps {

@@ -1,9 +1,17 @@
-<% it.pages.forEach((page) => { %>
-import { <%= page.componentName %> } from "./pages/<%= page.fileName %>";
-<% }) %>
+import type { ComponentType } from "react";
+<%~ it.pages.map((page) => `import { ${page.componentName} } from "./pages/${page.fileName}";`).join("\n") %>
 
-export const routes = [
-<% it.pages.forEach((page) => { %>
+export interface RouteDescriptor {
+  id: string;
+  nodeId: string;
+  path: string;
+  title: string;
+  requiresEntityId: boolean;
+  component: ComponentType;
+}
+
+export const routes: RouteDescriptor[] = [
+<% it.pages.forEach((page) => { -%>
   {
     id: <%~ it.json(page.operation.routeId) %>,
     nodeId: <%~ it.json(page.operation.nodeId) %>,
@@ -12,5 +20,5 @@ export const routes = [
     requiresEntityId: <%~ it.json(it.model.routes.find((route) => route.operationId === page.operation.id)?.requiresEntityId) %>,
     component: <%= page.componentName %>,
   },
-<% }) %>
-] as const;
+<% }) -%>
+];
