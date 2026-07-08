@@ -42,27 +42,6 @@ export const createResource = asyncHandler(async (request: express.Request, resp
     return;
 });
 
-/**
- * Copies the whole package recursively or just the resource.
- */
-export const copyRecursively = asyncHandler(async (request: express.Request, response: express.Response) => {
-    const querySchema = z.object({
-        iri: z.string().min(1),
-        parentIri: z.string().min(1),
-    });
-    const query = querySchema.parse(request.query);
-
-    const bodySchema = z.object({
-        userMetadata: z.optional(z.record(z.string(), z.unknown())),
-    }).strict();
-    const body = bodySchema.parse(request.body);
-
-    await resourceModel.copyRecursively(query.iri, query.parentIri, body.userMetadata ?? {});
-
-    response.send(await resourceModel.getResource(query.parentIri));
-    return;
-});
-
 export const updateResource = asyncHandler(async (request: express.Request, response: express.Response) => {
     const querySchema = z.object({
         iri: z.string().min(1),

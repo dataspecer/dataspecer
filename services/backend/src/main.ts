@@ -13,7 +13,6 @@ import { getSingleFile, getZip } from "./routes/generate.ts";
 import { exportPackageResource, importPackageResource } from "./routes/export-import-raw.ts";
 import { importResource, reloadResource } from "./routes/import.ts";
 import {
-  copyRecursively,
   createPackageResource,
   createResource,
   deleteBlob,
@@ -28,13 +27,12 @@ import {
 import { getSimplifiedSemanticModel, setSimplifiedSemanticModel } from "./routes/simplified-semantic-model.ts";
 import { getSystemData } from "./routes/system.ts";
 import { useStaticSpaHandler } from "./static.ts";
-import { migratePR419 } from "./tools/migrate-pr419.ts";
 import { newApplicationProfile } from "./routes/new.ts";
 import { createTransactions, getTransactionsDiff, listBranches } from "./routes/transaction.ts";
 
 // Create application models
 
-export const storeModel = new LocalStoreModel("./database/stores");
+const storeModel = new LocalStoreModel("./database/stores");
 export const prismaClient = new PrismaClient();
 export const resourceModel = new ResourceModel(storeModel, prismaClient);
 export const transactionModel = new TransactionModel(prismaClient);
@@ -97,7 +95,8 @@ application.delete(apiBasename + "/resources/packages", deleteResource); // same
 // Special operation to list all root packages
 application.get(apiBasename + "/resources/root-resources", getRootPackages); // ---
 
-application.post(apiBasename + "/repository/copy-recursively", copyRecursively);
+// disabled for now
+// application.post(apiBasename + "/repository/copy-recursively", copyRecursively);
 
 // Side-channel for storing operations performed on the project, see TransactionModel.
 application.post(apiBasename + "/transactions", createTransactions);
@@ -176,15 +175,12 @@ if (configuration.staticFilesPath) {
 
   // Command-line arguments
   if (process.argv.length > 2) {
-    // Some command line arguments are present
-    if (process.argv[2] === "migrate-pr419") {
-      await migratePR419();
-      process.exit(0);
-    } else {
+    // if (process.argv[2] === "...") {
+      //   process.exit(0);
+    // }
       console.error("Unknown command line arguments.");
       process.exit(0);
-    }
-  } else {
+      } else {
     // Create local root
     if (!(await resourceModel.getResource(configuration.localRootIri))) {
       console.log("There is no default root package. Creating one...");
