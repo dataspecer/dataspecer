@@ -7,11 +7,11 @@ export function App() {
   const Page = route.component;
 
   return (
-    <main>
-      <header>
+    <main className="app">
+      <header className="app-header">
         <h1><%= it.model.app.name %></h1>
-        <nav>
-          {routes.filter((candidate) => !candidate.requiresEntityId).map((candidate) => (
+        <nav className="site-nav">
+          {routes.filter((candidate) => candidate.operation === "ReadList").map((candidate) => (
             <a key={candidate.id} href={candidate.path}>
               {candidate.title}
             </a>

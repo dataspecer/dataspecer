@@ -52,6 +52,7 @@ export interface GeneratedRouteDescriptor {
   nodeId: string;
   path: string;
   operationId: string;
+  operation: Operation;
   pageComponentName: string;
   requiresEntityId: boolean;
 }

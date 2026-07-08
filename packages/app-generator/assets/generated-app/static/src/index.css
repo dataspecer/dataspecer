@@ -1,0 +1,175 @@
+/*
+ * Minimal styling for the generated application. The goal is a readable, comfortable layout for
+ * local testing, not a polished product design. Plain CSS, no framework.
+ */
+
+:root {
+    color-scheme: light;
+}
+
+body {
+    margin: 0;
+    background: #f5f6f8;
+    color: #1b1d1f;
+    font-family:
+        system-ui,
+        -apple-system,
+        Arial,
+        sans-serif;
+    line-height: 1.5;
+}
+
+a {
+    color: #1a4fbf;
+}
+
+.app {
+    max-width: 1024px;
+    margin: 0 auto;
+    padding: 1.5rem;
+}
+
+.app-header {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #d3d7dd;
+}
+
+.app-header h1 {
+    margin: 0 0 0.75rem;
+    font-size: 1.4rem;
+}
+
+/* Top-level navigation between pages. */
+.site-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.site-nav a {
+    padding: 0.35rem 0.7rem;
+    background: #fff;
+    border: 1px solid #c7ccd3;
+    border-radius: 4px;
+    text-decoration: none;
+}
+
+.site-nav a:hover {
+    background: #eceff3;
+}
+
+section {
+    background: #fff;
+    border: 1px solid #e1e4e9;
+    border-radius: 6px;
+    padding: 1.25rem;
+}
+
+section h2 {
+    margin-top: 0;
+}
+
+/* Page and row action buttons, rendered as links. */
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0.75rem 0;
+}
+
+.actions a {
+    display: inline-block;
+    padding: 0.3rem 0.7rem;
+    background: #f0f2f5;
+    border: 1px solid #c7ccd3;
+    border-radius: 4px;
+    color: #1b1d1f;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.actions a:hover {
+    background: #e2e6ec;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+    padding: 0.5rem 0.7rem;
+    border: 1px solid #dfe3e8;
+    text-align: left;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+}
+
+.data-table thead th {
+    background: #eef1f5;
+}
+
+.data-table tbody tr:nth-child(even) {
+    background: #fafbfc;
+}
+
+/* Detail view: label/value rows, with nested associations indented as a collapsible tree. */
+.field-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.field-row {
+    display: grid;
+    grid-template-columns: minmax(8rem, max-content) 1fr;
+    gap: 0.15rem 1rem;
+    align-items: baseline;
+}
+
+.field-label {
+    font-weight: 600;
+}
+
+.field-value {
+    overflow-wrap: anywhere;
+}
+
+.field-branch > summary.field-label {
+    padding: 0.15rem 0;
+    cursor: pointer;
+}
+
+/* Nested entities indent with a left rule rather than nesting inside the value column. */
+.field-children {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin: 0.4rem 0 0 0.5rem;
+    padding-left: 0.75rem;
+    border-left: 2px solid #e1e4e9;
+}
+
+.entity {
+    padding: 0.6rem 0.75rem;
+    background: #fbfcfd;
+    border: 1px solid #eceff3;
+    border-radius: 4px;
+}
+
+.entity-link {
+    display: inline-block;
+    margin-top: 0.4rem;
+    font-size: 0.9rem;
+}
+
+[role='alert'] {
+    margin-bottom: 1rem;
+    padding: 0.5rem 0.75rem;
+    color: #922;
+    background: #fdecec;
+    border: 1px solid #f0b6b6;
+    border-radius: 4px;
+}

@@ -14,6 +14,7 @@ export function buildRouteDescriptor(
     nodeId: operation.nodeId,
     path: `/${operation.routeId}`,
     operationId: operation.id,
+    operation: operation.operation,
     pageComponentName: operation.pageComponentName,
     requiresEntityId,
   };

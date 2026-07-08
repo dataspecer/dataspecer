@@ -1,4 +1,5 @@
 import type { EntityModel, FieldDescriptor } from '../types/aggregate.ts';
+import { ActionLinks } from './action-links.tsx';
 import { formatFieldValue } from './field-value.ts';
 import {
   entityIdFromValue,
@@ -25,7 +26,7 @@ export function ListView<TModel extends EntityModel>(props: ListViewProps<TModel
     <section>
       <h2>{props.title}</h2>
       <ActionLinks actions={pageActions} />
-      <table>
+      <table className="data-table">
         <thead>
           <tr>
             {props.fields.map((field) => (
@@ -98,29 +99,4 @@ function LinkedFieldValue(props: LinkedFieldValueProps) {
   const label = formatFieldValue(props.field, props.value);
   const href = entityId ? hrefForAction(props.action, entityId) : undefined;
   return href ? <a href={href}>{label || entityId}</a> : <>{label}</>;
-}
-
-interface ActionLinksProps {
-  actions: readonly NavigationActionDescriptor[];
-  entityId?: string;
-}
-
-function ActionLinks(props: ActionLinksProps) {
-  if (props.actions.length === 0) {
-    return null;
-  }
-
-  return (
-    <nav>
-      {props.actions.map((action, index) => {
-        const href = hrefForAction(action, props.entityId);
-        return href ? (
-          <span key={action.id}>
-            {index > 0 ? ' ' : null}
-            <a href={href}>{action.label}</a>
-          </span>
-        ) : null;
-      })}
-    </nav>
-  );
 }

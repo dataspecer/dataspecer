@@ -1,4 +1,5 @@
 import type { ComponentType } from "react";
+import type { OperationKind } from "./shared/operations/operation-kind.ts";
 <%~ it.pages.map((page) => `import { ${page.componentName} } from "./pages/${page.fileName}";`).join("\n") %>
 
 export interface RouteDescriptor {
@@ -6,6 +7,7 @@ export interface RouteDescriptor {
   nodeId: string;
   path: string;
   title: string;
+  operation: OperationKind;
   requiresEntityId: boolean;
   component: ComponentType;
 }
@@ -17,6 +19,7 @@ export const routes: RouteDescriptor[] = [
     nodeId: <%~ it.json(page.operation.nodeId) %>,
     path: <%~ it.json(it.model.routes.find((route) => route.operationId === page.operation.id)?.path) %>,
     title: <%~ it.json(page.operation.pageTitle) %>,
+    operation: <%~ it.json(page.operation.operation) %>,
     requiresEntityId: <%~ it.json(it.model.routes.find((route) => route.operationId === page.operation.id)?.requiresEntityId) %>,
     component: <%= page.componentName %>,
   },
