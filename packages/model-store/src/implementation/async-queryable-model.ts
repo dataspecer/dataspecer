@@ -1,3 +1,4 @@
+import { QUERYABLE_MODEL } from "@dataspecer/core-v2/model/known-models";
 import type { PackageService } from "@dataspecer/core-v2/project";
 import { type ExternalSemanticModel } from "@dataspecer/core-v2/semantic-model/simplified";
 import { CimAdapterWrapper } from "@dataspecer/core-v2/semantic-model/v1-adapters";
@@ -10,7 +11,6 @@ import type { Operation } from "@dataspecer/core/operation";
 import { SgovAdapter } from "@dataspecer/sgov-adapter";
 import { BaseModelInModelStore, type ModelState } from "./base.ts";
 import type { ApplyOperationResult, ModelInDefaultFrontendModelStore } from "./implementation.ts";
-import { QUERYABLE_MODEL } from "@dataspecer/core-v2/model/known-models";
 
 class IdentityIriProvider implements IriProvider {
   cimToPim = (cimIri: string) => cimIri;
@@ -246,11 +246,8 @@ export class AsyncQueryableModelInModelStore extends BaseModelInModelStore imple
    * Deserializes the part of the model that is actually stored on the backend.
    */
   private deserializeModel(data: unknown): ModelState {
-    const modelDescriptor = data as any;
-    const queries = modelDescriptor.queries as string[];
-
     return {
-      entities: Object.fromEntries(queries.map(queryStringToQueryEntity).map((entity) => [entity.id, entity])),
+      entities: serializationToAsyncQueryableModelEntities(data),
       operations: [],
     };
   }
@@ -273,27 +270,36 @@ export class AsyncQueryableModelInModelStore extends BaseModelInModelStore imple
 }
 
 /**
- * Resolves all entities (queries and the semantic entities they resolve to)
- * for the serialized data of an async queryable (SGOV) model, without
- * instantiating a full {@link AsyncQueryableModelInModelStore}. Useful for
- * one-off reads, e.g. on the backend, where we don't need to keep subscribing
- * to query changes.
+ * Deserializes the async queryable (SGOV) model but does not fetch entities.
+ * This is synchronous function that returns only the queries.
+ *
+ * Use {@link resolveAsyncQueryableModelEntities} to fetch the semantic entities
+ * the queries resolve to.
  */
-export async function resolveAsyncQueryableModelEntities(data: unknown, httpFetch: HttpFetch): Promise<EntityRecord> {
+export function serializationToAsyncQueryableModelEntities(data: unknown): EntityRecord {
   const modelDescriptor = data as { queries: string[] };
   const queries = modelDescriptor.queries ?? [];
+  return Object.fromEntries(queries.map(queryStringToQueryEntity).map((entity) => [entity.id, entity]));
+}
 
+/**
+ * Takes entity model containing queries and fetches the semantic entities the
+ * queries resolve to.
+ *
+ * @see {@link serializationToAsyncQueryableModelEntities} for deserialization of the model.
+ */
+export async function resolveAsyncQueryableModelEntities(entities: EntityRecord, httpFetch: HttpFetch): Promise<EntityRecord> {
   const adapter = new SgovAdapter("https://slovník.gov.cz/sparql", httpFetch);
   adapter.setIriProvider(new IdentityIriProvider());
   const queryAdapter = new CimAdapterWrapper(adapter);
 
-  const queryEntities: EntityRecord = Object.fromEntries(queries.map(queryStringToQueryEntity).map((entity) => [entity.id, entity]));
+  const queries = Object.values(entities).filter(isQueryEntity).map(queryEntityToQueryString);
 
   const queryResults = await Promise.all(queries.map((query) => queryAdapter.query(query)));
   const semanticEntities: EntityRecord = Object.assign({}, ...queryResults);
 
   return {
-    ...queryEntities,
+    ...entities,
     ...semanticEntities,
   };
 }
