@@ -1,15 +1,15 @@
-import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { serializationToSemanticModelEntities } from "@dataspecer/core-v2/semantic-model";
 import { serializationToPimModelEntities } from "@dataspecer/core-v2/semantic-model/v1-adapters";
 import { serializationToStructureModelEntities } from "@dataspecer/core/data-psm";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { serializationToBlobModelEntities } from "@dataspecer/core/entity-model/utils";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
-import { getModelMetadata, resolveAsyncQueryableModelEntities } from "@dataspecer/model-store/implementation";
-import { PROJECT_MODEL_MODEL_ENTITY, type ProjectModelEntity, type PackageEntity } from "@dataspecer/project-model";
+import type { ModelIdentifier } from "@dataspecer/core/model";
+import { getModelMetadata, resolveAsyncQueryableModelEntities, serializationToAsyncQueryableModelEntities } from "@dataspecer/model-store/implementation";
+import { PROJECT_MODEL_MODEL_ENTITY, type PackageEntity, type ProjectModelEntity } from "@dataspecer/project-model";
 import { serializationToVisualModelEntities } from "@dataspecer/visual-model";
 import type { BaseResource, Package, ResourceModel } from "../models/resource-model.ts";
-import type { ModelIdentifier } from "@dataspecer/core/model";
 
 const PROJECT_MODEL_ID = "_project_model";
 
@@ -17,7 +17,7 @@ function createRegularResourceEntity(resource: BaseResource): ProjectModelEntity
   return {
     // Resources may carry arbitrary extra metadata fields (e.g. documentBaseUrl,
     // importedFromUrl) beyond label/description, which callers rely on.
-    ...(resource.userMetadata as object ?? {}),
+    ...((resource.userMetadata as object) ?? {}),
     id: resource.iri,
     type: [PROJECT_MODEL_MODEL_ENTITY],
     label: resource.userMetadata?.label ?? {},
@@ -28,7 +28,7 @@ function createRegularResourceEntity(resource: BaseResource): ProjectModelEntity
 
 function createProjectPackageEntity(resource: Package): PackageEntity {
   return {
-    ...(resource.userMetadata as object ?? {}),
+    ...((resource.userMetadata as object) ?? {}),
     id: resource.iri,
     type: [PROJECT_MODEL_MODEL_ENTITY],
     label: resource.userMetadata?.label ?? {},
@@ -71,7 +71,7 @@ export async function loadModelEntities(modelId: string, modelType: string, reso
   }
 
   if (modelType === QUERYABLE_MODEL) {
-    return await resolveAsyncQueryableModelEntities(modelData, httpFetch);
+    return serializationToAsyncQueryableModelEntities(modelData);
   }
 
   if (modelType === RDFS_MODEL) {
@@ -84,6 +84,19 @@ export async function loadModelEntities(modelId: string, modelType: string, reso
 
   // Fallback to blob model
   return serializationToBlobModelEntities(modelId, modelData);
+}
+
+/**
+ * Asynchronously resolves entities that are not part of the model's
+ * serialization. For the queryable (SGOV) model it fetches the semantic
+ * entities the query entities resolve to; other models are returned as-is.
+ */
+export async function resolveModelEntities(modelType: string, entities: EntityRecord): Promise<EntityRecord> {
+  if (modelType === QUERYABLE_MODEL) {
+    return await resolveAsyncQueryableModelEntities(entities, httpFetch);
+  }
+
+  return entities;
 }
 
 /**
@@ -119,7 +132,7 @@ export async function getModelsForPackage(packageId: ModelIdentifier, resourceMo
       if (subModelType === LOCAL_PACKAGE) {
         await loadPackageRecursively(subResource.iri);
       } else {
-        models[subResource.iri] = await loadModelEntities(subResource.iri, subModelType, resourceModel);
+        models[subResource.iri] = await resolveModelEntities(subModelType, await loadModelEntities(subResource.iri, subModelType, resourceModel));
 
         if (subModelType === VISUAL_MODEL) {
           const svgEntities = await loadNamedBlobEntities(subResource.iri, "svg", resourceModel);
