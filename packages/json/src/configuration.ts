@@ -52,12 +52,12 @@ export const DefaultJsonConfiguration =  {
     /**
      * Language used for label if {jsonDefaultTypeKeyMapping === "human-label"}
      */
-    jsonDefaultTypeKeyMappingHumanLabelLang: "cs" as string,
+    jsonDefaultTypeKeyMappingHumanLabelLang: "en" as string,
 
     /**
      * Preferred language used for labels and descriptions.
      */
-    jsonLabelLanguage: "cs" as string,
+    jsonLabelLanguage: "en" as string,
 
     /**
      * Whether JSON schemas shall be dereferenced, meaning that all $ref will be resolved.
