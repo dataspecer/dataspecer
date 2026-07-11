@@ -9,7 +9,20 @@ import {
 } from "@dataspecer/app-generator";
 import { getSpecification } from "../utils/data-specification.ts";
 
-// TODO: Add endpoints for graph storage, validation, and metadata lookup for the graph editor.
+// TODO: Add endpoints for graph storage and validation for the graph editor.
+export const getSpecificationMetadataForEditor = asyncHandler(
+  async (request: express.Request, response: express.Response) => {
+    const querySchema = z.object({
+      iri: z.string().min(1),
+    });
+    const query = querySchema.parse(request.query);
+
+    const provider = new DataspecerSpecificationMetadataProvider(getSpecification);
+    const metadata = await provider.getSpecificationMetadata(query.iri);
+    response.json(metadata);
+  },
+);
+
 export const generateApplicationByModelId = asyncHandler(
   async (request: express.Request, response: express.Response) => {
     const querySchema = z.object({
