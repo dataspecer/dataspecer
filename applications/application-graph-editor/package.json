@@ -1,0 +1,38 @@
+{
+  "name": "application-graph-editor",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@dataspecer/app-generator": "*",
+    "@dataspecer/core-v2": "*",
+    "@tailwindcss/vite": "^4.1.17",
+    "@xyflow/react": "^12.10.2",
+    "elkjs": "0.9.3",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "zustand": "^5.0.12"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^25.5.2",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "eslint": "^10.1.0",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.4.0",
+    "tailwindcss": "^4.1.17",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.58.0",
+    "vite": "^7.3.1",
+    "zod-validation-error": "^4.0.0"
+  }
+}

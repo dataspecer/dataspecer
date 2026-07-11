@@ -126,13 +126,18 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
           </a>
         </Button>
       }
-      {resource.types.includes(APPLICATION_GRAPH_NEW) &&
+      {resource.types.includes(APPLICATION_GRAPH_NEW) && <>
+        <Button asChild variant={"ghost"} onClick={stopPropagation()}>
+          <a href={import.meta.env.VITE_APPLICATION_GRAPH_EDITOR + "/?iri=" + encodeURIComponent(iri)}>
+            {t("edit application graph")}
+          </a>
+        </Button>
         <Button asChild variant={"ghost"} onClick={stopPropagation()}>
           <a href={import.meta.env.VITE_BACKEND + "/app-generator/generate?iri=" + encodeURIComponent(iri)}>
             {t("generate application new")}
           </a>
         </Button>
-      }
+      </>}
       {resource.types.includes(V1.PSM) && <Button variant={"ghost"} onClick={async event => {
         event.preventDefault();
         event.stopPropagation();

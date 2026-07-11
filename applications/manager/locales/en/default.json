@@ -54,6 +54,7 @@
       "name": "URL"
     }
   },
+  "edit application graph": "Edit the application graph",
   "format as json": "Format as json",
   "generate application": "Generate the application",
   "ID": "ID",

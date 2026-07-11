@@ -24,7 +24,8 @@
     "prettier": "^3.8.3"
   },
   "exports": {
-    ".": "./lib/index.js"
+    ".": "./lib/index.js",
+    "./graph": "./lib/graph-entry.js"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
