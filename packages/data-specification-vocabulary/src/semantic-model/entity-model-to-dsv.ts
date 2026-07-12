@@ -4,7 +4,6 @@ import {
   isSemanticModelClass,
   isSemanticModelGeneralization,
   isSemanticModelRelationship,
-type NamedThing,
 } from "@dataspecer/core-v2/semantic-model/concepts";
 import {
   isSemanticModelClassProfile,
@@ -12,7 +11,6 @@ import {
   SemanticModelClassProfile,
   SemanticModelRelationshipEndProfile,
   SemanticModelRelationshipProfile,
-  type NamedThingProfile,
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { isPrimitiveType } from "@dataspecer/core-v2/semantic-model/datatypes";
 
@@ -36,7 +34,6 @@ import {
 } from "./dsv-model.ts";
 import { DSV_CLASS_ROLE, DSV_MANDATORY_LEVEL, SKOS } from "./vocabulary.ts";
 
-
 interface EntityListContainerToDsvContext {
 
   /**
@@ -58,12 +55,13 @@ interface EntityListContainerToDsvContext {
   /**
    * Returns property that the given entity uses for name.
    */
-  getPropertyForName: (entityIdentifier: string) => string | null;
+  getPropertyForName: (entityIdentifier: string | null) => string | null;
 
   /**
    * Returns property that the given entity uses for description.
    */
-  getPropertyForDescription: (entityIdentifier: string) => string | null;
+  getPropertyForDescription: (entityIdentifier: string | null) => string | null;
+
 }
 
 /**
@@ -118,52 +116,61 @@ export function createContext(
     }
   };
 
-  const getPropertyForName = (entityIdentifier: string): string | null => {
-    const entity = identifierToEntity(entityIdentifier);
-    if (!entity) {
+  const getPropertyForName = (
+    entityIdentifier: string | null,
+    visited: string[] = [],
+  ): string | null => {
+    if (entityIdentifier === null || visited.includes(entityIdentifier)) {
       return null;
     }
-
-    let prop: NamedThing | NamedThingProfile | null = null;
-
-    if (isSemanticModelClass(entity) || isSemanticModelClassProfile(entity)) {
-      prop = entity;
+    const entity = identifierToEntity(entityIdentifier);
+    if (entity === null) {
+      return null;
     }
-
-    if (isSemanticModelRelationship(entity) || isSemanticModelRelationshipProfile(entity)) {
+    // Based on the entity type we can either
+    if (isSemanticModelClass(entity)) {
+      return entity.nameProperty ?? null;
+    } else if (isSemanticModelRelationship(entity)) {
       const [_, range] = entity.ends;
-      prop = range;
+      return range.nameProperty ?? null
+    } else if (isSemanticModelClassProfile(entity)) {
+      return getPropertyForName(
+        entity.nameFromProfiled, [...visited, entityIdentifier]);
+    } else if (isSemanticModelRelationshipProfile(entity)) {
+      const [_, range] = entity.ends;
+      return getPropertyForName(
+        range.nameFromProfiled, [...visited, entityIdentifier]);
+    } else {
+      return null;
     }
-
-    if (prop) {
-      return prop.nameProperty ?? null;
-    }
-
-    return null;
   };
 
-  const getPropertyForDescription = (entityIdentifier: string): string | null => {
-    const entity = identifierToEntity(entityIdentifier);
-    if (!entity) {
+  const getPropertyForDescription = (
+    entityIdentifier: string | null,
+    visited: string[] = [],
+  ): string | null => {
+    if (entityIdentifier === null || visited.includes(entityIdentifier)) {
       return null;
     }
-
-    let prop: NamedThing | NamedThingProfile | null = null;
-
-    if (isSemanticModelClass(entity) || isSemanticModelClassProfile(entity)) {
-      prop = entity;
+    const entity = identifierToEntity(entityIdentifier);
+    if (entity === null) {
+      return null;
     }
-
-    if (isSemanticModelRelationship(entity) || isSemanticModelRelationshipProfile(entity)) {
+    if (isSemanticModelClass(entity)) {
+      return entity.descriptionProperty ?? null;
+    } else if (isSemanticModelRelationship(entity)) {
       const [_, range] = entity.ends;
-      prop = range;
+      return range.descriptionProperty ?? null
+    } else if (isSemanticModelClassProfile(entity)) {
+      return getPropertyForName(
+        entity.descriptionFromProfiled, [...visited, entityIdentifier]);
+    } else if (isSemanticModelRelationshipProfile(entity)) {
+      const [_, range] = entity.ends;
+      return getPropertyForName(
+        range.descriptionFromProfiled, [...visited, entityIdentifier]);
+    } else {
+      return null;
     }
-
-    if (prop) {
-      return prop.descriptionProperty ?? null;
-    }
-
-    return null;
   };
 
   const languageFilter = (value: LanguageString | null | undefined) =>
@@ -199,6 +206,7 @@ export function entityListContainerToDsvModel(
     .loadToDsv(entityListContainer, result);
   return result;
 }
+
 class EntityListContainerToDsv {
 
   readonly context: EntityListContainerToDsvContext;

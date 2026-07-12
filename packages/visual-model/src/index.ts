@@ -3,6 +3,9 @@ export {
     type ColorGenerator,
 } from "./color-generator.ts";
 export {
+    VISUAL_MODEL_ENTITY_TYPE,
+} from "./default-visual-model.ts";
+export {
     VISUAL_DIAGRAM_NODE_TYPE,
     VISUAL_GROUP_TYPE,
     VISUAL_MODEL_DATA_TYPE,

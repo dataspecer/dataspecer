@@ -98,7 +98,6 @@ export function useModelObserver(
       if (entry === undefined) {
         continue;
       }
-      entry.model.getVisualEntities()
       entry.unsubscribe();
       changes[modelIdentifier] = {
         created: [],
@@ -246,34 +245,32 @@ function diffArrays<T>(
 function createModelMetadataEntity(
   model: { getId(): ModelIdentifier; },
 ): ModelMetadataEntity {
-  let types: string[] = [MAIN_ENTITY_TYPE];
-  let label = model.getId();
-  let baseIri: string | undefined = undefined;
+  let result: ModelMetadataEntity = {
+    id: createModelMetadataEntityId(model),
+    label: { "": model.getId() },
+    type: [],
+  };
+
   if (model instanceof InMemorySemanticModel) {
-    types.push(SEMANTIC_MODEL);
-    label = model.getAlias() ?? label;
-    baseIri = model.getBaseIri();
+    result.type.push(SEMANTIC_MODEL);
+    result.label = { "": model.getAlias() ?? "" };
+    (result as any).baseIri = model.getBaseIri();
   }
   if (model instanceof InMemoryEntityModel) { // PimStoreWrapper
-    types.push(PIM_STORE_MODEL);
-    label = model.getAlias() ?? label;
-    baseIri = baseIri ?? "";
+    result.type.push(PIM_STORE_MODEL);
+    result.label = { "": model.getAlias() ?? "" };
+    (result as any).baseIri = "";
   }
   if (model instanceof ExternalSemanticModel) {
-    types.push(EXTERNAL_SEMANTIC_MODEL);
-    label = model.getAlias() ?? label;
-    baseIri = baseIri ?? "";
+    result.type.push(EXTERNAL_SEMANTIC_MODEL);
+    result.label = { "": model.getAlias() ?? "" };
+    (result as any).baseIri = "";
   }
   if (isVisualModel(model) || isWritableVisualModel(model)) {
-    types.push(VISUAL_MODEL);
+    result.type.push(VISUAL_MODEL);
+    result.label = model.getLabel() ?? result.label;
   }
-  return {
-    id: createModelMetadataEntityId(model),
-    type: types,
-    label: { "": label },
-    // Model specific properties.
-    baseIri,
-  } as ModelMetadataEntity;
+  return result;
 }
 
 const MAIN_ENTITY_TYPE = "main-entity";

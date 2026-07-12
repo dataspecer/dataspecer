@@ -1,11 +1,14 @@
-import { Entity, EntityIdentifier } from "../../../entity-model/entity.ts";
-import { LanguageString, SemanticModelClass } from "../../concepts/concepts.ts";
+import { EntityIdentifier } from "../../../entity-model/entity.ts";
+import { SemanticModelClass } from "../../concepts/concepts.ts";
 import { isSemanticModelClass } from "../../concepts/index.ts";
 import {
   isSemanticModelClassProfile,
   SemanticModelClassProfile,
 } from "../concepts/index.ts";
-import { AggregatedProfiledSemanticModelClass } from "./aggregator-model.ts";
+import {
+  AggregatedProfiledSemanticModelClass,
+  isAggregatedProfiledSemanticModelClass,
+} from "./aggregator-concepts.ts";
 import { createProfiledGetter } from "./utilities.ts";
 
 export const SemanticClassProfileAggregator = {
@@ -19,84 +22,106 @@ export const SemanticClassProfileAggregator = {
   aggregate: aggregateSemanticModelClassProfile,
 };
 
-export function isAggregatedProfiledSemanticModelClass(
-  entity: Entity | null,
-): entity is AggregatedProfiledSemanticModelClass {
-  return isSemanticModelClassProfile(entity) && "conceptIris" in entity;
-}
-
 function getDependencies(
   entity: SemanticModelClassProfile,
 ): EntityIdentifier[] {
+  // All dependencies are defined just by the values the profiles.
   return entity.profiling;
 }
 
 function aggregateSemanticModelClassProfile(
   profile: SemanticModelClassProfile,
-  dependenciesArray: (
+  dependencies: (
     SemanticModelClass |
     SemanticModelClassProfile |
     AggregatedProfiledSemanticModelClass
   )[],
 ): AggregatedProfiledSemanticModelClass {
-  const profiled = createProfiledGetter(dependenciesArray, profile);
 
-  let usageNote: LanguageString | null = null;
-  const usageNoteProfiled = profiled(profile.usageNoteFromProfiled);
-  if (isSemanticModelClassProfile(usageNoteProfiled)) {
-    usageNote = usageNoteProfiled.usageNote;
-  } else {
-    usageNote = profile.usageNote;
-  }
+  // A helper for easy access to dependencies.
+  const getProfiled = createProfiledGetter(dependencies);
 
-  // This collect all properties that are part of the profiled
-  // entities and merges them into the aggregated one.
-  // The goal is to allow unknown properties to be aggregated.
-  const otherPropertiesAggregated: Record<string, unknown> = {};
+  // We try to get an entity to get the name from.
+  // Since all entities share name we just try to read it directly.
+  // For the property we need to check if the value is a non-profile.
+  const nameProfiled = getProfiled(profile.nameFromProfiled);
+  const name = nameProfiled?.name ?? profile.name;
+  const nameProperty = isSemanticModelClass(nameProfiled)
+    ? (nameProfiled.nameProperty ?? null) : null;
 
+  // Description is similar to name in processing.
+  const descriptionProfiled = getProfiled(profile.descriptionFromProfiled);
+  const description = descriptionProfiled?.description ?? profile.description;
+  const descriptionProperty = isSemanticModelClass(descriptionProfiled)
+    ? (descriptionProfiled.descriptionProperty ?? null) : null;
+
+  // Unlike name and description usage note does not exists on a class.
+  // As a result we type check before reading it.
+  const usageNoteProfiled = getProfiled(profile.usageNoteFromProfiled);
+  const usageNote = isSemanticModelClassProfile(usageNoteProfiled)
+    ? usageNoteProfiled.usageNote : profile.usageNote;
+
+  // We need to collect IRI from vocabulary and propagate it toward
+  // the aggregated profile.
   const conceptIris: string[] = [];
-  for (const identifier of profile.profiling) {
-    const profile = profiled(identifier);
-    if (isSemanticModelClass(profile) && !isSemanticModelClassProfile(profile) && profile.iri) {
-      conceptIris.push(profile.iri);
-    } else if (isAggregatedProfiledSemanticModelClass(profile)) {
-      conceptIris.push(...profile.conceptIris);
-    } else {
-      // SemanticModelClassProfile should never be the case.
-    }
 
-    if (profile) {
-      Object.assign(otherPropertiesAggregated, profile);
+  // We need to collect identifiers of the non-profile (root) entities
+  // and propagate them toward the aggregated profile.
+  const conceptIdentifiers: EntityIdentifier[] = [];
+
+  // We collect all properties along the way.
+  // The ideas is to merge even unknown properties into the result.
+  const propertiesCollector: Record<string, unknown> = {};
+
+  // Iterate over all entities we profile.
+  for (const identifier of profile.profiling) {
+    const profiled = getProfiled(identifier);
+    if (profiled === null) {
+      continue;
     }
+    // We go from the most specific types to the general one.
+    if (isAggregatedProfiledSemanticModelClass(profiled)) {
+      conceptIris.push(...profiled.conceptIris);
+      conceptIdentifiers.push(...profiled.conceptIdentifiers);
+    } else if (isSemanticModelClassProfile(profiled)) {
+      // conceptIris and conceptIdentifiers properties are not part of this type.
+    } else if (isSemanticModelClass(profiled)) {
+      if (profiled.iri !== null) {
+        conceptIris.push(profiled.iri);
+      }
+      conceptIdentifiers.push(profiled.id);
+    }
+    // Collect all properties.
+    Object.assign(propertiesCollector, profiled);
   }
 
   return {
-    // Add all properties from aggregated entities and from this one.
-    ...otherPropertiesAggregated as {}, // enforce all members to be explicitly defined
-    ...profile as {}, // enforce all members to be explicitly defined
-    //
+    // We start by unpacking all we have collected.
+    // This can be anything so we put it there wrist to overwrite it with
+    // more specific options.
+    ...propertiesCollector,
+    // Next we put all values from the profile.
+    ...profile,
+    // Now we manually assemble the entity to be explicit
+    // on about how and what is part of the result.
     id: profile.id,
-    type: profile.type,
-    profiling: profile.profiling,
+    type: ["class-profile", "aggregate"],
     iri: profile.iri,
+    name: name,
+    nameFromProfiled: profile.nameFromProfiled,
+    description: description,
+    descriptionFromProfiled: profile.descriptionFromProfiled,
+    profiling: profile.profiling,
+    usageNote: usageNote,
+    usageNoteFromProfiled: profile.usageNoteFromProfiled,
     externalDocumentationUrl: profile.externalDocumentationUrl,
     tags: profile.tags,
     order: profile.order ?? null,
-    //
-    usageNote: (profiled(profile.usageNoteFromProfiled) as SemanticModelClassProfile)?.usageNote ?? usageNote ?? null,
-    usageNoteFromProfiled: profile.usageNoteFromProfiled,
-    //
-    name: profiled(profile.nameFromProfiled)?.name ?? profile.name ?? null,
-    nameFromProfiled: profile.nameFromProfiled,
-    nameProperty: profile.nameProperty ?? null, // do not inherit, this is specific to this profile
-    //
-    description: profiled(profile.descriptionFromProfiled)?.description ?? profile.description ?? null,
-    descriptionFromProfiled: profile.descriptionFromProfiled,
-    descriptionProperty: profile.descriptionProperty ?? null, // do not inherit, this is specific to this profile
-    //
-    conceptIris: Array.from(new Set(conceptIris)),
-    //
     controlledVocabularies: profile.controlledVocabularies,
-  } satisfies AggregatedProfiledSemanticModelClass;
+    // Aggregate entities.
+    conceptIris: [...new Set(conceptIris)],
+    conceptIdentifiers: [...new Set(conceptIdentifiers)],
+    nameProperty: nameProperty,
+    descriptionProperty: descriptionProperty,
+  };
 }
-// TODO [E. Blajer]: add effective controlled vocabularies

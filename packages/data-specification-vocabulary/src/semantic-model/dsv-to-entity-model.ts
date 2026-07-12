@@ -178,10 +178,8 @@ class ApplicationProfileToEntityModel {
       // NamedThingProfile
       name: profile.prefLabel ?? {},
       nameFromProfiled: nameReuse ? this.context.iriToIdentifier(nameReuse.propertyReusedFromResourceIri) : null,
-      nameProperty: nameReuse ? this.context.iriToIdentifier(nameReuse.reusedAsPropertyIri) : null,
       description: profile.definition ?? {},
       descriptionFromProfiled: descriptionReuse ? this.context.iriToIdentifier(descriptionReuse.propertyReusedFromResourceIri) : null,
-      descriptionProperty: descriptionReuse ? this.context.iriToIdentifier(descriptionReuse.reusedAsPropertyIri) : null,
     };
     this.entities.push(classProfile);
     // Convert generalizations.
@@ -259,10 +257,8 @@ class ApplicationProfileToEntityModel {
       // NamedThingProfile
       name: {},
       nameFromProfiled: null,
-      nameProperty: null,
       description: {},
       descriptionFromProfiled: null,
-      descriptionProperty: null,
       // Profile
       profiling: [],
       usageNote: {},
@@ -295,11 +291,9 @@ class ApplicationProfileToEntityModel {
       name: profile.prefLabel ?? {},
       nameFromProfiled: this.selectFromPropertyProfiled(
         profile, SKOS.prefLabel.id, rangeConcept),
-      nameProperty: nameReuse ? this.context.iriToIdentifier(nameReuse.reusedAsPropertyIri) : null,
       description: profile.definition ?? {},
       descriptionFromProfiled: this.selectFromPropertyProfiled(
         profile, SKOS.definition.id, rangeConcept),
-      descriptionProperty: descriptionReuse ? this.context.iriToIdentifier(descriptionReuse.reusedAsPropertyIri) : null,
       // Profile
       profiling,
       usageNote: profile.usageNote ?? {},

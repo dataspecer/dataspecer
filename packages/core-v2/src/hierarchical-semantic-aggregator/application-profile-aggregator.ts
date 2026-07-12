@@ -9,7 +9,10 @@ import {
   SemanticModelGeneralization,
   SemanticModelRelationship,
 } from "../semantic-model/concepts/index.ts";
-import { createSemanticProfileAggregator, ProfileAggregator } from "../semantic-model/profile/aggregator/index.ts";
+import {
+  createSemanticProfileAggregator,
+  SemanticProfileAggregator,
+} from "../semantic-model/profile/aggregator/index.ts";
 import {
   isSemanticModelClassProfile,
   isSemanticModelRelationshipProfile,
@@ -100,7 +103,7 @@ export class ApplicationProfileAggregator implements SemanticModelAggregator {
   private readonly dependsOn: TupleSet<string, string> = new TupleSet();
 
   private readonly subscribers: Set<(updated: Record<string, LocalEntityWrapped>, removed: string[]) => void> = new Set();
-  private readonly profileEntityAggregator: ProfileAggregator;
+  private readonly profileEntityAggregator: SemanticProfileAggregator;
   private readonly operationFactory: SemanticModelProfileOperationFactory = createDefaultSemanticModelProfileOperationFactory();
 
   readonly thisVocabularyChain: object;
@@ -113,7 +116,7 @@ export class ApplicationProfileAggregator implements SemanticModelAggregator {
   private allowOnlyProfiledEntities: boolean = false;
   private readonly profileBaseIri: string;
 
-  constructor(profile: EntityModel, source: SemanticModelAggregator, allowOnlyProfiledEntities: boolean = false, profileEntityAggregator?: ProfileAggregator) {
+  constructor(profile: EntityModel, source: SemanticModelAggregator, allowOnlyProfiledEntities: boolean = false, profileEntityAggregator?: SemanticProfileAggregator) {
     this.profile = profile;
     this.profileBaseIri = getModelBaseIri(profile.getEntities());
     this.source = source;
@@ -515,11 +518,11 @@ export class ApplicationProfileAggregator implements SemanticModelAggregator {
     }
     subProfiles.forEach(
       (entity) =>
-        (fullCompleteHierarchy[entity.aggregatedEntity.id] = {
-          aggregatedEntity: entity.aggregatedEntity,
-          vocabularyChain: [this.thisVocabularyChain],
-          originatingModel: [this],
-        }),
+      (fullCompleteHierarchy[entity.aggregatedEntity.id] = {
+        aggregatedEntity: entity.aggregatedEntity,
+        vocabularyChain: [this.thisVocabularyChain],
+        originatingModel: [this],
+      }),
     );
 
     const superProfiles: LocalEntityWrapped[] = [this.entities[localEntityId]];
@@ -545,11 +548,11 @@ export class ApplicationProfileAggregator implements SemanticModelAggregator {
     }
     superProfiles.map(
       (entity) =>
-        (fullCompleteHierarchy[entity.aggregatedEntity.id] = {
-          aggregatedEntity: entity.aggregatedEntity,
-          vocabularyChain: [this.thisVocabularyChain],
-          originatingModel: [this],
-        }),
+      (fullCompleteHierarchy[entity.aggregatedEntity.id] = {
+        aggregatedEntity: entity.aggregatedEntity,
+        vocabularyChain: [this.thisVocabularyChain],
+        originatingModel: [this],
+      }),
     );
 
     // Now we need hierarchy for each class profile.

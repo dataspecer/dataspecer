@@ -1,11 +1,11 @@
 import { Entity } from "../../../entity-model/index.ts";
 import { EntityIdentifier } from "../../../entity-model/entity.ts";
-import { SemanticModelEntity } from "../../concepts/index.ts";
 import { NamedThingProfile } from "./named-thing-profile.ts";
 import { Profile } from "./profile.ts";
 import { OrderedThing } from "../../concepts/ordered-thing.ts";
 
-export interface SemanticModelClassProfile extends SemanticModelEntity, Profile, NamedThingProfile, OrderedThing {
+export interface SemanticModelClassProfile extends
+  Entity, Profile, NamedThingProfile, OrderedThing {
 
   type: [typeof SEMANTIC_MODEL_CLASS_PROFILE];
 
@@ -14,21 +14,29 @@ export interface SemanticModelClassProfile extends SemanticModelEntity, Profile,
    */
   tags: string[];
 
+  /**
+   * The "undefined" type is workaround for a missing migration.
+   */
   controlledVocabularies: ControlledVocabularyAssignment[] | undefined;
+
 }
-//TODO: agregacni funkce
 
-
-export type Qualifier = "MUST" | "AT_LEAST_1" | "RECOMMENDED" | "MAY"
+export type Qualifier = "MUST" | "AT_LEAST_1" | "RECOMMENDED" | "MAY";
 
 export type ControlledVocabularyAssignment = {
-    identifier: EntityIdentifier;
-    qualifier: Qualifier;
-    override: boolean;
+
+  identifier: EntityIdentifier;
+
+  qualifier: Qualifier;
+
+  override: boolean;
+
 }
 
 export const SEMANTIC_MODEL_CLASS_PROFILE = "class-profile";
 
-export function isSemanticModelClassProfile(entity: Entity | null): entity is SemanticModelClassProfile {
+export function isSemanticModelClassProfile(
+  entity: Entity | null,
+): entity is SemanticModelClassProfile {
   return entity?.type.includes(SEMANTIC_MODEL_CLASS_PROFILE) ?? false;
 }
