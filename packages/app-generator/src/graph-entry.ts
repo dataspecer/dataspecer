@@ -28,3 +28,9 @@ export {
   requiresSameClassOrAssociationTransition,
   requiresSameClassTransition,
 } from './validation/rules/edge-rules.ts';
+export { FieldKind } from './metadata/types.ts';
+export type {
+  AggregateFieldMetadata,
+  AggregateMetadata,
+  SpecificationMetadata,
+} from './metadata/types.ts';

@@ -14,3 +14,9 @@ npm run dev
 ```
 
 The dev server runs on port 5177.
+
+Dependency pins: `zustand` stays on v4 because `@xyflow/react` depends on it and the editor
+store and `zundo` must share that copy. `zod-validation-error` v4 satisfies a subpath that
+`eslint-plugin-react-hooks` requires but does not declare correctly. After changing dependency
+resolutions, clear `node_modules/.vite` and restart the dev server, otherwise React Flow edges
+can silently stop rendering from the stale prebundled cache.
