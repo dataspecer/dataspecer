@@ -7,9 +7,13 @@ import { changesToEntityOperations, diffEntities, type Entity, type EntityChange
 import {
   isRemoveEntityOperation,
   isSetEntityOperation,
+  isUndoOperation,
   isUpdateEntityOperation,
+  resolveCancelledTransactions,
   type Operation,
   type OperationInModel,
+  type Transaction,
+  type UndoOperation,
 } from "@dataspecer/core/operation";
 import {
   applyOperationsToAsyncQueryableModel,
@@ -56,10 +60,6 @@ export function entityChangesToEvents(changes: EntityChange[]): { up: Record<str
  * Diffs two states of a model of the given type and returns operations that
  * would transform the previous state into the next one, tagged with the id of
  * the model they belong to.
- *
- * For the semantic model, semantic and profile operations are generated where
- * possible. Everything else (including all entities of other model types)
- * falls back to the generic set/update/remove entity operations.
  */
 export function diffModelEntitiesToOperations(modelId: string, modelType: string, previous: EntityRecord, next: EntityRecord): OperationInModel[] {
   let remainingChanges = diffEntities(previous, next);
@@ -74,6 +74,8 @@ export function diffModelEntitiesToOperations(modelId: string, modelType: string
 
     remainingChanges = profile.remainingChanges;
   }
+
+  // todo: Implement differ for other models
 
   operations.push(...changesToEntityOperations(remainingChanges));
 
@@ -129,6 +131,125 @@ export function applyOperationsToModelEntities(modelId: string, modelType: strin
       delete working[operation.entityId];
     } else {
       applyModelSpecificOperation(modelId, modelType, working, operation);
+    }
+  }
+
+  return working;
+}
+
+/**
+ * One transaction of the history, projected onto a single model, as needed to
+ * interpret an undo operation in it. See
+ * {@link applyUndoOperationToModelEntities}.
+ */
+export interface UndoHistoryEntry {
+  /** Client-generated transaction id. */
+  clientId: string;
+  /** Operations of the transaction targeting the model, in order. */
+  operations: Operation[];
+  /**
+   * Entity states before the transaction for the model, empty when the
+   * transaction did not change the model. Null when the transaction's events
+   * were not recorded at all.
+   */
+  downEvents: Record<string, Entity | null> | null;
+}
+
+/**
+ * Interprets an undo operation for one model. The undo cancels the referenced
+ * transaction as a whole - possibly spanning several models - but since every
+ * operation is applied to a single model in isolation, it arrives dispatched
+ * to each model the cancelled transaction touched; this function handles one
+ * such model, cancelling the transaction's operations on it as if they never
+ * happened.
+ *
+ * The final state is computed from the model's history (oldest first, up to
+ * and including the transaction the current state reflects): the state is
+ * rewound to before the earliest transaction ever targeted by an undo, by
+ * patching the recorded down events in reverse order, and the operations of
+ * the transactions from that point on are replayed, skipping transactions
+ * that are effectively cancelled (see {@link resolveCancelledTransactions})
+ * and undo operations themselves, whose effect the replay already accounts
+ * for.
+ *
+ * Returns null when the undo cannot be interpreted - the referenced
+ * transaction is not in the history, or a transaction that would have to be
+ * rewound has no recorded events. The caller should then only record the
+ * operation, per the {@link Operation} contract.
+ *
+ * The input entities are not modified.
+ */
+export function applyUndoOperationToModelEntities(
+  modelId: string,
+  modelType: string,
+  entities: EntityRecord,
+  undoOperation: UndoOperation,
+  history: UndoHistoryEntry[],
+): EntityRecord | null {
+  // Pseudo transactions for the cancellation resolution. The undo operation
+  // being applied participates as the last, not yet recorded transaction; as
+  // client-generated ids are always uuids, "current" cannot collide with them.
+  const pseudoTransactions: Transaction[] = history.map((entry) => ({
+    id: entry.clientId,
+    operations: entry.operations.map((operation) => ({ modelId, operation })),
+  }));
+  pseudoTransactions.push({ id: "current", operations: [{ modelId, operation: undoOperation }] });
+
+  // Find the earliest transaction targeted by any undo operation: everything
+  // before it is unaffected by any cancellation, so it is a safe point to
+  // rewind to and replay from. Undo targets that are not part of the history
+  // never had an effect and are skipped.
+  const indexByClientId = new Map<string, number>();
+  history.forEach((entry, index) => indexByClientId.set(entry.clientId, index));
+
+  const targetIndex = indexByClientId.get(undoOperation.cancelTransactionId);
+  if (targetIndex === undefined) {
+    return null;
+  }
+
+  let earliestIndex = targetIndex;
+  for (const transaction of pseudoTransactions) {
+    for (const { operation } of transaction.operations) {
+      if (isUndoOperation(operation)) {
+        const index = indexByClientId.get(operation.cancelTransactionId);
+        if (index !== undefined && index < earliestIndex) {
+          earliestIndex = index;
+        }
+      }
+    }
+  }
+
+  // Transactions that changed the model but have no recorded events cannot be
+  // rewound through.
+  for (let index = earliestIndex; index < history.length; index++) {
+    if (history[index]!.downEvents === null && history[index]!.operations.length > 0) {
+      return null;
+    }
+  }
+
+  const cancelled = resolveCancelledTransactions(pseudoTransactions);
+  const isCancelled = (index: number) => cancelled.get(pseudoTransactions[index]!.id)?.has(modelId) ?? false;
+
+  // Rewind to the state before the earliest affected transaction.
+  let working = { ...entities };
+  for (let index = history.length - 1; index >= earliestIndex; index--) {
+    for (const [entityId, entity] of Object.entries(history[index]!.downEvents ?? {})) {
+      if (entity === null) {
+        delete working[entityId];
+      } else {
+        working[entityId] = entity;
+      }
+    }
+  }
+
+  // Replay the effective operations on top of it.
+  for (let index = earliestIndex; index < history.length; index++) {
+    if (isCancelled(index)) {
+      continue;
+    }
+    const operations = history[index]!.operations.filter((operation) => !isUndoOperation(operation));
+    if (operations.length > 0) {
+      working = applyOperationsToModelEntities(modelId, modelType, working, operations);
     }
   }
 

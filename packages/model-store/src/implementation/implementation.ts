@@ -1,6 +1,6 @@
 import { LOCAL_PACKAGE, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { type PackageService } from "@dataspecer/core-v2/project";
-import { changesToEntityOperations, type EntityChange, type EntityRecord } from "@dataspecer/core/entity-model";
+import { type EntityChange, type EntityRecord } from "@dataspecer/core/entity-model";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import type { Model, ModelIdentifier } from "@dataspecer/core/model";
 import type { Transaction as CoreTransaction, Operation, OperationInModel } from "@dataspecer/core/operation";
@@ -10,7 +10,7 @@ import type { ObservableEntityModelStoreChangeEvent } from "../interfaces/observ
 import type { ConnectionStatus, RemoteModelStore } from "../interfaces/remote.ts";
 import type { UndoRedoState } from "../interfaces/undo-redo.ts";
 import type { TransactionMetadata, TransactionResult } from "../interfaces/writable.ts";
-import { UNDO_OPERATION_TYPE, type UndoOperation } from "./base.ts";
+import { createUndoOperation } from "@dataspecer/core/operation";
 import { getModelMetadata } from "./metadata.ts";
 import type { ProjectModelInModelStore } from "./project-model.ts";
 
@@ -530,22 +530,16 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
         continue;
       }
 
-      const undoOperation = {
-        id: uuidv4(),
-        type: UNDO_OPERATION_TYPE,
-        cancelTransactionId: transactionToRevert.id,
-      } satisfies UndoOperation;
+      const undoOperation = createUndoOperation(transactionToRevert.id);
 
       const changes = model.applyOperations(transactionId, [undoOperation]);
       entityChanges[modelId] = changes.entityChanges;
 
-      // The undo operation itself is meaningful only locally, where it
-      // restores a snapshot of the model - the backend cannot replay it. The
-      // transaction is therefore recorded as generic entity operations that
-      // perform the same change.
-      for (const operation of changesToEntityOperations(changes.entityChanges)) {
-        allOperations.push({ modelId, operation });
-      }
+      // The undo cancels the whole transaction, but as every operation is
+      // applied to a single model in isolation, it is recorded once per
+      // model the transaction touched. The backend interprets it using the
+      // recorded history of the cancelled transaction.
+      allOperations.push({ modelId, operation: undoOperation });
 
       if (modelId === this.projectModelId) {
         // React to models being created/removed in the project structure (e.g.

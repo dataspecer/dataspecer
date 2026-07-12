@@ -1,29 +1,8 @@
 import type { Entity, EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import { diffEntities } from "@dataspecer/core/entity-model";
 import type { Model } from "@dataspecer/core/model";
-import { isSetEntityOperation, isUpdateEntityOperation, type Operation } from "@dataspecer/core/operation";
+import { isSetEntityOperation, isUndoOperation, isUpdateEntityOperation, type Operation, type UndoOperation } from "@dataspecer/core/operation";
 import type { ApplyOperationResult, ModelInDefaultFrontendModelStore } from "./implementation.ts";
-
-export const UNDO_OPERATION_TYPE = "undo" as const;
-
-/**
- * An undo operation "cancels" specific transaction (a set of operations) in the
- * model. It can be used to implement undo/redo functionality by simply
- * canceling last non-canceled transactions an canceling undo operations to
- * perform redo.
- */
-export interface UndoOperation extends Operation {
-  type: typeof UNDO_OPERATION_TYPE;
-
-  /**
-   * Transaction ID that this undo cancels.
-   */
-  cancelTransactionId: string;
-}
-
-function isUndoOperation(operation: Operation): operation is UndoOperation {
-  return operation.type === UNDO_OPERATION_TYPE;
-}
 
 /**
  * State of the model. Can be used for undo/redo operations and to keep track of changes.

@@ -1,5 +1,5 @@
 import type { Entity } from "@dataspecer/core/entity-model";
-import type { Transaction } from "@dataspecer/core/operation";
+import type { Operation, OperationInModel, Transaction } from "@dataspecer/core/operation";
 import { PrismaClient } from "@prisma/client";
 
 /**
@@ -30,6 +30,17 @@ export interface CollectedTransaction {
   id: number;
   createdAt: Date;
   operations: CollectedOperation[];
+}
+
+/**
+ * One transaction of a branch history as needed for interpreting undo
+ * operations: its client id, operations (in order) and down events.
+ */
+export interface HistoryTransaction {
+  /** Client-generated transaction id. */
+  clientId: string;
+  operations: OperationInModel[];
+  downEvents: TransactionEvents | null;
 }
 
 export interface BranchInfo {
@@ -99,6 +110,7 @@ export class TransactionModel {
       const created = await this.prismaClient.transaction.create({
         data: {
           projectId: project.id,
+          clientId: transaction.id,
           upEvents: transaction.upEvents === undefined ? undefined : JSON.stringify(transaction.upEvents),
           downEvents: transaction.downEvents === undefined ? undefined : JSON.stringify(transaction.downEvents),
           parents: parentId === null ? undefined : { create: [{ parentTransactionId: parentId }] },
@@ -122,6 +134,59 @@ export class TransactionModel {
         await this.prismaClient.branch.create({ data: { name: branch as string, projectId: project.id, transactionId: parentId } });
       }
     }
+  }
+
+  /**
+   * Returns the transaction history of a branch of the project, oldest first,
+   * with parsed operations and down events. Used for interpreting undo
+   * operations, see the ModelRepository.
+   *
+   * The branch is referenced the same way as in {@link createTransactions}: by
+   * name (defaults to "main"; when the named branch does not exist yet, the
+   * history ends at the project's latest transaction, which new transactions
+   * would be chained onto) or by the internal numerical id of an existing
+   * branch.
+   */
+  async getBranchHistory(projectIri: string, branch: string | number = "main"): Promise<HistoryTransaction[]> {
+    const project = await this.prismaClient.resource.findFirst({ select: { id: true }, where: { iri: projectIri } });
+    if (project === null) {
+      return [];
+    }
+
+    const branchRecord =
+      typeof branch === "number"
+        ? await this.prismaClient.branch.findFirst({ select: { transactionId: true }, where: { id: branch, projectId: project.id } })
+        : await this.prismaClient.branch.findUnique({ select: { transactionId: true }, where: { projectId_name: { projectId: project.id, name: branch } } });
+
+    if (typeof branch === "number" && branchRecord === null) {
+      throw new Error("Branch not found.");
+    }
+
+    let currentId =
+      branchRecord !== null
+        ? branchRecord.transactionId
+        : ((await this.prismaClient.transaction.findFirst({ select: { id: true }, where: { projectId: project.id }, orderBy: { id: "desc" } }))?.id ?? null);
+
+    const history: HistoryTransaction[] = [];
+    while (currentId !== null) {
+      const row = await this.prismaClient.transaction.findUnique({
+        where: { id: currentId },
+        include: {
+          operations: { orderBy: { order: "asc" } },
+          parents: { select: { parentTransactionId: true } },
+        },
+      });
+      if (row === null) break;
+      history.push({
+        clientId: row.clientId,
+        operations: row.operations.map((operation) => ({ modelId: operation.modelId, operation: JSON.parse(operation.data) as Operation })),
+        downEvents: row.downEvents === null ? null : (JSON.parse(row.downEvents) as TransactionEvents),
+      });
+      currentId = row.parents[0]?.parentTransactionId ?? null;
+    }
+
+    history.reverse(); // oldest first
+    return history;
   }
 
   /**
