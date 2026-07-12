@@ -1,6 +1,6 @@
 import { LOCAL_PACKAGE, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { type PackageService } from "@dataspecer/core-v2/project";
-import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
+import { changesToEntityOperations, type EntityChange, type EntityRecord } from "@dataspecer/core/entity-model";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import type { Model, ModelIdentifier } from "@dataspecer/core/model";
 import type { Transaction as CoreTransaction, Operation, OperationInModel } from "@dataspecer/core/operation";
@@ -42,12 +42,18 @@ export interface ModelInDefaultFrontendModelStore {
   subscribeForAsyncChanges(listener: (changeEvent: EntityChange[]) => void): () => void;
 
   /**
-   * Instructs model to load. Currently there are two options for loading:
-   * - load from backend (set to false)
-   * - initialize as empty (set to true)
-   * @default false (load from backend)
+   * Instructs model to load its state from the backend.
    */
-  load(doNotFetch?: boolean): Promise<void>;
+  load(): Promise<void>;
+
+  /**
+   * Initializes the model as freshly created, without fetching anything from
+   * the backend. The initial state is obtained by applying operations to an
+   * empty state under the given transaction; the applied operations and the
+   * resulting entity changes are returned so that the caller can record them
+   * as part of that transaction.
+   */
+  createNew(transactionId: string): { operations: Operation[]; entityChanges: EntityChange[] };
 
   save(): Promise<void>;
 
@@ -311,7 +317,19 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
         this.internalNotifyEntityChange({ entityChanges: { [modelId]: modelChanges } });
       });
 
-      this.modelPromises.push(model.load(createFresh));
+      if (createFresh) {
+        // The model is created locally as part of the current transaction. Its
+        // initial state is created by operations that are recorded to the same
+        // transaction, so the backend can replay them.
+        if (!this.currentTransaction) {
+          throw new Error(`Cannot create model ${modelId} outside of a transaction.`);
+        }
+        const { operations, entityChanges: initialChanges } = model.createNew(this.currentTransaction.id);
+        this.currentTransaction.operations.push(...operations.map((operation) => ({ modelId, operation })));
+        appendEntityChanges(entityChanges, modelId, initialChanges);
+      } else {
+        this.modelPromises.push(model.load());
+      }
 
       return;
     }
@@ -403,11 +421,11 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
         touchesProjectModel: false,
       };
     }
-    this.currentTransaction.operations.push(...operations);
+    const currentTransaction = this.currentTransaction;
     if (operations.some((operation) => operation.modelId === this.projectModelId)) {
-      this.currentTransaction.touchesProjectModel = true;
+      currentTransaction.touchesProjectModel = true;
     }
-    const transactionId = this.currentTransaction.id;
+    const transactionId = currentTransaction.id;
 
     // Changes made in this transaction
     const entityChanges: Record<ModelIdentifier, EntityChange[]> = {};
@@ -424,6 +442,11 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
     for (const modelId of modelIds) {
       const thisModelOperations = groupedOperations[modelId]!;
       const pureOperations = thisModelOperations.map((operation) => operation.operation);
+
+      // The operations are recorded in the order they are applied, so that
+      // the initial operations of models created by the project model (see
+      // activateModel) are recorded before operations targeting them.
+      currentTransaction.operations.push(...thisModelOperations);
 
       const model = this.models[modelId];
       if (!model || this.inactiveModelIds.has(modelId)) {
@@ -499,7 +522,7 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
     // The project model is processed first, analogous to addOperationForTransaction.
     const affectedModels = [...new Set(transactionToRevert.operations.map((operation) => operation.modelId))].sort(this.compareProjectModelFirst);
 
-    const allOperations: OperationInModel<UndoOperation>[] = [];
+    const allOperations: OperationInModel[] = [];
     for (const modelId of affectedModels) {
       const model = this.models[modelId];
       if (!model) {
@@ -512,13 +535,17 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
         type: UNDO_OPERATION_TYPE,
         cancelTransactionId: transactionToRevert.id,
       } satisfies UndoOperation;
-      allOperations.push({
-        modelId,
-        operation: undoOperation,
-      });
 
       const changes = model.applyOperations(transactionId, [undoOperation]);
       entityChanges[modelId] = changes.entityChanges;
+
+      // The undo operation itself is meaningful only locally, where it
+      // restores a snapshot of the model - the backend cannot replay it. The
+      // transaction is therefore recorded as generic entity operations that
+      // perform the same change.
+      for (const operation of changesToEntityOperations(changes.entityChanges)) {
+        allOperations.push({ modelId, operation });
+      }
 
       if (modelId === this.projectModelId) {
         // React to models being created/removed in the project structure (e.g.
@@ -676,70 +703,21 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
   }
 
   /**
-   * Saves all models that support saving and were changed since the last
-   * save (or load). Models that do not support saving (currently the
-   * virtual project model) are skipped.
+   * Persists everything that changed since the last successful save. The
+   * models themselves are written purely as operations: the pending
+   * transactions are uploaded to the backend, which records them in the
+   * operation history and updates the stored models accordingly. Full model
+   * snapshots are not uploaded anymore.
+   *
+   * The project structure is the exception, as the backend does not handle
+   * the project model yet: the backend resources of locally created models
+   * are created (via the resource API) before the operations are uploaded,
+   * so the operations can be applied to them, and the resources of locally
+   * removed models are deleted only after the upload, so their final
+   * operations are still recorded.
    */
   async saveByOverride(): Promise<void> {
-    await this.synchronizeProjectStructureWithBackend();
-
-    const savePromises: Promise<void>[] = [];
-    for (const modelId in this.models) {
-      if (modelId === this.projectModelId) {
-        // The project model is virtual and does not support saving yet.
-        continue;
-      }
-      if (this.inactiveModelIds.has(modelId)) {
-        // Model was removed from the project structure, nothing to save.
-        continue;
-      }
-      savePromises.push(this.models[modelId]!.save());
-    }
-    await this.uploadPendingTransactions();
-    await Promise.all(savePromises);
-    this.transactionConfirmations.forEach((resolve) => resolve({}));
-    this.transactionConfirmations = [];
-  }
-
-  /**
-   * Uploads operations of transactions (commits, undos and redos) that happened
-   * since the last call, to the backend's operation log, via a side channel
-   * that is independent of the regular model save above.
-   *
-   * This is a temporary, simplified approach: the backend still receives the
-   * full model snapshot on every save; this additionally records the operations
-   * that led to it for future use, once the application switches to storing
-   * only operations instead of snapshots.
-   *
-   * Failures are logged and otherwise ignored, since this is only a best-effort
-   * side channel and must not prevent the regular save above.
-   */
-  protected async uploadPendingTransactions(): Promise<void> {
-    const pendingTransactions = this.transactions
-      .slice(this.uploadedTransactionCount)
-      .filter((transaction) => transaction.operations.length > 0);
-    this.uploadedTransactionCount = this.transactions.length;
-
-    if (pendingTransactions.length === 0) {
-      return;
-    }
-
-    try {
-      await this.service.uploadTransactions(this.rootProjectId, pendingTransactions);
-    } catch (error) {
-      console.error("Failed to upload transaction operations to the backend.", error);
-    }
-  }
-
-  /**
-   * Creates and removes the backend resources for models that were locally
-   * created/removed in the project structure since the last save. Once a
-   * model is created on the backend, the regular save loop in
-   * {@link saveByOverride} is responsible for storing its actual data.
-   */
-  protected async synchronizeProjectStructureWithBackend(): Promise<void> {
     const projectModel = this.models[this.projectModelId] as ProjectModelInModelStore;
-
     const { creations, deletions } = projectModel.takePendingStructuralChanges();
 
     // Created sequentially (in the order they happened) so that a parent
@@ -752,8 +730,42 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
       }
     }
 
-    for (const modelId of deletions) {
-      await this.service.deleteResource(modelId);
+    try {
+      await this.uploadPendingTransactions();
+
+      for (const modelId of deletions) {
+        await this.service.deleteResource(modelId);
+      }
+    } catch (error) {
+      // The not-yet-uploaded transactions stay pending (see
+      // uploadPendingTransactions) and so must the deletions, so that the
+      // next save retries both.
+      projectModel.restorePendingDeletions(deletions);
+      throw error;
     }
+
+    this.transactionConfirmations.forEach((resolve) => resolve({}));
+    this.transactionConfirmations = [];
+  }
+
+  /**
+   * Uploads operations of transactions (commits, undos and redos) that
+   * happened since the last successful upload to the backend, which records
+   * them in the operation history and applies them to the stored models.
+   *
+   * This is the only write of model content, so failures propagate to the
+   * caller and the transactions stay pending for the next attempt.
+   */
+  protected async uploadPendingTransactions(): Promise<void> {
+    const pendingTransactions = this.transactions
+      .slice(this.uploadedTransactionCount)
+      .filter((transaction) => transaction.operations.length > 0);
+    const transactionCount = this.transactions.length;
+
+    if (pendingTransactions.length > 0) {
+      await this.service.applyTransactions(this.rootProjectId, pendingTransactions);
+    }
+
+    this.uploadedTransactionCount = transactionCount;
   }
 }

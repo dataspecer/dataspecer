@@ -1,13 +1,13 @@
 import type { PackageService } from "@dataspecer/core-v2/project";
 import { createRdfsModel } from "@dataspecer/core-v2/semantic-model/simplified";
 import { PimStoreWrapper, serializationToPimModelEntities, buildPimResources } from "@dataspecer/core-v2/semantic-model/v1-adapters";
-import { applyOperationToSemanticModel } from "@dataspecer/core-v2/semantic-model";
+import { applyOperationsToSemanticModel } from "@dataspecer/core-v2/semantic-model";
 import { RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
 import type { Entity, EntityRecord } from "@dataspecer/core/entity-model";
 import { diffEntities } from "@dataspecer/core/entity-model";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import type { Model, ModelIdentifier, ModelMetadata } from "@dataspecer/core/model";
-import type { Operation } from "@dataspecer/core/operation";
+import { createSetEntityOperation, type Operation } from "@dataspecer/core/operation";
 import { BaseModelInModelStore, type ModelState } from "./base.ts";
 import type { ModelInDefaultFrontendModelStore } from "./implementation.ts";
 
@@ -73,13 +73,7 @@ export class PimModelInModelStore extends BaseModelInModelStore implements Model
     } else if (operation.type === ReloadModelOperationType) {
       void this.freshLoad(mutableState[this.id] as MainEntity);
     } else {
-      const { updated, removed } = applyOperationToSemanticModel(mutableState, [operation]);
-      for (const [id, entity] of Object.entries(updated)) {
-        mutableState[id] = entity;
-      }
-      for (const id of removed) {
-        delete mutableState[id];
-      }
+      applyOperationsToSemanticModel(mutableState, [operation]);
     }
   }
 
@@ -118,7 +112,7 @@ export class PimModelInModelStore extends BaseModelInModelStore implements Model
    * from the backend. The model must always contain a {@link MainEntity}
    * representing itself, analogous to {@link loadInternal}.
    */
-  override loadInitialStateInternal(): void {
+  protected override createNewInternal(): Operation[] {
     const adapter = new PimStoreWrapper({ resources: {} } as any, this.id, "model", []);
     adapter.fetchFromPimStore();
     this.model = adapter;
@@ -129,32 +123,33 @@ export class PimModelInModelStore extends BaseModelInModelStore implements Model
       urls: [],
     };
 
-    this.initializeState({
-      entities: {
-        ...adapter.getEntities(),
-        [this.id]: mainEntity,
-      },
-      operations: [],
-    });
+    return [createSetEntityOperation(mainEntity)];
   }
 
   protected async saveInternal(state: ModelState): Promise<void> {
-    const mainEntity = state.entities[this.id];
-    const mainEntityMetadata: Partial<typeof mainEntity> = {
-      ...mainEntity,
-    };
-    delete mainEntityMetadata.id;
-    delete mainEntityMetadata.type;
-
-    const serialization = {
-      ...mainEntityMetadata,
-      type: RDFS_MODEL,
-      id: this.id,
-      pimStore: { resources: buildPimResources(state.entities, this.id) },
-    };
-
+    const serialization = pimModelEntitiesToSerialization(this.id, state.entities);
     await this.service.setResourceJsonData(this.id, serialization);
   }
+}
+
+/**
+ * Serializes the RDFS (PIM store wrapper) model. Inverse of
+ * {@link serializationToPimModelEntities}.
+ */
+export function pimModelEntitiesToSerialization(modelId: ModelIdentifier, entities: EntityRecord): unknown {
+  const mainEntity = entities[modelId];
+  const mainEntityMetadata: Partial<typeof mainEntity> = {
+    ...mainEntity,
+  };
+  delete mainEntityMetadata.id;
+  delete mainEntityMetadata.type;
+
+  return {
+    ...mainEntityMetadata,
+    type: RDFS_MODEL,
+    id: modelId,
+    pimStore: { resources: buildPimResources(entities, modelId) },
+  };
 }
 
 export function createPimModel(

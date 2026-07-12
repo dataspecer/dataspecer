@@ -42,14 +42,7 @@ export class VisualModelInModelStore extends BaseModelInModelStore implements Mo
   }
 
   protected override applyOperation(operation: Operation, mutableState: EntityRecord): void {
-    const changes = applyOperationsToVisualModel(mutableState, [operation]);
-    for (const change of changes) {
-      if (change.next === null) {
-        delete mutableState[change.previous!.id];
-      } else {
-        mutableState[change.next.id] = change.next;
-      }
-    }
+    applyOperationsToVisualModel(mutableState, [operation]);
   }
 }
 

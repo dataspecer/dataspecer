@@ -76,35 +76,45 @@ export abstract class BaseModelInModelStore<BaseEntityType extends Entity = Enti
   protected abstract loadInternal(): Promise<ModelState<BaseEntityType>>;
 
   /**
-   * Function to load the initial state of the model for newly created models.
+   * Hook for newly created models. Sets up any runtime state the model needs
+   * and returns the operations that create the model's initial entities. The
+   * default is no runtime state and no operations, i.e. an empty model.
    */
-  protected loadInitialStateInternal(): void {
+  protected createNewInternal(): Operation[] {
+    return [];
+  }
+
+  /**
+   * Initializes the model as freshly created (e.g. as a reaction to a
+   * {@link CreateModelOperation} on the project model), without fetching
+   * anything from the backend. The initial state is obtained by applying
+   * operations (see {@link createNewInternal}) to an empty state under the
+   * given transaction. The applied operations are returned so that the caller
+   * can record them as part of that transaction. Marks the model dirty so
+   * that it gets persisted on the next {@link save}.
+   */
+  createNew(transactionId: string): { operations: Operation[]; entityChanges: EntityChange[] } {
     this.initializeState({
       entities: {},
       operations: [],
     });
+    const operations = this.createNewInternal();
+    const { entityChanges } = this.applyOperations(transactionId, operations);
+    return { operations, entityChanges };
   }
 
-  async load(doNotFetch: boolean = false): Promise<void> {
-    if (!doNotFetch) {
-      const oldEntities = this.state.entities;
-      this.state = await this.loadInternal();
-      this.dirty = false;
-      const changes = diffEntities(oldEntities, this.state.entities);
-      this.notifyAboutExternalChanges(changes);
-    } else {
-      // Initializes the model as freshly created (e.g. as a reaction to a
-      // {@link CreateModelOperation} on the project model), without fetching
-      // anything from the backend. Marks the model dirty so that it gets
-      // persisted on the next {@link save}.
-      this.loadInitialStateInternal();
-    }
+  async load(): Promise<void> {
+    const oldEntities = this.state.entities;
+    this.state = await this.loadInternal();
+    this.dirty = false;
+    const changes = diffEntities(oldEntities, this.state.entities);
+    this.notifyAboutExternalChanges(changes);
   }
 
   /**
    * Synchronously sets the model state, bypassing any diffing/notification.
-   * Intended to be used by {@link createNew} (and its overrides) to set up
-   * the initial state of a freshly created model.
+   * Intended to be used by {@link createNew} to set up the initial state of a
+   * freshly created model.
    */
   protected initializeState(state: ModelState<BaseEntityType>): void {
     this.state = state;

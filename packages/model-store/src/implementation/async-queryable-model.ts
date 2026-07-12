@@ -3,7 +3,7 @@ import type { PackageService } from "@dataspecer/core-v2/project";
 import { type ExternalSemanticModel } from "@dataspecer/core-v2/semantic-model/simplified";
 import { CimAdapterWrapper } from "@dataspecer/core-v2/semantic-model/v1-adapters";
 import type { IriProvider } from "@dataspecer/core/cim/index";
-import type { Entity, EntityChange, EntityChangeDeleted, EntityRecord } from "@dataspecer/core/entity-model";
+import { diffEntities, type Entity, type EntityChange, type EntityChangeDeleted, type EntityRecord } from "@dataspecer/core/entity-model";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
 import type { Model, ModelIdentifier } from "@dataspecer/core/model";
@@ -105,15 +105,7 @@ export class AsyncQueryableModelInModelStore extends BaseModelInModelStore imple
   }
 
   protected applyOperation(operation: Operation, mutableState: EntityRecord<QueryEntity>): void {
-    if (isAddQueryOperation(operation)) {
-      if (!mutableState[operation.query]) {
-        mutableState[operation.query] = queryStringToQueryEntity(operation.query);
-      }
-    } else if (isRemoveQueryOperation(operation)) {
-      delete mutableState[operation.query];
-    } else {
-      throw new Error("Unsupported operation: " + operation.type);
-    }
+    applyOperationsToAsyncQueryableModel(mutableState, [operation]);
   }
 
   public override applyOperations(transactionId: string, operations: Operation[]): ApplyOperationResult {
@@ -234,12 +226,9 @@ export class AsyncQueryableModelInModelStore extends BaseModelInModelStore imple
    * but the query adapter must still be set up before any query operations
    * can be applied.
    */
-  override loadInitialStateInternal(): void {
+  protected override createNewInternal(): Operation[] {
     this.queryAdapter = this.createQueryAdapter();
-    this.initializeState({
-      entities: {},
-      operations: [],
-    });
+    return [];
   }
 
   /**
@@ -261,12 +250,48 @@ export class AsyncQueryableModelInModelStore extends BaseModelInModelStore imple
    * Serializes the part of the model that is actually stored on the backend.
    */
   private serializeModel(state: ModelState): unknown {
-    return {
-      type: QUERYABLE_MODEL,
-      id: this.id,
-      queries: Object.values(state.entities as EntityRecord<QueryEntity>).map(queryEntityToQueryString),
-    };
+    return asyncQueryableModelEntitiesToSerialization(this.id, state.entities);
   }
+}
+
+/**
+ * Applies async queryable model operations (add/remove query) to the given
+ * entities and returns the net changes. The entities are modified in place.
+ * Note that this only manipulates the query entities; fetching the semantic
+ * entities the queries resolve to is up to the caller, see
+ * {@link resolveAsyncQueryableModelEntities}.
+ *
+ * @todo Move to a separate `apply-operations.ts` file outside of the model
+ *  store package.
+ */
+export function applyOperationsToAsyncQueryableModel(entities: EntityRecord, operations: Operation[]): EntityChange[] {
+  const previous = { ...entities };
+
+  for (const operation of operations) {
+    if (isAddQueryOperation(operation)) {
+      if (!entities[operation.query]) {
+        entities[operation.query] = queryStringToQueryEntity(operation.query);
+      }
+    } else if (isRemoveQueryOperation(operation)) {
+      delete entities[operation.query];
+    } else {
+      throw new Error("Unsupported operation: " + operation.type);
+    }
+  }
+
+  return diffEntities(previous, entities);
+}
+
+/**
+ * Serializes the async queryable (SGOV) model, i.e. only its queries. Inverse
+ * of {@link serializationToAsyncQueryableModelEntities}.
+ */
+export function asyncQueryableModelEntitiesToSerialization(modelId: ModelIdentifier, entities: EntityRecord): unknown {
+  return {
+    type: QUERYABLE_MODEL,
+    id: modelId,
+    queries: Object.values(entities).filter(isQueryEntity).map(queryEntityToQueryString),
+  };
 }
 
 /**

@@ -2,7 +2,7 @@ import type { PackageService } from "@dataspecer/core-v2/project";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import type { Model, ModelIdentifier } from "@dataspecer/core/model";
 import type { Operation } from "@dataspecer/core/operation";
-import { SetEntityOperationType, UpdateEntityOperationType, type SetEntityOperation, type UpdateEntityOperation } from "@dataspecer/core/operation";
+import { createSetEntityOperation, SetEntityOperationType, UpdateEntityOperationType, type SetEntityOperation, type UpdateEntityOperation } from "@dataspecer/core/operation";
 import { BaseModelInModelStore, type ModelState } from "./base.ts";
 import type { ModelInDefaultFrontendModelStore } from "./implementation.ts";
 import { serializationToBlobModelEntities } from "@dataspecer/core/entity-model/utils";
@@ -83,12 +83,11 @@ export class BlobModelInModelStore extends BaseModelInModelStore implements Mode
     };
   }
 
-  override loadInitialStateInternal(): void {
-    // A blob model always has exactly one entity even if empty
-    this.initializeState({
-      entities: serializationToBlobModelEntities(this.id, {}),
-      operations: [],
-    });
+  /**
+   * A blob model always has exactly one entity even if empty.
+   */
+  protected override createNewInternal(): Operation[] {
+    return [createSetEntityOperation(serializationToBlobModelEntities(this.id, {})[this.id]!)];
   }
 
   protected async saveInternal(state: ModelState): Promise<void> {
