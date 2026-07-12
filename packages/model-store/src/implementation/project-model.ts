@@ -88,6 +88,15 @@ export class ProjectModelInModelStore extends BaseModelInModelStore<ProjectModel
     return { creations, deletions };
   }
 
+  /**
+   * Returns the given deletions to the pending state, so that they are
+   * retried by the next synchronization. Used when a save fails after the
+   * pending changes were already taken.
+   */
+  restorePendingDeletions(deletions: ModelIdentifier[]): void {
+    deletions.forEach((modelId) => this.pendingDeletions.add(modelId));
+  }
+
   protected async loadInternal(): Promise<ModelState<ProjectModelEntity>> {
     const entities = await loadProjectStructure(this.service, this.rootProjectId);
     return {

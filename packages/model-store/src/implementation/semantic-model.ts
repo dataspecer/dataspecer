@@ -1,8 +1,9 @@
+import { LOCAL_SEMANTIC_MODEL } from "@dataspecer/core-v2/model/known-models";
 import type { PackageService } from "@dataspecer/core-v2/project";
-import { applyOperationToSemanticModel, semanticModelEntitiesToSerialization, serializationToSemanticModelEntities } from "@dataspecer/core-v2/semantic-model";
+import { applyOperationsToSemanticModel, semanticModelEntitiesToSerialization, serializationToSemanticModelEntities } from "@dataspecer/core-v2/semantic-model";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import type { Model, ModelIdentifier } from "@dataspecer/core/model";
-import type { Operation } from "@dataspecer/core/operation";
+import { createSetEntityOperation, type Operation } from "@dataspecer/core/operation";
 import { BaseModelInModelStore, type ModelState } from "./base.ts";
 import type { ModelInDefaultFrontendModelStore } from "./implementation.ts";
 
@@ -35,11 +36,8 @@ export class SemanticModelInModelStore extends BaseModelInModelStore implements 
    * {@link semanticModelEntitiesToSerialization}, which throws without it) -
    * even when it otherwise has no entities.
    */
-  override loadInitialStateInternal(): void {
-    this.initializeState({
-      entities: serializationToSemanticModelEntities({ modelId: this.id }),
-      operations: [],
-    });
+  protected override createNewInternal(): Operation[] {
+    return [createSetEntityOperation({ id: this.id, type: [LOCAL_SEMANTIC_MODEL] })];
   }
 
   protected async saveInternal(state: ModelState): Promise<void> {
@@ -52,14 +50,7 @@ export class SemanticModelInModelStore extends BaseModelInModelStore implements 
   }
 
   protected override applyOperation(operation: Operation, mutableState: EntityRecord): void {
-    const { changes } = applyOperationToSemanticModel(mutableState, [operation]);
-    for (const change of changes) {
-      if (change.next === null) {
-        delete mutableState[change.previous!.id];
-      } else {
-        mutableState[change.next.id] = change.next;
-      }
-    }
+    applyOperationsToSemanticModel(mutableState, [operation]);
   }
 }
 
