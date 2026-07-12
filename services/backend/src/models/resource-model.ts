@@ -199,6 +199,25 @@ export class ResourceModel {
     }
 
     /**
+     * Returns the IRI of the direct parent package of a resource, or null if
+     * it is a root resource or does not exist.
+     */
+    async getParentIri(iri: string): Promise<string | null> {
+        const row = await this.prismaClient.resource.findFirst({
+            select: {parentResourceId: true},
+            where: {iri},
+        });
+        if (!row?.parentResourceId) {
+            return null;
+        }
+        const parent = await this.prismaClient.resource.findUnique({
+            select: {iri: true},
+            where: {id: row.parentResourceId},
+        });
+        return parent?.iri ?? null;
+    }
+
+    /**
      * Returns data about the package and its sub-resources.
      */
     async getPackage(iri: string) {

@@ -1,5 +1,23 @@
+import type { Entity } from "@dataspecer/core/entity-model";
 import type { Transaction } from "@dataspecer/core/operation";
 import { PrismaClient } from "@prisma/client";
+
+/**
+ * Low-level log of entity changes made by a transaction: for each model, the
+ * changed entities keyed by their id. In up events the value is the entity
+ * AFTER the transaction (null = removed), in down events BEFORE the
+ * transaction (null = did not exist yet).
+ */
+export type TransactionEvents = Record<string, Record<string, Entity | null>>;
+
+/**
+ * Transaction together with its optional up/down entity events. When the
+ * events are missing, they were not recorded for the transaction.
+ */
+export interface TransactionWithEvents extends Transaction {
+  upEvents?: TransactionEvents;
+  downEvents?: TransactionEvents;
+}
 
 export interface CollectedOperation {
   id: number;
@@ -48,7 +66,7 @@ export class TransactionModel {
    * After all transactions are created, the branch pointer is automatically
    * advanced to the last new transaction.
    */
-  async createTransactions(projectIri: string, transactions: Transaction[], branch: string | number = "main"): Promise<void> {
+  async createTransactions(projectIri: string, transactions: TransactionWithEvents[], branch: string | number = "main"): Promise<void> {
     const project = await this.prismaClient.resource.findFirst({ select: { id: true }, where: { iri: projectIri } });
     if (project === null) {
       throw new Error("Project resource not found.");
@@ -81,6 +99,8 @@ export class TransactionModel {
       const created = await this.prismaClient.transaction.create({
         data: {
           projectId: project.id,
+          upEvents: transaction.upEvents === undefined ? undefined : JSON.stringify(transaction.upEvents),
+          downEvents: transaction.downEvents === undefined ? undefined : JSON.stringify(transaction.downEvents),
           parents: parentId === null ? undefined : { create: [{ parentTransactionId: parentId }] },
           operations: {
             create: transaction.operations.map((operation, order) => ({
