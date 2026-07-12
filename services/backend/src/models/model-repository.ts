@@ -5,7 +5,7 @@ import type { CoreResourceAndEntity } from "@dataspecer/core/core";
 import { serializationToStructureModelEntities, structureModelEntitiesToSerialization } from "@dataspecer/core/data-psm";
 import { diffEntities, type EntityRecord } from "@dataspecer/core/entity-model";
 import { serializationToBlobModelEntities } from "@dataspecer/core/entity-model/utils";
-import type { Operation, Transaction } from "@dataspecer/core/operation";
+import { isUndoOperation, type Operation, type Transaction } from "@dataspecer/core/operation";
 import {
   asyncQueryableModelEntitiesToSerialization,
   pimModelEntitiesToSerialization,
@@ -13,9 +13,16 @@ import {
 } from "@dataspecer/model-store/implementation";
 import { serializationToVisualModelEntities, visualModelEntitiesToSerialization } from "@dataspecer/visual-model";
 import { v4 as uuidv4 } from "uuid";
-import { applyOperationsToModelEntities, diffModelEntitiesToOperations, entityChangesToEvents, isBlobModelType } from "../utils/model-operations.ts";
+import {
+  applyOperationsToModelEntities,
+  applyUndoOperationToModelEntities,
+  diffModelEntitiesToOperations,
+  entityChangesToEvents,
+  isBlobModelType,
+  type UndoHistoryEntry,
+} from "../utils/model-operations.ts";
 import type { ResourceModel } from "./resource-model.ts";
-import type { TransactionEvents, TransactionModel, TransactionWithEvents } from "./transaction-model.ts";
+import type { HistoryTransaction, TransactionEvents, TransactionModel, TransactionWithEvents } from "./transaction-model.ts";
 
 /**
  * Id of the virtual project model that lists the models of a project. It has
@@ -263,17 +270,68 @@ export class ModelRepository {
       return model;
     };
 
+    // History of the branch the transactions are appended to, loaded lazily
+    // when the first undo operation has to be interpreted.
+    let storedHistory: HistoryTransaction[] | null = null;
+    const getStoredHistory = async () => (storedHistory ??= await this.transactionModel.getBranchHistory(projectIri));
+
+    // Projects the history a model's current state reflects - the stored
+    // transactions followed by the ones of this batch already applied - onto
+    // the given model, as needed to interpret an undo operation dispatched
+    // to it.
+    const getModelHistory = async (modelId: string, processedTransactions: TransactionWithEvents[]): Promise<UndoHistoryEntry[]> => {
+      const stored = (await getStoredHistory()).map((transaction) => ({
+        clientId: transaction.clientId,
+        downEvents: transaction.downEvents,
+        operations: transaction.operations,
+      }));
+      const processed = processedTransactions.map((transaction) => ({
+        clientId: transaction.id,
+        downEvents: transaction.downEvents ?? {},
+        operations: transaction.operations,
+      }));
+      return [...stored, ...processed].map((transaction) => ({
+        clientId: transaction.clientId,
+        operations: transaction.operations.filter((operation) => operation.modelId === modelId).map((operation) => operation.operation),
+        downEvents: transaction.downEvents === null ? null : (transaction.downEvents[modelId] ?? {}),
+      }));
+    };
+
     // Apply the transactions to the models in memory one by one, recording
     // for each transaction its up/down events. Models whose operations are
     // only recorded (see getWorkingModel above) have no events.
-    const transactionsWithEvents = await this.buildTransactionsWithEvents(transactions, async (modelId, operations) => {
+    const transactionsWithEvents = await this.buildTransactionsWithEvents(transactions, async (modelId, operations, processedTransactions) => {
       const model = await getWorkingModel(modelId);
       if (model === null) {
         return null;
       }
 
       const previousEntities = model.entities;
-      model.entities = applyOperationsToModelEntities(modelId, model.modelType, previousEntities, operations);
+
+      let working = previousEntities;
+      if (operations.some(isUndoOperation)) {
+        // An undo operation cancels a whole transaction, which may span
+        // several models; it arrives dispatched to each of them and is
+        // interpreted here against the recorded history of this model, see
+        // applyUndoOperationToModelEntities.
+        const modelHistory = await getModelHistory(modelId, processedTransactions);
+        for (const operation of operations) {
+          if (isUndoOperation(operation)) {
+            const undone = applyUndoOperationToModelEntities(modelId, model.modelType, working, operation, modelHistory);
+            if (undone === null) {
+              console.warn(`Cannot interpret undo of transaction "${operation.cancelTransactionId}" in model "${modelId}". The operation is only recorded.`);
+            } else {
+              working = undone;
+            }
+          } else {
+            working = applyOperationsToModelEntities(modelId, model.modelType, working, [operation]);
+          }
+        }
+      } else {
+        working = applyOperationsToModelEntities(modelId, model.modelType, working, operations);
+      }
+
+      model.entities = working;
       model.hadOperations = true;
 
       return { previousEntities, nextEntities: model.entities, isBlob: isBlobModelType(model.modelType) };
@@ -365,11 +423,16 @@ export class ModelRepository {
    * The given callback applies the operations of one transaction targeting
    * one model (in order) and returns the model's entity state before and
    * after them, plus whether the model is a blob; null means the model's
-   * events are not recorded.
+   * events are not recorded. It also receives the transactions of this batch
+   * processed so far, with their events.
    */
   private async buildTransactionsWithEvents(
     transactions: Transaction[],
-    applyToModel: (modelId: string, operations: Operation[]) => Promise<{ previousEntities: EntityRecord; nextEntities: EntityRecord; isBlob: boolean } | null>,
+    applyToModel: (
+      modelId: string,
+      operations: Operation[],
+      processedTransactions: TransactionWithEvents[],
+    ) => Promise<{ previousEntities: EntityRecord; nextEntities: EntityRecord; isBlob: boolean } | null>,
   ): Promise<TransactionWithEvents[]> {
     const transactionsWithEvents: TransactionWithEvents[] = [];
 
@@ -387,7 +450,7 @@ export class ModelRepository {
       }
 
       for (const [modelId, operations] of operationsByModel) {
-        const applied = await applyToModel(modelId, operations);
+        const applied = await applyToModel(modelId, operations, transactionsWithEvents);
         if (applied === null) {
           continue;
         }
