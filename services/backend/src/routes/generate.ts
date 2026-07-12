@@ -8,7 +8,7 @@ import express from "express";
 import { z } from "zod";
 import configuration from "../configuration.ts";
 import { ZipStreamDictionary } from "../utils/zip-stream-dictionary.ts";
-import { resourceModel } from "../main.ts";
+import { modelRepository } from "../main.ts";
 import { asyncHandler } from "../utils/async-handler.ts";
 import { getContentDispositionAttachmentHeaderValue, safeAsciiFileName, safeUnicodeFileName } from "../utils/safe-file-name.ts";
 import { getModelsForPackage } from "../utils/backend-model-store.ts";
@@ -57,7 +57,7 @@ async function generateArtifacts(
   queryParams: string = "",
   singleFilePath: string | null = null,
 ) {
-  const allModels = await getModelsForPackage(packageIri, resourceModel);
+  const allModels = await getModelsForPackage(packageIri, modelRepository);
 
   const { store, dataSpecifications } = getDataSpecificationWithModels(packageIri, allModels);
   const generator = new DefaultArtifactBuilder(store as CoreResourceReader, dataSpecifications, configuration.configuration, fetch, allModels);
@@ -72,7 +72,7 @@ export const getZip = asyncHandler(async (request: express.Request, response: ex
   });
   const query = querySchema.parse(request.query);
 
-  const resource = await resourceModel.getPackage(query.iri);
+  const resource = await modelRepository.getPackage(query.iri);
 
   if (!resource) {
     response.status(404).send({ error: "Package does not exist." });
@@ -113,7 +113,7 @@ export const getSingleFile = asyncHandler(async (request: express.Request, respo
       .pipe(z.boolean()),
   });
   const query = querySchema.parse(request.query);
-  const resource = await resourceModel.getPackage(query.iri);
+  const resource = await modelRepository.getPackage(query.iri);
   if (!resource) {
     response.status(404).send({ error: "Package does not exist." });
     return;

@@ -1,17 +1,17 @@
 import JSZip from "jszip";
-import { ResourceModel } from "../models/resource-model.ts";
+import { ModelRepository } from "../models/model-repository.ts";
 
 const FILE_EXTENSION_REGEX = /^\.([-0-9a-zA-Z]+)\.json$/;
 const RESOURCE_IN_PACKAGE_REGEX = /^([-0-9a-zA-Z]+)\.meta\.json$/;
 const PACKAGES_IN_PACKAGE_REGEX = /^([-0-9a-zA-Z]+\/)\.meta\.json/;
 
 export class PackageImporter {
-  private readonly resourceModel: ResourceModel;
+  private readonly modelRepository: ModelRepository;
   private zip!: JSZip;
   private rootToWrite = "http://dataspecer.com/packages/local-root";
 
-  constructor(resourceModel: ResourceModel) {
-    this.resourceModel = resourceModel;
+  constructor(modelRepository: ModelRepository) {
+    this.modelRepository = modelRepository;
   }
 
   async doImport(buffer: Buffer): Promise<string[]> {
@@ -36,7 +36,7 @@ export class PackageImporter {
     const metaFile = await this.zip.file(metaFileName)!.async("text");
     const meta = JSON.parse(metaFile);
 
-    await this.resourceModel.createPackage(parentPackageIri, meta.iri, meta.userMetadata);
+    await this.modelRepository.createPackage(parentPackageIri, meta.iri, meta.userMetadata);
     await this.setBlobsForResource(dirPath, meta.iri);
     const thisPackageIri = meta.iri;
 
@@ -68,7 +68,7 @@ export class PackageImporter {
     const metaFile = await this.zip.file(metaFileName)!.async("text");
     const meta = JSON.parse(metaFile);
 
-    await this.resourceModel.createResource(parentPackageIri, meta.iri, meta.types[0], meta.userMetadata);
+    await this.modelRepository.createResource(parentPackageIri, meta.iri, meta.types[0], meta.userMetadata);
     await this.setBlobsForResource(dirPath, meta.iri);
   }
 
@@ -97,7 +97,7 @@ export class PackageImporter {
         const blob = await this.zip.file(file)!.async("text");
         const blobJson = JSON.parse(blob);
 
-        await this.resourceModel.setResourceStoreJson(resourceIri, blobJson, blobName);
+        await this.modelRepository.setResourceStoreJson(resourceIri, blobJson, blobName);
       }
     }
   }

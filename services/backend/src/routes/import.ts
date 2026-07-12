@@ -20,9 +20,9 @@ import N3, { Quad_Object } from "n3";
 import { parse } from "node-html-parser";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
-import { prismaClient, resourceModel, transactionModel } from "../main.ts";
+import { modelRepository, prismaClient, transactionModel } from "../main.ts";
 import { BaseResource } from "../models/resource-model.ts";
-import { getModelsForPackage, loadModelEntities } from "../utils/backend-model-store.ts";
+import { getModelsForPackage } from "../utils/backend-model-store.ts";
 import { asyncHandler } from "./../utils/async-handler.ts";
 import type { CoreResource } from "@dataspecer/core/core/core-resource";
 import { canonicalizeIds } from "@dataspecer/structure-model";
@@ -49,11 +49,11 @@ function jsonLdLiteralToLanguageString(literal: Quad_Object[]): LanguageString {
  * Creates a resource if it doesn't exist, or updates its metadata if it already exists.
  */
 async function ensureResource(parentIri: string, iri: string, type: string, userMetadata: any): Promise<void> {
-  const existing = await resourceModel.getResource(iri);
+  const existing = await modelRepository.getResource(iri);
   if (existing) {
-    await resourceModel.updateResource(iri, userMetadata);
+    await modelRepository.updateResource(iri, userMetadata);
   } else {
-    await resourceModel.createResource(parentIri, iri, type, userMetadata);
+    await modelRepository.createResource(parentIri, iri, type, userMetadata);
   }
 }
 
@@ -61,11 +61,11 @@ async function ensureResource(parentIri: string, iri: string, type: string, user
  * Creates a package if it doesn't exist, or updates its metadata if it already exists.
  */
 async function ensurePackage(parentIri: string, iri: string, userMetadata: any): Promise<void> {
-  const existing = await resourceModel.getResource(iri);
+  const existing = await modelRepository.getResource(iri);
   if (existing) {
-    await resourceModel.updateResource(iri, userMetadata);
+    await modelRepository.updateResource(iri, userMetadata);
   } else {
-    await resourceModel.createPackage(parentIri, iri, userMetadata);
+    await modelRepository.createPackage(parentIri, iri, userMetadata);
   }
 }
 
@@ -73,11 +73,11 @@ async function ensurePackage(parentIri: string, iri: string, userMetadata: any):
  * Deletes children of a package that are not in the touchedIris set.
  */
 async function deleteUntouchedChildren(packageIri: string, touchedIris: Set<string>): Promise<void> {
-  const pkg = await resourceModel.getPackage(packageIri);
+  const pkg = await modelRepository.getPackage(packageIri);
   if (pkg?.subResources) {
     for (const child of pkg.subResources) {
       if (!touchedIris.has(child.iri)) {
-        await resourceModel.deleteResource(child.iri);
+        await modelRepository.deleteResource(child.iri);
       }
     }
   }
@@ -103,7 +103,7 @@ async function getParentIri(resourceIri: string): Promise<string | null> {
  * Builds a map from importedFromUrl/documentBaseUrl to child IRI for matching during reload.
  */
 async function getExistingChildrenByUrl(packageIri: string): Promise<Map<string, string>> {
-  const pkg = await resourceModel.getPackage(packageIri);
+  const pkg = await modelRepository.getPackage(packageIri);
   const map = new Map<string, string>();
   if (pkg?.subResources) {
     for (const child of pkg.subResources) {
@@ -130,7 +130,7 @@ async function importRdfsModel(parentIri: string, url: string, newIri: string, u
   serialization.id = newIri;
   serialization.alias = userMetadata?.label?.en ?? userMetadata?.label?.cs;
   await ensureResource(parentIri, newIri, RDFS_MODEL, userMetadata);
-  await resourceModel.setResourceStoreJson(newIri, serialization);
+  await modelRepository.setResourceStoreJson(newIri, serialization);
   return Object.values(wrapper.getEntities()) as SemanticModelEntity[];
 }
 
@@ -183,7 +183,7 @@ async function importAllStructureModels(urls: string[], iriPrefix: string, rootP
       resources: Object.fromEntries(model.model.map((e) => [e.iri, e])),
     };
 
-    await resourceModel.setResourceStoreJson(model.iri, modelData);
+    await modelRepository.setResourceStoreJson(model.iri, modelData);
   }
 }
 
@@ -262,7 +262,7 @@ async function importRdfsAndDsv(parentIri: string, rdfsUrl: string | null, dsvUr
       baseIri: bestPrefix,
     } as any;
 
-    await resourceModel.setResourceStoreJson(id, result);
+    await modelRepository.setResourceStoreJson(id, result);
   }
 
   /**
@@ -340,7 +340,7 @@ async function legacyDsvImport(store: N3.Store, url: string, baseIri: string, pa
 
   // Create package
   const newPackageIri = parentIri + "/" + uuidv4();
-  const pkg = await resourceModel.createPackage(parentIri, newPackageIri, {
+  const pkg = await modelRepository.createPackage(parentIri, newPackageIri, {
     label: name,
     description,
     importedFromUrl: url,
@@ -393,7 +393,7 @@ async function legacyDsvImport(store: N3.Store, url: string, baseIri: string, pa
     entities,
   );
 
-  return [(await resourceModel.getResource(newPackageIri))!, entities];
+  return [(await modelRepository.getResource(newPackageIri))!, entities];
 }
 
 /**
@@ -441,7 +441,7 @@ async function dsvImport(store: N3.Store, url: string, baseIri: string, parentIr
       ...DataSpecificationConfigurator.getFromObject(configurationModel),
       publicBaseUrl: rootHref,
     });
-    await resourceModel.setResourceStoreJson(rootPackageId + "/generator-configuration", configuration);
+    await modelRepository.setResourceStoreJson(rootPackageId + "/generator-configuration", configuration);
   }
 
   // Identify important resources to import
@@ -498,13 +498,13 @@ async function dsvImport(store: N3.Store, url: string, baseIri: string, parentIr
     await deleteUntouchedChildren(rootPackageId, touchedModelIds);
   }
 
-  return [(await resourceModel.getResource(rootPackageId))!, allEntitiesFromProfiled];
+  return [(await modelRepository.getResource(rootPackageId))!, allEntitiesFromProfiled];
 }
 
 /**
  * Diffs two snapshots of model states (as produced by {@link getModelsForPackage}
- * or single {@link loadModelEntities} calls) and converts the differences into
- * operations, tagged with the id of the model they belong to.
+ * or single {@link ModelRepository.getModelEntities} calls) and converts the
+ * differences into operations, tagged with the id of the model they belong to.
  */
 function diffModelStatesToOperations(previous: Record<string, EntityRecord>, next: Record<string, EntityRecord>): OperationInModel[] {
   const modelIds = new Set([...Object.keys(previous), ...Object.keys(next)]);
@@ -612,7 +612,7 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
   const query = querySchema.parse(request.query);
 
   // Get the existing package
-  const existingResource = await resourceModel.getResource(query.iri);
+  const existingResource = await modelRepository.getResource(query.iri);
   if (!existingResource) {
     response.status(404).send({ error: "Resource not found" });
     return;
@@ -620,12 +620,12 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
 
   // Check if it is a PIM wrapper and if so, we can reload it directly
   if (existingResource.types.includes(RDFS_MODEL)) {
-    const previousEntities = await loadModelEntities(existingResource.iri, RDFS_MODEL, resourceModel);
+    const previousEntities = (await modelRepository.getModelEntities(existingResource.iri))!;
 
-    const data = await resourceModel.getResourceStoreJson(existingResource.iri) as {urls: string[]};
+    const data = await modelRepository.getResourceStoreJson(existingResource.iri) as {urls: string[]};
     const bodyUrls = (request.body as { urls?: string[] })?.urls;
     if (bodyUrls) {
-      await resourceModel.setResourceStoreJson(existingResource.iri, { ...data, urls: bodyUrls });
+      await modelRepository.setResourceStoreJson(existingResource.iri, { ...data, urls: bodyUrls });
     }
     const urls = bodyUrls ?? data.urls;
     const newModel = await createRdfsModel(urls, httpFetch);
@@ -641,7 +641,7 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
       await transactionModel.createTransactions(projectIri, [{ id: uuidv4(), operations }], branchId);
     }
 
-    response.send(await resourceModel.getResource(existingResource.iri));
+    response.send(await modelRepository.getResource(existingResource.iri));
     return;
   }
 
@@ -658,11 +658,11 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
   // Note: blob updates here are a known limitation — blobs are not yet connected
   // to branches, so the diff is recorded on the evolution branch even though the
   // blob is also written. This will be resolved when blobs support branching.
-  const previousModels = await getModelsForPackage(query.iri, resourceModel);
+  const previousModels = await getModelsForPackage(query.iri, modelRepository);
 
   const [result] = await importFromUrl("", url, query.iri);
 
-  const nextModels = await getModelsForPackage(query.iri, resourceModel);
+  const nextModels = await getModelsForPackage(query.iri, modelRepository);
   const operations = diffModelStatesToOperations(previousModels, nextModels);
   if (operations.length > 0) {
     const projectIri = await getParentIri(query.iri) ?? query.iri;

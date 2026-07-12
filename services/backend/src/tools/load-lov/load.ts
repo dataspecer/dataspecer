@@ -5,7 +5,9 @@ import { readFileSync } from 'fs';
 import { Parser, Store } from 'n3';
 import path from 'path';
 import { LocalStoreModel } from '../../models/local-store-model.ts';
+import { ModelRepository } from '../../models/model-repository.ts';
 import { ResourceModel } from '../../models/resource-model.ts';
+import { TransactionModel } from '../../models/transaction-model.ts';
 import { objectsToLanguageString } from './better-n3-store.ts';
 import type { SemanticModelEntity } from '@dataspecer/core-v2/semantic-model/concepts';
 
@@ -55,15 +57,15 @@ const filename = "./lov.nq";
 
     const prisma = new PrismaClient();
     const storeModel = new LocalStoreModel("./database/stores");
-    const resourceModel = new ResourceModel(storeModel, prisma);
+    const modelRepository = new ModelRepository(new ResourceModel(storeModel, prisma), new TransactionModel(prisma));
 
     // Override the package
-    if (await resourceModel.getPackage(LOD_ROOT)) {
+    if (await modelRepository.getPackage(LOD_ROOT)) {
         console.log("Root package for LOD already exists. Removing.");
-        await resourceModel.deleteResource(LOD_ROOT);
+        await modelRepository.deleteResource(LOD_ROOT);
     }
 
-    await resourceModel.createPackage(null, LOD_ROOT, {
+    await modelRepository.createPackage(null, LOD_ROOT, {
         label: {
             cs: "Propojené otevřené slovníky",
             en: "Linked Open Vocabularies"
@@ -103,19 +105,19 @@ const filename = "./lov.nq";
 
         const packageIri = "https://dataspecer.com/resources/import/lod?vocabulary=" + encodeURIComponent(vocabulary.id);
 
-        await resourceModel.createPackage(LOD_ROOT, packageIri, {
+        await modelRepository.createPackage(LOD_ROOT, packageIri, {
             label,
             description: vocabulary.description,
         });
 
         // Create semantic model
         {
-            await resourceModel.createResource(packageIri, vocabulary.id, LOCAL_SEMANTIC_MODEL, {
+            await modelRepository.createResource(packageIri, vocabulary.id, LOCAL_SEMANTIC_MODEL, {
                 label,
                 description: vocabulary.description,
                 tags: ["imported"]
             });
-            await resourceModel.setResourceStoreJson(vocabulary.id, {
+            await modelRepository.setResourceStoreJson(vocabulary.id, {
                 baseIri: vocabulary.namespaceUri,
                 entities: Object.fromEntries(vocabulary.entities.map(e => [e.id, e])),
                 modelAlias: label[Object.keys(label)[0]],

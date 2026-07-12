@@ -91,6 +91,19 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
         });
     }
 
+    async applyTransactions(projectId: string, transactions: Transaction[]): Promise<void> {
+        const response = await this.httpFetch(this.getTransactionsUrl(projectId, "/apply"), {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ transactions }),
+        });
+        if (response.status < 200 || response.status >= 300) {
+            throw new Error(`Failed to apply transactions on the backend, status ${response.status}.`);
+        }
+    }
+
     async getResourceJsonData(id: string, blobId?: string): Promise<object | null> {
         const result = await this.httpFetch(this.getBlobUrl(id, blobId));
         return (result.status >= 200 && result.status < 300) ? (await result.json() as object) : null;
@@ -254,8 +267,8 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
         return url;
     }
 
-    private getTransactionsUrl(projectIri: string): string {
-        let url = this.backendUrl + "/transactions";
+    private getTransactionsUrl(projectIri: string, suffix: string = ""): string {
+        let url = this.backendUrl + "/transactions" + suffix;
         url += "?" + "projectIri" + "=" + encodeURIComponent(projectIri);
         return url;
     }

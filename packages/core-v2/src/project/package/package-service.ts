@@ -54,6 +54,14 @@ export interface PackageService extends ResourceService {
      * chaining the given transactions together.
      */
     uploadTransactions(projectId: string, transactions: Transaction[]): Promise<void>;
+
+    /**
+     * Uploads transactions (in order) to the backend, which records them in
+     * the operation history and applies their operations to the stored
+     * models. Unlike {@link uploadTransactions}, this is the actual write of
+     * the models and thus throws when the backend rejects it.
+     */
+    applyTransactions(projectId: string, transactions: Transaction[]): Promise<void>;
 }
 
 export interface SemanticModelPackageService extends PackageService {
