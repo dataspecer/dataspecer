@@ -14,29 +14,6 @@ const transactionsBodySchema = z.object({
 });
 
 /**
- * Side-channel endpoint that stores transactions (in order) for a given
- * project. Each transaction is a set of operations applied atomically,
- * possibly to several models. The backend chains the given transactions
- * together, and to the project's previously stored transaction, if any.
- *
- * This does not affect the actual model data, which is stored separately as
- * full snapshots, see resource blob routes.
- */
-export const createTransactions = asyncHandler(async (request: express.Request, response: express.Response) => {
-    const querySchema = z.object({
-        projectIri: z.string().min(1),
-    });
-    const query = querySchema.parse(request.query);
-
-    const body = transactionsBodySchema.parse(request.body);
-
-    await transactionModel.createTransactions(query.projectIri, body.transactions);
-
-    response.sendStatus(204);
-    return;
-});
-
-/**
  * The new interface for writing models: stores the transactions (in order)
  * for a given project and applies their operations to the stored models,
  * updating the JSON snapshots. See {@link ModelRepository.applyTransactions}.
