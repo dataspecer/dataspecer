@@ -76,6 +76,7 @@ export function App() {
 }
 
 function Editor({ graph }: { graph: ApplicationGraph }) {
+  useAutosave();
   useUndoRedoShortcuts();
 
   const { undo, redo, pastStates, futureStates } = useStore(useEditorStore.temporal);
