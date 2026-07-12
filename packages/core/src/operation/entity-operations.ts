@@ -30,6 +30,10 @@ export function createRemoveEntityOperation(entityId: EntityIdentifier): RemoveE
   };
 }
 
+export function isRemoveEntityOperation(operation: Operation): operation is RemoveEntityOperation {
+  return operation.type === RemoveEntityOperationType;
+}
+
 /**
  * @see {@link SetEntityOperation}
  */
