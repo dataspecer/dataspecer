@@ -1,16 +1,17 @@
 import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
 import { ZipStreamDictionary } from "../utils/zip-stream-dictionary.ts";
-import { BaseResource, ResourceModel } from "../models/resource-model.ts";
+import { BaseResource } from "../models/resource-model.ts";
+import { ModelRepository } from "../models/model-repository.ts";
 import { currentVersion } from "../tools/migrations/index.ts";
 import configuration from "../configuration.ts";
 import crypto from 'node:crypto';
 
 export class PackageExporter {
-  resourceModel: ResourceModel;
+  modelRepository: ModelRepository;
   zipStreamDictionary!: ZipStreamDictionary;
 
-  constructor(resourceModel: ResourceModel) {
-    this.resourceModel = resourceModel;
+  constructor(modelRepository: ModelRepository) {
+    this.modelRepository = modelRepository;
   }
 
   async doExport(iri: string): Promise<Buffer> {
@@ -20,7 +21,7 @@ export class PackageExporter {
   }
 
   private async exportResource(iri: string, path: string) {
-    const resource = (await this.resourceModel.getResource(iri))!;
+    const resource = (await this.modelRepository.getResource(iri))!;
 
     let localNameCandidate = iri;
     if (iri.startsWith(path)) {
@@ -34,7 +35,7 @@ export class PackageExporter {
     if (resource.types.includes(LOCAL_PACKAGE)) {
       fullName += "/"; // Create directory
 
-      const pckg = (await this.resourceModel.getPackage(iri))!;
+      const pckg = (await this.modelRepository.getPackage(iri))!;
 
       for (const subResource of pckg.subResources) {
         await this.exportResource(subResource.iri, fullName);
@@ -45,7 +46,7 @@ export class PackageExporter {
     await this.writeBlob(fullName, "meta", metadata);
 
     for (const blobName of Object.keys(resource.dataStores)) {
-      const data = await this.resourceModel.getResourceStoreJson(iri, blobName);
+      const data = await this.modelRepository.getResourceStoreJson(iri, blobName);
       await this.writeBlob(fullName, blobName, data);
     }
   }

@@ -1,4 +1,4 @@
-import { prismaClient, resourceModel } from "../../main.ts";
+import { modelRepository, prismaClient } from "../../main.ts";
 import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { LanguageString, ReadOnlyMemoryStore } from "@dataspecer/core/core/index";
 import { PimStoreWrapper } from "@dataspecer/core-v2/semantic-model/v1-adapters";
@@ -11,12 +11,12 @@ const CIM = "http://dataspecer.com/resources/v1/cim";
 const GENERATOR_CONFIGURATION = "http://dataspecer.com/resources/v1/generator-configuration";
 
 export default async function () {
-  const roots = (await resourceModel.getRootResources()).filter(r => r.types.includes(LOCAL_PACKAGE));
+  const roots = (await modelRepository.getRootResources()).filter(r => r.types.includes(LOCAL_PACKAGE));
 
   for (const root of roots) {
-    const rootPackage = await resourceModel.getPackage(root.iri);
+    const rootPackage = await modelRepository.getPackage(root.iri);
     for (const pkg of (rootPackage?.subResources!.filter(r => r.types.includes(LOCAL_PACKAGE)) ?? [])) {
-      const finalPackage = await resourceModel.getPackage(pkg.iri);
+      const finalPackage = await modelRepository.getPackage(pkg.iri);
 
       // Is is data specification?
 
@@ -34,7 +34,7 @@ export default async function () {
           };
 
           // Process CIM
-          const cimData = await resourceModel.getResourceStoreJson(cim.iri);
+          const cimData = await modelRepository.getResourceStoreJson(cim.iri);
           const cimModels = cimData.models as string[];
           if (cimModels.length == 0) {
             packageData.sourceSemanticModelIds = ["https://dataspecer.com/adapters/sgov"];
@@ -43,15 +43,15 @@ export default async function () {
           } else {
             packageData.sourceSemanticModelIds = cimModels.map(m => `rdfs:${m}`);
           }
-          await resourceModel.deleteResource(cim.iri);
+          await modelRepository.deleteResource(cim.iri);
 
           // Process Generator configuration
-          const generatorConfigurationData = await resourceModel.getResourceStoreJson(generatorConfiguration.iri);
+          const generatorConfigurationData = await modelRepository.getResourceStoreJson(generatorConfiguration.iri);
           if (!Array.isArray(generatorConfigurationData.sourceSemanticModelIds) && generatorConfigurationData.client) {
             const client = generatorConfigurationData.client;
             delete generatorConfigurationData.client;
             packageData.userPreferences.client = client;
-            await resourceModel.setResourceStoreJson(generatorConfiguration.iri, generatorConfigurationData);
+            await modelRepository.setResourceStoreJson(generatorConfiguration.iri, generatorConfigurationData);
           }
 
           // Process PIM
@@ -62,7 +62,7 @@ export default async function () {
               representationType: LOCAL_SEMANTIC_MODEL,
             }
           });
-          const pimData = await resourceModel.getResourceStoreJson(pim.iri);
+          const pimData = await modelRepository.getResourceStoreJson(pim.iri);
           const reader = ReadOnlyMemoryStore.create(pimData.resources);
           const wrapper = new PimStoreWrapper(reader);
           wrapper.fetchFromPimStore();
@@ -74,19 +74,19 @@ export default async function () {
             baseIri: "",
             entities,
           };
-          await resourceModel.setResourceStoreJson(pim.iri, semanticModel);
+          await modelRepository.setResourceStoreJson(pim.iri, semanticModel);
 
           // Title
           // @ts-ignore
           const title = Object.values(pimData.resources).find((r: any) => r?.types?.includes("https://ofn.gov.cz/slovník/pim/Schema"))?.pimHumanLabel as LanguageString ?? {};
           if (!finalPackage?.userMetadata.label || Object.keys(finalPackage?.userMetadata.label).length === 0) {
-            resourceModel.updateResource(finalPackage!.iri, { label: title });
+            modelRepository.updateResource(finalPackage!.iri, { label: title });
           }
 
           // Process PSMs reverse associations
           const relationshipMapping = wrapper.relationshipMapping;
           for (const psm of finalPackage?.subResources.filter(r => r.types.includes(PSM)) ?? []) {
-            const psmData = await resourceModel.getResourceStoreJson(psm.iri);
+            const psmData = await modelRepository.getResourceStoreJson(psm.iri);
 
             for (const entity of Object.values(psmData.resources) as DataPsmResource[]) {
               if (DataPsmAssociationEnd.is(entity)) {
@@ -98,19 +98,19 @@ export default async function () {
               }
             }
 
-            await resourceModel.setResourceStoreJson(psm.iri, psmData);
+            await modelRepository.setResourceStoreJson(psm.iri, psmData);
 
             // Title
             // @ts-ignore
             const title = Object.values(psmData.resources).find((r: any) => r?.types?.includes("https://ofn.gov.cz/slovník/psm/Schema"))?.dataPsmHumanLabel as LanguageString ?? {};
             if (!psm.userMetadata.label || Object.keys(psm.userMetadata.label).length === 0) {
-              resourceModel.updateResource(psm.iri, { label: title });
+              modelRepository.updateResource(psm.iri, { label: title });
             }
           }
 
           // Store the package data
-          const originalData = await resourceModel.getResourceStoreJson(finalPackage!.iri) ?? {};
-          await resourceModel.setResourceStoreJson(finalPackage!.iri, {...originalData, ...packageData});
+          const originalData = await modelRepository.getResourceStoreJson(finalPackage!.iri) ?? {};
+          await modelRepository.setResourceStoreJson(finalPackage!.iri, {...originalData, ...packageData});
         } catch (e) {
           console.error(e);
         }

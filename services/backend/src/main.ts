@@ -5,6 +5,7 @@ import multer from "multer";
 import configuration from "./configuration.ts";
 import { Migrate } from "./migrations/migrate.ts";
 import { LocalStoreModel } from "./models/local-store-model.ts";
+import { ModelRepository } from "./models/model-repository.ts";
 import { ResourceModel } from "./models/resource-model.ts";
 import { TransactionModel } from "./models/transaction-model.ts";
 import { getDefaultConfiguration } from "./routes/configuration.ts";
@@ -28,14 +29,15 @@ import { getSimplifiedSemanticModel, setSimplifiedSemanticModel } from "./routes
 import { getSystemData } from "./routes/system.ts";
 import { useStaticSpaHandler } from "./static.ts";
 import { newApplicationProfile } from "./routes/new.ts";
-import { createTransactions, getTransactionsDiff, listBranches } from "./routes/transaction.ts";
+import { applyTransactions, createTransactions, getTransactionsDiff, listBranches } from "./routes/transaction.ts";
 
 // Create application models
 
 const storeModel = new LocalStoreModel("./database/stores");
 export const prismaClient = new PrismaClient();
-export const resourceModel = new ResourceModel(storeModel, prismaClient);
+const resourceModel = new ResourceModel(storeModel, prismaClient);
 export const transactionModel = new TransactionModel(prismaClient);
+export const modelRepository = new ModelRepository(resourceModel, transactionModel);
 const migration = new Migrate(prismaClient);
 
 let fullUrl: string;
@@ -100,6 +102,7 @@ application.get(apiBasename + "/resources/root-resources", getRootPackages); // 
 
 // Side-channel for storing operations performed on the project, see TransactionModel.
 application.post(apiBasename + "/transactions", createTransactions);
+application.post(apiBasename + "/transactions/apply", applyTransactions);
 application.get(apiBasename + "/transactions/branches", listBranches);
 application.get(apiBasename + "/transactions/log/:range", getTransactionsDiff);
 
@@ -182,14 +185,14 @@ if (configuration.staticFilesPath) {
       process.exit(0);
       } else {
     // Create local root
-    if (!(await resourceModel.getResource(configuration.localRootIri))) {
+    if (!(await modelRepository.getResource(configuration.localRootIri))) {
       console.log("There is no default root package. Creating one...");
-      await resourceModel.createPackage(null, configuration.localRootIri, configuration.localRootMetadata);
+      await modelRepository.createPackage(null, configuration.localRootIri, configuration.localRootMetadata);
     }
     // Create root models for the common use and for the v1 adapter.
-    if (!(await resourceModel.getResource(configuration.v1RootIri))) {
+    if (!(await modelRepository.getResource(configuration.v1RootIri))) {
       console.log("There is no root package for data specifications from v1 dataspecer. Creating one...");
-      await resourceModel.createPackage(null, configuration.v1RootIri, configuration.v1RootMetadata);
+      await modelRepository.createPackage(null, configuration.v1RootIri, configuration.v1RootMetadata);
     }
 
     application.listen(Number(configuration.port), () => {

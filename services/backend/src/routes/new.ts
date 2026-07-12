@@ -8,7 +8,7 @@ import { createStructureProfile } from "@dataspecer/structure-model/profile";
 import { type Request, type Response } from "express";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
-import { resourceModel } from "../main.ts";
+import { modelRepository } from "../main.ts";
 import { asyncHandler } from "../utils/async-handler.ts";
 import { importFromUrl } from "./import.ts";
 import { PimStoreWrapper } from "@dataspecer/core-v2/semantic-model/v1-adapters";
@@ -17,8 +17,6 @@ import { isSemanticModelClass, isSemanticModelRelationship, type SemanticModelCl
 /**
  * Creates a new application profile by importing specifications and setting up
  * semantic and visual models.
- *
- * todo: This depends directly on the resource model. Should use some abstraction layer for that.
  *
  * todo: This function depends on the knowledge how to perform import and conceptual and structural profiling.
  */
@@ -53,11 +51,11 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
   try {
     // Create package
     const packageIri = uuidv4();
-    await resourceModel.createPackage(query.parentIri, packageIri, {
+    await modelRepository.createPackage(query.parentIri, packageIri, {
       label: body.label ? { en: body.label } : {},
       description: body.description ? { en: body.description } : {},
     });
-    await resourceModel.setResourceStoreJson(packageIri, {});
+    await modelRepository.setResourceStoreJson(packageIri, {});
 
     // Import resources from all specification URLs
     const importResults = [];
@@ -73,7 +71,7 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
 
     // Check if all imports were successful
     if (!importResults.every((r) => r.success)) {
-      await resourceModel.deleteResource(packageIri);
+      await modelRepository.deleteResource(packageIri);
       response.status(400).json({
         error: "Failed to import one or more specifications",
         details: importResults.filter((r) => !r.success).map((r) => r.error?.toString()),
@@ -89,7 +87,7 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
     }
 
     // Create semantic model
-    await resourceModel.createResource(packageIri, packageIri + "/semantic-model", LOCAL_SEMANTIC_MODEL, {
+    await modelRepository.createResource(packageIri, packageIri + "/semantic-model", LOCAL_SEMANTIC_MODEL, {
       label: { en: profileLabel || "Profile" },
       description: { en: "Semantic model for the profile" },
       baseIri: body.baseIri,
@@ -103,15 +101,15 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
       const otherEntities: Entity[] = [];
       for (const importedPackage of importResults) {
         if (importedPackage.importedResource) {
-          const pckg = await resourceModel.getPackage(importedPackage.importedResource!.iri);
+          const pckg = await modelRepository.getPackage(importedPackage.importedResource!.iri);
           for (const subResource of pckg!.subResources) {
             if (subResource.types.includes(LOCAL_SEMANTIC_MODEL)) {
-              const subModelJson = await resourceModel.getResourceStoreJson(subResource.iri);
+              const subModelJson = await modelRepository.getResourceStoreJson(subResource.iri);
               if (subModelJson.entities) {
                 thisSpecificationEntities.push(...Object.values(subModelJson.entities as Record<string, Entity>));
               }
             } else if (subResource.types.includes(RDFS_MODEL)) {
-              const subModelJson = await resourceModel.getResourceStoreJson(subResource.iri);
+              const subModelJson = await modelRepository.getResourceStoreJson(subResource.iri);
               const model = new PimStoreWrapper(subModelJson.pimStore, subModelJson.id, "", subModelJson.urls);
               model.fetchFromPimStore();
               otherEntities.push(...Object.values(model.getEntities()));
@@ -171,7 +169,7 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
 
       profiledEntities = profileModel.getEntities();
     }
-    await resourceModel.setResourceStoreJson(packageIri + "/semantic-model", {
+    await modelRepository.setResourceStoreJson(packageIri + "/semantic-model", {
       type: LOCAL_SEMANTIC_MODEL,
       modelId: packageIri + "/semantic-model",
       modelAlias: profileLabel || "Profile",
@@ -181,11 +179,11 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
 
     // Create visual model
     const viewIri = packageIri + "/visual-model";
-    await resourceModel.createResource(packageIri, viewIri, VISUAL_MODEL, {
+    await modelRepository.createResource(packageIri, viewIri, VISUAL_MODEL, {
       label: { en: "View for " + (profileLabel || "Profile") },
       description: { en: "Visual model for the profile" },
     });
-    await resourceModel.setResourceStoreJson(viewIri, {
+    await modelRepository.setResourceStoreJson(viewIri, {
       "identifier": viewIri,
       "version": 1,
       "type": VISUAL_MODEL,
@@ -203,7 +201,7 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
     });
 
     // Update package metadata with the final label
-    await resourceModel.updateResource(packageIri, {
+    await modelRepository.updateResource(packageIri, {
       label: { en: profileLabel || "Profile" },
       description: body.description ? { en: body.description } : {},
     });
@@ -240,10 +238,10 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
 
       for (const importedPackage of importResults) {
         if (!importedPackage.importedResource) continue;
-        const pckg = await resourceModel.getPackage(importedPackage.importedResource!.iri);
+        const pckg = await modelRepository.getPackage(importedPackage.importedResource!.iri);
         for (const subResource of pckg!.subResources) {
           if (!subResource.types.includes(V1.PSM)) continue;
-          const subModelJson = await resourceModel.getResourceStoreJson(subResource.iri);
+          const subModelJson = await modelRepository.getResourceStoreJson(subResource.iri);
 
           if (subModelJson.resources) {
             const model = Object.values(subModelJson.resources) as CoreResource[];
@@ -263,18 +261,18 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
       for (const newStructure of result) {
         const schema = newStructure.find(DataPsmSchema.is)!;
 
-        await resourceModel.createResource(packageIri, schema.iri!, V1.PSM, {
+        await modelRepository.createResource(packageIri, schema.iri!, V1.PSM, {
           label: schema.dataPsmHumanLabel,
           description: schema.dataPsmHumanDescription,
         });
-        await resourceModel.setResourceStoreJson(schema.iri!, {
+        await modelRepository.setResourceStoreJson(schema.iri!, {
           operations: [],
           resources: Object.fromEntries(newStructure.map((r) => [r.iri!, r])),
         });
       }
     }
 
-    await resourceModel.setResourceStoreJson(packageIri, {
+    await modelRepository.setResourceStoreJson(packageIri, {
       modelCompositionConfiguration: {
         modelType: "application-profile",
         model: packageIri + "/semantic-model",

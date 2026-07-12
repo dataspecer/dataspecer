@@ -175,6 +175,30 @@ export class ResourceModel {
     }
 
     /**
+     * Returns the IRI of the project the resource belongs to, or null if the
+     * resource does not exist. The project is the ancestor that is a direct
+     * child of a root resource, or the resource itself if it is a root
+     * resource or a direct child of one.
+     */
+    async getProjectIri(iri: string): Promise<string | null> {
+        type ResourceRow = { iri: string, parentResourceId: number | null };
+        let current: ResourceRow | null = await this.prismaClient.resource.findFirst({select: {iri: true, parentResourceId: true}, where: {iri}});
+        if (current === null) {
+            return null;
+        }
+
+        while (current.parentResourceId !== null) {
+            const parent: ResourceRow | null = await this.prismaClient.resource.findFirst({select: {iri: true, parentResourceId: true}, where: {id: current.parentResourceId}});
+            if (parent === null || parent.parentResourceId === null) {
+                return current.iri;
+            }
+            current = parent;
+        }
+
+        return current.iri;
+    }
+
+    /**
      * Returns data about the package and its sub-resources.
      */
     async getPackage(iri: string) {

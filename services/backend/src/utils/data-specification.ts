@@ -1,7 +1,7 @@
 import { SemanticModelClass, SemanticModelGeneralization, SemanticModelRelationship, type SemanticModelRelationshipEnd } from "@dataspecer/core-v2/semantic-model/concepts";
 import type { DataPsmResource } from "@dataspecer/core/data-psm/model/data-psm-resource";
 import { getDataSpecificationWithModels } from "@dataspecer/specification/specification";
-import { resourceModel } from "../main.ts";
+import { modelRepository } from "../main.ts";
 import { getModelsForPackage } from "./backend-model-store.ts";
 
 export interface SemanticModelClassWithConceptIris extends SemanticModelClass {
@@ -45,7 +45,7 @@ export async function getSpecification(projectId: string): Promise<{
    */
   structureModels: DataPsmResource[][];
 }> {
-  const allModels = await getModelsForPackage(projectId, resourceModel);
+  const allModels = await getModelsForPackage(projectId, modelRepository);
   const specification = getDataSpecificationWithModels(projectId, allModels);
 
   // Aggregated semantic model is a single model containing entities.

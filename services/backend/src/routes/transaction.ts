@@ -1,7 +1,17 @@
-import { transactionModel } from "../main.ts";
+import { modelRepository, transactionModel } from "../main.ts";
 import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
 import { z } from "zod";
+
+const transactionsBodySchema = z.object({
+    transactions: z.array(z.object({
+        id: z.string(),
+        operations: z.array(z.object({
+            modelId: z.string().min(1),
+            operation: z.any(),
+        })),
+    })),
+});
 
 /**
  * Side-channel endpoint that stores transactions (in order) for a given
@@ -18,18 +28,28 @@ export const createTransactions = asyncHandler(async (request: express.Request, 
     });
     const query = querySchema.parse(request.query);
 
-    const bodySchema = z.object({
-        transactions: z.array(z.object({
-            id: z.string(),
-            operations: z.array(z.object({
-                modelId: z.string().min(1),
-                operation: z.any(),
-            })),
-        })),
-    });
-    const body = bodySchema.parse(request.body);
+    const body = transactionsBodySchema.parse(request.body);
 
     await transactionModel.createTransactions(query.projectIri, body.transactions);
+
+    response.sendStatus(204);
+    return;
+});
+
+/**
+ * The new interface for writing models: stores the transactions (in order)
+ * for a given project and applies their operations to the stored models,
+ * updating the JSON snapshots. See {@link ModelRepository.applyTransactions}.
+ */
+export const applyTransactions = asyncHandler(async (request: express.Request, response: express.Response) => {
+    const querySchema = z.object({
+        projectIri: z.string().min(1),
+    });
+    const query = querySchema.parse(request.query);
+
+    const body = transactionsBodySchema.parse(request.body);
+
+    await modelRepository.applyTransactions(query.projectIri, body.transactions);
 
     response.sendStatus(204);
     return;

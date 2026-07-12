@@ -1,17 +1,11 @@
-import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
-import { serializationToSemanticModelEntities } from "@dataspecer/core-v2/semantic-model";
-import { serializationToPimModelEntities } from "@dataspecer/core-v2/semantic-model/v1-adapters";
-import { serializationToStructureModelEntities } from "@dataspecer/core/data-psm";
+import { LOCAL_PACKAGE, QUERYABLE_MODEL, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
-import { serializationToBlobModelEntities } from "@dataspecer/core/entity-model/utils";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import type { ModelIdentifier } from "@dataspecer/core/model";
-import { getModelMetadata, resolveAsyncQueryableModelEntities, serializationToAsyncQueryableModelEntities } from "@dataspecer/model-store/implementation";
+import { getModelMetadata, resolveAsyncQueryableModelEntities } from "@dataspecer/model-store/implementation";
 import { PROJECT_MODEL_MODEL_ENTITY, type PackageEntity, type ProjectModelEntity } from "@dataspecer/project-model";
-import { serializationToVisualModelEntities } from "@dataspecer/visual-model";
-import type { BaseResource, Package, ResourceModel } from "../models/resource-model.ts";
-
-const PROJECT_MODEL_ID = "_project_model";
+import { PROJECT_MODEL_ID, type ModelRepository } from "../models/model-repository.ts";
+import type { BaseResource, Package } from "../models/resource-model.ts";
 
 function createRegularResourceEntity(resource: BaseResource): ProjectModelEntity {
   return {
@@ -39,59 +33,11 @@ function createProjectPackageEntity(resource: Package): PackageEntity {
 }
 
 /**
- * Loads a named, non-default storage blob of a model (e.g. the "svg" blob of
- * a visual model) and returns it as its own top-level blob model entry, keyed
- * by `${modelId}#${blobName}`. Returns null if the blob does not exist.
- */
-async function loadNamedBlobEntities(modelId: string, blobName: string, resourceModel: ResourceModel): Promise<EntityRecord | null> {
-  const blobData = await resourceModel.getResourceStoreJson(modelId, blobName);
-  if (!blobData) {
-    return null;
-  }
-  return serializationToBlobModelEntities(`${modelId}#${blobName}`, blobData);
-}
-
-export async function loadModelEntities(modelId: string, modelType: string, resourceModel: ResourceModel): Promise<EntityRecord> {
-  const modelData = await resourceModel.getResourceStoreJson(modelId);
-
-  if (modelType === LOCAL_PACKAGE) {
-    return serializationToBlobModelEntities(modelId, modelData);
-  }
-
-  if (modelType === LOCAL_SEMANTIC_MODEL) {
-    return serializationToSemanticModelEntities(modelData);
-  }
-
-  if (modelType === VISUAL_MODEL) {
-    return serializationToVisualModelEntities(modelData);
-  }
-
-  if (modelType === V1.PSM) {
-    return serializationToStructureModelEntities(modelData).entities;
-  }
-
-  if (modelType === QUERYABLE_MODEL) {
-    return serializationToAsyncQueryableModelEntities(modelData);
-  }
-
-  if (modelType === RDFS_MODEL) {
-    return serializationToPimModelEntities(modelData as object).entities;
-  }
-
-  if (modelType === V1.GENERATOR_CONFIGURATION) {
-    return serializationToBlobModelEntities(modelId, modelData);
-  }
-
-  // Fallback to blob model
-  return serializationToBlobModelEntities(modelId, modelData);
-}
-
-/**
  * Asynchronously resolves entities that are not part of the model's
  * serialization. For the queryable (SGOV) model it fetches the semantic
  * entities the query entities resolve to; other models are returned as-is.
  */
-export async function resolveModelEntities(modelType: string, entities: EntityRecord): Promise<EntityRecord> {
+async function resolveModelEntities(modelType: string, entities: EntityRecord): Promise<EntityRecord> {
   if (modelType === QUERYABLE_MODEL) {
     return await resolveAsyncQueryableModelEntities(entities, httpFetch);
   }
@@ -108,7 +54,7 @@ export async function resolveModelEntities(modelType: string, entities: EntityRe
  * @todo Add project revision id (branch or commit) parameter
  * @todo Add model type filter parameter
  */
-export async function getModelsForPackage(packageId: ModelIdentifier, resourceModel: ResourceModel): Promise<Record<ModelIdentifier, EntityRecord>> {
+export async function getModelsForPackage(packageId: ModelIdentifier, modelRepository: ModelRepository): Promise<Record<ModelIdentifier, EntityRecord>> {
   const models: Record<string, EntityRecord> = {};
   const projectModelEntities: EntityRecord = {};
   const visitedPackages = new Set<string>();
@@ -119,12 +65,12 @@ export async function getModelsForPackage(packageId: ModelIdentifier, resourceMo
     }
     visitedPackages.add(id);
 
-    const pkg = await resourceModel.getPackage(id);
+    const pkg = await modelRepository.getPackage(id);
     if (!pkg) {
       return;
     }
 
-    models[pkg.iri] = await loadModelEntities(pkg.iri, LOCAL_PACKAGE, resourceModel);
+    models[pkg.iri] = (await modelRepository.getModelEntities(pkg.iri))!;
 
     for (const subResource of pkg.subResources ?? []) {
       const subModelType = subResource.types[0] ?? "";
@@ -132,10 +78,10 @@ export async function getModelsForPackage(packageId: ModelIdentifier, resourceMo
       if (subModelType === LOCAL_PACKAGE) {
         await loadPackageRecursively(subResource.iri);
       } else {
-        models[subResource.iri] = await resolveModelEntities(subModelType, await loadModelEntities(subResource.iri, subModelType, resourceModel));
+        models[subResource.iri] = await resolveModelEntities(subModelType, (await modelRepository.getModelEntities(subResource.iri))!);
 
         if (subModelType === VISUAL_MODEL) {
-          const svgEntities = await loadNamedBlobEntities(subResource.iri, "svg", resourceModel);
+          const svgEntities = await modelRepository.getModelEntities(`${subResource.iri}#svg`);
           if (svgEntities) {
             models[`${subResource.iri}#svg`] = svgEntities;
           }
