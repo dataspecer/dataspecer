@@ -29,7 +29,7 @@ import { getSimplifiedSemanticModel, setSimplifiedSemanticModel } from "./routes
 import { getSystemData } from "./routes/system.ts";
 import { useStaticSpaHandler } from "./static.ts";
 import { newApplicationProfile } from "./routes/new.ts";
-import { applyTransactions, createTransactions, getTransactionsDiff, listBranches } from "./routes/transaction.ts";
+import { applyTransactions, getTransactionsDiff, listBranches } from "./routes/transaction.ts";
 
 // Create application models
 
@@ -101,7 +101,6 @@ application.get(apiBasename + "/resources/root-resources", getRootPackages); // 
 // application.post(apiBasename + "/repository/copy-recursively", copyRecursively);
 
 // Side-channel for storing operations performed on the project, see TransactionModel.
-application.post(apiBasename + "/transactions", createTransactions);
 application.post(apiBasename + "/transactions/apply", applyTransactions);
 application.get(apiBasename + "/transactions/branches", listBranches);
 application.get(apiBasename + "/transactions/log/:range", getTransactionsDiff);

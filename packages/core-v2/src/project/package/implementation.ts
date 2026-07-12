@@ -81,16 +81,6 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
         });
     }
 
-    async uploadTransactions(projectId: string, transactions: Transaction[]): Promise<void> {
-        await this.httpFetch(this.getTransactionsUrl(projectId), {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ transactions }),
-        });
-    }
-
     async applyTransactions(projectId: string, transactions: Transaction[]): Promise<void> {
         const response = await this.httpFetch(this.getTransactionsUrl(projectId, "/apply"), {
             method: "POST",
