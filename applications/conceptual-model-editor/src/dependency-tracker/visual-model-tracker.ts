@@ -3,6 +3,7 @@ import {
 } from "@dataspecer/entity-model";
 import {
   isModelVisualInformation,
+  VISUAL_MODEL_ENTITY_TYPE,
   VisualModelData,
 } from "@dataspecer/visual-model";
 
@@ -41,17 +42,16 @@ class VisualModelTracker implements Tracker {
         label: {},
       });
     }
-    if (next.type.includes("entity-model-type")) {
+    if (next.type.includes(VISUAL_MODEL_ENTITY_TYPE)) {
       // Contains information about the visual model see ModelEntity.
       const visualData = this.getOrCreateModel(model);
       visualData.metadataEntity = next.id;
       visualData.label = (next as any).label ?? {};
     }
-    if (isModelVisualInformation(next as any)) {
-      const typed = next as unknown as VisualModelData;
+    if (isModelVisualInformation(next)) {
       const visualModel = this.getOrCreateModel(model);
-      if (typed.representedModel !== null && typed.color !== null) {
-        visualModel.colors[typed.representedModel] = typed.color;
+      if (next.representedModel !== null && next.color !== null) {
+        visualModel.colors[next.representedModel] = next.color;
       }
     }
   }

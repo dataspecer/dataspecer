@@ -5,29 +5,35 @@ import {
 } from "../../concepts/index.ts";
 import {
   isSemanticModelClassProfile,
+  isSemanticModelGeneralizationProfile,
   isSemanticModelRelationshipProfile,
   SemanticModelClassProfile,
+  SemanticModelGeneralizationProfile,
   SemanticModelRelationshipProfile,
 } from "../concepts/index.ts";
 import {
   AggregatedProfiledSemanticModelClass,
   AggregatedProfiledSemanticModelRelationship,
-} from "./aggregator-model.ts";
+  AggregatedProfileSemanticModelGeneralization,
+} from "./aggregator-concepts.ts";
 import {
   SemanticClassProfileAggregator,
 } from "./semantic-class-profile-aggregator.ts";
 import {
   SemanticRelationshipProfileAggregator,
 } from "./semantic-relationship-profile-aggregator.ts";
+import {
+  SemanticGeneralizationProfileAggregator,
+} from "./semantic-generalization-profile-aggregator.ts";
 
 /**
  * Provide single interface for access to semantic profile aggregator.
  */
-export function createSemanticProfileAggregator(): ProfileEntityAggregator {
+export function createSemanticProfileAggregator(): SemanticProfileAggregator {
   return new DefaultProfileEntityAggregator();
 }
 
-export interface ProfileEntityAggregator extends ProfileAggregator {
+export interface SemanticProfileAggregator {
 
   /**
    * Given an entity analyze and return dependencies to other entities.
@@ -35,31 +41,34 @@ export interface ProfileEntityAggregator extends ProfileAggregator {
    */
   dependencies(entity: Entity): EntityIdentifier[] | null;
 
-}
-
-export interface ProfileAggregator {
-
   aggregateSemanticModelClassProfile(
     profile: SemanticModelClassProfile,
-    aggregatedProfiled: (
-      SemanticModelClassProfile |
+    dependencies: (
       SemanticModelClass |
+      SemanticModelClassProfile |
       AggregatedProfiledSemanticModelClass
     )[],
   ): AggregatedProfiledSemanticModelClass;
 
   aggregateSemanticModelRelationshipProfile(
     profile: SemanticModelRelationshipProfile,
-    aggregatedProfiled: (
-      SemanticModelRelationshipProfile |
+    dependencies: (
       SemanticModelRelationship |
+      SemanticModelRelationshipProfile |
       AggregatedProfiledSemanticModelRelationship
     )[],
   ): AggregatedProfiledSemanticModelRelationship;
 
+  aggregateSemanticModelGeneralizationProfile(
+    profile: SemanticModelGeneralizationProfile,
+  ): AggregatedProfileSemanticModelGeneralization;
+
 }
 
-class DefaultProfileEntityAggregator implements ProfileEntityAggregator {
+/**
+ * Just a wrapper to expose internal functionality of this package.
+ */
+class DefaultProfileEntityAggregator implements SemanticProfileAggregator {
 
   dependencies(entity: Entity): EntityIdentifier[] | null {
     if (isSemanticModelClassProfile(entity)) {
@@ -68,14 +77,17 @@ class DefaultProfileEntityAggregator implements ProfileEntityAggregator {
     if (isSemanticModelRelationshipProfile(entity)) {
       return SemanticRelationshipProfileAggregator.dependencies(entity);
     }
+    if (isSemanticModelGeneralizationProfile(entity)) {
+      return SemanticGeneralizationProfileAggregator.dependencies(entity);
+    }
     return null;
   }
 
   aggregateSemanticModelClassProfile(
     profile: SemanticModelClassProfile,
     aggregatedProfiled: (
-      SemanticModelClassProfile |
       SemanticModelClass |
+      SemanticModelClassProfile |
       AggregatedProfiledSemanticModelClass
     )[],
   ): AggregatedProfiledSemanticModelClass {
@@ -86,13 +98,19 @@ class DefaultProfileEntityAggregator implements ProfileEntityAggregator {
   aggregateSemanticModelRelationshipProfile(
     profile: SemanticModelRelationshipProfile,
     aggregatedProfiled: (
-      SemanticModelRelationshipProfile |
       SemanticModelRelationship |
+      SemanticModelRelationshipProfile |
       AggregatedProfiledSemanticModelRelationship
     )[],
   ): AggregatedProfiledSemanticModelRelationship {
     return SemanticRelationshipProfileAggregator
       .aggregate(profile, aggregatedProfiled);
+  }
+
+  aggregateSemanticModelGeneralizationProfile(
+    profile: SemanticModelGeneralizationProfile,
+  ): AggregatedProfileSemanticModelGeneralization {
+    return SemanticGeneralizationProfileAggregator.aggregate(profile);
   }
 
 }
