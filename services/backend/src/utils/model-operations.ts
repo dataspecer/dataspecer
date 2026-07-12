@@ -3,7 +3,7 @@ import { applyOperationsToSemanticModel } from "@dataspecer/core-v2/semantic-mod
 import { changesToSemanticModelOperations } from "@dataspecer/core-v2/semantic-model/operations";
 import type { CoreOperationAndOperation, CoreResourceAndEntity } from "@dataspecer/core/core";
 import { applyOperationsToStructureModel } from "@dataspecer/core/data-psm";
-import { changesToEntityOperations, diffEntities, type EntityRecord } from "@dataspecer/core/entity-model";
+import { changesToEntityOperations, diffEntities, type Entity, type EntityChange, type EntityRecord } from "@dataspecer/core/entity-model";
 import {
   isRemoveEntityOperation,
   isSetEntityOperation,
@@ -19,6 +19,38 @@ import {
 } from "@dataspecer/model-store/implementation";
 import { SemanticProfileModelOperations } from "@dataspecer/profile-model";
 import { applyOperationsToVisualModel } from "@dataspecer/visual-model/executor";
+
+/**
+ * Model types whose model is stored as one blob entity rather than a set of
+ * individually addressed entities. For blob models only the down events of a
+ * transaction are recorded - the up state is available as the next
+ * transaction's down event, or as the current snapshot.
+ */
+export function isBlobModelType(modelType: string): boolean {
+  return (
+    modelType !== LOCAL_SEMANTIC_MODEL &&
+    modelType !== VISUAL_MODEL &&
+    modelType !== V1.PSM &&
+    modelType !== QUERYABLE_MODEL &&
+    modelType !== RDFS_MODEL
+  );
+}
+
+/**
+ * Converts entity changes of one model to its up/down transaction events: the
+ * state of each changed entity after the change (up, null = removed) and
+ * before the change (down, null = did not exist yet), keyed by entity id.
+ */
+export function entityChangesToEvents(changes: EntityChange[]): { up: Record<string, Entity | null>; down: Record<string, Entity | null> } {
+  const up: Record<string, Entity | null> = {};
+  const down: Record<string, Entity | null> = {};
+  for (const change of changes) {
+    const id = (change.next ?? change.previous)!.id;
+    up[id] = change.next;
+    down[id] = change.previous;
+  }
+  return { up, down };
+}
 
 /**
  * Diffs two states of a model of the given type and returns operations that
@@ -46,6 +78,30 @@ export function diffModelEntitiesToOperations(modelId: string, modelType: string
   operations.push(...changesToEntityOperations(remainingChanges));
 
   return operations.map((operation) => ({ modelId, operation }));
+}
+
+/**
+ * Diffs two snapshots of model states (model id to entities) and converts the
+ * differences into operations, tagged with the id of the model they belong
+ * to. Semantic operations are generated where possible; everything else falls
+ * back to the generic set/update/remove entity operations.
+ */
+export function diffModelStatesToOperations(previous: Record<string, EntityRecord>, next: Record<string, EntityRecord>): OperationInModel[] {
+  const modelIds = new Set([...Object.keys(previous), ...Object.keys(next)]);
+  const operations: OperationInModel[] = [];
+
+  for (const modelId of modelIds) {
+    const changes = diffEntities(previous[modelId] ?? {}, next[modelId] ?? {});
+    const { operations: semanticOps, remainingChanges } = changesToSemanticModelOperations(changes);
+    for (const operation of semanticOps) {
+      operations.push({ modelId, operation });
+    }
+    for (const operation of changesToEntityOperations(remainingChanges)) {
+      operations.push({ modelId, operation });
+    }
+  }
+
+  return operations;
 }
 
 /**

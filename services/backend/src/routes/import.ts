@@ -20,17 +20,15 @@ import N3, { Quad_Object } from "n3";
 import { parse } from "node-html-parser";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
-import { modelRepository, prismaClient, transactionModel } from "../main.ts";
+import { modelRepository } from "../main.ts";
 import { BaseResource } from "../models/resource-model.ts";
 import { getModelsForPackage } from "../utils/backend-model-store.ts";
+import { diffModelStatesToOperations } from "../utils/model-operations.ts";
 import { asyncHandler } from "./../utils/async-handler.ts";
 import type { CoreResource } from "@dataspecer/core/core/core-resource";
 import { canonicalizeIds } from "@dataspecer/structure-model";
-import { changesToEntityOperations, diffEntities, type EntityRecord } from "@dataspecer/core/entity-model";
-import { changesToSemanticModelOperations } from "@dataspecer/core-v2/semantic-model/operations";
 import { DataSpecificationConfigurator } from "@dataspecer/core/data-specification/configuration";
 import { turtleStringToGeneratorConfiguration } from "@dataspecer/data-specification-vocabulary/generator-configuration";
-import type { OperationInModel } from "@dataspecer/core/operation";
 
 
 function jsonLdLiteralToLanguageString(literal: Quad_Object[]): LanguageString {
@@ -81,22 +79,6 @@ async function deleteUntouchedChildren(packageIri: string, touchedIris: Set<stri
       }
     }
   }
-}
-
-/**
- * Returns the IRI of the direct parent package of a resource, or null if it is a root resource.
- */
-async function getParentIri(resourceIri: string): Promise<string | null> {
-  const row = await prismaClient.resource.findFirst({
-    select: { parentResourceId: true },
-    where: { iri: resourceIri },
-  });
-  if (!row?.parentResourceId) return null;
-  const parent = await prismaClient.resource.findUnique({
-    select: { iri: true },
-    where: { id: row.parentResourceId },
-  });
-  return parent?.iri ?? null;
 }
 
 /**
@@ -502,29 +484,6 @@ async function dsvImport(store: N3.Store, url: string, baseIri: string, parentIr
 }
 
 /**
- * Diffs two snapshots of model states (as produced by {@link getModelsForPackage}
- * or single {@link ModelRepository.getModelEntities} calls) and converts the
- * differences into operations, tagged with the id of the model they belong to.
- */
-function diffModelStatesToOperations(previous: Record<string, EntityRecord>, next: Record<string, EntityRecord>): OperationInModel[] {
-  const modelIds = new Set([...Object.keys(previous), ...Object.keys(next)]);
-  const operations: OperationInModel[] = [];
-
-  for (const modelId of modelIds) {
-    const changes = diffEntities(previous[modelId] ?? {}, next[modelId] ?? {});
-    const { operations: semanticOps, remainingChanges } = changesToSemanticModelOperations(changes);
-    for (const operation of semanticOps) {
-      operations.push({ modelId, operation });
-    }
-    for (const operation of changesToEntityOperations(remainingChanges)) {
-      operations.push({ modelId, operation });
-    }
-  }
-
-  return operations;
-}
-
-/**
  * Universal function that detects the type of the resource and imports it.
  * @todo move to packages so it is not backend dependent, make more generic such as custom fetch function
  */
@@ -634,12 +593,10 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
     // The diff is recorded as pending operations on an independent evolution branch.
     const nextEntities = serializationToPimModelEntities(newModel.serializeModel() as object).entities;
 
-    const operations = diffModelStatesToOperations({ [existingResource.iri]: previousEntities }, { [existingResource.iri]: nextEntities });
-    if (operations.length > 0) {
-      const projectIri = await getParentIri(existingResource.iri) ?? existingResource.iri;
-      const branchId = await transactionModel.getOrCreateEvolutionBranch(projectIri, existingResource.iri);
-      await transactionModel.createTransactions(projectIri, [{ id: uuidv4(), operations }], branchId);
-    }
+    const previousStates = { [existingResource.iri]: previousEntities };
+    const operations = diffModelStatesToOperations(previousStates, { [existingResource.iri]: nextEntities });
+    const projectIri = await modelRepository.getParentIri(existingResource.iri) ?? existingResource.iri;
+    await modelRepository.recordEvolutionTransactions(projectIri, existingResource.iri, [{ id: uuidv4(), operations }], previousStates);
 
     response.send(await modelRepository.getResource(existingResource.iri));
     return;
@@ -664,11 +621,8 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
 
   const nextModels = await getModelsForPackage(query.iri, modelRepository);
   const operations = diffModelStatesToOperations(previousModels, nextModels);
-  if (operations.length > 0) {
-    const projectIri = await getParentIri(query.iri) ?? query.iri;
-    const branchId = await transactionModel.getOrCreateEvolutionBranch(projectIri, query.iri);
-    await transactionModel.createTransactions(projectIri, [{ id: uuidv4(), operations }], branchId);
-  }
+  const projectIri = await modelRepository.getParentIri(query.iri) ?? query.iri;
+  await modelRepository.recordEvolutionTransactions(projectIri, query.iri, [{ id: uuidv4(), operations }], previousModels);
 
   response.send(result ?? existingResource);
   return;

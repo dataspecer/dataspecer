@@ -3,7 +3,7 @@ import { semanticModelEntitiesToSerialization, serializationToSemanticModelEntit
 import { serializationToPimModelEntities } from "@dataspecer/core-v2/semantic-model/v1-adapters";
 import type { CoreResourceAndEntity } from "@dataspecer/core/core";
 import { serializationToStructureModelEntities, structureModelEntitiesToSerialization } from "@dataspecer/core/data-psm";
-import type { EntityRecord } from "@dataspecer/core/entity-model";
+import { diffEntities, type EntityRecord } from "@dataspecer/core/entity-model";
 import { serializationToBlobModelEntities } from "@dataspecer/core/entity-model/utils";
 import type { Operation, Transaction } from "@dataspecer/core/operation";
 import {
@@ -13,9 +13,9 @@ import {
 } from "@dataspecer/model-store/implementation";
 import { serializationToVisualModelEntities, visualModelEntitiesToSerialization } from "@dataspecer/visual-model";
 import { v4 as uuidv4 } from "uuid";
-import { applyOperationsToModelEntities, diffModelEntitiesToOperations } from "../utils/model-operations.ts";
+import { applyOperationsToModelEntities, diffModelEntitiesToOperations, entityChangesToEvents, isBlobModelType } from "../utils/model-operations.ts";
 import type { ResourceModel } from "./resource-model.ts";
-import type { TransactionModel } from "./transaction-model.ts";
+import type { TransactionEvents, TransactionModel, TransactionWithEvents } from "./transaction-model.ts";
 
 /**
  * Id of the virtual project model that lists the models of a project. It has
@@ -204,8 +204,11 @@ export class ModelRepository {
 
       const operations = diffModelEntitiesToOperations(modelId, modelType, previousEntities, nextEntities);
       if (operations.length > 0) {
+        const { up, down } = entityChangesToEvents(diffEntities(previousEntities, nextEntities));
+        const upEvents: TransactionEvents = isBlobModelType(modelType) ? {} : { [modelId]: up };
+        const downEvents: TransactionEvents = { [modelId]: down };
         const projectIri = await this.resourceModel.getProjectIri(iri);
-        await this.transactionModel.createTransactions(projectIri!, [{ id: uuidv4(), operations }]);
+        await this.transactionModel.createTransactions(projectIri!, [{ id: uuidv4(), operations, upEvents, downEvents }]);
       }
     } catch (error) {
       console.error(`Failed to derive operation history for model "${modelId}". The snapshot is written without it.`, error);
@@ -224,49 +227,186 @@ export class ModelRepository {
    * handled here.
    */
   async applyTransactions(projectIri: string, transactions: Transaction[]): Promise<void> {
+    // In-memory state of a model the transactions operate on, loaded once and
+    // updated as the transactions are applied to it one by one.
+    interface WorkingModel {
+      iri: string;
+      storeName: string;
+      modelType: string;
+      previousData: unknown;
+      entities: EntityRecord;
+      hadOperations: boolean;
+    }
+
+    // null marks models whose operations are only recorded: the virtual
+    // project model and models whose resource does not exist.
+    const workingModels = new Map<string, WorkingModel | null>();
+
+    const getWorkingModel = async (modelId: string): Promise<WorkingModel | null> => {
+      let model = workingModels.get(modelId);
+      if (model !== undefined) {
+        return model;
+      }
+      model = null;
+      if (modelId !== PROJECT_MODEL_ID) {
+        const { iri, storeName } = splitModelId(modelId);
+        const resource = await this.resourceModel.getResource(iri);
+        if (resource === null) {
+          console.warn(`Cannot apply operations to model "${modelId}" because its resource does not exist. The operations are only recorded.`);
+        } else {
+          const modelType = storeName === "model" ? (resource.types[0] ?? "") : NAMED_BLOB_STORE_TYPE;
+          const previousData = await this.resourceModel.getResourceStoreJson(iri, storeName);
+          model = { iri, storeName, modelType, previousData, entities: deserializeModelEntities(modelId, modelType, previousData), hadOperations: false };
+        }
+      }
+      workingModels.set(modelId, model);
+      return model;
+    };
+
+    // Apply the transactions to the models in memory one by one, recording
+    // for each transaction its up/down events. Models whose operations are
+    // only recorded (see getWorkingModel above) have no events.
+    const transactionsWithEvents = await this.buildTransactionsWithEvents(transactions, async (modelId, operations) => {
+      const model = await getWorkingModel(modelId);
+      if (model === null) {
+        return null;
+      }
+
+      const previousEntities = model.entities;
+      model.entities = applyOperationsToModelEntities(modelId, model.modelType, previousEntities, operations);
+      model.hadOperations = true;
+
+      return { previousEntities, nextEntities: model.entities, isBlob: isBlobModelType(model.modelType) };
+    });
+
     // The operation history is the source of truth and is written first; the
     // JSON snapshots below are only a cache derived from it.
-    await this.transactionModel.createTransactions(projectIri, transactions);
+    await this.transactionModel.createTransactions(projectIri, transactionsWithEvents);
 
-    // Group operations by model, preserving their relative order.
-    const operationsByModel = new Map<string, Operation[]>();
+    for (const [modelId, model] of workingModels) {
+      if (model === null || !model.hadOperations) {
+        continue;
+      }
+      const nextData = serializeModelEntities(modelId, model.modelType, model.entities, model.previousData ?? undefined);
+      await this.resourceModel.setResourceStoreJson(model.iri, nextData, model.storeName);
+    }
+  }
+
+  /**
+   * Records the given transactions on the resource's evolution branch as
+   * pending updates: unlike {@link applyTransactions}, the operations are only
+   * recorded in the history and are NOT applied to the stored models. If none
+   * of the transactions contain any operations, nothing is recorded and the
+   * evolution branch is left untouched.
+   *
+   * The stored snapshots cannot serve as the state the transactions apply to,
+   * since the reload flows write the new content in place before recording;
+   * the caller therefore provides the base states of the models (model id to
+   * entities), which are used to derive the up/down events of each
+   * transaction.
+   */
+  async recordEvolutionTransactions(
+    projectIri: string,
+    resourceIri: string,
+    transactions: Transaction[],
+    baseStates: Record<string, EntityRecord>,
+  ): Promise<void> {
+    if (transactions.every((transaction) => transaction.operations.length === 0)) {
+      return;
+    }
+
+    const workingStates: Record<string, EntityRecord> = {};
+    const transactionsWithEvents = await this.buildTransactionsWithEvents(transactions, async (modelId, operations) => {
+      if (modelId === PROJECT_MODEL_ID) {
+        return null;
+      }
+
+      const { modelType, isBlob } = await this.getEventModelType(modelId);
+      const previousEntities = workingStates[modelId] ?? baseStates[modelId] ?? {};
+      const nextEntities = applyOperationsToModelEntities(modelId, modelType, previousEntities, operations);
+      workingStates[modelId] = nextEntities;
+
+      return { previousEntities, nextEntities, isBlob };
+    });
+
+    const branchId = await this.transactionModel.getOrCreateEvolutionBranch(projectIri, resourceIri);
+    await this.transactionModel.createTransactions(projectIri, transactionsWithEvents, branchId);
+  }
+
+  /**
+   * Resolves how a model is treated when deriving transaction events: the
+   * model type its operations are interpreted with, and whether it is a blob
+   * model (recording only down events, see {@link isBlobModelType}). Named
+   * stores (model ids with a "#" suffix) are always blobs. A model whose
+   * resource does not exist (anymore, e.g. it was deleted during reload)
+   * cannot be typed: it is treated as a blob, and its operations are
+   * interpreted as semantic ones, since diff-derived operations are either
+   * generic (understood by every model type) or semantic.
+   */
+  private async getEventModelType(modelId: string): Promise<{ modelType: string; isBlob: boolean }> {
+    const { iri, storeName } = splitModelId(modelId);
+    if (storeName !== "model") {
+      return { modelType: NAMED_BLOB_STORE_TYPE, isBlob: true };
+    }
+    const resource = await this.resourceModel.getResource(iri);
+    if (resource === null) {
+      return { modelType: LOCAL_SEMANTIC_MODEL, isBlob: true };
+    }
+    const modelType = resource.types[0] ?? "";
+    return { modelType, isBlob: isBlobModelType(modelType) };
+  }
+
+  /**
+   * Computes the up/down events of each transaction: the state of the
+   * entities the transaction changed after (up) and before (down) the
+   * transaction. Blob models record only down events - their up state is the
+   * next transaction's down event, or the current snapshot.
+   *
+   * The given callback applies the operations of one transaction targeting
+   * one model (in order) and returns the model's entity state before and
+   * after them, plus whether the model is a blob; null means the model's
+   * events are not recorded.
+   */
+  private async buildTransactionsWithEvents(
+    transactions: Transaction[],
+    applyToModel: (modelId: string, operations: Operation[]) => Promise<{ previousEntities: EntityRecord; nextEntities: EntityRecord; isBlob: boolean } | null>,
+  ): Promise<TransactionWithEvents[]> {
+    const transactionsWithEvents: TransactionWithEvents[] = [];
+
     for (const transaction of transactions) {
+      const upEvents: TransactionEvents = {};
+      const downEvents: TransactionEvents = {};
+
+      // Group the transaction's operations by model, preserving their relative order.
+      const operationsByModel = new Map<string, Operation[]>();
       for (const { modelId, operation } of transaction.operations) {
         if (!operationsByModel.has(modelId)) {
           operationsByModel.set(modelId, []);
         }
         operationsByModel.get(modelId)!.push(operation);
       }
+
+      for (const [modelId, operations] of operationsByModel) {
+        const applied = await applyToModel(modelId, operations);
+        if (applied === null) {
+          continue;
+        }
+
+        const changes = diffEntities(applied.previousEntities, applied.nextEntities);
+        if (changes.length === 0) {
+          continue;
+        }
+        const { up, down } = entityChangesToEvents(changes);
+        downEvents[modelId] = down;
+        if (!applied.isBlob) {
+          upEvents[modelId] = up;
+        }
+      }
+
+      transactionsWithEvents.push({ ...transaction, upEvents, downEvents });
     }
 
-    for (const [modelId, operations] of operationsByModel) {
-      await this.applyOperationsToStoredModel(modelId, operations);
-    }
-  }
-
-  /**
-   * Applies operations to a single stored model and updates its JSON snapshot.
-   */
-  private async applyOperationsToStoredModel(modelId: string, operations: Operation[]): Promise<void> {
-    if (modelId === PROJECT_MODEL_ID) {
-      return;
-    }
-
-    const { iri, storeName } = splitModelId(modelId);
-
-    const resource = await this.resourceModel.getResource(iri);
-    if (resource === null) {
-      console.warn(`Cannot apply operations to model "${modelId}" because its resource does not exist. The operations are only recorded.`);
-      return;
-    }
-
-    const modelType = storeName === "model" ? (resource.types[0] ?? "") : NAMED_BLOB_STORE_TYPE;
-
-    const previousData = await this.resourceModel.getResourceStoreJson(iri, storeName);
-    const entities = deserializeModelEntities(modelId, modelType, previousData);
-    const nextEntities = applyOperationsToModelEntities(modelId, modelType, entities, operations);
-    const nextData = serializeModelEntities(modelId, modelType, nextEntities, previousData ?? undefined);
-    await this.resourceModel.setResourceStoreJson(iri, nextData, storeName);
+    return transactionsWithEvents;
   }
 
   // The methods below delegate to the underlying storages so that the rest of
@@ -277,6 +417,14 @@ export class ModelRepository {
    */
   getResource(iri: string) {
     return this.resourceModel.getResource(iri);
+  }
+
+  /**
+   * Returns the IRI of the direct parent package of a resource, or null if it
+   * is a root resource or does not exist.
+   */
+  getParentIri(iri: string) {
+    return this.resourceModel.getParentIri(iri);
   }
 
   /**

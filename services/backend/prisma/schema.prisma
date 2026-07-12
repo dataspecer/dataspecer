@@ -145,6 +145,18 @@ model Transaction {
   /* Technical metadata: creation date. */
   createdAt DateTime @default(now())
 
+  /* Low-level log of entity changes made by this transaction, serialized as
+     JSON Record<ModelId, Record<EntityId, Entity | null>>: for each model, the
+     changed entities AFTER the transaction, null meaning the entity was
+     removed. Blob models and the virtual project model are not recorded, see
+     the backend ModelRepository. Null when the events were not recorded. */
+  upEvents String?
+
+  /* Same structure as upEvents, but the entities BEFORE the transaction, null
+     meaning the entity did not exist yet. Serves for going back. Unlike
+     upEvents, blob models are recorded here. */
+  downEvents String?
+
   operations Operation[]
   branches   Branch[]
 
