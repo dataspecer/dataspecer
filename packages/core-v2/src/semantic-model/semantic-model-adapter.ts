@@ -6,6 +6,8 @@ import { Entities, Entity, EntityModel } from "../entity-model/index.ts";
  * It translates generic entities and interprets them as semantic entities.
  *
  * Todo: the translation is identity now, but it should be more complex
+ *
+ * @deprecated Use model store instead to manage the model state.
  */
 export class SemanticModelAdapter implements EntityModel {
     constructor(protected readonly entityModel: EntityModel) {}

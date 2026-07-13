@@ -27,10 +27,18 @@ export class CoreOperation extends CoreResource {
 
 export type CoreOperationAndOperation = Operation & CoreOperation;
 
-export function coreOperationToOperation(operation: CoreOperation): CoreOperationAndOperation {
+export function coreOperationToOperation(operation: CoreOperation | Operation): CoreOperationAndOperation {
+  const id = (operation as Operation).id ?? (operation as CoreOperation).iri;
+  const type = (operation as Operation).type ?? (operation as CoreOperation).types.filter(t => t !== "core-operation")[0];
+
   return {
+    parent: null, // not used
+
     ...operation,
-    id: operation.iri!,
-    type: operation.types![0],
+
+    id,
+    type,
+    iri: id,
+    types: [type]
   };
 }
