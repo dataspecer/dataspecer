@@ -1,6 +1,6 @@
 import type { PackageService } from "@dataspecer/core-v2/project";
 import { type CoreOperationAndOperation, type CoreResourceAndEntity } from "@dataspecer/core/core";
-import { applyOperationsToStructureModel, initializeStructureModel, serializationToStructureModelEntities, structureModelEntitiesToSerialization, StructureModelState } from "@dataspecer/core/data-psm";
+import { applyOperationsToStructureModel, initializeStructureModel, serializationToStructureModelEntities } from "@dataspecer/core/data-psm";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import type { Model, ModelIdentifier } from "@dataspecer/core/model";
 import { type Operation } from "@dataspecer/core/operation";
@@ -26,11 +26,6 @@ export class StructureModelInModelStore extends BaseModelInModelStore<CoreResour
   protected async loadInternal() {
     const data = await this.service.getResourceJsonData(this.id);
     return serializationToStructureModelEntities(data);
-  }
-
-  protected async saveInternal(state: StructureModelState): Promise<void> {
-    const data = structureModelEntitiesToSerialization(state);
-    await this.service.setResourceJsonData(this.id, data);
   }
 
   /**

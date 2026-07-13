@@ -2,7 +2,7 @@ import type { PackageService } from "@dataspecer/core-v2/project";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import type { Model, ModelIdentifier } from "@dataspecer/core/model";
 import type { Operation } from "@dataspecer/core/operation";
-import { serializationToVisualModelEntities, visualModelEntitiesToSerialization } from "@dataspecer/visual-model";
+import { serializationToVisualModelEntities } from "@dataspecer/visual-model";
 import { applyOperationsToVisualModel } from "@dataspecer/visual-model/executor";
 import { BaseModelInModelStore, type ModelState } from "./base.ts";
 import type { ModelInDefaultFrontendModelStore } from "./implementation.ts";
@@ -30,15 +30,6 @@ export class VisualModelInModelStore extends BaseModelInModelStore implements Mo
       entities: serializationToVisualModelEntities(data),
       operations: [], // todo still no operations
     };
-  }
-
-  protected async saveInternal(state: ModelState): Promise<void> {
-    const data = this.serializeModel(state);
-    await this.service.setResourceJsonData(this.id, data);
-  }
-
-  private serializeModel(state: ModelState): unknown {
-    return visualModelEntitiesToSerialization(state.entities);
   }
 
   protected override applyOperation(operation: Operation, mutableState: EntityRecord): void {

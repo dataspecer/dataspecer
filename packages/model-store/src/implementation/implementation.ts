@@ -55,8 +55,6 @@ export interface ModelInDefaultFrontendModelStore {
    */
   createNew(transactionId: string): { operations: Operation[]; entityChanges: EntityChange[] };
 
-  save(): Promise<void>;
-
   /**
    * Immutable object (record) containing entities.
    */

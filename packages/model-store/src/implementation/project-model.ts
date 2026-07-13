@@ -105,10 +105,6 @@ export class ProjectModelInModelStore extends BaseModelInModelStore<ProjectModel
     };
   }
 
-  protected saveInternal(_state: ModelState<ProjectModelEntity>): Promise<void> {
-    throw new Error("Method not implemented.");
-  }
-
   protected override applyOperation(operation: Operation, mutableState: EntityRecord<ProjectModelEntity>): void {
     if (isRemoveModelOperation(operation)) {
       const existed = mutableState[operation.modelId] !== undefined;

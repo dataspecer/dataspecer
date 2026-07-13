@@ -89,11 +89,6 @@ export class BlobModelInModelStore extends BaseModelInModelStore implements Mode
   protected override createNewInternal(): Operation[] {
     return [createSetEntityOperation(serializationToBlobModelEntities(this.id, {})[this.id]!)];
   }
-
-  protected async saveInternal(state: ModelState): Promise<void> {
-    const data = state.entities[this.id];
-    await this.service.setResourceJsonData(this.resourceId, data, this.blobName);
-  }
 }
 
 export function createBlobModel(

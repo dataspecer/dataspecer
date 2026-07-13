@@ -240,18 +240,6 @@ export class AsyncQueryableModelInModelStore extends BaseModelInModelStore imple
       operations: [],
     };
   }
-
-  async saveInternal(state: ModelState): Promise<void> {
-    const serializedModel = this.serializeModel(state);
-    await this.service.setResourceJsonData(this.id, serializedModel);
-  }
-
-  /**
-   * Serializes the part of the model that is actually stored on the backend.
-   */
-  private serializeModel(state: ModelState): unknown {
-    return asyncQueryableModelEntitiesToSerialization(this.id, state.entities);
-  }
 }
 
 /**
