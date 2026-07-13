@@ -1,6 +1,7 @@
 import type { EntityChange, EntityChangeDeleted, EntityRecord } from "@dataspecer/core/entity-model";
 import type { Operation } from "@dataspecer/core/operation";
 import type { Entity } from "../entity-model/entity.ts";
+import type { SemanticModelClass, SemanticModelGeneralization, SemanticModelRelationship } from "./concepts/concepts.ts";
 import {
   type CreateClassOperation,
   type CreatedEntityOperationResult,
@@ -23,7 +24,6 @@ import {
 } from "./operations/operations.ts";
 import { createDefaultSemanticModelProfileOperationExecutor } from "./profile/operations/operations-executor.ts";
 import { type ChangeCollector, type EntityGetter } from "./writable-semantic-model-adapter.ts";
-import type { SemanticModelClass, SemanticModelRelationship, SemanticModelGeneralization } from "./concepts/concepts.ts";
 
 /**
  * Applies semantic model operations to the given entities. The entities are

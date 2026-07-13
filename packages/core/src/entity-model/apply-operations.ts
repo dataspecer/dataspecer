@@ -8,21 +8,21 @@ import type { EntityChange } from "./observable.ts";
  * Applies the generic operations to any entity model and returns the net
  * changes. The entities are modified in place.
  */
-export function applyOperationsToEntityModel(entities: EntityRecord, operations: Operation[]): EntityChange[] {
-  const previous = { ...entities };
+export function applyOperationsToEntityModel(mutableModel: EntityRecord, operations: Operation[]): EntityChange[] {
+  const previous = { ...mutableModel };
   for (const operation of operations) {
     if (isSetEntityOperation(operation)) {
-      entities[operation.entity.id] = operation.entity;
+      mutableModel[operation.entity.id] = operation.entity;
     } else if (isUpdateEntityOperation(operation)) {
-      const entity = entities[operation.update.id];
+      const entity = mutableModel[operation.update.id];
       if (entity) {
-        entities[operation.update.id] = { ...entity, ...operation.update };
+        mutableModel[operation.update.id] = { ...entity, ...operation.update };
       }
     } else if (isRemoveEntityOperation(operation)) {
-      delete entities[operation.entityId];
+      delete mutableModel[operation.entityId];
     } else {
       throw new Error("Unsupported operation: " + operation.type);
     }
   }
-  return diffEntities(previous, entities);
+  return diffEntities(previous, mutableModel);
 }

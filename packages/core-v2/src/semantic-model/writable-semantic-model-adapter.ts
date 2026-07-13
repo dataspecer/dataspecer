@@ -16,6 +16,7 @@ export type ChangeCollector = (updated: Record<string, Entity>, removed: string[
 
 /**
  * Semantic model, that is writable.
+ * @deprecated Use model store instead to manage the model state.
  */
 export class WritableSemanticModelAdapter extends SemanticModelAdapter {
 
