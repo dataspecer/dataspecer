@@ -40,15 +40,6 @@ export class SemanticModelInModelStore extends BaseModelInModelStore implements 
     return [createSetEntityOperation({ id: this.id, type: [LOCAL_SEMANTIC_MODEL] })];
   }
 
-  protected async saveInternal(state: ModelState): Promise<void> {
-    const data = this.serializeModel(state);
-    await this.service.setResourceJsonData(this.id, data);
-  }
-
-  private serializeModel(state: ModelState): unknown {
-    return semanticModelEntitiesToSerialization(state.entities);
-  }
-
   protected override applyOperation(operation: Operation, mutableState: EntityRecord): void {
     applyOperationsToSemanticModel(mutableState, [operation]);
   }

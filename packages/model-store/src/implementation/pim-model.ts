@@ -125,11 +125,6 @@ export class PimModelInModelStore extends BaseModelInModelStore implements Model
 
     return [createSetEntityOperation(mainEntity)];
   }
-
-  protected async saveInternal(state: ModelState): Promise<void> {
-    const serialization = pimModelEntitiesToSerialization(this.id, state.entities);
-    await this.service.setResourceJsonData(this.id, serialization);
-  }
 }
 
 /**

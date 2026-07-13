@@ -38,13 +38,6 @@ export abstract class BaseModelInModelStore<BaseEntityType extends Entity = Enti
 
   private externalChangesSubscribers: ((changes: EntityChange[]) => void)[] = [];
 
-  /**
-   * Whether the entities changed since the last successful {@link save} (or
-   * since the model was loaded). Used to implement smart save, i.e. saving
-   * only models that actually changed.
-   */
-  private dirty: boolean = false;
-
   constructor(id: string) {
     this.id = id;
   }
@@ -69,8 +62,8 @@ export abstract class BaseModelInModelStore<BaseEntityType extends Entity = Enti
    * anything from the backend. The initial state is obtained by applying
    * operations (see {@link createNewInternal}) to an empty state under the
    * given transaction. The applied operations are returned so that the caller
-   * can record them as part of that transaction. Marks the model dirty so
-   * that it gets persisted on the next {@link save}.
+   * can record them as part of that transaction. Marks the model dirty so that
+   * it gets persisted on the next {@link save}.
    */
   createNew(transactionId: string): { operations: Operation[]; entityChanges: EntityChange[] } {
     this.initializeState({
@@ -85,7 +78,6 @@ export abstract class BaseModelInModelStore<BaseEntityType extends Entity = Enti
   async load(): Promise<void> {
     const oldEntities = this.state.entities;
     this.state = await this.loadInternal();
-    this.dirty = false;
     const changes = diffEntities(oldEntities, this.state.entities);
     this.notifyAboutExternalChanges(changes);
   }
@@ -97,21 +89,6 @@ export abstract class BaseModelInModelStore<BaseEntityType extends Entity = Enti
    */
   protected initializeState(state: ModelState<BaseEntityType>): void {
     this.state = state;
-    this.dirty = true;
-  }
-
-  protected abstract saveInternal(state: ModelState<BaseEntityType>): Promise<void>;
-
-  /**
-   * Saves the model to the backend, but only if it actually changed since the
-   * last save (or load). This is a no-op for unchanged models.
-   */
-  async save(): Promise<void> {
-    if (!this.dirty) {
-      return;
-    }
-    this.dirty = false;
-    await this.saveInternal(this.state);
   }
 
   /**
@@ -137,10 +114,6 @@ export abstract class BaseModelInModelStore<BaseEntityType extends Entity = Enti
       }
     }
     this.state.entities = newEntities;
-
-    if (changes.length > 0) {
-      this.dirty = true;
-    }
 
     this.notifyAboutExternalChanges(changes);
   }
@@ -193,9 +166,6 @@ export abstract class BaseModelInModelStore<BaseEntityType extends Entity = Enti
       this.state.entities = { ...snapshot.stateBefore.entities };
 
       const diff = diffEntities(previousEntities, this.state.entities);
-      if (diff.length > 0) {
-        this.dirty = true;
-      }
 
       return {
         transactionId,
@@ -222,9 +192,6 @@ export abstract class BaseModelInModelStore<BaseEntityType extends Entity = Enti
       }
 
       const diff = diffEntities(previousState, this.state.entities);
-      if (diff.length > 0) {
-        this.dirty = true;
-      }
 
       return {
         transactionId,
