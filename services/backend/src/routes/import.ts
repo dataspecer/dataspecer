@@ -12,6 +12,7 @@ import { PimStoreWrapper, serializationToPimModelEntities } from "@dataspecer/co
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import { conceptualModelToEntityListContainer, rdfToConceptualModel } from "@dataspecer/data-specification-vocabulary/semantic-model";
+import { isProjectModelEntity } from "@dataspecer/project-model";
 import { dsvMetadataWellKnown, rdfToDSVMetadata } from "@dataspecer/data-specification-vocabulary/specification-description";
 import { turtleStringToStructureModel } from "@dataspecer/data-specification-vocabulary/structure-model";
 import express from "express";
@@ -23,7 +24,7 @@ import z from "zod";
 import { modelRepository } from "../main.ts";
 import { BaseResource } from "../models/resource-model.ts";
 import { getModelsForPackage } from "../utils/backend-model-store.ts";
-import { diffModelStatesToOperations } from "../utils/model-operations.ts";
+import { diffModelEntitiesToOperations, diffModelStates } from "../utils/model-operations.ts";
 import { asyncHandler } from "./../utils/async-handler.ts";
 import type { CoreResource } from "@dataspecer/core/core/core-resource";
 import { canonicalizeIds } from "@dataspecer/structure-model";
@@ -594,7 +595,7 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
     const nextEntities = serializationToPimModelEntities(newModel.serializeModel() as object).entities;
 
     const previousStates = { [existingResource.iri]: previousEntities };
-    const operations = diffModelStatesToOperations(previousStates, { [existingResource.iri]: nextEntities });
+    const operations = diffModelEntitiesToOperations(existingResource.iri, RDFS_MODEL, previousEntities, nextEntities);
     const projectIri = await modelRepository.getParentIri(existingResource.iri) ?? existingResource.iri;
     await modelRepository.recordEvolutionTransactions(projectIri, existingResource.iri, [{ id: uuidv4(), operations }], previousStates);
 
@@ -620,7 +621,7 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
   const [result] = await importFromUrl("", url, query.iri);
 
   const nextModels = await getModelsForPackage(query.iri, modelRepository);
-  const operations = diffModelStatesToOperations(previousModels, nextModels);
+  const operations = diffModelStates(previousModels, nextModels);
   const projectIri = await modelRepository.getParentIri(query.iri) ?? query.iri;
   await modelRepository.recordEvolutionTransactions(projectIri, query.iri, [{ id: uuidv4(), operations }], previousModels);
 

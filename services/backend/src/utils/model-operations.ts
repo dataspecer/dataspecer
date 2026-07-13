@@ -22,7 +22,9 @@ import {
   type SetModelUrl,
 } from "@dataspecer/model-store/implementation";
 import { SemanticProfileModelOperations } from "@dataspecer/profile-model";
+import type { ProjectModelEntity } from "@dataspecer/project-model";
 import { applyOperationsToVisualModel } from "@dataspecer/visual-model/executor";
+import { PROJECT_MODEL_ID } from "../models/model-repository.ts";
 
 /**
  * Model types whose model is stored as one blob entity rather than a set of
@@ -81,26 +83,26 @@ export function diffModelEntitiesToOperations(modelId: string, modelType: string
 
   return operations.map((operation) => ({ modelId, operation }));
 }
-
 /**
  * Diffs two snapshots of model states (model id to entities) and converts the
- * differences into operations, tagged with the id of the model they belong
- * to. Semantic operations are generated where possible; everything else falls
- * back to the generic set/update/remove entity operations.
+ * differences into operations, tagged with the id of the model they belong to.
+ * The type of each model is resolved from its project model entity so that the
+ * diff can generate model type specific operations; models without one (the
+ * virtual project model itself, named blob stores) fall back to the generic
+ * entity operations.
  */
-export function diffModelStatesToOperations(previous: Record<string, EntityRecord>, next: Record<string, EntityRecord>): OperationInModel[] {
+export function diffModelStates(previous: Record<string, EntityRecord>, next: Record<string, EntityRecord>): OperationInModel[] {
   const modelIds = new Set([...Object.keys(previous), ...Object.keys(next)]);
   const operations: OperationInModel[] = [];
 
   for (const modelId of modelIds) {
-    const changes = diffEntities(previous[modelId] ?? {}, next[modelId] ?? {});
-    const { operations: semanticOps, remainingChanges } = changesToSemanticModelOperations(changes);
-    for (const operation of semanticOps) {
-      operations.push({ modelId, operation });
+    if (modelId === PROJECT_MODEL_ID) {
+      continue;
     }
-    for (const operation of changesToEntityOperations(remainingChanges)) {
-      operations.push({ modelId, operation });
-    }
+
+    const projectEntity = (next[PROJECT_MODEL_ID]?.[modelId] ?? previous[PROJECT_MODEL_ID]?.[modelId]) as ProjectModelEntity;
+    const modelType = projectEntity.modelType;
+    operations.push(...diffModelEntitiesToOperations(modelId, modelType, previous[modelId] ?? {}, next[modelId] ?? {}));
   }
 
   return operations;
