@@ -24,7 +24,7 @@ import {
 import { SemanticProfileModelOperations } from "@dataspecer/profile-model";
 import type { ProjectModelEntity } from "@dataspecer/project-model";
 import { applyOperationsToVisualModel } from "@dataspecer/visual-model/executor";
-import { PROJECT_MODEL_ID } from "../models/model-repository.ts";
+import { PROJECT_MODEL_ID } from "../models/model-repository-utils.ts";
 
 /**
  * Model types whose model is stored as one blob entity rather than a set of
@@ -67,7 +67,7 @@ export function diffModelEntitiesToOperations(modelId: string, modelType: string
   let remainingChanges = diffEntities(previous, next);
   const operations: Operation[] = [];
 
-  if (modelType === LOCAL_SEMANTIC_MODEL) {
+  if ([LOCAL_SEMANTIC_MODEL, RDFS_MODEL].includes(modelType)) {
     const semantic = changesToSemanticModelOperations(remainingChanges);
     operations.push(...semantic.operations);
 

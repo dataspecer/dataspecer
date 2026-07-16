@@ -45,7 +45,7 @@ interface OperationContext {
 
 }
 
-type EntityToProfileMapping = Record<EntityIdentifier, EntityIdentifier>;
+export type EntityToProfileMapping = Record<EntityIdentifier, EntityIdentifier>;
 
 type LanguageString = { [language: string]: string };
 
@@ -162,7 +162,7 @@ function splitEntitiesToProfile(entities: Entity[]) {
   }
 }
 
-function prepareProfileSemanticClassOperations(
+export function prepareProfileSemanticClassOperations(
   classes: SemanticClass[],
 ): CreateSemanticModelClassProfile[] {
   return classes.map(item => factory.createClassProfile({
@@ -180,7 +180,7 @@ function prepareProfileSemanticClassOperations(
   }))
 }
 
-function prepareProfileSemanticProfileClassOperations(
+export function prepareProfileSemanticProfileClassOperations(
   classes: ProfileClass[],
 ): CreateSemanticModelClassProfile[] {
   return classes.map(item => factory.createClassProfile({
@@ -217,7 +217,7 @@ async function createSemanticClassProfiles(
   return classProfiles;
 }
 
-function prepareProfileSemanticRelationshipOperations(
+export function prepareProfileSemanticRelationshipOperations(
   relationships: SemanticRelationship[],
   mappings: EntityToProfileMapping,
   relationshipSources: EntityIdentifier[],
@@ -299,7 +299,7 @@ function rangeEndProfile(
   }
 }
 
-function prepareProfileSemanticProfileRelationshipOperations(
+export function prepareProfileSemanticProfileRelationshipOperations(
   relationships: ProfileRelationship[],
   mappings: EntityToProfileMapping,
   relationshipSources: EntityIdentifier[],
@@ -349,7 +349,7 @@ async function createSemanticRelationshipProfiles(
   return relationshipProfiles;
 }
 
-function prepareProfileSemanticGeneralizationOperations(
+export function prepareProfileSemanticGeneralizationOperations(
   generalizations: SemanticGeneralization[],
   mappings: EntityToProfileMapping,
   generalizationSources: EntityIdentifier[],

@@ -10,6 +10,7 @@ import { useProjectTitle } from "@/hooks/use-project-title";
 
 const subPageLabelKeys: Record<string, string> = {
   "/evolution": "nav.evolution",
+  "/evolution/review": "nav.evolution",
 };
 
 export function Layout() {

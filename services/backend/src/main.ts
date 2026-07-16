@@ -29,7 +29,7 @@ import { getSimplifiedSemanticModel, setSimplifiedSemanticModel } from "./routes
 import { getSystemData } from "./routes/system.ts";
 import { useStaticSpaHandler } from "./static.ts";
 import { newApplicationProfile } from "./routes/new.ts";
-import { applyTransactions, getTransactionsDiff, listBranches } from "./routes/transaction.ts";
+import { applyTransactions, deleteEvolutionBranch, getTransactionsDiff, listBranches } from "./routes/transaction.ts";
 
 // Create application models
 
@@ -103,6 +103,7 @@ application.get(apiBasename + "/resources/root-resources", getRootPackages); // 
 // Side-channel for storing operations performed on the project, see TransactionModel.
 application.post(apiBasename + "/transactions/apply", applyTransactions);
 application.get(apiBasename + "/transactions/branches", listBranches);
+application.delete(apiBasename + "/transactions/branches/:branchId", deleteEvolutionBranch);
 application.get(apiBasename + "/transactions/log/:range", getTransactionsDiff);
 
 application.post(apiBasename + "/new/application-profile", newApplicationProfile);

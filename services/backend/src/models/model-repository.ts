@@ -1,17 +1,6 @@
-import { LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
-import { semanticModelEntitiesToSerialization, serializationToSemanticModelEntities } from "@dataspecer/core-v2/semantic-model";
-import { serializationToPimModelEntities } from "@dataspecer/core-v2/semantic-model/v1-adapters";
-import type { CoreResourceAndEntity } from "@dataspecer/core/core";
-import { serializationToStructureModelEntities, structureModelEntitiesToSerialization } from "@dataspecer/core/data-psm";
+import { LOCAL_SEMANTIC_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { diffEntities, type EntityRecord } from "@dataspecer/core/entity-model";
-import { serializationToBlobModelEntities } from "@dataspecer/core/entity-model/utils";
 import { isUndoOperation, type Operation, type Transaction } from "@dataspecer/core/operation";
-import {
-  asyncQueryableModelEntitiesToSerialization,
-  pimModelEntitiesToSerialization,
-  serializationToAsyncQueryableModelEntities,
-} from "@dataspecer/model-store/implementation";
-import { serializationToVisualModelEntities, visualModelEntitiesToSerialization } from "@dataspecer/visual-model";
 import { v4 as uuidv4 } from "uuid";
 import {
   applyOperationsToModelEntities,
@@ -21,105 +10,19 @@ import {
   isBlobModelType,
   type UndoHistoryEntry,
 } from "../utils/model-operations.ts";
-import type { ResourceModel } from "./resource-model.ts";
+import { composeModelId, deserializeModelEntities, NAMED_BLOB_STORE_TYPE, PROJECT_MODEL_ID, serializeModelEntities, splitModelId } from "./model-repository-utils.ts";
+import type { BaseResource, Package, ResourceModel } from "./resource-model.ts";
 import type { HistoryTransaction, TransactionEvents, TransactionModel, TransactionWithEvents } from "./transaction-model.ts";
 
-/**
- * Id of the virtual project model that lists the models of a project. It has
- * no backing resource; operations targeting it are only recorded.
- */
-export const PROJECT_MODEL_ID = "_project_model";
-
-/**
- * Synthetic model type for named, non-default storage blobs of a resource
- * (e.g. the "svg" blob of a visual model). Such blobs are treated as their own
- * blob models with id `${resourceIri}#${storeName}`, analogous to how the
- * frontend model store tracks them.
- */
-const NAMED_BLOB_STORE_TYPE = "#blob";
-
-function splitModelId(modelId: string): { iri: string; storeName: string } {
-  const hashIndex = modelId.indexOf("#");
-  if (hashIndex === -1) {
-    return { iri: modelId, storeName: "model" };
-  }
-  return { iri: modelId.slice(0, hashIndex), storeName: modelId.slice(hashIndex + 1) };
-}
-
-function composeModelId(iri: string, storeName: string): string {
-  return storeName === "model" ? iri : `${iri}#${storeName}`;
-}
-
-/**
- * Converts the JSON serialization of a model of the given type to a set of
- * entities. If the serialization is missing (null or undefined), the initial
- * state of a freshly created model of that type is returned instead,
- * mirroring how models are initialized on the frontend.
- */
-function deserializeModelEntities(modelId: string, modelType: string, data: unknown): EntityRecord {
-  if (modelType === LOCAL_SEMANTIC_MODEL) {
-    // A semantic model must always contain an entity representing the model itself.
-    return serializationToSemanticModelEntities(data ?? { modelId });
-  }
-
-  if (modelType === VISUAL_MODEL) {
-    return data ? serializationToVisualModelEntities(data) : {};
-  }
-
-  if (modelType === V1.PSM) {
-    // A model with no data yet starts empty, mirroring the frontend: the main
-    // schema entity is created by a create-schema operation that is recorded
-    // when the model is created, so replaying the operations produces it.
-    return data ? serializationToStructureModelEntities(data).entities : {};
-  }
-
-  if (modelType === QUERYABLE_MODEL) {
-    return data ? serializationToAsyncQueryableModelEntities(data) : {};
-  }
-
-  if (modelType === RDFS_MODEL) {
-    return serializationToPimModelEntities((data as object) ?? { id: modelId, pimStore: { resources: {} } }).entities;
-  }
-
-  // LOCAL_PACKAGE, V1.GENERATOR_CONFIGURATION and everything else is treated as a blob model.
-  return serializationToBlobModelEntities(modelId, (data as object) ?? {});
-}
-
-/**
- * Converts a set of entities of a model of the given type back to its JSON
- * serialization. Inverse of {@link deserializeModelEntities}.
- *
- * @param previousSerialization The serialization the entities were loaded
- * from, if any. It is used to carry over parts of the serialization that are
- * not represented as entities (currently the legacy embedded operation log of
- * the structure model).
- */
-function serializeModelEntities(modelId: string, modelType: string, entities: EntityRecord, previousSerialization?: unknown): unknown {
-  if (modelType === LOCAL_SEMANTIC_MODEL) {
-    return semanticModelEntitiesToSerialization(entities);
-  }
-
-  if (modelType === VISUAL_MODEL) {
-    return visualModelEntitiesToSerialization(entities);
-  }
-
-  if (modelType === V1.PSM) {
-    return structureModelEntitiesToSerialization({
-      operations: ((previousSerialization as { operations?: Operation[] })?.operations) ?? [],
-      entities: entities as EntityRecord<CoreResourceAndEntity>,
-    });
-  }
-
-  if (modelType === QUERYABLE_MODEL) {
-    return asyncQueryableModelEntitiesToSerialization(modelId, entities);
-  }
-
-  if (modelType === RDFS_MODEL) {
-    return pimModelEntitiesToSerialization(modelId, entities);
-  }
-
-  // Blob model is a single entity with the whole blob as its data.
-  return entities[modelId] ?? {};
+export interface ModelRepositoryType {
+  getResource(iri: string): Promise<BaseResource | null>;
+  getPackage(iri: string): Promise<Package | null>;
+  getModelEntities(modelId: string): Promise<EntityRecord | null>;
+  createResource(parentIri: string | null, iri: string, type: string, userMetadata: {}): Promise<void>;
+  createPackage(parentIri: string | null, iri: string, userMetadata: {}): Promise<void>;
+  updateResource(iri: string, userMetadata: {}): Promise<void>;
+  deleteResource(iri: string): Promise<void>;
+  setResourceStoreJson(iri: string, data: unknown, storeName?: string): Promise<void>;
 }
 
 /**
@@ -143,7 +46,7 @@ function serializeModelEntities(modelId: string, modelType: string, entities: En
  * by the history yet; the resource tree operations are plain delegates to
  * {@link ResourceModel}.
  */
-export class ModelRepository {
+export class ModelRepository implements ModelRepositoryType {
   private readonly resourceModel: ResourceModel;
   private readonly transactionModel: TransactionModel;
 
@@ -357,18 +260,11 @@ export class ModelRepository {
    * of the transactions contain any operations, nothing is recorded and the
    * evolution branch is left untouched.
    *
-   * The stored snapshots cannot serve as the state the transactions apply to,
-   * since the reload flows write the new content in place before recording;
-   * the caller therefore provides the base states of the models (model id to
-   * entities), which are used to derive the up/down events of each
-   * transaction.
+   * The caller provides the base states of the models (model id to entities)
+   * the transactions apply to; they are used to derive the up/down events of
+   * each transaction.
    */
-  async recordEvolutionTransactions(
-    projectIri: string,
-    resourceIri: string,
-    transactions: Transaction[],
-    baseStates: Record<string, EntityRecord>,
-  ): Promise<void> {
+  async recordEvolutionTransactions(projectIri: string, resourceIri: string, transactions: Transaction[], baseStates: Record<string, EntityRecord>): Promise<void> {
     if (transactions.every((transaction) => transaction.operations.length === 0)) {
       return;
     }
@@ -561,3 +457,5 @@ export class ModelRepository {
     return this.resourceModel.deleteResourceStore(iri, storeName);
   }
 }
+
+
