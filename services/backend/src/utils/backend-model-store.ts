@@ -4,7 +4,8 @@ import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import { getModelMetadata, resolveAsyncQueryableModelEntities } from "@dataspecer/model-store/implementation";
 import { PROJECT_MODEL_MODEL_ENTITY, type PackageEntity, type ProjectModelEntity } from "@dataspecer/project-model";
-import { PROJECT_MODEL_ID, type ModelRepository } from "../models/model-repository.ts";
+import { type ModelRepositoryType } from "../models/model-repository.ts";
+import { PROJECT_MODEL_ID } from "../models/model-repository-utils.ts";
 import type { BaseResource, Package } from "../models/resource-model.ts";
 
 function createRegularResourceEntity(resource: BaseResource): ProjectModelEntity {
@@ -54,7 +55,10 @@ async function resolveModelEntities(modelType: string, entities: EntityRecord): 
  * @todo Add project revision id (branch or commit) parameter
  * @todo Add model type filter parameter
  */
-export async function getModelsForPackage(packageId: ModelIdentifier, modelRepository: ModelRepository): Promise<Record<ModelIdentifier, EntityRecord>> {
+export async function getModelsForPackage(
+  packageId: ModelIdentifier,
+  modelRepository: Pick<ModelRepositoryType, "getPackage" | "getModelEntities">,
+): Promise<Record<ModelIdentifier, EntityRecord>> {
   const models: Record<string, EntityRecord> = {};
   const projectModelEntities: EntityRecord = {};
   const visitedPackages = new Set<string>();

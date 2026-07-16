@@ -2,7 +2,7 @@
   "--lang-name": "Čeština",
   "app-name": "historie",
   "breadcrumbs": {
-    "home": "Balíčky",
+    "home": "Specifikace",
     "no-specification": "Není vybrána žádná specifikace"
   },
   "nav": {
@@ -15,71 +15,120 @@
     "system": "Systémové"
   },
   "evolution": {
-    "title": "Nevyřízené změny",
-    "description": "Změny provedené v jednom modelu, které ještě nebyly promítnuty do ostatních modelů této specifikace.",
+    "title": "Evoluce",
+    "review-title": "Evoluce modelu „{{name}}“",
+    "back-to-overview": "Zpět na přehled",
+    "description": "Nadřazený model se změnil. Projděte si, jak mají závislé modely zareagovat — přijměte jednoduché části, vyřešte konflikty a obrazovku nechte otevřenou pro změny, které dokončíte ručně v editoru.",
     "empty": "Nejsou žádné nevyřízené změny.",
     "no-project": "Není vybrán žádný projekt. Otevřete tuto stránku s parametrem packageIri.",
-    "loading": "Načítám nevyřízené změny…",
-    "all-reviewed": "Všechny nevyřízené změny byly zpracovány.",
-    "progress": "Změna {{current}} z {{total}}",
-    "previous": "Předchozí",
-    "approve-and-continue": "Schválit a pokračovat",
-    "proposed-operations_one": "{{count}} navrhovaná operace v ostatních modelech",
-    "proposed-operations_few": "{{count}} navrhované operace v ostatních modelech",
-    "proposed-operations_other": "{{count}} navrhovaných operací v ostatních modelech",
-    "apply": "Použít",
-    "skip": "Přeskočit",
-    "status-applied": "Použito",
-    "status-skipped": "Přeskočeno",
-    "proposals-title": "Navrhované evoluce pro aplikační profil:",
-    "no-proposals": "Žádné návrhy evoluce pro aplikační profil.",
-    "no-evolution": "Bez evoluce (přeskočit aktualizaci profilu)"
-  },
-  "operations": {
-    "generic": {
-      "type": "Typ"
+    "overview": {
+      "description": "Čekající aktualizace slovníků a specifikací, jejichž změny ovlivňují jiné modely. Otevřete konkrétní aktualizaci a projděte si, jak mají závislé modely zareagovat.",
+      "empty": "Žádná evoluce nečeká na vyřízení.",
+      "change": {
+        "created": "Vytvořeno",
+        "modified": "Upraveno",
+        "deleted": "Smazáno"
+      },
+      "kind": {
+        "classes_one": "{{count}} třída",
+        "classes_few": "{{count}} třídy",
+        "classes_other": "{{count}} tříd",
+        "relationships_one": "{{count}} vztah",
+        "relationships_few": "{{count}} vztahy",
+        "relationships_other": "{{count}} vztahů",
+        "generalizations_one": "{{count}} generalizace",
+        "generalizations_few": "{{count}} generalizace",
+        "generalizations_other": "{{count}} generalizací",
+        "other_one": "{{count}} jiná entita",
+        "other_few": "{{count}} jiné entity",
+        "other_other": "{{count}} jiných entit"
+      },
+      "no-net-changes": "Čekající operace se navzájem ruší.",
+      "status": {
+        "not-in-specification": "Změny se zatím nepromítají do specifikace"
+      },
+      "affects": "Ovlivňuje:",
+      "no-targets": "Na tuto změnu nereaguje žádný závislý model — aktualizaci lze rovnou přijmout.",
+      "review": "Zkontrolovat",
+      "action": {
+        "skip": "Přeskočit evoluci",
+        "skip-description": "Přijmout změny nadřazeného modelu tak, jak jsou, bez jakékoliv reakce v závislých modelech.",
+        "cancel": "Zrušit evoluci",
+        "cancel-description": "Zahodit čekající změny a ponechat všechny modely beze změny."
+      },
+      "edge": {
+        "semantic-to-profile": "slovník → profil",
+        "profile-to-profile": "profil → profil"
+      }
     },
-    "semantic": {
-      "iri": "Iri",
+    "summary": "{{operations}} operací ve slovníku, {{items}} položek ovlivňujících profil",
+    "summary-counts": "{{attention}} vyžaduje pozornost · {{manual}} k ručnímu vyřešení · {{applied}} použito",
+    "all-done": "Vše použito",
+    "apply-all": "Přijmout aktualizaci a použít vybrané ({{count}})",
+    "apply-selected": "Použít vybrané ({{count}})",
+    "no-profile-impact": "Změny slovníku neovlivňují aplikační profil. Přijetí aktualizace pouze provede změny slovníku.",
+    "requires-new-profiles": "Vyžaduje profily tříd navržené výše — jejich odškrtnutí zruší i tuto položku.",
+    "cascade-warning": "Smazání odstraní také {{relationships}} závislé profily vztahů a {{generalizations}} generalizace.",
+    "manual-todo": "Vyřešeno ručně v editoru konceptuálního modelu.",
+    "retyped-upstream": "třída na tomto konci se ve slovníku změnila",
+    "section": {
+      "new-classes": "Nové třídy",
+      "new-relationships": "Nové vztahy",
+      "new-generalizations": "Nové generalizace",
+      "deletions": "Smazání",
+      "modifications": "Úpravy"
+    },
+    "item": {
+      "create-class": "Nová třída „{{name}}“",
+      "create-class-hint": "Vytvořit pro ni profil třídy",
+      "create-relationship": "Nový vztah „{{name}}“",
+      "create-generalization": "Nová generalizace",
+      "specializes": "„{{child}}“ specializuje „{{parent}}“",
+      "profile-of": "Profil entity „{{name}}“",
+      "deleted-class-profile": "Třída „{{name}}“ byla ve slovníku smazána",
+      "deleted-relationship-profile": "Vztah „{{name}}“ byl ve slovníku smazán",
+      "deleted-generalization": "Generalizace „{{name}}“ byla ve slovníku smazána",
+      "affected-profile": "Dotčený profil: „{{name}}“"
+    },
+    "end-role": {
+      "domain": "doména",
+      "range": "obor hodnot"
+    },
+    "field": {
       "name": "Název",
       "description": "Popis",
-      "name-property": "Vlastnost názvu",
-      "description-property": "Vlastnost popisu",
-      "domain": "Doména",
-      "range": "Rozsah",
-      "child": "Potomek",
-      "parent": "Předek"
+      "usageNote": "Poznámka k použití",
+      "cardinality": "Kardinalita",
+      "concept": "Třída",
+      "externalDocumentationUrl": "URL dokumentace"
     },
-    "structure": {
-      "new-iri": "Nové iri",
-      "interpretation": "Interpretace",
-      "human-label": "Lidský popisek",
-      "extends": "Rozšiřuje",
-      "class": "Třída",
-      "resource": "Zdroj",
-      "owner": "Vlastník",
-      "datatype": "Datový typ",
-      "entity": "Entita",
-      "cardinality": "Kardinalita"
+    "profile-state": {
+      "inherits": "Profil tuto hodnotu dědí — nová hodnota se propíše automaticky.",
+      "override-matches-new": "Profil hodnotu přepisuje na „{{value}}“, což nyní odpovídá nové hodnotě ve slovníku.",
+      "override-differs": "Konflikt: profil hodnotu přepisuje na „{{value}}“.",
+      "not-inheritable": "Profil má vlastní hodnotu „{{value}}“."
     },
-    "titles": {
-      "semantic-create-class": "Vytvoření třídy",
-      "semantic-modify-class": "Úprava třídy",
-      "semantic-create-relationship": "Vytvoření vztahu",
-      "semantic-modify-relationship": "Úprava vztahu",
-      "semantic-create-generalization": "Vytvoření generalizace",
-      "semantic-modify-generalization": "Úprava generalizace",
-      "semantic-delete-class": "Smazání třídy",
-      "semantic-delete-relationship": "Smazání vztahu",
-      "semantic-delete-generalization": "Smazání generalizace",
-      "semantic-delete-entity": "Smazání entity",
-      "semantic-generic": "Operace konceptuálního modelu",
-      "structure-create-class": "Vytvoření třídy",
-      "structure-delete-class": "Smazání třídy",
-      "structure-set-human-label": "Nastavení lidského popisku",
-      "structure-create-attribute": "Vytvoření atributu",
-      "structure-set-cardinality": "Nastavení kardinality",
-      "structure-generic": "Operace strukturálního modelu"
+    "choice": {
+      "inherit": "Dědit",
+      "freeze-old": "Zafixovat starou hodnotu",
+      "adopt-new": "Převzít novou hodnotu",
+      "keep-own": "Ponechat hodnotu profilu",
+      "drop-override": "Zrušit přepis (dědit)",
+      "keep-override": "Ponechat přepis",
+      "delete": "Smazat profil",
+      "detach": "Ponechat profil (odpojit)",
+      "keep": "Ponechat",
+      "retarget": "Přesměrovat na „{{name}}“",
+      "manual": "Vyřešit ručně"
+    },
+    "severity": {
+      "automatic": "automatické",
+      "decision": "rozhodnutí",
+      "attention": "vyžaduje pozornost"
+    },
+    "status": {
+      "applied": "Použito",
+      "manual": "Ručně"
     }
   }
 }

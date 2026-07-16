@@ -1,202 +1,149 @@
+import { Button } from "@/components/ui/button";
+import { useModelStore } from "@/contexts/model-store-context";
+import type { OperationInModel } from "@dataspecer/core/operation";
+import type { EvolutionItem } from "@dataspecer/profile-model/hooks";
+import { Link, useLocation } from "@tanstack/react-router";
+import { ArrowLeft, CheckCircle2, GitMerge } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useLocation } from "@tanstack/react-router";
-import { ArrowRight, CheckCircle2, SkipForward } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import { useModelStore } from "@/contexts/model-store-context";
-import { OperationRenderer } from "./operations/operation-renderer";
-import { LOCAL_SEMANTIC_MODEL } from "@dataspecer/core-v2/model/known-models";
-import type { ProjectModelEntity } from "@dataspecer/project-model";
-import { reactToSemanticModelOperation, type EvolutionProposal } from "@dataspecer/profile-model/hooks";
-import type { Operation, OperationInModel } from "@dataspecer/core/operation";
-import type { DefaultFrontendModelStore } from "@dataspecer/model-store/implementation";
+import { createLabelResolver, type LabelResolver } from "./display";
+import { buildReviewGroups, fetchEvolutionBranches, modelDisplayName, type EvolutionBranch } from "./evolution-data";
+import { ItemCard } from "./item-card";
+import {
+  buildReviewItems,
+  collectCommit,
+  groupKey,
+  initializeState,
+  itemStatus,
+  markApplied,
+  selectChoice,
+  setItemChecked,
+  setManualDone,
+  type ReviewGroup,
+  type ReviewState,
+} from "./review-state";
 
 // ---------------------------------------------------------------------------
-// Types
+// Sections
 // ---------------------------------------------------------------------------
 
-interface BackendOperation {
-  id: number;
-  modelId: string;
-  order: number;
-  data: Operation;
-}
-
-// ---------------------------------------------------------------------------
-// Data fetching
-// ---------------------------------------------------------------------------
-
-interface BranchInfo {
-  id: number;
-  name: string | null;
-  resourceIri: string | null;
-}
-
-async function fetchBranches(backendUrl: string, projectIri: string): Promise<BranchInfo[]> {
-  const url = new URL(`${backendUrl}/transactions/branches`, window.location.origin);
-  url.searchParams.set("projectIri", projectIri);
-  const response = await fetch(url.toString());
-  if (!response.ok) return [];
-  const result = await response.json() as { branches: BranchInfo[] };
-  return result.branches;
-}
-
-async function fetchBranchDiff(backendUrl: string, projectIri: string, branchId: number): Promise<BackendOperation[]> {
-  const range = `main..[${branchId}]`;
-  const url = new URL(`${backendUrl}/transactions/log/${encodeURIComponent(range)}`, window.location.origin);
-  url.searchParams.set("projectIri", projectIri);
-  const response = await fetch(url.toString());
-  if (!response.ok) return [];
-  const result = await response.json() as { transactions: { operations: BackendOperation[] }[] };
-  return result.transactions.flatMap((tx) => tx.operations);
-}
-
-/**
- * Fetches pending operations from every evolution branch of the project (one
- * per model currently being updated), not just a single hardcoded branch, so
- * evolution can be reviewed for multiple models at once.
- */
-async function fetchEvolutionOperations(backendUrl: string, projectIri: string): Promise<BackendOperation[]> {
-  const branches = await fetchBranches(backendUrl, projectIri);
-  const evolutionBranches = branches.filter((branch) => branch.resourceIri !== null);
-  const operationsPerBranch = await Promise.all(
-    evolutionBranches.map((branch) => fetchBranchDiff(backendUrl, projectIri, branch.id)),
-  );
-  return operationsPerBranch.flat();
-}
-
-// ---------------------------------------------------------------------------
-// Model helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Returns the id of the first LOCAL_SEMANTIC_MODEL in the project that is not
- * the given parent model.  This is the application profile model that will
- * receive the proposed evolution operations.
- */
-function findChildModelId(modelStore: DefaultFrontendModelStore, parentModelId: string): string | null {
-  const projectEntities = modelStore.getAllEntities()[modelStore.projectModelId] ?? {};
-  return (
-    Object.values(projectEntities)
-      .filter((e): e is ProjectModelEntity => (e as ProjectModelEntity).modelType === LOCAL_SEMANTIC_MODEL)
-      .find((e) => e.id !== parentModelId)
-      ?.id ?? null
-  );
-}
-
-/**
- * Derives evolution proposals for a single upstream operation using the
- * profile-model hook.  Returns an empty array when the parent or child model
- * cannot be resolved.
- */
-function deriveProposals(modelStore: DefaultFrontendModelStore, op: BackendOperation): { proposals: EvolutionProposal[]; childModelId: string | null } {
-  const parentEntities = modelStore.getAllEntities()[op.modelId];
-  if (!parentEntities) return { proposals: [], childModelId: null };
-
-  const childModelId = findChildModelId(modelStore, op.modelId);
-  if (!childModelId) return { proposals: [], childModelId: null };
-
-  const childEntities = modelStore.getAllEntities()[childModelId];
-  if (!childEntities) return { proposals: [], childModelId: null };
-
-  const proposals = reactToSemanticModelOperation(parentEntities, op.data, childEntities);
-  return { proposals, childModelId };
-}
-
-// ---------------------------------------------------------------------------
-// Sub-components
-// ---------------------------------------------------------------------------
-
-function ProposalCard({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "w-full rounded-md border px-4 py-3 text-left text-sm transition-colors",
-        selected
-          ? "border-primary bg-primary/10 font-medium"
-          : "border-border bg-muted/30 hover:bg-muted/60",
-      )}
-    >
-      {label}
-    </button>
-  );
-}
+const SECTIONS: { id: string; kinds: EvolutionItem["kind"][] }[] = [
+  { id: "new-classes", kinds: ["create-class-profile"] },
+  { id: "new-relationships", kinds: ["create-relationship-profile"] },
+  { id: "new-generalizations", kinds: ["create-generalization-profile"] },
+  { id: "deletions", kinds: ["delete-profile"] },
+  { id: "modifications", kinds: ["modify-profile"] },
+];
 
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
 /**
- * Shows pending operations from all evolution branches of the project (one
- * per model currently being updated) one at a time. For each operation the
- * hook `reactToSemanticModelOperation` is called against the first child
- * LOCAL_SEMANTIC_MODEL found in the project.  The user picks a proposed
- * evolution operation (or none) and approves, which dispatches both the
- * upstream operation on the parent model and the selected proposal's
- * operations on the child model in a single model-store transaction.
+ * Batch review of the pending evolution of one branch (or of every branch when
+ * none is given) — one branch per reloaded resource, e.g. a whole package. The
+ * pending operations are analyzed at once against every dependent profile
+ * model outside the branch — vocabulary → profile and profile → profile edges
+ * alike — and presented as one screen of decisions grouped into sections.
+ * "Apply selected" commits all pending operations of the branch (first apply)
+ * together with the profile operations of every resolved decision in a single
+ * transaction; the screen stays open so remaining items — including those
+ * marked to be resolved manually in the editor — keep their context.
  */
 export function EvolutionPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const location = useLocation();
-  const packageIri = (location.search as Record<string, unknown>).packageIri as string | undefined;
+  const search = location.search as Record<string, unknown>;
+  const packageIri = search.packageIri as string | undefined;
+  const branchId = search.branch === undefined ? undefined : Number(search.branch);
   const { modelStore } = useModelStore();
 
-  const [operations, setOperations] = useState<BackendOperation[]>([]);
-  const [index, setIndex] = useState(0);
   const [loading, setLoading] = useState(false);
-  // Index into proposals array; -1 means "no evolution / skip child model"
-  const [selectedProposalIdx, setSelectedProposalIdx] = useState<number>(-1);
+  /** The reviewed evolution branches, frozen at fetch time. */
+  const [branches, setBranches] = useState<EvolutionBranch[] | null>(null);
+  const [groups, setGroups] = useState<ReviewGroup[] | null>(null);
+  const [state, setState] = useState<ReviewState>({});
+  const [upstreamApplied, setUpstreamApplied] = useState(false);
 
+  // The analysis is computed once from the fetched operations and the current
+  // store state, then frozen — applying operations must not re-derive it.
   useEffect(() => {
     const backendUrl = import.meta.env.VITE_BACKEND as string | undefined;
     if (!backendUrl || !packageIri || !modelStore) return;
 
     setLoading(true);
-    setIndex(0);
-    fetchEvolutionOperations(backendUrl, packageIri)
-      .then(setOperations)
+    setBranches(null);
+    setGroups(null);
+    setUpstreamApplied(false);
+    fetchEvolutionBranches(backendUrl, packageIri)
+      .then((allBranches) => {
+        const scoped = branchId === undefined ? allBranches : allBranches.filter((branch) => branch.branchId === branchId);
+        const reviewGroups = buildReviewGroups(modelStore, scoped);
+        setBranches(scoped);
+        setGroups(reviewGroups);
+        setState(initializeState(buildReviewItems(reviewGroups)));
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [packageIri, modelStore]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [packageIri, branchId, modelStore]);
 
-  const current = operations[index];
+  const items = useMemo(() => buildReviewItems(groups ?? []), [groups]);
 
-  // Re-derive proposals whenever the current operation or the model store changes.
-  const { proposals, childModelId } = useMemo(() => {
-    if (!current || !modelStore) return { proposals: [], childModelId: null };
-    return deriveProposals(modelStore, current);
-  }, [current, modelStore]);
+  const labelResolvers = useMemo(() => {
+    const resolvers = new Map<string, LabelResolver>();
+    for (const group of groups ?? []) {
+      resolvers.set(groupKey(group), createLabelResolver(group, i18n.language));
+    }
+    return resolvers;
+  }, [groups, i18n.language]);
 
-  // Auto-select the first proposal whenever the operation changes.
-  useEffect(() => {
-    setSelectedProposalIdx(proposals.length > 0 ? 0 : -1);
-  }, [current?.id, proposals.length]);
+  const commit = useMemo(() => collectCommit(items, state), [items, state]);
 
-  const total = operations.length;
+  const statuses = useMemo(() => new Map(items.map((item) => [item.key, itemStatus(item, state)])), [items, state]);
 
-  const handleApprove = () => {
-    if (!modelStore || !current) return;
+  const counts = useMemo(
+    () => ({
+      attention: items.filter((i) => i.item.severity === "attention" && statuses.get(i.key) !== "applied").length,
+      manual: items.filter((i) => statuses.get(i.key) === "manual").length,
+      applied: items.filter((i) => statuses.get(i.key) === "applied").length,
+    }),
+    [items, statuses],
+  );
 
-    const ops: OperationInModel[] = [
-      { modelId: current.modelId, operation: current.data },
-    ];
+  const allDone = upstreamApplied && items.every((item) => statuses.get(item.key) === "applied" || statuses.get(item.key) === "unchecked");
 
-    if (selectedProposalIdx >= 0 && childModelId) {
-      const proposal = proposals[selectedProposalIdx];
-      for (const profileOp of proposal?.operations ?? []) {
-        ops.push({ modelId: childModelId, operation: profileOp });
+  // -------------------------------------------------------------------------
+  // Handlers
+  // -------------------------------------------------------------------------
+
+  const handleCheck = (key: string, checked: boolean) => setState((s) => setItemChecked(items, s, key, checked));
+
+  const handleSelectChoice = (key: string, decisionKey: string, choiceId: string) => setState((s) => selectChoice(items, s, key, decisionKey, choiceId));
+
+  const handleManualDone = (key: string, done: boolean) => setState((s) => setManualDone(s, key, done));
+
+  const handleApply = () => {
+    if (!modelStore || !branches) return;
+
+    const operations: OperationInModel[] = [];
+    if (!upstreamApplied) {
+      // The upstream changes are not negotiable — the upstream models moved to
+      // a new version; all pending operations of the reviewed branches
+      // (including those targeting models without dependents, e.g. structure
+      // models of a reloaded package) are committed wholesale with the first
+      // apply.
+      for (const branch of branches) {
+        operations.push(...branch.operations);
       }
     }
+    operations.push(...commit.operations);
+    if (operations.length === 0) return;
 
-    modelStore.transaction(ops, {});
-    setIndex((i) => i + 1);
+    modelStore.transaction(operations, {});
+    setState((s) => markApplied(s, commit.appliedMarks));
+    setUpstreamApplied(true);
   };
-
-  const handleSkip = () => setIndex((i) => i + 1);
 
   // -------------------------------------------------------------------------
   // Render
@@ -205,16 +152,15 @@ export function EvolutionPage() {
   if (!packageIri) {
     return (
       <div className="space-y-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{t("evolution.title")}</h1>
-          <p className="text-sm text-muted-foreground">{t("evolution.description")}</p>
-        </div>
+        <PageHeader packageIri={packageIri} sourceLabel={null} />
         <p className="text-sm text-muted-foreground">{t("evolution.no-project")}</p>
       </div>
     );
   }
 
-  if (loading) {
+  const sourceLabel = modelStore && branchId !== undefined && branches?.length ? modelDisplayName(modelStore, branches[0]!.resourceIri, i18n.language) : null;
+
+  if (loading || groups === null) {
     return (
       <div className="flex justify-center py-16">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-foreground" />
@@ -222,72 +168,93 @@ export function EvolutionPage() {
     );
   }
 
+  const hasUpstreamOperations = groups.some((group) => group.upstreamOperations.length > 0);
+  if (!hasUpstreamOperations) {
+    return (
+      <div className="space-y-4">
+        <PageHeader packageIri={packageIri} sourceLabel={sourceLabel} />
+        <p className="text-sm text-muted-foreground">{t("evolution.empty")}</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{t("evolution.title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("evolution.description")}</p>
+    <div className="space-y-6 pb-24">
+      <PageHeader packageIri={packageIri} sourceLabel={sourceLabel} />
+
+      {/* Summary */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border bg-muted/30 px-4 py-3">
+        <div className="text-sm">
+          <p className="font-medium">
+            {t("evolution.summary", {
+              operations: groups.reduce((n, g) => n + g.upstreamOperations.length, 0),
+              items: items.length,
+            })}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {t("evolution.summary-counts", {
+              attention: counts.attention,
+              manual: counts.manual,
+              applied: counts.applied,
+            })}
+          </p>
+        </div>
+        {allDone ? (
+          <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
+            <CheckCircle2 className="h-5 w-5" />
+            {t("evolution.all-done")}
+          </div>
+        ) : (
+          <Button onClick={handleApply} disabled={upstreamApplied && commit.operations.length === 0}>
+            <GitMerge className="mr-1 h-4 w-4" />
+            {upstreamApplied ? t("evolution.apply-selected", { count: commit.appliedMarks.length }) : t("evolution.apply-all", { count: commit.appliedMarks.length })}
+          </Button>
+        )}
       </div>
 
-      {total === 0 ? (
-        <p className="text-sm text-muted-foreground">{t("evolution.empty")}</p>
-      ) : index >= total ? (
-        <div className="flex flex-col items-center gap-2 rounded-md border border-dashed p-10 text-center animate-in fade-in duration-300">
-          <CheckCircle2 className="h-8 w-8 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">{t("evolution.all-reviewed")}</p>
-        </div>
-      ) : (
-        <>
-          <div className="text-sm text-muted-foreground">
-            {t("evolution.progress", { current: index + 1, total })}
-          </div>
+      {items.length === 0 && <p className="text-sm text-muted-foreground">{t("evolution.no-profile-impact")}</p>}
 
-          {/* Upstream operation card */}
-          <Card key={current.id} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <OperationRenderer operation={current.data} entities={modelStore?.getAllEntities()[current.modelId]} />
-          </Card>
-
-          {/* Evolution proposals */}
-          {childModelId && (
+      {/* Sections */}
+      {SECTIONS.map((section) => {
+        const sectionItems = items.filter((item) => section.kinds.includes(item.item.kind));
+        if (sectionItems.length === 0) return null;
+        return (
+          <section key={section.id} className="space-y-2">
+            <h2 className="text-sm font-semibold tracking-tight text-muted-foreground uppercase">
+              {t(`evolution.section.${section.id}`)} ({sectionItems.length})
+            </h2>
             <div className="space-y-2">
-              <p className="text-sm font-medium">
-                {proposals.length > 0
-                  ? t("evolution.proposals-title")
-                  : t("evolution.no-proposals")}
-              </p>
-
-              <div className="space-y-2">
-                {proposals.map((proposal, i) => (
-                  <ProposalCard
-                    key={i}
-                    label={proposal.label}
-                    selected={selectedProposalIdx === i}
-                    onClick={() => setSelectedProposalIdx(i)}
-                  />
-                ))}
-
-                {/* Always show a "no evolution" option */}
-                <ProposalCard
-                  label={t("evolution.no-evolution")}
-                  selected={selectedProposalIdx === -1}
-                  onClick={() => setSelectedProposalIdx(-1)}
+              {sectionItems.map((reviewItem) => (
+                <ItemCard
+                  key={reviewItem.key}
+                  reviewItem={reviewItem}
+                  state={state}
+                  labels={labelResolvers.get(groupKey(reviewItem.group))!}
+                  onCheck={handleCheck}
+                  onSelectChoice={handleSelectChoice}
+                  onManualDone={handleManualDone}
                 />
-              </div>
+              ))}
             </div>
-          )}
+          </section>
+        );
+      })}
+    </div>
+  );
+}
 
-          <div className="flex justify-between pt-2">
-            <Button variant="outline" onClick={handleSkip}>
-              <SkipForward className="mr-1 h-4 w-4" />
-              {t("evolution.skip")}
-            </Button>
-            <Button onClick={handleApprove}>
-              {t("evolution.approve-and-continue")}
-              <ArrowRight className="ml-1 h-4 w-4" />
-            </Button>
-          </div>
-        </>
+function PageHeader({ packageIri, sourceLabel }: { packageIri: string | undefined; sourceLabel: string | null }) {
+  const { t } = useTranslation();
+  return (
+    <div className="space-y-1">
+      {packageIri && (
+        <Link to="/evolution" search={{ packageIri }} className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-3 w-3" />
+          {t("evolution.back-to-overview")}
+        </Link>
       )}
+      <h1 className="text-2xl font-semibold tracking-tight">{sourceLabel ? t("evollinen.review-title", { name: sourceLabel }) : t("evolution.title")}</h1>
+      <p className="text-sm text-muted-foreground">{t("evolution.description")}</p>
     </div>
   );
 }

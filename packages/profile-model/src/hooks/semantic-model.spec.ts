@@ -10,7 +10,13 @@ import {
 } from "@dataspecer/core-v2/semantic-model/operations";
 import { createDefaultSemanticModelProfileOperationFactory } from "@dataspecer/core-v2/semantic-model/profile/operations";
 import { createWritableInMemoryProfileModel } from "../index.ts";
-import { reactToSemanticModelOperation } from "./semantic-model.ts";
+import {
+  type CreateClassProfileItem,
+  type CreateRelationshipProfileItem,
+  type DeleteProfileItem,
+  type ModifyProfileItem,
+} from "./evolution-items.ts";
+import { analyzeEvolution } from "./semantic-model.ts";
 import type { WritableProfileModel } from "../profile-model.ts";
 
 const profileFactory = createDefaultSemanticModelProfileOperationFactory();
@@ -18,7 +24,6 @@ const profileFactory = createDefaultSemanticModelProfileOperationFactory();
 /**
  * Build a semantic model with: Person --hasPet--> Animal
  * Person is a specialization of LivingThing.
- * Returns the model and entity IDs.
  */
 function buildSemanticModel() {
   const builder = createDefaultSemanticModelBuilder({
@@ -46,67 +51,38 @@ function buildSemanticModel() {
 }
 
 /**
- * Build a profile model that profiles Person and Animal from the semantic model,
- * plus a relationship profile for hasPet and a generalization.
+ * Build a profile model profiling Person, Animal and LivingThing, with a
+ * relationship profile for hasPet and a generalization p-person → p-livingThing.
+ * All names/descriptions are inherited.
  */
-function buildProfileModel(semanticModel: ReturnType<typeof buildSemanticModel>["model"], ids: ReturnType<typeof buildSemanticModel>["ids"]): WritableProfileModel {
+function buildProfileModel(ids: ReturnType<typeof buildSemanticModel>["ids"]): WritableProfileModel {
   const profileModel = createWritableInMemoryProfileModel({
     identifier: "profile",
     baseIri: "http://profile.example.com/",
   });
 
-  // Profile Person class
-  profileModel.executeOperations([
-    profileFactory.createClassProfile({
-      id: "p-person",
-      iri: "p-person",
-      profiling: [ids.person],
-      name: null,
-      nameFromProfiled: ids.person,
-      description: null,
-      descriptionFromProfiled: ids.person,
-      usageNote: null,
-      usageNoteFromProfiled: null,
-      externalDocumentationUrl: null,
-      tags: [],
-    }),
-  ]);
+  for (const [profileId, profiledId] of [
+    ["p-person", ids.person],
+    ["p-animal", ids.animal],
+    ["p-livingThing", ids.livingThing],
+  ] as const) {
+    profileModel.executeOperations([
+      profileFactory.createClassProfile({
+        id: profileId,
+        iri: profileId,
+        profiling: [profiledId],
+        name: null,
+        nameFromProfiled: profiledId,
+        description: null,
+        descriptionFromProfiled: profiledId,
+        usageNote: null,
+        usageNoteFromProfiled: null,
+        externalDocumentationUrl: null,
+        tags: [],
+      }),
+    ]);
+  }
 
-  // Profile Animal class
-  profileModel.executeOperations([
-    profileFactory.createClassProfile({
-      id: "p-animal",
-      iri: "p-animal",
-      profiling: [ids.animal],
-      name: null,
-      nameFromProfiled: ids.animal,
-      description: null,
-      descriptionFromProfiled: ids.animal,
-      usageNote: null,
-      usageNoteFromProfiled: null,
-      externalDocumentationUrl: null,
-      tags: [],
-    }),
-  ]);
-
-  // Profile LivingThing class
-  profileModel.executeOperations([
-    profileFactory.createClassProfile({
-      id: "p-livingThing",
-      iri: "p-livingThing",
-      profiling: [ids.livingThing],
-      name: null,
-      nameFromProfiled: ids.livingThing,
-      description: null,
-      descriptionFromProfiled: ids.livingThing,
-      usageNote: null,
-      usageNoteFromProfiled: null,
-      externalDocumentationUrl: null,
-      tags: [],
-    }),
-  ]);
-
-  // Profile hasPet relationship
   profileModel.executeOperations([
     profileFactory.createRelationshipProfile({
       id: "p-hasPet",
@@ -143,98 +119,199 @@ function buildProfileModel(semanticModel: ReturnType<typeof buildSemanticModel>[
     }),
   ]);
 
-  // Generalization: p-person specializes p-livingThing
   profileModel.executeOperations([
-    createGeneralization({
-      iri: null,
-      child: "p-person",
-      parent: "p-livingThing",
-    }),
+    createGeneralization({ iri: null, child: "p-person", parent: "p-livingThing" }),
   ]);
 
   return profileModel;
 }
 
-describe("reactToSemanticModelOperation", () => {
+describe("analyzeEvolution", () => {
 
-  describe("CreateClassOperation", () => {
+  describe("created entities", () => {
 
-    test("proposes creating a class profile", () => {
-      const { model } = buildSemanticModel();
-      const profileModel = createWritableInMemoryProfileModel({
-        identifier: "profile",
-        baseIri: "http://profile.example.com/",
-      });
+    test("new class produces a create-class-profile item with a provisional id", () => {
+      const { model, ids } = buildSemanticModel();
+      const profileModel = buildProfileModel(ids);
 
-      const op = createClass({ id: "s-newClass", name: { en: "New Class" } });
-      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
+      const analysis = analyzeEvolution(
+        model.getEntities(),
+        [createClass({ id: "s-newClass", name: { en: "New Class" } })],
+        profileModel.getEntities(),
+      );
 
-      expect(proposals).toHaveLength(1);
-      expect(proposals[0].label).toContain("New Class");
-      expect(proposals[0].operations).toHaveLength(1);
-      expect(proposals[0].operations[0].type).toBe("create-class-profile");
+      expect(analysis.items).toHaveLength(1);
+      const item = analysis.items[0] as CreateClassProfileItem;
+      expect(item.kind).toBe("create-class-profile");
+      expect(item.newProfileId).toBeTruthy();
+      expect(item.dependsOn).toEqual([]);
+      expect((item.operations[0] as any).entity.profiling).toContain("s-newClass");
+      expect((item.operations[0] as any).entity.nameFromProfiled).toBe("s-newClass");
+      // The after state of the source carries the new entity for display.
+      expect((item.source.after as any).name).toEqual({ en: "New Class" });
     });
 
-    test("proposed class profile inherits name and description from profiled", () => {
+    test("new relationship to a new class depends on its create item and uses the provisional profile id", () => {
+      const { model, ids } = buildSemanticModel();
+      const profileModel = buildProfileModel(ids);
+
+      const analysis = analyzeEvolution(
+        model.getEntities(),
+        [
+          createClass({ id: "s-food", name: { en: "Food" } }),
+          createRelationship({
+            id: "s-eats",
+            ends: [
+              { iri: null, concept: ids.person, name: {}, description: {}, cardinality: undefined },
+              { iri: "eats", concept: "s-food", name: { en: "eats" }, description: {}, cardinality: undefined },
+            ],
+          }),
+        ],
+        profileModel.getEntities(),
+      );
+
+      const classItem = analysis.items.find((i) => i.kind === "create-class-profile") as CreateClassProfileItem;
+      const relItem = analysis.items.find((i) => i.kind === "create-relationship-profile") as CreateRelationshipProfileItem;
+      expect(classItem).toBeDefined();
+      expect(relItem).toBeDefined();
+      expect(relItem.dependsOn).toEqual([classItem.id]);
+      expect(relItem.domainProfileId).toBe("p-person");
+      expect(relItem.rangeProfileId).toBe(classItem.newProfileId);
+      expect((relItem.operations[0] as any).entity.ends[1].concept).toBe(classItem.newProfileId);
+    });
+
+    test("new relationship between classes with no profiles produces no item", () => {
       const { model } = buildSemanticModel();
-      const profileModel = createWritableInMemoryProfileModel({
-        identifier: "profile",
-        baseIri: null,
-      });
+      const emptyProfile = createWritableInMemoryProfileModel({ identifier: "profile", baseIri: null });
 
-      const op = createClass({ id: "s-newClass", name: { en: "New Class" } });
-      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
-      const createOp = proposals[0].operations[0] as any;
+      const analysis = analyzeEvolution(
+        model.getEntities(),
+        [
+          createRelationship({
+            id: "s-rel",
+            ends: [
+              { iri: null, concept: "s-person", name: {}, description: {}, cardinality: undefined },
+              { iri: "x", concept: "s-animal", name: {}, description: {}, cardinality: undefined },
+            ],
+          }),
+        ],
+        emptyProfile.getEntities(),
+      );
 
-      expect(createOp.entity.nameFromProfiled).toBe("s-newClass");
-      expect(createOp.entity.descriptionFromProfiled).toBe("s-newClass");
-      expect(createOp.entity.profiling).toContain("s-newClass");
+      expect(analysis.items).toHaveLength(0);
+    });
+
+    test("create followed by modify collapses into a single create item with final values", () => {
+      const { model, ids } = buildSemanticModel();
+      const profileModel = buildProfileModel(ids);
+
+      const analysis = analyzeEvolution(
+        model.getEntities(),
+        [
+          createClass({ id: "s-newClass", name: { en: "Draft Name" } }),
+          modifyClass("s-newClass", { name: { en: "Final Name" } }),
+        ],
+        profileModel.getEntities(),
+      );
+
+      expect(analysis.items).toHaveLength(1);
+      const item = analysis.items[0] as CreateClassProfileItem;
+      expect(item.kind).toBe("create-class-profile");
+      expect((item.source.after as any).name).toEqual({ en: "Final Name" });
+    });
+
+    test("new generalization between profiled classes produces one item per profile combination", () => {
+      const { model, ids } = buildSemanticModel();
+      const profileModel = buildProfileModel(ids);
+
+      // Second profile of Animal → two combinations for child = animal.
+      profileModel.executeOperations([
+        profileFactory.createClassProfile({
+          id: "p-animal2",
+          profiling: [ids.animal],
+          name: { en: "Beast" },
+          nameFromProfiled: null,
+          description: null,
+          descriptionFromProfiled: null,
+          usageNote: null,
+          usageNoteFromProfiled: null,
+          externalDocumentationUrl: null,
+          tags: [],
+        }),
+      ]);
+
+      const analysis = analyzeEvolution(
+        model.getEntities(),
+        [createGeneralization({ id: "s-gen2", iri: null, child: ids.animal, parent: ids.livingThing } as any)],
+        profileModel.getEntities(),
+      );
+
+      const genItems = analysis.items.filter((i) => i.kind === "create-generalization-profile");
+      expect(genItems).toHaveLength(2);
+      expect(genItems.map((i: any) => i.childProfileId).sort()).toEqual(["p-animal", "p-animal2"]);
     });
 
   });
 
-  describe("ModifyClassOperation — name change", () => {
+  describe("modified entities", () => {
 
-    test("when profile inherits name, proposes to freeze old name", () => {
+    test("name change with inherited name is automatic with a freeze-old choice", () => {
       const { model, ids } = buildSemanticModel();
-      const profileModel = buildProfileModel(model, ids);
+      const profileModel = buildProfileModel(ids);
 
-      // Person profile inherits name from profiled (nameFromProfiled = ids.person)
-      const op = modifyClass(ids.person, { name: { en: "Human" } });
-      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
+      const analysis = analyzeEvolution(
+        model.getEntities(),
+        [modifyClass(ids.person, { name: { en: "Human" } })],
+        profileModel.getEntities(),
+      );
 
-      const freezeProposal = proposals.find(p => p.label.includes("Keep old name"));
-      expect(freezeProposal).toBeDefined();
-      const modOp = freezeProposal!.operations[0] as any;
-      expect(modOp.entity.name).toEqual({ en: "Person" });
-      expect(modOp.entity.nameFromProfiled).toBeNull();
+      const item = analysis.items.find((i) => i.kind === "modify-profile") as ModifyProfileItem;
+      expect(item).toBeDefined();
+      expect(item.profileId).toBe("p-person");
+      expect(item.severity).toBe("automatic");
+
+      const decision = item.decisions.find((d) => d.field === "name")!;
+      expect(decision.profileState).toBe("inherits");
+      expect(decision.defaultChoiceId).toBe("inherit");
+      const freeze = decision.choices.find((c) => c.id === "freeze-old")!;
+      expect((freeze.operations[0] as any).entity.name).toEqual({ en: "Person" });
+      expect((freeze.operations[0] as any).entity.nameFromProfiled).toBeNull();
     });
 
-    test("does not propose freeze when no profiles exist", () => {
+    test("one modify item per profile when a class has multiple profiles", () => {
       const { model, ids } = buildSemanticModel();
-      const emptyProfile = createWritableInMemoryProfileModel({
-        identifier: "profile",
-        baseIri: null,
-      });
+      const profileModel = buildProfileModel(ids);
+      profileModel.executeOperations([
+        profileFactory.createClassProfile({
+          id: "p-person2",
+          profiling: [ids.person],
+          name: null,
+          nameFromProfiled: ids.person,
+          description: null,
+          descriptionFromProfiled: ids.person,
+          usageNote: null,
+          usageNoteFromProfiled: null,
+          externalDocumentationUrl: null,
+          tags: [],
+        }),
+      ]);
 
-      const op = modifyClass(ids.person, { name: { en: "Human" } });
-      const proposals = reactToSemanticModelOperation(model.getEntities(), op, emptyProfile.getEntities());
+      const analysis = analyzeEvolution(
+        model.getEntities(),
+        [modifyClass(ids.person, { name: { en: "Human" } })],
+        profileModel.getEntities(),
+      );
 
-      expect(proposals).toHaveLength(0);
+      const items = analysis.items.filter((i) => i.kind === "modify-profile") as ModifyProfileItem[];
+      expect(items.map((i) => i.profileId).sort()).toEqual(["p-person", "p-person2"]);
     });
 
-    test("when profile has own name, proposes adopting new name and inheriting", () => {
+    test("name change conflicting with an override needs attention", () => {
       const { model, ids } = buildSemanticModel();
-      const profileModel = createWritableInMemoryProfileModel({
-        identifier: "profile",
-        baseIri: null,
-      });
-
-      // Create a class profile that has its OWN name (not inherited)
+      const profileModel = createWritableInMemoryProfileModel({ identifier: "profile", baseIri: null });
       profileModel.executeOperations([
         profileFactory.createClassProfile({
           id: "p-person",
-          iri: null,
           profiling: [ids.person],
           name: { en: "My Person" },
           nameFromProfiled: null,
@@ -247,325 +324,224 @@ describe("reactToSemanticModelOperation", () => {
         }),
       ]);
 
-      const op = modifyClass(ids.person, { name: { en: "Human" } });
-      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
+      const analysis = analyzeEvolution(
+        model.getEntities(),
+        [modifyClass(ids.person, { name: { en: "Human" } })],
+        profileModel.getEntities(),
+      );
 
-      const adoptProposal = proposals.find(p => p.label.includes("Update name"));
-      const inheritProposal = proposals.find(p => p.label.includes("Inherit new name"));
-
-      expect(adoptProposal).toBeDefined();
-      expect(inheritProposal).toBeDefined();
-
-      const adoptOp = adoptProposal!.operations[0] as any;
-      expect(adoptOp.entity.name).toEqual({ en: "Human" });
-
-      const inheritOp = inheritProposal!.operations[0] as any;
-      expect(inheritOp.entity.nameFromProfiled).toBe(ids.person);
+      const item = analysis.items[0] as ModifyProfileItem;
+      expect(item.severity).toBe("attention");
+      const decision = item.decisions.find((d) => d.field === "name")!;
+      expect(decision.profileState).toBe("override-differs");
+      expect(decision.defaultChoiceId).toBe("keep-own");
+      expect(decision.choices.map((c) => c.id).sort()).toEqual(["adopt-new", "inherit", "keep-own"]);
+      const adopt = decision.choices.find((c) => c.id === "adopt-new")!;
+      expect((adopt.operations[0] as any).entity.name).toEqual({ en: "Human" });
     });
 
-  });
-
-  describe("ModifyClassOperation — description change", () => {
-
-    test("when profile inherits description, proposes to freeze old description", () => {
+    test("override matching the new value offers to drop the override", () => {
       const { model, ids } = buildSemanticModel();
-      const profileModel = buildProfileModel(model, ids);
-
-      const op = modifyClass(ids.person, { description: { en: "Updated description." } });
-      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
-
-      const freezeProposal = proposals.find(p => p.label.includes("Keep old description"));
-      expect(freezeProposal).toBeDefined();
-      const modOp = freezeProposal!.operations[0] as any;
-      expect(modOp.entity.description).toEqual({ en: "A human." });
-      expect(modOp.entity.descriptionFromProfiled).toBeNull();
-    });
-
-  });
-
-  describe("CreateRelationshipOperation", () => {
-
-    test("proposes relationship profile when both ends are profiled", () => {
-      const { model, ids } = buildSemanticModel();
-      const profileModel = buildProfileModel(model, ids);
-
-      // Create a new relationship between Person and Animal
-      const op = createRelationship({
-        id: "s-newRel",
-        iri: null,
-        ends: [
-          { iri: null, concept: ids.person, name: {}, description: {}, cardinality: undefined },
-          { iri: "owns", concept: ids.animal, name: { en: "owns" }, description: {}, cardinality: undefined },
-        ],
-      });
-
-      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
-      expect(proposals.length).toBeGreaterThan(0);
-      expect(proposals[0].label).toContain("Create relationship profile");
-
-      const createOp = proposals[0].operations[0] as any;
-      expect(createOp.type).toBe("create-relation-profile");
-      // Domain should be p-person, range should be p-animal
-      expect(createOp.entity.ends[0].concept).toBe("p-person");
-      expect(createOp.entity.ends[1].concept).toBe("p-animal");
-    });
-
-    test("does not propose when domain class is not profiled", () => {
-      const { model, ids } = buildSemanticModel();
-      const profileModel = buildProfileModel(model, ids);
-
-      const op = createRelationship({
-        id: "s-newRel",
-        iri: null,
-        ends: [
-          { iri: null, concept: "s-unknown-class", name: {}, description: {}, cardinality: undefined },
-          { iri: "owns", concept: ids.animal, name: {}, description: {}, cardinality: undefined },
-        ],
-      });
-
-      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
-      expect(proposals).toHaveLength(0);
-    });
-
-    test("does not propose when range class is not profiled", () => {
-      const { model, ids } = buildSemanticModel();
-      const profileModel = buildProfileModel(model, ids);
-
-      const op = createRelationship({
-        id: "s-newRel",
-        iri: null,
-        ends: [
-          { iri: null, concept: ids.person, name: {}, description: {}, cardinality: undefined },
-          { iri: "owns", concept: "s-unknown-class", name: {}, description: {}, cardinality: undefined },
-        ],
-      });
-
-      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
-      expect(proposals).toHaveLength(0);
-    });
-
-    test("proposed relationship profile inherits name from profiled relationship", () => {
-      const { model, ids } = buildSemanticModel();
-      const profileModel = buildProfileModel(model, ids);
-
-      const op = createRelationship({
-        id: "s-newRel",
-        ends: [
-          { iri: null, concept: ids.person, name: {}, description: {}, cardinality: undefined },
-          { iri: "owns", concept: ids.animal, name: { en: "owns" }, description: {}, cardinality: undefined },
-        ],
-      });
-
-      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
-      const createOp = proposals[0].operations[0] as any;
-      expect(createOp.entity.ends[1].nameFromProfiled).toBe("s-newRel");
-      expect(createOp.entity.ends[1].profiling).toContain("s-newRel");
-    });
-
-  });
-
-  describe("ModifyRelationEndOperation — name change", () => {
-
-    test("when profile inherits name, proposes to freeze old name", () => {
-      const { model, ids } = buildSemanticModel();
-      const profileModel = buildProfileModel(model, ids);
-
-      // hasPet's range end (index 1) has iri="hasPet", so it's the range end.
-      const op = modifyRelationEnd(ids.hasPet, 1, { name: { en: "owns pet" } });
-      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
-
-      const freezeProposal = proposals.find(p => p.label.includes("Keep old name"));
-      expect(freezeProposal).toBeDefined();
-      const endOp = freezeProposal!.operations[0] as any;
-      expect(endOp.end.nameFromProfiled).toBeNull();
-      expect(endOp.end.name).toEqual({ en: "has pet" });
-    });
-
-    test("when profile has own name, proposes adopting or inheriting", () => {
-      const { model, ids } = buildSemanticModel();
-      const profileModel = createWritableInMemoryProfileModel({
-        identifier: "profile",
-        baseIri: null,
-      });
-
-      // Create a relationship profile that has its OWN name
+      const profileModel = createWritableInMemoryProfileModel({ identifier: "profile", baseIri: null });
       profileModel.executeOperations([
-        profileFactory.createRelationshipProfile({
-          id: "p-hasPet",
-          ends: [
-            {
-              iri: null,
-              concept: ids.person,
-              cardinality: null,
-              name: null,
-              nameFromProfiled: null,
-              description: null,
-              descriptionFromProfiled: null,
-              usageNote: null,
-              usageNoteFromProfiled: null,
-              profiling: [],
-              externalDocumentationUrl: null,
-              tags: [],
-            },
-            {
-              iri: "hasPet",
-              concept: ids.animal,
-              cardinality: null,
-              name: { en: "my has pet" },
-              nameFromProfiled: null, // own name, not inherited
-              description: null,
-              descriptionFromProfiled: null,
-              usageNote: null,
-              usageNoteFromProfiled: null,
-              profiling: [ids.hasPet],
-              externalDocumentationUrl: null,
-              tags: [],
-            },
-          ],
+        profileFactory.createClassProfile({
+          id: "p-person",
+          profiling: [ids.person],
+          name: { en: "Human" },
+          nameFromProfiled: null,
+          description: null,
+          descriptionFromProfiled: null,
+          usageNote: null,
+          usageNoteFromProfiled: null,
+          externalDocumentationUrl: null,
+          tags: [],
         }),
       ]);
 
-      const op = modifyRelationEnd(ids.hasPet, 1, { name: { en: "owns pet" } });
-      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
+      const analysis = analyzeEvolution(
+        model.getEntities(),
+        [modifyClass(ids.person, { name: { en: "Human" } })],
+        profileModel.getEntities(),
+      );
 
-      const adoptProposal = proposals.find(p => p.label.includes('Update name to "owns pet"'));
-      const inheritProposal = proposals.find(p => p.label.includes("Inherit new name"));
-      expect(adoptProposal).toBeDefined();
-      expect(inheritProposal).toBeDefined();
+      const item = analysis.items[0] as ModifyProfileItem;
+      const decision = item.decisions.find((d) => d.field === "name")!;
+      expect(decision.profileState).toBe("override-matches-new");
+      expect(decision.severity).toBe("decision");
+      expect(decision.defaultChoiceId).toBe("drop-override");
+    });
+
+    test("cardinality change with inherited cardinality is automatic", () => {
+      const { model, ids } = buildSemanticModel();
+      const profileModel = buildProfileModel(ids);
+
+      const analysis = analyzeEvolution(
+        model.getEntities(),
+        [modifyRelationEnd(ids.hasPet, 1, { cardinality: [0, 5] })],
+        profileModel.getEntities(),
+      );
+
+      const item = analysis.items.find((i) => i.kind === "modify-profile") as ModifyProfileItem;
+      expect(item.profileId).toBe("p-hasPet");
+      const decision = item.decisions.find((d) => d.field === "cardinality")!;
+      expect(decision.endRole).toBe("range");
+      expect(decision.profileState).toBe("inherits");
+      expect(decision.severity).toBe("automatic");
+    });
+
+    test("range retyping offers retargeting the profile end", () => {
+      const { model, ids } = buildSemanticModel();
+      const profileModel = buildProfileModel(ids);
+
+      const analysis = analyzeEvolution(
+        model.getEntities(),
+        [modifyRelationEnd(ids.hasPet, 1, { concept: ids.livingThing })],
+        profileModel.getEntities(),
+      );
+
+      const item = analysis.items.find((i) => i.kind === "modify-profile") as ModifyProfileItem;
+      const decision = item.decisions.find((d) => d.field === "concept")!;
+      expect(decision.endRole).toBe("range");
+      expect(decision.severity).toBe("attention");
+      // Exactly one candidate (p-livingThing) → retarget is the default.
+      expect(decision.defaultChoiceId).toBe("retarget:p-livingThing");
+      const retarget = decision.choices.find((c) => c.id === "retarget:p-livingThing")!;
+      expect((retarget.operations[0] as any).end.concept).toBe("p-livingThing");
+    });
+
+    test("multiple operations on one class collapse into one item", () => {
+      const { model, ids } = buildSemanticModel();
+      const profileModel = buildProfileModel(ids);
+
+      const analysis = analyzeEvolution(
+        model.getEntities(),
+        [
+          modifyClass(ids.person, { name: { en: "Human" } }),
+          modifyClass(ids.person, { description: { en: "A human being." } }),
+        ],
+        profileModel.getEntities(),
+      );
+
+      const items = analysis.items.filter((i) => i.kind === "modify-profile") as ModifyProfileItem[];
+      expect(items).toHaveLength(1);
+      expect(items[0].decisions.map((d) => d.field).sort()).toEqual(["description", "name"]);
     });
 
   });
 
-  describe("ModifyRelationEndOperation — cardinality change", () => {
+  describe("deleted entities", () => {
 
-    test("proposes updating cardinality and keeping old", () => {
+    test("deleted class produces a delete item with cascade and a detach choice", () => {
       const { model, ids } = buildSemanticModel();
-      const profileModel = buildProfileModel(model, ids);
+      const profileModel = buildProfileModel(ids);
 
-      const op = modifyRelationEnd(ids.hasPet, 1, { cardinality: [0, 5] });
-      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
+      const analysis = analyzeEvolution(
+        model.getEntities(),
+        [deleteEntity(ids.person)],
+        profileModel.getEntities(),
+      );
 
-      const updateProposal = proposals.find(p => p.label.includes("Update cardinality to [0..5]"));
-      const keepProposal = proposals.find(p => p.label.includes("Keep old cardinality"));
-      expect(updateProposal).toBeDefined();
-      expect(keepProposal).toBeDefined();
+      const item = analysis.items.find(
+        (i) => i.kind === "delete-profile" && (i as DeleteProfileItem).profileType === "class-profile",
+      ) as DeleteProfileItem;
+      expect(item).toBeDefined();
+      expect(item.severity).toBe("attention");
+      expect(item.cascade.relationshipProfileIds).toContain("p-hasPet");
+      expect(item.cascade.generalizationIds).toHaveLength(1);
+      expect(item.defaultChoiceId).toBe("delete");
+
+      const detach = item.choices.find((c) => c.id === "detach")!;
+      const detachOp = detach.operations[0] as any;
+      expect(detachOp.entity.profiling).toEqual([]);
+      // Inherited name is frozen to the deleted entity's value.
+      expect(detachOp.entity.name).toEqual({ en: "Person" });
+      expect(detachOp.entity.nameFromProfiled).toBeNull();
+    });
+
+    test("detach is the default when the profile profiles other entities too", () => {
+      const { model, ids } = buildSemanticModel();
+      const profileModel = createWritableInMemoryProfileModel({ identifier: "profile", baseIri: null });
+      profileModel.executeOperations([
+        profileFactory.createClassProfile({
+          id: "p-both",
+          profiling: [ids.person, ids.animal],
+          name: { en: "Both" },
+          nameFromProfiled: null,
+          description: null,
+          descriptionFromProfiled: null,
+          usageNote: null,
+          usageNoteFromProfiled: null,
+          externalDocumentationUrl: null,
+          tags: [],
+        }),
+      ]);
+
+      const analysis = analyzeEvolution(
+        model.getEntities(),
+        [deleteEntity(ids.person)],
+        profileModel.getEntities(),
+      );
+
+      const item = analysis.items[0] as DeleteProfileItem;
+      expect(item.defaultChoiceId).toBe("detach");
+      const detachOp = item.choices.find((c) => c.id === "detach")!.operations[0] as any;
+      expect(detachOp.entity.profiling).toEqual([ids.animal]);
+    });
+
+    test("deleted generalization produces a delete item for the profile generalization", () => {
+      const { model, ids } = buildSemanticModel();
+      const profileModel = buildProfileModel(ids);
+
+      const analysis = analyzeEvolution(
+        model.getEntities(),
+        [deleteEntity(ids.gen1)],
+        profileModel.getEntities(),
+      );
+
+      const item = analysis.items.find(
+        (i) => i.kind === "delete-profile" && (i as DeleteProfileItem).profileType === "generalization",
+      ) as DeleteProfileItem;
+      expect(item).toBeDefined();
+      expect(item.severity).toBe("decision");
+      expect(item.defaultChoiceId).toBe("delete");
+    });
+
+    test("delete of an entity without profiles produces no items", () => {
+      const { model, ids } = buildSemanticModel();
+      const emptyProfile = createWritableInMemoryProfileModel({ identifier: "profile", baseIri: null });
+
+      const analysis = analyzeEvolution(
+        model.getEntities(),
+        [deleteEntity(ids.person)],
+        emptyProfile.getEntities(),
+      );
+
+      expect(analysis.items).toHaveLength(0);
     });
 
   });
 
-  describe("CreateGeneralizationOperation", () => {
+  describe("upstream after state", () => {
 
-    test("proposes generalization profile when both class profiles exist", () => {
+    test("returns the upstream entities with all operations applied", () => {
       const { model, ids } = buildSemanticModel();
-      const profileModel = buildProfileModel(model, ids);
+      const profileModel = buildProfileModel(ids);
 
-      // Already have p-person and p-animal profiled. Create a generalization between them.
-      const op = createGeneralization({
-        iri: null,
-        child: ids.person,
-        parent: ids.animal,
-      });
+      const analysis = analyzeEvolution(
+        model.getEntities(),
+        [
+          modifyClass(ids.person, { name: { en: "Human" } }),
+          deleteEntity(ids.animal),
+          createClass({ id: "s-new", name: { en: "New" } }),
+        ],
+        profileModel.getEntities(),
+      );
 
-      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
-      expect(proposals.length).toBeGreaterThan(0);
-
-      const createOp = proposals[0].operations[0] as any;
-      expect(createOp.entity.child).toBe("p-person");
-      expect(createOp.entity.parent).toBe("p-animal");
-    });
-
-    test("does not propose when parent class is not profiled", () => {
-      const { model, ids } = buildSemanticModel();
-      const profileModel = buildProfileModel(model, ids);
-
-      const op = createGeneralization({
-        iri: null,
-        child: ids.person,
-        parent: "s-unknown",
-      });
-
-      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
-      expect(proposals).toHaveLength(0);
-    });
-
-  });
-
-  describe("DeleteEntityOperation — class", () => {
-
-    test("proposes deleting class profile and cascades to related profiles", () => {
-      const { model, ids } = buildSemanticModel();
-      const profileModel = buildProfileModel(model, ids);
-
-      const op = deleteEntity(ids.person);
-      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
-
-      expect(proposals.length).toBeGreaterThan(0);
-
-      const deleteProposal = proposals.find(p => p.label.includes("Delete class profile"));
-      expect(deleteProposal).toBeDefined();
-
-      // Expect cascade: relationship profile and generalization should also be deleted
-      expect(deleteProposal!.operations.length).toBeGreaterThan(1);
-    });
-
-    test("does not propose when no profile exists for the class", () => {
-      const { model, ids } = buildSemanticModel();
-      const emptyProfile = createWritableInMemoryProfileModel({
-        identifier: "profile",
-        baseIri: null,
-      });
-
-      const op = deleteEntity(ids.person);
-      const proposals = reactToSemanticModelOperation(model.getEntities(), op, emptyProfile.getEntities());
-      expect(proposals).toHaveLength(0);
-    });
-
-  });
-
-  describe("DeleteEntityOperation — relationship", () => {
-
-    test("proposes deleting relationship profile", () => {
-      const { model, ids } = buildSemanticModel();
-      const profileModel = buildProfileModel(model, ids);
-
-      const op = deleteEntity(ids.hasPet);
-      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
-
-      expect(proposals.length).toBeGreaterThan(0);
-      const deleteProposal = proposals.find(p => p.label.includes("Delete relationship profile"));
-      expect(deleteProposal).toBeDefined();
-    });
-
-  });
-
-  describe("DeleteEntityOperation — generalization", () => {
-
-    test("proposes deleting the corresponding generalization in profile", () => {
-      const { model, ids } = buildSemanticModel();
-      const profileModel = buildProfileModel(model, ids);
-
-      const op = deleteEntity(ids.gen1);
-      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
-
-      expect(proposals.length).toBeGreaterThan(0);
-      const deleteProposal = proposals.find(p => p.label.includes("Delete generalization profile"));
-      expect(deleteProposal).toBeDefined();
-    });
-
-  });
-
-  describe("unknown operation", () => {
-
-    test("returns empty array for unknown operation types", () => {
-      const { model } = buildSemanticModel();
-      const profileModel = createWritableInMemoryProfileModel({
-        identifier: "profile",
-        baseIri: null,
-      });
-
-      const op = { id: "op-x", type: "unknown-type" } as any;
-      const proposals = reactToSemanticModelOperation(model.getEntities(), op, profileModel.getEntities());
-      expect(proposals).toHaveLength(0);
+      expect((analysis.upstreamAfter[ids.person] as any).name).toEqual({ en: "Human" });
+      expect(analysis.upstreamAfter[ids.animal]).toBeUndefined();
+      expect(analysis.upstreamAfter["s-new"]).toBeDefined();
+      // The input state is not modified.
+      expect((model.getEntities()[ids.person] as any).name).toEqual({ en: "Person" });
     });
 
   });

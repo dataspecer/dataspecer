@@ -2,7 +2,7 @@
   "--lang-name": "English",
   "app-name": "history",
   "breadcrumbs": {
-    "home": "Packages",
+    "home": "Specifications",
     "no-specification": "No specification selected"
   },
   "nav": {
@@ -15,70 +15,116 @@
     "system": "System"
   },
   "evolution": {
-    "title": "Pending changes",
-    "description": "Changes made in one model that have not yet been propagated to the other models of this specification.",
+    "title": "Evolution",
+    "review-title": "Evolution of \"{{name}}\"",
+    "back-to-overview": "Back to overview",
+    "description": "The upstream model changed. Review how the dependent models should react — accept the easy parts, resolve conflicts, and keep this screen open for the changes you fix manually in the editor.",
     "empty": "There are no pending changes.",
     "no-project": "No project selected. Open this page with a packageIri query parameter.",
-    "loading": "Loading pending changes…",
-    "all-reviewed": "All pending changes have been reviewed.",
-    "progress": "Change {{current}} of {{total}}",
-    "previous": "Previous",
-    "approve-and-continue": "Approve and continue",
-    "proposed-operations_one": "{{count}} proposed operation in other models",
-    "proposed-operations_other": "{{count}} proposed operations in other models",
-    "apply": "Apply",
-    "skip": "Skip",
-    "status-applied": "Applied",
-    "status-skipped": "Skipped",
-    "proposals-title": "Proposed evolution for the application profile:",
-    "no-proposals": "No evolution proposals for the application profile.",
-    "no-evolution": "No evolution (skip profile update)"
-  },
-  "operations": {
-    "generic": {
-      "type": "Type"
+    "overview": {
+      "description": "Pending updates of vocabularies and specifications whose changes affect other models. Open an update and review how the dependent models should react.",
+      "empty": "There is no pending evolution.",
+      "change": {
+        "created": "Created",
+        "modified": "Modified",
+        "deleted": "Deleted"
+      },
+      "kind": {
+        "classes_one": "{{count}} class",
+        "classes_other": "{{count}} classes",
+        "relationships_one": "{{count}} relationship",
+        "relationships_other": "{{count}} relationships",
+        "generalizations_one": "{{count}} generalization",
+        "generalizations_other": "{{count}} generalizations",
+        "other_one": "{{count}} other entity",
+        "other_other": "{{count}} other entities"
+      },
+      "no-net-changes": "The pending operations cancel each other out.",
+      "status": {
+        "not-in-specification": "Changes not yet visible in the specification"
+      },
+      "affects": "Affects:",
+      "no-targets": "No dependent model reacts to this change — the update can be accepted as is.",
+      "review": "Review",
+      "action": {
+        "skip": "Skip evolution",
+        "skip-description": "Accept the upstream changes as they are, without any reaction in the dependent models.",
+        "cancel": "Cancel evolution",
+        "cancel-description": "Discard the pending changes and keep all models as they are."
+      },
+      "edge": {
+        "semantic-to-profile": "vocabulary → profile",
+        "profile-to-profile": "profile → profile"
+      }
     },
-    "semantic": {
-      "iri": "Iri",
+    "summary": "{{operations}} upstream operations, {{items}} items affecting the profile",
+    "summary-counts": "{{attention}} need attention · {{manual}} to resolve manually · {{applied}} applied",
+    "all-done": "Everything applied",
+    "apply-all": "Accept update & apply selected ({{count}})",
+    "apply-selected": "Apply selected ({{count}})",
+    "no-profile-impact": "The upstream changes do not affect the application profile. Accepting the update will only apply the vocabulary changes.",
+    "requires-new-profiles": "Requires class profiles that are proposed above — unchecking them deselects this item.",
+    "cascade-warning": "Deleting also removes {{relationships}} dependent relationship profile(s) and {{generalizations}} generalization(s).",
+    "manual-todo": "I resolved this manually in the conceptual model editor.",
+    "retyped-upstream": "the class at this end changed upstream",
+    "section": {
+      "new-classes": "New classes",
+      "new-relationships": "New relationships",
+      "new-generalizations": "New generalizations",
+      "deletions": "Deletions",
+      "modifications": "Modifications"
+    },
+    "item": {
+      "create-class": "New class \"{{name}}\"",
+      "create-class-hint": "Create a class profile for it",
+      "create-relationship": "New relationship \"{{name}}\"",
+      "create-generalization": "New generalization",
+      "specializes": "\"{{child}}\" specializes \"{{parent}}\"",
+      "profile-of": "Profile of \"{{name}}\"",
+      "deleted-class-profile": "Class \"{{name}}\" was deleted upstream",
+      "deleted-relationship-profile": "Relationship \"{{name}}\" was deleted upstream",
+      "deleted-generalization": "Generalization \"{{name}}\" was deleted upstream",
+      "affected-profile": "Affected profile: \"{{name}}\""
+    },
+    "end-role": {
+      "domain": "domain",
+      "range": "range"
+    },
+    "field": {
       "name": "Name",
       "description": "Description",
-      "name-property": "Name property",
-      "description-property": "Description property",
-      "domain": "Domain",
-      "range": "Range",
-      "child": "Child",
-      "parent": "Parent"
+      "usageNote": "Usage note",
+      "cardinality": "Cardinality",
+      "concept": "Class",
+      "externalDocumentationUrl": "Documentation URL"
     },
-    "structure": {
-      "new-iri": "New iri",
-      "interpretation": "Interpretation",
-      "human-label": "Human label",
-      "extends": "Extends",
-      "class": "Class",
-      "resource": "Resource",
-      "owner": "Owner",
-      "datatype": "Datatype",
-      "entity": "Entity",
-      "cardinality": "Cardinality"
+    "profile-state": {
+      "inherits": "The profile inherits this value — the new value flows in automatically.",
+      "override-matches-new": "The profile overrides this value with \"{{value}}\", which now matches the new upstream value.",
+      "override-differs": "Conflict: the profile overrides this value with \"{{value}}\".",
+      "not-inheritable": "The profile has its own value \"{{value}}\"."
     },
-    "titles": {
-      "semantic-create-class": "Create class",
-      "semantic-modify-class": "Modify class",
-      "semantic-create-relationship": "Create relationship",
-      "semantic-modify-relationship": "Modify relationship",
-      "semantic-create-generalization": "Create generalization",
-      "semantic-modify-generalization": "Modify generalization",
-      "semantic-delete-class": "Delete class",
-      "semantic-delete-relationship": "Delete relationship",
-      "semantic-delete-generalization": "Delete generalization",
-      "semantic-delete-entity": "Delete entity",
-      "semantic-generic": "Semantic model operation",
-      "structure-create-class": "Create class",
-      "structure-delete-class": "Delete class",
-      "structure-set-human-label": "Set human label",
-      "structure-create-attribute": "Create attribute",
-      "structure-set-cardinality": "Set cardinality",
-      "structure-generic": "Structure model operation"
+    "choice": {
+      "inherit": "Inherit",
+      "freeze-old": "Freeze old value",
+      "adopt-new": "Adopt new value",
+      "keep-own": "Keep profile value",
+      "drop-override": "Drop override (inherit)",
+      "keep-override": "Keep override",
+      "delete": "Delete profile",
+      "detach": "Keep profile (detach)",
+      "keep": "Keep",
+      "retarget": "Retarget to \"{{name}}\"",
+      "manual": "Resolve manually"
+    },
+    "severity": {
+      "automatic": "automatic",
+      "decision": "decision",
+      "attention": "needs attention"
+    },
+    "status": {
+      "applied": "Applied",
+      "manual": "Manual"
     }
   }
 }

@@ -55,6 +55,37 @@ export const listBranches = asyncHandler(async (request: express.Request, respon
 });
 
 /**
+ * Deletes an evolution branch, discarding its pending transactions -
+ * effectively rolling the evolution back. Named branches cannot be deleted.
+ *
+ * Example: DELETE /transactions/branches/34?projectIri=...
+ */
+export const deleteEvolutionBranch = asyncHandler(async (request: express.Request, response: express.Response) => {
+    const querySchema = z.object({
+        projectIri: z.string().min(1),
+    });
+    const query = querySchema.parse(request.query);
+
+    const branchId = Number(request.params.branchId);
+    if (!Number.isInteger(branchId)) {
+        response.status(400).json({ error: "branchId must be a number" });
+        return;
+    }
+
+    const result = await transactionModel.deleteEvolutionBranch(query.projectIri, branchId);
+    if (result === "not-found") {
+        response.status(404).json({ error: "Branch not found" });
+        return;
+    }
+    if (result === "not-evolution-branch") {
+        response.status(400).json({ error: "Only evolution branches can be deleted" });
+        return;
+    }
+
+    response.sendStatus(204);
+});
+
+/**
  * Diff endpoint: returns transactions (and their operations) that are reachable
  * from the "from" branch tip but not from the "to" branch tip, ordered oldest
  * to newest.  The range is specified as "fromBranch..toBranch", analogous to

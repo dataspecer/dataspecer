@@ -255,6 +255,32 @@ export class TransactionModel {
   }
 
   /**
+   * Deletes an evolution branch of the given project, discarding its pending
+   * transactions - effectively rolling the evolution back. Named branches
+   * (e.g. "main") cannot be deleted this way as their history is shared.
+   */
+  async deleteEvolutionBranch(projectIri: string, branchId: number): Promise<"deleted" | "not-found" | "not-evolution-branch"> {
+    const project = await this.prismaClient.resource.findFirst({ select: { id: true }, where: { iri: projectIri } });
+    if (project === null) {
+      return "not-found";
+    }
+
+    const branch = await this.prismaClient.branch.findFirst({
+      select: { id: true, name: true },
+      where: { id: branchId, projectId: project.id },
+    });
+    if (branch === null) {
+      return "not-found";
+    }
+    if (branch.name !== null) {
+      return "not-evolution-branch";
+    }
+
+    await this.deleteBranch(branch.id);
+    return "deleted";
+  }
+
+  /**
    * Lists all branches of the given project, with their internal id,
    * optional name (for named branches) and optional tracked resource IRI
    * (for evolution branches).
