@@ -59,6 +59,19 @@ interface ProfileEntitiesResult {
 
 }
 
+/**
+ * Converts absolute or relative IRI to relative IRI by preserving only the last
+ * segment of the IRI.
+ */
+function iriToLastSegment(iri: string | null): string | null {
+  if (iri === null) {
+    return null;
+  }
+
+  const segments = iri.split(/[\/#]/);
+  return segments[segments.length - 1];
+}
+
 const factory = createDefaultSemanticModelProfileOperationFactory();
 
 export const OwlThingIdentifier = "https://www.w3.org/2002/07/owl#Thing";
@@ -153,7 +166,7 @@ function prepareProfileSemanticClassOperations(
   classes: SemanticClass[],
 ): CreateSemanticModelClassProfile[] {
   return classes.map(item => factory.createClassProfile({
-    iri: item.iri,
+    iri: iriToLastSegment(item.iri),
     profiling: [item.id],
     name: item.name,
     nameFromProfiled: item.id,
@@ -171,7 +184,7 @@ function prepareProfileSemanticProfileClassOperations(
   classes: ProfileClass[],
 ): CreateSemanticModelClassProfile[] {
   return classes.map(item => factory.createClassProfile({
-    iri: item.iri,
+    iri: iriToLastSegment(item.iri),
     profiling: [item.id],
     name: item.name,
     nameFromProfiled: item.id,
@@ -272,7 +285,7 @@ function rangeEndProfile(
       : (conceptMapping[range.concept] ?? range.concept);
   return {
     profiling: [profiled],
-    iri: range.iri,
+    iri: iriToLastSegment(range.iri),
     name: range.name,
     nameFromProfiled: profiled,
     description: range.description,
@@ -350,7 +363,7 @@ function prepareProfileSemanticGeneralizationOperations(
     }
     generalizationSources.push(item.id);
     generalizationOperations.push(createGeneralization({
-      iri: item.iri,
+      iri: iriToLastSegment(item.iri),
       child,
       parent,
     }));
@@ -372,7 +385,7 @@ function prepareProfileSemanticProfileGeneralizationOperations(
     }
     generalizationSources.push(item.id);
     generalizationOperations.push(createGeneralization({
-      iri: item.iri,
+      iri: iriToLastSegment(item.iri),
       child,
       parent,
     }));
