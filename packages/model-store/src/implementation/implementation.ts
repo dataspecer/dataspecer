@@ -1,4 +1,4 @@
-import { LOCAL_PACKAGE, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
+import { VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { type PackageService } from "@dataspecer/core-v2/project";
 import { type EntityChange, type EntityRecord } from "@dataspecer/core/entity-model";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
@@ -63,11 +63,14 @@ export interface ModelInDefaultFrontendModelStore {
   //subscribeForReadinessChange(): () => void;
 }
 
-export type ModelInModelStoreBuilder = (modelId: ModelIdentifier, context: {
-  service: PackageService;
-  httpFetch: HttpFetch;
-  rootProjectId: ModelIdentifier;
-}) => Model & ModelInDefaultFrontendModelStore;
+export type ModelInModelStoreBuilder = (
+  modelId: ModelIdentifier,
+  context: {
+    service: PackageService;
+    httpFetch: HttpFetch;
+    rootProjectId: ModelIdentifier;
+  },
+) => Model & ModelInDefaultFrontendModelStore;
 
 export interface DefaultFrontendModelStoreParams {
   projectId: ModelIdentifier;
@@ -106,11 +109,7 @@ interface Transaction extends CoreTransaction {
 /**
  * Adds entity changes to the existing entity changes per model record.
  */
-function appendEntityChanges(
-  entityChanges: Record<ModelIdentifier, EntityChange[]>,
-  modelId: ModelIdentifier,
-  changes: EntityChange[],
-): void {
+function appendEntityChanges(entityChanges: Record<ModelIdentifier, EntityChange[]>, modelId: ModelIdentifier, changes: EntityChange[]): void {
   if (changes.length > 0) {
     entityChanges[modelId] = [...(entityChanges[modelId] ?? []), ...changes];
   }
@@ -212,9 +211,7 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
       httpFetch: this.httpFetch,
       rootProjectId: this.rootProjectId,
     };
-    const builder = modelType === null
-      ? this.projectModelBuilder
-      : this.modelBuilders[modelType];
+    const builder = modelType === null ? this.projectModelBuilder : this.modelBuilders[modelType];
     if (!builder) {
       return null;
     }
@@ -259,11 +256,7 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
    * @param isLocalChange Set to true if the change is local and thus potential
    * models do not exist on backend.
    */
-  protected applyProjectStructureChanges(
-    structuralChanges: EntityChange[],
-    entityChanges: Record<ModelIdentifier, EntityChange[]>,
-    isLocalChange: boolean,
-  ): void {
+  protected applyProjectStructureChanges(structuralChanges: EntityChange[], entityChanges: Record<ModelIdentifier, EntityChange[]>, isLocalChange: boolean): void {
     for (const change of structuralChanges) {
       if (change.previous === null) {
         // New model was created
@@ -294,12 +287,7 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
    * subscribing to it as needed, and records its appearance into
    * `entityChanges`.
    */
-  private activateModel(
-    modelId: ModelIdentifier,
-    modelType: string,
-    createFresh: boolean,
-    entityChanges: Record<ModelIdentifier, EntityChange[]>,
-  ): void {
+  private activateModel(modelId: ModelIdentifier, modelType: string, createFresh: boolean, entityChanges: Record<ModelIdentifier, EntityChange[]>): void {
     let model = this.models[modelId];
 
     if (!model) {
@@ -311,7 +299,7 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
       }
       model = createdModel;
 
-      model.subscribeForAsyncChanges(modelChanges => {
+      model.subscribeForAsyncChanges((modelChanges) => {
         this.internalNotifyEntityChange({ entityChanges: { [modelId]: modelChanges } });
       });
 
@@ -344,7 +332,7 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
     appendEntityChanges(
       entityChanges,
       modelId,
-      Object.values(model.getAllEntities()).map((entity) => ({ previous: null, next: entity }))
+      Object.values(model.getAllEntities()).map((entity) => ({ previous: null, next: entity })),
     );
   }
 
@@ -363,7 +351,7 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
     appendEntityChanges(
       entityChanges,
       modelId,
-      Object.values(model.getAllEntities()).map((entity) => ({ previous: entity, next: null }))
+      Object.values(model.getAllEntities()).map((entity) => ({ previous: entity, next: null })),
     );
   }
 
@@ -385,7 +373,7 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
 
   /**
    * Number of leading entries of {@link transactions} whose operations were
-   * already uploaded to the backend, see {@link uploadPendingTransactions}.
+   * already uploaded to the backend.
    */
   private uploadedTransactionCount: number = 0;
 
@@ -402,8 +390,7 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
    * operations are always processed first within a transaction, see
    * {@link addOperationForTransaction} and {@link undoRedo}.
    */
-  private compareProjectModelFirst = (a: ModelIdentifier, b: ModelIdentifier): number =>
-    a === this.projectModelId ? -1 : b === this.projectModelId ? 1 : 0;
+  private compareProjectModelFirst = (a: ModelIdentifier, b: ModelIdentifier): number => (a === this.projectModelId ? -1 : b === this.projectModelId ? 1 : 0);
 
   /**
    * Allows executing a set of operations by calling this method multiple times
@@ -601,12 +588,12 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
     this.notifyUndoRedoSubscribers();
     this.notifyTransactionCommitSubscribers();
 
-    const confirmation = new Promise<{}>(resolve => this.transactionConfirmations.push(resolve));
+    const confirmation = new Promise<{}>((resolve) => this.transactionConfirmations.push(resolve));
 
     return {
       transactionId: transaction.id,
       confirmation,
-    }
+    };
   }
 
   protected transactionCommitSubscribers: Set<() => void> = new Set();
@@ -691,67 +678,16 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
     this.subscribers.push(listener);
     return () => {
       this.subscribers = this.subscribers.filter((l) => l !== listener);
-    }
+    };
   }
 
   /**
-   * Persists everything that changed since the last successful save. The
-   * models themselves are written purely as operations: the pending
-   * transactions are uploaded to the backend, which records them in the
-   * operation history and updates the stored models accordingly. Full model
-   * snapshots are not uploaded anymore.
+   * Applies all operations that happened since the last successful save to the backend.
    *
-   * The project structure is the exception, as the backend does not handle
-   * the project model yet: the backend resources of locally created models
-   * are created (via the resource API) before the operations are uploaded,
-   * so the operations can be applied to them, and the resources of locally
-   * removed models are deleted only after the upload, so their final
-   * operations are still recorded.
+   * @todo Rename this method, it is not "by override" anymore
    */
   async saveByOverride(): Promise<void> {
-    const projectModel = this.models[this.projectModelId] as ProjectModelInModelStore;
-    const { creations, deletions } = projectModel.takePendingStructuralChanges();
-
-    // Created sequentially (in the order they happened) so that a parent
-    // package always exists on the backend before its children are created.
-    for (const creation of creations) {
-      if (creation.modelType === LOCAL_PACKAGE) {
-        await this.service.createPackage(creation.parentPackageId, { iri: creation.modelId, userMetadata: {} });
-      } else {
-        await this.service.createResource(creation.parentPackageId, { iri: creation.modelId, type: creation.modelType, userMetadata: {} });
-      }
-    }
-
-    try {
-      await this.uploadPendingTransactions();
-
-      for (const modelId of deletions) {
-        await this.service.deleteResource(modelId);
-      }
-    } catch (error) {
-      // The not-yet-uploaded transactions stay pending (see
-      // uploadPendingTransactions) and so must the deletions, so that the
-      // next save retries both.
-      projectModel.restorePendingDeletions(deletions);
-      throw error;
-    }
-
-    this.transactionConfirmations.forEach((resolve) => resolve({}));
-    this.transactionConfirmations = [];
-  }
-
-  /**
-   * Uploads operations of transactions (commits, undos and redos) that
-   * happened since the last successful upload to the backend, which records
-   * them in the operation history and applies them to the stored models.
-   *
-   * This is the only write of model content, so failures propagate to the
-   * caller and the transactions stay pending for the next attempt.
-   */
-  protected async uploadPendingTransactions(): Promise<void> {
-    const pendingTransactions = this.transactions
-      .slice(this.uploadedTransactionCount)
-      .filter((transaction) => transaction.operations.length > 0);
+    const pendingTransactions = this.transactions.slice(this.uploadedTransactionCount).filter((transaction) => transaction.operations.length > 0);
     const transactionCount = this.transactions.length;
 
     if (pendingTransactions.length > 0) {
@@ -759,5 +695,8 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
     }
 
     this.uploadedTransactionCount = transactionCount;
+
+    this.transactionConfirmations.forEach((resolve) => resolve({}));
+    this.transactionConfirmations = [];
   }
 }
