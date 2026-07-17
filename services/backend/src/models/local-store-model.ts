@@ -2,8 +2,9 @@ import { readFile, rm, writeFile } from "fs/promises";
 import path from "path";
 
 /**
- * Low level "database" of string documents.
- * I do not know why I store it in files instead of a real database.
+ * Low level storage of string documents, each identified by an id, kept as
+ * individual files in a single directory. Holds the contents of resource data
+ * stores, see the ResourceModel.
  */
 export class LocalStoreModel {
   private readonly storage: string;
@@ -12,44 +13,40 @@ export class LocalStoreModel {
     this.storage = storage;
   }
 
-  async remove(uuid: string): Promise<void> {
-    const path = this.getStorePath(uuid);
-    if (path) {
-      try {
-        await rm(path, { force: true });
-      } catch (e) {}
+  /**
+   * Removes the document. Does nothing if the document does not exist.
+   */
+  async remove(id: string): Promise<void> {
+    await rm(this.getStorePath(id), { force: true });
+  }
+
+  /**
+   * Returns the content of the document, or null if it does not exist.
+   */
+  async get(id: string): Promise<Buffer | null> {
+    try {
+      return await readFile(this.getStorePath(id));
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+        return null;
+      }
+      throw error;
     }
   }
 
   /**
-   * Returns the content of the store
-   * @internal used only by MemoryStoreHandle
-   * @param id
+   * Creates or overwrites the document with the given content.
    */
-  async get(id: string): Promise<Buffer | null> {
-    const path = this.getStorePath(id);
-    if (path) {
-      try {
-        return await readFile(path);
-      } catch (e) {}
-    }
-    return null;
+  async set(id: string, payload: string): Promise<void> {
+    await writeFile(this.getStorePath(id), payload);
   }
 
-  async set(id: string, payload: string) {
-    const path = this.getStorePath(id);
-    if (path) {
-      try {
-        return await writeFile(path, payload);
-      } catch (e) {}
-    }
-  }
-
-  private getStorePath(unsafeId: string): string | null {
+  private getStorePath(unsafeId: string): string {
+    // The id becomes a file name, so restrict it to safe characters to
+    // prevent path traversal.
     if (!/^[a-zA-Z0-9-]+$/.test(unsafeId)) {
-      return null;
-    } else {
-      return path.join(this.storage, unsafeId);
+      throw new Error(`Invalid store id "${unsafeId}".`);
     }
+    return path.join(this.storage, unsafeId);
   }
 }

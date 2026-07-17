@@ -5,7 +5,7 @@ import type { ModelIdentifier } from "@dataspecer/core/model";
 import { getModelMetadata, resolveAsyncQueryableModelEntities } from "@dataspecer/model-store/implementation";
 import { PROJECT_MODEL_MODEL_ENTITY, type PackageEntity, type ProjectModelEntity } from "@dataspecer/project-model";
 import { type ModelRepositoryType } from "../models/model-repository.ts";
-import { PROJECT_MODEL_ID } from "../models/model-repository-utils.ts";
+import { PROJECT_MODEL_ID } from "../models/model-id.ts";
 import type { BaseResource, Package } from "../models/resource-model.ts";
 
 function createRegularResourceEntity(resource: BaseResource): ProjectModelEntity {

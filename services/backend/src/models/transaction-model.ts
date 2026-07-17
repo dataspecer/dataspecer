@@ -1,6 +1,6 @@
 import type { Entity } from "@dataspecer/core/entity-model";
 import type { Operation, OperationInModel, Transaction } from "@dataspecer/core/operation";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 
 /**
  * Low-level log of entity changes made by a transaction: for each model, the
@@ -53,7 +53,30 @@ export interface BranchInfo {
 }
 
 /**
- * Manages Transactions, Branches and Operations.
+ * A branch is referenced either by its name (a named branch, e.g. "main") or
+ * by the internal numerical id of an existing branch (used for independent,
+ * unnamed evolution branches, see
+ * {@link TransactionModel.getOrCreateEvolutionBranch}).
+ */
+export type BranchReference = string | number;
+
+/** Both the Prisma client and its interactive-transaction client. */
+type Db = PrismaClient | Prisma.TransactionClient;
+
+function findBranch(db: Db, projectId: number, branch: BranchReference): Promise<{ id: number; transactionId: number | null } | null> {
+  return typeof branch === "number"
+    ? db.branch.findFirst({ select: { id: true, transactionId: true }, where: { id: branch, projectId } })
+    : db.branch.findUnique({ select: { id: true, transactionId: true }, where: { projectId_name: { projectId, name: branch } } });
+}
+
+async function getLatestTransactionId(db: Db, projectId: number): Promise<number | null> {
+  const latest = await db.transaction.findFirst({ select: { id: true }, where: { projectId }, orderBy: { id: "desc" } });
+  return latest?.id ?? null;
+}
+
+/**
+ * Manages Transactions, Branches and Operations: the history of a project
+ * that its current state can be recomputed from.
  */
 export class TransactionModel {
   private readonly prismaClient: PrismaClient;
@@ -62,78 +85,105 @@ export class TransactionModel {
     this.prismaClient = prismaClient;
   }
 
+  private async getProjectId(projectIri: string): Promise<number | null> {
+    const project = await this.prismaClient.resource.findUnique({ select: { id: true }, where: { iri: projectIri } });
+    return project?.id ?? null;
+  }
+
+  /**
+   * Walks the parent links from the given transaction backwards, up to (and
+   * excluding) the stop transaction or the beginning of the history, and
+   * returns the visited transaction ids ordered oldest first.
+   */
+  private async collectChainIds(tipId: number | null, stopAtId: number | null = null): Promise<number[]> {
+    const ids: number[] = [];
+    let currentId = tipId;
+    while (currentId !== null && currentId !== stopAtId) {
+      const row = await this.prismaClient.transaction.findUnique({
+        select: { id: true, parents: { select: { parentTransactionId: true } } },
+        where: { id: currentId },
+      });
+      if (row === null) break;
+      ids.push(row.id);
+      currentId = row.parents[0]?.parentTransactionId ?? null;
+    }
+    return ids.reverse();
+  }
+
+  /**
+   * Loads the transactions of a chain (see {@link collectChainIds}) together
+   * with their operations, ordered oldest first.
+   */
+  private async loadTransactionChain(tipId: number | null, stopAtId: number | null = null) {
+    const ids = await this.collectChainIds(tipId, stopAtId);
+    const rows = await this.prismaClient.transaction.findMany({
+      where: { id: { in: ids } },
+      include: { operations: { orderBy: { order: "asc" } } },
+    });
+    const rowsById = new Map(rows.map((row) => [row.id, row]));
+    return ids.map((id) => rowsById.get(id)!);
+  }
+
   /**
    * Creates the given transactions (in order) for the project identified by
    * its resource IRI, chaining each one to the previous transaction in the
-   * array.
+   * array. Everything is written atomically in one database transaction.
    *
-   * The branch to append to can be given either as a name (a named branch,
-   * chained onto the branch's current tip, or the project's latest
-   * transaction if the branch does not exist yet - defaults to "main") or as
-   * the internal numerical id of an existing branch (used for independent,
-   * unnamed evolution branches, see {@link getOrCreateEvolutionBranch}),
-   * which is always chained onto its own current tip only.
+   * The branch to append to defaults to "main". A named branch that does not
+   * exist yet is created, chained onto the project's latest transaction; a
+   * branch referenced by id must exist and is always chained onto its own
+   * current tip only.
    *
-   * After all transactions are created, the branch pointer is automatically
-   * advanced to the last new transaction.
+   * After all transactions are created, the branch pointer is advanced to the
+   * last new transaction.
    */
-  async createTransactions(projectIri: string, transactions: TransactionWithEvents[], branch: string | number = "main"): Promise<void> {
-    const project = await this.prismaClient.resource.findFirst({ select: { id: true }, where: { iri: projectIri } });
-    if (project === null) {
+  async createTransactions(projectIri: string, transactions: TransactionWithEvents[], branch: BranchReference = "main"): Promise<void> {
+    const projectId = await this.getProjectId(projectIri);
+    if (projectId === null) {
       throw new Error("Project resource not found.");
     }
 
-    const branchRecord =
-      typeof branch === "number"
-        ? await this.prismaClient.branch.findFirst({ select: { id: true, transactionId: true }, where: { id: branch, projectId: project.id } })
-        : await this.prismaClient.branch.findUnique({ select: { id: true, transactionId: true }, where: { projectId_name: { projectId: project.id, name: branch } } });
+    await this.prismaClient.$transaction(
+      async (tx) => {
+        const branchRecord = await findBranch(tx, projectId, branch);
+        if (branchRecord === null && typeof branch === "number") {
+          throw new Error("Branch not found.");
+        }
 
-    if (typeof branch === "number" && branchRecord === null) {
-      throw new Error("Branch not found.");
-    }
+        let parentId = branchRecord !== null ? branchRecord.transactionId : await getLatestTransactionId(tx, projectId);
 
-    let parentId: number | null;
-    if (branchRecord !== null) {
-      parentId = branchRecord.transactionId;
-    } else {
-      parentId =
-        (
-          await this.prismaClient.transaction.findFirst({
-            select: { id: true },
-            where: { projectId: project.id },
-            orderBy: { id: "desc" },
-          })
-        )?.id ?? null;
-    }
+        for (const transaction of transactions) {
+          const created = await tx.transaction.create({
+            data: {
+              projectId,
+              clientId: transaction.id,
+              upEvents: transaction.upEvents === undefined ? undefined : JSON.stringify(transaction.upEvents),
+              downEvents: transaction.downEvents === undefined ? undefined : JSON.stringify(transaction.downEvents),
+              parents: parentId === null ? undefined : { create: [{ parentTransactionId: parentId }] },
+              operations: {
+                create: transaction.operations.map((operation, order) => ({
+                  projectId,
+                  order,
+                  modelId: operation.modelId,
+                  data: JSON.stringify(operation.operation),
+                })),
+              },
+            },
+          });
+          parentId = created.id;
+        }
 
-    for (const transaction of transactions) {
-      const created = await this.prismaClient.transaction.create({
-        data: {
-          projectId: project.id,
-          clientId: transaction.id,
-          upEvents: transaction.upEvents === undefined ? undefined : JSON.stringify(transaction.upEvents),
-          downEvents: transaction.downEvents === undefined ? undefined : JSON.stringify(transaction.downEvents),
-          parents: parentId === null ? undefined : { create: [{ parentTransactionId: parentId }] },
-          operations: {
-            create: transaction.operations.map((operation, order) => ({
-              projectId: project.id,
-              order,
-              modelId: operation.modelId,
-              data: JSON.stringify(operation.operation),
-            })),
-          },
-        },
-      });
-      parentId = created.id;
-    }
-
-    if (parentId !== null) {
-      if (branchRecord !== null) {
-        await this.prismaClient.branch.update({ where: { id: branchRecord.id }, data: { transactionId: parentId } });
-      } else {
-        await this.prismaClient.branch.create({ data: { name: branch as string, projectId: project.id, transactionId: parentId } });
-      }
-    }
+        if (parentId !== null) {
+          if (branchRecord !== null) {
+            await tx.branch.update({ where: { id: branchRecord.id }, data: { transactionId: parentId } });
+          } else {
+            await tx.branch.create({ data: { name: branch as string, projectId, transactionId: parentId } });
+          }
+        }
+        // Recording an evolution of a large imported package can take a while.
+      },
+      { timeout: 60_000 },
+    );
   }
 
   /**
@@ -141,52 +191,29 @@ export class TransactionModel {
    * with parsed operations and down events. Used for interpreting undo
    * operations, see the ModelRepository.
    *
-   * The branch is referenced the same way as in {@link createTransactions}: by
-   * name (defaults to "main"; when the named branch does not exist yet, the
-   * history ends at the project's latest transaction, which new transactions
-   * would be chained onto) or by the internal numerical id of an existing
-   * branch.
+   * The branch is referenced the same way as in {@link createTransactions}:
+   * when a named branch does not exist yet, the history ends at the project's
+   * latest transaction, which new transactions would be chained onto.
    */
-  async getBranchHistory(projectIri: string, branch: string | number = "main"): Promise<HistoryTransaction[]> {
-    const project = await this.prismaClient.resource.findFirst({ select: { id: true }, where: { iri: projectIri } });
-    if (project === null) {
+  async getBranchHistory(projectIri: string, branch: BranchReference = "main"): Promise<HistoryTransaction[]> {
+    const projectId = await this.getProjectId(projectIri);
+    if (projectId === null) {
       return [];
     }
 
-    const branchRecord =
-      typeof branch === "number"
-        ? await this.prismaClient.branch.findFirst({ select: { transactionId: true }, where: { id: branch, projectId: project.id } })
-        : await this.prismaClient.branch.findUnique({ select: { transactionId: true }, where: { projectId_name: { projectId: project.id, name: branch } } });
-
-    if (typeof branch === "number" && branchRecord === null) {
+    const branchRecord = await findBranch(this.prismaClient, projectId, branch);
+    if (branchRecord === null && typeof branch === "number") {
       throw new Error("Branch not found.");
     }
 
-    let currentId =
-      branchRecord !== null
-        ? branchRecord.transactionId
-        : ((await this.prismaClient.transaction.findFirst({ select: { id: true }, where: { projectId: project.id }, orderBy: { id: "desc" } }))?.id ?? null);
+    const tipId = branchRecord !== null ? branchRecord.transactionId : await getLatestTransactionId(this.prismaClient, projectId);
 
-    const history: HistoryTransaction[] = [];
-    while (currentId !== null) {
-      const row = await this.prismaClient.transaction.findUnique({
-        where: { id: currentId },
-        include: {
-          operations: { orderBy: { order: "asc" } },
-          parents: { select: { parentTransactionId: true } },
-        },
-      });
-      if (row === null) break;
-      history.push({
-        clientId: row.clientId,
-        operations: row.operations.map((operation) => ({ modelId: operation.modelId, operation: JSON.parse(operation.data) as Operation })),
-        downEvents: row.downEvents === null ? null : (JSON.parse(row.downEvents) as TransactionEvents),
-      });
-      currentId = row.parents[0]?.parentTransactionId ?? null;
-    }
-
-    history.reverse(); // oldest first
-    return history;
+    const rows = await this.loadTransactionChain(tipId);
+    return rows.map((row) => ({
+      clientId: row.clientId,
+      operations: row.operations.map((operation) => ({ modelId: operation.modelId, operation: JSON.parse(operation.data) as Operation })),
+      downEvents: row.downEvents === null ? null : (JSON.parse(row.downEvents) as TransactionEvents),
+    }));
   }
 
   /**
@@ -201,11 +228,8 @@ export class TransactionModel {
    * Returns the internal numerical id of the (newly created) branch.
    */
   async getOrCreateEvolutionBranch(projectIri: string, resourceIri: string): Promise<number> {
-    const [project, resource] = await Promise.all([
-      this.prismaClient.resource.findFirst({ select: { id: true }, where: { iri: projectIri } }),
-      this.prismaClient.resource.findFirst({ select: { id: true }, where: { iri: resourceIri } }),
-    ]);
-    if (project === null) {
+    const [projectId, resource] = await Promise.all([this.getProjectId(projectIri), this.prismaClient.resource.findUnique({ select: { id: true }, where: { iri: resourceIri } })]);
+    if (projectId === null) {
       throw new Error("Project resource not found.");
     }
     if (resource === null) {
@@ -214,7 +238,7 @@ export class TransactionModel {
 
     const existing = await this.prismaClient.branch.findUnique({
       select: { id: true },
-      where: { projectId_resourceId: { projectId: project.id, resourceId: resource.id } },
+      where: { projectId_resourceId: { projectId, resourceId: resource.id } },
     });
 
     if (existing !== null) {
@@ -222,7 +246,7 @@ export class TransactionModel {
     }
 
     const created = await this.prismaClient.branch.create({
-      data: { projectId: project.id, resourceId: resource.id },
+      data: { projectId, resourceId: resource.id },
     });
 
     return created.id;
@@ -235,23 +259,12 @@ export class TransactionModel {
    */
   private async deleteBranch(branchId: number): Promise<void> {
     const branch = await this.prismaClient.branch.findUnique({ select: { transactionId: true }, where: { id: branchId } });
+    const transactionIds = await this.collectChainIds(branch?.transactionId ?? null);
 
-    const transactionIds: number[] = [];
-    let currentId = branch?.transactionId ?? null;
-    while (currentId !== null) {
-      const transaction = await this.prismaClient.transaction.findUnique({
-        select: { id: true, parents: { select: { parentTransactionId: true } } },
-        where: { id: currentId },
-      });
-      if (transaction === null) break;
-      transactionIds.push(transaction.id);
-      currentId = transaction.parents[0]?.parentTransactionId ?? null;
-    }
-
-    await this.prismaClient.branch.delete({ where: { id: branchId } });
-    if (transactionIds.length > 0) {
-      await this.prismaClient.transaction.deleteMany({ where: { id: { in: transactionIds } } });
-    }
+    await this.prismaClient.$transaction([
+      this.prismaClient.branch.delete({ where: { id: branchId } }),
+      this.prismaClient.transaction.deleteMany({ where: { id: { in: transactionIds } } }),
+    ]);
   }
 
   /**
@@ -260,14 +273,14 @@ export class TransactionModel {
    * (e.g. "main") cannot be deleted this way as their history is shared.
    */
   async deleteEvolutionBranch(projectIri: string, branchId: number): Promise<"deleted" | "not-found" | "not-evolution-branch"> {
-    const project = await this.prismaClient.resource.findFirst({ select: { id: true }, where: { iri: projectIri } });
-    if (project === null) {
+    const projectId = await this.getProjectId(projectIri);
+    if (projectId === null) {
       return "not-found";
     }
 
     const branch = await this.prismaClient.branch.findFirst({
       select: { id: true, name: true },
-      where: { id: branchId, projectId: project.id },
+      where: { id: branchId, projectId },
     });
     if (branch === null) {
       return "not-found";
@@ -288,14 +301,14 @@ export class TransactionModel {
    * Returns null if the project does not exist.
    */
   async listBranches(projectIri: string): Promise<BranchInfo[] | null> {
-    const project = await this.prismaClient.resource.findFirst({ select: { id: true }, where: { iri: projectIri } });
-    if (project === null) {
+    const projectId = await this.getProjectId(projectIri);
+    if (projectId === null) {
       return null;
     }
 
     const branches = await this.prismaClient.branch.findMany({
       select: { id: true, name: true, resource: { select: { iri: true } } },
-      where: { projectId: project.id },
+      where: { projectId },
     });
 
     return branches.map((branch) => ({
@@ -306,78 +319,40 @@ export class TransactionModel {
   }
 
   /**
-   * Resolves a branch reference to its current tip transaction id, scoped
-   * to the given project. The reference is either a branch name, or the
-   * branch's internal numerical id wrapped in brackets, e.g. "[34]".
-   */
-  private async resolveBranchTip(projectId: number, ref: string): Promise<number | null> {
-    const idMatch = ref.match(/^\[(\d+)\]$/);
-    const branch =
-      idMatch !== null
-        ? await this.prismaClient.branch.findFirst({ select: { transactionId: true }, where: { id: Number(idMatch[1]), projectId } })
-        : await this.prismaClient.branch.findUnique({ select: { transactionId: true }, where: { projectId_name: { projectId, name: ref } } });
-    return branch?.transactionId ?? null;
-  }
-
-  /**
    * Returns transactions (and their operations) that are reachable from the
    * "to" branch tip but not from the "from" branch tip, ordered oldest to
-   * newest. Branches are referenced by name or by internal id wrapped in
-   * brackets, analogous to git's two-dot range syntax, e.g. "main..[34]".
+   * newest - analogous to git's two-dot range syntax "from..to". A branch
+   * reference that does not resolve to an existing branch is treated as the
+   * initial (empty) commit.
    *
    * Returns null if the project does not exist.
    */
-  async getTransactionsLog(projectIri: string, fromRef: string, toRef: string): Promise<CollectedTransaction[] | null> {
-    const project = await this.prismaClient.resource.findFirst({ select: { id: true }, where: { iri: projectIri } });
-    if (project === null) {
+  async getTransactionsLog(projectIri: string, from: BranchReference, to: BranchReference): Promise<CollectedTransaction[] | null> {
+    const projectId = await this.getProjectId(projectIri);
+    if (projectId === null) {
       return null;
     }
 
-    const [fromTipId, toTipId] = await Promise.all([this.resolveBranchTip(project.id, fromRef), this.resolveBranchTip(project.id, toRef)]);
+    const [fromBranch, toBranch] = await Promise.all([findBranch(this.prismaClient, projectId, from), findBranch(this.prismaClient, projectId, to)]);
+    const fromTipId = fromBranch?.transactionId ?? null;
+    const toTipId = toBranch?.transactionId ?? null;
 
-    // Return empty when there is no target branch or both branches point to
-    // the same transaction (no difference).
+    // No target branch, or both branches point to the same transaction.
     if (toTipId === null || toTipId === fromTipId) {
       return [];
     }
 
-    interface CollectedTx {
-      id: number;
-      createdAt: Date;
-      operations: { id: number; modelId: string; order: number; data: string }[];
-      parents: { parentTransactionId: number }[];
-    }
-
-    // Walk backwards from the "to" tip, collecting transactions until we reach
-    // the "from" tip (exclusive) or run out of history. When "from" does not
-    // exist (null) it is treated as the initial commit, so the entire "to"
-    // branch history is returned.
-    const collected: CollectedTx[] = [];
-
-    let currentId: number | null = toTipId;
-    while (currentId !== null && currentId !== fromTipId) {
-      const row = (await this.prismaClient.transaction.findUnique({
-        where: { id: currentId },
-        include: {
-          operations: { orderBy: { order: "asc" } },
-          parents: { select: { parentTransactionId: true } },
-        },
-      })) as CollectedTx | null;
-      if (row === null) break;
-      collected.push(row);
-      currentId = row.parents[0]?.parentTransactionId ?? null;
-    }
-
-    collected.reverse(); // oldest first
-
-    return collected.map((tx) => ({
-      id: tx.id,
-      createdAt: tx.createdAt,
-      operations: tx.operations.map((op) => ({
-        id: op.id,
-        modelId: op.modelId,
-        order: op.order,
-        data: JSON.parse(op.data),
+    // Walk backwards from the "to" tip until the "from" tip (exclusive) or the
+    // beginning of the history when "from" does not exist.
+    const rows = await this.loadTransactionChain(toTipId, fromTipId);
+    return rows.map((row) => ({
+      id: row.id,
+      createdAt: row.createdAt,
+      operations: row.operations.map((operation) => ({
+        id: operation.id,
+        modelId: operation.modelId,
+        order: operation.order,
+        data: JSON.parse(operation.data),
       })),
     }));
   }

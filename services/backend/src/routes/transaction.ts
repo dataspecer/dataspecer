@@ -4,13 +4,17 @@ import express from "express";
 import { z } from "zod";
 
 const transactionsBodySchema = z.object({
-    transactions: z.array(z.object({
-        id: z.string(),
-        operations: z.array(z.object({
-            modelId: z.string().min(1),
-            operation: z.any(),
-        })),
-    })),
+  transactions: z.array(
+    z.object({
+      id: z.string(),
+      operations: z.array(
+        z.object({
+          modelId: z.string().min(1),
+          operation: z.any(),
+        }),
+      ),
+    }),
+  ),
 });
 
 /**
@@ -19,17 +23,17 @@ const transactionsBodySchema = z.object({
  * updating the JSON snapshots. See {@link ModelRepository.applyTransactions}.
  */
 export const applyTransactions = asyncHandler(async (request: express.Request, response: express.Response) => {
-    const querySchema = z.object({
-        projectIri: z.string().min(1),
-    });
-    const query = querySchema.parse(request.query);
+  const querySchema = z.object({
+    projectIri: z.string().min(1),
+  });
+  const query = querySchema.parse(request.query);
 
-    const body = transactionsBodySchema.parse(request.body);
+  const body = transactionsBodySchema.parse(request.body);
 
-    await modelRepository.applyTransactions(query.projectIri, body.transactions);
+  await modelRepository.applyTransactions(query.projectIri, body.transactions);
 
-    response.sendStatus(204);
-    return;
+  response.sendStatus(204);
+  return;
 });
 
 /**
@@ -40,18 +44,18 @@ export const applyTransactions = asyncHandler(async (request: express.Request, r
  * Example: GET /transactions/branches?projectIri=...
  */
 export const listBranches = asyncHandler(async (request: express.Request, response: express.Response) => {
-    const querySchema = z.object({
-        projectIri: z.string().min(1),
-    });
-    const query = querySchema.parse(request.query);
+  const querySchema = z.object({
+    projectIri: z.string().min(1),
+  });
+  const query = querySchema.parse(request.query);
 
-    const branches = await transactionModel.listBranches(query.projectIri);
-    if (branches === null) {
-        response.status(404).json({ error: "Project not found" });
-        return;
-    }
+  const branches = await transactionModel.listBranches(query.projectIri);
+  if (branches === null) {
+    response.status(404).json({ error: "Project not found" });
+    return;
+  }
 
-    response.json({ branches });
+  response.json({ branches });
 });
 
 /**
@@ -61,59 +65,68 @@ export const listBranches = asyncHandler(async (request: express.Request, respon
  * Example: DELETE /transactions/branches/34?projectIri=...
  */
 export const deleteEvolutionBranch = asyncHandler(async (request: express.Request, response: express.Response) => {
-    const querySchema = z.object({
-        projectIri: z.string().min(1),
-    });
-    const query = querySchema.parse(request.query);
+  const querySchema = z.object({
+    projectIri: z.string().min(1),
+  });
+  const query = querySchema.parse(request.query);
 
-    const branchId = Number(request.params.branchId);
-    if (!Number.isInteger(branchId)) {
-        response.status(400).json({ error: "branchId must be a number" });
-        return;
-    }
+  const branchId = Number(request.params.branchId);
+  if (!Number.isInteger(branchId)) {
+    response.status(400).json({ error: "branchId must be a number" });
+    return;
+  }
 
-    const result = await transactionModel.deleteEvolutionBranch(query.projectIri, branchId);
-    if (result === "not-found") {
-        response.status(404).json({ error: "Branch not found" });
-        return;
-    }
-    if (result === "not-evolution-branch") {
-        response.status(400).json({ error: "Only evolution branches can be deleted" });
-        return;
-    }
+  const result = await transactionModel.deleteEvolutionBranch(query.projectIri, branchId);
+  if (result === "not-found") {
+    response.status(404).json({ error: "Branch not found" });
+    return;
+  }
+  if (result === "not-evolution-branch") {
+    response.status(400).json({ error: "Only evolution branches can be deleted" });
+    return;
+  }
 
-    response.sendStatus(204);
+  response.sendStatus(204);
 });
 
 /**
+ * Parses one side of a range: either a branch name, or the internal numerical
+ * id of a branch wrapped in brackets, e.g. "[34]".
+ */
+function parseBranchReference(reference: string): string | number {
+  const idMatch = reference.match(/^\[(\d+)\]$/);
+  return idMatch !== null ? Number(idMatch[1]) : reference;
+}
+
+/**
  * Diff endpoint: returns transactions (and their operations) that are reachable
- * from the "from" branch tip but not from the "to" branch tip, ordered oldest
+ * from the "to" branch tip but not from the "from" branch tip, ordered oldest
  * to newest.  The range is specified as "fromBranch..toBranch", analogous to
  * git's two-dot range syntax. Either side can instead reference a branch by
  * its internal numerical id, wrapped in brackets, e.g. "main..[34]".
  *
- * Example: GET /transactions/log?projectIri=...&range=upstream..main
+ * Example: GET /transactions/log/upstream..main?projectIri=...
  */
 export const getTransactionsDiff = asyncHandler(async (request: express.Request, response: express.Response) => {
-    const querySchema = z.object({
-        projectIri: z.string().min(1),
-    });
-    const query = querySchema.parse(request.query);
+  const querySchema = z.object({
+    projectIri: z.string().min(1),
+  });
+  const query = querySchema.parse(request.query);
 
-    const range = String(request.params.range ?? "");
-    const dotDot = range.indexOf("..");
-    if (dotDot === -1) {
-        response.status(400).json({ error: "range must be 'fromBranch..toBranch'" });
-        return;
-    }
-    const fromRef = range.slice(0, dotDot);
-    const toRef = range.slice(dotDot + 2);
+  const range = String(request.params.range ?? "");
+  const dotDot = range.indexOf("..");
+  if (dotDot === -1) {
+    response.status(400).json({ error: "range must be 'fromBranch..toBranch'" });
+    return;
+  }
+  const fromRef = parseBranchReference(range.slice(0, dotDot));
+  const toRef = parseBranchReference(range.slice(dotDot + 2));
 
-    const transactions = await transactionModel.getTransactionsLog(query.projectIri, fromRef, toRef);
-    if (transactions === null) {
-        response.status(404).json({ error: "Project not found" });
-        return;
-    }
+  const transactions = await transactionModel.getTransactionsLog(query.projectIri, fromRef, toRef);
+  if (transactions === null) {
+    response.status(404).json({ error: "Project not found" });
+    return;
+  }
 
-    response.json({ transactions });
+  response.json({ transactions });
 });
