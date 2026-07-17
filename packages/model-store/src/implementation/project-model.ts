@@ -3,30 +3,17 @@ import type { PackageService } from "@dataspecer/core-v2/project";
 import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { Model, ModelIdentifier, ModelMetadata } from "@dataspecer/core/model";
 import type { Operation } from "@dataspecer/core/operation";
-import { isCreateModelOperation, isRemoveModelOperation, loadProjectStructure, PROJECT_MODEL_MODEL_ENTITY, type PackageEntity, type ProjectModelEntity } from "@dataspecer/project-model";
+import {
+  isCreateModelOperation,
+  isRemoveModelOperation,
+  loadProjectStructure,
+  PROJECT_MODEL_MODEL_ENTITY,
+  type PackageEntity,
+  type ProjectModelEntity,
+} from "@dataspecer/project-model";
 import { deepEqual } from "@dataspecer/utilities";
 import { BaseModelInModelStore, type ModelState } from "./base.ts";
 import type { ModelInDefaultFrontendModelStore } from "./implementation.ts";
-
-/**
- * Represents the changes in the project model that need to be synchronized with
- * the backend.
- */
-export interface PendingStructuralChanges {
-  /**
-   * Models created locally that still need to be created on the backend.
-   */
-  creations: {
-    modelId: ModelIdentifier;
-    parentPackageId: ModelIdentifier;
-    modelType: string;
-  }[];
-
-  /**
-   * Models removed locally that still need to be removed on the backend.
-   */
-  deletions: ModelIdentifier[];
-}
 
 /**
  * Adapter for project model into model store.
@@ -36,18 +23,6 @@ export interface PendingStructuralChanges {
 export class ProjectModelInModelStore extends BaseModelInModelStore<ProjectModelEntity> implements Model, ModelInDefaultFrontendModelStore {
   rootProjectId: ModelIdentifier;
   protected service: PackageService;
-
-  /**
-   * Models created locally (via {@link CreateModelOperation}) that have not
-   * yet been created on the backend, keyed by model id.
-   */
-  private pendingCreations: Map<ModelIdentifier, { parentPackageId: ModelIdentifier; modelType: string }> = new Map();
-
-  /**
-   * Models removed locally (via {@link RemoveModelOperation}) that have not
-   * yet been removed on the backend.
-   */
-  private pendingDeletions: Set<ModelIdentifier> = new Set();
 
   constructor(id: string, service: PackageService, rootProjectId: ModelIdentifier) {
     super(id);
@@ -75,28 +50,6 @@ export class ProjectModelInModelStore extends BaseModelInModelStore<ProjectModel
     return changes;
   }
 
-  /**
-   * Returns the model creations/removals that happened locally since the last
-   * call and have not yet been synchronized with the backend, clearing them in
-   * the process.
-   */
-  takePendingStructuralChanges(): PendingStructuralChanges {
-    const creations = [...this.pendingCreations].map(([modelId, { parentPackageId, modelType }]) => ({ modelId, parentPackageId, modelType }));
-    const deletions = [...this.pendingDeletions];
-    this.pendingCreations.clear();
-    this.pendingDeletions.clear();
-    return { creations, deletions };
-  }
-
-  /**
-   * Returns the given deletions to the pending state, so that they are
-   * retried by the next synchronization. Used when a save fails after the
-   * pending changes were already taken.
-   */
-  restorePendingDeletions(deletions: ModelIdentifier[]): void {
-    deletions.forEach((modelId) => this.pendingDeletions.add(modelId));
-  }
-
   protected async loadInternal(): Promise<ModelState<ProjectModelEntity>> {
     const entities = await loadProjectStructure(this.service, this.rootProjectId);
     return {
@@ -107,8 +60,6 @@ export class ProjectModelInModelStore extends BaseModelInModelStore<ProjectModel
 
   protected override applyOperation(operation: Operation, mutableState: EntityRecord<ProjectModelEntity>): void {
     if (isRemoveModelOperation(operation)) {
-      const existed = mutableState[operation.modelId] !== undefined;
-
       const toDelete = [operation.modelId];
       while (toDelete.length > 0) {
         const current = toDelete.pop()!;
@@ -139,14 +90,6 @@ export class ProjectModelInModelStore extends BaseModelInModelStore<ProjectModel
           subModels: packageEntity.subModels.filter((subModelId) => subModelId !== operation.modelId),
         } as PackageEntity;
         break;
-      }
-
-      if (existed) {
-        if (!this.pendingCreations.delete(operation.modelId)) {
-          // The model was already created on the backend (it wasn't pending a
-          // local-only creation), so it must be removed there as well.
-          this.pendingDeletions.add(operation.modelId);
-        }
       }
       return;
     }
@@ -185,12 +128,6 @@ export class ProjectModelInModelStore extends BaseModelInModelStore<ProjectModel
         ...mutableState[operation.parentPackageId],
         subModels: [...(mutableState[operation.parentPackageId] as PackageEntity).subModels, operation.modelId],
       } as PackageEntity;
-
-      this.pendingDeletions.delete(operation.modelId);
-      this.pendingCreations.set(operation.modelId, {
-        parentPackageId: operation.parentPackageId,
-        modelType: operation.modelType,
-      });
       return;
     }
 
