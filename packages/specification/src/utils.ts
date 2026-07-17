@@ -3,6 +3,9 @@ import { createDefaultConfigurationModelFromJsonObject } from "@dataspecer/core-
 import { isSemanticModelClass, isSemanticModelRelationship, SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
 import { isSemanticModelClassProfile, isSemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import type { LanguageString } from "@dataspecer/core/core/core-resource";
+import type { EntityRecord } from "@dataspecer/core/entity-model";
+import { createSetEntityOperation, generateOperationId, type Transaction } from "@dataspecer/core/operation";
+import { ldesToRdf, profileTransactionsToLdes, vocabularyTransactionsToLdes } from "@dataspecer/data-specification-vocabulary/ldes";
 import * as DataSpecificationVocabulary from "@dataspecer/data-specification-vocabulary/semantic-model";
 import { getMustacheView } from "@dataspecer/documentation";
 import { createPartialDocumentationConfiguration, DOCUMENTATION_MAIN_TEMPLATE_PARTIAL } from "@dataspecer/documentation/configuration";
@@ -66,6 +69,67 @@ export async function generateDsvApplicationProfile(forExportModels: ModelDescri
   });
 
   return dsvString;
+}
+
+/**
+ * Publishes the operations of the model as an LDES stream, see
+ * `@dataspecer/data-specification-vocabulary/ldes`. Members are version
+ * objects of the published representation of the model: DSV term profiles
+ * for an application profile, OWL classes and properties for a vocabulary.
+ *
+ * When no transaction history is available, the current state of the model
+ * is published as a single initial transaction.
+ */
+export async function generateLdesOperationStream(
+  forExportModel: ModelDescription,
+  forContextModels: ModelDescription[],
+  iri: string,
+  streamIri: string,
+  history: { models: Record<string, EntityRecord>; transactions: Transaction[] } | undefined,
+): Promise<string> {
+  const publishedModelId = forExportModel.id ?? "model";
+
+  const baseIris: Record<string, string | null> = {};
+  for (const model of forContextModels) {
+    if (model.id !== null) {
+      baseIris[model.id] = model.baseIri;
+    }
+  }
+  baseIris[publishedModelId] = forExportModel.baseIri;
+
+  let models: Record<string, EntityRecord>;
+  let transactions: Transaction[];
+  if (history) {
+    models = history.models;
+    transactions = history.transactions;
+  } else {
+    models = {};
+    for (const model of forContextModels) {
+      if (model.id !== null) {
+        models[model.id] = model.entities;
+      }
+    }
+    models[publishedModelId] = {};
+    transactions = [{
+      id: generateOperationId(),
+      operations: Object.values(forExportModel.entities)
+        .map((entity) => ({ modelId: publishedModelId, operation: createSetEntityOperation(entity) })),
+    }];
+  }
+
+  const input = {
+    streamIri,
+    publishedModelIri: iri,
+    models,
+    baseIris,
+    publishedModelId,
+    transactions,
+  };
+  const stream = isModelVocabulary(forExportModel.entities)
+    ? vocabularyTransactionsToLdes(input)
+    : profileTransactionsToLdes(input);
+
+  return await ldesToRdf(stream, { prettyPrint: true });
 }
 
 export async function generateShaclApplicationProfile(forExportModel: ModelDescription, forContextModels: ModelDescription[], iri: string, configuration: SemanticModelsToShaclConfiguration) {

@@ -11,7 +11,8 @@ import { isSemanticModelClassProfile, isSemanticModelRelationshipProfile } from 
 import { diffEntities, type Entity, type EntityRecord } from "@dataspecer/core/entity-model";
 import type { Operation } from "@dataspecer/core/operation";
 import type { DefaultFrontendModelStore } from "@dataspecer/model-store/implementation";
-import { analyzeEvolution, analyzeProfileEvolution, applyOperationsToCopy } from "@dataspecer/profile-model/hooks";
+import { applyOperationsToSemanticModel } from "@dataspecer/core-v2/semantic-model";
+import { analyzeEvolution, analyzeProfileEvolution } from "@dataspecer/profile-model/hooks";
 import type { ProjectModelEntity } from "@dataspecer/project-model";
 import type { ReviewGroup } from "./review-state";
 
@@ -133,7 +134,8 @@ export function countPendingChanges(entities: EntityRecord, operations: Operatio
   const empty = (): EntityKindCounts => ({ classes: 0, relationships: 0, generalizations: 0, other: 0 });
   const counts: PendingChangeCounts = { created: empty(), modified: empty(), deleted: empty() };
 
-  const after = applyOperationsToCopy(entities, operations);
+  const after = { ...entities };
+  applyOperationsToSemanticModel(after, operations);
   for (const change of diffEntities(entities, after)) {
     const action = change.previous === null ? "created" : change.next === null ? "deleted" : "modified";
     counts[action][entityKind((change.next ?? change.previous)!)]++;

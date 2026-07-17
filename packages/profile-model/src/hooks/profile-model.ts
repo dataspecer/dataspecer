@@ -1,8 +1,8 @@
 import type { SemanticModelAggregator } from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
+import { applyOperationsToSemanticModel } from "@dataspecer/core-v2/semantic-model";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import type { ProfileOperation } from "../profile-model.ts";
 import {
-  applyOperationsToCopy,
   deriveEvolutionItems,
   type EvolutionAnalysis,
 } from "./evolution-items.ts";
@@ -51,7 +51,8 @@ export function analyzeProfileEvolution(input: ProfileEvolutionInput): Evolution
   const upstreamBefore = models[upstreamModelId] ?? {};
   const aggregatedBefore = getAggregatedRecord(buildAggregator(models));
 
-  const upstreamAfter = applyOperationsToCopy(upstreamBefore, operations);
+  const upstreamAfter = { ...upstreamBefore };
+  applyOperationsToSemanticModel(upstreamAfter, operations);
   const aggregatedAfter = getAggregatedRecord(
     buildAggregator({ ...models, [upstreamModelId]: upstreamAfter }));
 

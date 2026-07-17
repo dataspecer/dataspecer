@@ -1,4 +1,3 @@
-import { applyOperationsToSemanticModel } from "@dataspecer/core-v2/semantic-model";
 import {
   isSemanticModelClass,
   isSemanticModelGeneralization,
@@ -18,12 +17,6 @@ import {
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { createDefaultSemanticModelProfileOperationFactory } from "@dataspecer/core-v2/semantic-model/profile/operations";
 import { diffEntities, type Entity, type EntityRecord } from "@dataspecer/core/entity-model";
-import {
-  isRemoveEntityOperation,
-  isSetEntityOperation,
-  isUpdateEntityOperation,
-  type Operation,
-} from "@dataspecer/core/operation";
 import { deepEqual } from "@dataspecer/utilities";
 import {
   prepareProfileSemanticClassOperations,
@@ -368,47 +361,6 @@ export function deriveEvolutionItems(
   }
 
   return items;
-}
-
-// ---------------------------------------------------------------------------
-// Upstream state computation
-// ---------------------------------------------------------------------------
-
-/**
- * Applies operations to a copy of the entities. Generic set/update/remove
- * entity operations are handled directly; everything else is delegated to the
- * semantic model executor (which also understands profile operations).
- */
-export function applyOperationsToCopy(entities: EntityRecord, operations: Operation[]): EntityRecord {
-  const working: EntityRecord = { ...entities };
-  const semanticOperations: Operation[] = [];
-
-  const flush = () => {
-    if (semanticOperations.length > 0) {
-      applyOperationsToSemanticModel(working, semanticOperations.splice(0));
-    }
-  };
-
-  for (const operation of operations) {
-    if (isSetEntityOperation(operation)) {
-      flush();
-      working[operation.entity.id] = operation.entity;
-    } else if (isUpdateEntityOperation(operation)) {
-      flush();
-      const entity = working[operation.update.id];
-      if (entity) {
-        working[operation.update.id] = { ...entity, ...operation.update };
-      }
-    } else if (isRemoveEntityOperation(operation)) {
-      flush();
-      delete working[operation.entityId];
-    } else {
-      semanticOperations.push(operation);
-    }
-  }
-  flush();
-
-  return working;
 }
 
 // ---------------------------------------------------------------------------
