@@ -2,15 +2,15 @@ import { LOCAL_SEMANTIC_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { diffEntities, type EntityRecord } from "@dataspecer/core/entity-model";
 import { isUndoOperation, type Operation, type Transaction } from "@dataspecer/core/operation";
 import { v4 as uuidv4 } from "uuid";
+import { composeModelId, PROJECT_MODEL_ID, splitModelId } from "./model-id.ts";
 import {
   applyOperationsToModelEntities,
   applyUndoOperationToModelEntities,
   diffModelEntitiesToOperations,
   entityChangesToEvents,
-  isBlobModelType,
   type UndoHistoryEntry,
-} from "../utils/model-operations.ts";
-import { composeModelId, deserializeModelEntities, NAMED_BLOB_STORE_TYPE, PROJECT_MODEL_ID, serializeModelEntities, splitModelId } from "./model-repository-utils.ts";
+} from "./model-operations.ts";
+import { deserializeModelEntities, deserializeStoredModel, isBlobModelType, NAMED_BLOB_STORE_TYPE, resolveStoreModelType, serializeModelEntities } from "./model-types.ts";
 import type { BaseResource, Package, ResourceModel } from "./resource-model.ts";
 import type { HistoryTransaction, TransactionEvents, TransactionModel, TransactionWithEvents } from "./transaction-model.ts";
 
@@ -18,9 +18,9 @@ export interface ModelRepositoryType {
   getResource(iri: string): Promise<BaseResource | null>;
   getPackage(iri: string): Promise<Package | null>;
   getModelEntities(modelId: string): Promise<EntityRecord | null>;
-  createResource(parentIri: string | null, iri: string, type: string, userMetadata: {}): Promise<void>;
-  createPackage(parentIri: string | null, iri: string, userMetadata: {}): Promise<void>;
-  updateResource(iri: string, userMetadata: {}): Promise<void>;
+  createResource(parentIri: string | null, iri: string, type: string, userMetadata: object): Promise<void>;
+  createPackage(parentIri: string | null, iri: string, userMetadata: object): Promise<void>;
+  updateResource(iri: string, userMetadata: object): Promise<void>;
   deleteResource(iri: string): Promise<void>;
   setResourceStoreJson(iri: string, data: unknown, storeName?: string): Promise<void>;
 }
@@ -73,15 +73,7 @@ export class ModelRepository implements ModelRepositoryType {
     }
 
     const data = await this.resourceModel.getResourceStoreJson(iri, storeName);
-
-    if (storeName === "model") {
-      return deserializeModelEntities(iri, resource.types[0] ?? "", data);
-    }
-
-    if (data === null) {
-      return null;
-    }
-    return deserializeModelEntities(modelId, NAMED_BLOB_STORE_TYPE, data);
+    return deserializeStoredModel(modelId, resource.types[0] ?? "", data);
   }
 
   /**
@@ -101,7 +93,7 @@ export class ModelRepository implements ModelRepositoryType {
     }
 
     const modelId = composeModelId(iri, storeName);
-    const modelType = storeName === "model" ? (resource.types[0] ?? "") : NAMED_BLOB_STORE_TYPE;
+    const modelType = resolveStoreModelType(resource.types[0] ?? "", storeName);
 
     try {
       // The history is recorded before the snapshot is written: if the write
@@ -164,7 +156,7 @@ export class ModelRepository implements ModelRepositoryType {
         if (resource === null) {
           console.warn(`Cannot apply operations to model "${modelId}" because its resource does not exist. The operations are only recorded.`);
         } else {
-          const modelType = storeName === "model" ? (resource.types[0] ?? "") : NAMED_BLOB_STORE_TYPE;
+          const modelType = resolveStoreModelType(resource.types[0] ?? "", storeName);
           const previousData = await this.resourceModel.getResourceStoreJson(iri, storeName);
           model = { iri, storeName, modelType, previousData, entities: deserializeModelEntities(modelId, modelType, previousData), hadOperations: false };
         }
@@ -379,11 +371,12 @@ export class ModelRepository implements ModelRepositoryType {
   }
 
   /**
-   * Returns the IRI of the direct parent package of a resource, or null if it
-   * is a root resource or does not exist.
+   * Returns the IRI of the project the resource belongs to - the package
+   * whose history the resource's changes are recorded under - or null if the
+   * resource does not exist.
    */
-  getParentIri(iri: string) {
-    return this.resourceModel.getParentIri(iri);
+  getProjectIri(iri: string) {
+    return this.resourceModel.getProjectIri(iri);
   }
 
   /**
@@ -401,21 +394,21 @@ export class ModelRepository implements ModelRepositoryType {
    * Low level function to create a resource.
    * If parent IRI is null, the resource is created as root resource.
    */
-  createResource(parentIri: string | null, iri: string, type: string, userMetadata: {}) {
+  createResource(parentIri: string | null, iri: string, type: string, userMetadata: object) {
     return this.resourceModel.createResource(parentIri, iri, type, userMetadata);
   }
 
   /**
    * Creates resource of type LOCAL_PACKAGE.
    */
-  createPackage(parentIri: string | null, iri: string, userMetadata: {}) {
+  createPackage(parentIri: string | null, iri: string, userMetadata: object) {
     return this.resourceModel.createPackage(parentIri, iri, userMetadata);
   }
 
   /**
-   * Updates user metadata of the resource.
+   * Updates user metadata of the resource by merging in the given properties.
    */
-  updateResource(iri: string, userMetadata: {}) {
+  updateResource(iri: string, userMetadata: object) {
     return this.resourceModel.updateResource(iri, userMetadata);
   }
 
@@ -457,5 +450,3 @@ export class ModelRepository implements ModelRepositoryType {
     return this.resourceModel.deleteResourceStore(iri, storeName);
   }
 }
-
-

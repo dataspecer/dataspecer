@@ -1,10 +1,8 @@
 import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
+import { composeModelId, splitModelId } from "./model-id.ts";
 import { type ModelRepository, type ModelRepositoryType } from "./model-repository.ts";
-import { NAMED_BLOB_STORE_TYPE } from "./model-repository-utils.ts";
-import { splitModelId } from "./model-repository-utils.ts";
-import { composeModelId } from "./model-repository-utils.ts";
-import { deserializeModelEntities } from "./model-repository-utils.ts";
+import { deserializeStoredModel } from "./model-types.ts";
 import type { BaseResource, Package } from "./resource-model.ts";
 
 /**
@@ -69,7 +67,7 @@ export class StagingModelRepository implements ModelRepositoryType {
     return { ...(staged ?? basePackage!), subResources };
   }
 
-  async createResource(parentIri: string | null, iri: string, type: string, userMetadata: {}): Promise<void> {
+  async createResource(parentIri: string | null, iri: string, type: string, userMetadata: object): Promise<void> {
     this.deletedIris.delete(iri);
     this.createdIris.add(iri);
     this.stagedResources.set(iri, {
@@ -86,11 +84,11 @@ export class StagingModelRepository implements ModelRepositoryType {
     }
   }
 
-  createPackage(parentIri: string | null, iri: string, userMetadata: {}): Promise<void> {
+  createPackage(parentIri: string | null, iri: string, userMetadata: object): Promise<void> {
     return this.createResource(parentIri, iri, LOCAL_PACKAGE, userMetadata);
   }
 
-  async updateResource(iri: string, userMetadata: {}): Promise<void> {
+  async updateResource(iri: string, userMetadata: object): Promise<void> {
     const resource = await this.getResource(iri);
     if (resource === null) {
       throw new Error("Resource not found.");
@@ -125,13 +123,6 @@ export class StagingModelRepository implements ModelRepositoryType {
     const storeKey = composeModelId(iri, storeName);
     const data = this.stagedStores.has(storeKey) ? this.stagedStores.get(storeKey) : this.createdIris.has(iri) ? null : await this.base.getResourceStoreJson(iri, storeName);
 
-    if (storeName === "model") {
-      return deserializeModelEntities(iri, resource.types[0] ?? "", data);
-    }
-
-    if (data === null || data === undefined) {
-      return null;
-    }
-    return deserializeModelEntities(modelId, NAMED_BLOB_STORE_TYPE, data);
+    return deserializeStoredModel(modelId, resource.types[0] ?? "", data);
   }
 }

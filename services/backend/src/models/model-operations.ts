@@ -1,8 +1,3 @@
-import { LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
-import { applyOperationsToSemanticModel } from "@dataspecer/core-v2/semantic-model";
-import { changesToSemanticModelOperations } from "@dataspecer/core-v2/semantic-model/operations";
-import type { CoreOperationAndOperation, CoreResourceAndEntity } from "@dataspecer/core/core";
-import { applyOperationsToStructureModel } from "@dataspecer/core/data-psm";
 import { changesToEntityOperations, diffEntities, type Entity, type EntityChange, type EntityRecord } from "@dataspecer/core/entity-model";
 import {
   isRemoveEntityOperation,
@@ -15,32 +10,9 @@ import {
   type Transaction,
   type UndoOperation,
 } from "@dataspecer/core/operation";
-import {
-  applyOperationsToAsyncQueryableModel,
-  ReloadModelOperationType,
-  SetModelUrlsOperationType,
-  type SetModelUrl,
-} from "@dataspecer/model-store/implementation";
-import { SemanticProfileModelOperations } from "@dataspecer/profile-model";
 import type { ProjectModelEntity } from "@dataspecer/project-model";
-import { applyOperationsToVisualModel } from "@dataspecer/visual-model/executor";
-import { PROJECT_MODEL_ID } from "../models/model-repository-utils.ts";
-
-/**
- * Model types whose model is stored as one blob entity rather than a set of
- * individually addressed entities. For blob models only the down events of a
- * transaction are recorded - the up state is available as the next
- * transaction's down event, or as the current snapshot.
- */
-export function isBlobModelType(modelType: string): boolean {
-  return (
-    modelType !== LOCAL_SEMANTIC_MODEL &&
-    modelType !== VISUAL_MODEL &&
-    modelType !== V1.PSM &&
-    modelType !== QUERYABLE_MODEL &&
-    modelType !== RDFS_MODEL
-  );
-}
+import { PROJECT_MODEL_ID } from "./model-id.ts";
+import { applyModelTypeOperation, modelTypeChangesToOperations } from "./model-types.ts";
 
 /**
  * Converts entity changes of one model to its up/down transaction events: the
@@ -61,28 +33,15 @@ export function entityChangesToEvents(changes: EntityChange[]): { up: Record<str
 /**
  * Diffs two states of a model of the given type and returns operations that
  * would transform the previous state into the next one, tagged with the id of
- * the model they belong to.
+ * the model they belong to. Changes the model type has no richer operations
+ * for are expressed as generic entity operations.
  */
 export function diffModelEntitiesToOperations(modelId: string, modelType: string, previous: EntityRecord, next: EntityRecord): OperationInModel[] {
-  let remainingChanges = diffEntities(previous, next);
-  const operations: Operation[] = [];
-
-  if ([LOCAL_SEMANTIC_MODEL, RDFS_MODEL].includes(modelType)) {
-    const semantic = changesToSemanticModelOperations(remainingChanges);
-    operations.push(...semantic.operations);
-
-    const profile = SemanticProfileModelOperations.changesToProfileModelOperations(semantic.remainingChanges);
-    operations.push(...profile.operations);
-
-    remainingChanges = profile.remainingChanges;
-  }
-
-  // todo: Implement differ for other models
-
-  operations.push(...changesToEntityOperations(remainingChanges));
-
-  return operations.map((operation) => ({ modelId, operation }));
+  const changes = diffEntities(previous, next);
+  const { operations, remainingChanges } = modelTypeChangesToOperations(modelType, changes);
+  return [...operations, ...changesToEntityOperations(remainingChanges)].map((operation) => ({ modelId, operation }));
 }
+
 /**
  * Diffs two snapshots of model states (model id to entities) and converts the
  * differences into operations, tagged with the id of the model they belong to.
@@ -132,7 +91,7 @@ export function applyOperationsToModelEntities(modelId: string, modelType: strin
     } else if (isRemoveEntityOperation(operation)) {
       delete working[operation.entityId];
     } else {
-      applyModelSpecificOperation(modelId, modelType, working, operation);
+      applyModelTypeOperation(modelId, modelType, working, operation);
     }
   }
 
@@ -256,45 +215,4 @@ export function applyUndoOperationToModelEntities(
   }
 
   return working;
-}
-
-/**
- * Applies a single model type specific operation to the mutable entity record.
- */
-function applyModelSpecificOperation(modelId: string, modelType: string, working: EntityRecord, operation: Operation): void {
-  if (modelType === LOCAL_SEMANTIC_MODEL) {
-    applyOperationsToSemanticModel(working, [operation]);
-    return;
-  }
-
-  if (modelType === VISUAL_MODEL) {
-    applyOperationsToVisualModel(working, [operation]);
-    return;
-  }
-
-  if (modelType === V1.PSM) {
-    applyOperationsToStructureModel(working as EntityRecord<CoreResourceAndEntity>, [operation as CoreOperationAndOperation]);
-    return;
-  }
-
-  if (modelType === QUERYABLE_MODEL) {
-    applyOperationsToAsyncQueryableModel(working, [operation]);
-    return;
-  }
-
-  if (modelType === RDFS_MODEL) {
-    if (operation.type === SetModelUrlsOperationType) {
-      // Only the urls are updated; the cached vocabulary entities are
-      // refetched by the reload endpoint, not by applying operations.
-      working[modelId] = { ...working[modelId], urls: (operation as SetModelUrl).urls } as EntityRecord[string];
-      return;
-    }
-    if (operation.type === ReloadModelOperationType) {
-      return;
-    }
-    applyOperationsToSemanticModel(working, [operation]);
-    return;
-  }
-
-  console.warn(`Unsupported operation "${operation.type}" for model "${modelId}" of type "${modelType}". The operation is ignored.`);
 }

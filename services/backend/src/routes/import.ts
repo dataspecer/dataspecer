@@ -23,11 +23,11 @@ import { v4 as uuidv4 } from "uuid";
 import z from "zod";
 import { modelRepository } from "../main.ts";
 import { type ModelRepositoryType } from "../models/model-repository.ts";
-import { PROJECT_MODEL_ID } from "../models/model-repository-utils.ts";
+import { PROJECT_MODEL_ID } from "../models/model-id.ts";
 import { StagingModelRepository } from "../models/staging-model-repository.ts";
 import { BaseResource } from "../models/resource-model.ts";
 import { getModelsForPackage } from "../utils/backend-model-store.ts";
-import { diffModelEntitiesToOperations, diffModelStates } from "../utils/model-operations.ts";
+import { diffModelEntitiesToOperations, diffModelStates } from "../models/model-operations.ts";
 import { asyncHandler } from "./../utils/async-handler.ts";
 import type { CoreResource } from "@dataspecer/core/core/core-resource";
 import { canonicalizeIds } from "@dataspecer/structure-model";
@@ -611,7 +611,7 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
 
     const previousStates = { [existingResource.iri]: previousEntities };
     const operations = diffModelEntitiesToOperations(existingResource.iri, RDFS_MODEL, previousEntities, nextEntities);
-    const projectIri = await modelRepository.getParentIri(existingResource.iri) ?? existingResource.iri;
+    const projectIri = (await modelRepository.getProjectIri(existingResource.iri))!;
     await modelRepository.recordEvolutionTransactions(projectIri, existingResource.iri, [{ id: uuidv4(), operations }], previousStates);
 
     response.send(await modelRepository.getResource(existingResource.iri));
@@ -654,7 +654,7 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
   }
 
   const operations = diffModelStates(previousModels, nextModels);
-  const projectIri = await modelRepository.getParentIri(query.iri) ?? query.iri;
+  const projectIri = (await modelRepository.getProjectIri(query.iri))!;
   await modelRepository.recordEvolutionTransactions(projectIri, query.iri, [{ id: uuidv4(), operations }], previousModels);
 
   response.send(await modelRepository.getResource(query.iri));

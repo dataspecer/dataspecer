@@ -1,11 +1,5 @@
 import type { Entity, EntityRecord } from "@dataspecer/core/entity-model";
-import {
-  createRemoveEntityOperation,
-  createSetEntityOperation,
-  createUndoOperation,
-  createUpdateEntityOperation,
-  type Operation,
-} from "@dataspecer/core/operation";
+import { createRemoveEntityOperation, createSetEntityOperation, createUndoOperation, createUpdateEntityOperation, type Operation } from "@dataspecer/core/operation";
 import { describe, expect, test } from "vitest";
 import { applyUndoOperationToModelEntities, type UndoHistoryEntry } from "./model-operations.ts";
 
