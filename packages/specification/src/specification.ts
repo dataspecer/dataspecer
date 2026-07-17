@@ -5,6 +5,7 @@ import { LanguageString, type CoreResource } from "@dataspecer/core/core/core-re
 import { DataSpecificationArtefact } from "@dataspecer/core/data-specification/model/data-specification-artefact";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
+import type { Transaction } from "@dataspecer/core/operation";
 import { StreamDictionary } from "@dataspecer/core/io/stream/stream-dictionary";
 import { generatorConfigurationToRdf } from "@dataspecer/data-specification-vocabulary/generator-configuration";
 import {
@@ -26,6 +27,7 @@ import { DefaultShaclConfiguration, DefaultShaclFileKey, ShaclV2Configurator } f
 import {
   generateDsvApplicationProfile,
   generateHtmlDocumentation,
+  generateLdesOperationStream,
   generateLightweightOwl,
   generateShaclApplicationProfile,
   getIdToIriMapping,
@@ -78,6 +80,19 @@ export interface GenerateSpecificationContext {
    */
   models: Record<string, EntityRecord>;
   output: StreamDictionary;
+
+  /**
+   * Transaction history of the project used to publish the operations as an
+   * LDES stream: the state of the models before the first transaction and
+   * all transactions, oldest first.
+   *
+   * @todo The backend does not provide the history yet; when missing, the
+   * current state is published as a single initial transaction.
+   */
+  history?: {
+    models: Record<string, EntityRecord>;
+    transactions: Transaction[];
+  };
 
   fetch: HttpFetch;
 
@@ -169,6 +184,7 @@ export async function generateSpecification(packageId: string, context: Generate
       }
 
       modelDescriptions.push({
+        id: semanticModel.id,
         entities: Object.fromEntries(Object.entries(entities).map(([id, entity]) => [id, withAbsoluteIri(entity as SemanticModelEntity, baseIri)])),
         isPrimary: isRoot,
         documentationUrl: (pckgEntity as any).documentBaseUrl ?? null,
@@ -185,6 +201,7 @@ export async function generateSpecification(packageId: string, context: Generate
         isSemanticModelGeneralization(entity)
       )) as Record<string, SemanticModelEntity>;
       modelDescriptions.push({
+        id: sgovModel.id,
         entities: entities,
         isPrimary: false,
         documentationUrl: null,
@@ -197,6 +214,7 @@ export async function generateSpecification(packageId: string, context: Generate
       const modelEntities = allModels[pimModel.id] ?? {};
       const entities = Object.fromEntries(Object.entries(modelEntities).filter(([id]) => id !== pimModel.id)) as Record<string, SemanticModelEntity>;
       modelDescriptions.push({
+        id: pimModel.id,
         entities,
         isPrimary: false,
         documentationUrl: null,
@@ -499,6 +517,17 @@ export async function generateSpecification(packageId: string, context: Generate
           hasResource.push(shaclDescriptor);
         }
       }
+    }
+
+    // Publish the operations of the model as an LDES stream. This is a proof
+    // of concept: the descriptor is not registered in the DSV metadata yet as
+    // PROF has no suitable role for a change log.
+    if (isModelVocabulary(model.entities) || isModelProfile(model.entities)) {
+      const ldesFileName = isModelVocabulary(model.entities) ? "model.owl.ldes.ttl" : "dsv.ldes.ttl";
+      const ldesUrl = baseUrl + ldesFileName + queryParams;
+      const ldes = await generateLdesOperationStream(model, modelDescriptions, modelIri, ldesUrl, context.history);
+      await writeFile(ldesFileName, ldes);
+      externalArtifacts["ldes-operations"] = [{ type: ldesFileName, URL: ldesUrl }];
     }
   }
 

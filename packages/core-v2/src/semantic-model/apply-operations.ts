@@ -1,5 +1,13 @@
 import type { EntityChange, EntityChangeDeleted, EntityRecord } from "@dataspecer/core/entity-model";
-import type { Operation } from "@dataspecer/core/operation";
+import {
+  isRemoveEntityOperation,
+  isSetEntityOperation,
+  isUpdateEntityOperation,
+  type Operation,
+  type RemoveEntityOperation,
+  type SetEntityOperation,
+  type UpdateEntityOperation,
+} from "@dataspecer/core/operation";
 import type { Entity } from "../entity-model/entity.ts";
 import type { SemanticModelClass, SemanticModelGeneralization, SemanticModelRelationship } from "./concepts/concepts.ts";
 import {
@@ -27,7 +35,8 @@ import { type ChangeCollector, type EntityGetter } from "./writable-semantic-mod
 
 /**
  * Applies semantic model operations to the given entities. The entities are
- * modified in place.
+ * modified in place. Next to the semantic and profile operations, the generic
+ * set/update/remove entity operations are supported as well.
  */
 export function applyOperationsToSemanticModel(
   semanticModel: EntityRecord,
@@ -67,7 +76,13 @@ export function applyOperationsToSemanticModel(
   const result: (OperationResult | CreatedEntityOperationResult)[] = [];
 
   for (const operation of operations) {
-    if (isCreateClassOperation(operation)) {
+    if (isSetEntityOperation(operation)) {
+      result.push(handleSetEntityOperation(change, operation));
+    } else if (isUpdateEntityOperation(operation)) {
+      result.push(handleUpdateEntityOperation(getEntity, change, operation));
+    } else if (isRemoveEntityOperation(operation)) {
+      result.push(handleRemoveEntityOperation(getEntity, change, operation));
+    } else if (isCreateClassOperation(operation)) {
       result.push(handleCreateClassOperation(getEntity, change, operation));
     } else if (isModifyClassOperation(operation)) {
       result.push(handleModifyClassOperation(getEntity, change, operation));
@@ -104,6 +119,38 @@ export function applyOperationsToSemanticModel(
     changes,
     updated: updatedCollector,
     removed: removedCollector,
+  };
+}
+
+function handleSetEntityOperation(change: ChangeCollector, operation: SetEntityOperation): OperationResult {
+  change({ [operation.entity.id]: operation.entity }, []);
+  return {
+    success: true,
+  };
+}
+
+function handleUpdateEntityOperation(getEntity: EntityGetter, change: ChangeCollector, operation: UpdateEntityOperation): OperationResult {
+  const entity = getEntity(operation.update.id);
+  if (!entity) {
+    return {
+      success: false,
+    };
+  }
+  change({ [operation.update.id]: { ...entity, ...operation.update } }, []);
+  return {
+    success: true,
+  };
+}
+
+function handleRemoveEntityOperation(getEntity: EntityGetter, change: ChangeCollector, operation: RemoveEntityOperation): OperationResult {
+  if (!getEntity(operation.entityId)) {
+    return {
+      success: false,
+    };
+  }
+  change({}, [operation.entityId]);
+  return {
+    success: true,
   };
 }
 

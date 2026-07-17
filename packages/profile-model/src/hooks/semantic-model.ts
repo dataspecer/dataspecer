@@ -1,7 +1,7 @@
+import { applyOperationsToSemanticModel } from "@dataspecer/core-v2/semantic-model";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import type { SemanticOperation } from "@dataspecer/semantic-model";
 import {
-  applyOperationsToCopy,
   deriveEvolutionItems,
   type EvolutionAnalysis,
 } from "./evolution-items.ts";
@@ -28,7 +28,8 @@ export function analyzeEvolution(
   operations: SemanticOperation[],
   profileEntities: EntityRecord,
 ): EvolutionAnalysis {
-  const upstreamAfter = applyOperationsToCopy(upstreamBefore, operations);
+  const upstreamAfter = { ...upstreamBefore };
+  applyOperationsToSemanticModel(upstreamAfter, operations);
   return {
     upstreamBefore,
     upstreamAfter,
