@@ -12,6 +12,7 @@ import {
   nextNodeId,
   removeEdge,
   removeNode,
+  renameNode,
   updateEdge,
   updateNode,
 } from "./mutations.ts";
@@ -49,6 +50,21 @@ describe("nextNodeId", () => {
 
   it("appends a counter when the id is taken", () => {
     expect(nextNodeId(graphFixture(), "Books", Operation.ReadList)).toBe("books.list-2");
+  });
+
+  it("does not collide with the excluded node's own id", () => {
+    expect(nextNodeId(graphFixture(), "Books", Operation.ReadList, "books.list")).toBe(
+      "books.list",
+    );
+  });
+});
+
+describe("renameNode", () => {
+  it("renames the node and rewrites its edges", () => {
+    const graph = renameNode(graphFixture(), "books.detail", "book.detail");
+    expect(graph.nodes.map((node) => node.id)).toContain("book.detail");
+    expect(graph.edges[0].target).toBe("book.detail");
+    expect(graph.edges[0].source).toBe("books.list");
   });
 });
 

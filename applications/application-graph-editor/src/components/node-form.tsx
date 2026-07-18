@@ -8,6 +8,8 @@ import {
   type ApplicationNode,
   type ApplicationNodeConfig,
 } from "@dataspecer/app-generator/graph";
+import { omit } from "es-toolkit";
+import { nextNodeId } from "../graph/mutations.ts";
 import { useEditorStore } from "../store.ts";
 import { FormField, inputClass } from "./form-field.tsx";
 
@@ -48,6 +50,7 @@ function normalizeConfig(config: ApplicationNodeConfig): ApplicationNodeConfig |
 export function NodeForm({ node }: { node: ApplicationNode }) {
   const metadata = useEditorStore((state) => state.metadata);
   const updateNode = useEditorStore((state) => state.updateNode);
+  const renameNode = useEditorStore((state) => state.renameNode);
   const removeNode = useEditorStore((state) => state.removeNode);
 
   const aggregate = metadata?.aggregates.find((entry) => entry.iri === node.aggregateIri);
@@ -56,27 +59,51 @@ export function NodeForm({ node }: { node: ApplicationNode }) {
     updateNode(node.id, { config: normalizeConfig({ ...node.config, ...patch }) });
   };
 
+  // The id of an unconnected node follows its aggregate and operation, so a node created with
+  // defaults gets a telling id once configured. Ids referenced by edges stay stable.
+  const applyWithId = (
+    patch: Partial<Omit<ApplicationNode, "id">>,
+    aggregateIri: string,
+    operation: Operation,
+  ) => {
+    const { graph } = useEditorStore.getState();
+    const connected = graph?.edges.some(
+      (edge) => edge.source === node.id || edge.target === node.id,
+    );
+    const name = metadata?.aggregates.find((entry) => entry.iri === aggregateIri)?.name;
+    if (graph && !connected && name) {
+      renameNode(node.id, nextNodeId(graph, name, operation, node.id), patch);
+    } else {
+      updateNode(node.id, patch);
+    }
+  };
+
   // Association paths belong to the aggregate, so a different aggregate invalidates them. The
   // stale sections would otherwise stay in the config while the form no longer shows them.
   const changeAggregate = (aggregateIri: string) => {
-    updateNode(node.id, {
+    applyWithId(
+      { aggregateIri, config: normalizeConfig({ pageTitle: node.config?.pageTitle }) },
       aggregateIri,
-      config: normalizeConfig({ pageTitle: node.config?.pageTitle }),
-    });
+      node.operation,
+    );
   };
 
   // Association kinds are meaningful on Create and Update nodes, delete policies on Delete
   // nodes. Switching the operation drops the sections the new operation cannot have.
   const changeOperation = (operation: Operation) => {
     const keepAssociations = operation === Operation.Create || operation === Operation.Update;
-    updateNode(node.id, {
+    applyWithId(
+      {
+        operation,
+        config: normalizeConfig({
+          pageTitle: node.config?.pageTitle,
+          associations: keepAssociations ? node.config?.associations : undefined,
+          delete: operation === Operation.Delete ? node.config?.delete : undefined,
+        }),
+      },
+      node.aggregateIri,
       operation,
-      config: normalizeConfig({
-        pageTitle: node.config?.pageTitle,
-        associations: keepAssociations ? node.config?.associations : undefined,
-        delete: operation === Operation.Delete ? node.config?.delete : undefined,
-      }),
-    });
+    );
   };
 
   return (
@@ -172,13 +199,12 @@ function AssociationEditor({ node, aggregate, onPatch }: ConfigEditorProps) {
               className="rounded border border-slate-300 bg-white px-1 py-0.5 text-xs"
               value={current[path] ?? ""}
               onChange={(event) => {
-                const associations = { ...current };
-                if (event.target.value === "") {
-                  delete associations[path];
-                } else {
-                  associations[path] = event.target.value as AssociationKind;
-                }
-                onPatch({ associations });
+                onPatch({
+                  associations:
+                    event.target.value === ""
+                      ? omit(current, [path])
+                      : { ...current, [path]: event.target.value as AssociationKind },
+                });
               }}
             >
               <option value="">—</option>
@@ -209,13 +235,11 @@ function CascadeEditor({ node, aggregate, onPatch }: ConfigEditorProps) {
               type="checkbox"
               checked={current[path] === DeletePolicy.Cascade}
               onChange={(event) => {
-                const cascade = { ...current };
-                if (event.target.checked) {
-                  cascade[path] = DeletePolicy.Cascade;
-                } else {
-                  delete cascade[path];
-                }
-                onPatch({ delete: cascade });
+                onPatch({
+                  delete: event.target.checked
+                    ? { ...current, [path]: DeletePolicy.Cascade }
+                    : omit(current, [path]),
+                });
               }}
             />
             <span className="min-w-0 flex-1 truncate" title={path}>

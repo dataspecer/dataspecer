@@ -1,3 +1,4 @@
+import { deburr, kebabCase } from "es-toolkit";
 import {
   Operation,
   type ApplicationEdge,
@@ -5,7 +6,6 @@ import {
   type ApplicationNode,
 } from "@dataspecer/app-generator/graph";
 
-// Node id suffixes follow the naming style of existing graphs, for example "graphs.list".
 const OPERATION_SUFFIXES: Record<Operation, string> = {
   [Operation.Create]: "create",
   [Operation.ReadList]: "list",
@@ -14,24 +14,21 @@ const OPERATION_SUFFIXES: Record<Operation, string> = {
   [Operation.Delete]: "delete",
 };
 
-function slugify(value: string): string {
-  const slug = value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  return slug === "" ? "node" : slug;
-}
-
-/** Derives a unique node id from the aggregate name and operation. */
+/**
+ * Derives a unique node id from the aggregate name and operation. When the id is generated for an
+ * existing node, that node's current id is excluded from the collision check, so re-generating the
+ * same base does not append a counter.
+ */
 export function nextNodeId(
   graph: ApplicationGraph,
   aggregateName: string,
   operation: Operation,
+  excludeNodeId?: string,
 ): string {
-  const base = `${slugify(aggregateName)}.${OPERATION_SUFFIXES[operation]}`;
-  const used = new Set(graph.nodes.map((node) => node.id));
+  const base = `${kebabCase(deburr(aggregateName)) || "node"}.${OPERATION_SUFFIXES[operation]}`;
+  const used = new Set(
+    graph.nodes.filter((node) => node.id !== excludeNodeId).map((node) => node.id),
+  );
   if (!used.has(base)) {
     return base;
   }
@@ -40,6 +37,23 @@ export function nextNodeId(
     counter += 1;
   }
   return `${base}-${counter}`;
+}
+
+/** Renames a node and rewrites the edges referencing it. */
+export function renameNode(
+  graph: ApplicationGraph,
+  currentId: string,
+  newId: string,
+): ApplicationGraph {
+  return {
+    ...graph,
+    nodes: graph.nodes.map((node) => (node.id === currentId ? { ...node, id: newId } : node)),
+    edges: graph.edges.map((edge) => ({
+      ...edge,
+      source: edge.source === currentId ? newId : edge.source,
+      target: edge.target === currentId ? newId : edge.target,
+    })),
+  };
 }
 
 /** Derives a unique edge id from its endpoints, for example "graphs.list-graphs.detail". */
