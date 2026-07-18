@@ -71,6 +71,8 @@ interface EditorState extends UndoableState {
   updateEdge: (edgeId: string, patch: Partial<Omit<ApplicationEdge, "id">>) => void;
   removeEdge: (edgeId: string) => void;
   updateGraphMeta: (patch: Partial<Pick<ApplicationGraph, "name" | "dataSpecificationIri" | "datasources">>) => void;
+  /** Replaces the whole graph, for imports and JSON panel edits. Undo restores the old one. */
+  replaceGraph: (graph: ApplicationGraph, positions: NodePositions) => void;
   setNodePosition: (nodeId: string, position: { x: number; y: number }) => void;
   setAllPositions: (positions: NodePositions) => void;
 }
@@ -156,6 +158,7 @@ export const useEditorStore = create<EditorState>()(
         })),
       updateGraphMeta: (patch) =>
         set((state) => withGraph(state, (graph) => ({ ...graph, ...patch }))),
+      replaceGraph: (graph, positions) => set({ graph, positions, selection: null }),
       setNodePosition: (nodeId, position) =>
         set((state) => ({ positions: { ...state.positions, [nodeId]: position } })),
       setAllPositions: (positions) => set({ positions }),

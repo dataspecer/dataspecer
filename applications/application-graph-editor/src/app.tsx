@@ -1,13 +1,21 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useStore } from "zustand";
 import { Operation, type ApplicationGraph } from "@dataspecer/app-generator/graph";
-import { loadGraph, loadMetadata, loadPositions } from "./backend/client.ts";
+import {
+  generateApplication,
+  loadGraph,
+  loadMetadata,
+  loadPositions,
+  saveGraph,
+} from "./backend/client.ts";
 import { useAutosave } from "./backend/use-autosave.ts";
 import { Inspector } from "./components/inspector.tsx";
 import { ProblemsPanel } from "./components/problems-panel.tsx";
 import { autoLayout } from "./diagram/auto-layout.ts";
 import { Canvas } from "./diagram/canvas.tsx";
+import { applyGraphJson } from "./graph/apply-json.ts";
 import { nextNodeId } from "./graph/mutations.ts";
+import { archiveFileName, exportFileName } from "./graph/serialization.ts";
 import { useEditorStore, type SaveState } from "./store.ts";
 
 export function App() {
@@ -86,6 +94,49 @@ function Editor({ graph }: { graph: ApplicationGraph }) {
   const setJsonPanelOpen = useEditorStore((state) => state.setJsonPanelOpen);
   const settingsOpen = useEditorStore((state) => state.settingsOpen);
   const setSettingsOpen = useEditorStore((state) => state.setSettingsOpen);
+  const importInput = useRef<HTMLInputElement>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
+
+  const importFile = async (file: File) => {
+    const problem = await applyGraphJson(await file.text());
+    setActionError(problem && `Import failed: ${problem}`);
+  };
+
+  const exportGraph = () => {
+    const blob = new Blob([JSON.stringify(graph, null, 2)], { type: "application/json" });
+    downloadBlob(blob, exportFileName(graph));
+  };
+
+  const generate = async () => {
+    setGenerating(true);
+    setActionError(null);
+    try {
+      // the endpoint reads the saved blob, so the current state is saved first instead of
+      // waiting for the autosave debounce
+      const { resourceIri, positions, graph: current } = useEditorStore.getState();
+      if (resourceIri === null || current === null) {
+        return;
+      }
+      await saveGraph(resourceIri, current, positions);
+      const result = await generateApplication(resourceIri);
+      if (result.ok) {
+        downloadBlob(result.archive, archiveFileName(current));
+      } else {
+        // generation violations land in the problems panel like a validation run
+        useEditorStore.getState().setSemanticValidation({
+          violations: result.violations,
+          forGraph: current,
+        });
+        setActionError("Generation failed, see the problems panel.");
+      }
+    } catch (caught) {
+      console.error(caught);
+      setActionError(caught instanceof Error ? caught.message : String(caught));
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const addNode = () => {
     const { graph: current, metadata } = useEditorStore.getState();
@@ -125,9 +176,38 @@ function Editor({ graph }: { graph: ApplicationGraph }) {
         <HeaderButton onClick={() => redo()} disabled={futureStates.length === 0}>
           Redo
         </HeaderButton>
+        <HeaderButton onClick={() => importInput.current?.click()}>Import</HeaderButton>
+        <HeaderButton onClick={exportGraph}>Export</HeaderButton>
+        <HeaderButton onClick={() => void generate()} disabled={generating}>
+          {generating ? "Generating…" : "Generate"}
+        </HeaderButton>
         <HeaderButton onClick={() => setSettingsOpen(!settingsOpen)}>Settings</HeaderButton>
         <HeaderButton onClick={() => setJsonPanelOpen(!jsonPanelOpen)}>JSON</HeaderButton>
+        <input
+          ref={importInput}
+          type="file"
+          accept=".json,application/json"
+          className="hidden"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            // the same file can be picked again after an undo
+            event.target.value = "";
+            if (file) {
+              void importFile(file);
+            }
+          }}
+        />
       </header>
+      {actionError && (
+        <button
+          type="button"
+          className="border-b border-red-200 bg-red-50 px-4 py-1 text-left text-xs text-red-700"
+          title="Dismiss"
+          onClick={() => setActionError(null)}
+        >
+          {actionError}
+        </button>
+      )}
       <div className="flex min-h-0 flex-1">
         <div className="min-w-0 flex-1">
           <Canvas />
@@ -161,6 +241,15 @@ function useUndoRedoShortcuts(): void {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
+}
+
+function downloadBlob(blob: Blob, fileName: string): void {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = fileName;
+  anchor.click();
+  URL.revokeObjectURL(url);
 }
 
 function Centered({ children }: { children: ReactNode }) {

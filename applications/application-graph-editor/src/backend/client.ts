@@ -65,6 +65,24 @@ export async function validateGraph(
   return (await response.json()) as { valid: boolean; violations: Violation[] };
 }
 
+export type GenerateResult =
+  | { ok: true; archive: Blob }
+  | { ok: false; violations: Violation[] };
+
+export async function generateApplication(iri: string): Promise<GenerateResult> {
+  const response = await fetch(
+    `${backendUrl}/app-generator/generate?iri=${encodeURIComponent(iri)}`,
+  );
+  if (response.status === 400) {
+    const body = (await response.json()) as { violations: Violation[] };
+    return { ok: false, violations: body.violations };
+  }
+  if (!response.ok) {
+    throw new Error(`Generation failed with status ${response.status}.`);
+  }
+  return { ok: true, archive: await response.blob() };
+}
+
 export async function loadMetadata(dataSpecificationIri: string): Promise<SpecificationMetadata> {
   const response = await checkedFetch(
     `${backendUrl}/app-generator/metadata?iri=${encodeURIComponent(dataSpecificationIri)}`,
