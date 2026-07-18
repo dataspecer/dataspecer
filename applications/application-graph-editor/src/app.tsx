@@ -4,6 +4,7 @@ import { Operation, type ApplicationGraph } from "@dataspecer/app-generator/grap
 import { loadGraph, loadMetadata, loadPositions } from "./backend/client.ts";
 import { useAutosave } from "./backend/use-autosave.ts";
 import { Inspector } from "./components/inspector.tsx";
+import { ProblemsPanel } from "./components/problems-panel.tsx";
 import { autoLayout } from "./diagram/auto-layout.ts";
 import { Canvas } from "./diagram/canvas.tsx";
 import { nextNodeId } from "./graph/mutations.ts";
@@ -133,6 +134,7 @@ function Editor({ graph }: { graph: ApplicationGraph }) {
         </div>
         <Inspector graph={graph} />
       </div>
+      <ProblemsPanel graph={graph} />
     </div>
   );
 }

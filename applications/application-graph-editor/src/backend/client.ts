@@ -3,6 +3,7 @@ import {
   validateGraphSyntax,
   type ApplicationGraph,
   type SpecificationMetadata,
+  type Violation,
 } from "@dataspecer/app-generator/graph";
 import type { NodePositions } from "../store.ts";
 
@@ -51,6 +52,17 @@ export async function saveGraph(
 ): Promise<void> {
   await packageService.setResourceJsonData(iri, graph);
   await packageService.setResourceJsonData(iri, positions, POSITIONS_BLOB);
+}
+
+export async function validateGraph(
+  graph: ApplicationGraph,
+): Promise<{ valid: boolean; violations: Violation[] }> {
+  const response = await checkedFetch(`${backendUrl}/app-generator/validate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(graph),
+  });
+  return (await response.json()) as { valid: boolean; violations: Violation[] };
 }
 
 export async function loadMetadata(dataSpecificationIri: string): Promise<SpecificationMetadata> {

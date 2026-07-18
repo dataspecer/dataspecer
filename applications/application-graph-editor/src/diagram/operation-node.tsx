@@ -1,5 +1,6 @@
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { Operation } from "@dataspecer/app-generator/graph";
+import { useEditorStore } from "../store.ts";
 import type { OperationFlowNode } from "./graph-to-flow.ts";
 
 const OPERATION_LABELS: Record<Operation, string> = {
@@ -19,16 +20,24 @@ const OPERATION_COLORS: Record<Operation, string> = {
 };
 
 /**
- * One application graph node on the canvas. Shows the page title (or the node id when no title
- * is configured) with the operation as a subtitle.
+ * One application graph node on the canvas. Shows the aggregate name (or the page title as a
+ * fallback while metadata is unavailable) with the operation as a subtitle. Nodes the current
+ * violations point are highlighted.
  */
 export function OperationNode(props: NodeProps<OperationFlowNode>) {
-  const { node } = props.data;
-  const title = node.config?.pageTitle ?? node.id;
+  const { node, invalid } = props.data;
+  const aggregateName = useEditorStore(
+    (state) =>
+      state.metadata?.aggregates.find((entry) => entry.iri === node.aggregateIri)?.name,
+  );
+  const title = aggregateName ?? node.config?.pageTitle ?? node.id;
+  const subtitle = node.config?.pageTitle;
 
   return (
     <div
-      className="w-60 rounded-md border border-sky-300 bg-sky-50 px-3 py-2 shadow-sm"
+      className={`w-60 rounded-md border px-3 py-2 shadow-sm ${
+        invalid ? "border-red-500 bg-red-50" : "border-sky-300 bg-sky-50"
+      }`}
       title={`${node.id}\n${node.aggregateIri}`}
     >
       <Handle type="target" position={Position.Top} />
@@ -39,7 +48,7 @@ export function OperationNode(props: NodeProps<OperationFlowNode>) {
         >
           {OPERATION_LABELS[node.operation]}
         </span>
-        <span className="truncate text-xs text-slate-500">{node.id}</span>
+        <span className="truncate text-xs text-slate-500">{subtitle ?? node.id}</span>
       </div>
       <Handle type="source" position={Position.Bottom} />
     </div>

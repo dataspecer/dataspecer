@@ -1,18 +1,24 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import {
   Background,
   Controls,
   ReactFlow,
   useEdgesState,
   useNodesState,
+  useReactFlow,
   type Connection,
   type Edge,
   type Node,
   type OnSelectionChangeParams,
 } from "@xyflow/react";
-import { EdgeType } from "@dataspecer/app-generator/graph";
+import {
+  EdgeType,
+  isValidRedirectOperation,
+  isValidTransitionOperation,
+} from "@dataspecer/app-generator/graph";
 import { nextEdgeId } from "../graph/mutations.ts";
 import { useEditorStore } from "../store.ts";
+import { invalidIds, liveViolations } from "../validation/violations.ts";
 import { graphToFlow, type OperationFlowNode } from "./graph-to-flow.ts";
 import { OperationNode } from "./operation-node.tsx";
 
@@ -22,15 +28,28 @@ export function Canvas() {
   const graph = useEditorStore((state) => state.graph);
   const positions = useEditorStore((state) => state.positions);
   const selection = useEditorStore((state) => state.selection);
+  const semanticValidation = useEditorStore((state) => state.semanticValidation);
 
   const [nodes, setNodes, onNodesChange] = useNodesState<OperationFlowNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+
+  // ids to highlight, from the live violations + the semantic ones while they are fresh
+  const invalid = useMemo(() => {
+    if (graph === null) {
+      return { nodes: new Set<string>(), edges: new Set<string>() };
+    }
+    const violations = [
+      ...liveViolations(graph),
+      ...(semanticValidation?.forGraph === graph ? semanticValidation.violations : []),
+    ];
+    return invalidIds(graph, violations);
+  }, [graph, semanticValidation]);
 
   useEffect(() => {
     if (graph === null) {
       return;
     }
-    const flow = graphToFlow(graph, positions);
+    const flow = graphToFlow(graph, positions, invalid);
     setNodes(
       flow.nodes.map((node) => ({
         ...node,
@@ -43,7 +62,7 @@ export function Canvas() {
         selected: selection?.kind === "edge" && selection.id === edge.id,
       })),
     );
-  }, [graph, positions, selection, setNodes, setEdges]);
+  }, [graph, positions, selection, invalid, setNodes, setEdges]);
 
   const onNodeDragStop = useCallback((_event: unknown, node: Node) => {
     useEditorStore.getState().setNodePosition(node.id, node.position);
@@ -54,11 +73,21 @@ export function Canvas() {
     if (current === null || !connection.source || !connection.target) {
       return;
     }
+    const source = current.nodes.find((node) => node.id === connection.source);
+    const target = current.nodes.find((node) => node.id === connection.target);
+    // prefer the edge type the operation pair allows, transition when both or neither fit
+    const type =
+      source &&
+      target &&
+      !isValidTransitionOperation(source.operation, target.operation) &&
+      isValidRedirectOperation(source.operation, target.operation)
+        ? EdgeType.Redirect
+        : EdgeType.Transition;
     addEdge({
       id: nextEdgeId(current, connection.source, connection.target),
       source: connection.source,
       target: connection.target,
-      type: EdgeType.Transition,
+      type,
     });
   }, []);
 
@@ -101,6 +130,34 @@ export function Canvas() {
     >
       <Background />
       <Controls showInteractive={false} />
+      <FocusHandler />
     </ReactFlow>
   );
+}
+
+/** Brings the node or edge of the latest focus request into view. */
+function FocusHandler() {
+  const focusRequest = useEditorStore((state) => state.focusRequest);
+  const reactFlow = useReactFlow();
+
+  useEffect(() => {
+    if (focusRequest === null) {
+      return;
+    }
+    const { graph } = useEditorStore.getState();
+    if (graph === null) {
+      return;
+    }
+    // an edge is brought into view through its two endpoints
+    const edge = graph.edges.find((candidate) => candidate.id === focusRequest.id);
+    const nodeIds = edge ? [edge.source, edge.target] : [focusRequest.id];
+    void reactFlow.fitView({
+      nodes: nodeIds.map((id) => ({ id })),
+      duration: 300,
+      maxZoom: 1.2,
+      padding: 0.4,
+    });
+  }, [focusRequest, reactFlow]);
+
+  return null;
 }

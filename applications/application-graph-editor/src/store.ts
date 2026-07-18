@@ -1,10 +1,12 @@
 import { create } from "zustand";
 import { temporal } from "zundo";
+import { mapKeys, omit } from "es-toolkit";
 import type {
   ApplicationEdge,
   ApplicationGraph,
   ApplicationNode,
   SpecificationMetadata,
+  Violation,
 } from "@dataspecer/app-generator/graph";
 import * as mutations from "./graph/mutations.ts";
 
@@ -13,6 +15,18 @@ export type NodePositions = Record<string, { x: number; y: number }>;
 export type Selection = { kind: "node" | "edge"; id: string } | null;
 
 export type SaveState = "saved" | "saving" | "error";
+
+/** Result of the backend validation, tied to the graph snapshot it was computed for. */
+export interface SemanticValidation {
+  violations: Violation[];
+  forGraph: ApplicationGraph;
+}
+
+/** One-shot request to bring a node or edge into view. The seq makes repeats distinct. */
+export interface FocusRequest {
+  id: string;
+  seq: number;
+}
 
 /** The part of the state that undo and redo travel through. */
 interface UndoableState {
@@ -31,6 +45,8 @@ interface EditorState extends UndoableState {
   selection: Selection;
   jsonPanelOpen: boolean;
   settingsOpen: boolean;
+  semanticValidation: SemanticValidation | null;
+  focusRequest: FocusRequest | null;
 
   initialize: (resourceIri: string, graph: ApplicationGraph, positions: NodePositions) => void;
   failLoad: (message: string) => void;
@@ -39,9 +55,17 @@ interface EditorState extends UndoableState {
   setSelection: (selection: Selection) => void;
   setJsonPanelOpen: (open: boolean) => void;
   setSettingsOpen: (open: boolean) => void;
+  setSemanticValidation: (validation: SemanticValidation | null) => void;
+  requestFocus: (id: string) => void;
 
   addNode: (node: ApplicationNode, position: { x: number; y: number }) => void;
   updateNode: (nodeId: string, patch: Partial<Omit<ApplicationNode, "id">>) => void;
+  /** Renames a node, optionally applying a patch in the same undoable step. */
+  renameNode: (
+    currentId: string,
+    newId: string,
+    patch?: Partial<Omit<ApplicationNode, "id">>,
+  ) => void;
   removeNode: (nodeId: string) => void;
   addEdge: (edge: ApplicationEdge) => void;
   updateEdge: (edgeId: string, patch: Partial<Omit<ApplicationEdge, "id">>) => void;
@@ -74,6 +98,8 @@ export const useEditorStore = create<EditorState>()(
       selection: null,
       jsonPanelOpen: true,
       settingsOpen: false,
+      semanticValidation: null,
+      focusRequest: null,
 
       initialize: (resourceIri, graph, positions) =>
         set({ resourceIri, graph, positions, loadState: "ready", loadError: null }),
@@ -84,6 +110,9 @@ export const useEditorStore = create<EditorState>()(
       setJsonPanelOpen: (open) => set({ jsonPanelOpen: open }),
       setSettingsOpen: (open) =>
         set(open ? { settingsOpen: true, selection: null } : { settingsOpen: false }),
+      setSemanticValidation: (semanticValidation) => set({ semanticValidation }),
+      requestFocus: (id) =>
+        set((state) => ({ focusRequest: { id, seq: (state.focusRequest?.seq ?? 0) + 1 } })),
 
       addNode: (node, position) =>
         set((state) => ({
@@ -94,16 +123,24 @@ export const useEditorStore = create<EditorState>()(
         })),
       updateNode: (nodeId, patch) =>
         set((state) => withGraph(state, (graph) => mutations.updateNode(graph, nodeId, patch))),
+      renameNode: (currentId, newId, patch) =>
+        set((state) => ({
+          ...withGraph(state, (graph) => {
+            const renamed = mutations.renameNode(graph, currentId, newId);
+            return patch ? mutations.updateNode(renamed, newId, patch) : renamed;
+          }),
+          positions: mapKeys(state.positions, (_position, key) =>
+            key === currentId ? newId : key,
+          ),
+          selection:
+            state.selection?.id === currentId ? { kind: "node", id: newId } : state.selection,
+        })),
       removeNode: (nodeId) =>
-        set((state) => {
-          const positions = { ...state.positions };
-          delete positions[nodeId];
-          return {
-            ...withGraph(state, (graph) => mutations.removeNode(graph, nodeId)),
-            positions,
-            selection: state.selection?.id === nodeId ? null : state.selection,
-          };
-        }),
+        set((state) => ({
+          ...withGraph(state, (graph) => mutations.removeNode(graph, nodeId)),
+          positions: omit(state.positions, [nodeId]),
+          selection: state.selection?.id === nodeId ? null : state.selection,
+        })),
       addEdge: (edge) =>
         set((state) => ({
           ...withGraph(state, (graph) => mutations.addEdge(graph, edge)),
