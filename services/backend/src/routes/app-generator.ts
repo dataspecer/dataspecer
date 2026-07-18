@@ -6,10 +6,25 @@ import { asyncHandler } from "../utils/async-handler.ts";
 import {
   DataspecerSpecificationMetadataProvider,
   generateApp,
+  validateApplicationGraph,
 } from "@dataspecer/app-generator";
 import { getSpecification } from "../utils/data-specification.ts";
 
-// TODO: Add endpoints for graph storage and validation for the graph editor.
+/**
+ * Validates an application graph sent in the request body and returns the violations. Runs the
+ * same pipeline as generation (syntax, structure, metadata resolution, semantics), so the graph
+ * editor reports identical diagnostics without generating anything.
+ */
+export const validateApplicationGraphRoute = asyncHandler(
+  async (request: express.Request, response: express.Response) => {
+    const result = await validateApplicationGraph({
+      graph: request.body,
+      metadataProvider: new DataspecerSpecificationMetadataProvider(getSpecification),
+    });
+    response.json({ valid: result.valid, violations: result.violations });
+  },
+);
+
 export const getSpecificationMetadataForEditor = asyncHandler(
   async (request: express.Request, response: express.Response) => {
     const querySchema = z.object({

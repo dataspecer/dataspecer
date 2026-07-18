@@ -29,7 +29,7 @@ import { getSimplifiedSemanticModel, setSimplifiedSemanticModel } from "./routes
 import { getSystemData } from "./routes/system.ts";
 import { useStaticSpaHandler } from "./static.ts";
 import { migratePR419 } from "./tools/migrate-pr419.ts";
-import { generateApplicationByModelId, getSpecificationMetadataForEditor } from "./routes/app-generator.js";
+import { generateApplicationByModelId, getSpecificationMetadataForEditor, validateApplicationGraphRoute } from "./routes/app-generator.js";
 import { newApplicationProfile } from "./routes/new.ts";
 
 // Create application models
@@ -133,6 +133,7 @@ application.get(apiBasename + "/generate/application", getGenerateApplicationByM
 // todo make post
 application.get(apiBasename + "/app-generator/generate", generateApplicationByModelId);
 application.get(apiBasename + "/app-generator/metadata", getSpecificationMetadataForEditor);
+application.post(apiBasename + "/app-generator/validate", validateApplicationGraphRoute);
 
 // Generate application
 
