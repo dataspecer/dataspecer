@@ -1,6 +1,11 @@
 export { ViolationCode } from './validation/violation-codes.ts';
 export { ViolationSeverity } from './validation/types.ts';
 export { generateApp } from './generate-app.ts';
+export { validateApplicationGraph } from './validate-application-graph.ts';
+export type {
+  ValidateApplicationGraphInput,
+  ValidateApplicationGraphResult,
+} from './validate-application-graph.ts';
 export {
   AssociationKind,
   DatasourceType,

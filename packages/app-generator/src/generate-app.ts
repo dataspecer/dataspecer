@@ -3,16 +3,12 @@ import type { Violation } from './validation/types.ts';
 import { ViolationSeverity } from './validation/types.ts';
 import { buildGenerationModel } from './generation-model/build-generation-model.ts';
 import type { GenerationModel } from './generation-model/types.ts';
-import type { ApplicationGraph } from './graph/types.ts';
-import { validateGraphStructure } from './validation/validate-structure.ts';
-import { validateGraphSyntax } from './validation/validate-syntax.ts';
-import { DataspecerMetadataMappingError } from './metadata/dataspecer-specification-metadata-provider.ts';
-import type { DataspecerMetadataProvider, SpecificationMetadata } from './metadata/types.ts';
+import type { DataspecerMetadataProvider } from './metadata/types.ts';
 import { writeFileTree } from './rendering/write-file-tree.ts';
 import type { FileTreeContent } from './rendering/file-tree.ts';
 import { renderGeneratedApp } from './rendering/render-generated-app.ts';
-import { analyzeGraphSemantics } from './validation/analyze-semantics.ts';
 import { formatGeneratedApp } from './rendering/format-generated-app.ts';
+import { validateApplicationGraph } from './validate-application-graph.ts';
 
 export interface GenerateAppInput {
   graph: unknown;
@@ -30,31 +26,15 @@ export interface GenerateAppResult {
 }
 
 export async function generateApp(input: GenerateAppInput): Promise<GenerateAppResult> {
-  const syntaxResult = validateGraphSyntax(input.graph);
-  if (!syntaxResult.valid || !syntaxResult.graph) {
-    return failure(syntaxResult.violations);
+  const validation = await validateApplicationGraph({
+    graph: input.graph,
+    metadataProvider: input.metadataProvider,
+  });
+  if (!validation.valid || !validation.graph || !validation.enrichedMetadata) {
+    return failure(validation.violations);
   }
 
-  const graph: ApplicationGraph = syntaxResult.graph;
-  // Structural rules need no metadata, so graph mistakes are reported fast
-  const structureResult = validateGraphStructure(graph);
-  if (!structureResult.valid) {
-    return failure(structureResult.violations);
-  }
-
-  let metadata: SpecificationMetadata;
-  try {
-    metadata = await input.metadataProvider.getSpecificationMetadata(graph.dataSpecificationIri);
-  } catch (error) {
-    return failure(metadataResolutionViolations(error));
-  }
-
-  const analysis = analyzeGraphSemantics(graph, metadata);
-  if (!analysis.valid) {
-    return failure(analysis.violations);
-  }
-
-  const generationModel = buildGenerationModel(graph, analysis.enrichedMetadata);
+  const generationModel = buildGenerationModel(validation.graph, validation.enrichedMetadata);
   let fileTree = renderGeneratedApp(generationModel);
   try {
     fileTree = await formatGeneratedApp(fileTree);
@@ -107,27 +87,6 @@ export async function generateApp(input: GenerateAppInput): Promise<GenerateAppR
     writtenFiles,
     generationModel,
   };
-}
-
-function metadataResolutionViolations(error: unknown): Violation[] {
-  if (error instanceof DataspecerMetadataMappingError) {
-    return error.issues.map((issue) => ({
-      code: ViolationCode.MetadataResolutionFailed,
-      message: issue.message,
-      ...(issue.path ? { path: issue.path } : {}),
-      severity: ViolationSeverity.Error,
-    }));
-  }
-
-  return [
-    {
-      code: ViolationCode.MetadataResolutionFailed,
-      message: `Unable to resolve Dataspecer specification metadata: ${
-        error instanceof Error ? error.message : String(error)
-      }`,
-      severity: ViolationSeverity.Error,
-    },
-  ];
 }
 
 function failure(violations: Violation[]): GenerateAppResult {
