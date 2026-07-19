@@ -32,7 +32,9 @@ export function ModelStoreProvider({ packageIri, children }: { packageIri: strin
       .then(() => {
         if (!cancelled) {
           setValue({ modelStore: store, isLoading: false });
-          store.subscribeToTransactionCommit(() => store.saveByOverride());
+          store.subscribeToTransactionCommit(() => {
+            store.saveByOverride().catch((error) => console.error("Failed to save models.", error));
+          });
         }
       })
       .catch((error) => {

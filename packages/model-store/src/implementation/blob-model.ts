@@ -1,8 +1,7 @@
 import type { PackageService } from "@dataspecer/core-v2/project";
-import type { EntityRecord } from "@dataspecer/core/entity-model";
 import type { Model, ModelIdentifier } from "@dataspecer/core/model";
 import type { Operation } from "@dataspecer/core/operation";
-import { createSetEntityOperation, SetEntityOperationType, UpdateEntityOperationType, type SetEntityOperation, type UpdateEntityOperation } from "@dataspecer/core/operation";
+import { createSetEntityOperation } from "@dataspecer/core/operation";
 import { BaseModelInModelStore, type ModelState } from "./base.ts";
 import type { ModelInDefaultFrontendModelStore } from "./implementation.ts";
 import { serializationToBlobModelEntities } from "@dataspecer/core/entity-model/utils";
@@ -39,31 +38,11 @@ export class BlobModelInModelStore extends BaseModelInModelStore implements Mode
     this.blobName = hashIndex === -1 ? undefined : id.slice(hashIndex + 1);
   }
 
-  protected applyOperation(operation: Operation, mutableState: EntityRecord): void {
-    if (operation.type === SetEntityOperationType) {
-      const setOperation = operation as SetEntityOperation;
-      if (setOperation.entity.id !== this.id) {
-        throw new Error(`Blob model can only set entity with id \"${this.id}\".`);
-      }
-      mutableState[this.id] = setOperation.entity;
-      return;
-    }
-
-    if (operation.type !== UpdateEntityOperationType) {
-      throw new Error("Applying operations to blob model is not yet supported!");
-    }
-
-    const updateOperation = operation as UpdateEntityOperation;
-    const currentEntity = mutableState[this.id];
-
-    if (updateOperation.update.id !== this.id) {
-      throw new Error(`Blob model can only update entity with id \"${this.id}\".`);
-    }
-
-    mutableState[this.id] = {
-      ...currentEntity,
-      ...updateOperation.update,
-    };
+  protected applyOperation(operation: Operation): void {
+    // The generic set/update entity operations are already handled by the
+    // base class, and a blob model supports no other operations. Per the
+    // Operation contract, operations that cannot be executed are ignored.
+    console.warn(`Unsupported operation "${operation.type}" for blob model "${this.id}". The operation is ignored.`);
   }
 
   protected async loadInternal(): Promise<ModelState> {

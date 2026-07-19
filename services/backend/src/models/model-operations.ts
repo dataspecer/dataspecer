@@ -12,7 +12,7 @@ import {
 } from "@dataspecer/core/operation";
 import type { ProjectModelEntity } from "@dataspecer/project-model";
 import { PROJECT_MODEL_ID } from "./model-id.ts";
-import { applyModelTypeOperation, modelTypeChangesToOperations } from "./model-types.ts";
+import { applyModelTypeOperation, modelTypeChangesToOperations, NAMED_BLOB_STORE_TYPE } from "./model-types.ts";
 
 /**
  * Converts entity changes of one model to its up/down transaction events: the
@@ -59,8 +59,8 @@ export function diffModelStates(previous: Record<string, EntityRecord>, next: Re
       continue;
     }
 
-    const projectEntity = (next[PROJECT_MODEL_ID]?.[modelId] ?? previous[PROJECT_MODEL_ID]?.[modelId]) as ProjectModelEntity;
-    const modelType = projectEntity.modelType;
+    const projectEntity = (next[PROJECT_MODEL_ID]?.[modelId] ?? previous[PROJECT_MODEL_ID]?.[modelId]) as ProjectModelEntity | undefined;
+    const modelType = projectEntity?.modelType ?? NAMED_BLOB_STORE_TYPE;
     operations.push(...diffModelEntitiesToOperations(modelId, modelType, previous[modelId] ?? {}, next[modelId] ?? {}));
   }
 

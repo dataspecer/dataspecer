@@ -9,7 +9,8 @@ export function useProjectTitle(packageIri: string | undefined): string | undefi
   const { modelStore } = useModelStore();
   if (!modelStore || !packageIri) return undefined;
 
-  const modelEntity = modelStore.getAllEntities()[modelStore.projectModelId][packageIri] as ProjectModelEntity;
+  const modelEntity = modelStore.getAllEntities()[modelStore.projectModelId]?.[packageIri] as ProjectModelEntity | undefined;
+  if (!modelEntity?.label) return undefined;
 
   return pickLabel(modelEntity.label);
 }

@@ -20,7 +20,7 @@ export class SemanticModelInModelStore extends BaseModelInModelStore implements 
 
   protected async loadInternal(): Promise<ModelState> {
     const data = await this.service.getResourceJsonData(this.id);
-    return this.deserializeModel(data);
+    return this.deserializeModel(data ?? { modelId: this.id });
   }
 
   private async deserializeModel(data: unknown): Promise<ModelState> {
