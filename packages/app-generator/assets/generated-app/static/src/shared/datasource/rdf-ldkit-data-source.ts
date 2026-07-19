@@ -1,6 +1,7 @@
 import type { Lens, Schema, QueryContext } from 'ldkit';
 import { createLens, QueryEngine } from 'ldkit';
-import type { RDF } from 'ldkit/rdf';
+import { DataFactory, type RDF } from 'ldkit/rdf';
+import { sparql } from 'ldkit/sparql';
 
 import type { AggregateDescriptor, EntityModel, FieldDescriptor } from '../types/aggregate.ts';
 import type {
@@ -20,6 +21,11 @@ const LABEL_PREDICATES = [
   'http://www.w3.org/2004/02/skos/core#prefLabel',
   'http://purl.org/dc/terms/title',
 ];
+const dataFactory = new DataFactory();
+const absoluteIri = /^[a-z][a-z0-9+.-]*:/i;
+// SPARQL IRIREF does not allow these characters unescaped. Rejecting them also prevents a value
+// from closing `<...>` and injecting another update into a generated query.
+const forbiddenIriCharacters = /[\u0000-\u0020<>"{}|^`\\]/u;
 
 export type LdkitSchemaMap = Record<string, Schema>;
 
@@ -58,11 +64,12 @@ export class RdfLdkitDataSource implements DataSource {
     // fields are kept out of the lens payload and their reversed triples are written separately.
     const inverseFields = inverseWritableFields(args.aggregate.fields);
     const forwardPayload = omitFields(args.payload, inverseFields);
+    const inverseInsertQuery = buildInverseInsertQuery(inverseFields, args.payload);
 
     const lens = this.buildLens(args.aggregate);
     const entity = denormalizeIds(forwardPayload) as Parameters<typeof lens.insert>[0];
     await lens.insert(entity);
-    await this.writeInverseLinks(inverseFields, args.payload);
+    await this.executeUpdate(inverseInsertQuery);
     return args.payload;
   }
 
@@ -70,67 +77,45 @@ export class RdfLdkitDataSource implements DataSource {
     const payload = { ...args.payload, id: args.id };
     const inverseFields = inverseWritableFields(args.aggregate.fields);
     const forwardPayload = omitFields(payload, inverseFields);
+    const inverseDeleteQuery = buildInverseDeleteQuery(inverseFields, args.id);
+    const inverseInsertQuery = buildInverseInsertQuery(inverseFields, payload);
 
     const lens = this.buildLens(args.aggregate);
     const entity = denormalizeIds(forwardPayload) as Parameters<typeof lens.update>[0];
     await lens.update(entity);
-    await this.deleteInverseLinks(inverseFields, args.id);
-    await this.writeInverseLinks(inverseFields, payload);
+    await this.executeUpdate(inverseDeleteQuery);
+    await this.executeUpdate(inverseInsertQuery);
     return payload;
   }
 
-  // Writes an inverse relation as `<target> <predicate> <entity>`, the direction LDKit reads but
-  // does not write. One triple per referenced target, for single and repeating inverse fields.
-  private async writeInverseLinks<TModel extends EntityModel>(
-    fields: readonly FieldDescriptor[],
-    payload: TModel
-  ): Promise<void> {
-    const entityId = payload.id;
-    if (fields.length === 0 || typeof entityId !== 'string' || entityId === '') {
+  private async executeUpdate(query: string | null): Promise<void> {
+    if (query === null) {
       return;
     }
-
-    const record = payload as Record<string, unknown>;
-    const triples = fields.flatMap((field) =>
-      referenceIds(record[field.propertyName]).map(
-        (targetId) => `<${targetId}> <${field.propertyIri as string}> <${entityId}>`
-      )
-    );
-    if (triples.length === 0) {
-      return;
-    }
-
-    await new QueryEngine().queryVoid(`INSERT DATA { ${triples.join(' . ')} }`, this.context());
-  }
-
-  private async deleteInverseLinks(
-    fields: readonly FieldDescriptor[],
-    entityId: string
-  ): Promise<void> {
-    for (const field of fields) {
-      if (!field.propertyIri) {
-        continue;
-      }
-      await new QueryEngine().queryVoid(
-        `DELETE WHERE { ?target <${field.propertyIri}> <${entityId}> }`,
-        this.context()
-      );
-    }
+    await new QueryEngine().queryVoid(query, this.context());
   }
 
   async delete<TModel extends EntityModel>(args: DeleteArgs<TModel>): Promise<void> {
     // TODO: Implement recursive composition cascade and incoming reference checks.
-    await this.deleteInverseLinks(inverseWritableFields(args.aggregate.fields), args.id);
+    const inverseDeleteQuery = buildInverseDeleteQuery(
+      inverseWritableFields(args.aggregate.fields),
+      args.id
+    );
+    await this.executeUpdate(inverseDeleteQuery);
     const lens = this.buildLens(args.aggregate);
     await lens.delete(args.id);
   }
 
   async listByType(classIri: string, limit = 200): Promise<ReferenceOption[]> {
+    if (!Number.isSafeInteger(limit) || limit < 1) {
+      throw new Error('Reference option limit must be a positive safe integer.');
+    }
     const labelPath = LABEL_PREDICATES.map((predicate) => `<${predicate}>`).join('|');
-    const query = `SELECT DISTINCT ?iri ?label WHERE {
-  ?iri a <${classIri}> .
+    const classNode = toSparqlNamedNode(classIri, 'Reference target class IRI');
+    const query = sparql`SELECT DISTINCT ?iri ?label WHERE {
+  ?iri a ${classNode} .
   OPTIONAL { ?iri ${labelPath} ?label }
-} LIMIT ${limit}`;
+} LIMIT ${String(limit)}`;
 
     // A SELECT by class rather than by a fixed schema, so it runs on the query engine directly
     // instead of a lens. Reuses the same endpoint context the lenses read through.
@@ -164,6 +149,63 @@ export class RdfLdkitDataSource implements DataSource {
       sources: [this.endpoint],
     };
   }
+}
+
+/**
+ * Builds the reversed triples LDKit cannot write through an `@inverse` schema property.
+ */
+export function buildInverseInsertQuery<TModel extends EntityModel>(
+  fields: readonly FieldDescriptor[],
+  payload: TModel
+): string | null {
+  const entityId = payload.id;
+  if (fields.length === 0 || typeof entityId !== 'string' || entityId === '') {
+    return null;
+  }
+
+  const entityNode = toSparqlNamedNode(entityId, 'Entity IRI');
+  const record = payload as Record<string, unknown>;
+  const triples = fields.flatMap((field) => {
+    if (!field.propertyIri) {
+      return [];
+    }
+    const predicate = toSparqlNamedNode(field.propertyIri, 'Inverse predicate IRI');
+    return referenceIds(record[field.propertyName]).map((targetId) =>
+      dataFactory.quad(
+        toSparqlNamedNode(targetId, 'Inverse relation target IRI'),
+        predicate,
+        entityNode
+      )
+    );
+  });
+
+  return triples.length > 0 ? sparql`INSERT DATA {\n${triples}\n}` : null;
+}
+
+export function buildInverseDeleteQuery(
+  fields: readonly FieldDescriptor[],
+  entityId: string
+): string | null {
+  const predicates = fields.flatMap((field) =>
+    field.propertyIri ? [toSparqlNamedNode(field.propertyIri, 'Inverse predicate IRI')] : []
+  );
+  if (predicates.length === 0) {
+    return null;
+  }
+
+  const entityNode = toSparqlNamedNode(entityId, 'Entity IRI');
+  return sparql`DELETE { ?target ?predicate ${entityNode} }
+WHERE {
+  VALUES ?predicate { ${predicates} }
+  ?target ?predicate ${entityNode}
+}`;
+}
+
+export function toSparqlNamedNode(value: string, label: string): RDF.NamedNode {
+  if (!absoluteIri.test(value) || forbiddenIriCharacters.test(value)) {
+    throw new Error(`${label} must be a safe absolute IRI.`);
+  }
+  return dataFactory.namedNode(value);
 }
 
 function inverseWritableFields(fields: readonly FieldDescriptor[]): FieldDescriptor[] {

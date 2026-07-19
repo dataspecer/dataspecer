@@ -41,6 +41,7 @@ interface EditorState extends UndoableState {
   loadError: string | null;
   /** Aggregates of the graph's data specification. Null while loading or when the fetch failed. */
   metadata: SpecificationMetadata | null;
+  metadataError: string | null;
   saveState: SaveState;
   selection: Selection;
   jsonPanelOpen: boolean;
@@ -50,7 +51,10 @@ interface EditorState extends UndoableState {
 
   initialize: (resourceIri: string, graph: ApplicationGraph, positions: NodePositions) => void;
   failLoad: (message: string) => void;
+  /** Stores loaded metadata (or clears it while loading) and clears the metadata error. */
   setMetadata: (metadata: SpecificationMetadata | null) => void;
+  /** Records a failed metadata fetch, clearing any previously loaded metadata. */
+  failMetadata: (message: string) => void;
   setSaveState: (state: SaveState) => void;
   setSelection: (selection: Selection) => void;
   setJsonPanelOpen: (open: boolean) => void;
@@ -96,6 +100,7 @@ export const useEditorStore = create<EditorState>()(
       loadState: "loading",
       loadError: null,
       metadata: null,
+      metadataError: null,
       saveState: "saved",
       selection: null,
       jsonPanelOpen: true,
@@ -104,9 +109,18 @@ export const useEditorStore = create<EditorState>()(
       focusRequest: null,
 
       initialize: (resourceIri, graph, positions) =>
-        set({ resourceIri, graph, positions, loadState: "ready", loadError: null }),
+        set({
+          resourceIri,
+          graph,
+          positions,
+          loadState: "ready",
+          loadError: null,
+          metadata: null,
+          metadataError: null,
+        }),
       failLoad: (message) => set({ loadState: "error", loadError: message }),
-      setMetadata: (metadata) => set({ metadata }),
+      setMetadata: (metadata) => set({ metadata, metadataError: null }),
+      failMetadata: (metadataError) => set({ metadata: null, metadataError }),
       setSaveState: (saveState) => set({ saveState }),
       setSelection: (selection) => set({ selection, settingsOpen: false }),
       setJsonPanelOpen: (open) => set({ jsonPanelOpen: open }),

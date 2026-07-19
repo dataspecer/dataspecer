@@ -16,7 +16,8 @@ export function haveSameClass(
 export function hasAssociationToTarget(
   sourceNode: ApplicationNode,
   targetNode: ApplicationNode,
-  aggregates: Map<string, AggregateMetadata>
+  aggregates: Map<string, AggregateMetadata>,
+  recursive = false
 ): boolean {
   const sourceAggregate = aggregates.get(sourceNode.aggregateIri);
   const targetAggregate = aggregates.get(targetNode.aggregateIri);
@@ -24,10 +25,19 @@ export function hasAssociationToTarget(
     return false;
   }
 
-  return sourceAggregate.fields.some(
+  return hasAssociation(sourceAggregate.fields, targetAggregate, recursive);
+}
+
+function hasAssociation(
+  fields: AggregateMetadata['fields'],
+  targetAggregate: AggregateMetadata,
+  recursive: boolean
+): boolean {
+  return fields.some(
     (field) =>
-      field.kind === FieldKind.Association &&
-      (field.targetAggregateIri === targetAggregate.iri ||
-        field.targetClassIri === targetAggregate.classIri)
+      (field.kind === FieldKind.Association &&
+        (field.targetAggregateIri === targetAggregate.iri ||
+          field.targetClassIri === targetAggregate.classIri)) ||
+      (recursive && field.fields ? hasAssociation(field.fields, targetAggregate, recursive) : false)
   );
 }

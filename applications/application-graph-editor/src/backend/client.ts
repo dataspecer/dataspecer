@@ -4,7 +4,7 @@ import type {
   SpecificationMetadata,
   Violation,
 } from "@dataspecer/app-generator/graph";
-import { checkGraph } from "../graph/serialization.ts";
+import { checkGraph } from "../graph/parse-graph.ts";
 import type { NodePositions } from "../store.ts";
 
 const backendUrl = import.meta.env.VITE_BACKEND as string;
@@ -18,7 +18,7 @@ async function checkedFetch(...args: Parameters<typeof fetch>): Promise<Response
   return response;
 }
 
-export const packageService = new BackendPackageService(backendUrl, checkedFetch);
+const packageService = new BackendPackageService(backendUrl, checkedFetch);
 
 // Node positions live in a second blob next to the graph.
 const POSITIONS_BLOB = "visual";

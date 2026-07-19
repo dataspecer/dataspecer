@@ -22,8 +22,9 @@ export interface AggregateFieldMetadata {
   targetClassIri?: string;
   associationKind?: AssociationKind;
   /**
-   * True for a reverse (inverse) relation, where the predicate is traversed backwards. Reverse relations are read-only
-   * so they appear in read schemas but not in create or update forms.
+   * True for a reverse (inverse) relation, where the predicate is traversed backwards. The
+   * generated RDF adapter can edit top-level reverse references as an extension to the
+   * specification by writing the reversed triples outside LDKit.
    */
   isReverse?: boolean;
   /** Whether the field holds more than one value (upper cardinality above one). */

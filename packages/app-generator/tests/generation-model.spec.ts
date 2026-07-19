@@ -14,6 +14,7 @@ import {
 import { basicMetadata, specificationIri } from './fixtures/metadata/basic-metadata.ts';
 import { FieldKind } from '../src/metadata/types.ts';
 import { analyzeGraphSemantics } from '../src/validation/analyze-semantics.ts';
+import { toOperationClassName } from '../src/utils/naming.ts';
 
 describe('buildGenerationModel', () => {
   it('builds a deterministic generation model', () => {
@@ -156,6 +157,29 @@ describe('buildGenerationModel', () => {
     expect(model.operations[0].pageComponentName).toBe('CilReadListPage');
   });
 
+  it('prefixes generated TypeScript identifiers that start with a number', () => {
+    const graph = graphFixture();
+    graph.nodes = [
+      node('123 Books.ReadList', 'https://example.org/aggregate/numeric', Operation.ReadList),
+    ];
+    graph.edges = [];
+    const model = buildGenerationModel(graph, {
+      dataSpecificationIri: specificationIri,
+      aggregates: [
+        {
+          iri: 'https://example.org/aggregate/numeric',
+          name: '123 Books',
+          classIri: 'https://example.org/class/book',
+          fields: [],
+        },
+      ],
+    });
+
+    expect(model.aggregates[0].safeName).toBe('_123Books');
+    expect(model.operations[0].pageComponentName).toBe('_123BooksReadListPage');
+    expect(toOperationClassName(model.operations[0].nodeId)).toBe('_123BooksReadListOperation');
+  });
+
   it('resolves association kinds from graph association config', () => {
     const graph = graphFixture();
     const model = buildGenerationModel(graph, preparedMetadataFor(graph));
@@ -280,6 +304,64 @@ describe('buildGenerationModel', () => {
         id: 'detail-author-detail:chapters.editor',
         fieldPath: 'chapters.editor',
         targetPath: '/author-read-detail',
+        requiresEntityId: true,
+      },
+    ]);
+  });
+
+  it('creates association navigation for an aggregate target without target class metadata', () => {
+    const sourceAggregateIri = 'urn:aggregate:source';
+    const targetAggregateIri = 'urn:aggregate:target';
+    const graph: ApplicationGraph = {
+      name: 'Aggregate target navigation',
+      dataSpecificationIri: specificationIri,
+      datasources: [
+        {
+          id: 'main-rdf',
+          type: DatasourceType.Rdf,
+          endpoint: 'https://example.org/sparql',
+        },
+      ],
+      nodes: [
+        node('Source.ReadList', sourceAggregateIri, Operation.ReadList),
+        node('Target.ReadDetail', targetAggregateIri, Operation.ReadDetail),
+      ],
+      edges: [transition('source-target', 'Source.ReadList', 'Target.ReadDetail')],
+    };
+    const metadata = {
+      dataSpecificationIri: specificationIri,
+      aggregates: [
+        {
+          iri: sourceAggregateIri,
+          name: 'Source',
+          classIri: 'urn:class:source',
+          fields: [
+            {
+              path: 'target',
+              label: 'Target',
+              kind: FieldKind.Association,
+              targetAggregateIri,
+            },
+          ],
+        },
+        {
+          iri: targetAggregateIri,
+          name: 'Target',
+          classIri: 'urn:class:target',
+          fields: [],
+        },
+      ],
+    };
+    const analysis = analyzeGraphSemantics(graph, metadata);
+
+    expect(analysis.valid).toBe(true);
+    const model = buildGenerationModel(graph, analysis.enrichedMetadata);
+    const source = model.operations.find((operation) => operation.id === 'Source.ReadList');
+    expect(source?.navigation.associationActions).toEqual([
+      {
+        id: 'source-target:target',
+        fieldPath: 'target',
+        targetPath: '/target-read-detail',
         requiresEntityId: true,
       },
     ]);

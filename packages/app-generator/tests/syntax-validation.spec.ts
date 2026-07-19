@@ -80,6 +80,24 @@ describe('validateGraphSyntax', () => {
     );
   });
 
+  it('reports invalid null array entries without throwing', () => {
+    const graph = readGraphFixture('valid-basic.json');
+    graph.nodes.push(null);
+
+    expect(() => validateGraphSyntax(graph)).not.toThrow();
+    expect(validateGraphSyntax(graph)).toEqual(
+      expect.objectContaining({
+        valid: false,
+        violations: expect.arrayContaining([
+          expect.objectContaining({
+            code: ViolationCode.GraphSyntaxInvalid,
+            path: '/nodes/2',
+          }),
+        ]),
+      })
+    );
+  });
+
   it('rejects unsupported datasource types', () => {
     const graph = readGraphFixture('valid-basic.json');
     graph.datasources[0].type = 'rest';

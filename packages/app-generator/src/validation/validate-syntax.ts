@@ -71,9 +71,9 @@ function toViolation(errors: ErrorObject[]): Violation[] {
 }
 
 function isApplicationGraphCandidate(input: unknown): input is {
-  datasources: Array<{ id?: unknown }>;
-  nodes: Array<{ id?: unknown }>;
-  edges: Array<{ id?: unknown }>;
+  datasources: unknown[];
+  nodes: unknown[];
+  edges: unknown[];
 } {
   if (!isPlainObject(input)) {
     return false;
@@ -86,7 +86,7 @@ function isApplicationGraphCandidate(input: unknown): input is {
 }
 
 function findDuplicateIdViolations(
-  items: Array<{ id?: unknown }>,
+  items: unknown[],
   code: ViolationCode,
   collectionPath: string,
   itemLabel: string
@@ -95,6 +95,9 @@ function findDuplicateIdViolations(
   const violations: Violation[] = [];
 
   items.forEach((item, index) => {
+    if (!isPlainObject(item)) {
+      return;
+    }
     if (typeof item.id !== 'string') {
       return;
     }

@@ -1,21 +1,24 @@
 import { deburr, kebabCase, pascalCase, upperFirst } from 'es-toolkit';
 
-function toKebabName(value: string): string {
-  return kebabCase(deburr(value));
+const validIdentifierStart = /^[$_\p{ID_Start}]/u;
+
+function toKebabName(value: string, fallback: string): string {
+  return kebabCase(deburr(value)) || fallback;
 }
 
-function toPascalName(value: string): string {
-  return pascalCase(deburr(value));
+function toPascalIdentifier(value: string, fallback: string): string {
+  const name = pascalCase(deburr(value)) || fallback;
+  return validIdentifierStart.test(name) ? name : `_${name}`;
 }
 
 /** Names the generated application package and the downloaded zip archive. */
 export function toAppName(graphName: string): string {
-  return toKebabName(graphName);
+  return toKebabName(graphName, 'generated-application');
 }
 
 /** Names the per-aggregate source folder of the generated application. */
 export function toModuleName(aggregateName: string): string {
-  return toKebabName(aggregateName);
+  return toKebabName(aggregateName, 'aggregate');
 }
 
 /**
@@ -23,22 +26,22 @@ export function toModuleName(aggregateName: string): string {
  * LDKit schema, and the aggregate descriptor.
  */
 export function toAggregateTypeName(aggregateName: string): string {
-  return toPascalName(aggregateName);
+  return toPascalIdentifier(aggregateName, 'Aggregate');
 }
 
 /** Names a generated model interface for an inline nested association target. */
 export function toNestedModelTypeName(aggregateTypeName: string, fieldPath: string): string {
-  return `${aggregateTypeName}${toPascalName(fieldPath)}Model`;
+  return `${aggregateTypeName}${toPascalIdentifier(fieldPath, 'Field')}Model`;
 }
 
 /** Names the React page component generated for a graph node. */
 export function toPageComponentName(nodeId: string): string {
-  return `${toPascalName(nodeId)}Page`;
+  return `${toPascalIdentifier(nodeId, 'Operation')}Page`;
 }
 
 /** Names the operation strategy class generated for a graph node. */
 export function toOperationClassName(nodeId: string): string {
-  return `${toPascalName(nodeId)}Operation`;
+  return `${toPascalIdentifier(nodeId, 'Generated')}Operation`;
 }
 
 /**
@@ -46,7 +49,7 @@ export function toOperationClassName(nodeId: string): string {
  * validation rejects the collisions before generation.
  */
 export function toRouteId(nodeId: string): string {
-  return toKebabName(nodeId);
+  return toKebabName(nodeId, 'operation');
 }
 
 /**
@@ -61,7 +64,6 @@ export function toPropertyName(path: string): string {
   // ID_Continue covers the remaining positions and additionally includes digits and "_".
   // JavaScript also allows "$" anywhere and "_" in the first position.
   const nonIdentifierChars = /[^$\p{ID_Continue}]+/u;
-  const validIdentifierChars = /^[$_\p{ID_Start}]/u;
   const parts = deburr(path)
     .split(nonIdentifierChars)
     .filter((part) => part.length > 0);
@@ -71,5 +73,5 @@ export function toPropertyName(path: string): string {
   }
 
   const name = parts.map((part, index) => (index === 0 ? part : upperFirst(part))).join('');
-  return validIdentifierChars.test(name) ? name : `_${name}`;
+  return validIdentifierStart.test(name) ? name : `_${name}`;
 }

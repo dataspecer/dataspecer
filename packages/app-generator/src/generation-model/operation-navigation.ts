@@ -46,7 +46,7 @@ export function buildOperationNavigation(
           rowActions.push(action);
         }
         associationActions.push(
-          ...associationActionsFor(sourceAggregate.fields, targetAggregate.classIri, action, false)
+          ...associationActionsFor(sourceAggregate.fields, targetAggregate, action, false)
         );
       }
     }
@@ -60,7 +60,7 @@ export function buildOperationNavigation(
         pageActions.push(action);
       } else if (targetOperation.operation === Operation.ReadDetail) {
         associationActions.push(
-          ...associationActionsFor(sourceAggregate.fields, targetAggregate.classIri, action, true)
+          ...associationActionsFor(sourceAggregate.fields, targetAggregate, action, true)
         );
       }
     }
@@ -134,7 +134,7 @@ function buildNavigationAction(
 
 function associationActionsFor(
   fields: readonly GeneratedFieldDescriptor[],
-  targetClassIri: string,
+  targetAggregate: GeneratedAggregateDescriptor,
   action: GeneratedNavigationActionDescriptor,
   recursive: boolean,
   pathPrefix = ''
@@ -143,9 +143,13 @@ function associationActionsFor(
     const fieldPath = pathPrefix ? `${pathPrefix}.${field.path}` : field.path;
     const nested =
       recursive && field.fields
-        ? associationActionsFor(field.fields, targetClassIri, action, recursive, fieldPath)
+        ? associationActionsFor(field.fields, targetAggregate, action, recursive, fieldPath)
         : [];
-    if (field.kind === FieldKind.Association && field.targetClassIri === targetClassIri) {
+    if (
+      field.kind === FieldKind.Association &&
+      (field.targetAggregateIri === targetAggregate.iri ||
+        field.targetClassIri === targetAggregate.classIri)
+    ) {
       return [
         {
           id: `${action.id}:${fieldPath}`,

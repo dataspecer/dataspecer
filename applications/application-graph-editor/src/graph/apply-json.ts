@@ -1,6 +1,6 @@
 import { autoLayout } from "../diagram/auto-layout.ts";
 import { useEditorStore } from "../store.ts";
-import { parseGraph } from "./serialization.ts";
+import { parseGraph } from "./parse-graph.ts";
 
 /**
  * Parses graph text and makes it the edited graph. Nodes keep their current canvas positions

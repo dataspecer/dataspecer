@@ -7,6 +7,8 @@ import { validateNodeConfig } from './rules/node-config.ts';
 import { validateRedirects } from './rules/redirect.ts';
 import { validateRouteIds } from './rules/route-id.ts';
 import { validateTransitions } from './rules/transition.ts';
+import { semanticViolation } from './types.ts';
+import { ViolationCode } from './violation-codes.ts';
 
 /**
  * Runs the validation rules that need no Dataspecer metadata, so a graph can be checked quickly
@@ -19,6 +21,15 @@ export function validateGraphStructure(graph: ApplicationGraph): ValidationResul
   };
 
   const violations: Violation[] = [
+    ...(graph.nodes.length === 0
+      ? [
+          semanticViolation(
+            ViolationCode.SemanticNoNodes,
+            'The application graph must contain at least one operation node.',
+            '/nodes'
+          ),
+        ]
+      : []),
     ...validateDatasource(context),
     ...validateNodeConfig(context),
     ...validateRouteIds(context),

@@ -12,6 +12,7 @@ import {
   type ApplicationNodeConfig,
 } from '../src/graph/types.ts';
 import { analyzeGraphSemantics } from '../src/validation/analyze-semantics.ts';
+import { FieldKind } from '../src/metadata/types.ts';
 import { basicMetadata, specificationIri } from './fixtures/metadata/basic-metadata.ts';
 
 describe('analyzeGraphSemantics', () => {
@@ -209,6 +210,42 @@ describe('analyzeGraphSemantics', () => {
     const result = validatePreparedGraph(graph);
 
     expect(result.valid).toBe(true);
+  });
+
+  it('allows nested associations from detail pages but not list rows', () => {
+    const footnoteDetail = node(
+      'Footnote.ReadDetail',
+      'https://example.org/aggregate/footnote-detail',
+      Operation.ReadDetail
+    );
+    const detailGraph = validGraph({
+      nodes: [validGraph().nodes[1], footnoteDetail],
+      edges: [
+        {
+          id: 'book-detail-nested-footnote-detail',
+          source: 'Book.ReadDetail',
+          target: footnoteDetail.id,
+          type: EdgeType.Transition,
+        },
+      ],
+    });
+    const listGraph = validGraph({
+      nodes: [
+        node('Book.ReadList', 'https://example.org/aggregate/book-detail', Operation.ReadList),
+        footnoteDetail,
+      ],
+      edges: [
+        {
+          id: 'book-list-nested-footnote-detail',
+          source: 'Book.ReadList',
+          target: footnoteDetail.id,
+          type: EdgeType.Transition,
+        },
+      ],
+    });
+
+    expect(validatePreparedGraph(detailGraph).valid).toBe(true);
+    expectViolations(listGraph, ViolationCode.SemanticTransitionRequiresAssociation);
   });
 
   it('rejects unrelated cross-aggregate detail transitions', () => {
@@ -414,6 +451,47 @@ describe('analyzeGraphSemantics', () => {
     expect(result.valid).toBe(false);
     expect(result.violations).toContainEqual(
       expect.objectContaining({ code: ViolationCode.SemanticDuplicateAggregateName })
+    );
+  });
+
+  it('rejects field paths that collide after TypeScript name normalization', () => {
+    const graph = validGraph({
+      nodes: [node('Book.ReadList', 'urn:aggregate:collision', Operation.ReadList)],
+      edges: [],
+    });
+    const metadata = {
+      dataSpecificationIri: specificationIri,
+      aggregates: [
+        {
+          iri: 'urn:aggregate:collision',
+          name: 'Collision',
+          classIri: 'urn:class:collision',
+          fields: [
+            {
+              path: 'a-b',
+              label: 'First',
+              kind: FieldKind.Primitive,
+              propertyIri: 'urn:property:first',
+            },
+            {
+              path: 'a.b',
+              label: 'Second',
+              kind: FieldKind.Primitive,
+              propertyIri: 'urn:property:second',
+            },
+          ],
+        },
+      ],
+    };
+
+    const result = analyzeGraphSemantics(graph, metadata);
+
+    expect(result.valid).toBe(false);
+    expect(result.violations).toContainEqual(
+      expect.objectContaining({
+        code: ViolationCode.SemanticDuplicateGeneratedFieldName,
+        message: expect.stringContaining('property name "aB"'),
+      })
     );
   });
 

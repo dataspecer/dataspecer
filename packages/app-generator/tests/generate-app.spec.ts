@@ -66,6 +66,23 @@ describe('generateApp', () => {
     expect(result.files).toEqual({});
   });
 
+  it('rejects an empty application before loading metadata', async () => {
+    const result = await generateApp({
+      graph: graphFixture({ nodes: [], edges: [] }),
+      metadataProvider: {
+        getSpecificationMetadata: () => Promise.reject(new Error('must not be called')),
+      },
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.violations).toContainEqual(
+      expect.objectContaining({ code: ViolationCode.SemanticNoNodes })
+    );
+    expect(result.violations).not.toContainEqual(
+      expect.objectContaining({ code: ViolationCode.MetadataResolutionFailed })
+    );
+  });
+
   it('returns violations when metadata mapping fails', async () => {
     const result = await generateApp({
       graph: graphFixture(),
@@ -136,8 +153,6 @@ describe('generateApp', () => {
       expect.objectContaining({ code: ViolationCode.MetadataResolutionFailed })
     );
   });
-  // todo enable later
-  /*
   it('generates files in memory without an output directory', async () => {
     const result = await generateApp({
       graph: graphFixture(),
@@ -154,6 +169,37 @@ describe('generateApp', () => {
     expect(result.files['src/modules/book-detail/descriptor.ts']).toContain('path: "chapters"');
     expect(result.files['src/modules/book-detail/descriptor.ts']).not.toContain('"path":');
     expect(result.generationModel?.operations).toHaveLength(2);
+  });
+
+  it('generates valid source for names that start with a number', async () => {
+    const aggregateIri = 'https://example.org/aggregate/123-books';
+    const result = await generateApp({
+      graph: graphFixture({
+        nodes: [node('123 Books.ReadList', aggregateIri, Operation.ReadList)],
+        edges: [],
+      }),
+      metadataProvider: new FakeDataspecerMetadataProvider({
+        [specificationIri]: {
+          dataSpecificationIri: specificationIri,
+          aggregates: [
+            {
+              iri: aggregateIri,
+              name: '123 Books',
+              classIri: 'https://example.org/class/book',
+              fields: [],
+            },
+          ],
+        },
+      }),
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.files['src/modules/123-books/model.ts']).toContain(
+      'export interface _123BooksModel'
+    );
+    expect(result.files['src/pages/_123BooksReadListPage.tsx']).toContain(
+      'export function _123BooksReadListPage()'
+    );
   });
 
   it('writes generated files to an empty output directory', async () => {
@@ -194,7 +240,7 @@ describe('generateApp', () => {
     );
     expect(allowed.success).toBe(true);
     await expect(readFile(join(outputDirectory, 'existing.txt'), 'utf8')).resolves.toBe('keep me');
-  });*/
+  });
 });
 
 function metadataProvider() {

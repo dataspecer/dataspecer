@@ -57,6 +57,18 @@ describe('validateGraphStructure', () => {
       })
     );
   });
+
+  it('rejects a graph without operation nodes', () => {
+    const result = validateGraphStructure(validGraph({ nodes: [], edges: [] }));
+
+    expect(result.valid).toBe(false);
+    expect(result.violations).toContainEqual(
+      expect.objectContaining({
+        code: ViolationCode.SemanticNoNodes,
+        path: '/nodes',
+      })
+    );
+  });
 });
 
 function validGraph(overrides: Partial<ApplicationGraph> = {}): ApplicationGraph {

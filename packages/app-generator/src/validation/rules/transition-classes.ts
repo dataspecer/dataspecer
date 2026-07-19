@@ -1,6 +1,6 @@
 import { semanticViolation, type Violation } from '../types.ts';
 import { ViolationCode } from '../violation-codes.ts';
-import { EdgeType } from '../../graph/types.ts';
+import { EdgeType, Operation } from '../../graph/types.ts';
 import { hasAssociationToTarget, haveSameClass } from './aggregate-rules.ts';
 import {
   isValidTransitionOperation,
@@ -42,7 +42,12 @@ export function validateTransitionClasses(context: SemanticValidationContext): V
     if (
       requiresSameClassOrAssociationTransition(sourceNode.operation, targetNode.operation) &&
       !haveSameClass(sourceNode, targetNode, context.aggregates) &&
-      !hasAssociationToTarget(sourceNode, targetNode, context.aggregates)
+      !hasAssociationToTarget(
+        sourceNode,
+        targetNode,
+        context.aggregates,
+        sourceNode.operation === Operation.ReadDetail
+      )
     ) {
       return [
         semanticViolation(

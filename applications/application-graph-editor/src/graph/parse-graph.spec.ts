@@ -4,7 +4,7 @@ import {
   Operation,
   type ApplicationGraph,
 } from "@dataspecer/app-generator/graph";
-import { archiveFileName, exportFileName, parseGraph } from "./serialization.ts";
+import { parseGraph } from "./parse-graph.ts";
 
 function graphFixture(): ApplicationGraph {
   return {
@@ -30,21 +30,5 @@ describe("parseGraph", () => {
   it("rejects JSON that is not an application graph", () => {
     const result = parseGraph(JSON.stringify({ nodes: [] }));
     expect("error" in result && result.error).toContain("syntax violation");
-  });
-});
-
-describe("exportFileName", () => {
-  it("derives the file name from the graph name", () => {
-    expect(exportFileName(graphFixture())).toBe("katalog-knih.json");
-  });
-
-  it("falls back when the name has no usable characters", () => {
-    expect(exportFileName({ ...graphFixture(), name: "—" })).toBe("application-graph.json");
-  });
-});
-
-describe("archiveFileName", () => {
-  it("matches the name the backend derives for the generated archive", () => {
-    expect(archiveFileName(graphFixture())).toBe("katalog-knih.zip");
   });
 });
