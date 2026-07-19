@@ -90,7 +90,8 @@ export function ItemCard({ reviewItem, state, labels, onCheck, onSelectChoice, o
         </div>
       )}
 
-      {status === "manual" && (
+      {/* Stays visible once ticked so an accidental tick can be undone. */}
+      {(status === "manual" || itemState.manualDone) && (
         <label className="flex items-center gap-2 rounded-md border border-dashed border-violet-400/60 bg-violet-500/5 px-3 py-2 text-sm">
           <input type="checkbox" className="h-4 w-4 accent-primary" checked={itemState.manualDone} onChange={(e) => onManualDone(key, e.target.checked)} />
           <span>{t("evolution.manual-todo")}</span>

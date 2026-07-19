@@ -168,6 +168,9 @@ export class AsyncQueryableModelInModelStore extends BaseModelInModelStore imple
                 }) satisfies EntityChange,
             ),
           );
+        }).catch((error) => {
+          delete this.queryPromises[query];
+          console.error(`Failed to execute query "${query}" on model "${this.id}".`, error);
         });
         this.queryPromises[query] = promise;
       } else {
@@ -263,7 +266,9 @@ export function applyOperationsToAsyncQueryableModel(entities: EntityRecord, ope
     } else if (isRemoveQueryOperation(operation)) {
       delete entities[operation.query];
     } else {
-      throw new Error("Unsupported operation: " + operation.type);
+      // Per the Operation contract, operations that cannot be executed are
+      // ignored.
+      console.warn(`Unsupported operation "${operation.type}" for the async queryable model. The operation is ignored.`);
     }
   }
 
@@ -290,7 +295,8 @@ export function asyncQueryableModelEntitiesToSerialization(modelId: ModelIdentif
  * the queries resolve to.
  */
 export function serializationToAsyncQueryableModelEntities(data: unknown): EntityRecord {
-  const modelDescriptor = data as { queries: string[] };
+  // Missing data (a blob that was never written) yields an empty model.
+  const modelDescriptor = (data ?? {}) as { queries?: string[] };
   const queries = modelDescriptor.queries ?? [];
   return Object.fromEntries(queries.map(queryStringToQueryEntity).map((entity) => [entity.id, entity]));
 }

@@ -168,7 +168,8 @@ export function EvolutionPage() {
     );
   }
 
-  const hasUpstreamOperations = groups.some((group) => group.upstreamOperations.length > 0);
+  const upstreamOperationCount = (branches ?? []).reduce((n, branch) => n + branch.operations.length, 0);
+  const hasUpstreamOperations = upstreamOperationCount > 0;
   if (!hasUpstreamOperations) {
     return (
       <div className="space-y-4">
@@ -187,7 +188,7 @@ export function EvolutionPage() {
         <div className="text-sm">
           <p className="font-medium">
             {t("evolution.summary", {
-              operations: groups.reduce((n, g) => n + g.upstreamOperations.length, 0),
+              operations: upstreamOperationCount,
               items: items.length,
             })}
           </p>
@@ -253,7 +254,7 @@ function PageHeader({ packageIri, sourceLabel }: { packageIri: string | undefine
           {t("evolution.back-to-overview")}
         </Link>
       )}
-      <h1 className="text-2xl font-semibold tracking-tight">{sourceLabel ? t("evollinen.review-title", { name: sourceLabel }) : t("evolution.title")}</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">{sourceLabel ? t("evolution.review-title", { name: sourceLabel }) : t("evolution.title")}</h1>
       <p className="text-sm text-muted-foreground">{t("evolution.description")}</p>
     </div>
   );

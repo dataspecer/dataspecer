@@ -436,14 +436,12 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
 
       const model = this.models[modelId];
       if (!model || this.inactiveModelIds.has(modelId)) {
-        console.error(`Model ${modelId} does not exist or is not active. Operations will be ignored!`);
+        console.warn(`Model ${modelId} does not exist locally or is not active. Its operations are only recorded, not applied locally.`);
         continue;
       }
 
       const changes = model.applyOperations(transactionId, pureOperations);
-      if (changes.entityChanges.length !== 0) {
-        entityChanges[modelId] = changes.entityChanges;
-      }
+      appendEntityChanges(entityChanges, modelId, changes.entityChanges);
 
       if (modelId === this.projectModelId) {
         // React to models being created/removed in the project structure.
@@ -519,7 +517,7 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
       const undoOperation = createUndoOperation(transactionToRevert.id);
 
       const changes = model.applyOperations(transactionId, [undoOperation]);
-      entityChanges[modelId] = changes.entityChanges;
+      appendEntityChanges(entityChanges, modelId, changes.entityChanges);
 
       // The undo cancels the whole transaction, but as every operation is
       // applied to a single model in isolation, it is recorded once per
@@ -684,11 +682,25 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
   }
 
   /**
+   * Chain of pending {@link saveByOverride} uploads, so that concurrent saves
+   * run one after another. Overlapping saves would slice the pending
+   * transactions from the same {@link uploadedTransactionCount} and upload
+   * them twice, duplicating the recorded history.
+   */
+  private saveLock: Promise<void> = Promise.resolve();
+
+  /**
    * Applies all operations that happened since the last successful save to the backend.
    *
    * @todo Rename this method, it is not "by override" anymore
    */
-  async saveByOverride(): Promise<void> {
+  saveByOverride(): Promise<void> {
+    const result = this.saveLock.then(() => this.uploadPendingTransactions());
+    this.saveLock = result.catch(() => {});
+    return result;
+  }
+
+  private async uploadPendingTransactions(): Promise<void> {
     const pendingTransactions = this.transactions.slice(this.uploadedTransactionCount).filter((transaction) => transaction.operations.length > 0);
     const transactionCount = this.transactions.length;
 

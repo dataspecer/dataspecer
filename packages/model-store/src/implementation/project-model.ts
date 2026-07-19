@@ -99,9 +99,11 @@ export class ProjectModelInModelStore extends BaseModelInModelStore<ProjectModel
       if (mutableState[operation.modelId]) {
         return;
       }
-      // Skip if parent model does not exists as it was probably removed
+      // Skip if the parent package does not exist (it was probably removed) or
+      // is not a package.
       // @todo Is this the correct logic?
-      if (!mutableState[operation.parentPackageId]) {
+      const parentEntity = mutableState[operation.parentPackageId];
+      if (!parentEntity || parentEntity.modelType !== LOCAL_PACKAGE) {
         return;
       }
       let newEntity = {
@@ -125,13 +127,15 @@ export class ProjectModelInModelStore extends BaseModelInModelStore<ProjectModel
 
       // Now modify the parent package
       mutableState[operation.parentPackageId] = {
-        ...mutableState[operation.parentPackageId],
-        subModels: [...(mutableState[operation.parentPackageId] as PackageEntity).subModels, operation.modelId],
+        ...parentEntity,
+        subModels: [...(parentEntity as PackageEntity).subModels, operation.modelId],
       } as PackageEntity;
       return;
     }
 
-    throw new Error(`Unsupported operation type ${operation.type} for project model.`);
+    // Per the Operation contract, operations that cannot be executed are
+    // ignored.
+    console.warn(`Unsupported operation "${operation.type}" for the project model. The operation is ignored.`);
   }
 }
 

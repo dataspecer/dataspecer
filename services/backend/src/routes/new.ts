@@ -97,9 +97,9 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
     if (body.autoProfile) {
       // We need to inspect all sub-packages and read semantic models from them
       const entitiesToProfile: Entity[] = [];
-      const thisSpecificationEntities: Entity[] = [];
       const otherEntities: Entity[] = [];
       for (const importedPackage of importResults) {
+        const thisSpecificationEntities: Entity[] = [];
         if (importedPackage.importedResource) {
           const pckg = await modelRepository.getPackage(importedPackage.importedResource!.iri);
           for (const subResource of pckg!.subResources) {

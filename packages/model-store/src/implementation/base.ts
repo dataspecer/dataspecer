@@ -159,6 +159,7 @@ export abstract class BaseModelInModelStore<BaseEntityType extends Entity = Enti
       const snapshot = this.snapshots.find((snapshot) => snapshot.transactionId === undoOperation.cancelTransactionId);
 
       if (!snapshot) {
+        // Backend should be capable to run the undo operation, but this frontend not.
         throw new Error(`Cannot find snapshot for transaction ID ${undoOperation.cancelTransactionId}`);
       }
 
@@ -172,7 +173,8 @@ export abstract class BaseModelInModelStore<BaseEntityType extends Entity = Enti
         entityChanges: diff,
       };
     } else {
-      const previousState = { ...this.state.entities };
+      const previousState = this.state.entities;
+      this.state.entities = { ...this.state.entities };
 
       for (const operation of operations) {
         // todo: we allow running this low level operations on all models, is it correct?

@@ -69,9 +69,9 @@ export class PimModelInModelStore extends BaseModelInModelStore implements Model
         ...mutableState[this.id],
         urls: (operation as SetModelUrl).urls,
       } as MainEntity;
-      void this.freshLoad(mutableState[this.id] as MainEntity);
+      this.freshLoad(mutableState[this.id] as MainEntity).catch((error) => console.error(`Failed to reload model "${this.id}".`, error));
     } else if (operation.type === ReloadModelOperationType) {
-      void this.freshLoad(mutableState[this.id] as MainEntity);
+      this.freshLoad(mutableState[this.id] as MainEntity).catch((error) => console.error(`Failed to reload model "${this.id}".`, error));
     } else {
       applyOperationsToSemanticModel(mutableState, [operation]);
     }
@@ -87,10 +87,9 @@ export class PimModelInModelStore extends BaseModelInModelStore implements Model
       return;
     }
 
-    const oldModel = this.model!;
+    const oldEntities = this.model?.getEntities() ?? {};
     this.model = model;
 
-    const oldEntities = oldModel.getEntities();
     const newEntities = model.getEntities();
 
     const changes = diffEntities(oldEntities, newEntities);
@@ -99,7 +98,8 @@ export class PimModelInModelStore extends BaseModelInModelStore implements Model
 
   protected async loadInternal(): Promise<ModelState> {
     const data = (await this.service.getResourceJsonData(this.id)) as any;
-    const {adapter, entities} = serializationToPimModelEntities(data);
+    // A model whose blob was never written starts as a fresh empty model.
+    const {adapter, entities} = serializationToPimModelEntities(data ?? { id: this.id, pimStore: { resources: {} } });
     this.model = adapter;
     return {
       entities,

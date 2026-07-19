@@ -25,7 +25,7 @@ export const getSimplifiedSemanticModel = asyncHandler(async (request: express.R
     }
 
     const data = await modelRepository.getResourceStoreJson(query.iri);
-    const entities = data.entities as Record<string, SemanticModelEntity>;
+    const entities = (data?.entities ?? {}) as Record<string, SemanticModelEntity>;
 
     const simplifiedModel = semanticModelToSimplifiedSemanticModel(entities, {});
 
@@ -51,8 +51,8 @@ export const setSimplifiedSemanticModel = asyncHandler(async (request: express.R
         return;
     }
 
-    const data = await modelRepository.getResourceStoreJson(query.iri);
-    const entities = data.entities as Record<string, SemanticModelEntity>;
+    const data = (await modelRepository.getResourceStoreJson(query.iri)) ?? { modelId: query.iri };
+    const entities = (data.entities ?? {}) as Record<string, SemanticModelEntity>;
 
     const newEntities = simplifiedSemanticModelToSemanticModel(request.body, entities);
 

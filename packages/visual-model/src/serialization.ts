@@ -5,6 +5,9 @@ import { type VisualEntity } from "./concepts/visual-entity.ts";
  * Takes serialization (JSON parsed data) and converts it to visual model entities.
  */
 export function serializationToVisualModelEntities(data: unknown): Record<string, Entity> {
+  if (!data) {
+    return {};
+  }
   const entities = (data as any).entities;
   // We need to fix entities when deserializing.
   const entityList = (Object.values(entities) as VisualEntity[]).map(fixVisualEntity);
