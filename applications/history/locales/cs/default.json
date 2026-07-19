@@ -6,7 +6,41 @@
     "no-specification": "Není vybrána žádná specifikace"
   },
   "nav": {
-    "evolution": "Evoluce"
+    "evolution": "Evoluce",
+    "history": "Historie"
+  },
+  "history": {
+    "title": "Historie",
+    "description": "Úplná historie projektu jako transakce operací, od nejnovějších. Libovolnou transakci lze vrátit zpět nebo označit verzí, podobně jako git tagem - verze rozdělují historii na části publikované ve specifikaci.",
+    "empty": "Projekt zatím nemá žádnou zaznamenanou historii.",
+    "no-project": "Není vybrán žádný projekt. Otevřete tuto stránku s parametrem packageIri.",
+    "project-model": "Struktura projektu",
+    "badge": {
+      "project-structure": "Mění strukturu projektu",
+      "undone": "Vráceno zpět",
+      "undone-in-model": "vráceno zpět v tomto modelu"
+    },
+    "category": {
+      "create": "Vytvoření",
+      "modify": "Úprava",
+      "delete": "Smazání",
+      "set": "Nastavení",
+      "undo": "Vrácení zpět",
+      "version": "Verze",
+      "create-model": "Vytvoření modelu",
+      "remove-model": "Odstranění modelu",
+      "other": "Operace"
+    },
+    "undo-target": "ruší transakci {{id}}",
+    "version-target": "označuje transakci {{id}} verzí {{version}}",
+    "action": {
+      "undo": "Vrátit zpět",
+      "undo-description": "Zrušit tuto transakci, jako by její operace nikdy neproběhly. Pozdější změny zůstávají zachovány.",
+      "tag": "Označit verzí",
+      "tag-title": "Označit tuto transakci verzí",
+      "tag-placeholder": "např. 1.1",
+      "tag-confirm": "Označit"
+    }
   },
   "mode-toggle": {
     "title": "Přepnout téma",

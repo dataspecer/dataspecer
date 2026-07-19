@@ -28,6 +28,8 @@ export interface CollectedOperation {
 
 export interface CollectedTransaction {
   id: number;
+  /** Client-generated transaction id, referenced by undo and version operations. */
+  clientId: string;
   createdAt: Date;
   operations: CollectedOperation[];
 }
@@ -39,6 +41,8 @@ export interface CollectedTransaction {
 export interface HistoryTransaction {
   /** Client-generated transaction id. */
   clientId: string;
+  /** Time the transaction was executed. */
+  createdAt: Date;
   operations: OperationInModel[];
   downEvents: TransactionEvents | null;
 }
@@ -157,6 +161,7 @@ export class TransactionModel {
             data: {
               projectId,
               clientId: transaction.id,
+              createdAt: transaction.time === undefined ? undefined : new Date(transaction.time),
               upEvents: transaction.upEvents === undefined ? undefined : JSON.stringify(transaction.upEvents),
               downEvents: transaction.downEvents === undefined ? undefined : JSON.stringify(transaction.downEvents),
               parents: parentId === null ? undefined : { create: [{ parentTransactionId: parentId }] },
@@ -211,6 +216,7 @@ export class TransactionModel {
     const rows = await this.loadTransactionChain(tipId);
     return rows.map((row) => ({
       clientId: row.clientId,
+      createdAt: row.createdAt,
       operations: row.operations.map((operation) => ({ modelId: operation.modelId, operation: JSON.parse(operation.data) as Operation })),
       downEvents: row.downEvents === null ? null : (JSON.parse(row.downEvents) as TransactionEvents),
     }));
@@ -322,18 +328,22 @@ export class TransactionModel {
    * Returns transactions (and their operations) that are reachable from the
    * "to" branch tip but not from the "from" branch tip, ordered oldest to
    * newest - analogous to git's two-dot range syntax "from..to". A branch
-   * reference that does not resolve to an existing branch is treated as the
-   * initial (empty) commit.
+   * reference that does not resolve to an existing branch, or a null "from",
+   * is treated as the initial (empty) commit - null "from" therefore returns
+   * the entire history of the "to" branch.
    *
    * Returns null if the project does not exist.
    */
-  async getTransactionsLog(projectIri: string, from: BranchReference, to: BranchReference): Promise<CollectedTransaction[] | null> {
+  async getTransactionsLog(projectIri: string, from: BranchReference | null, to: BranchReference): Promise<CollectedTransaction[] | null> {
     const projectId = await this.getProjectId(projectIri);
     if (projectId === null) {
       return null;
     }
 
-    const [fromBranch, toBranch] = await Promise.all([findBranch(this.prismaClient, projectId, from), findBranch(this.prismaClient, projectId, to)]);
+    const [fromBranch, toBranch] = await Promise.all([
+      from === null ? null : findBranch(this.prismaClient, projectId, from),
+      findBranch(this.prismaClient, projectId, to),
+    ]);
     const fromTipId = fromBranch?.transactionId ?? null;
     const toTipId = toBranch?.transactionId ?? null;
 
@@ -347,6 +357,7 @@ export class TransactionModel {
     const rows = await this.loadTransactionChain(toTipId, fromTipId);
     return rows.map((row) => ({
       id: row.id,
+      clientId: row.clientId,
       createdAt: row.createdAt,
       operations: row.operations.map((operation) => ({
         id: operation.id,

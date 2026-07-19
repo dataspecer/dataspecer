@@ -6,7 +6,41 @@
     "no-specification": "No specification selected"
   },
   "nav": {
-    "evolution": "Evolution"
+    "evolution": "Evolution",
+    "history": "History"
+  },
+  "history": {
+    "title": "History",
+    "description": "The full history of the project as transactions of operations, newest first. Undo any transaction or mark one with a version, like a git tag - versions separate the history into the chunks published in the specification.",
+    "empty": "The project has no recorded history yet.",
+    "no-project": "No project selected. Open this page with a packageIri query parameter.",
+    "project-model": "Project structure",
+    "badge": {
+      "project-structure": "Changes the project structure",
+      "undone": "Undone",
+      "undone-in-model": "undone in this model"
+    },
+    "category": {
+      "create": "Create",
+      "modify": "Modify",
+      "delete": "Delete",
+      "set": "Set",
+      "undo": "Undo",
+      "version": "Version",
+      "create-model": "Create model",
+      "remove-model": "Remove model",
+      "other": "Operation"
+    },
+    "undo-target": "cancels transaction {{id}}",
+    "version-target": "marks transaction {{id}} as version {{version}}",
+    "action": {
+      "undo": "Undo",
+      "undo-description": "Cancel this transaction as if its operations never happened. Later changes stay in place.",
+      "tag": "Mark version",
+      "tag-title": "Mark this transaction with a version",
+      "tag-placeholder": "e.g. 1.1",
+      "tag-confirm": "Mark"
+    }
   },
   "mode-toggle": {
     "title": "Toggle theme",

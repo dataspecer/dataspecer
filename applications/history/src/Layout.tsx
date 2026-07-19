@@ -1,7 +1,7 @@
 import { Outlet, useLocation } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { Breadcrumbs } from "@/components/breadcrumbs";
-// import { SidebarNav } from "@/components/sidebar-nav";
+import { SidebarNav } from "@/components/sidebar-nav";
 import { GithubLink } from "@/components/github-link";
 import { LanguageToggle } from "@/components/language-toggle";
 import { ModeToggle } from "@/components/mode-toggle";
@@ -9,6 +9,7 @@ import { ModelStoreProvider, useModelStore } from "@/contexts/model-store-contex
 import { useProjectTitle } from "@/hooks/use-project-title";
 
 const subPageLabelKeys: Record<string, string> = {
+  "/history": "nav.history",
   "/evolution": "nav.evolution",
   "/evolution/review": "nav.evolution",
 };
@@ -66,8 +67,7 @@ function LayoutContent() {
           </div>
         ) : (
           <>
-            {/* Side panel has a single entry for now, hidden until there is more than one sub-page. */}
-            {/* <SidebarNav /> */}
+            <SidebarNav />
             <div className="min-w-0 flex-1">
               <Outlet />
             </div>

@@ -6,7 +6,7 @@ import { OwlPropertyType } from "@dataspecer/lightweight-owl";
 import type { LanguageString } from "../semantic-model/dsv-model.ts";
 import { DsvWriter, prettyPrintTurtle } from "../semantic-model/dsv-to-rdf.ts";
 import { DSV } from "../semantic-model/vocabulary.ts";
-import type { LdesEvent, LdesEventStream } from "./ldes-model.ts";
+import type { LdesEvent, LdesEventStream, LdesVersion } from "./ldes-model.ts";
 import { AS, DATASPECER_LDES, DCT, LDES, OWL, RDF, RDFS, TREE, XSD } from "./vocabulary.ts";
 
 const IRI = DataFactory.namedNode;
@@ -77,6 +77,14 @@ function createDefaultConfiguration(): LdesToRdfConfiguration {
   };
 }
 
+/**
+ * IRI under which a version of the stream is published, derived from the
+ * stream IRI and the version label.
+ */
+export function createStreamVersionIri(streamIri: string, version: string): string {
+  return streamIri + (streamIri.includes("#") ? "-" : "#") + "version-" + encodeURIComponent(version);
+}
+
 class LdesWriter {
 
   private writer: N3.Writer;
@@ -121,7 +129,22 @@ class LdesWriter {
       this.writer.addQuad(IRI(this.stream.publishedModelIri), RDF.type, DSV.ApplicationProfile);
     }
 
+    this.stream.versions.forEach(version => this.writeVersion(version));
     this.stream.events.forEach(event => this.writeEvent(event));
+  }
+
+  /**
+   * Publishes one version of the stream. Together with the version label of
+   * each member (see {@link writeEvent}) and the shared dct:issued timestamps,
+   * this separates the history of the stream into chunks by versions.
+   */
+  private writeVersion(version: LdesVersion): void {
+    const subject = IRI(createStreamVersionIri(this.stream.iri, version.version));
+    this.writer.addQuad(IRI(this.stream.iri), DATASPECER_LDES.hasVersion, subject);
+    this.writer.addQuad(subject, RDF.type, DATASPECER_LDES.Version);
+    this.writer.addQuad(subject, DATASPECER_LDES.versionLabel, Literal(version.version));
+    this.writer.addQuad(subject, DATASPECER_LDES.transaction, Literal(version.transactionId));
+    this.writer.addQuad(subject, DCT.issued, Literal(version.issued, XSD.dateTime));
   }
 
   private writeEvent(event: LdesEvent): void {
@@ -143,6 +166,9 @@ class LdesWriter {
     this.writer.addQuad(member, DCT.issued, Literal(event.issued, XSD.dateTime));
     this.writer.addQuad(member, DATASPECER_LDES.sequence, Literal(event.sequence));
     this.writer.addQuad(member, DATASPECER_LDES.transaction, Literal(event.transactionId));
+    if (event.version !== undefined) {
+      this.writer.addQuad(member, DATASPECER_LDES.version, Literal(event.version));
+    }
     if (event.replacedByIri !== undefined) {
       this.writer.addQuad(member, DCT.isReplacedBy, IRI(event.replacedByIri));
     }

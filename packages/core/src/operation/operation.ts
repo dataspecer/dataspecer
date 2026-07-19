@@ -66,4 +66,11 @@ export interface OperationInModel<T extends Operation = Operation> extends Wrapp
 export interface Transaction<T extends Operation = Operation> {
   id: OperationIdentifier;
   operations: OperationInModel<T>[];
+
+  /**
+   * Time when the transaction was executed by its author, as an ISO 8601
+   * string. Optional as older histories do not record it; the backend then
+   * falls back to the time the transaction was stored.
+   */
+  time?: string;
 }

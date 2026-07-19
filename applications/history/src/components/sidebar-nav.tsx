@@ -1,14 +1,13 @@
-import { GitBranch } from "lucide-react";
+import { GitBranch, History } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 
 /**
- * Sub-pages of the history application. Evolution is the only one implemented
- * so far; further sub-pages (e.g. for reviewing already applied changes) can
- * be added to this list.
+ * Sub-pages of the history application.
  */
 const subPages = [
+  { to: "/history", labelKey: "nav.history", icon: History },
   { to: "/evolution", labelKey: "nav.evolution", icon: GitBranch },
 ];
 

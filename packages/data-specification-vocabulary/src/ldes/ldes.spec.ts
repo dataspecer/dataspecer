@@ -9,7 +9,8 @@ import {
 } from "@dataspecer/core-v2/semantic-model/operations";
 import { createDefaultSemanticModelProfileOperationFactory } from "@dataspecer/core-v2/semantic-model/profile/operations";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
-import { generateOperationId, type Operation, type Transaction } from "@dataspecer/core/operation";
+import { createUndoOperation, createVersionOperation, generateOperationId, type Operation, type Transaction } from "@dataspecer/core/operation";
+import { groupEventsByVersion } from "./ldes-model.ts";
 import { semanticModelToLightweightOwl } from "@dataspecer/lightweight-owl";
 import { createDataSpecificationVocabulary } from "../semantic-model/dsv-api-v2.ts";
 import { ldesToTransactions } from "./events-to-operations.ts";
@@ -162,6 +163,99 @@ test("IRI reuse within one transaction.", async () => {
   const entities = Object.values(reconstructed);
   expect(entities.length).toBe(1);
   expect(entities[0]).toMatchObject({ iri: "http://example.com/voc#Thing", name: { en: "B" } });
+});
+
+test("Versions separate the history into chunks.", async () => {
+  // Two content transactions with an undo in between; each of the two
+  // versions marks the history up to one of them, like a git tag.
+  const first = { ...transaction("voc", [createClass({ id: "person", iri: "Person", name: { en: "Person" }, description: {} })]), time: "2026-01-01T10:00:00.000Z" };
+  const firstMarker = {
+    id: generateOperationId(),
+    time: "2026-01-02T10:00:00.000Z",
+    operations: [{ modelId: "_project_model", operation: createVersionOperation(first.id, "1.0") }],
+  };
+  const second = { ...transaction("voc", [createClass({ id: "agent", iri: "Agent", name: { en: "Agent" }, description: {} })]), time: "2026-01-03T10:00:00.000Z" };
+  const undo = { ...transaction("voc", [createUndoOperation(second.id)]), time: "2026-01-04T10:00:00.000Z" };
+  const secondMarker = {
+    id: generateOperationId(),
+    time: "2026-01-05T10:00:00.000Z",
+    operations: [{ modelId: "_project_model", operation: createVersionOperation(undo.id, "1.1") }],
+  };
+  const transactions = [first, firstMarker, second, undo, secondMarker];
+
+  const stream = vocabularyTransactionsToLdes({
+    streamIri: "http://example.com/voc/ldes",
+    publishedModelIri: "http://example.com/voc",
+    models: { "voc": {} },
+    baseIris: { "voc": "http://example.com/voc#" },
+    publishedModelId: "voc",
+    transactions,
+  });
+
+  // The undo of the creation of the agent is published as a regular delete
+  // event, keeping the stream append-only.
+  expect(stream.events.map((event) => [event.kind, event.iri])).toStrictEqual([
+    ["create", "http://example.com/voc#Person"],
+    ["create", "http://example.com/voc#Agent"],
+    ["delete", "http://example.com/voc#Agent"],
+  ]);
+
+  expect(stream.versions).toStrictEqual([
+    { version: "1.0", transactionId: first.id, issued: "2026-01-02T10:00:00.000Z" },
+    { version: "1.1", transactionId: undo.id, issued: "2026-01-05T10:00:00.000Z" },
+  ]);
+
+  // Events keep their recorded time as created, and get the publication time
+  // of their version as issued.
+  expect(stream.events.map((event) => [event.version, event.created, event.issued])).toStrictEqual([
+    ["1.0", "2026-01-01T10:00:00.000Z", "2026-01-02T10:00:00.000Z"],
+    ["1.1", "2026-01-03T10:00:00.000Z", "2026-01-05T10:00:00.000Z"],
+    ["1.1", "2026-01-04T10:00:00.000Z", "2026-01-05T10:00:00.000Z"],
+  ]);
+
+  const chunks = groupEventsByVersion(stream);
+  expect(chunks.map((chunk) => [chunk.version?.version ?? null, chunk.events.length])).toStrictEqual([
+    ["1.0", 1],
+    ["1.1", 2],
+  ]);
+
+  // Roundtrip through RDF.
+  const parsedStream = await rdfToLdes(await ldesToRdf(stream, {}));
+  expect(parsedStream).toStrictEqual(stream);
+});
+
+test("Events after the last version are unreleased.", async () => {
+  const released = { ...transaction("voc", [createClass({ id: "person", iri: "Person", name: { en: "Person" }, description: {} })]), time: "2026-01-01T10:00:00.000Z" };
+  const marker = {
+    id: generateOperationId(),
+    time: "2026-01-02T10:00:00.000Z",
+    operations: [{ modelId: "_project_model", operation: createVersionOperation(released.id, "1.0") }],
+  };
+  const unreleased = { ...transaction("voc", [modifyClass("person", { name: { en: "Human" } })]), time: "2026-01-03T10:00:00.000Z" };
+
+  const stream = vocabularyTransactionsToLdes({
+    streamIri: "http://example.com/voc/ldes",
+    publishedModelIri: "http://example.com/voc",
+    models: { "voc": {} },
+    baseIris: { "voc": "http://example.com/voc#" },
+    publishedModelId: "voc",
+    transactions: [released, marker, unreleased],
+  });
+
+  expect(stream.events.map((event) => [event.kind, event.version, event.issued])).toStrictEqual([
+    ["create", "1.0", "2026-01-02T10:00:00.000Z"],
+    // Not covered by any version: issued keeps the recorded time.
+    ["update", undefined, "2026-01-03T10:00:00.000Z"],
+  ]);
+
+  const chunks = groupEventsByVersion(stream);
+  expect(chunks.map((chunk) => [chunk.version?.version ?? null, chunk.events.length])).toStrictEqual([
+    ["1.0", 1],
+    [null, 1],
+  ]);
+
+  const parsedStream = await rdfToLdes(await ldesToRdf(stream, {}));
+  expect(parsedStream).toStrictEqual(stream);
 });
 
 test("Application profile operations roundtrip.", async () => {

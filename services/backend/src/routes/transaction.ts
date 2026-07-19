@@ -7,6 +7,7 @@ const transactionsBodySchema = z.object({
   transactions: z.array(
     z.object({
       id: z.string(),
+      time: z.string().datetime({ offset: true }).optional(),
       operations: z.array(
         z.object({
           modelId: z.string().min(1),
@@ -103,9 +104,12 @@ function parseBranchReference(reference: string): string | number {
  * from the "to" branch tip but not from the "from" branch tip, ordered oldest
  * to newest.  The range is specified as "fromBranch..toBranch", analogous to
  * git's two-dot range syntax. Either side can instead reference a branch by
- * its internal numerical id, wrapped in brackets, e.g. "main..[34]".
+ * its internal numerical id, wrapped in brackets, e.g. "main..[34]". A range
+ * without ".." (just a branch reference) returns the entire history of that
+ * branch.
  *
  * Example: GET /transactions/log/upstream..main?projectIri=...
+ * Example: GET /transactions/log/main?projectIri=... (entire history of main)
  */
 export const getTransactionsDiff = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({
@@ -115,12 +119,8 @@ export const getTransactionsDiff = asyncHandler(async (request: express.Request,
 
   const range = String(request.params.range ?? "");
   const dotDot = range.indexOf("..");
-  if (dotDot === -1) {
-    response.status(400).json({ error: "range must be 'fromBranch..toBranch'" });
-    return;
-  }
-  const fromRef = parseBranchReference(range.slice(0, dotDot));
-  const toRef = parseBranchReference(range.slice(dotDot + 2));
+  const fromRef = dotDot === -1 ? null : parseBranchReference(range.slice(0, dotDot));
+  const toRef = parseBranchReference(range.slice(dotDot === -1 ? 0 : dotDot + 2));
 
   const transactions = await transactionModel.getTransactionsLog(query.projectIri, fromRef, toRef);
   if (transactions === null) {

@@ -401,6 +401,7 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
     if (!this.currentTransaction) {
       this.currentTransaction = {
         id: uuidv4(),
+        time: new Date().toISOString(),
         metadata: {},
         operations: [],
         touchesProjectModel: false,
@@ -539,6 +540,7 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
 
     this.transactions.push({
       id: transactionId,
+      time: new Date().toISOString(),
       metadata: {},
       operations: allOperations,
       // Transactions reachable from the undo/redo stacks never touch the

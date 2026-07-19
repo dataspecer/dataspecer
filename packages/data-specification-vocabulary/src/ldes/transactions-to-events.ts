@@ -4,12 +4,19 @@ import {
   isSemanticModelRelationshipProfile,
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import type { Entity, EntityRecord } from "@dataspecer/core/entity-model";
-import type { Operation, Transaction } from "@dataspecer/core/operation";
+import {
+  collectTransactionVersions,
+  filterCancelledTransactions,
+  isUndoOperation,
+  resolveCancelledTransactions,
+  type Operation,
+  type Transaction,
+} from "@dataspecer/core/operation";
 import { semanticModelToLightweightOwl } from "@dataspecer/lightweight-owl";
 import { deepEqual } from "@dataspecer/utilities";
 import { createDataSpecificationVocabulary } from "../semantic-model/dsv-api-v2.ts";
 import type { TermProfile } from "../semantic-model/dsv-model.ts";
-import type { LdesEvent, LdesEventKind, LdesEventStream, LdesResourceSnapshot } from "./ldes-model.ts";
+import type { LdesEvent, LdesEventKind, LdesEventStream, LdesResourceSnapshot, LdesVersion } from "./ldes-model.ts";
 
 export interface TransactionsToLdesInput {
 
@@ -47,8 +54,9 @@ export interface TransactionsToLdesInput {
   transactions: Transaction[];
 
   /**
-   * Recorded time of a transaction. Defaults to the time encoded in its
-   * uuidv7 identifier.
+   * Recorded time of a transaction. Defaults to the {@link Transaction.time}
+   * of the transaction, falling back to the time encoded in its uuidv7
+   * identifier.
    */
   transactionTime?: (transaction: Transaction) => Date;
 
@@ -86,27 +94,39 @@ interface PublishedResource {
 type Projection = (input: TransactionsToLdesInput, models: Record<string, EntityRecord>) => Map<string, PublishedResource>;
 
 function transactionsToEvents(input: TransactionsToLdesInput, project: Projection): LdesEventStream {
-  const transactionTime = input.transactionTime ?? timeFromUuidv7;
+  const transactionTime = input.transactionTime ?? defaultTransactionTime;
 
   let models = input.models;
   let previous = project(input, models);
   const events: LdesEvent[] = [];
+  /** For each event (by index), the position of its transaction in the history. */
+  const eventTransactionIndexes: number[] = [];
+  /** Prefix of the history processed so far, for interpreting undo operations. */
+  const processed: Transaction[] = [];
+  let transactionIndex = -1;
 
   for (const transaction of input.transactions) {
+    transactionIndex++;
+    processed.push(transaction);
     // @todo Once operations that change entity identity exist (e.g. merging
     // two entities into one), inspect the operations of the transaction here
     // and pair the affected internal ids, so the diff below reports a rename
     // instead of an unrelated delete + create.
 
-    // @todo Once Dataspecer supports marking versions, detect the version
-    // marker operation here: all pending events up to it get the version's
-    // publication time as `issued` while `created` keeps the recorded time.
-
-    models = applyTransaction(models, transaction);
+    if (transaction.operations.some(({ operation }) => isUndoOperation(operation))) {
+      // An undo cancels an earlier transaction: recompute the effective state
+      // of the models by replaying the effective prefix of the history from
+      // the initial state. The diff below then publishes the undo as regular
+      // (inverse) events, keeping the stream append-only.
+      models = filterCancelledTransactions(processed).reduce(applyTransaction, input.models);
+    } else {
+      models = applyTransaction(models, transaction);
+    }
     const next = project(input, models);
     const timestamp = transactionTime(transaction).toISOString();
 
     const push = (kind: LdesEventKind, iri: string, snapshot: LdesResourceSnapshot | null, replacedByIri?: string) => {
+      eventTransactionIndexes.push(transactionIndex);
       events.push({
         kind,
         iri,
@@ -142,11 +162,53 @@ function transactionsToEvents(input: TransactionsToLdesInput, project: Projectio
     previous = next;
   }
 
+  const versions = assignVersions(input, events, eventTransactionIndexes, transactionTime);
+
   return {
     iri: input.streamIri,
     publishedModelIri: input.publishedModelIri,
     events,
+    versions,
   };
+}
+
+/**
+ * Detects the version markers in the history (see the VersionOperation of
+ * `@dataspecer/core`) and assigns the events to the versions: each version
+ * covers the events of the transactions up to (and including) the marked
+ * transaction that are not covered by an earlier version. Covered events get
+ * the version's publication time - the recorded time of the transaction
+ * carrying the marker - as `issued`, while `created` keeps the recorded time.
+ * The events are modified in place; the found versions are returned.
+ */
+function assignVersions(
+  input: TransactionsToLdesInput,
+  events: LdesEvent[],
+  eventTransactionIndexes: number[],
+  transactionTime: (transaction: Transaction) => Date,
+): LdesVersion[] {
+  const transactionIndexById = new Map(input.transactions.map((transaction, index) => [transaction.id, index]));
+
+  // Versions marked by an undone transaction do not count - undoing the
+  // marker removes the tag.
+  const cancelled = resolveCancelledTransactions(input.transactions);
+  const markers = collectTransactionVersions(input.transactions).filter((marker) => !cancelled.has(marker.markerTransactionId));
+
+  const versions: LdesVersion[] = [];
+  let nextUnversionedEvent = 0;
+  for (const marker of markers) {
+    const markerTransaction = input.transactions[transactionIndexById.get(marker.markerTransactionId)!]!;
+    const issued = transactionTime(markerTransaction).toISOString();
+    versions.push({ version: marker.version, transactionId: marker.versionedTransactionId, issued });
+
+    const coveredIndex = transactionIndexById.get(marker.versionedTransactionId)!;
+    while (nextUnversionedEvent < events.length && eventTransactionIndexes[nextUnversionedEvent]! <= coveredIndex) {
+      events[nextUnversionedEvent]!.version = marker.version;
+      events[nextUnversionedEvent]!.issued = issued;
+      nextUnversionedEvent++;
+    }
+  }
+  return versions;
 }
 
 function applyTransaction(models: Record<string, EntityRecord>, transaction: Transaction): Record<string, EntityRecord> {
@@ -170,10 +232,14 @@ function applyTransaction(models: Record<string, EntityRecord>, transaction: Tra
 }
 
 /**
- * Extracts the timestamp encoded in a uuidv7 transaction id; falls back to
- * the epoch for other identifiers.
+ * Recorded time of a transaction: its own {@link Transaction.time} when
+ * present, otherwise the timestamp encoded in its uuidv7 identifier; falls
+ * back to the epoch.
  */
-function timeFromUuidv7(transaction: Transaction): Date {
+function defaultTransactionTime(transaction: Transaction): Date {
+  if (transaction.time !== undefined) {
+    return new Date(transaction.time);
+  }
   const match = /^([0-9a-f]{8})-([0-9a-f]{4})-7/.exec(transaction.id);
   if (match === null) {
     return new Date(0);
