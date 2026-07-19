@@ -3,6 +3,7 @@ import MonacoEditor, { type Monaco, type OnMount } from "@monaco-editor/react";
 import type * as monaco from "monaco-editor";
 import { applicationGraphSchema, type ApplicationGraph } from "@dataspecer/app-generator/graph";
 import { applyGraphJson } from "../graph/apply-json.ts";
+import { graphElementAtOffset } from "../graph/json-cursor.ts";
 import { useEditorStore } from "../store.ts";
 import { liveViolations } from "../validation/violations.ts";
 import { violationRanges } from "../validation/violation-ranges.ts";
@@ -81,9 +82,36 @@ export function JsonPanel({ graph }: { graph: ApplicationGraph }) {
     mounted.monaco.editor.setModelMarkers(model, VIOLATION_MARKER_OWNER, markers);
   }, [json, violations, dirty, editorMounted]);
 
+  const focusGraphElement = (text: string, offset: number) => {
+    const target = graphElementAtOffset(text, offset);
+    if (target === null) {
+      return;
+    }
+    const store = useEditorStore.getState();
+    const exists =
+      target.kind === "node"
+        ? store.graph?.nodes.some((node) => node.id === target.id)
+        : store.graph?.edges.some((edge) => edge.id === target.id);
+    if (!exists) {
+      return;
+    }
+    store.requestFocus(target.id);
+  };
+
   const onMount: OnMount = (editor, instance) => {
     editorRef.current = { editor, monaco: instance };
     setEditorMounted(true);
+    // clicking into a node or edge section centers that element on the canvas
+    editor.onDidChangeCursorPosition((event) => {
+      if (event.source !== "mouse") {
+        return;
+      }
+      const model = editor.getModel();
+      if (!model) {
+        return;
+      }
+      focusGraphElement(model.getValue(), model.getOffsetAt(event.position));
+    });
   };
 
   const apply = () => {
