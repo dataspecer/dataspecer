@@ -2,6 +2,7 @@ import { createRootRoute, createRoute, createRouter, redirect } from "@tanstack/
 import { Layout } from "./Layout";
 import { EvolutionPage } from "./pages/evolution/evolution-page";
 import { EvolutionOverviewPage } from "./pages/evolution/overview-page";
+import { HistoryPage } from "./pages/history/history-page";
 
 const rootRoute = createRootRoute({
   component: Layout,
@@ -11,8 +12,14 @@ const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
   beforeLoad: () => {
-    throw redirect({ to: "/evolution", search: true });
+    throw redirect({ to: "/history", search: true });
   },
+});
+
+const historyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/history",
+  component: HistoryPage,
 });
 
 const evolutionRoute = createRoute({
@@ -27,7 +34,7 @@ const evolutionReviewRoute = createRoute({
   component: EvolutionPage,
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, evolutionRoute, evolutionReviewRoute]);
+const routeTree = rootRoute.addChildren([indexRoute, historyRoute, evolutionRoute, evolutionReviewRoute]);
 
 export const router = createRouter({
   routeTree,

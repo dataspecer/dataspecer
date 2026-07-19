@@ -8,7 +8,7 @@ import express from "express";
 import { z } from "zod";
 import configuration from "../configuration.ts";
 import { ZipStreamDictionary } from "../utils/zip-stream-dictionary.ts";
-import { modelRepository } from "../main.ts";
+import { modelRepository, transactionModel } from "../main.ts";
 import { asyncHandler } from "../utils/async-handler.ts";
 import { getContentDispositionAttachmentHeaderValue, safeAsciiFileName, safeUnicodeFileName } from "../utils/safe-file-name.ts";
 import { getModelsForPackage } from "../utils/backend-model-store.ts";
@@ -62,6 +62,23 @@ async function generateArtifacts(
   const { store, dataSpecifications } = getDataSpecificationWithModels(packageIri, allModels);
   const generator = new DefaultArtifactBuilder(store as CoreResourceReader, dataSpecifications, configuration.configuration, fetch, allModels);
   generator.singleSpecificationOnly = true; // We want to generate only a single specification without extra directories.
+
+  // The recorded transaction history (with the versions marked in it) is
+  // published as the LDES stream of the specification. The models start empty
+  // and are replayed from the history - faithful for projects whose whole
+  // content is recorded; projects predating the history keep the fallback of
+  // publishing their current state as a single initial transaction.
+  const historyTransactions = await transactionModel.getBranchHistory(packageIri);
+  if (historyTransactions.length > 0) {
+    generator.history = {
+      models: {},
+      transactions: historyTransactions.map((transaction) => ({
+        id: transaction.clientId,
+        time: transaction.createdAt.toISOString(),
+        operations: transaction.operations,
+      })),
+    };
+  }
   await generator.prepare(Object.keys(dataSpecifications), undefined, queryParams);
   await generator.build(streamDictionary, singleFilePath, queryParams, packageIri);
 }

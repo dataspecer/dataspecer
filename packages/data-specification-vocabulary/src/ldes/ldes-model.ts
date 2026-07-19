@@ -21,6 +21,31 @@ export type LdesResourceSnapshot = {
 export type LdesEventKind = "create" | "update" | "delete";
 
 /**
+ * A published version of the stream - a marker stating that the history up to
+ * (and including) the marked transaction belongs to the given version, like a
+ * git tag. Versions separate the history of the stream into chunks: every
+ * event belongs to the first version whose marked transaction is at or after
+ * the event's transaction, see {@link LdesEvent.version}.
+ */
+export interface LdesVersion {
+  /**
+   * Human-readable version label, e.g. "1.1".
+   */
+  version: string;
+
+  /**
+   * Identifier of the last internal transaction that belongs to the version.
+   */
+  transactionId: string;
+
+  /**
+   * When the version was published (the time of the transaction carrying the
+   * version marker), as xsd:dateTime.
+   */
+  issued: string;
+}
+
+/**
  * One published operation - a version object (member) of the LDES stream.
  * Create and update events carry the full published snapshot of the resource
  * after the change, delete events are tombstones.
@@ -54,17 +79,19 @@ export interface LdesEvent {
   created: string;
 
   /**
-   * When the change was published, as xsd:dateTime. Currently always equal to
-   * {@link created}.
-   *
-   * @todo Once Dataspecer supports marking versions (an operation stating
-   * "everything up to here is version X"), all events up to the marker get
-   * the version's publication time here (and possibly a version label),
-   * while {@link created} keeps the recorded time. This is why the stream
-   * declares both ldes:timestampPath (issued) and ldes:versionTimestampPath
-   * (created).
+   * When the change was published, as xsd:dateTime. For events that belong to
+   * a marked version (see {@link version}) this is the publication time of
+   * that version; events not covered by any version yet keep the recorded
+   * time of {@link created}. This is why the stream declares both
+   * ldes:timestampPath (issued) and ldes:versionTimestampPath (created).
    */
   issued: string;
+
+  /**
+   * Label of the version the event belongs to (see {@link LdesVersion}).
+   * Absent for events not covered by any version marker yet.
+   */
+  version?: string;
 
   /**
    * Total order of the events in the stream, published as
@@ -103,4 +130,45 @@ export interface LdesEventStream {
    * All events, ordered by {@link LdesEvent.sequence}.
    */
   events: LdesEvent[];
+
+  /**
+   * Published versions of the stream, in the order they were marked.
+   */
+  versions: LdesVersion[];
+}
+
+/**
+ * One chunk of the history of a stream: the events belonging to one version,
+ * or - for the last chunk with a null version - the events not covered by any
+ * version marker yet.
+ */
+export interface LdesVersionChunk {
+  version: LdesVersion | null;
+  events: LdesEvent[];
+}
+
+/**
+ * Splits the events of the stream into the chunks of history separated by its
+ * versions: one chunk per version (in the marking order), followed by a chunk
+ * of the events not released under any version yet. Empty chunks of versions
+ * that published no events are kept; the trailing unreleased chunk is present
+ * only when there are unreleased events.
+ */
+export function groupEventsByVersion(stream: LdesEventStream): LdesVersionChunk[] {
+  const chunks: LdesVersionChunk[] = stream.versions.map((version) => ({ version, events: [] }));
+  const chunkByLabel = new Map(chunks.map((chunk) => [chunk.version!.version, chunk]));
+
+  const unreleased: LdesEvent[] = [];
+  for (const event of stream.events) {
+    const chunk = event.version === undefined ? undefined : chunkByLabel.get(event.version);
+    if (chunk === undefined) {
+      unreleased.push(event);
+    } else {
+      chunk.events.push(event);
+    }
+  }
+  if (unreleased.length > 0) {
+    chunks.push({ version: null, events: unreleased });
+  }
+  return chunks;
 }

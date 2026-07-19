@@ -4,7 +4,7 @@ import { OwlPropertyType, type OwlClass, type OwlProperty } from "@dataspecer/li
 import type { LanguageString, TermProfile } from "../semantic-model/dsv-model.ts";
 import { stringN3ToRdf } from "../semantic-model/n3-reader.ts";
 import { rdfToDsv } from "../semantic-model/rdf-to-dsv.ts";
-import type { LdesEvent, LdesEventKind, LdesEventStream, LdesResourceSnapshot } from "./ldes-model.ts";
+import type { LdesEvent, LdesEventKind, LdesEventStream, LdesResourceSnapshot, LdesVersion } from "./ldes-model.ts";
 import { AS, DATASPECER_LDES, DCT, LDES, OWL, RDF, RDFS, TREE } from "./vocabulary.ts";
 
 /**
@@ -66,7 +66,31 @@ export async function rdfToLdes(rdfAsString: string): Promise<LdesEventStream> {
     iri: streamIri,
     publishedModelIri,
     events,
+    versions: loadVersions(streamReader, quadsBySubject),
   };
+}
+
+/**
+ * Loads the published versions of the stream, restoring their marking order
+ * from the issued timestamps.
+ */
+function loadVersions(streamReader: MemberReader, quadsBySubject: Map<string, N3.Quad[]>): LdesVersion[] {
+  const versions: LdesVersion[] = [];
+  for (const versionIri of streamReader.iris(DATASPECER_LDES.hasVersion)) {
+    const reader = new MemberReader(quadsBySubject.get(versionIri) ?? []);
+    const version = reader.literal(DATASPECER_LDES.versionLabel);
+    if (version === null) {
+      console.warn(`Ignoring version '${versionIri}' without a label.`);
+      continue;
+    }
+    versions.push({
+      version,
+      transactionId: reader.literal(DATASPECER_LDES.transaction) ?? "",
+      issued: reader.literal(DCT.issued) ?? "",
+    });
+  }
+  versions.sort((a, b) => a.issued.localeCompare(b.issued) || a.version.localeCompare(b.version));
+  return versions;
 }
 
 function findIsDefinedBy(events: LdesEvent[]): string | null {
@@ -108,6 +132,7 @@ function loadEvent(
   }
 
   const replacedByIri = reader.iri(DCT.isReplacedBy);
+  const version = reader.literal(DATASPECER_LDES.version);
   return {
     kind,
     iri,
@@ -115,6 +140,7 @@ function loadEvent(
     transactionId: reader.literal(DATASPECER_LDES.transaction) ?? "",
     created: reader.literal(DCT.created) ?? "",
     issued: reader.literal(DCT.issued) ?? "",
+    ...(version === null ? {} : { version }),
     sequence: Number(reader.literal(DATASPECER_LDES.sequence) ?? 0),
     snapshot: kind === "delete" ? null
       : loadSnapshot(memberIri, iri, types, reader, termProfilesByMemberIri),

@@ -92,4 +92,8 @@ export const DATASPECER_LDES = {
   "sequence": IRI(DATASPECER_LDES_PREFIX + "sequence"),
   "transaction": IRI(DATASPECER_LDES_PREFIX + "transaction"),
   "publishedModel": IRI(DATASPECER_LDES_PREFIX + "publishedModel"),
+  "version": IRI(DATASPECER_LDES_PREFIX + "version"),
+  "hasVersion": IRI(DATASPECER_LDES_PREFIX + "hasVersion"),
+  "Version": IRI(DATASPECER_LDES_PREFIX + "Version"),
+  "versionLabel": IRI(DATASPECER_LDES_PREFIX + "versionLabel"),
 };
