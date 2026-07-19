@@ -1,10 +1,10 @@
 import { BackendPackageService } from "@dataspecer/core-v2/project";
-import {
-  validateGraphSyntax,
-  type ApplicationGraph,
-  type SpecificationMetadata,
-  type Violation,
+import type {
+  ApplicationGraph,
+  SpecificationMetadata,
+  Violation,
 } from "@dataspecer/app-generator/graph";
+import { checkGraph } from "../graph/serialization.ts";
 import type { NodePositions } from "../store.ts";
 
 const backendUrl = import.meta.env.VITE_BACKEND as string;
@@ -29,15 +29,11 @@ export async function loadGraph(iri: string): Promise<ApplicationGraph> {
     throw new Error(`No application graph found for resource "${iri}".`);
   }
 
-  const syntax = validateGraphSyntax(data);
-  if (!syntax.valid) {
-    const first = syntax.violations[0];
-    throw new Error(
-      `The stored JSON is not a valid application graph ` +
-        `(${syntax.violations.length} syntax violation(s), first: ${first.message})`,
-    );
+  const result = checkGraph(data);
+  if ("error" in result) {
+    throw new Error(result.error);
   }
-  return data as ApplicationGraph;
+  return result.graph;
 }
 
 export async function loadPositions(iri: string): Promise<NodePositions | null> {

@@ -5,22 +5,13 @@ import {
   type Violation,
 } from "@dataspecer/app-generator/graph";
 
-// keyed by graph identity, so every consumer of the same snapshot shares one validation run
-const liveCache = new WeakMap<ApplicationGraph, Violation[]>();
-
 /**
  * Client-side violations of the given graph: syntax first and structural rules. Semantic violations need specification
  * metadata and come from the backend validate endpoint instead.
  */
 export function liveViolations(graph: ApplicationGraph): Violation[] {
-  const cached = liveCache.get(graph);
-  if (cached) {
-    return cached;
-  }
   const syntax = validateGraphSyntax(graph);
-  const violations = syntax.valid ? validateGraphStructure(graph).violations : syntax.violations;
-  liveCache.set(graph, violations);
-  return violations;
+  return syntax.valid ? validateGraphStructure(graph).violations : syntax.violations;
 }
 
 export type ViolationTarget = { kind: "node" | "edge"; id: string } | null;

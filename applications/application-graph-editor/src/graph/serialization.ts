@@ -7,17 +7,11 @@ import {
 export type ParseGraphResult = { graph: ApplicationGraph } | { error: string };
 
 /**
- * Parses graph JSON from an import or the JSON panel. Only syntactically valid graphs are accepted. Structural and
- * semantic violations are allowed through, the problems panel reports them.
+ * Checks that already parsed JSON is a syntactically valid graph. Every way a graph enters the
+ * editor (stored blob, import, JSON panel) goes through this gate. Structural and semantic
+ * violations are allowed through, the problems panel reports them.
  */
-export function parseGraph(text: string): ParseGraphResult {
-  let data: unknown;
-  try {
-    data = JSON.parse(text);
-  } catch (caught) {
-    return { error: `Not valid JSON: ${caught instanceof Error ? caught.message : caught}` };
-  }
-
+export function checkGraph(data: unknown): ParseGraphResult {
   const syntax = validateGraphSyntax(data);
   if (!syntax.valid || !syntax.graph) {
     const first = syntax.violations[0];
@@ -28,6 +22,15 @@ export function parseGraph(text: string): ParseGraphResult {
     };
   }
   return { graph: syntax.graph };
+}
+
+/** Parses graph JSON from an import or the JSON panel. */
+export function parseGraph(text: string): ParseGraphResult {
+  try {
+    return checkGraph(JSON.parse(text));
+  } catch (caught) {
+    return { error: `Not valid JSON: ${caught instanceof Error ? caught.message : caught}` };
+  }
 }
 
 function baseFileName(graph: ApplicationGraph): string {
