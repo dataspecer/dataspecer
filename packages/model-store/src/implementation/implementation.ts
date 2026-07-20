@@ -550,9 +550,12 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
 
     this.notifyUndoRedoSubscribers();
     this.notifyTransactionCommitSubscribers();
+    // The undo transaction is uploaded on the next save like any other
+    // transaction, so its confirmation goes through the same queue.
+    const confirmation = new Promise<{}>((resolve) => this.transactionConfirmations.push(resolve));
     return {
       transactionId,
-      confirmation: Promise.resolve({}),
+      confirmation,
     };
   }
 
@@ -703,6 +706,9 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
   private async uploadPendingTransactions(): Promise<void> {
     const pendingTransactions = this.transactions.slice(this.uploadedTransactionCount).filter((transaction) => transaction.operations.length > 0);
     const transactionCount = this.transactions.length;
+    // Transactions committed while the upload below is in flight are not part
+    // of it; their confirmations must wait for the next upload.
+    const confirmationCount = this.transactionConfirmations.length;
 
     if (pendingTransactions.length > 0) {
       await this.service.applyTransactions(this.rootProjectId, pendingTransactions);
@@ -710,7 +716,6 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
 
     this.uploadedTransactionCount = transactionCount;
 
-    this.transactionConfirmations.forEach((resolve) => resolve({}));
-    this.transactionConfirmations = [];
+    this.transactionConfirmations.splice(0, confirmationCount).forEach((resolve) => resolve({}));
   }
 }

@@ -197,7 +197,15 @@ export function deserializeStoredModel(modelId: string, resourceType: string, da
 export function applyModelTypeOperation(modelId: string, modelType: string, working: EntityRecord, operation: Operation): void {
   const support = MODEL_TYPES[modelType];
   if (support !== undefined) {
-    support.applyOperation(modelId, working, operation);
+    try {
+      support.applyOperation(modelId, working, operation);
+    } catch (error) {
+      // Some executors (e.g. the structure model) throw on operations they do
+      // not understand; per the Operation contract such operations are only
+      // ignored, and one bad operation must not abort a whole transaction
+      // batch.
+      console.warn(`Failed to apply operation "${operation.type}" to model "${modelId}" of type "${modelType}". The operation is ignored.`, error);
+    }
     return;
   }
   console.warn(`Unsupported operation "${operation.type}" for model "${modelId}" of type "${modelType}". The operation is ignored.`);
