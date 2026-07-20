@@ -1,3 +1,4 @@
+import { pickLanguageString } from "@/lib/model-display";
 import { isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
 import { isSemanticModelClassProfile, isSemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import type { Entity, EntityRecord } from "@dataspecer/core/entity-model";
@@ -10,11 +11,7 @@ import type { ReviewGroup } from "./review-state";
  * so labels stay stable while the user applies changes.
  */
 
-export function pickLanguageString(value: unknown, language: string): string | null {
-  if (!value || typeof value !== "object") return null;
-  const record = value as Record<string, string>;
-  return record[language] ?? record["en"] ?? Object.values(record)[0] ?? null;
-}
+export { pickLanguageString } from "@/lib/model-display";
 
 /**
  * Formats a decision value (language string, cardinality, url, ...)

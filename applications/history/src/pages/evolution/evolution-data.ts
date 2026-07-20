@@ -355,16 +355,3 @@ export function buildReviewGroups(modelStore: DefaultFrontendModelStore, branche
   }
   return groups;
 }
-
-// ---------------------------------------------------------------------------
-// Display
-// ---------------------------------------------------------------------------
-
-/** Human-readable name of a model, from its project model entity. */
-export function modelDisplayName(modelStore: DefaultFrontendModelStore, modelId: string, language: string): string {
-  const projectEntities = modelStore.getAllEntities()[modelStore.projectModelId] ?? {};
-  const entity = projectEntities[modelId] as ProjectModelEntity | undefined;
-  const label = entity?.label;
-  if (!label) return modelId;
-  return label[language] ?? label["en"] ?? Object.values(label)[0] ?? modelId;
-}

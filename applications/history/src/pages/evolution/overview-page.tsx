@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useModelStore } from "@/contexts/model-store-context";
+import { resolveModelDisplay } from "@/lib/model-display";
 import { Link, useLocation } from "@tanstack/react-router";
-import { ArrowRight, ChevronDown, GitMerge, SkipForward, Undo2 } from "lucide-react";
+import { ArrowRight, ChevronDown, SkipForward, Undo2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -12,7 +13,6 @@ import {
   countBranchPendingChanges,
   fetchEvolutionBranches,
   findBranchEvolutionEdges,
-  modelDisplayName,
   semanticModelRecords,
   type EvolutionBranch,
   type EvolutionEdge,
@@ -137,13 +137,17 @@ export function EvolutionOverviewPage() {
       {rows.length === 0 && <p className="text-sm text-muted-foreground">{t("evolution.overview.empty")}</p>}
 
       <div className="space-y-3">
-        {rows.map((row) => (
+        {rows.map((row) => {
+          const source = resolveModelDisplay(modelStore, row.branch.resourceIri, i18n.language);
+          const SourceIcon = source.icon;
+          return (
           <Card key={row.branch.branchId} className="p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0 space-y-2">
                 <div className="flex items-center gap-2">
-                  <GitMerge className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  <span className="truncate font-medium">{modelDisplayName(modelStore, row.branch.resourceIri, i18n.language)}</span>
+                  <SourceIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span className="truncate font-medium">{source.name ?? t(`model-type.${source.typeKey}`)}</span>
+                  {source.name !== null && <span className="text-xs text-muted-foreground">{t(`model-type.${source.typeKey}`)}</span>}
                   <Badge variant="destructive">{t("evolution.overview.status.not-in-specification")}</Badge>
                 </div>
                 <PendingChangesSummary counts={row.counts} />
@@ -152,12 +156,17 @@ export function EvolutionOverviewPage() {
                 ) : (
                   <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     <span>{t("evolution.overview.affects")}</span>
-                    {row.edges.map((edge) => (
-                      <Badge key={`${edge.sourceModelId}|${edge.targetModelId}`} variant="outline" className="gap-1 font-normal">
-                        {modelDisplayName(modelStore, edge.targetModelId, i18n.language)}
-                        <span className="text-muted-foreground">· {t(`evolution.overview.edge.${edge.kind}`)}</span>
-                      </Badge>
-                    ))}
+                    {row.edges.map((edge) => {
+                      const target = resolveModelDisplay(modelStore, edge.targetModelId, i18n.language);
+                      const TargetIcon = target.icon;
+                      return (
+                        <Badge key={`${edge.sourceModelId}|${edge.targetModelId}`} variant="outline" className="gap-1 font-normal">
+                          <TargetIcon className="h-3 w-3" />
+                          {target.name ?? t(`model-type.${target.typeKey}`)}
+                          <span className="text-muted-foreground">· {t(`evolution.overview.edge.${edge.kind}`)}</span>
+                        </Badge>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -194,7 +203,8 @@ export function EvolutionOverviewPage() {
               </div>
             </div>
           </Card>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

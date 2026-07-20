@@ -1,4 +1,3 @@
-import type { Entity } from "@dataspecer/core/entity-model";
 import {
   collectTransactionVersions,
   createUndoOperation,
@@ -11,13 +10,15 @@ import {
   type Transaction,
 } from "@dataspecer/core/operation";
 import type { DefaultFrontendModelStore } from "@dataspecer/model-store/implementation";
+import { modelTypesFromStore } from "@/lib/model-display";
+import { describeHistory, type OperationDescription } from "./operation-description";
 
 /**
  * Data layer of the history page: the transaction history of the project's
  * main branch fetched from the backend, enriched with the versions marked in
- * it and with the transactions cancelled by undo operations, plus the actions
- * (undo a transaction, mark a version) that append new transactions to the
- * history.
+ * it, with the transactions cancelled by undo operations, and with a
+ * human-readable description of every operation, plus the actions (undo a
+ * transaction, mark a version) that append new transactions to the history.
  */
 
 interface BackendTransaction {
@@ -27,13 +28,20 @@ interface BackendTransaction {
   operations: { id: number; modelId: string; order: number; data: Operation }[];
 }
 
+/** One operation of a transaction together with its description. */
+export interface DescribedOperationInModel extends OperationInModel {
+  description: OperationDescription;
+  /** Time of the transaction referenced by an undo/version operation. */
+  refTime?: Date;
+}
+
 /** One transaction of the project history as displayed on the history page. */
 export interface HistoryEntry {
   /** Client-generated transaction id, referenced by undo and version operations. */
   clientId: string;
   /** Time the transaction was executed. */
   executedAt: Date;
-  operations: OperationInModel[];
+  operations: DescribedOperationInModel[];
   /** Version labels this transaction is marked with, like git tags. */
   versions: string[];
   /** Models in which the transaction is effectively cancelled by an undo. */
@@ -44,10 +52,11 @@ export interface HistoryEntry {
 
 /**
  * Fetches the entire transaction history of the project's main branch,
- * ordered oldest first, and resolves the versions and undo cancellations
- * recorded in it.
+ * ordered oldest first, and resolves the versions, the undo cancellations and
+ * the descriptions of the recorded operations. The store provides the model
+ * types the descriptions are phrased by.
  */
-export async function fetchProjectHistory(backendUrl: string, projectIri: string): Promise<HistoryEntry[]> {
+export async function fetchProjectHistory(backendUrl: string, projectIri: string, modelStore: DefaultFrontendModelStore): Promise<HistoryEntry[]> {
   const url = new URL(`${backendUrl}/transactions/log/main`, window.location.origin);
   url.searchParams.set("projectIri", projectIri);
   const response = await fetch(url.toString());
@@ -69,8 +78,15 @@ export async function fetchProjectHistory(backendUrl: string, projectIri: string
     versionsByTransaction.set(version.versionedTransactionId, [...(versionsByTransaction.get(version.versionedTransactionId) ?? []), version.version]);
   }
 
+  const descriptions = describeHistory(transactions, modelTypesFromStore(modelStore), modelStore.projectModelId);
+  const executionTimes = new Map(result.transactions.map((transaction) => [transaction.clientId, new Date(transaction.createdAt)]));
+
   return result.transactions.map((transaction, index) => {
-    const operations = transactions[index]!.operations;
+    const operations = transactions[index]!.operations.map((operation, operationIndex): DescribedOperationInModel => {
+      const description = descriptions[index]![operationIndex]!;
+      const refTime = description.refTransactionId === undefined ? undefined : executionTimes.get(description.refTransactionId);
+      return { ...operation, description, refTime };
+    });
     const undoneInModels = cancelled.get(transaction.clientId) ?? new Set<string>();
     const changedModels = new Set(operations.filter(({ operation }) => !isUndoOperation(operation)).map(({ modelId }) => modelId));
     return {
@@ -129,15 +145,3 @@ export async function markHistoryVersion(backendUrl: string, projectIri: string,
   await applyHistoryTransactions(backendUrl, projectIri, [{ id: generateOperationId(), time: new Date().toISOString(), operations }]);
 }
 
-/**
- * Human-readable name of an entity of a model, resolved from the current
- * state of the model store. Falls back to null when the entity does not exist
- * (anymore) or has no name.
- */
-export function resolveEntityName(modelStore: DefaultFrontendModelStore, modelId: string, entityId: string, language: string): string | null {
-  const entity = modelStore.getAllEntities()[modelId]?.[entityId] as (Entity & { name?: Record<string, string>; ends?: { name?: Record<string, string> }[] }) | undefined;
-  if (!entity) return null;
-  const name = entity.name ?? entity.ends?.find((end) => end.name && Object.keys(end.name).length > 0)?.name;
-  if (!name || typeof name !== "object") return null;
-  return name[language] ?? name["en"] ?? Object.values(name)[0] ?? null;
-}
