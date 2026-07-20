@@ -528,6 +528,15 @@ export async function generateSpecification(packageId: string, context: Generate
       const ldes = await generateLdesOperationStream(model, modelDescriptions, modelIri, ldesUrl, context.history);
       await writeFile(ldesFileName, ldes);
       externalArtifacts["ldes-operations"] = [{ type: ldesFileName, URL: ldesUrl }];
+      const ldesDescriptor = {
+        iri: null,
+        url: ldesUrl,
+        role: dsvMetadataWellKnown.role.specification,
+        formatMime: dsvMetadataWellKnown.formatMime.turtle,
+        additionalRdfTypes: [],
+        conformsTo: [dsvMetadataWellKnown.conformsTo.ldes],
+      } satisfies ResourceDescriptor;
+      allModelsHasResource.forEach((hasResource) => hasResource.push(ldesDescriptor));
     }
   }
 

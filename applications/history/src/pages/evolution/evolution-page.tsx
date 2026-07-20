@@ -6,8 +6,9 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { ArrowLeft, CheckCircle2, GitMerge } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { resolveModelDisplay } from "@/lib/model-display";
 import { createLabelResolver, type LabelResolver } from "./display";
-import { buildReviewGroups, fetchEvolutionBranches, modelDisplayName, type EvolutionBranch } from "./evolution-data";
+import { buildReviewGroups, fetchEvolutionBranches, type EvolutionBranch } from "./evolution-data";
 import { ItemCard } from "./item-card";
 import {
   buildReviewItems,
@@ -158,7 +159,7 @@ export function EvolutionPage() {
     );
   }
 
-  const sourceLabel = modelStore && branchId !== undefined && branches?.length ? modelDisplayName(modelStore, branches[0]!.resourceIri, i18n.language) : null;
+  const sourceLabel = modelStore && branchId !== undefined && branches?.length ? resolveModelDisplay(modelStore, branches[0]!.resourceIri, i18n.language).name : null;
 
   if (loading || groups === null) {
     return (
