@@ -1,7 +1,7 @@
 import type { Entity, EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import { diffEntities } from "@dataspecer/core/entity-model";
 import type { Model } from "@dataspecer/core/model";
-import { isSetEntityOperation, isUndoOperation, isUpdateEntityOperation, type Operation, type UndoOperation } from "@dataspecer/core/operation";
+import { isRemoveEntityOperation, isSetEntityOperation, isUndoOperation, isUpdateEntityOperation, type Operation, type UndoOperation } from "@dataspecer/core/operation";
 import type { ApplyOperationResult, ModelInDefaultFrontendModelStore } from "./implementation.ts";
 
 /**
@@ -188,6 +188,8 @@ export abstract class BaseModelInModelStore<BaseEntityType extends Entity = Enti
           if (entity) {
             this.state.entities[update.id] = { ...entity, ...update };
           }
+        } else if (isRemoveEntityOperation(operation)) {
+          delete this.state.entities[operation.entityId];
         } else {
           this.applyOperation(operation, this.state.entities);
         }
