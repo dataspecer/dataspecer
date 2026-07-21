@@ -294,7 +294,21 @@ class SemanticModelAggregatorBuilder {
     if (entity?.modelType === LOCAL_PACKAGE) {
       // It's a package, recurse
       const configuration = this.getCompositionConfiguration(modelId);
-      return this.buildFromConfiguration(modelId, configuration);
+      const aggregator = this.buildFromConfiguration(modelId, configuration);
+
+      // The package may reuse data structures from other, unrelated packages
+      // via `dataStructuresImportPackages`. Their models are merged in
+      // alongside the package's own content.
+      const rootModel = this.allModels[modelId]?.[modelId] as Record<string, unknown> | undefined;
+      const importedPackageIds = (rootModel?.dataStructuresImportPackages as string[] | undefined) ?? [];
+      const importedAggregators = importedPackageIds
+        .filter((importedPackageId) => !this.usedModels.has(importedPackageId))
+        .map((importedPackageId) => this.buildFromModelReference(importedPackageId));
+
+      if (importedAggregators.length === 0) {
+        return aggregator;
+      }
+      return new MergeAggregator([aggregator, ...importedAggregators]);
     }
 
     // It's a semantic model
