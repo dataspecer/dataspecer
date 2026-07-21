@@ -1,4 +1,4 @@
-import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
+import type { Entity, EntityChange, EntityIdentifier, EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 
 export interface ObservableEntityModelStoreChangeEvent {
@@ -41,6 +41,12 @@ export interface EntityObservableModelStore {
    * observe changes in all entity models.
    */
   getAllEntities(): Record<ModelIdentifier, EntityRecord>;
+
+  /**
+   * Returns a single entity by model id and entity id, or null if the model
+   * or the entity does not exist (or the model is not currently active).
+   */
+  getEntity(modelId: ModelIdentifier, entityId: EntityIdentifier): Entity | null;
 
   /**
    * Subscribes to changes in all entity models. The purpose of this method is to

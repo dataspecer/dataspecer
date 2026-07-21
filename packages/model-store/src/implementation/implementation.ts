@@ -1,6 +1,6 @@
 import { VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { type PackageService } from "@dataspecer/core-v2/project";
-import { type EntityChange, type EntityRecord } from "@dataspecer/core/entity-model";
+import { type Entity, type EntityChange, type EntityIdentifier, type EntityRecord } from "@dataspecer/core/entity-model";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import type { Model, ModelIdentifier } from "@dataspecer/core/model";
 import type { Transaction as CoreTransaction, Operation, OperationInModel } from "@dataspecer/core/operation";
@@ -59,6 +59,11 @@ export interface ModelInDefaultFrontendModelStore {
    * Immutable object (record) containing entities.
    */
   getAllEntities(): EntityRecord;
+
+  /**
+   * Returns a single entity by id, or null if it does not exist in this model.
+   */
+  getEntity(id: EntityIdentifier): Entity | null;
 
   //subscribeForReadinessChange(): () => void;
 }
@@ -198,6 +203,13 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
       allEntities[modelId] = model.getAllEntities();
     }
     return allEntities;
+  }
+
+  getEntity(modelId: ModelIdentifier, entityId: EntityIdentifier): Entity | null {
+    if (this.inactiveModelIds.has(modelId)) {
+      return null;
+    }
+    return this.models[modelId]?.getEntity(entityId) ?? null;
   }
 
   /**

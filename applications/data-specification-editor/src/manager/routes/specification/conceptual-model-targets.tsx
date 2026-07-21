@@ -1,16 +1,24 @@
 import { LOCAL_SEMANTIC_MODEL } from "@dataspecer/core-v2/model/known-models";
 import type { Entity } from "@dataspecer/core/entity-model";
 import { createUpdateEntityOperation } from "@dataspecer/core/operation";
+import { useModelStoreEntity } from "@dataspecer/model-store/react";
+import type { ProjectModelEntity } from "@dataspecer/project-model";
 import { ModelCompositionConfigurationApplicationProfile, ModelCompositionConfigurationMerge } from "@dataspecer/specification/model-hierarchy";
 import { Alert, Box, Button, Card, CardContent, Checkbox, Divider, FormControlLabel, Radio, RadioGroup, Typography } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { FC, useContext, useState } from "react";
 import { LanguageStringText } from "../../../editor/components/helper/LanguageStringComponents";
-import { ManagerModelStoreContext, SpecificationContext } from "./specification";
+import { PROJECT_MODEL_ID, SpecificationContext, useModelStore } from "./specification";
+
+const ModelResourceLabel: FC<{ modelId: string; fallback: string }> = ({ modelId, fallback }) => {
+  // To lookup the model by its id we need to find ENTITY in the project model
+  const entity = useModelStoreEntity<ProjectModelEntity>(PROJECT_MODEL_ID, modelId);
+  return <LanguageStringText from={entity?.label} fallback={fallback} />;
+};
 
 export const ConceptualModelTargets: FC = () => {
   const specification = useContext(SpecificationContext);
-  const modelStore = useContext(ManagerModelStoreContext);
+  const modelStore = useModelStore();
 
   const { enqueueSnackbar } = useSnackbar();
 
@@ -56,7 +64,7 @@ export const ConceptualModelTargets: FC = () => {
             {specification?.subResources
               .filter((resource) => resource.types.includes(LOCAL_SEMANTIC_MODEL))
               .map((resource) => (
-                <FormControlLabel key={resource.iri} control={<Radio value={resource.iri} />} label={<LanguageStringText from={resource.userMetadata?.label} fallback={resource.iri} />} />
+                <FormControlLabel key={resource.iri} control={<Radio value={resource.iri} />} label={<ModelResourceLabel modelId={resource.iri} fallback={resource.iri} />} />
               ))}
           </RadioGroup>
           <Divider style={{ margin: "1rem 0 1rem 0" }} />

@@ -1,7 +1,7 @@
 import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
 import type { PackageService } from "@dataspecer/core-v2/project";
 import type { ModelIdentifier } from "@dataspecer/core/model";
-import { PROJECT_MODEL_MODEL_ENTITY, type ProjectModelEntity, type PackageEntity } from "./model.ts";
+import { PROJECT_MODEL_MODEL_ENTITY, type PackageEntity, type ProjectModelEntity } from "./model.ts";
 
 /**
  * Traverses the package tree and returns entities representing the whole project structure.
@@ -11,14 +11,47 @@ export async function loadProjectStructure(
   projectId: ModelIdentifier,
 ): Promise<ProjectModelEntity[]> {
   const allModels: ProjectModelEntity[] = [];
-  await recursivelyLoadResource(service, projectId, allModels);
+  await loadResource(service, projectId, allModels);
   return allModels;
 }
 
-async function recursivelyLoadResource(
+/**
+ * Loads only the main entity of each project, without traversing the package
+ * tree.
+ *
+ * It wont set the subModels property of the returned entities.
+ */
+export async function loadProjectsMainEntities(
+  service: PackageService,
+): Promise<ProjectModelEntity[]> {
+  const PACKAGE_ROOT = "http://dataspecer.com/packages/local-root";
+
+  const allModels: ProjectModelEntity[] = [];
+  let resource = await service.getPackage(PACKAGE_ROOT);
+
+  for (const subResource of resource.subResources || []) {
+    const isPackage = subResource.types.includes(LOCAL_PACKAGE);
+
+    if (isPackage) {
+      allModels.push({
+        id: subResource.iri,
+        type: [PROJECT_MODEL_MODEL_ENTITY],
+        label: subResource.userMetadata?.label || {},
+        description: subResource.userMetadata?.description || {},
+        modelType: LOCAL_PACKAGE,
+        subModels: [],
+      } satisfies PackageEntity as PackageEntity);
+    }
+  }
+
+  return allModels;
+}
+
+async function loadResource(
   service: PackageService,
   resourceId: ModelIdentifier,
   modelsToCollect: ProjectModelEntity[],
+  recursive: boolean = true,
 ): Promise<void> {
   let resource = await service.getPackage(resourceId);
 
@@ -26,7 +59,7 @@ async function recursivelyLoadResource(
     const isPackage = subResource.types.includes(LOCAL_PACKAGE);
 
     if (isPackage) {
-      await recursivelyLoadResource(service, subResource.iri, modelsToCollect);
+      await loadResource(service, subResource.iri, modelsToCollect);
     } else {
       modelsToCollect.push({
         id: subResource.iri,

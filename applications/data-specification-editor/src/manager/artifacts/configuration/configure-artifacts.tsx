@@ -1,8 +1,8 @@
 import { createSetEntityOperation } from "@dataspecer/core/operation";
 import { Button } from "@mui/material";
-import { FC, useCallback, useContext, useEffect, useState } from "react";
+import { FC, useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ManagerModelStoreContext } from "../../routes/specification/specification";
+import { useModelStore } from "../../routes/specification/specification";
 import { useToggle } from "../../use-toggle";
 import { ConfigureArtifactsDialog } from "./configure-artifacts-dialog";
 
@@ -15,7 +15,7 @@ export const ConfigureArtifacts: FC<{
   configurationId: string,
 }> = ({configurationId}) => {
   const {t} = useTranslation("ui");
-  const modelStore = useContext(ManagerModelStoreContext);
+  const modelStore = useModelStore();
 
   const [configuration, setConfiguration] = useState<object>(null);
 
