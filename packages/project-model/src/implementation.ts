@@ -11,7 +11,7 @@ export async function loadProjectStructure(
   projectId: ModelIdentifier,
 ): Promise<ProjectModelEntity[]> {
   const allModels: ProjectModelEntity[] = [];
-  await loadResource(service, projectId, allModels);
+  await loadResource(service, projectId, allModels, new Set());
   return allModels;
 }
 
@@ -51,15 +51,20 @@ async function loadResource(
   service: PackageService,
   resourceId: ModelIdentifier,
   modelsToCollect: ProjectModelEntity[],
-  recursive: boolean = true,
+  visited: Set<ModelIdentifier>,
 ): Promise<void> {
+  if (visited.has(resourceId)) {
+    return;
+  }
+  visited.add(resourceId);
+
   let resource = await service.getPackage(resourceId);
 
   for (const subResource of resource.subResources || []) {
     const isPackage = subResource.types.includes(LOCAL_PACKAGE);
 
     if (isPackage) {
-      await loadResource(service, subResource.iri, modelsToCollect);
+      await loadResource(service, subResource.iri, modelsToCollect, visited);
     } else {
       modelsToCollect.push({
         id: subResource.iri,
@@ -80,4 +85,13 @@ async function loadResource(
     subModels: resource.subResources?.map(model => model.iri) ?? [],
   };
   modelsToCollect.push(packageEntity);
+
+  // The package's own model may reference other, unrelated packages via
+  // `dataStructuresImportPackages` (used for data structure reuse across
+  // specifications). These are not part of the sub-resource hierarchy, so
+  // they must be loaded explicitly as well.
+  const rawPackageData = await service.getResourceJsonData(resourceId) as { dataStructuresImportPackages?: string[] } | undefined;
+  for (const importedPackageId of rawPackageData?.dataStructuresImportPackages ?? []) {
+    await loadResource(service, importedPackageId, modelsToCollect, visited);
+  }
 }

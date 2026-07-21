@@ -1,3 +1,7 @@
+/**
+ * This file partially matches implementation in packages/project-model/src/implementation.ts.
+ */
+
 import { LOCAL_PACKAGE, QUERYABLE_MODEL, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
@@ -75,6 +79,15 @@ export async function getModelsForPackage(
     }
 
     models[pkg.iri] = (await modelRepository.getModelEntities(pkg.iri))!;
+
+    // The package's own model entity may reference other, unrelated packages
+    // via `dataStructuresImportPackages` (used for data structure reuse across
+    // specifications). These are not part of the sub-resource hierarchy, so
+    // they must be loaded explicitly as well.
+    const rawPackageData = models[pkg.iri]?.[pkg.iri] as { dataStructuresImportPackages?: string[] } | undefined;
+    for (const importedPackageId of rawPackageData?.dataStructuresImportPackages ?? []) {
+      await loadPackageRecursively(importedPackageId);
+    }
 
     for (const subResource of pkg.subResources ?? []) {
       const subModelType = subResource.types[0] ?? "";
