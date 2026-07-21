@@ -1,29 +1,29 @@
-import type { DataSpecification } from '@dataspecer/specification/specification';
-import { BaseResource, Package } from "@dataspecer/core-v2/project";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import { createManagerModelStore, type DefaultFrontendModelStore } from "@dataspecer/model-store/implementation";
-import type { ProjectModelEntity } from "@dataspecer/project-model";
+import { ModelStoreContext } from "@dataspecer/model-store/react";
+import { type ProjectModelEntity } from "@dataspecer/project-model";
+import type { DataSpecification } from "@dataspecer/specification/specification";
 import { getDataSpecification } from "@dataspecer/specification/specification";
 import { Box, CircularProgress, Container, Typography } from "@mui/material";
 import { createContext, FC, useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
-import { BackendConnectorContext } from "../../../application";
 import { DocumentationSpecification } from "./documentation-specification";
 
-export const SpecificationContext = createContext<DataSpecification & Package>(null);
+export const SpecificationContext = createContext<DataSpecification>(null);
 
-export const AllSpecificationsContext = createContext<Record<string, BaseResource>>(null);
+export const PROJECT_MODEL_ID: ModelIdentifier = "_project_model";
 
 /**
- * Lightweight model store used by the manager to read and directly mutate the
- * package and artifact configuration blobs, without needing the heavier
- * semantic/structure/visual models used by the structure editor.
+ * Accesses the manager's model store (provided via {@link ModelStoreContext})
+ * typed for write access (transactions), as opposed to {@link useModelStoreEntity}
+ * which only needs read access.
  */
-export const ManagerModelStoreContext = createContext<DefaultFrontendModelStore>(null);
-export const PROJECT_MODEL_ID: ModelIdentifier = "_project_model";
+export function useModelStore(): DefaultFrontendModelStore {
+  return useContext(ModelStoreContext) as DefaultFrontendModelStore;
+}
 
 /**
  * There could be more types of specifications. This component decides which one
@@ -33,11 +33,8 @@ export const Specification: FC = () => {
   const { t } = useTranslation("ui");
   const [searchParams] = useSearchParams();
   const dataSpecificationIri = searchParams.get("dataSpecificationIri");
-  const backendConnector = useContext(BackendConnectorContext);
 
-  const connector = useContext(BackendConnectorContext);
-
-  const [specification, updateSpecification] = useState<DataSpecification & Package>(null);
+  const [specification, updateSpecification] = useState<DataSpecification>(null);
 
   const [modelStore, setModelStore] = useState<DefaultFrontendModelStore>(null);
 
@@ -55,9 +52,8 @@ export const Specification: FC = () => {
       // Autosave: persist changed models to the backend after every fully
       // executed operation (commit, undo, redo).
       modelStore.subscribeToTransactionCommit(() => {
-        modelStore.saveByOverride().catch(error => console.error("Failed to save models.", error));
+        modelStore.saveByOverride().catch((error) => console.error("Failed to save models.", error));
       });
-
 
       setModelStore(modelStore);
 
@@ -72,33 +68,26 @@ export const Specification: FC = () => {
       reloadSpecification();
       modelStore.subscribeToEntityChanges(reloadSpecification);
     })();
-  }, [dataSpecificationIri, updateSpecification, backendConnector]);
+  }, [dataSpecificationIri, updateSpecification]);
 
-  const [allSpecifications, setAllSpecifications] = useState<Record<string, BaseResource>>(null);
-  useEffect(() => {
-    connector
-      .getPackage("http://dataspecer.com/packages/local-root")
-      .then((result) => setAllSpecifications(Object.fromEntries(result.subResources.map((resource) => [resource.iri, resource]))));
-  }, [connector]);
-
-  if (specification && allSpecifications && modelStore) {
+  if (specification && modelStore) {
     return (
       <SpecificationContext.Provider value={specification}>
-        <ManagerModelStoreContext.Provider value={modelStore}>
-          <AllSpecificationsContext.Provider value={allSpecifications}>
-            <DocumentationSpecification />
-          </AllSpecificationsContext.Provider>
-        </ManagerModelStoreContext.Provider>
+        <ModelStoreContext.Provider value={modelStore}>
+          <DocumentationSpecification />
+        </ModelStoreContext.Provider>
       </SpecificationContext.Provider>
     );
   } else {
-    return <Container>
-    <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" minHeight="50vh" gap={2}>
-      <CircularProgress />
-      <Typography variant="h6" color="textSecondary">
-        {t("loading specification")}
-      </Typography>
-    </Box>
-  </Container>;
+    return (
+      <Container>
+        <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" minHeight="50vh" gap={2}>
+          <CircularProgress />
+          <Typography variant="h6" color="textSecondary">
+            {t("loading specification")}
+          </Typography>
+        </Box>
+      </Container>
+    );
   }
 };

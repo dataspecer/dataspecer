@@ -3,7 +3,7 @@ import type { PackageService } from "@dataspecer/core-v2/project";
 import { type ExternalSemanticModel } from "@dataspecer/core-v2/semantic-model/simplified";
 import { CimAdapterWrapper } from "@dataspecer/core-v2/semantic-model/v1-adapters";
 import type { IriProvider } from "@dataspecer/core/cim/index";
-import { diffEntities, type Entity, type EntityChange, type EntityChangeDeleted, type EntityRecord } from "@dataspecer/core/entity-model";
+import { diffEntities, type Entity, type EntityChange, type EntityChangeDeleted, type EntityIdentifier, type EntityRecord } from "@dataspecer/core/entity-model";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
 import type { Model, ModelIdentifier } from "@dataspecer/core/model";
@@ -102,6 +102,10 @@ export class AsyncQueryableModelInModelStore extends BaseModelInModelStore imple
       ...queryEntities,
       ...semanticEntities,
     };
+  }
+
+  public override getEntity(id: EntityIdentifier): Entity | null {
+    return this.semanticEntityMap[id]?.entity ?? super.getEntity(id);
   }
 
   protected applyOperation(operation: Operation, mutableState: EntityRecord<QueryEntity>): void {

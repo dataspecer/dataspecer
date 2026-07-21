@@ -15,6 +15,8 @@ export interface BaseResource {
 
     /**
      * User-friendly metadata that each resource may have.
+     *
+     * @deprecated Use project model
      */
     userMetadata: {
         label?: LanguageString;

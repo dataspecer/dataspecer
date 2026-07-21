@@ -4,7 +4,7 @@ import { createUpdateEntityOperation } from "@dataspecer/core/operation";
 import { Fab } from "@mui/material";
 import { FC, useCallback, useContext } from "react";
 import { useTranslation } from "react-i18next";
-import { ManagerModelStoreContext, SpecificationContext } from "../../routes/specification/specification";
+import { SpecificationContext, useModelStore } from "../../routes/specification/specification";
 import { useToggle } from "../../use-toggle";
 import { ConfigureDialog } from "./configure-dialog";
 
@@ -15,7 +15,7 @@ import { ConfigureDialog } from "./configure-dialog";
 export const ConfigureButton: FC = () => {
   const { t } = useTranslation("ui");
   const specification = useContext(SpecificationContext);
-  const modelStore = useContext(ManagerModelStoreContext);
+  const modelStore = useModelStore();
 
   const configuration = specification?.userPreferences ?? {};
 

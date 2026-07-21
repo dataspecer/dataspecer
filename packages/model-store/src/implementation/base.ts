@@ -1,4 +1,4 @@
-import type { Entity, EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
+import type { Entity, EntityChange, EntityIdentifier, EntityRecord } from "@dataspecer/core/entity-model";
 import { diffEntities } from "@dataspecer/core/entity-model";
 import type { Model } from "@dataspecer/core/model";
 import { isRemoveEntityOperation, isSetEntityOperation, isUndoOperation, isUpdateEntityOperation, type Operation, type UndoOperation } from "@dataspecer/core/operation";
@@ -97,6 +97,13 @@ export abstract class BaseModelInModelStore<BaseEntityType extends Entity = Enti
    */
   getAllEntities(): EntityRecord<BaseEntityType> {
     return this.state.entities;
+  }
+
+  /**
+   * Returns a single entity by id, or null if it does not exist in this model.
+   */
+  getEntity(id: EntityIdentifier): BaseEntityType | null {
+    return this.state.entities[id] ?? null;
   }
 
   /**

@@ -1,11 +1,9 @@
-import { CoreResourceReader } from "@dataspecer/core/core/core-reader";
-import { DataSpecificationArtefact } from "@dataspecer/core/data-specification/model";
+import { DataSpecification as CoreDataSpecification, DataSpecificationArtefact } from "@dataspecer/core/data-specification/model";
 import { Generator } from "@dataspecer/core/generator";
 import { MemoryStreamDictionary } from "@dataspecer/core/io/stream/memory-stream-dictionary";
 import { FederatedObservableStore } from "@dataspecer/federated-observable-store/federated-observable-store";
+import type { DataSpecification } from "@dataspecer/specification/specification";
 import { DefaultArtifactConfigurator, getArtefactGenerators } from "@dataspecer/specification/v1";
-import { DataSpecification as CoreDataSpecification } from "@dataspecer/core/data-specification/model";
-import type { DataSpecification } from '@dataspecer/specification/specification';
 
 /**
  * Returns a single generated artifact with its name based on the given artifact
@@ -41,8 +39,7 @@ export async function getSingleArtifact(
   // Find the correct artifact
 
   // @ts-ignore
-  const artefact = dataSpecificationsWithArtifacts[forDataSpecificationIri]?.artefacts
-    ?.find(artifactSelector);
+  const artefact = dataSpecificationsWithArtifacts[forDataSpecificationIri]?.artefacts?.find(artifactSelector);
 
   // Generate the artifact and return it
 
@@ -61,7 +58,7 @@ export async function getSingleArtifact(
     cimAdapters: [],
   })) as CoreDataSpecification[];
 
-  const generator = new Generator(ds, store as CoreResourceReader, getArtefactGenerators());
+  const generator = new Generator(ds, store, getArtefactGenerators());
   const dict = new MemoryStreamDictionary();
   await generator.generateArtefact(forDataSpecificationIri, artefact?.iri as string, dict);
   return dict;

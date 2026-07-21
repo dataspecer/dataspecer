@@ -1,19 +1,20 @@
-import PowerIcon from "@mui/icons-material/Power";
-import type { Entity } from "@dataspecer/core/entity-model";
+import { BackendPackageService } from "@dataspecer/core-v2/project";
+import type { Entity, EntityRecord } from "@dataspecer/core/entity-model";
+import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
 import { createUpdateEntityOperation } from "@dataspecer/core/operation";
-import { Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, Fab, List, ListItem, ListItemButton, ListItemIcon } from "@mui/material";
+import { loadProjectsMainEntities, type ProjectModelEntity } from "@dataspecer/project-model";
+import PowerIcon from "@mui/icons-material/Power";
+import { Box, Button, Checkbox, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Fab, List, ListItem, ListItemButton, ListItemIcon } from "@mui/material";
 import React, { useContext, useEffect, useState } from "react";
 import { LanguageStringText } from "../../../editor/components/helper/LanguageStringComponents";
 import { useToggle } from "../../use-toggle";
-import { AllSpecificationsContext, ManagerModelStoreContext, SpecificationContext } from "./specification";
+import { SpecificationContext, useModelStore } from "./specification";
 
 export const ReuseDataSpecifications: React.FC = () => {
   const dialog = useToggle();
 
   const specification = useContext(SpecificationContext);
-  const modelStore = useContext(ManagerModelStoreContext);
-
-  const allSpecifications = useContext(AllSpecificationsContext);
+  const modelStore = useModelStore();
 
   const [selectedSpecificationIds, setSelectedSpecificationIds] = useState<string[]>([]);
 
@@ -46,27 +47,43 @@ export const ReuseDataSpecifications: React.FC = () => {
     dialog.close();
   };
 
+  const [allSpecifications, setAllSpecifications] = useState<EntityRecord<ProjectModelEntity> | null>(null);
+
+  const openDialog = () => {
+    const legacyBackendConnector = new BackendPackageService(import.meta.env.VITE_BACKEND, httpFetch);
+    loadProjectsMainEntities(legacyBackendConnector).then((entities) => {
+      setAllSpecifications(Object.fromEntries(entities.map(entity => [entity.id, entity] as const)));
+    });
+
+    dialog.open();
+  };
+
   return (
     <>
-      <Fab variant="extended" size="medium" color={"primary"} onClick={dialog.open}>
+      <Fab variant="extended" size="medium" color={"primary"} onClick={openDialog}>
         <PowerIcon sx={{ mr: 1 }} />
         Set reused data specifications
       </Fab>
       <Dialog open={dialog.isOpen} onClose={dialog.close} maxWidth={"xs"} fullWidth>
         <DialogTitle>Reuse data specifications</DialogTitle>
         <DialogContent>
-          <List>
-            {Object.entries(allSpecifications).map(([_, spec]) => (
-              <ListItem key={spec.iri} disablePadding>
-                <ListItemButton role={undefined} onClick={handleToggle(spec.iri as string)} dense>
-                  <ListItemIcon>
-                    <Checkbox edge="start" checked={selectedSpecificationIds.includes(spec.iri as string)} tabIndex={-1} disableRipple />
-                  </ListItemIcon>
-                  <LanguageStringText from={spec.userMetadata.label} fallback={spec.iri} />
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </List>
+          {allSpecifications ?
+            <List>
+              {Object.entries(allSpecifications).map(([, spec]) => (
+                <ListItem key={spec.id} disablePadding>
+                  <ListItemButton role={undefined} onClick={handleToggle(spec.id)} dense>
+                    <ListItemIcon>
+                      <Checkbox edge="start" checked={selectedSpecificationIds.includes(spec.id)} tabIndex={-1} disableRipple />
+                    </ListItemIcon>
+                    <LanguageStringText from={spec.label} fallback={spec.id} />
+                  </ListItemButton>
+                </ListItem>
+              ))}
+            </List> :
+            <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" minHeight="50vh" gap={2}>
+              <CircularProgress />
+            </Box>
+          }
         </DialogContent>
         <DialogActions>
           <Button onClick={save} fullWidth variant="contained">

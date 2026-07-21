@@ -1,27 +1,28 @@
 import { Checkbox } from "@/components/ui/checkbox";
+import type { Configuration } from "@/configuration/configuration";
+import { getConfiguration } from "@/configuration/provided-configuration";
 import { CloseDialogButton } from "@/editor/components/detail/components/close-dialog-button";
 import { dialog } from "@/editor/dialog";
 import { useAsyncMemo } from "@/editor/hooks/use-async-memo";
-import type { Configuration } from "@/configuration/configuration";
-import { getConfiguration } from "@/configuration/provided-configuration";
 import { cn } from "@/lib/utils";
-import type { DataSpecificationStructure } from '@dataspecer/specification/specification';
 import type { ApplicationProfileAggregator } from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
 import { V1 } from "@dataspecer/core-v2/model/known-models";
-import type { LanguageString } from "@dataspecer/core/core/core-resource";
 import { coreResourceToEntity, type CoreResource } from "@dataspecer/core/core";
+import type { LanguageString } from "@dataspecer/core/core/core-resource";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
 import type { Entity, EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import { createSetEntityOperation, type OperationInModel } from "@dataspecer/core/operation";
 import type { TransactionResult } from "@dataspecer/model-store";
-import { createCreateModelOperation } from "@dataspecer/project-model";
+import { useModelStoreEntity } from "@dataspecer/model-store/react";
+import { createCreateModelOperation, type ProjectModelEntity } from "@dataspecer/project-model";
+import type { DataSpecificationStructure } from "@dataspecer/specification/specification";
 import { createStructureProfile } from "@dataspecer/structure-model/profile";
 import { Alert, Button, CircularProgress, DialogActions, DialogContent, DialogTitle } from "@mui/material";
 import { ChevronDown, ChevronRight, MinusIcon } from "lucide-react";
-import { useContext, useState } from "react";
+import { FC, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ManagerModelStoreContext, PROJECT_MODEL_ID, SpecificationContext } from "./specification";
+import { PROJECT_MODEL_ID, SpecificationContext, useModelStore } from "./specification";
 
 interface ProfileStructureDialogProps {
   dataSpecificationId: string;
@@ -33,7 +34,7 @@ interface ProfileStructureDialogProps {
  */
 export const ProfileStructureDialog = dialog<ProfileStructureDialogProps>({ maxWidth: "md", fullWidth: true }, ({ isOpen, close, dataSpecificationId }) => {
   const { t } = useTranslation("ui");
-  const modelStore = useContext(ManagerModelStoreContext);
+  const modelStore = useModelStore();
 
   const [configuration, isLoading] = useAsyncMemo(() => (isOpen ? getConfiguration(dataSpecificationId, "") : null), [dataSpecificationId, isOpen], null);
   const data = configuration ? getStructuresToProfile(configuration) : [];
@@ -44,16 +45,10 @@ export const ProfileStructureDialog = dialog<ProfileStructureDialogProps>({ maxW
   const dataSpecificationIri = specification.id;
   const profile = async () => {
     const semanticModelAggregator = configuration!.semanticModelAggregator as ApplicationProfileAggregator;
-    await profileStructures(
-      Array.from(selectedStructures),
-      dataSpecificationIri,
-      modelStore.getAllEntities(),
-      semanticModelAggregator,
-      (operations) => {
-        console.log(operations);
-        return modelStore.transaction(operations, {})
-      },
-    );
+    await profileStructures(Array.from(selectedStructures), dataSpecificationIri, modelStore.getAllEntities(), semanticModelAggregator, (operations) => {
+      console.log(operations);
+      return modelStore.transaction(operations, {});
+    });
 
     close();
   };
@@ -96,7 +91,6 @@ export const ProfileStructureDialog = dialog<ProfileStructureDialogProps>({ maxW
 type StructuresToProfileList = {
   iri: string;
   name: LanguageString;
-  description: LanguageString;
 
   structures: {
     iri: string;
@@ -113,8 +107,7 @@ function getStructuresToProfile(configuration: Configuration) {
     if (specification.dataStructures.length > 0) {
       result.push({
         iri: specification.id,
-        name: specification.userMetadata?.label || {},
-        description: specification.userMetadata?.description || {},
+        name: specification.label || {},
 
         structures: specification.dataStructures.map((structure) => ({
           iri: structure.id,
@@ -142,6 +135,18 @@ interface StructuresCheckboxListProps {
 function getLocalizedString(langString: LanguageString, language: string): string {
   return langString[language] || langString["en"] || Object.values(langString)[0] || "";
 }
+
+/**
+ * Reads the specification's description live from the project model.
+ */
+const GroupDescription: FC<{ modelId: string; language: string }> = ({ modelId, language }) => {
+  const entity = useModelStoreEntity<ProjectModelEntity>(PROJECT_MODEL_ID, modelId);
+  const description = entity?.description;
+  if (!description || Object.keys(description).length === 0) {
+    return null;
+  }
+  return <p className="text-sm text-muted-foreground truncate">{getLocalizedString(description, language)}</p>;
+};
 
 export function StructuresCheckboxList({ data, selectedStructures, onSelectionChange, language = "en", className }: StructuresCheckboxListProps) {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => new Set(data.map((group) => group.iri)));
@@ -234,9 +239,7 @@ export function StructuresCheckboxList({ data, selectedStructures, onSelectionCh
                 <label htmlFor={`group-${group.iri}`} className="block cursor-pointer font-medium text-card-foreground">
                   {getLocalizedString(group.name, language)}
                 </label>
-                {group.description && Object.keys(group.description).length > 0 && (
-                  <p className="text-sm text-muted-foreground truncate">{getLocalizedString(group.description, language)}</p>
-                )}
+                <GroupDescription modelId={group.iri} language={language} />
               </div>
 
               <span className="text-sm text-muted-foreground">

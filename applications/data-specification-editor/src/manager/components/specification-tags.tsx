@@ -1,5 +1,4 @@
-import type { DataSpecification } from '@dataspecer/specification/specification';
-import { Package } from "@dataspecer/core-v2/project";
+import type { DataSpecification } from "@dataspecer/specification/specification";
 import { Chip, Stack } from "@mui/material";
 import React from "react";
 
@@ -8,7 +7,7 @@ import React from "react";
  * @param iri
  * @constructor
  */
-export const SpecificationTags: React.FC<{ specification: DataSpecification & Package }> = ({ specification }) => {
+export const SpecificationTags: React.FC<{ specification: DataSpecification }> = ({ specification }) => {
   return (
     <Stack direction="row" spacing={1} sx={{ ml: 1 }}>
       {specification?.tags?.map((tag) => (
