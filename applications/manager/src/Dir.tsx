@@ -202,14 +202,17 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
       {resource.types.includes(LOCAL_PACKAGE) &&
         <Tooltip>
           <TooltipTrigger>
-            <Button asChild variant="ghost" size="icon" className="shrink-0" onClick={stopPropagation()}>
+            <Button asChild variant="ghost" size="icon" className="relative shrink-0" onClick={stopPropagation()}>
               <a href={getHistoryLink(iri ?? "")}>
                 <History className="h-4 w-4" />
+                {resource.hasPendingEvolution &&
+                  <span aria-hidden="true" className="absolute top-1.5 right-1.5 size-2 rounded-full bg-red-500"></span>
+                }
               </a>
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>{t("history button")}</p>
+            <p>{t(resource.hasPendingEvolution ? "history button pending evolution" : "history button")}</p>
           </TooltipContent>
         </Tooltip>
       }

@@ -20,6 +20,24 @@ export function isProjectModelEntity(entity: Entity): entity is ProjectModelEnti
   return entity.type.includes(PROJECT_MODEL_MODEL_ENTITY);
 }
 
+/**
+ * Additional metadata about a {@link ProjectModelEntity}. Every property is
+ * optional since not all sources that produce project model entities are able
+ * to provide it.
+ *
+ * Intended to be used as extension of {@link ProjectModelEntity} via
+ * intersection type.
+ */
+export interface ProjectModelEntityMeta {
+  /**
+   * Whether the entity has pending evolution updates recorded on an
+   * evolution branch, awaiting review and merge.
+   *
+   * If undefined, the information is not available.
+   */
+  hasPendingEvolution?: boolean;
+}
+
 export interface PackageEntity extends ProjectModelEntity {
   /**
    * IDs of {@link ProjectModelEntity}s contained in this package in no particular order.
