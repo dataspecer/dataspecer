@@ -337,10 +337,13 @@ export class ModelRepository implements ModelRepositoryType {
    * The caller provides the base states of the models (model id to entities)
    * the transactions apply to; they are used to derive the up/down events of
    * each transaction.
+   *
+   * Returns the id of the evolution branch the transactions were recorded on,
+   * or null if there was nothing to record.
    */
-  async recordEvolutionTransactions(projectIri: string, resourceIri: string, transactions: Transaction[], baseStates: Record<string, EntityRecord>): Promise<void> {
+  async recordEvolutionTransactions(projectIri: string, resourceIri: string, transactions: Transaction[], baseStates: Record<string, EntityRecord>): Promise<number | null> {
     if (transactions.every((transaction) => transaction.operations.length === 0)) {
-      return;
+      return null;
     }
 
     const workingStates: Record<string, EntityRecord> = {};
@@ -362,6 +365,7 @@ export class ModelRepository implements ModelRepositoryType {
 
     const branchId = await this.transactionModel.getOrCreateEvolutionBranch(projectIri, resourceIri);
     await this.transactionModel.createTransactions(projectIri, transactionsWithEvents, branchId);
+    return branchId;
   }
 
   /**

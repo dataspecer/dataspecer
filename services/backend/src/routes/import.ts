@@ -575,6 +575,9 @@ export const importResource = asyncHandler(async (request: express.Request, resp
 /**
  * Reload: Reload endpoint updates an existing imported package by re-fetching
  * its content from the source URL. The package IRI is preserved.
+ *
+ * By default the diff is recorded as a pending evolution branch for review;
+ * pass `apply=true` to apply it directly to the main branch instead.
  */
 export const reloadResource = asyncHandler(async (request: express.Request, response: express.Response) => {
   const querySchema = z.object({
@@ -582,6 +585,13 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
     iri: z.string().min(1),
     // Optional URL to reload from (defaults to the stored importedFromUrl)
     url: z.string().url().optional(),
+    // When set, the reload is applied directly to the main branch instead of
+    // being recorded as a pending evolution branch.
+    apply: z
+      .string()
+      .optional()
+      .transform((value) => value !== undefined)
+      .pipe(z.boolean()),
   });
 
   const query = querySchema.parse(request.query);
@@ -612,9 +622,14 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
     const previousStates = { [existingResource.iri]: previousEntities };
     const operations = diffModelEntitiesToOperations(existingResource.iri, RDFS_MODEL, previousEntities, nextEntities);
     const projectIri = (await modelRepository.getProjectIri(existingResource.iri))!;
-    await modelRepository.recordEvolutionTransactions(projectIri, existingResource.iri, [{ id: uuidv4(), operations }], previousStates);
+    let evolutionBranchId: number | null = null;
+    if (query.apply) {
+      await modelRepository.applyTransactions(projectIri, [{ id: uuidv4(), operations }]);
+    } else {
+      evolutionBranchId = await modelRepository.recordEvolutionTransactions(projectIri, existingResource.iri, [{ id: uuidv4(), operations }], previousStates);
+    }
 
-    response.send(await modelRepository.getResource(existingResource.iri));
+    response.send({ ...(await modelRepository.getResource(existingResource.iri)), evolutionBranchId });
     return;
   }
 
@@ -655,8 +670,13 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
 
   const operations = diffModelStates(previousModels, nextModels);
   const projectIri = (await modelRepository.getProjectIri(query.iri))!;
-  await modelRepository.recordEvolutionTransactions(projectIri, query.iri, [{ id: uuidv4(), operations }], previousModels);
+  let evolutionBranchId: number | null = null;
+  if (query.apply) {
+    await modelRepository.applyTransactions(projectIri, [{ id: uuidv4(), operations }]);
+  } else {
+    evolutionBranchId = await modelRepository.recordEvolutionTransactions(projectIri, query.iri, [{ id: uuidv4(), operations }], previousModels);
+  }
 
-  response.send(await modelRepository.getResource(query.iri));
+  response.send({ ...(await modelRepository.getResource(query.iri)), evolutionBranchId });
   return;
 });
