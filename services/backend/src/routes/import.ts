@@ -48,6 +48,19 @@ function jsonLdLiteralToLanguageString(literal: Quad_Object[]): LanguageString {
 }
 
 /**
+ * Fetches a URL (following redirects, as fetch does by default) and rejects
+ * if the final response is not a 2xx, instead of letting callers parse an
+ * error page or empty body as if it were the requested content.
+ */
+async function fetchOrThrow(url: string): Promise<Response> {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch "${url}": ${response.status} ${response.statusText}`);
+  }
+  return response;
+}
+
+/**
  * Creates a resource if it doesn't exist, or updates its metadata if it already exists.
  */
 async function ensureResource(repository: ModelRepositoryType, parentIri: string, iri: string, type: string, userMetadata: any): Promise<void> {
@@ -139,7 +152,7 @@ async function importAllStructureModels(repository: ModelRepositoryType, urls: s
   const iriMapping: Record<string, string> = {};
 
   for (const url of urls) {
-    const response = await fetch(url);
+    const response = await fetchOrThrow(url);
     const rdfData = await response.text();
     const structureModelEntities = await turtleStringToStructureModel(rdfData);
 
@@ -295,7 +308,7 @@ async function importRdfsAndDsv(repository: ModelRepositoryType, parentIri: stri
 
   let profileEntities: SemanticModelEntity[] = [];
   if (dsvUrl) {
-    const response = await fetch(dsvUrl);
+    const response = await fetchOrThrow(dsvUrl);
     const data = await response.text();
     const conceptualModel = await rdfToConceptualModel(data);
     const dsvResult = conceptualModelToEntityListContainer(conceptualModel[0], {
@@ -410,7 +423,7 @@ async function dsvImport(repository: ModelRepositoryType, store: N3.Store, url: 
 
     let configurationModel = {};
     if (gcResource) {
-      const queryResponse = await fetch(gcResource.url);
+      const queryResponse = await fetchOrThrow(gcResource.url);
       const data = await queryResponse.text();
       configurationModel = await turtleStringToGeneratorConfiguration(null, data); // todo: iri of resource descriptor is not iri of the configuration IMO
     }
@@ -510,10 +523,7 @@ export async function importFromUrl(
   const baseIri = url;
 
   // Load the URL
-  const queryResponse = await fetch(url);
-  if (!queryResponse.ok) {
-    throw new Error("Failed to fetch the URL: " + queryResponse.statusText);
-  }
+  const queryResponse = await fetchOrThrow(url);
   if (queryResponse.headers.get("content-type")?.includes("text/html")) {
     const queryText = await queryResponse.text();
     const html = parse(queryText);
