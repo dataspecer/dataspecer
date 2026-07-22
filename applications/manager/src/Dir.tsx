@@ -25,9 +25,8 @@ import { SortModelsContext } from "./components/sort-models";
 import { ModifyRawDialog } from "./dialog/modify-raw";
 import { Autolayout } from "./dialog/autolayout";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./components/ui/tooltip";
-import { ReloadImported } from "./dialog/reload-imported";
+import { ReloadResource } from "./dialog/reload-resource";
 import { AddImported } from "./dialog/add-imported";
-import { ReloadPimWrapper } from "./dialog/reload-pim-wrapper";
 import { stopPropagation } from "./utils/events";
 
 export function lng(text: LanguageString | undefined): string | undefined {
@@ -133,7 +132,7 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
       {resource.types.includes(LOCAL_PACKAGE) && (resource.userMetadata as any)?.importedFromUrl &&
         <Tooltip>
           <TooltipTrigger>
-            <Button asChild variant="ghost" size="icon" className="shrink-0" onClick={stopPropagation(() => openModal(ReloadImported, {id: iri, parentId: parentIri ?? ""}))}>
+            <Button asChild variant="ghost" size="icon" className="shrink-0" onClick={stopPropagation(() => openModal(ReloadResource, {id: iri, parentId: parentIri ?? ""}))}>
               <span>
                 <RotateCw className="h-4 w-4" />
               </span>
@@ -148,7 +147,7 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
       {resource.types.includes(RDFS_MODEL) &&
         <Tooltip>
           <TooltipTrigger>
-            <Button asChild variant="ghost" size="icon" className="shrink-0" onClick={stopPropagation(() => openModal(ReloadPimWrapper, {id: iri, parentId: parentIri ?? ""}))}>
+            <Button asChild variant="ghost" size="icon" className="shrink-0" onClick={stopPropagation(() => openModal(ReloadResource, {id: iri, parentId: parentIri ?? ""}))}>
               <span>
                 <RotateCw className="h-4 w-4" />
               </span>

@@ -17,6 +17,10 @@ export function getHistoryLink(packageId: string) {
   return (import.meta.env.VITE_HISTORY ?? "") + "/evolution?packageIri=" + encodeURIComponent(packageId);
 }
 
+export function getEvolutionReviewLink(packageId: string, branch: number) {
+  return (import.meta.env.VITE_HISTORY ?? "") + "/evolution/review?packageIri=" + encodeURIComponent(packageId) + "&branch=" + encodeURIComponent(branch);
+}
+
 export interface createModelContext {
   iri?: string;
   parentIri: string;
