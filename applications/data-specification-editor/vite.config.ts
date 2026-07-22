@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react'
 import i18nextLoader from 'vite-plugin-i18next-loader'
 
 // https://vite.dev/config/
-export default defineConfig(({ command, mode }) => {
+export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   return {
