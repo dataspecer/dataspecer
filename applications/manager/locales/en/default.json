@@ -58,6 +58,7 @@
   "format as json": "Format as json",
   "generate application": "Generate the application",
   "history button": "History and change propagation",
+  "history button pending evolution": "History and change propagation (pending evolution)",
   "ID": "ID",
   "import": "Import",
   "import specification from url": "Profile dataspec from URL",

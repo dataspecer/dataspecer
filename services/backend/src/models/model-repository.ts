@@ -3,6 +3,7 @@ import { diffEntities, type EntityRecord } from "@dataspecer/core/entity-model";
 import { isUndoOperation, type Operation, type Transaction } from "@dataspecer/core/operation";
 import { createCreateModelOperation, createRemoveModelOperation, isCreateModelOperation, isRemoveModelOperation } from "@dataspecer/project-model";
 import { v4 as uuidv4 } from "uuid";
+import configuration from "../configuration.ts";
 import { composeModelId, PROJECT_MODEL_ID, splitModelId } from "./model-id.ts";
 import {
   applyOperationsToModelEntities,
@@ -526,9 +527,42 @@ export class ModelRepository implements ModelRepositoryType {
 
   /**
    * Returns data about the package and its sub-resources.
+   *
+   * {@link Package.hasPendingEvolution}/{@link BaseResource.hasPendingEvolution}
+   * is only meaningful for main packages (projects), not for arbitrary
+   * sub-packages, so it is set on the requested package itself - except for
+   * the root package, whose direct sub-resources are the actual projects, in
+   * which case it is set on each of them instead.
    */
-  getPackage(iri: string) {
-    return this.resourceModel.getPackage(iri);
+  async getPackage(projectId: ModelIdentifier) {
+    const pkg = await this.resourceModel.getPackage(projectId);
+    if (pkg === null) {
+      return null;
+    }
+
+    if (projectId === configuration.localRootIri) {
+      return {
+        ...pkg,
+        subResources: await Promise.all(
+          pkg.subResources.map(async (resource) => ({ ...resource, hasPendingEvolution: await this.hasPendingEvolutionBranch(resource.iri) })),
+        ),
+      };
+    }
+
+    return { ...pkg, hasPendingEvolution: await this.hasPendingEvolutionBranch(projectId) };
+  }
+
+  /**
+   * Whether the resource has a pending evolution branch recorded for it.
+   */
+  private async hasPendingEvolutionBranch(projectId: ModelIdentifier): Promise<boolean> {
+    const projectIri = await this.resourceModel.getProjectIri(projectId);
+    if (projectIri === null) {
+      return false;
+    }
+
+    const branches = await this.transactionModel.listBranches(projectIri);
+    return (branches ?? []).some((branch) => branch.name === null);
   }
 
   getRootResources() {

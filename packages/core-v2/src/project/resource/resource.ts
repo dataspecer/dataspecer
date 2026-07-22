@@ -36,6 +36,16 @@ export interface Package extends BaseResource {
      * If the value is undefined, the package was not-yet loaded.
      */
     subResources?: BaseResource[];
+
+    /**
+     * Whether the package has pending evolution updates recorded on an
+     * evolution branch, awaiting review and merge.
+     *
+     * If undefined, the information is not available.
+     *
+     * @deprecated Use project model's `ProjectModelEntityMeta.hasPendingEvolution` instead.
+     */
+    hasPendingEvolution?: boolean;
 }
 
 export type ResourceEditable = Pick<BaseResource, "iri" | "userMetadata">;

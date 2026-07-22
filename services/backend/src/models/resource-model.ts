@@ -36,6 +36,13 @@ export interface BaseResource {
   };
 
   dataStores: Record<string, string>;
+
+  /**
+   * Whether the resource has pending evolution updates recorded on an
+   * evolution branch, awaiting review and merge. Only set by
+   * {@link ModelRepository.getPackage}.
+   */
+  hasPendingEvolution?: boolean;
 }
 
 export interface Package extends BaseResource {
