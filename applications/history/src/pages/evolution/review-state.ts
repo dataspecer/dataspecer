@@ -26,6 +26,13 @@ export interface ReviewGroup {
   profileEntities: EntityRecord;
   /** The pending upstream operations, in backend order. */
   upstreamOperations: Operation[];
+  /**
+   * Every pending operation of the branch this group comes from, across all
+   * the models it touches (a branch is one atomic upstream update, e.g. a
+   * package reload, so aggregating names correctly may need more than just
+   * {@link sourceModelId}'s own operations).
+   */
+  branchOperations: { modelId: string; operation: Operation }[];
   analysis: EvolutionAnalysis;
 }
 
@@ -274,6 +281,44 @@ export function collectCommit(items: ReviewItem[], state: ReviewState): Collecte
   }
 
   return { operations, appliedMarks };
+}
+
+/**
+ * Profile operations implied by the current selections (checked create items,
+ * chosen decisions) of one review group — what the shadow model used to name
+ * entities on the review screen (see `effectiveGroupEntities` in
+ * evolution-data.ts) should apply on top of the group's frozen snapshot.
+ * Unlike {@link collectCommit}, items already marked applied are included too
+ * (their effect belongs in the shadow regardless of commit status) and a
+ * choice's dependencies are not re-checked, since the state transitions in
+ * this file already keep a chosen choice's dependencies checked.
+ */
+export function collectGroupOperations(items: ReviewItem[], state: ReviewState, group: ReviewGroup): Operation[] {
+  const groupItems = items.filter((reviewItem) => reviewItem.group === group);
+  const sorted = [...groupItems].sort((a, b) => COMMIT_ORDER[a.item.kind] - COMMIT_ORDER[b.item.kind]);
+
+  const operations: Operation[] = [];
+  for (const { key, item } of sorted) {
+    const itemState = state[key];
+    if (!itemState) continue;
+
+    if (item.kind === "modify-profile") {
+      for (const decision of item.decisions) {
+        const choiceId = itemState.choices[decision.key];
+        if (choiceId === MANUAL_CHOICE) continue;
+        const choice = decision.choices.find((c) => c.id === choiceId);
+        if (choice) operations.push(...choice.operations);
+      }
+    } else if (item.kind === "delete-profile") {
+      const choiceId = itemState.choices[ITEM_KEY];
+      if (choiceId === MANUAL_CHOICE) continue;
+      const choice = item.choices.find((c) => c.id === choiceId);
+      if (choice) operations.push(...choice.operations);
+    } else if (itemState.checked) {
+      operations.push(...item.operations);
+    }
+  }
+  return operations;
 }
 
 export function markApplied(state: ReviewState, marks: { key: string; decisionKey: string }[]): ReviewState {

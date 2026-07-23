@@ -14,10 +14,11 @@ import type { DefaultFrontendModelStore } from "@dataspecer/model-store/implemen
 import { applyOperationsToSemanticModel } from "@dataspecer/core-v2/semantic-model";
 import { analyzeEvolution, analyzeProfileEvolution } from "@dataspecer/profile-model/hooks";
 import type { ProjectModelEntity } from "@dataspecer/project-model";
+import { getAggregatedEntitiesWithPassthroughForPackage } from "@/components/operation-row/operation-list";
 import type { OperationRowProps } from "@/components/operation-row/operation-row";
 import { modelTypesFromStore } from "@/lib/model-display";
 import { computeModelSnapshots } from "@/lib/model-snapshots";
-import type { ReviewGroup } from "./review-state";
+import { collectGroupOperations, type ReviewGroup, type ReviewItem, type ReviewState } from "./review-state";
 
 /**
  * Data layer of the evolution pages: pending upstream operations fetched from
@@ -307,6 +308,40 @@ export function buildAggregatorForModel(models: Record<string, EntityRecord>, mo
   return new ApplicationProfileAggregator(asEntityModel(entities), source, true);
 }
 
+/**
+ * Effective (aggregated, inherited-value-resolved) entities of a review
+ * group's target model — the same mechanism {@link OperationGroups} uses to
+ * name entities of a package, via `getAggregatedEntitiesWithPassthroughForPackage`
+ * / `build` — computed against a copy of every project model where the
+ * group's upstream operations and the operations implied by the review
+ * screen's current selections (checked create items, chosen decisions) are
+ * both applied. This lets a field decision (e.g. a changed title) update the
+ * derived names of other entities live, e.g. a relationship profile pointing
+ * to the renamed class.
+ */
+export function effectiveGroupEntities(modelStore: DefaultFrontendModelStore, group: ReviewGroup, items: ReviewItem[], state: ReviewState): EntityRecord {
+  const models = { ...modelStore.getAllEntities() };
+
+  // The branch is one atomic upstream update — models other than the group's
+  // own source may have pending changes too, and aggregation may depend on
+  // them (e.g. a name several levels up the profiling chain).
+  const operationsByModel = new Map<string, Operation[]>();
+  for (const { modelId, operation } of group.branchOperations) {
+    if (!operationsByModel.has(modelId)) operationsByModel.set(modelId, []);
+    operationsByModel.get(modelId)!.push(operation);
+  }
+  for (const [modelId, operations] of operationsByModel) {
+    models[modelId] = { ...(models[modelId] ?? {}) };
+    applyOperationsToSemanticModel(models[modelId], operations);
+  }
+
+  const proposedOperations = collectGroupOperations(items, state, group);
+  models[group.targetModelId] = { ...(models[group.targetModelId] ?? {}) };
+  applyOperationsToSemanticModel(models[group.targetModelId], proposedOperations);
+
+  return getAggregatedEntitiesWithPassthroughForPackage(models, group.targetModelId, new Map());
+}
+
 // ---------------------------------------------------------------------------
 // Analysis
 // ---------------------------------------------------------------------------
@@ -343,6 +378,7 @@ export function buildReviewGroups(modelStore: DefaultFrontendModelStore, branche
           targetModelId: sourceModelId,
           profileEntities: {},
           upstreamOperations,
+          branchOperations: branch.operations,
           analysis: { upstreamBefore, upstreamAfter: upstreamBefore, items: [] },
         });
         continue;
@@ -366,6 +402,7 @@ export function buildReviewGroups(modelStore: DefaultFrontendModelStore, branche
           targetModelId: edge.targetModelId,
           profileEntities,
           upstreamOperations,
+          branchOperations: branch.operations,
           analysis,
         });
       }

@@ -321,7 +321,6 @@ function ModifyRelationshipRow({ operation, before }: OperationRowProps) {
 
 function CreateGeneralizationRow({ operation, contextAfter }: OperationRowProps) {
   const { t } = useTranslation();
-  console.log("generalization row", contextAfter);
   const op = operation as CreateGeneralizationOperation;
   const entity = contextAfter[op.entity.id];
   const childId = isSemanticModelGeneralization(entity) ? entity.child : "";
