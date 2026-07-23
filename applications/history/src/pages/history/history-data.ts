@@ -1,3 +1,6 @@
+import type { OperationRowProps } from "@/components/operation-row/operation-row";
+import { modelTypesFromStore } from "@/lib/model-display";
+import { computeModelSnapshots } from "@/lib/model-snapshots";
 import {
   collectTransactionVersions,
   createUndoOperation,
@@ -10,15 +13,14 @@ import {
   type Transaction,
 } from "@dataspecer/core/operation";
 import type { DefaultFrontendModelStore } from "@dataspecer/model-store/implementation";
-import { modelTypesFromStore } from "@/lib/model-display";
-import { describeHistory, type OperationDescription } from "./operation-description";
 
 /**
  * Data layer of the history page: the transaction history of the project's
  * main branch fetched from the backend, enriched with the versions marked in
- * it, with the transactions cancelled by undo operations, and with a
- * human-readable description of every operation, plus the actions (undo a
- * transaction, mark a version) that append new transactions to the history.
+ * it, with the transactions cancelled by undo operations, and with the entity
+ * state each operation's model was in just before and after its transaction
+ * (see {@link computeModelSnapshots}), plus the actions (undo a transaction,
+ * mark a version) that append new transactions to the history.
  */
 
 interface BackendTransaction {
@@ -28,20 +30,13 @@ interface BackendTransaction {
   operations: { id: number; modelId: string; order: number; data: Operation }[];
 }
 
-/** One operation of a transaction together with its description. */
-export interface DescribedOperationInModel extends OperationInModel {
-  description: OperationDescription;
-  /** Time of the transaction referenced by an undo/version operation. */
-  refTime?: Date;
-}
-
 /** One transaction of the project history as displayed on the history page. */
 export interface HistoryEntry {
   /** Client-generated transaction id, referenced by undo and version operations. */
   clientId: string;
   /** Time the transaction was executed. */
   executedAt: Date;
-  operations: DescribedOperationInModel[];
+  operations: OperationRowProps[];
   /** Version labels this transaction is marked with, like git tags. */
   versions: string[];
   /** Models in which the transaction is effectively cancelled by an undo. */
@@ -53,8 +48,9 @@ export interface HistoryEntry {
 /**
  * Fetches the entire transaction history of the project's main branch,
  * ordered oldest first, and resolves the versions, the undo cancellations and
- * the descriptions of the recorded operations. The store provides the model
- * types the descriptions are phrased by.
+ * the model state each operation's model was in around its transaction. The
+ * store provides the model types and the current entity state the replay is
+ * seeded with.
  */
 export async function fetchProjectHistory(backendUrl: string, projectIri: string, modelStore: DefaultFrontendModelStore): Promise<HistoryEntry[]> {
   const url = new URL(`${backendUrl}/transactions/log/main`, window.location.origin);
@@ -78,14 +74,12 @@ export async function fetchProjectHistory(backendUrl: string, projectIri: string
     versionsByTransaction.set(version.versionedTransactionId, [...(versionsByTransaction.get(version.versionedTransactionId) ?? []), version.version]);
   }
 
-  const descriptions = describeHistory(transactions, modelTypesFromStore(modelStore), modelStore.projectModelId);
-  const executionTimes = new Map(result.transactions.map((transaction) => [transaction.clientId, new Date(transaction.createdAt)]));
+  const snapshots = computeModelSnapshots(transactions, modelTypesFromStore(modelStore), modelStore.projectModelId);
 
   return result.transactions.map((transaction, index) => {
-    const operations = transactions[index]!.operations.map((operation, operationIndex): DescribedOperationInModel => {
-      const description = descriptions[index]![operationIndex]!;
-      const refTime = description.refTransactionId === undefined ? undefined : executionTimes.get(description.refTransactionId);
-      return { ...operation, description, refTime };
+    const operations = transactions[index]!.operations.map((operation, operationIndex): OperationRowProps => {
+      const snapshot = snapshots[index]![operationIndex]!;
+      return { ...operation, ...snapshot, contextBefore: snapshot.before, contextAfter: snapshot.after };
     });
     const undoneInModels = cancelled.get(transaction.clientId) ?? new Set<string>();
     const changedModels = new Set(operations.filter(({ operation }) => !isUndoOperation(operation)).map(({ modelId }) => modelId));

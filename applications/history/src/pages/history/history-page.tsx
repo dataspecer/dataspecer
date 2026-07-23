@@ -1,22 +1,15 @@
+import { OperationGroups } from "@/components/operation-row/operation-list";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useModelStore } from "@/contexts/model-store-context";
-import { pickLanguageString, resolveEntityNameAnywhere, resolveModelDisplay } from "@/lib/model-display";
 import { useLocation } from "@tanstack/react-router";
 import { Boxes, Tag, Undo2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  fetchProjectHistory,
-  markHistoryVersion,
-  undoHistoryTransaction,
-  type DescribedOperationInModel,
-  type HistoryEntry,
-} from "./history-data";
-import { CATEGORY_STYLE, humanizeTypeName } from "./operation-description";
+import { fetchProjectHistory, markHistoryVersion, undoHistoryTransaction, type HistoryEntry } from "./history-data";
 
 /**
  * The history page: the full transaction history of the project's main
@@ -198,15 +191,6 @@ function TransactionCard({
 
   const touchesProjectModel = modelStore !== null && entry.operations.some(({ modelId }) => modelId === modelStore.projectModelId);
 
-  const operationsByModel = useMemo(() => {
-    const byModel = new Map<string, DescribedOperationInModel[]>();
-    for (const operation of entry.operations) {
-      byModel.set(operation.modelId, [...(byModel.get(operation.modelId) ?? []), operation]);
-    }
-    // The project model first, as its operations are the important ones.
-    return [...byModel.entries()].sort(([a], [b]) => (a === modelStore?.projectModelId ? -1 : b === modelStore?.projectModelId ? 1 : 0));
-  }, [entry, modelStore]);
-
   const time = new Intl.DateTimeFormat(language, { timeStyle: "medium" }).format(entry.executedAt);
   const fullTime = new Intl.DateTimeFormat(language, { dateStyle: "medium", timeStyle: "medium" }).format(entry.executedAt);
 
@@ -239,11 +223,7 @@ function TransactionCard({
             {entry.isUndone && <Badge variant="secondary">{t("history.badge.undone")}</Badge>}
           </div>
 
-          <div className="space-y-2">
-            {operationsByModel.map(([modelId, operations]) => (
-              <ModelOperations key={modelId} modelId={modelId} operations={operations} language={language} undone={entry.undoneInModels.has(modelId)} />
-            ))}
-          </div>
+          <OperationGroups operations={entry.operations} undoneInModels={entry.undoneInModels} />
         </div>
 
         <div className="flex items-center gap-1">
@@ -256,120 +236,6 @@ function TransactionCard({
       </div>
     </Card>
   );
-}
-
-/** The operations of one transaction targeting one model. */
-function ModelOperations({ modelId, operations, language, undone }: { modelId: string; operations: DescribedOperationInModel[]; language: string; undone: boolean }) {
-  const { t } = useTranslation();
-  const { modelStore } = useModelStore();
-
-  const display = modelStore === null ? null : resolveModelDisplay(modelStore, modelId, language);
-  const ModelIcon = display?.icon;
-  const typeName = display === null ? null : t(`model-type.${display.typeKey}`);
-  const modelName = display === null ? null : display.isProjectModel ? t("history.project-model") : (display.name ?? typeName);
-
-  return (
-    <div className={undone ? "line-through decoration-muted-foreground/60" : ""}>
-      <div className="mb-1 flex items-center gap-2">
-        <Badge
-          variant={display?.isProjectModel ? "default" : "secondary"}
-          className={`gap-1 font-normal ${display?.isProjectModel ? "bg-amber-600 text-white hover:bg-amber-600 dark:bg-amber-500" : ""}`}
-        >
-          {ModelIcon && <ModelIcon className="h-3 w-3" />}
-          {modelName}
-        </Badge>
-        {display !== null && !display.isProjectModel && display.name !== null && <span className="text-xs text-muted-foreground">{typeName}</span>}
-        {undone && <span className="text-xs text-muted-foreground no-underline">{t("history.badge.undone-in-model")}</span>}
-      </div>
-      <ul className="space-y-0.5">
-        {operations.map((item, index) => (
-          <OperationRow key={item.operation.id ?? index} item={item} language={language} />
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Operations
-// ---------------------------------------------------------------------------
-
-/**
- * One operation as a plain-language sentence: an icon and a phrase built from
- * the operation description, with names resolved to the UI language. The raw
- * operation data (including all identifiers) is shown in a tooltip.
- */
-function OperationRow({ item, language }: { item: DescribedOperationInModel; language: string }) {
-  const { t } = useTranslation();
-  const { modelStore } = useModelStore();
-  const { operation, description } = item;
-  const { icon: Icon, colorClass } = CATEGORY_STYLE[description.category];
-
-  const params: Record<string, string> = {};
-  for (const [key, value] of Object.entries(description.params)) {
-    params[key] = typeof value === "string" ? value : (pickLanguageString(value, language) ?? "");
-  }
-  for (const [key, translationKey] of Object.entries(description.paramKeys ?? {})) {
-    params[key] = t(translationKey);
-  }
-  if (description.refTransactionId !== undefined) {
-    params.time = item.refTime === undefined ? "?" : new Intl.DateTimeFormat(language, { dateStyle: "medium", timeStyle: "short" }).format(item.refTime);
-  }
-  if (params.name === undefined) {
-    params.name = resolveFallbackName(description, modelStore, language, t) ?? t("history.unnamed");
-  }
-
-  const fields = description.fields
-    ?.map((field) => t(`history.field.${field}`, { defaultValue: humanizeTypeName(field).toLowerCase() }))
-    .join(", ");
-
-  return (
-    <Tooltip delayDuration={700}>
-      <TooltipTrigger asChild>
-        <li className="flex items-center gap-2 text-sm">
-          <Icon className={`h-3.5 w-3.5 shrink-0 ${colorClass}`} />
-          <span className="truncate">{t(`history.op.${description.phrase}`, params)}</span>
-          {description.swatch && <span className="h-3 w-3 shrink-0 rounded-sm border border-border" style={{ backgroundColor: description.swatch }} />}
-          {fields && <span className="truncate text-xs text-muted-foreground">({fields})</span>}
-        </li>
-      </TooltipTrigger>
-      <TooltipContent side="bottom" align="start" className="max-w-lg p-0">
-        <div className="max-h-72 overflow-auto p-3">
-          <p className="mb-1 font-mono text-[10px] text-muted-foreground">{typeof operation.type === "string" ? operation.type : ""}</p>
-          <pre className="whitespace-pre-wrap break-all font-mono text-[10px] leading-snug">{formatOperationData(operation)}</pre>
-        </div>
-      </TooltipContent>
-    </Tooltip>
-  );
-}
-
-/**
- * Name of the operation's subject when the history itself does not know it:
- * a model referenced by the operation, or an entity looked up in the current
- * store (it may no longer exist).
- */
-function resolveFallbackName(
-  description: DescribedOperationInModel["description"],
-  modelStore: ReturnType<typeof useModelStore>["modelStore"],
-  language: string,
-  t: (key: string) => string,
-): string | null {
-  if (modelStore === null) return null;
-  if (description.modelRef !== undefined) {
-    const display = resolveModelDisplay(modelStore, description.modelRef, language);
-    return display.name ?? t(`model-type.${display.typeKey}`);
-  }
-  if (description.targetId !== undefined) {
-    return resolveEntityNameAnywhere(modelStore, description.targetId, language);
-  }
-  return null;
-}
-
-const OPERATION_DATA_LIMIT = 3000;
-
-function formatOperationData(operation: object): string {
-  const json = JSON.stringify(operation, null, 2);
-  return json.length > OPERATION_DATA_LIMIT ? `${json.slice(0, OPERATION_DATA_LIMIT)}…` : json;
 }
 
 // ---------------------------------------------------------------------------

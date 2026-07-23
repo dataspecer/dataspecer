@@ -8,7 +8,9 @@ import {
   V1,
   VISUAL_MODEL,
 } from "@dataspecer/core-v2/model/known-models";
+import { isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
 import { isSemanticModelClassProfile, isSemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
+import type { Entity, EntityRecord } from "@dataspecer/core/entity-model";
 import type { DefaultFrontendModelStore } from "@dataspecer/model-store/implementation";
 import type { ProjectModelEntity } from "@dataspecer/project-model";
 import {
@@ -33,6 +35,71 @@ import {
  * its display name. Used by both the evolution pages and the history page.
  */
 
+/**
+ * A resolved entity label: its human-readable name, and its iri — kept apart
+ * (rather than merged into one string) so the UI can render them differently
+ * (e.g. the name in bold and the iri in gray, see the `EntityName` component
+ * in `operation-row.tsx`). Both are null when nothing is known about the
+ * entity at all (a dangling reference by an id not found anywhere).
+ */
+export interface EntityLabel {
+  name: string | null;
+  iri: string | null;
+}
+
+/**
+ * Resolves the label of a class, relationship, profile or generalization
+ * entity within the given entity record (a generalization is named after its
+ * child and parent, resolved the same way via {@link entityLabelById}). Both
+ * `name` and `iri` are null when the entity itself is missing (e.g. a dangling
+ * reference) — use {@link entityLabelById} instead when the entity may not
+ * exist, so a class the store never received (or already lost) is still
+ * identified by its id (which, for such a reference, doubles as its iri)
+ * rather than shown as nothing.
+ */
+export function entityLabel(entity: Entity | null | undefined, entities: EntityRecord, language: string): EntityLabel {
+  if (!entity) return { name: null, iri: null };
+  if (isSemanticModelClass(entity) || isSemanticModelClassProfile(entity)) {
+    return { name: pickLanguageString(entity.name, language), iri: entity.iri };
+  }
+  if (isSemanticModelRelationship(entity)) {
+    const rangeEnd = entity.ends.find((end) => end.iri !== null) ?? entity.ends[1];
+    return {
+      name: pickLanguageString(rangeEnd?.name, language) ?? pickLanguageString(entity.name, language),
+      iri: rangeEnd?.iri ?? null,
+    };
+  }
+  if (isSemanticModelRelationshipProfile(entity)) {
+    // A relationship profile holds its data on the range end by convention.
+    const rangeEnd = entity.ends[1] ?? entity.ends[0];
+    return { name: pickLanguageString(rangeEnd?.name, language), iri: rangeEnd?.iri ?? null };
+  }
+  if (isSemanticModelGeneralization(entity)) {
+    const child = entityLabelText(entityLabelById(entity.child, entities, language));
+    const parent = entityLabelText(entityLabelById(entity.parent, entities, language));
+    return { name: `${child} → ${parent}`, iri: entity.iri };
+  }
+  // An entity of an unknown type has no name; its id identifies it.
+  return { name: null, iri: entity.id };
+}
+
+/**
+ * Same as {@link entityLabel}, but looks the entity up by id first — when a
+ * referenced class does not exist at all (e.g. it was never loaded, or has
+ * since been deleted), its id is resolved as its `iri` (with no `name`)
+ * instead of both being null, since for such a dangling reference the id is
+ * (or stands in for) its iri.
+ */
+export function entityLabelById(id: string, entities: EntityRecord, language: string): EntityLabel {
+  const entity = entities[id];
+  return entity ? entityLabel(entity, entities, language) : { name: null, iri: id };
+}
+
+/** Flattens a resolved label into a single string, for plain-text (non-JSX) use. */
+export function entityLabelText(label: EntityLabel): string {
+  return label.name ?? label.iri ?? "?";
+}
+
 /** Resolves a language string to the UI language with sensible fallbacks. */
 export function pickLanguageString(value: unknown, language: string): string | null {
   if (!value || typeof value !== "object") return null;
@@ -47,7 +114,7 @@ export interface ModelTypeDisplay {
 }
 
 const MODEL_TYPE_DISPLAY: Record<string, ModelTypeDisplay> = {
-  [LOCAL_PACKAGE]: { typeKey: "package", icon: Package },
+  [LOCAL_PACKAGE]: { typeKey: "specification", icon: Package },
   [LOCAL_SEMANTIC_MODEL]: { typeKey: "vocabulary", icon: BookOpen },
   [VISUAL_MODEL]: { typeKey: "visual-model", icon: Workflow },
   [RDFS_MODEL]: { typeKey: "imported-vocabulary", icon: CloudDownload },
@@ -126,4 +193,21 @@ export function resolveEntityNameAnywhere(modelStore: DefaultFrontendModelStore,
     if (name !== null) return name;
   }
   return null;
+}
+
+/**
+ * Label of an entity referenced by another operation (e.g. the domain/range
+ * of a relationship, or the parent/child of a generalization) that the
+ * operation itself does not carry a name for: its name if found anywhere in
+ * the store, else its IRI, else the raw id.
+ */
+export function resolveEntityLabelAnywhere(modelStore: DefaultFrontendModelStore, entityId: string, language: string): string {
+  const name = resolveEntityNameAnywhere(modelStore, entityId, language);
+  if (name !== null) return name;
+  const allEntities = modelStore.getAllEntities();
+  for (const entities of Object.values(allEntities)) {
+    const entity = entities[entityId] as { iri?: string | null } | undefined;
+    if (entity?.iri) return entity.iri;
+  }
+  return entityId;
 }

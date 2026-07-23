@@ -1,3 +1,4 @@
+import { OperationGroups } from "@/components/operation-row/operation-list";
 import { Button } from "@/components/ui/button";
 import { useModelStore } from "@/contexts/model-store-context";
 import type { OperationInModel } from "@dataspecer/core/operation";
@@ -7,13 +8,11 @@ import { ArrowLeft, CheckCircle2, GitMerge } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { resolveModelDisplay } from "@/lib/model-display";
-import { createLabelResolver, type LabelResolver } from "./display";
-import { buildReviewGroups, fetchEvolutionBranches, type EvolutionBranch } from "./evolution-data";
+import { buildReviewGroups, describeBranchOperations, fetchEvolutionBranches, type EvolutionBranch } from "./evolution-data";
 import { ItemCard } from "./item-card";
 import {
   buildReviewItems,
   collectCommit,
-  groupKey,
   initializeState,
   itemStatus,
   markApplied,
@@ -91,26 +90,11 @@ export function EvolutionPage() {
 
   const items = useMemo(() => buildReviewItems(groups ?? []), [groups]);
 
-  const labelResolvers = useMemo(() => {
-    const resolvers = new Map<string, LabelResolver>();
-    for (const group of groups ?? []) {
-      resolvers.set(groupKey(group), createLabelResolver(group, i18n.language));
-    }
-    return resolvers;
-  }, [groups, i18n.language]);
-
   const commit = useMemo(() => collectCommit(items, state), [items, state]);
 
   const statuses = useMemo(() => new Map(items.map((item) => [item.key, itemStatus(item, state)])), [items, state]);
 
-  const counts = useMemo(
-    () => ({
-      attention: items.filter((i) => i.item.severity === "attention" && statuses.get(i.key) !== "applied").length,
-      manual: items.filter((i) => statuses.get(i.key) === "manual").length,
-      applied: items.filter((i) => statuses.get(i.key) === "applied").length,
-    }),
-    [items, statuses],
-  );
+  const upstreamOperations = useMemo(() => (modelStore && branches ? describeBranchOperations(modelStore, branches) : []), [modelStore, branches]);
 
   const allDone = upstreamApplied && items.every((item) => statuses.get(item.key) === "applied" || statuses.get(item.key) === "unchecked");
 
@@ -185,19 +169,12 @@ export function EvolutionPage() {
       <PageHeader packageIri={packageIri} sourceLabel={sourceLabel} />
 
       {/* Summary */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border bg-muted/30 px-4 py-3">
+      <div className="sticky top-20 z-10 flex flex-wrap items-center justify-between gap-3 rounded-md border bg-background/95 px-4 py-3 shadow-sm backdrop-blur-sm supports-backdrop-filter:bg-background/80">
         <div className="text-sm">
           <p className="font-medium">
             {t("evolution.summary", {
               operations: upstreamOperationCount,
-              items: items.length,
-            })}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {t("evolution.summary-counts", {
-              attention: counts.attention,
-              manual: counts.manual,
-              applied: counts.applied,
+              proposed: items.length,
             })}
           </p>
         </div>
@@ -213,6 +190,12 @@ export function EvolutionPage() {
           </Button>
         )}
       </div>
+
+      {/* Upstream changes */}
+      <section className="space-y-2">
+        <h2 className="text-sm font-semibold tracking-tight text-muted-foreground uppercase">{t("evolution.upstream-changes")}</h2>
+        <OperationGroups operations={upstreamOperations} />
+      </section>
 
       {items.length === 0 && <p className="text-sm text-muted-foreground">{t("evolution.no-profile-impact")}</p>}
 
@@ -231,7 +214,6 @@ export function EvolutionPage() {
                   key={reviewItem.key}
                   reviewItem={reviewItem}
                   state={state}
-                  labels={labelResolvers.get(groupKey(reviewItem.group))!}
                   onCheck={handleCheck}
                   onSelectChoice={handleSelectChoice}
                   onManualDone={handleManualDone}
