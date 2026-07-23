@@ -14,6 +14,13 @@ const subPageLabelKeys: Record<string, string> = {
   "/evolution/review": "nav.evolution",
 };
 
+/** The page each pathname's project-title breadcrumb should link back to. */
+const subPageBasePaths: Record<string, string> = {
+  "/history": "/history",
+  "/evolution": "/evolution",
+  "/evolution/review": "/evolution",
+};
+
 export function Layout() {
   const location = useLocation();
   const packageIri = (location.search as Record<string, unknown>).packageIri as string | undefined;
@@ -30,7 +37,7 @@ function LayoutContent() {
   const location = useLocation();
   const pathname = location.pathname;
   const packageIri = (location.search as Record<string, unknown>).packageIri as string | undefined;
-  const searchString = new URLSearchParams(location.search as Record<string, string>).toString();
+  const baseSearchString = packageIri ? `?packageIri=${encodeURIComponent(packageIri)}` : "";
   const subPageLabelKey = subPageLabelKeys[pathname];
   const { isLoading } = useModelStore();
   const projectTitle = useProjectTitle(packageIri);
@@ -39,9 +46,9 @@ function LayoutContent() {
     <div className="relative flex min-h-screen flex-col bg-background">
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-sm supports-backdrop-filter:bg-background/60">
         <div className="container flex h-14 items-center justify-between">
-          <div className="flex items-center gap-2">
+          <a href={import.meta.env.VITE_MANAGER_URL ?? "/"} className="flex items-center gap-2 hover:opacity-80">
             <strong>Dataspecer</strong> {t("app-name")}
-          </div>
+          </a>
           <div className="flex gap-2">
             <GithubLink />
             <ModeToggle />
@@ -54,7 +61,7 @@ function LayoutContent() {
           items={[
             {
               label: projectTitle ?? packageIri ?? t("breadcrumbs.no-specification"),
-              href: subPageLabelKey ? pathname + (searchString ? `?${searchString}` : "") : undefined,
+              href: subPageLabelKey ? subPageBasePaths[pathname] + baseSearchString : undefined,
             },
             ...(subPageLabelKey ? [{ label: t(subPageLabelKey) }] : []),
           ]}

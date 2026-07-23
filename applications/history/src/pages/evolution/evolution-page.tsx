@@ -202,9 +202,14 @@ export function EvolutionPage() {
           </p>
         </div>
         {allDone ? (
-          <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
-            <CheckCircle2 className="h-5 w-5" />
-            {t("evolution.all-done")}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
+              <CheckCircle2 className="h-5 w-5" />
+              {t("evolution.all-done")}
+            </div>
+            <Button asChild size="sm" variant="outline">
+              <a href={import.meta.env.VITE_MANAGER_URL ?? "/"}>{t("evolution.back-to-manager")}</a>
+            </Button>
           </div>
         ) : (
           <Button onClick={handleApply} disabled={upstreamApplied && commit.operations.length === 0}>
