@@ -201,6 +201,7 @@
     },
     "summary": "{{operations}} operací nadřazené specifikace k použití, {{proposed}} navržených operací k rozhodnutí",
     "all-done": "Vše použito",
+    "back-to-manager": "Zpět do správce",
     "apply-all": "Přijmout aktualizaci a použít vybrané ({{count}})",
     "apply-selected": "Použít vybrané ({{count}})",
     "no-profile-impact": "Změny slovníku neovlivňují aplikační profil. Přijetí aktualizace pouze provede změny slovníku.",
@@ -247,7 +248,7 @@
       "not-inheritable": "Profil má vlastní hodnotu <value />."
     },
     "choice": {
-      "inherit": "Použít novou hodnotu (dědit)",
+      "inherit": "Zachovat dědění",
       "freeze-old": "Ponechat starou hodnotu v profilu",
       "adopt-new": "Převzít novou hodnotu",
       "keep-own": "Ponechat změněnou hodnotu",

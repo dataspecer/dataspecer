@@ -196,6 +196,7 @@
     },
     "summary": "{{operations}} upstream operations to apply, {{proposed}} proposed operations to decide",
     "all-done": "Everything applied",
+    "back-to-manager": "Back to manager",
     "apply-all": "Accept update & apply selected ({{count}})",
     "apply-selected": "Apply selected ({{count}})",
     "no-profile-impact": "The upstream changes do not affect the application profile. Accepting the update will only apply the vocabulary changes.",
@@ -242,7 +243,7 @@
       "not-inheritable": "The profile has its own value <value />."
     },
     "choice": {
-      "inherit": "Adopt new value (inherit)",
+      "inherit": "Keep inheriting",
       "freeze-old": "Keep old value in profile",
       "adopt-new": "Adopt new value",
       "keep-own": "Keep changed value",
