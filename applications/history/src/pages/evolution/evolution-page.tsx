@@ -8,7 +8,7 @@ import { ArrowLeft, CheckCircle2, GitMerge } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { resolveModelDisplay } from "@/lib/model-display";
-import { buildReviewGroups, describeBranchOperations, fetchEvolutionBranches, type EvolutionBranch } from "./evolution-data";
+import { buildReviewGroups, cancelEvolutionBranch, describeBranchOperations, fetchEvolutionBranches, type EvolutionBranch } from "./evolution-data";
 import { ItemCard } from "./item-card";
 import {
   buildReviewItems,
@@ -57,6 +57,7 @@ export function EvolutionPage() {
   const packageIri = search.packageIri as string | undefined;
   const branchId = search.branch === undefined ? undefined : Number(search.branch);
   const { modelStore } = useModelStore();
+  const backendUrl = import.meta.env.VITE_BACKEND as string | undefined;
 
   const [loading, setLoading] = useState(false);
   /** The reviewed evolution branches, frozen at fetch time. */
@@ -68,7 +69,6 @@ export function EvolutionPage() {
   // The analysis is computed once from the fetched operations and the current
   // store state, then frozen — applying operations must not re-derive it.
   useEffect(() => {
-    const backendUrl = import.meta.env.VITE_BACKEND as string | undefined;
     if (!backendUrl || !packageIri || !modelStore) return;
 
     setLoading(true);
@@ -108,7 +108,7 @@ export function EvolutionPage() {
 
   const handleManualDone = (key: string, done: boolean) => setState((s) => setManualDone(s, key, done));
 
-  const handleApply = () => {
+  const handleApply = async () => {
     if (!modelStore || !branches) return;
 
     const operations: OperationInModel[] = [];
@@ -125,7 +125,16 @@ export function EvolutionPage() {
     operations.push(...commit.operations);
     if (operations.length === 0) return;
 
-    modelStore.transaction(operations, {});
+    await modelStore.transaction(operations, {}).confirmation;
+
+    if (!upstreamApplied && backendUrl && packageIri) {
+      // The committed upstream operations made the evolution branches
+      // obsolete — delete them, like skipping does on the overview page. The
+      // review keeps working from its frozen snapshots until the page is left.
+      for (const branch of branches) {
+        cancelEvolutionBranch(backendUrl, packageIri, branch.branchId).catch(console.error);
+      }
+    }
     setState((s) => markApplied(s, commit.appliedMarks));
     setUpstreamApplied(true);
   };
