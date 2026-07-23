@@ -30,6 +30,15 @@ const DEFAULT_COLOR = "#4998f9";
  * the editor to update the UI after changes. Returns a function to cancel subscription
  * @param executeOperation Callback to execute operations on the models, needed
  * for the editor to modify the models after user interaction
+ * @param forcePassThrough Treats `mainProjectModelId` itself as a
+ * sub-specification for the purpose of the default application-profile
+ * composition's `allowPassThrough`, so entities of the profiled models pass
+ * through alongside the profile's own entities even though `mainProjectModelId`
+ * is the root of this build. Normally that only happens for a package nested
+ * under the root. Used when building the aggregation of one package in
+ * isolation (rather than from the project's true root), where the same "less
+ * strict" behavior is wanted regardless of the package's actual position in
+ * the project.
  * @returns Semantic model aggregator built from the given models and configuration
  */
 export function build(
@@ -37,8 +46,9 @@ export function build(
   models: Record<ModelIdentifier, EntityRecord>,
   onChange?: (changeListener: (changes: Record<ModelIdentifier, EntityChange[]>) => void) => () => void,
   executeOperation?: (modelId: ModelIdentifier, operation: any) => void,
+  forcePassThrough?: boolean,
 ): SemanticModelAggregator {
-  const builder = new SemanticModelAggregatorBuilder(mainProjectModelId, models, onChange, executeOperation);
+  const builder = new SemanticModelAggregatorBuilder(mainProjectModelId, models, onChange, executeOperation, forcePassThrough);
   return builder.build();
 }
 
@@ -118,6 +128,7 @@ class SemanticModelAggregatorBuilder {
   private readonly projectModel: EntityRecord<ProjectModelEntity>;
   private readonly onChange?: (changeListener: (changes: Record<ModelIdentifier, EntityChange[]>) => void) => () => void;
   private readonly executeOperation?: (modelId: ModelIdentifier, operation: any) => void;
+  private readonly forcePassThrough: boolean;
   private knownModels: Record<string, EntityModel> = {};
   private modelData: Record<string, VisualModelData> = {};
   private usedModels: Set<string> = new Set();
@@ -127,11 +138,13 @@ class SemanticModelAggregatorBuilder {
     allModels: Record<ModelIdentifier, EntityRecord>,
     onChange?: (changeListener: (changes: Record<ModelIdentifier, EntityChange[]>) => void) => () => void,
     executeOperation?: (modelId: ModelIdentifier, operation: any) => void,
+    forcePassThrough?: boolean,
   ) {
     this.mainProjectModelId = mainProjectModelId;
     this.allModels = allModels;
     this.onChange = onChange;
     this.executeOperation = executeOperation;
+    this.forcePassThrough = forcePassThrough ?? false;
 
     const projectModel = this.allModels[PROJECT_MODEL_ID];
 
@@ -180,7 +193,7 @@ class SemanticModelAggregatorBuilder {
      * passing of other non-profiled entities, therefore we use the (i) profile
      * and its (ii) profiles in merge to allow (ii) profiles to pass.
      */
-    const isSubSpecification = packageId !== this.mainProjectModelId;
+    const isSubSpecification = packageId !== this.mainProjectModelId || this.forcePassThrough;
 
     if (hasProfile) {
       return {

@@ -173,6 +173,10 @@ function SessionHeader({ session, language }: { session: HistoryEntry[]; languag
 // Transactions
 // ---------------------------------------------------------------------------
 
+/**
+ * todo This has wrong implementation as it takes current state of the history
+ *  and not the state as it was at the time of the transaction.
+ */
 function TransactionCard({
   entry,
   busy,
@@ -223,7 +227,7 @@ function TransactionCard({
             {entry.isUndone && <Badge variant="secondary">{t("history.badge.undone")}</Badge>}
           </div>
 
-          <OperationGroups operations={entry.operations} undoneInModels={entry.undoneInModels} />
+          <OperationGroups modelsBefore={modelStore?.getAllEntities() ?? {}} operations={entry.operations} undoneInModels={entry.undoneInModels} />
         </div>
 
         <div className="flex items-center gap-1">

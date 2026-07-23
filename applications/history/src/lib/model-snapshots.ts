@@ -1,12 +1,16 @@
 import { type CoreOperationAndOperation, type CoreResourceAndEntity } from "@dataspecer/core/core";
 import { applyOperationsToStructureModel } from "@dataspecer/core/data-psm";
 import { applyOperationsToEntityModel, type EntityRecord } from "@dataspecer/core/entity-model";
+import type { ModelIdentifier } from "@dataspecer/core/model";
 import { isSetEntityOperation, isUpdateEntityOperation, isRemoveEntityOperation, type Operation, type OperationInModel } from "@dataspecer/core/operation";
 import { LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { applyOperationsToSemanticModel } from "@dataspecer/core-v2/semantic-model";
 import { applyOperationsToAsyncQueryableModel } from "@dataspecer/model-store/implementation";
-import { applyOperationsToVirtualProjectModel, isCreateModelOperation, type ProjectModelEntity } from "@dataspecer/project-model";
+import { applyOperationsToVirtualProjectModel, isCreateModelOperation, isRemoveModelOperation, type ProjectModelEntity } from "@dataspecer/project-model";
 import { applyOperationsToVisualModel } from "@dataspecer/visual-model/executor";
+
+/** Fixed id of the virtual project model, shared by every model store instance. */
+const PROJECT_MODEL_ID: ModelIdentifier = "_project_model";
 
 /**
  * Replays a chronologically ordered history model-by-model, giving every
@@ -56,6 +60,37 @@ function applyToModel(entities: EntityRecord, operations: Operation[], isProject
       console.warn(`Failed to replay operation "${operation.type}" for a model snapshot. Skipping it.`, error);
     }
   }
+}
+
+/**
+ * Applies operations to the full set of a project's models, in place. The
+ * project model's own operations are applied first, since they are the source
+ * of truth for every other model's kind (needed to dispatch its operations)
+ * and structure (e.g. a model created by one of these operations only gets an
+ * entity record here).
+ */
+export function applyOperationsToModels(models: Record<ModelIdentifier, EntityRecord>, operations: OperationInModel[]): void {
+  const byModel = new Map<ModelIdentifier, Operation[]>();
+  for (const { modelId, operation } of operations) {
+    byModel.set(modelId, [...(byModel.get(modelId) ?? []), operation]);
+  }
+
+  const projectModelOperations = byModel.get(PROJECT_MODEL_ID);
+  const createProjectModelOperations = projectModelOperations?.filter(op => !isRemoveModelOperation(op)) ?? [];
+  const removeProjectModelOperations = projectModelOperations?.filter(isRemoveModelOperation) ?? [];
+
+  // Create models
+  applyToModel((models[PROJECT_MODEL_ID] ??= {}), createProjectModelOperations, true, undefined);
+
+  const projectEntities = models[PROJECT_MODEL_ID] ?? {};
+  for (const [modelId, modelOperations] of byModel) {
+    if (modelId === PROJECT_MODEL_ID) continue;
+    const modelType = (projectEntities[modelId] as ProjectModelEntity | undefined)?.modelType;
+    applyToModel((models[modelId] ??= {}), modelOperations, false, modelType);
+  }
+
+  // Remove models
+  applyToModel((models[PROJECT_MODEL_ID] ??= {}), removeProjectModelOperations, true, undefined);
 }
 
 /**
