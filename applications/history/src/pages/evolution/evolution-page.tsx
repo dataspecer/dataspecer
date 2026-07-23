@@ -8,7 +8,7 @@ import { ArrowLeft, CheckCircle2, GitMerge } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { resolveModelDisplay } from "@/lib/model-display";
-import { buildReviewGroups, cancelEvolutionBranch, describeBranchOperations, fetchEvolutionBranches, type EvolutionBranch } from "./evolution-data";
+import { buildReviewGroups, cancelEvolutionBranch, fetchEvolutionBranches, type EvolutionBranch } from "./evolution-data";
 import { ItemCard } from "./item-card";
 import {
   buildReviewItems,
@@ -94,7 +94,7 @@ export function EvolutionPage() {
 
   const statuses = useMemo(() => new Map(items.map((item) => [item.key, itemStatus(item, state)])), [items, state]);
 
-  const upstreamOperations = useMemo(() => (modelStore && branches ? describeBranchOperations(modelStore, branches) : []), [modelStore, branches]);
+  const upstreamOperations = useMemo(() => branches?.flatMap((branch) => branch.operations) ?? [], [branches]);
 
   const allDone = upstreamApplied && items.every((item) => statuses.get(item.key) === "applied" || statuses.get(item.key) === "unchecked");
 
@@ -203,7 +203,7 @@ export function EvolutionPage() {
       {/* Upstream changes */}
       <section className="space-y-2">
         <h2 className="text-sm font-semibold tracking-tight text-muted-foreground uppercase">{t("evolution.upstream-changes")}</h2>
-        <OperationGroups operations={upstreamOperations} />
+        <OperationGroups modelsBefore={modelStore?.getAllEntities() ?? {}} operations={upstreamOperations} />
       </section>
 
       {items.length === 0 && <p className="text-sm text-muted-foreground">{t("evolution.no-profile-impact")}</p>}

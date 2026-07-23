@@ -319,10 +319,11 @@ function ModifyRelationshipRow({ operation, before }: OperationRowProps) {
   );
 }
 
-function CreateGeneralizationRow({ operation, after }: OperationRowProps) {
+function CreateGeneralizationRow({ operation, contextAfter }: OperationRowProps) {
   const { t } = useTranslation();
+  console.log("generalization row", contextAfter);
   const op = operation as CreateGeneralizationOperation;
-  const entity = after[op.entity.id];
+  const entity = contextAfter[op.entity.id];
   const childId = isSemanticModelGeneralization(entity) ? entity.child : "";
   const parentId = isSemanticModelGeneralization(entity) ? entity.parent : "";
   if (!childId || !parentId) {
@@ -334,7 +335,7 @@ function CreateGeneralizationRow({ operation, after }: OperationRowProps) {
   }
   return (
     <Row icon={Plus} colorClass="text-green-600 dark:text-green-400" operation={operation}>
-      <span className="truncate">{generalizationText("history.op.create-generalization", childId, parentId, after)}</span>
+      <span className="truncate">{generalizationText("history.op.create-generalization", childId, parentId, contextAfter)}</span>
     </Row>
   );
 }
@@ -891,9 +892,9 @@ function PsmUnwrapOrRow({ operation }: OperationRowProps) {
 
 // #region Base operations
 
-function SetEntityRow({ operation, before }: OperationRowProps) {
+function SetEntityRow({ operation, contextBefore }: OperationRowProps) {
   const op = operation as SetEntityOperation;
-  const name = <SemanticEntityName entityId={op.entity.id} entities={before} />;
+  const name = <SemanticEntityName entityId={op.entity.id} entities={contextBefore} />;
   return (
     <Row icon={Replace} colorClass="text-sky-600 dark:text-sky-400" operation={operation}>
       <span className="truncate">
@@ -903,9 +904,9 @@ function SetEntityRow({ operation, before }: OperationRowProps) {
   );
 }
 
-function UpdateEntityRow({ operation, before }: OperationRowProps) {
+function UpdateEntityRow({ operation, contextBefore }: OperationRowProps) {
   const op = operation as UpdateEntityOperation;
-  const name = <SemanticEntityName entityId={op.update.id} entities={before} />;
+  const name = <SemanticEntityName entityId={op.update.id} entities={contextBefore} />;
   return (
     <Row icon={Pencil} colorClass="text-blue-600 dark:text-blue-400" operation={operation}>
       <span className="truncate">
@@ -916,9 +917,9 @@ function UpdateEntityRow({ operation, before }: OperationRowProps) {
   );
 }
 
-function RemoveEntityRow({ operation, before }: OperationRowProps) {
+function RemoveEntityRow({ operation, contextBefore }: OperationRowProps) {
   const op = operation as RemoveEntityOperation;
-  const name = <SemanticEntityName entityId={op.entityId} entities={before} />;
+  const name = <SemanticEntityName entityId={op.entityId} entities={contextBefore} />;
   return (
     <Row icon={Trash2} colorClass="text-red-600 dark:text-red-400" operation={operation}>
       <span className="truncate">
