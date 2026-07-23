@@ -1,6 +1,8 @@
 export {
+  AddQueryOperationType,
   applyOperationsToAsyncQueryableModel,
   asyncQueryableModelEntitiesToSerialization,
+  RemoveQueryOperationType,
   resolveAsyncQueryableModelEntities,
   serializationToAsyncQueryableModelEntities,
 } from "./async-queryable-model.ts";
