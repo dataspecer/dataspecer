@@ -13,7 +13,7 @@ export interface CreatedEntityOperationResult extends OperationResult {
 
 // Create class
 
-const CREATE_CLASS_OPERATION = 'create';
+export const CREATE_CLASS_OPERATION = 'create';
 
 export interface CreateClassOperation extends Operation {
     type: typeof CREATE_CLASS_OPERATION;
@@ -34,7 +34,7 @@ export function createClass(entity: Partial<Omit<SemanticModelClass, "type">> = 
 
 // Modify class
 
-const MODIFY_CLASS_OPERATION = 'modify';
+export const MODIFY_CLASS_OPERATION = 'modify';
 
 export interface ModifyClassOperation extends Operation {
     type: typeof MODIFY_CLASS_OPERATION;
@@ -58,7 +58,7 @@ export function modifyClass(id: string, entity: Partial<Omit<SemanticModelClass,
 
 // Create relationship
 
-const CREATE_RELATIONSHIP_OPERATION = 'create-relation';
+export const CREATE_RELATIONSHIP_OPERATION = 'create-relation';
 
 export interface CreateRelationshipOperation extends Operation {
     type: typeof CREATE_RELATIONSHIP_OPERATION;
@@ -81,7 +81,7 @@ export function createRelationship(entity: Partial<Omit<SemanticModelRelationshi
 
 // Modify relationship
 
-const MODIFY_RELATIONSHIP_OPERATION = 'modify-relation';
+export const MODIFY_RELATIONSHIP_OPERATION = 'modify-relation';
 
 /**
  * If you modifying individual ends of the relationship, use `ModifyRelationEndOperation` instead.
@@ -108,7 +108,7 @@ export function modifyRelation(id: string, entity: Partial<Omit<SemanticModelRel
 
 // Modify relationship end
 
-const MODIFY_RELATIONSHIP_END_OPERATION = 'modify-relation-end';
+export const MODIFY_RELATIONSHIP_END_OPERATION = 'modify-relation-end';
 
 export interface ModifyRelationEndOperation extends Operation {
     type: typeof MODIFY_RELATIONSHIP_END_OPERATION;
@@ -136,7 +136,7 @@ export function modifyRelationEnd(id: string, endIndex: number, end: Partial<Sem
 
 // Create generalization
 
-const CREATE_GENERALIZATION_OPERATION = 'create-generalization';
+export const CREATE_GENERALIZATION_OPERATION = 'create-generalization';
 
 export interface CreateGeneralizationOperation extends Operation {
     type: typeof CREATE_GENERALIZATION_OPERATION;
@@ -157,7 +157,7 @@ export function createGeneralization(entity: Partial<Omit<SemanticModelGeneraliz
 
 // Modify generalization
 
-const MODIFY_GENERALIZATION_OPERATION = 'modify-generalization';
+export const MODIFY_GENERALIZATION_OPERATION = 'modify-generalization';
 
 export interface ModifyGeneralizationOperation extends Operation {
     type: typeof MODIFY_GENERALIZATION_OPERATION;
@@ -181,7 +181,7 @@ export function modifyGeneralization(id: string, entity: Partial<Omit<SemanticMo
 
 // Delete entity
 
-const DELETE_ENTITY_OPERATION = 'delete';
+export const DELETE_ENTITY_OPERATION = 'delete';
 
 /**
  * Deletes any type of entity from the single model.
