@@ -2,6 +2,7 @@ import {
   isSemanticModelClass,
   isSemanticModelGeneralization,
   isSemanticModelRelationship,
+  type LanguageString,
   type SemanticModelClass,
   type SemanticModelGeneralization,
   type SemanticModelRelationship,
@@ -71,14 +72,6 @@ export interface EvolutionSource {
   after: Entity | null;
 }
 
-export type EvolutionFieldId =
-  | "name"
-  | "description"
-  | "usageNote"
-  | "cardinality"
-  | "concept"
-  | "externalDocumentationUrl";
-
 /**
  * One way to resolve a field decision or a delete item. `operations` are the
  * profile model operations executing the choice; an empty array means "leave
@@ -104,23 +97,58 @@ export interface EvolutionChoice {
 /**
  * An independent decision about one field of one profile entity, caused by an
  * upstream modification. Decisions of one item are orthogonal — the user picks
- * one choice per decision.
+ * one choice per decision. The `field` discriminates the value types of
+ * `oldValue`, `newValue` and `profileValue`.
  */
-export interface EvolutionFieldDecision {
+interface EvolutionFieldDecisionBase {
   /** Unique within the item, e.g. "name" or "range:cardinality". */
   key: string;
-  field: EvolutionFieldId;
   /** For relationship profiles: which end the decision concerns. */
   endRole?: "domain" | "range";
-  oldValue: unknown;
-  newValue: unknown;
-  /** The profile's own (override) value; null when inherited. */
-  profileValue: unknown;
   profileState: "inherits" | "override-matches-new" | "override-differs" | "not-inheritable";
   severity: EvolutionSeverity;
   choices: EvolutionChoice[];
   defaultChoiceId: string;
 }
+
+/** A language-tagged text field with the profile inheritance mechanism. */
+export interface EvolutionLanguageStringDecision extends EvolutionFieldDecisionBase {
+  field: "name" | "description" | "usageNote";
+  oldValue: LanguageString | null;
+  newValue: LanguageString | null;
+  /** The profile's own (override) value; null when inherited. */
+  profileValue: LanguageString | null;
+}
+
+export interface EvolutionCardinalityDecision extends EvolutionFieldDecisionBase {
+  field: "cardinality";
+  oldValue: [number, number | null] | null;
+  newValue: [number, number | null] | null;
+  /** The profile's own (override) value; null when inherited. */
+  profileValue: [number, number | null] | null;
+}
+
+/** The domain/range class of a relationship was retyped upstream. */
+export interface EvolutionConceptDecision extends EvolutionFieldDecisionBase {
+  field: "concept";
+  oldValue: string | null;
+  newValue: string;
+  /** The class profile the relationship profile end currently points to. */
+  profileValue: string;
+}
+
+export interface EvolutionUrlDecision extends EvolutionFieldDecisionBase {
+  field: "externalDocumentationUrl";
+  oldValue: string | null;
+  newValue: string | null;
+  profileValue: string | null;
+}
+
+export type EvolutionFieldDecision =
+  | EvolutionLanguageStringDecision
+  | EvolutionCardinalityDecision
+  | EvolutionConceptDecision
+  | EvolutionUrlDecision;
 
 interface EvolutionItemBase {
   /** Stable identifier of the item, used to key UI state and dependencies. */
@@ -375,7 +403,7 @@ function buildModifyClassItem(
   const decisions: EvolutionFieldDecision[] = [];
 
   const inheritablePatchOperations = (field: "name" | "description" | "usageNote") =>
-    (value: unknown, fromProfiled: string | null, addProfiling: boolean): ProfileOperation[] => [
+    (value: LanguageString | null, fromProfiled: string | null, addProfiling: boolean): ProfileOperation[] => [
       factory.modifyClassProfile(profile.id, {
         [field]: value,
         [`${field}FromProfiled`]: fromProfiled,
@@ -419,14 +447,12 @@ function buildModifyClassItem(
     }));
   }
 
-  pushDecision(decisions, plainFieldDecision({
-    key: "externalDocumentationUrl",
-    field: "externalDocumentationUrl",
+  pushDecision(decisions, urlDecision({
     oldValue: before.externalDocumentationUrl ?? null,
     newValue: after.externalDocumentationUrl ?? null,
     profileValue: profile.externalDocumentationUrl ?? null,
     makeOperations: (value) => [
-      factory.modifyClassProfile(profile.id, { externalDocumentationUrl: value as string | null }),
+      factory.modifyClassProfile(profile.id, { externalDocumentationUrl: value }),
     ],
   }));
 
@@ -467,7 +493,7 @@ function buildModifyRelationshipItem(
     if (!beforeEnd || !afterEnd || !profileEnd) continue;
 
     const inheritablePatchOperations = (field: "name" | "description" | "usageNote") =>
-      (value: unknown, fromProfiled: string | null, addProfiling: boolean): ProfileOperation[] => [
+      (value: LanguageString | null, fromProfiled: string | null, addProfiling: boolean): ProfileOperation[] => [
         factory.modifyRelationshipEndProfile(profile.id, profileIdx, {
           [field]: value,
           [`${field}FromProfiled`]: fromProfiled,
@@ -523,9 +549,7 @@ function buildModifyRelationshipItem(
       newValue: afterEnd.cardinality ?? null,
       profileValue: profileEnd.cardinality ?? null,
       makeOperations: (value) => [
-        factory.modifyRelationshipEndProfile(profile.id, profileIdx, {
-          cardinality: value as [number, number | null] | null,
-        }),
+        factory.modifyRelationshipEndProfile(profile.id, profileIdx, { cardinality: value }),
       ],
     }));
 
@@ -592,15 +616,15 @@ function pushDecision(decisions: EvolutionFieldDecision[], decision: EvolutionFi
  */
 function inheritableFieldDecision(args: {
   key: string;
-  field: EvolutionFieldId;
+  field: EvolutionLanguageStringDecision["field"];
   endRole?: "domain" | "range";
   upstreamId: string;
-  oldValue: unknown;
-  newValue: unknown;
-  profileValue: unknown;
+  oldValue: LanguageString | null;
+  newValue: LanguageString | null;
+  profileValue: LanguageString | null;
   profileFromProfiled: string | null;
-  makeOperations: (value: unknown, fromProfiled: string | null, addProfiling: boolean) => ProfileOperation[];
-}): EvolutionFieldDecision | null {
+  makeOperations: (value: LanguageString | null, fromProfiled: string | null, addProfiling: boolean) => ProfileOperation[];
+}): EvolutionLanguageStringDecision | null {
   const { key, field, endRole, upstreamId, oldValue, newValue, profileValue, profileFromProfiled, makeOperations } = args;
   if (deepEqual(oldValue, newValue)) return null;
 
@@ -661,11 +685,11 @@ function inheritableFieldDecision(args: {
 function cardinalityDecision(args: {
   key: string;
   endRole: "domain" | "range";
-  oldValue: unknown;
-  newValue: unknown;
-  profileValue: unknown;
-  makeOperations: (value: unknown) => ProfileOperation[];
-}): EvolutionFieldDecision | null {
+  oldValue: [number, number | null] | null;
+  newValue: [number, number | null] | null;
+  profileValue: [number, number | null] | null;
+  makeOperations: (value: [number, number | null] | null) => ProfileOperation[];
+}): EvolutionCardinalityDecision | null {
   const { key, endRole, oldValue, newValue, profileValue, makeOperations } = args;
   if (deepEqual(oldValue, newValue)) return null;
 
@@ -710,27 +734,23 @@ function cardinalityDecision(args: {
 }
 
 /**
- * Decision for a field without the inheritance mechanism (the profile always
- * holds its own value, e.g. external documentation URL).
+ * Decision for the external documentation URL, a field without the inheritance
+ * mechanism (the profile always holds its own value).
  */
-function plainFieldDecision(args: {
-  key: string;
-  field: EvolutionFieldId;
-  endRole?: "domain" | "range";
-  oldValue: unknown;
-  newValue: unknown;
-  profileValue: unknown;
-  makeOperations: (value: unknown) => ProfileOperation[];
-}): EvolutionFieldDecision | null {
-  const { key, field, endRole, oldValue, newValue, profileValue, makeOperations } = args;
-  if (deepEqual(oldValue, newValue)) return null;
-  if (deepEqual(profileValue, newValue)) return null;
+function urlDecision(args: {
+  oldValue: string | null;
+  newValue: string | null;
+  profileValue: string | null;
+  makeOperations: (value: string | null) => ProfileOperation[];
+}): EvolutionUrlDecision | null {
+  const { oldValue, newValue, profileValue, makeOperations } = args;
+  if (oldValue === newValue) return null;
+  if (profileValue === newValue) return null;
 
-  const matchesOld = deepEqual(profileValue, oldValue);
+  const matchesOld = profileValue === oldValue;
   return {
-    key,
-    field,
-    ...(endRole ? { endRole } : {}),
+    key: "externalDocumentationUrl",
+    field: "externalDocumentationUrl",
     oldValue,
     newValue,
     profileValue,

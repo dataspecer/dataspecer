@@ -14,6 +14,9 @@ import type { DefaultFrontendModelStore } from "@dataspecer/model-store/implemen
 import { applyOperationsToSemanticModel } from "@dataspecer/core-v2/semantic-model";
 import { analyzeEvolution, analyzeProfileEvolution } from "@dataspecer/profile-model/hooks";
 import type { ProjectModelEntity } from "@dataspecer/project-model";
+import type { OperationRowProps } from "@/components/operation-row/operation-row";
+import { modelTypesFromStore } from "@/lib/model-display";
+import { computeModelSnapshots } from "@/lib/model-snapshots";
 import type { ReviewGroup } from "./review-state";
 
 /**
@@ -89,6 +92,21 @@ export function branchOperationsByModel(branch: EvolutionBranch): Map<string, Op
     byModel.get(modelId)!.push(operation);
   }
   return byModel;
+}
+
+/**
+ * Resolves the pending operations of the given branches as one transaction on
+ * top of the current state of the models they target, rendered exactly like
+ * the history page renders a transaction's operations — so the raw upstream
+ * changes read the same way wherever they are reviewed.
+ */
+export function describeBranchOperations(modelStore: DefaultFrontendModelStore, branches: EvolutionBranch[]): OperationRowProps[] {
+  const operations = branches.flatMap((branch) => branch.operations);
+  const snapshots = computeModelSnapshots([{ operations }], modelTypesFromStore(modelStore), modelStore.projectModelId, modelStore.getAllEntities())[0] ?? [];
+  return operations.map((operation, index) => {
+    const snapshot = snapshots[index]!;
+    return { ...operation, ...snapshot, contextBefore: snapshot.before, contextAfter: snapshot.after };
+  });
 }
 
 /**

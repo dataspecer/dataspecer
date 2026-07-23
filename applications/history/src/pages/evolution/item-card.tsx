@@ -1,31 +1,31 @@
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import type { EvolutionChoice, EvolutionFieldDecision, EvolutionSeverity } from "@dataspecer/profile-model/hooks";
+import type { LanguageString } from "@dataspecer/core-v2/semantic-model/concepts";
+import type { EvolutionChoice, EvolutionFieldDecision } from "@dataspecer/profile-model/hooks";
 import { ArrowRight, Check, CircleAlert, Link2Off, Trash2, Wrench } from "lucide-react";
-import { useTranslation } from "react-i18next";
-import type { LabelResolver } from "./display";
-import { formatValue } from "./display";
-import { ITEM_KEY, MANUAL_CHOICE, itemStatus, type ItemStatus, type ReviewItem, type ReviewState } from "./review-state";
+import type { ReactNode } from "react";
+import { Trans, useTranslation } from "react-i18next";
+import { ProfileName, SourceName } from "./display";
+import { ITEM_KEY, MANUAL_CHOICE, itemStatus, type ItemStatus, type ReviewGroup, type ReviewItem, type ReviewState } from "./review-state";
 
 export interface ItemCardProps {
   reviewItem: ReviewItem;
   state: ReviewState;
-  labels: LabelResolver;
   onCheck: (key: string, checked: boolean) => void;
   onSelectChoice: (key: string, decisionKey: string, choiceId: string) => void;
   onManualDone: (key: string, done: boolean) => void;
 }
 
-export function ItemCard({ reviewItem, state, labels, onCheck, onSelectChoice, onManualDone }: ItemCardProps) {
+export function ItemCard({ reviewItem, state, onCheck, onSelectChoice, onManualDone }: ItemCardProps) {
   const { t } = useTranslation();
-  const { key, item } = reviewItem;
+  const { key, group, item } = reviewItem;
   const itemState = state[key]!;
   const status = itemStatus(reviewItem, state);
   const locked = status === "applied";
 
   return (
-    <Card className={cn("p-4 space-y-3", status === "applied" && "opacity-70", status === "unchecked" && "opacity-50")}>
+    <Card className={cn("p-4 space-y-3", status === "applied" && "opacity-70")}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3 min-w-0">
           {isCreateItem(item.kind) && (
@@ -38,11 +38,10 @@ export function ItemCard({ reviewItem, state, labels, onCheck, onSelectChoice, o
             />
           )}
           <div className="min-w-0">
-            <ItemTitle reviewItem={reviewItem} labels={labels} />
+            <ItemTitle reviewItem={reviewItem} />
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <SeverityChip severity={item.severity} />
           <StatusBadge status={status} />
         </div>
       </div>
@@ -59,10 +58,10 @@ export function ItemCard({ reviewItem, state, labels, onCheck, onSelectChoice, o
           {item.decisions.map((decision) => (
             <DecisionRow
               key={decision.key}
+              group={group}
               decision={decision}
               selectedChoiceId={itemState.choices[decision.key]!}
               applied={!!itemState.applied[decision.key]}
-              labels={labels}
               onSelect={(choiceId) => onSelectChoice(key, decision.key, choiceId)}
             />
           ))}
@@ -81,10 +80,10 @@ export function ItemCard({ reviewItem, state, labels, onCheck, onSelectChoice, o
             </p>
           )}
           <ChoiceButtons
+            group={group}
             choices={item.choices}
             selectedChoiceId={itemState.choices[ITEM_KEY]!}
             disabled={locked}
-            labels={labels}
             onSelect={(choiceId) => onSelectChoice(key, ITEM_KEY, choiceId)}
           />
         </div>
@@ -109,27 +108,31 @@ function isCreateItem(kind: string): boolean {
 // Title
 // ---------------------------------------------------------------------------
 
-function ItemTitle({ reviewItem, labels }: { reviewItem: ReviewItem; labels: LabelResolver }) {
+function ItemTitle({ reviewItem }: { reviewItem: ReviewItem }) {
   const { t } = useTranslation();
-  const { item } = reviewItem;
-  const sourceLabel = labels.source(item.source);
+  const { group, item } = reviewItem;
+  const sourceName = <SourceName group={group} source={item.source} />;
 
   switch (item.kind) {
     case "create-class-profile":
       return (
         <>
-          <p className="text-sm font-medium">{t("evolution.item.create-class", { name: sourceLabel })}</p>
+          <p className="text-sm font-medium">
+            <Trans i18nKey="evolution.item.create-class" components={{ name: sourceName }} />
+          </p>
           <p className="text-xs text-muted-foreground">{t("evolution.item.create-class-hint")}</p>
         </>
       );
     case "create-relationship-profile":
       return (
         <>
-          <p className="text-sm font-medium">{t("evolution.item.create-relationship", { name: sourceLabel })}</p>
+          <p className="text-sm font-medium">
+            <Trans i18nKey="evolution.item.create-relationship" components={{ name: sourceName }} />
+          </p>
           <p className="text-xs text-muted-foreground flex items-center gap-1">
-            {labels.profile(item.domainProfileId)}
+            <ProfileName group={group} profileId={item.domainProfileId} />
             <ArrowRight className="h-3 w-3" />
-            {labels.profile(item.rangeProfileId)}
+            <ProfileName group={group} profileId={item.rangeProfileId} />
           </p>
         </>
       );
@@ -138,25 +141,36 @@ function ItemTitle({ reviewItem, labels }: { reviewItem: ReviewItem; labels: Lab
         <>
           <p className="text-sm font-medium">{t("evolution.item.create-generalization")}</p>
           <p className="text-xs text-muted-foreground">
-            {t("evolution.item.specializes", {
-              child: labels.profile(item.childProfileId),
-              parent: labels.profile(item.parentProfileId),
-            })}
+            <Trans
+              i18nKey="evolution.item.specializes"
+              components={{
+                child: <ProfileName group={group} profileId={item.childProfileId} />,
+                parent: <ProfileName group={group} profileId={item.parentProfileId} />,
+              }}
+            />
           </p>
         </>
       );
     case "modify-profile":
       return (
         <>
-          <p className="text-sm font-medium">{labels.profile(item.profileId)}</p>
-          <p className="text-xs text-muted-foreground">{t("evolution.item.profile-of", { name: sourceLabel })}</p>
+          <p className="text-sm font-medium">
+            <ProfileName group={group} profileId={item.profileId} />
+          </p>
+          <p className="text-xs text-muted-foreground">
+            <Trans i18nKey="evolution.item.profile-of" components={{ name: sourceName }} />
+          </p>
         </>
       );
     case "delete-profile":
       return (
         <>
-          <p className="text-sm font-medium">{t(`evolution.item.deleted-${item.profileType}`, { name: sourceLabel })}</p>
-          <p className="text-xs text-muted-foreground">{t("evolution.item.affected-profile", { name: labels.profile(item.profileId) })}</p>
+          <p className="text-sm font-medium">
+            <Trans i18nKey={`evolution.item.deleted-${item.profileType}`} components={{ name: sourceName }} />
+          </p>
+          <p className="text-xs text-muted-foreground">
+            <Trans i18nKey="evolution.item.affected-profile" components={{ name: <ProfileName group={group} profileId={item.profileId} /> }} />
+          </p>
         </>
       );
   }
@@ -167,19 +181,19 @@ function ItemTitle({ reviewItem, labels }: { reviewItem: ReviewItem; labels: Lab
 // ---------------------------------------------------------------------------
 
 function DecisionRow({
+  group,
   decision,
   selectedChoiceId,
   applied,
-  labels,
   onSelect,
 }: {
+  group: ReviewGroup;
   decision: EvolutionFieldDecision;
   selectedChoiceId: string;
   applied: boolean;
-  labels: LabelResolver;
   onSelect: (choiceId: string) => void;
 }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
 
   return (
     <div className={cn("rounded-md border px-3 py-2 space-y-2", applied && "opacity-60")}>
@@ -188,52 +202,126 @@ function DecisionRow({
           {decision.endRole && `${t(`evolution.end-role.${decision.endRole}`)} · `}
           {t(`evolution.field.${decision.field}`)}
         </span>
-        {decision.field === "concept" ? (
-          <span className="text-muted-foreground text-xs">{t("evolution.retyped-upstream")}</span>
-        ) : (
-          <span className="flex items-center gap-1 text-muted-foreground">
-            <span className="line-through decoration-muted-foreground/60">{formatValue(decision.oldValue, i18n.language)}</span>
-            <ArrowRight className="h-3 w-3" />
-            <span className="text-foreground">{formatValue(decision.newValue, i18n.language)}</span>
-          </span>
-        )}
+        <UpstreamDiff decision={decision} />
         {applied && <Check className="h-3.5 w-3.5 text-green-600" />}
       </div>
 
       <p className="text-xs text-muted-foreground">
-        {t(`evolution.profile-state.${decision.profileState}`, {
-          value: formatValue(decision.profileValue, i18n.language),
-        })}
+        <Trans
+          i18nKey={`evolution.profile-state.${decision.profileState}`}
+          components={{ value: <ProfileValue group={group} decision={decision} /> }}
+        />
       </p>
 
-      <ChoiceButtons choices={decision.choices} selectedChoiceId={selectedChoiceId} disabled={applied} labels={labels} onSelect={onSelect} />
+      <ChoiceButtons group={group} choices={decision.choices} selectedChoiceId={selectedChoiceId} disabled={applied} onSelect={onSelect} />
     </div>
   );
 }
 
+/** The upstream old → new change of the decided field. */
+function UpstreamDiff({ decision }: { decision: EvolutionFieldDecision }) {
+  const { t } = useTranslation();
+  switch (decision.field) {
+    case "concept":
+      return <span className="text-muted-foreground text-xs">{t("evolution.retyped-upstream")}</span>;
+    case "cardinality":
+      return <OldNew oldText={formatCardinality(decision.oldValue)} newText={formatCardinality(decision.newValue)} />;
+    case "externalDocumentationUrl":
+      return <OldNew oldText={decision.oldValue ?? "—"} newText={decision.newValue ?? "—"} />;
+    default:
+      return <LanguageStringDiff oldValue={decision.oldValue} newValue={decision.newValue} />;
+  }
+}
+
+/** The profile's current value of the decided field. */
+function ProfileValue({ group, decision }: { group: ReviewGroup; decision: EvolutionFieldDecision }) {
+  switch (decision.field) {
+    case "concept":
+      return <ProfileName group={group} profileId={decision.profileValue} />;
+    case "cardinality":
+      return <>{formatCardinality(decision.profileValue)}</>;
+    case "externalDocumentationUrl":
+      return <>{decision.profileValue ?? "—"}</>;
+    default:
+      return <LanguageStringValue value={decision.profileValue} />;
+  }
+}
+
+function formatCardinality(value: [number, number | null] | null): string {
+  return value ? `[${value[0]}..${value[1] ?? "*"}]` : "—";
+}
+
+function OldNew({ oldText, newText }: { oldText: string; newText: string }) {
+  return (
+    <span className="flex items-center gap-1 text-muted-foreground">
+      <span className="line-through decoration-muted-foreground/60">{oldText}</span>
+      <ArrowRight className="h-3 w-3" />
+      <span className="text-foreground">{newText}</span>
+    </span>
+  );
+}
+
+/** One line per language tag, only for languages whose value actually changed. */
+function LanguageStringDiff({ oldValue, newValue }: { oldValue: LanguageString | null; newValue: LanguageString | null }) {
+  const oldRecord = oldValue ?? {};
+  const newRecord = newValue ?? {};
+  const languages = [...new Set([...Object.keys(oldRecord), ...Object.keys(newRecord)])].filter((lang) => oldRecord[lang] !== newRecord[lang]);
+
+  return (
+    <div className="flex flex-col gap-0.5">
+      {languages.map((lang) => (
+        <span key={lang} className="flex items-center gap-1 text-muted-foreground">
+          <span className="text-xs uppercase text-muted-foreground/70">{lang}:</span>
+          <span className="line-through decoration-muted-foreground/60">{oldRecord[lang] ?? "—"}</span>
+          <ArrowRight className="h-3 w-3" />
+          <span className="text-foreground">{newRecord[lang] ?? "—"}</span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/** All values of a language string, one line per language tag. */
+function LanguageStringValue({ value }: { value: LanguageString | null }) {
+  const record = value ?? {};
+  const languages = Object.keys(record);
+  if (languages.length === 0) return <>—</>;
+
+  return (
+    <span className="inline-flex flex-col gap-0.5 align-top">
+      {languages.map((lang) => (
+        <span key={lang}>
+          <span className="text-xs uppercase text-muted-foreground/70">{lang}: </span>
+          {record[lang]}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 function ChoiceButtons({
+  group,
   choices,
   selectedChoiceId,
   disabled,
-  labels,
   onSelect,
 }: {
+  group: ReviewGroup;
   choices: EvolutionChoice[];
   selectedChoiceId: string;
   disabled: boolean;
-  labels: LabelResolver;
   onSelect: (choiceId: string) => void;
 }) {
   const { t } = useTranslation();
 
-  const choiceLabel = (choice: EvolutionChoice): string => {
+  const choiceLabel = (choice: EvolutionChoice): ReactNode => {
     if (choice.targetProfileId) {
-      return t("evolution.choice.retarget", { name: labels.profile(choice.targetProfileId) });
+      return <Trans i18nKey="evolution.choice.retarget" components={{ name: <ProfileName group={group} profileId={choice.targetProfileId} /> }} />;
     }
     return t(`evolution.choice.${choice.id}`);
   };
 
-  const allChoices: { id: string; label: string; icon?: typeof Wrench }[] = [
+  const allChoices: { id: string; label: ReactNode; icon?: typeof Wrench }[] = [
     ...choices.map((choice) => ({
       id: choice.id,
       label: choiceLabel(choice),
@@ -266,21 +354,6 @@ function ChoiceButtons({
 // ---------------------------------------------------------------------------
 // Chips and badges
 // ---------------------------------------------------------------------------
-
-const severityStyles: Record<EvolutionSeverity, string> = {
-  automatic: "border-green-500/40 text-green-700 dark:text-green-400",
-  decision: "border-amber-500/40 text-amber-700 dark:text-amber-400",
-  attention: "border-red-500/40 text-red-700 dark:text-red-400",
-};
-
-function SeverityChip({ severity }: { severity: EvolutionSeverity }) {
-  const { t } = useTranslation();
-  return (
-    <Badge variant="outline" className={severityStyles[severity]}>
-      {t(`evolution.severity.${severity}`)}
-    </Badge>
-  );
-}
 
 function StatusBadge({ status }: { status: ItemStatus }) {
   const { t } = useTranslation();
