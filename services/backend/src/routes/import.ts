@@ -9,12 +9,15 @@ import {
 import { DataTypeURIs, isDataType } from "@dataspecer/core-v2/semantic-model/datatypes";
 import { createRdfsModel } from "@dataspecer/core-v2/semantic-model/simplified";
 import { PimStoreWrapper, serializationToPimModelEntities } from "@dataspecer/core-v2/semantic-model/v1-adapters";
+import type { CoreResource } from "@dataspecer/core/core/core-resource";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
+import { DataSpecificationConfigurator } from "@dataspecer/core/data-specification/configuration";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
+import { turtleStringToGeneratorConfiguration } from "@dataspecer/data-specification-vocabulary/generator-configuration";
 import { conceptualModelToEntityListContainer, rdfToConceptualModel } from "@dataspecer/data-specification-vocabulary/semantic-model";
-import { isProjectModelEntity } from "@dataspecer/project-model";
 import { dsvMetadataWellKnown, rdfToDSVMetadata } from "@dataspecer/data-specification-vocabulary/specification-description";
 import { turtleStringToStructureModel } from "@dataspecer/data-specification-vocabulary/structure-model";
+import { canonicalizeIds } from "@dataspecer/structure-model";
 import express from "express";
 import * as jsonld from "jsonld";
 import N3, { Quad_Object } from "n3";
@@ -22,17 +25,13 @@ import { parse } from "node-html-parser";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
 import { modelRepository } from "../main.ts";
-import { type ModelRepositoryType } from "../models/model-repository.ts";
 import { PROJECT_MODEL_ID } from "../models/model-id.ts";
-import { StagingModelRepository } from "../models/staging-model-repository.ts";
-import { BaseResource } from "../models/resource-model.ts";
-import { getModelsForPackage } from "../utils/backend-model-store.ts";
 import { diffModelEntitiesToOperations, diffModelStates } from "../models/model-operations.ts";
+import { type ModelRepositoryType } from "../models/model-repository.ts";
+import { BaseResource } from "../models/resource-model.ts";
+import { StagingModelRepository } from "../models/staging-model-repository.ts";
+import { getModelsForPackage } from "../utils/backend-model-store.ts";
 import { asyncHandler } from "./../utils/async-handler.ts";
-import type { CoreResource } from "@dataspecer/core/core/core-resource";
-import { canonicalizeIds } from "@dataspecer/structure-model";
-import { DataSpecificationConfigurator } from "@dataspecer/core/data-specification/configuration";
-import { turtleStringToGeneratorConfiguration } from "@dataspecer/data-specification-vocabulary/generator-configuration";
 
 
 function jsonLdLiteralToLanguageString(literal: Quad_Object[]): LanguageString {
@@ -116,6 +115,97 @@ async function getExistingChildrenByUrl(repository: ModelRepositoryType, package
 }
 
 /**
+ * Determines the leading IRI prefix shared by most of a set of entities.
+ */
+function getDominantBaseIri(entities: SemanticModelEntity[]): string | null {
+  const prefixCounts: Record<string, number> = {};
+  const count = (iri: string | null | undefined) => {
+    const [prefix] = splitIri(iri);
+    if (prefix) {
+      prefixCounts[prefix] = (prefixCounts[prefix] ?? 0) + 1;
+    }
+  };
+  for (const entity of entities) {
+    count(entity.iri);
+    if (isSemanticModelRelationship(entity)) {
+      for (const end of entity.ends) {
+        count(end.iri);
+      }
+    }
+  }
+
+  let bestPrefix: string | null = null;
+  let bestCount = 0;
+  for (const [prefix, prefixCount] of Object.entries(prefixCounts)) {
+    if (prefixCount > bestCount) {
+      bestPrefix = prefix;
+      bestCount = prefixCount;
+    }
+  }
+  return bestPrefix;
+}
+
+/**
+ * Finds an existing RDFS_MODEL child of the package whose stored entities
+ * have the given dominant base IRI, ignoring any child whose iri is in
+ * excludeIris (already claimed by a URL match or an earlier content match
+ * during the same reload). Used to recognize a profiled vocabulary across a
+ * reload when its source URL changed (e.g. dcat2.ttl -> dcat3.ttl), so it can
+ * be diffed against its previous state instead of being treated as a brand
+ * new model.
+ */
+async function findRdfsModelChildByBaseIri(repository: ModelRepositoryType, packageIri: string, baseIri: string, excludeIris: Set<string>): Promise<string | undefined> {
+  const pkg = await repository.getPackage(packageIri);
+  for (const child of pkg?.subResources ?? []) {
+    if (!child.types.includes(RDFS_MODEL) || excludeIris.has(child.iri)) {
+      continue;
+    }
+    const entities = Object.values((await repository.getModelEntities(child.iri)) ?? {}) as SemanticModelEntity[];
+    if (getDominantBaseIri(entities) === baseIri) {
+      return child.iri;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Derives a display name from a URL's last path segment, without its file
+ * extension (e.g. "https://example.com/dcat3.ttl" -> "dcat3").
+ */
+function deriveNameFromUrl(url: string): string {
+  let chunkToParse = url;
+  try {
+    chunkToParse = new URL(url).pathname;
+  } catch (error) {}
+
+  const chunks = chunkToParse.split("/");
+  const section = chunks.pop() || chunks.pop() || "unnamed"; // handle potential trailing slash
+  return section.split(".")[0];
+}
+
+/**
+ * Fetches and parses a raw RDFS/vocabulary document without persisting
+ * anything, so the caller can inspect its entities before deciding under
+ * which resource iri to store it.
+ */
+async function fetchRdfsModel(url: string) {
+  return await createRdfsModel([url], httpFetch);
+}
+
+/**
+ * Persists an already-fetched RDFS wrapper under the given resource iri,
+ * creating the resource if it doesn't exist yet or updating it otherwise.
+ */
+async function persistRdfsModel(repository: ModelRepositoryType, parentIri: string, wrapper: Awaited<ReturnType<typeof fetchRdfsModel>>, newIri: string, userMetadata: any): Promise<SemanticModelEntity[]> {
+  const serialization = wrapper.serializeModel();
+  serialization.id = newIri;
+  serialization.alias = userMetadata?.label?.en ?? userMetadata?.label?.cs;
+  await ensureResource(repository, parentIri, newIri, RDFS_MODEL, userMetadata);
+  await repository.setResourceStoreJson(newIri, serialization);
+  return Object.values(wrapper.getEntities()) as SemanticModelEntity[];
+}
+
+/**
  * Creates a PIM Wrapper that imports an RDFS model. Model has IRI that needs to
  * be specified, but the IDs inside the model are stable. If the model exists,
  * it is updated.
@@ -124,13 +214,8 @@ async function getExistingChildrenByUrl(repository: ModelRepositoryType, package
  * wrapper should be deprecated.
  */
 async function importRdfsModel(repository: ModelRepositoryType, parentIri: string, url: string, newIri: string, userMetadata: any): Promise<SemanticModelEntity[]> {
-  const wrapper = await createRdfsModel([url], httpFetch);
-  const serialization = wrapper.serializeModel();
-  serialization.id = newIri;
-  serialization.alias = userMetadata?.label?.en ?? userMetadata?.label?.cs;
-  await ensureResource(repository, parentIri, newIri, RDFS_MODEL, userMetadata);
-  await repository.setResourceStoreJson(newIri, serialization);
-  return Object.values(wrapper.getEntities()) as SemanticModelEntity[];
+  const wrapper = await fetchRdfsModel(url);
+  return await persistRdfsModel(repository, parentIri, wrapper, newIri, userMetadata);
 }
 
 /**
@@ -469,11 +554,65 @@ async function dsvImport(repository: ModelRepositoryType, store: N3.Store, url: 
 
   const isReload = !!existingPackageIri;
   const existingChildrenByUrl = isReload ? await getExistingChildrenByUrl(repository, rootPackageId) : undefined;
+  // Existing children actually claimed so far during this reload (by an
+  // exact URL match, or by a content match below), so the same one is never
+  // reused for two different profiles. Note this is NOT existingChildrenByUrl's
+  // values(): that map lists every existing child with a recorded URL,
+  // including ones whose URL is no longer referenced by any current profile
+  // (e.g. the old dcat2.ttl child once its profile url becomes dcat3.ttl) -
+  // those are exactly the candidates the content match below must still be
+  // able to see.
+  const claimedExistingIris = new Set<string>();
 
   const allEntitiesFromProfiled: SemanticModelEntity[] = [];
   for (const profile of mainSpecification.isProfileOf) {
     const childExistingIri = existingChildrenByUrl?.get(profile.url);
-    const [, e] = await importFromUrl(rootPackageId, profile.url, childExistingIri, touchedModelIds, repository);
+
+    if (childExistingIri || !isReload) {
+      if (childExistingIri) {
+        claimedExistingIris.add(childExistingIri);
+      }
+      const [, e] = await importFromUrl(rootPackageId, profile.url, childExistingIri, touchedModelIds, repository);
+      allEntitiesFromProfiled.push(...e);
+      continue;
+    }
+
+    // No URL match during a reload: the profiled vocabulary's URL may simply
+    // have changed (e.g. dcat2.ttl -> dcat3.ttl). We only attempt to
+    // recognize this for raw vocabulary documents, by downloading it first
+    // and matching its dominant IRI prefix against an existing child before
+    // deciding whether to store it as a new model or update the matched one -
+    // without this, the old and new state would be treated as unrelated
+    // models and the reload would be unable to derive a diff for it (see
+    // below in reloadResource, where previous/next models without a
+    // counterpart on the other side are dropped from the diff). There is no
+    // reliable way to recognize this for full HTML specifications profiled
+    // via isProfileOf before fully importing them, so those are just
+    // imported as new, same as before.
+    const probeUrl = profile.url.replace(/#.*$/, "");
+    const probeResponse = await fetchOrThrow(probeUrl);
+    const isHtml = probeResponse.headers.get("content-type")?.includes("text/html") ?? false;
+
+    if (isHtml) {
+      const [, e] = await importFromUrl(rootPackageId, profile.url, undefined, touchedModelIds, repository);
+      allEntitiesFromProfiled.push(...e);
+      continue;
+    }
+
+    const wrapper = await fetchRdfsModel(profile.url);
+    const baseIri = getDominantBaseIri(Object.values(wrapper.getEntities()) as SemanticModelEntity[]);
+    const existingMatchIri = baseIri ? await findRdfsModelChildByBaseIri(repository, rootPackageId, baseIri, claimedExistingIris) : undefined;
+    if (existingMatchIri) {
+      claimedExistingIris.add(existingMatchIri);
+    }
+
+    const targetIri = existingMatchIri ?? rootPackageId + "/" + uuidv4();
+    touchedModelIds?.add(targetIri);
+    const name = deriveNameFromUrl(profile.url);
+    const e = await persistRdfsModel(repository, rootPackageId, wrapper, targetIri, {
+      documentBaseUrl: profile.url,
+      ...(name ? { label: { en: name } } : {}),
+    });
     allEntitiesFromProfiled.push(...e);
   }
 
@@ -541,15 +680,7 @@ export async function importFromUrl(
       return dsvImport(repository, store, url, baseIri, parentIri, existingIri, touchedModelIds);
     }
   } else {
-    // Generate name
-    let chunkToParse = url;
-    try {
-      chunkToParse = new URL(url).pathname;
-    } catch (error) {}
-
-    const chunks = chunkToParse.split("/");
-    const section = chunks.pop() || chunks.pop() || "unnamed"; // handle potential trailing slash
-    const name = section.split(".")[0];
+    const name = deriveNameFromUrl(url);
 
     const newIri = existingIri ?? parentIri + "/" + uuidv4();
     touchedModelIds?.add(newIri);
