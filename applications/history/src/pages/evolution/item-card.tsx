@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { LanguageString } from "@dataspecer/core-v2/semantic-model/concepts";
+import type { EntityRecord } from "@dataspecer/core/entity-model";
 import type { EvolutionChoice, EvolutionFieldDecision } from "@dataspecer/profile-model/hooks";
 import { ArrowRight, Check, CircleAlert, Link2Off, Trash2, Wrench } from "lucide-react";
 import type { ReactNode } from "react";
@@ -12,12 +13,14 @@ import { ITEM_KEY, MANUAL_CHOICE, itemStatus, type ItemStatus, type ReviewGroup,
 export interface ItemCardProps {
   reviewItem: ReviewItem;
   state: ReviewState;
+  /** Effective (aggregated) entities of the item's group — see `effectiveGroupEntities` in evolution-data.ts. */
+  effectiveEntities: EntityRecord;
   onCheck: (key: string, checked: boolean) => void;
   onSelectChoice: (key: string, decisionKey: string, choiceId: string) => void;
   onManualDone: (key: string, done: boolean) => void;
 }
 
-export function ItemCard({ reviewItem, state, onCheck, onSelectChoice, onManualDone }: ItemCardProps) {
+export function ItemCard({ reviewItem, state, effectiveEntities, onCheck, onSelectChoice, onManualDone }: ItemCardProps) {
   const { t } = useTranslation();
   const { key, group, item } = reviewItem;
   const itemState = state[key]!;
@@ -38,7 +41,7 @@ export function ItemCard({ reviewItem, state, onCheck, onSelectChoice, onManualD
             />
           )}
           <div className="min-w-0">
-            <ItemTitle reviewItem={reviewItem} />
+            <ItemTitle reviewItem={reviewItem} effectiveEntities={effectiveEntities} />
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -59,6 +62,7 @@ export function ItemCard({ reviewItem, state, onCheck, onSelectChoice, onManualD
             <DecisionRow
               key={decision.key}
               group={group}
+              effectiveEntities={effectiveEntities}
               decision={decision}
               selectedChoiceId={itemState.choices[decision.key]!}
               applied={!!itemState.applied[decision.key]}
@@ -81,6 +85,7 @@ export function ItemCard({ reviewItem, state, onCheck, onSelectChoice, onManualD
           )}
           <ChoiceButtons
             group={group}
+            effectiveEntities={effectiveEntities}
             choices={item.choices}
             selectedChoiceId={itemState.choices[ITEM_KEY]!}
             disabled={locked}
@@ -108,10 +113,10 @@ function isCreateItem(kind: string): boolean {
 // Title
 // ---------------------------------------------------------------------------
 
-function ItemTitle({ reviewItem }: { reviewItem: ReviewItem }) {
+function ItemTitle({ reviewItem, effectiveEntities }: { reviewItem: ReviewItem; effectiveEntities: EntityRecord }) {
   const { t } = useTranslation();
   const { group, item } = reviewItem;
-  const sourceName = <SourceName group={group} source={item.source} />;
+  const sourceName = <SourceName effectiveEntities={effectiveEntities} source={item.source} />;
 
   switch (item.kind) {
     case "create-class-profile":
@@ -130,9 +135,9 @@ function ItemTitle({ reviewItem }: { reviewItem: ReviewItem }) {
             <Trans i18nKey="evolution.item.create-relationship" components={{ name: sourceName }} />
           </p>
           <p className="text-xs text-muted-foreground flex items-center gap-1">
-            <ProfileName group={group} profileId={item.domainProfileId} />
+            <ProfileName group={group} effectiveEntities={effectiveEntities} profileId={item.domainProfileId} />
             <ArrowRight className="h-3 w-3" />
-            <ProfileName group={group} profileId={item.rangeProfileId} />
+            <ProfileName group={group} effectiveEntities={effectiveEntities} profileId={item.rangeProfileId} />
           </p>
         </>
       );
@@ -144,8 +149,8 @@ function ItemTitle({ reviewItem }: { reviewItem: ReviewItem }) {
             <Trans
               i18nKey="evolution.item.specializes"
               components={{
-                child: <ProfileName group={group} profileId={item.childProfileId} />,
-                parent: <ProfileName group={group} profileId={item.parentProfileId} />,
+                child: <ProfileName group={group} effectiveEntities={effectiveEntities} profileId={item.childProfileId} />,
+                parent: <ProfileName group={group} effectiveEntities={effectiveEntities} profileId={item.parentProfileId} />,
               }}
             />
           </p>
@@ -155,7 +160,7 @@ function ItemTitle({ reviewItem }: { reviewItem: ReviewItem }) {
       return (
         <>
           <p className="text-sm font-medium">
-            <ProfileName group={group} profileId={item.profileId} />
+            <ProfileName group={group} effectiveEntities={effectiveEntities} profileId={item.profileId} />
           </p>
           <p className="text-xs text-muted-foreground">
             <Trans i18nKey="evolution.item.profile-of" components={{ name: sourceName }} />
@@ -169,7 +174,10 @@ function ItemTitle({ reviewItem }: { reviewItem: ReviewItem }) {
             <Trans i18nKey={`evolution.item.deleted-${item.profileType}`} components={{ name: sourceName }} />
           </p>
           <p className="text-xs text-muted-foreground">
-            <Trans i18nKey="evolution.item.affected-profile" components={{ name: <ProfileName group={group} profileId={item.profileId} /> }} />
+            <Trans
+              i18nKey="evolution.item.affected-profile"
+              components={{ name: <ProfileName group={group} effectiveEntities={effectiveEntities} profileId={item.profileId} /> }}
+            />
           </p>
         </>
       );
@@ -182,12 +190,14 @@ function ItemTitle({ reviewItem }: { reviewItem: ReviewItem }) {
 
 function DecisionRow({
   group,
+  effectiveEntities,
   decision,
   selectedChoiceId,
   applied,
   onSelect,
 }: {
   group: ReviewGroup;
+  effectiveEntities: EntityRecord;
   decision: EvolutionFieldDecision;
   selectedChoiceId: string;
   applied: boolean;
@@ -209,11 +219,18 @@ function DecisionRow({
       <p className="text-xs text-muted-foreground">
         <Trans
           i18nKey={`evolution.profile-state.${decision.profileState}`}
-          components={{ value: <ProfileValue group={group} decision={decision} /> }}
+          components={{ value: <ProfileValue group={group} effectiveEntities={effectiveEntities} decision={decision} /> }}
         />
       </p>
 
-      <ChoiceButtons group={group} choices={decision.choices} selectedChoiceId={selectedChoiceId} disabled={applied} onSelect={onSelect} />
+      <ChoiceButtons
+        group={group}
+        effectiveEntities={effectiveEntities}
+        choices={decision.choices}
+        selectedChoiceId={selectedChoiceId}
+        disabled={applied}
+        onSelect={onSelect}
+      />
     </div>
   );
 }
@@ -234,10 +251,18 @@ function UpstreamDiff({ decision }: { decision: EvolutionFieldDecision }) {
 }
 
 /** The profile's current value of the decided field. */
-function ProfileValue({ group, decision }: { group: ReviewGroup; decision: EvolutionFieldDecision }) {
+function ProfileValue({
+  group,
+  effectiveEntities,
+  decision,
+}: {
+  group: ReviewGroup;
+  effectiveEntities: EntityRecord;
+  decision: EvolutionFieldDecision;
+}) {
   switch (decision.field) {
     case "concept":
-      return <ProfileName group={group} profileId={decision.profileValue} />;
+      return <ProfileName group={group} effectiveEntities={effectiveEntities} profileId={decision.profileValue} />;
     case "cardinality":
       return <>{formatCardinality(decision.profileValue)}</>;
     case "externalDocumentationUrl":
@@ -301,12 +326,14 @@ function LanguageStringValue({ value }: { value: LanguageString | null }) {
 
 function ChoiceButtons({
   group,
+  effectiveEntities,
   choices,
   selectedChoiceId,
   disabled,
   onSelect,
 }: {
   group: ReviewGroup;
+  effectiveEntities: EntityRecord;
   choices: EvolutionChoice[];
   selectedChoiceId: string;
   disabled: boolean;
@@ -316,7 +343,12 @@ function ChoiceButtons({
 
   const choiceLabel = (choice: EvolutionChoice): ReactNode => {
     if (choice.targetProfileId) {
-      return <Trans i18nKey="evolution.choice.retarget" components={{ name: <ProfileName group={group} profileId={choice.targetProfileId} /> }} />;
+      return (
+        <Trans
+          i18nKey="evolution.choice.retarget"
+          components={{ name: <ProfileName group={group} effectiveEntities={effectiveEntities} profileId={choice.targetProfileId} /> }}
+        />
+      );
     }
     return t(`evolution.choice.${choice.id}`);
   };

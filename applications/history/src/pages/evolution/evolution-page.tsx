@@ -1,6 +1,7 @@
 import { OperationGroups } from "@/components/operation-row/operation-list";
 import { Button } from "@/components/ui/button";
 import { useModelStore } from "@/contexts/model-store-context";
+import type { EntityRecord } from "@dataspecer/core/entity-model";
 import type { OperationInModel } from "@dataspecer/core/operation";
 import type { EvolutionItem } from "@dataspecer/profile-model/hooks";
 import { Link, useLocation } from "@tanstack/react-router";
@@ -8,7 +9,7 @@ import { ArrowLeft, CheckCircle2, GitMerge } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { resolveModelDisplay } from "@/lib/model-display";
-import { buildReviewGroups, cancelEvolutionBranch, fetchEvolutionBranches, type EvolutionBranch } from "./evolution-data";
+import { buildReviewGroups, cancelEvolutionBranch, effectiveGroupEntities, fetchEvolutionBranches, type EvolutionBranch } from "./evolution-data";
 import { ItemCard } from "./item-card";
 import {
   buildReviewItems,
@@ -89,6 +90,19 @@ export function EvolutionPage() {
   }, [packageIri, branchId, modelStore]);
 
   const items = useMemo(() => buildReviewItems(groups ?? []), [groups]);
+
+  // Recomputed on every state change: applies the operations implied by the
+  // current selections to a shadow copy of each group's target model, so
+  // entity names (e.g. of a proposed class profile, or one whose title a
+  // decision is changing) stay live while the user fills out the form.
+  const effectiveEntitiesByGroup = useMemo(() => {
+    const map = new Map<ReviewGroup, EntityRecord>();
+    if (!modelStore) return map;
+    for (const group of groups ?? []) {
+      map.set(group, effectiveGroupEntities(modelStore, group, items, state));
+    }
+    return map;
+  }, [groups, items, state, modelStore]);
 
   const commit = useMemo(() => collectCommit(items, state), [items, state]);
 
@@ -223,6 +237,7 @@ export function EvolutionPage() {
                   key={reviewItem.key}
                   reviewItem={reviewItem}
                   state={state}
+                  effectiveEntities={effectiveEntitiesByGroup.get(reviewItem.group) ?? reviewItem.group.profileEntities}
                   onCheck={handleCheck}
                   onSelectChoice={handleSelectChoice}
                   onManualDone={handleManualDone}

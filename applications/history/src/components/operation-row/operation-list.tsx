@@ -19,7 +19,7 @@ const PROJECT_MODEL_ID: ModelIdentifier = "_project_model";
  *
  * Uses caching.
  */
-function getAggregatedEntitiesWithPassthroughForPackage(models: Record<ModelIdentifier, EntityRecord>, modelId: ModelIdentifier, cache: Map<ModelIdentifier, EntityRecord>): EntityRecord {
+export function getAggregatedEntitiesWithPassthroughForPackage(models: Record<ModelIdentifier, EntityRecord>, modelId: ModelIdentifier, cache: Map<ModelIdentifier, EntityRecord>): EntityRecord {
   if (modelId === PROJECT_MODEL_ID) return {};
 
   let owningPackageId: ModelIdentifier | null = null;
