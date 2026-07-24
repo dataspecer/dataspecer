@@ -112,6 +112,17 @@ export class StagingModelRepository implements ModelRepositoryType {
     this.stagedStores.set(composeModelId(iri, storeName), data);
   }
 
+  /**
+   * The staging overlay never has its own operation history - the reload flow
+   * derives the whole reload's operations by diffing the base repository's
+   * state against this overlay's once staging is complete (see
+   * getModelsForPackage/diffModelStates in reloadResource) - so this is
+   * equivalent to {@link setResourceStoreJson} here.
+   */
+  setModelJson(iri: string, data: unknown, storeName: string = "model"): Promise<void> {
+    return this.setResourceStoreJson(iri, data, storeName);
+  }
+
   async getModelEntities(modelId: string): Promise<EntityRecord | null> {
     const { iri, storeName } = splitModelId(modelId);
 
