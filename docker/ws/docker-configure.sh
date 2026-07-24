@@ -41,7 +41,7 @@ printf "VITE_GIT_COMMIT=$GIT_COMMIT\nVITE_GIT_REF=$GIT_REF\nVITE_GIT_COMMIT_DATE
 
 printf "VITE_BACKEND=$BACKEND\n" > applications/api-specification/.env.local
 
-printf "VITE_BACKEND=$BACKEND\nVITE_MANAGER_URL=$MANAGER_URL\nVITE_BASE_PATH=$HISTORY_BASE_PATH\n" > applications/history/.env.local
+printf "VITE_BACKEND=$BACKEND\nVITE_MANAGER_URL=$MANAGER_URL/\nVITE_BASE_PATH=$HISTORY_BASE_PATH\n" > applications/history/.env.local
 
 printf "VITE_MANAGER=$MANAGER_URL\nVITE_BACKEND=$BACKEND\n" > applications/controlled-vocabulary-manager/.env.local
 
