@@ -58,7 +58,7 @@ footer = """
 <p align=\"left\"> <img src=\"/images/eu-mšmt.webp\" alt=\"EU and MŠMT Logos\" width=\"100%\"> </p>
 <p> This project output was developed with financial contributions from the <a href="https://www.eosc.cz/projekty/narodni-podpora-pro-eosc">EOSC CZ</a> initiative through the project <strong>National Repository Platform for Research Data</strong> (CZ.02.01.01/00/23_014/0008787) founded by Programme Johannes Amos Comenius (P JAC) of the Ministry of Education, Youth and Sports of the Czech Republic (MEYS).</p>
 <p align=\"left\"> <img src=\"/images/eosc-cz.webp\" alt=\"EOSC CZ Logo\" width=\"100%\"> </p>
-<p> This documentation site is powered by <a class=\"text-muted\" href=\"https://pages.cloudflare.com/\">Cloudflare</a>, <a class=\"text-muted\" href=\"https://gohugo.io/\">Hugo</a>, and <a class=\"text-muted\" href=\"https://getdoks.org/\">Doks</a>.</p>
+<p> This documentation site is powered by <a class=\"text-muted\" href=\"https://gohugo.io/\">Hugo</a> and <a class=\"text-muted\" href=\"https://getdoks.org/\">Doks</a>.</p>
 """
 
 # Feed
