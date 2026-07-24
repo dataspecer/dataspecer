@@ -98,7 +98,7 @@ import {
   Undo2,
   type LucideIcon,
 } from "lucide-react";
-import type { ComponentType, ReactNode } from "react";
+import { memo, type ComponentType, type ReactNode } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import { generalizationText, relationshipText, SemanticEntityName } from "./text-utils";
@@ -126,10 +126,10 @@ export interface OperationRowProps {
   contextAfter: EntityRecord;
 }
 
-export function OperationRow(props: OperationRowProps) {
+export const OperationRow = memo(function OperationRow(props: OperationRowProps) {
   const Component = OPERATION_ROWS[props.operation.type] ?? UnknownOperationRow;
   return <Component {...props} />;
-}
+});
 
 // #region Helper functions
 
@@ -157,9 +157,9 @@ function Row({ icon: Icon, colorClass, operation, children }: { icon: LucideIcon
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <li className="flex cursor-pointer items-center gap-2 text-sm">
-          <Icon className={`h-3.5 w-3.5 shrink-0 ${colorClass}`} />
-          <span className="flex min-w-0 items-center gap-2 truncate">{children}</span>
+        <li className="flex cursor-pointer items-start gap-2 text-sm">
+          <Icon className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${colorClass}`} />
+          <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-0.5">{children}</span>
         </li>
       </PopoverTrigger>
       <PopoverContent side="bottom" align="start" className="max-w-lg p-0">
@@ -187,7 +187,7 @@ function ChangedFields({ fields }: { fields: string[] }) {
   const { t } = useTranslation();
   if (fields.length === 0) return null;
   const text = fields.map((field) => t(`history.field.${field}`, { defaultValue: humanizeTypeName(field).toLowerCase() })).join(", ");
-  return <span className="truncate text-xs text-muted-foreground">({text})</span>;
+  return <span className="text-xs text-muted-foreground">({text})</span>;
 }
 
 /**
@@ -216,7 +216,7 @@ function UndoRow({ operation }: OperationRowProps) {
   const op = operation as UndoOperation;
   return (
     <Row icon={Undo2} colorClass="text-orange-600 dark:text-orange-400" operation={operation}>
-      <span className="truncate">{t("history.op.undo", { transactionId: op.cancelTransactionId })}</span>
+      <span>{t("history.op.undo", { transactionId: op.cancelTransactionId })}</span>
     </Row>
   );
 }
@@ -226,7 +226,7 @@ function VersionRow({ operation }: OperationRowProps) {
   const op = operation as VersionOperation;
   return (
     <Row icon={Tag} colorClass="text-purple-600 dark:text-purple-400" operation={operation}>
-      <span className="truncate">{t("history.op.version", { transactionId: op.versionedTransactionId, version: op.version })}</span>
+      <span>{t("history.op.version", { transactionId: op.versionedTransactionId, version: op.version })}</span>
     </Row>
   );
 }
@@ -248,7 +248,7 @@ function CreateModelRow({ operation, after }: OperationRowProps) {
   const { name, typeName } = projectModelLabel(after, op.modelId, i18n.language, t);
   return (
     <Row icon={PackagePlus} colorClass="text-amber-700 dark:text-amber-400" operation={operation}>
-      <span className="truncate">{t("history.op.create-model", { type: typeName, name: name ?? t("history.unnamed") })}</span>
+      <span>{t("history.op.create-model", { type: typeName, name: name ?? t("history.unnamed") })}</span>
     </Row>
   );
 }
@@ -259,7 +259,7 @@ function RemoveModelRow({ operation, before }: OperationRowProps) {
   const { name, typeName } = projectModelLabel(before, op.modelId, i18n.language, t);
   return (
     <Row icon={PackageMinus} colorClass="text-amber-700 dark:text-amber-400" operation={operation}>
-      <span className="truncate">{t("history.op.remove-model", { type: typeName, name: name ?? t("history.unnamed") })}</span>
+      <span>{t("history.op.remove-model", { type: typeName, name: name ?? t("history.unnamed") })}</span>
     </Row>
   );
 }
@@ -273,7 +273,7 @@ function CreateClassRow({ operation, after }: OperationRowProps) {
   const name = <SemanticEntityName entityId={op.entity.id} entities={after} />;
   return (
     <Row icon={Plus} colorClass="text-green-600 dark:text-green-400" operation={operation}>
-      <span className="truncate">
+      <span>
         <Trans i18nKey="history.op.create-class" components={{ name }} />
       </span>
     </Row>
@@ -285,7 +285,7 @@ function ModifyClassRow({ operation, before }: OperationRowProps) {
   const name = <SemanticEntityName entityId={op.entity.id} entities={before} />;
   return (
     <Row icon={Pencil} colorClass="text-blue-600 dark:text-blue-400" operation={operation}>
-      <span className="truncate">
+      <span>
         <Trans i18nKey="history.op.modify-class" components={{ name }} />
       </span>
       <ChangedFields fields={changedFields(op.entity)} />
@@ -299,7 +299,7 @@ function CreateRelationshipRow({ operation, after }: OperationRowProps) {
   const { domainId, rangeId } = isSemanticModelRelationship(entity) ? relationshipEnds(entity) : { domainId: undefined, rangeId: undefined };
   return (
     <Row icon={Plus} colorClass="text-green-600 dark:text-green-400" operation={operation}>
-      <span className="truncate">{relationshipText("history.op.create-relationship", op.entity.id, domainId, rangeId, after)}</span>
+      <span>{relationshipText("history.op.create-relationship", op.entity.id, domainId, rangeId, after)}</span>
     </Row>
   );
 }
@@ -312,7 +312,7 @@ function ModifyRelationshipRow({ operation, before }: OperationRowProps) {
     : changedFields((operation as ModifyRelationEndOperation).end);
   return (
     <Row icon={Pencil} colorClass="text-blue-600 dark:text-blue-400" operation={operation}>
-      <span className="truncate">
+      <span>
         <Trans i18nKey="history.op.modify-relationship" components={{ name }} />
       </span>
       <ChangedFields fields={fields} />
@@ -329,13 +329,13 @@ function CreateGeneralizationRow({ operation, contextAfter }: OperationRowProps)
   if (!childId || !parentId) {
     return (
       <Row icon={Plus} colorClass="text-green-600 dark:text-green-400" operation={operation}>
-        <span className="truncate">{t("history.op.create-generalization-plain")}</span>
+        <span>{t("history.op.create-generalization-plain")}</span>
       </Row>
     );
   }
   return (
     <Row icon={Plus} colorClass="text-green-600 dark:text-green-400" operation={operation}>
-      <span className="truncate">{generalizationText("history.op.create-generalization", childId, parentId, contextAfter)}</span>
+      <span>{generalizationText("history.op.create-generalization", childId, parentId, contextAfter)}</span>
     </Row>
   );
 }
@@ -345,7 +345,7 @@ function ModifyGeneralizationRow({ operation }: OperationRowProps) {
   const op = operation as ModifyGeneralizationOperation;
   return (
     <Row icon={Pencil} colorClass="text-blue-600 dark:text-blue-400" operation={operation}>
-      <span className="truncate">{t("history.op.modify-generalization")}</span>
+      <span>{t("history.op.modify-generalization")}</span>
       <ChangedFields fields={changedFields(op.entity)} />
     </Row>
   );
@@ -366,7 +366,7 @@ function DeleteEntityRow({ operation, before, contextBefore }: OperationRowProps
   if (!entity) {
     return (
       <Row icon={Trash2} colorClass="text-red-600 dark:text-red-400" operation={operation}>
-        <span className="truncate">
+        <span>
           <Trans i18nKey="history.op.delete-entity" components={{ name: <SemanticEntityName entityId={op.entityId} entities={before} /> }} />
         </span>
       </Row>
@@ -378,7 +378,7 @@ function DeleteEntityRow({ operation, before, contextBefore }: OperationRowProps
     const name = <SemanticEntityName entityId={op.entityId} entities={contextBefore} />;
     return (
       <Row icon={Trash2} colorClass="text-red-600 dark:text-red-400" operation={operation}>
-        <span className="truncate">
+        <span>
           <Trans i18nKey={`history.op.${DELETE_ENTITY_PHRASE[kind]}`} components={{ name }} />
         </span>
       </Row>
@@ -389,7 +389,7 @@ function DeleteEntityRow({ operation, before, contextBefore }: OperationRowProps
     const { domainId, rangeId } = relationshipEnds(entity);
     return (
       <Row icon={Trash2} colorClass="text-red-600 dark:text-red-400" operation={operation}>
-        <span className="truncate">{relationshipText("history.op.delete-relationship", op.entityId, domainId, rangeId, before)}</span>
+        <span>{relationshipText("history.op.delete-relationship", op.entityId, domainId, rangeId, before)}</span>
       </Row>
     );
   }
@@ -397,7 +397,7 @@ function DeleteEntityRow({ operation, before, contextBefore }: OperationRowProps
   if (isSemanticModelGeneralization(entity)) {
     return (
       <Row icon={Trash2} colorClass="text-red-600 dark:text-red-400" operation={operation}>
-        <span className="truncate">{generalizationText("history.op.delete-generalization", entity.child, entity.parent, before)}</span>
+        <span>{generalizationText("history.op.delete-generalization", entity.child, entity.parent, before)}</span>
       </Row>
     );
   }
@@ -406,7 +406,7 @@ function DeleteEntityRow({ operation, before, contextBefore }: OperationRowProps
   const phrase = isSemanticModelClass(entity) ? DELETE_ENTITY_PHRASE["class"]! : "delete-entity";
   return (
     <Row icon={Trash2} colorClass="text-red-600 dark:text-red-400" operation={operation}>
-      <span className="truncate">
+      <span>
         <Trans i18nKey={`history.op.${phrase}`} components={{ name }} />
       </span>
     </Row>
@@ -422,7 +422,7 @@ function CreateClassProfileRow({ operation, contextAfter }: OperationRowProps) {
   const name = <SemanticEntityName entityId={op.entity.id} entities={contextAfter} />;
   return (
     <Row icon={Plus} colorClass="text-green-600 dark:text-green-400" operation={operation}>
-      <span className="truncate">
+      <span>
         <Trans i18nKey="history.op.create-class-profile" components={{ name }} />
       </span>
     </Row>
@@ -434,7 +434,7 @@ function ModifyClassProfileRow({ operation, contextBefore }: OperationRowProps) 
   const name = <SemanticEntityName entityId={op.identifier} entities={contextBefore} />;
   return (
     <Row icon={Pencil} colorClass="text-blue-600 dark:text-blue-400" operation={operation}>
-      <span className="truncate">
+      <span>
         <Trans i18nKey="history.op.modify-class-profile" components={{ name }} />
       </span>
       <ChangedFields fields={changedFields(op.entity)} />
@@ -447,7 +447,7 @@ function CreateRelationshipProfileRow({ operation, contextAfter }: OperationRowP
   const name = <SemanticEntityName entityId={op.entity.id} entities={contextAfter} />;
   return (
     <Row icon={Plus} colorClass="text-green-600 dark:text-green-400" operation={operation}>
-      <span className="truncate">
+      <span>
         <Trans i18nKey="history.op.create-relationship-profile" components={{ name }} />
       </span>
     </Row>
@@ -464,7 +464,7 @@ function ModifyRelationshipProfileRow({ operation, contextBefore }: OperationRow
     : changedFields((operation as ModifySemanticModelRelationshipEndProfile).end);
   return (
     <Row icon={Pencil} colorClass="text-blue-600 dark:text-blue-400" operation={operation}>
-      <span className="truncate">
+      <span>
         <Trans i18nKey="history.op.modify-relationship-profile" components={{ name }} />
       </span>
       <ChangedFields fields={fields} />
@@ -477,7 +477,7 @@ function AssignControlledVocabularyRow({ operation, contextBefore }: OperationRo
   const name = <SemanticEntityName entityId={op.classProfileIdentifier} entities={contextBefore} />;
   return (
     <Row icon={Plus} colorClass="text-green-600 dark:text-green-400" operation={operation}>
-      <span className="truncate">
+      <span>
         <Trans i18nKey="history.op.assign-controlled-vocabulary" components={{ name }} />
       </span>
     </Row>
@@ -489,7 +489,7 @@ function RemoveControlledVocabularyRow({ operation, contextBefore }: OperationRo
   const name = <SemanticEntityName entityId={op.classProfileIdentifier} entities={contextBefore} />;
   return (
     <Row icon={Trash2} colorClass="text-red-600 dark:text-red-400" operation={operation}>
-      <span className="truncate">
+      <span>
         <Trans i18nKey="history.op.remove-controlled-vocabulary" components={{ name }} />
       </span>
     </Row>
@@ -501,7 +501,7 @@ function ModifyControlledVocabularyRow({ operation, contextBefore }: OperationRo
   const name = <SemanticEntityName entityId={op.classProfileIdentifier} entities={contextBefore} />;
   return (
     <Row icon={Pencil} colorClass="text-blue-600 dark:text-blue-400" operation={operation}>
-      <span className="truncate">
+      <span>
         <Trans i18nKey="history.op.modify-controlled-vocabulary" components={{ name }} />
       </span>
     </Row>
@@ -517,7 +517,7 @@ function AddVisualNodeRow({ operation, contextAfter }: OperationRowProps) {
   const name = <SemanticEntityName entityId={op.entity.representedEntity} entities={contextAfter} />;
   return (
     <Row icon={Plus} colorClass="text-green-600 dark:text-green-400" operation={operation}>
-      <span className="truncate">
+      <span>
         <Trans i18nKey="history.op.add-visual-node" components={{ name }} />
       </span>
     </Row>
@@ -530,7 +530,7 @@ function AddVisualDiagramNodeRow({ operation, contextAfter }: OperationRowProps)
   const { name, typeName } = projectModelLabel(contextAfter, op.entity.representedVisualModel, i18n.language, t);
   return (
     <Row icon={Plus} colorClass="text-green-600 dark:text-green-400" operation={operation}>
-      <span className="truncate">{t("history.op.add-visual-diagram-node", { name: name ?? typeName })}</span>
+      <span>{t("history.op.add-visual-diagram-node", { name: name ?? typeName })}</span>
     </Row>
   );
 }
@@ -540,7 +540,7 @@ function AddVisualRelationshipRow({ operation, contextAfter }: OperationRowProps
   const name = <SemanticEntityName entityId={op.entity.representedRelationship} entities={contextAfter} />;
   return (
     <Row icon={Plus} colorClass="text-green-600 dark:text-green-400" operation={operation}>
-      <span className="truncate">
+      <span>
         <Trans i18nKey="history.op.add-visual-relationship" components={{ name }} />
       </span>
     </Row>
@@ -551,7 +551,7 @@ function AddVisualProfileRelationshipRow({ operation }: OperationRowProps) {
   const { t } = useTranslation();
   return (
     <Row icon={Plus} colorClass="text-green-600 dark:text-green-400" operation={operation}>
-      <span className="truncate">{t("history.op.add-visual-profile-relationship")}</span>
+      <span>{t("history.op.add-visual-profile-relationship")}</span>
     </Row>
   );
 }
@@ -560,7 +560,7 @@ function AddVisualGroupRow({ operation }: OperationRowProps) {
   const { t } = useTranslation();
   return (
     <Row icon={Plus} colorClass="text-green-600 dark:text-green-400" operation={operation}>
-      <span className="truncate">{t("history.op.add-visual-group")}</span>
+      <span>{t("history.op.add-visual-group")}</span>
     </Row>
   );
 }
@@ -584,7 +584,7 @@ function UpdateVisualEntityRow({ operation, before, contextBefore }: OperationRo
     const from = (entity as { position?: Position } | undefined)?.position;
     return (
       <Row icon={Move} colorClass="text-indigo-600 dark:text-indigo-400" operation={operation}>
-        <span className="truncate">
+        <span>
           {from ? (
             <Trans i18nKey="history.op.move-node" values={{ from: formatPosition(from), to: formatPosition(to) }} components={{ name }} />
           ) : (
@@ -597,7 +597,7 @@ function UpdateVisualEntityRow({ operation, before, contextBefore }: OperationRo
   if ("waypoints" in updates) {
     return (
       <Row icon={Move} colorClass="text-indigo-600 dark:text-indigo-400" operation={operation}>
-        <span className="truncate">
+        <span>
           <Trans i18nKey="history.op.reroute-edge" components={{ name }} />
         </span>
       </Row>
@@ -606,7 +606,7 @@ function UpdateVisualEntityRow({ operation, before, contextBefore }: OperationRo
   if ("content" in updates) {
     return (
       <Row icon={Pencil} colorClass="text-blue-600 dark:text-blue-400" operation={operation}>
-        <span className="truncate">
+        <span>
           <Trans i18nKey="history.op.change-node-content" components={{ name }} />
         </span>
       </Row>
@@ -614,7 +614,7 @@ function UpdateVisualEntityRow({ operation, before, contextBefore }: OperationRo
   }
   return (
     <Row icon={Pencil} colorClass="text-blue-600 dark:text-blue-400" operation={operation}>
-      <span className="truncate">
+      <span>
         <Trans i18nKey="history.op.update-visual-entity" components={{ name }} />
       </span>
       <ChangedFields fields={changedFields(updates)} />
@@ -634,7 +634,7 @@ function DeleteVisualEntityRow({ operation, before, contextBefore }: OperationRo
         : "remove-visual-entity";
   return (
     <Row icon={Trash2} colorClass="text-red-600 dark:text-red-400" operation={operation}>
-      <span className="truncate">
+      <span>
         <Trans i18nKey={`history.op.${phrase}`} components={{ name }} />
       </span>
     </Row>
@@ -649,13 +649,13 @@ function SetModelColorRow({ operation, contextAfter }: OperationRowProps) {
   if (op.color === null) {
     return (
       <Row icon={Palette} colorClass="text-fuchsia-600 dark:text-fuchsia-400" operation={operation}>
-        <span className="truncate">{t("history.op.remove-model-color", { name: modelName })}</span>
+        <span>{t("history.op.remove-model-color", { name: modelName })}</span>
       </Row>
     );
   }
   return (
     <Row icon={Palette} colorClass="text-fuchsia-600 dark:text-fuchsia-400" operation={operation}>
-      <span className="truncate">{t("history.op.set-model-color", { name: modelName })}</span>
+      <span>{t("history.op.set-model-color", { name: modelName })}</span>
       <ColorSwatch color={op.color} />
     </Row>
   );
@@ -667,7 +667,7 @@ function DeleteModelColorRow({ operation, contextBefore }: OperationRowProps) {
   const { name, typeName } = projectModelLabel(contextBefore, op.modelId, i18n.language, t);
   return (
     <Row icon={Palette} colorClass="text-fuchsia-600 dark:text-fuchsia-400" operation={operation}>
-      <span className="truncate">{t("history.op.remove-model-color", { name: name ?? typeName })}</span>
+      <span>{t("history.op.remove-model-color", { name: name ?? typeName })}</span>
     </Row>
   );
 }
@@ -678,7 +678,7 @@ function SetLabelRow({ operation }: OperationRowProps) {
   const name = pickLanguageString(op.label, i18n.language);
   return (
     <Row icon={Pencil} colorClass="text-blue-600 dark:text-blue-400" operation={operation}>
-      <span className="truncate">{t("history.op.rename-view", { name: name ?? t("history.unnamed") })}</span>
+      <span>{t("history.op.rename-view", { name: name ?? t("history.unnamed") })}</span>
     </Row>
   );
 }
@@ -687,7 +687,7 @@ function SetViewRow({ operation }: OperationRowProps) {
   const { t } = useTranslation();
   return (
     <Row icon={Palette} colorClass="text-fuchsia-600 dark:text-fuchsia-400" operation={operation}>
-      <span className="truncate">{t("history.op.set-view")}</span>
+      <span>{t("history.op.set-view")}</span>
     </Row>
   );
 }
@@ -700,7 +700,7 @@ function ReloadModelRow({ operation }: OperationRowProps) {
   const { t } = useTranslation();
   return (
     <Row icon={Replace} colorClass="text-sky-600 dark:text-sky-400" operation={operation}>
-      <span className="truncate">{t("history.op.reload-model")}</span>
+      <span>{t("history.op.reload-model")}</span>
     </Row>
   );
 }
@@ -709,7 +709,7 @@ function SetModelUrlsRow({ operation }: OperationRowProps) {
   const { t } = useTranslation();
   return (
     <Row icon={Pencil} colorClass="text-blue-600 dark:text-blue-400" operation={operation}>
-      <span className="truncate">{t("history.op.set-model-urls")}</span>
+      <span>{t("history.op.set-model-urls")}</span>
     </Row>
   );
 }
@@ -718,7 +718,7 @@ function AddQueryRow({ operation }: OperationRowProps) {
   const { t } = useTranslation();
   return (
     <Row icon={Plus} colorClass="text-green-600 dark:text-green-400" operation={operation}>
-      <span className="truncate">{t("history.op.add-query")}</span>
+      <span>{t("history.op.add-query")}</span>
     </Row>
   );
 }
@@ -727,7 +727,7 @@ function RemoveQueryRow({ operation }: OperationRowProps) {
   const { t } = useTranslation();
   return (
     <Row icon={Trash2} colorClass="text-red-600 dark:text-red-400" operation={operation}>
-      <span className="truncate">{t("history.op.remove-query")}</span>
+      <span>{t("history.op.remove-query")}</span>
     </Row>
   );
 }
@@ -787,7 +787,7 @@ function PsmCreateRow({ operation }: OperationRowProps) {
   const partKey = PSM_CREATE_TYPES[operation.type] ?? "class";
   return (
     <Row icon={Plus} colorClass="text-green-600 dark:text-green-400" operation={operation}>
-      <span className="truncate">{t("history.op.psm-create", { what: t(`history.psm-part.${partKey}`) })}</span>
+      <span>{t("history.op.psm-create", { what: t(`history.psm-part.${partKey}`) })}</span>
     </Row>
   );
 }
@@ -797,7 +797,7 @@ function PsmDeleteRow({ operation }: OperationRowProps) {
   const partKey = PSM_DELETE_TYPES[operation.type] ?? "class";
   return (
     <Row icon={Trash2} colorClass="text-red-600 dark:text-red-400" operation={operation}>
-      <span className="truncate">{t("history.op.psm-delete", { what: t(`history.psm-part.${partKey}`) })}</span>
+      <span>{t("history.op.psm-delete", { what: t(`history.psm-part.${partKey}`) })}</span>
     </Row>
   );
 }
@@ -808,7 +808,7 @@ function PsmGenericSetRow({ operation }: OperationRowProps) {
   const what = humanizeTypeName(suffix.replace(/^(Set|Unset)/, "")).toLowerCase();
   return (
     <Row icon={Pencil} colorClass="text-blue-600 dark:text-blue-400" operation={operation}>
-      <span className="truncate">{t("history.op.psm-set", { what })}</span>
+      <span>{t("history.op.psm-set", { what })}</span>
     </Row>
   );
 }
@@ -817,7 +817,7 @@ function PsmCreateSchemaRow({ operation }: OperationRowProps) {
   const { t } = useTranslation();
   return (
     <Row icon={Plus} colorClass="text-green-600 dark:text-green-400" operation={operation}>
-      <span className="truncate">{t("history.op.psm-create-schema")}</span>
+      <span>{t("history.op.psm-create-schema")}</span>
     </Row>
   );
 }
@@ -826,7 +826,7 @@ function PsmMovePropertyRow({ operation }: OperationRowProps) {
   const { t } = useTranslation();
   return (
     <Row icon={Move} colorClass="text-indigo-600 dark:text-indigo-400" operation={operation}>
-      <span className="truncate">{t("history.op.psm-move-property")}</span>
+      <span>{t("history.op.psm-move-property")}</span>
     </Row>
   );
 }
@@ -835,7 +835,7 @@ function PsmSetOrderRow({ operation }: OperationRowProps) {
   const { t } = useTranslation();
   return (
     <Row icon={Move} colorClass="text-indigo-600 dark:text-indigo-400" operation={operation}>
-      <span className="truncate">{t("history.op.psm-set-order")}</span>
+      <span>{t("history.op.psm-set-order")}</span>
     </Row>
   );
 }
@@ -846,7 +846,7 @@ function PsmSetHumanLabelRow({ operation }: OperationRowProps) {
   const name = pickLanguageString(label, i18n.language);
   return (
     <Row icon={Pencil} colorClass="text-blue-600 dark:text-blue-400" operation={operation}>
-      <span className="truncate">{t("history.op.psm-set-human-label", { name: name ?? t("history.unnamed") })}</span>
+      <span>{t("history.op.psm-set-human-label", { name: name ?? t("history.unnamed") })}</span>
     </Row>
   );
 }
@@ -856,7 +856,7 @@ function PsmSetTechnicalLabelRow({ operation }: OperationRowProps) {
   const value = (operation as Operation & Record<string, unknown>).dataPsmTechnicalLabel;
   return (
     <Row icon={Pencil} colorClass="text-blue-600 dark:text-blue-400" operation={operation}>
-      <span className="truncate">{t("history.op.psm-set-technical-label", { value: typeof value === "string" ? value : "?" })}</span>
+      <span>{t("history.op.psm-set-technical-label", { value: typeof value === "string" ? value : "?" })}</span>
     </Row>
   );
 }
@@ -865,7 +865,7 @@ function PsmReplaceAlongInheritanceRow({ operation }: OperationRowProps) {
   const { t } = useTranslation();
   return (
     <Row icon={Pencil} colorClass="text-blue-600 dark:text-blue-400" operation={operation}>
-      <span className="truncate">{t("history.op.psm-replace-along-inheritance")}</span>
+      <span>{t("history.op.psm-replace-along-inheritance")}</span>
     </Row>
   );
 }
@@ -874,7 +874,7 @@ function PsmWrapWithOrRow({ operation }: OperationRowProps) {
   const { t } = useTranslation();
   return (
     <Row icon={Pencil} colorClass="text-blue-600 dark:text-blue-400" operation={operation}>
-      <span className="truncate">{t("history.op.psm-wrap-with-or")}</span>
+      <span>{t("history.op.psm-wrap-with-or")}</span>
     </Row>
   );
 }
@@ -883,7 +883,7 @@ function PsmUnwrapOrRow({ operation }: OperationRowProps) {
   const { t } = useTranslation();
   return (
     <Row icon={Pencil} colorClass="text-blue-600 dark:text-blue-400" operation={operation}>
-      <span className="truncate">{t("history.op.psm-unwrap-or")}</span>
+      <span>{t("history.op.psm-unwrap-or")}</span>
     </Row>
   );
 }
@@ -897,7 +897,7 @@ function SetEntityRow({ operation, contextBefore }: OperationRowProps) {
   const name = <SemanticEntityName entityId={op.entity.id} entities={contextBefore} />;
   return (
     <Row icon={Replace} colorClass="text-sky-600 dark:text-sky-400" operation={operation}>
-      <span className="truncate">
+      <span>
         <Trans i18nKey="history.op.set-entity" components={{ name }} />
       </span>
     </Row>
@@ -942,7 +942,7 @@ function UpdateEntityRow(props: OperationRowProps) {
   const name = <SemanticEntityName entityId={op.update.id} entities={contextBefore} />;
   return (
     <Row icon={Pencil} colorClass="text-blue-600 dark:text-blue-400" operation={operation}>
-      <span className="truncate">
+      <span>
         <Trans i18nKey="history.op.update-entity" components={{ name }} />
       </span>
       <ChangedFields fields={changedFields(op.update)} />
@@ -955,7 +955,7 @@ function RemoveEntityRow({ operation, contextBefore }: OperationRowProps) {
   const name = <SemanticEntityName entityId={op.entityId} entities={contextBefore} />;
   return (
     <Row icon={Trash2} colorClass="text-red-600 dark:text-red-400" operation={operation}>
-      <span className="truncate">
+      <span>
         <Trans i18nKey="history.op.remove-entity" components={{ name }} />
       </span>
     </Row>
@@ -980,7 +980,7 @@ function UnknownOperationRow({ operation }: OperationRowProps) {
           : ([CircleHelp, "text-muted-foreground"] as const);
   return (
     <Row icon={icon} colorClass={colorClass} operation={operation}>
-      <span className="truncate">{t("history.op.generic", { text: type === "" ? "?" : humanizeTypeName(type) })}</span>
+      <span>{t("history.op.generic", { text: type === "" ? "?" : humanizeTypeName(type) })}</span>
     </Row>
   );
 }

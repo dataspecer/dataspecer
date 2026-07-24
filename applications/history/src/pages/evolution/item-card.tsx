@@ -5,14 +5,15 @@ import type { LanguageString } from "@dataspecer/core-v2/semantic-model/concepts
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import type { EvolutionChoice, EvolutionFieldDecision } from "@dataspecer/profile-model/hooks";
 import { ArrowRight, Check, CircleAlert, Link2Off, Trash2, Wrench } from "lucide-react";
-import type { ReactNode } from "react";
+import { memo, type ReactNode } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { ProfileName, SourceName } from "./display";
-import { ITEM_KEY, MANUAL_CHOICE, itemStatus, type ItemStatus, type ReviewGroup, type ReviewItem, type ReviewState } from "./review-state";
+import { ITEM_KEY, MANUAL_CHOICE, itemStatus, type ItemState, type ItemStatus, type ReviewGroup, type ReviewItem } from "./review-state";
 
 export interface ItemCardProps {
   reviewItem: ReviewItem;
-  state: ReviewState;
+  /** This item's own state slice — passing just this (rather than the whole `ReviewState`) lets `ItemCard` be memoized: unrelated items keep the same state reference across updates (see `setItemChecked` et al.), so untouched cards skip re-rendering. */
+  itemState: ItemState;
   /** Effective (aggregated) entities of the item's group — see `effectiveGroupEntities` in evolution-data.ts. */
   effectiveEntities: EntityRecord;
   onCheck: (key: string, checked: boolean) => void;
@@ -20,11 +21,10 @@ export interface ItemCardProps {
   onManualDone: (key: string, done: boolean) => void;
 }
 
-export function ItemCard({ reviewItem, state, effectiveEntities, onCheck, onSelectChoice, onManualDone }: ItemCardProps) {
+export const ItemCard = memo(function ItemCard({ reviewItem, itemState, effectiveEntities, onCheck, onSelectChoice, onManualDone }: ItemCardProps) {
   const { t } = useTranslation();
   const { key, group, item } = reviewItem;
-  const itemState = state[key]!;
-  const status = itemStatus(reviewItem, state);
+  const status = itemStatus(reviewItem, itemState);
   const locked = status === "applied";
 
   return (
@@ -103,7 +103,7 @@ export function ItemCard({ reviewItem, state, effectiveEntities, onCheck, onSele
       )}
     </Card>
   );
-}
+});
 
 function isCreateItem(kind: string): boolean {
   return kind.startsWith("create-");

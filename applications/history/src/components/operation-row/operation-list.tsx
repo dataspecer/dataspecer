@@ -8,7 +8,7 @@ import type { ModelIdentifier } from "@dataspecer/core/model";
 import type { OperationInModel } from "@dataspecer/core/operation";
 import { build } from "@dataspecer/specification/model-hierarchy";
 import { isPackageEntity } from "@dataspecer/project-model";
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 /** Fixed id of the virtual project model, shared by every model store instance. */
@@ -61,7 +61,7 @@ export function getAggregatedEntitiesWithPassthroughForPackage(models: Record<Mo
  * profiles resolve. This makes the component self-contained — the operations
  * it renders do not need to relate to the current state of the model store.
  */
-export function OperationGroups({
+export const OperationGroups = memo(function OperationGroups({
   modelsBefore,
   operations,
   undoneInModels,
@@ -123,8 +123,6 @@ export function OperationGroups({
       .map(([modelId, modelOperations]): [string, OperationRowProps[], boolean] => [modelId, modelOperations, rank(modelId) >= 2]);
   }, [rows, modelsBefore, importantModelTypes]);
 
-  console.log(groups);
-
   return (
     <div className="space-y-2">
       {groups.map(([modelId, modelOperations, unimportant]) => (
@@ -138,9 +136,9 @@ export function OperationGroups({
       ))}
     </div>
   );
-}
+});
 
-function SingleModelOperations({
+const SingleModelOperations = memo(function SingleModelOperations({
   modelId,
   operations,
   undone,
@@ -179,4 +177,4 @@ function SingleModelOperations({
       </ul>
     </div>
   );
-}
+});

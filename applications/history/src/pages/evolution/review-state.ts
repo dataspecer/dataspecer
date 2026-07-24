@@ -185,8 +185,7 @@ function findChoice(item: EvolutionItem, decisionKey: string, choiceId: string) 
 // Status
 // ---------------------------------------------------------------------------
 
-export function itemStatus(reviewItem: ReviewItem, state: ReviewState): ItemStatus {
-  const itemState = state[reviewItem.key]!;
+export function itemStatus(reviewItem: ReviewItem, itemState: ItemState): ItemStatus {
   const item = reviewItem.item;
 
   if (item.kind === "modify-profile") {

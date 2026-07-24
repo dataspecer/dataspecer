@@ -7,7 +7,7 @@ import type { OperationInModel } from "@dataspecer/core/operation";
 import type { EvolutionItem } from "@dataspecer/profile-model/hooks";
 import { Link, useLocation } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, CheckCircle2, GitMerge } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { pickLanguageString, resolveModelDisplay } from "@/lib/model-display";
 import { LOCAL_SEMANTIC_MODEL, RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
@@ -30,7 +30,9 @@ import {
   selectChoice,
   setItemChecked,
   setManualDone,
+  type ItemState,
   type ReviewGroup,
+  type ReviewItem,
   type ReviewState,
 } from "./review-state";
 
@@ -111,24 +113,44 @@ export function EvolutionPage() {
 
   const items = useMemo(() => buildReviewItems(groups ?? []), [groups]);
 
-  // Recomputed on every state change: applies the operations implied by the
-  // current selections to a shadow copy of each group's target model, so
-  // entity names (e.g. of a proposed class profile, or one whose title a
-  // decision is changing) stay live while the user fills out the form.
+  const itemsByGroup = useMemo(() => {
+    const map = new Map<ReviewGroup, ReviewItem[]>();
+    for (const item of items) map.set(item.group, [...(map.get(item.group) ?? []), item]);
+    return map;
+  }, [items]);
+
+  /**
+   * Per-group cache of `effectiveGroupEntities` (a nontrivial aggregation
+   * over the group's target model). `setItemChecked`/`selectChoice`/etc.
+   * shallow-copy `ReviewState`, so an item's own state object keeps the same
+   * reference across an update unless it (or a dependency of it) was the one
+   * that changed — comparing those references lets a group whose items were
+   * untouched skip recomputation entirely instead of redoing it for every
+   * group on every keystroke/click anywhere on the page.
+   */
+  const effectiveEntitiesCache = useRef(new Map<ReviewGroup, { itemStates: ItemState[]; entities: EntityRecord }>());
+
   const effectiveEntitiesByGroup = useMemo(() => {
     const map = new Map<ReviewGroup, EntityRecord>();
     if (!modelStore) return map;
     for (const group of groups ?? []) {
-      map.set(group, effectiveGroupEntities(modelStore, group, items, state));
+      const itemStates = (itemsByGroup.get(group) ?? []).map((item) => state[item.key]!);
+      const cached = effectiveEntitiesCache.current.get(group);
+      const unchanged = !!cached && cached.itemStates.length === itemStates.length && cached.itemStates.every((s, i) => s === itemStates[i]);
+      const entities = unchanged ? cached!.entities : effectiveGroupEntities(modelStore, group, items, state);
+      if (!unchanged) effectiveEntitiesCache.current.set(group, { itemStates, entities });
+      map.set(group, entities);
     }
     return map;
-  }, [groups, items, state, modelStore]);
+  }, [groups, items, itemsByGroup, state, modelStore]);
 
   const commit = useMemo(() => collectCommit(items, state), [items, state]);
 
-  const statuses = useMemo(() => new Map(items.map((item) => [item.key, itemStatus(item, state)])), [items, state]);
+  const statuses = useMemo(() => new Map(items.map((item) => [item.key, itemStatus(item, state[item.key]!)])), [items, state]);
 
   const upstreamOperations = useMemo(() => branches?.flatMap((branch) => branch.operations) ?? [], [branches]);
+
+  const modelsBefore = useMemo(() => modelStore?.getAllEntities() ?? {}, [modelStore]);
 
   const allDone = upstreamApplied && items.every((item) => statuses.get(item.key) === "applied" || statuses.get(item.key) === "unchecked");
 
@@ -136,11 +158,14 @@ export function EvolutionPage() {
   // Handlers
   // -------------------------------------------------------------------------
 
-  const handleCheck = (key: string, checked: boolean) => setState((s) => setItemChecked(items, s, key, checked));
+  const handleCheck = useCallback((key: string, checked: boolean) => setState((s) => setItemChecked(items, s, key, checked)), [items]);
 
-  const handleSelectChoice = (key: string, decisionKey: string, choiceId: string) => setState((s) => selectChoice(items, s, key, decisionKey, choiceId));
+  const handleSelectChoice = useCallback(
+    (key: string, decisionKey: string, choiceId: string) => setState((s) => selectChoice(items, s, key, decisionKey, choiceId)),
+    [items],
+  );
 
-  const handleManualDone = (key: string, done: boolean) => setState((s) => setManualDone(s, key, done));
+  const handleManualDone = useCallback((key: string, done: boolean) => setState((s) => setManualDone(s, key, done)), []);
 
   const handleApply = async () => {
     if (!modelStore || !branches || applying) return;
@@ -264,7 +289,7 @@ export function EvolutionPage() {
       {/* Upstream changes */}
       <section className="space-y-2">
         <h2 className="text-sm font-semibold tracking-tight text-muted-foreground uppercase">{t("evolution.upstream-changes")}</h2>
-        <OperationGroups modelsBefore={modelStore?.getAllEntities() ?? {}} operations={upstreamOperations} importantModelTypes={IMPORTANT_MODEL_TYPES} />
+        <OperationGroups modelsBefore={modelsBefore} operations={upstreamOperations} importantModelTypes={IMPORTANT_MODEL_TYPES} />
       </section>
 
       {items.length === 0 && <p className="text-sm text-muted-foreground">{t("evolution.no-profile-impact")}</p>}
@@ -283,7 +308,7 @@ export function EvolutionPage() {
                 <ItemCard
                   key={reviewItem.key}
                   reviewItem={reviewItem}
-                  state={state}
+                  itemState={state[reviewItem.key]!}
                   effectiveEntities={effectiveEntitiesByGroup.get(reviewItem.group) ?? reviewItem.group.profileEntities}
                   onCheck={handleCheck}
                   onSelectChoice={handleSelectChoice}

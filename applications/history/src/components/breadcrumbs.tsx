@@ -17,7 +17,7 @@ export function Breadcrumbs({ items }: { items: BreadcrumbItem[] }) {
   const { t } = useTranslation();
 
   return (
-    <nav className="flex items-center gap-1.5 overflow-x-auto whitespace-nowrap text-sm text-muted-foreground">
+    <nav style={{scrollbarWidth: "none"}} className="flex items-center gap-1.5 overflow-x-auto scrollbar-none whitespace-nowrap text-sm text-muted-foreground">
       <a href={import.meta.env.VITE_MANAGER_URL ?? "/"} className="hover:text-foreground shrink-0">
         {t("breadcrumbs.home")}
       </a>
