@@ -16,10 +16,15 @@ const UNION_RANGE_PREFIX = "https://dataspecer.com/cim/abstract-class-union-rang
 function rdfSourceProperty(source: RdfMemorySource, iri: string, properties: string[]): RdfObject[] {
     const result = [] as RdfObject[];
     for (const property of properties) {
-        const objects = source.property(iri, property);
+        // Blank nodes are technical and treated as if the relation had no end.
+        const objects = source.property(iri, property).filter(object => object.termType === "NamedNode");
         objects.forEach(object => result.find(o => o.value === object.value) || result.push(object));
     }
     return result;
+}
+
+function namedNodeValues(objects: {termType: string, value: string}[]): string[] {
+    return objects.filter(object => object.termType === "NamedNode").map(object => object.value);
 }
 
 function rdfSourceReverseProperty(source: RdfMemorySource, iris: string[], properties: string[]): RdfNode[] {
@@ -116,7 +121,9 @@ export class RdfsFileAdapter implements CimAdapter {
 
         // PROCESS PROPERTIES (attributes and associations)
 
-        const rdfProperties = rdfSourceReverseProperty(source, this.options.property, [RDF.type]);
+        // Blank nodes are technical and must not become entities in the output.
+        const rdfProperties = rdfSourceReverseProperty(source, this.options.property, [RDF.type])
+            .filter(node => node.termType === "NamedNode");
 
         for (const rdfProperty of rdfProperties) {
             const propertyIri = rdfProperty.value;
@@ -190,11 +197,13 @@ export class RdfsFileAdapter implements CimAdapter {
             loadRdfsEntityToResource(entity, this.iriProvider, resource);
             resource.pimExtends = unique([
                 ...resource.pimExtends,
-                ...(entity.nodes(RDFS.subClassOf)).map(this.iriProvider.cimToPim),
+                // A blank iri is technical and does not represent a real generalization.
+                ...namedNodeValues(entity.property(RDFS.subClassOf)).map(this.iriProvider.cimToPim),
             ]);
 
             // Add anonymous classes for domains
-            const propertiesHavingAsDomain = rdfSourceReverseProperty(source, [cimIri], [...this.options.propertyDomain, ...this.options.propertyDomainIncludes]);
+            const propertiesHavingAsDomain = rdfSourceReverseProperty(source, [cimIri], [...this.options.propertyDomain, ...this.options.propertyDomainIncludes])
+                .filter(node => node.termType === "NamedNode");
             const propertyIrisWithAnonymousDomainClass = [] as string[];
             for (const prop of propertiesHavingAsDomain) {
                 const domain = rdfSourceProperty(source, prop.value, [...this.options.propertyDomain, ...this.options.propertyDomainIncludes]);
@@ -205,7 +214,8 @@ export class RdfsFileAdapter implements CimAdapter {
             resource.pimExtends.push(...propertyIrisWithAnonymousDomainClass.map(iri => this.iriProvider.cimToPim(UNION_DOMAIN_PREFIX + iri)));
 
             // Add anonymous classes for ranges
-            const propertiesHavingAsRange = rdfSourceReverseProperty(source, [cimIri], [...this.options.propertyRange, ...this.options.propertyRangeIncludes]);
+            const propertiesHavingAsRange = rdfSourceReverseProperty(source, [cimIri], [...this.options.propertyRange, ...this.options.propertyRangeIncludes])
+                .filter(node => node.termType === "NamedNode");
             const propertyIrisWithAnonymousRangeClass = [] as string[];
             for (const prop of propertiesHavingAsRange) {
                 const range = rdfSourceProperty(source, prop.value, [...this.options.propertyRange, ...this.options.propertyRangeIncludes]);
@@ -271,13 +281,14 @@ export class RdfsFileAdapter implements CimAdapter {
             ...this.options.propertyRange,
             ...this.options.propertyRangeIncludes,
         ];
+        // Blank iris are technical, a relation to one is treated as having no end.
         let domainNodes = [] as string[];
         for (const domainProp of allDomainProperties) {
-            domainNodes.push(...entity.nodes(domainProp));
+            domainNodes.push(...namedNodeValues(entity.property(domainProp)));
         }
         let rangeNodes = [] as string[];
         for (const rangeProp of allRangeProperties) {
-            rangeNodes.push(...entity.nodes(rangeProp));
+            rangeNodes.push(...namedNodeValues(entity.property(rangeProp)));
         }
 
         // // Treat rdfs:Resource as owl:Thing
@@ -350,7 +361,7 @@ export class RdfsFileAdapter implements CimAdapter {
             attribute.pimOwnerClass = this.iriProvider.cimToPim(domainClassIri);
             attribute.pimDatatype = rangeClassIri === OWL.Thing ? RDFS.Literal : rangeClassIri ?? RDFS.Literal;
 
-            attribute["pimExtends"] = entity.property(RDFS.subPropertyOf).map(e => this.iriProvider.cimToPim(e.value));
+            attribute["pimExtends"] = namedNodeValues(entity.property(RDFS.subPropertyOf)).map(e => this.iriProvider.cimToPim(e));
 
             connectedClasses.push(domainClassIri);
             resources.push(attribute);
@@ -373,7 +384,7 @@ export class RdfsFileAdapter implements CimAdapter {
 
             association.pimEnd = [domain.iri, range.iri];
 
-            association["pimExtends"] = entity.property(RDFS.subPropertyOf).map(e => this.iriProvider.cimToPim(e.value));
+            association["pimExtends"] = namedNodeValues(entity.property(RDFS.subPropertyOf)).map(e => this.iriProvider.cimToPim(e));
 
             connectedClasses.push(domainClassIri, rangeClassIri);
             resources.push(domain, association, range);
