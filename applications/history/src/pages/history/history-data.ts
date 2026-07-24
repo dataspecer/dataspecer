@@ -1,5 +1,5 @@
 import type { OperationRowProps } from "@/components/operation-row/operation-row";
-import { modelTypesFromStore } from "@/lib/model-display";
+import { modelTypesFromProjectModel } from "@/lib/model-display";
 import { computeModelSnapshots } from "@/lib/model-snapshots";
 import {
   collectTransactionVersions,
@@ -74,7 +74,7 @@ export async function fetchProjectHistory(backendUrl: string, projectIri: string
     versionsByTransaction.set(version.versionedTransactionId, [...(versionsByTransaction.get(version.versionedTransactionId) ?? []), version.version]);
   }
 
-  const snapshots = computeModelSnapshots(transactions, modelTypesFromStore(modelStore), modelStore.projectModelId);
+  const snapshots = computeModelSnapshots(transactions, modelTypesFromProjectModel(modelStore.getAllEntities()[modelStore.projectModelId] ?? {}), modelStore.projectModelId);
 
   return result.transactions.map((transaction, index) => {
     const operations = transactions[index]!.operations.map((operation, operationIndex): OperationRowProps => {

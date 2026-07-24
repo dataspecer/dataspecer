@@ -10,6 +10,7 @@ import { ArrowLeft, ArrowRight, CheckCircle2, GitMerge } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { pickLanguageString, resolveModelDisplay } from "@/lib/model-display";
+import { LOCAL_SEMANTIC_MODEL, RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
 import {
   branchModelLabelChange,
   buildReviewGroups,
@@ -36,6 +37,9 @@ import {
 // ---------------------------------------------------------------------------
 // Sections
 // ---------------------------------------------------------------------------
+
+/** Upstream changes to models other than these are pushed to the end and grayed out, as they are of little interest here. */
+const IMPORTANT_MODEL_TYPES = [RDFS_MODEL, LOCAL_SEMANTIC_MODEL];
 
 const SECTIONS: { id: string; kinds: EvolutionItem["kind"][] }[] = [
   { id: "new-classes", kinds: ["create-class-profile"] },
@@ -260,7 +264,7 @@ export function EvolutionPage() {
       {/* Upstream changes */}
       <section className="space-y-2">
         <h2 className="text-sm font-semibold tracking-tight text-muted-foreground uppercase">{t("evolution.upstream-changes")}</h2>
-        <OperationGroups modelsBefore={modelStore?.getAllEntities() ?? {}} operations={upstreamOperations} />
+        <OperationGroups modelsBefore={modelStore?.getAllEntities() ?? {}} operations={upstreamOperations} importantModelTypes={IMPORTANT_MODEL_TYPES} />
       </section>
 
       {items.length === 0 && <p className="text-sm text-muted-foreground">{t("evolution.no-profile-impact")}</p>}

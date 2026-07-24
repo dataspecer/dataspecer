@@ -16,7 +16,7 @@ import { analyzeEvolution, analyzeProfileEvolution } from "@dataspecer/profile-m
 import type { ProjectModelEntity } from "@dataspecer/project-model";
 import { getAggregatedEntitiesWithPassthroughForPackage } from "@/components/operation-row/operation-list";
 import type { OperationRowProps } from "@/components/operation-row/operation-row";
-import { modelTypesFromStore } from "@/lib/model-display";
+import { modelTypesFromProjectModel } from "@/lib/model-display";
 import { applyToModel, computeModelSnapshots } from "@/lib/model-snapshots";
 import { collectGroupOperations, type ReviewGroup, type ReviewItem, type ReviewState } from "./review-state";
 
@@ -103,7 +103,7 @@ export function branchOperationsByModel(branch: EvolutionBranch): Map<string, Op
  */
 export function describeBranchOperations(modelStore: DefaultFrontendModelStore, branches: EvolutionBranch[]): OperationRowProps[] {
   const operations = branches.flatMap((branch) => branch.operations);
-  const snapshots = computeModelSnapshots([{ operations }], modelTypesFromStore(modelStore), modelStore.projectModelId, modelStore.getAllEntities())[0] ?? [];
+  const snapshots = computeModelSnapshots([{ operations }], modelTypesFromProjectModel(modelStore.getAllEntities()[modelStore.projectModelId] ?? {}), modelStore.projectModelId, modelStore.getAllEntities())[0] ?? [];
   return operations.map((operation, index) => {
     const snapshot = snapshots[index]!;
     return { ...operation, ...snapshot, contextBefore: snapshot.before, contextAfter: snapshot.after };
@@ -129,18 +129,32 @@ function languageStringsEqual(a: LanguageString, b: LanguageString): boolean {
  * the branch has no operations on the model, or its label does not change.
  */
 export function branchModelLabelChange(modelStore: DefaultFrontendModelStore, branch: EvolutionBranch, modelId: string): ModelLabelChange | null {
-  const operations = branchOperationsByModel(branch).get(modelId);
-  if (!operations || operations.length === 0) return null;
-
-  const modelType = modelTypesFromStore(modelStore)[modelId];
+  const modelType = modelTypesFromProjectModel(modelStore.getAllEntities()[modelStore.projectModelId] ?? {})[modelId];
   if (!modelType) return null;
 
-  const currentEntities = modelStore.getAllEntities()[modelId] ?? {};
-  const current = getModelMetadata(modelType, currentEntities, modelId)?.label ?? {};
+  if (modelType === RDFS_MODEL) {
+    const operations = branchOperationsByModel(branch).get(modelId);
+    if (!operations || operations.length === 0) return null;
+
+    const currentEntities = modelStore.getAllEntities()[modelId] ?? {};
+    const current = getModelMetadata(modelType, currentEntities, modelId)?.label ?? {};
+
+    const futureEntities = { ...currentEntities };
+    applyToModel(futureEntities, operations, false, modelType);
+    const future = getModelMetadata(modelType, futureEntities, modelId)?.label ?? {};
+
+    return languageStringsEqual(current, future) ? null : { current, future };
+  }
+
+  const operations = branchOperationsByModel(branch).get(modelStore.projectModelId);
+  if (!operations || operations.length === 0) return null;
+
+  const currentEntities = modelStore.getAllEntities()[modelStore.projectModelId] ?? {};
+  const current = (currentEntities[modelId] as ProjectModelEntity).label ?? {};
 
   const futureEntities = { ...currentEntities };
   applyToModel(futureEntities, operations, false, modelType);
-  const future = getModelMetadata(modelType, futureEntities, modelId)?.label ?? {};
+  const future = (futureEntities[modelId] as ProjectModelEntity).label ?? {};
 
   return languageStringsEqual(current, future) ? null : { current, future };
 }

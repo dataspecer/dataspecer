@@ -811,6 +811,22 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
     }
   }
 
+  // The project model's own entities (one per surviving model above, keyed
+  // by the same resource iris) are trimmed the same way, so its diff below
+  // only reports metadata changes (e.g. a package renamed on reload) for
+  // models that exist on both sides, not model creation/removal.
+  const survivingModelIds = new Set(Object.keys(nextModels).filter((modelId) => modelId !== PROJECT_MODEL_ID));
+  for (const entityId of Object.keys(previousModels[PROJECT_MODEL_ID] ?? {})) {
+    if (!survivingModelIds.has(entityId)) {
+      delete previousModels[PROJECT_MODEL_ID]![entityId];
+    }
+  }
+  for (const entityId of Object.keys(nextModels[PROJECT_MODEL_ID] ?? {})) {
+    if (!survivingModelIds.has(entityId)) {
+      delete nextModels[PROJECT_MODEL_ID]![entityId];
+    }
+  }
+
   const operations = diffModelStates(previousModels, nextModels);
 
   const projectIri = (await modelRepository.getProjectIri(query.iri))!;

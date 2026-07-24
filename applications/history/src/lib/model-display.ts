@@ -167,8 +167,7 @@ export function resolveModelDisplay(modelStore: DefaultFrontendModelStore, model
 }
 
 /** Model types of all models of the project, keyed by model id. */
-export function modelTypesFromStore(modelStore: DefaultFrontendModelStore): Record<string, string> {
-  const projectEntities = modelStore.getAllEntities()[modelStore.projectModelId] ?? {};
+export function modelTypesFromProjectModel(projectEntities: EntityRecord): Record<string, string> {
   const result: Record<string, string> = {};
   for (const entity of Object.values(projectEntities)) {
     const projectEntity = entity as ProjectModelEntity;
