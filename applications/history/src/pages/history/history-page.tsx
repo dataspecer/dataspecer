@@ -7,8 +7,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useModelStore } from "@/contexts/model-store-context";
 import { useLocation } from "@tanstack/react-router";
 import { Boxes, Tag, Undo2 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { EntityRecord } from "@dataspecer/core/entity-model";
+import type { ModelIdentifier } from "@dataspecer/core/model";
 import { fetchProjectHistory, markHistoryVersion, undoHistoryTransaction, type HistoryEntry } from "./history-data";
 
 /**
@@ -48,31 +50,40 @@ export function HistoryPage() {
   /** Newest first, split into sessions separated by half an hour of inactivity. */
   const sessions = useMemo(() => (entries === null ? [] : groupBySession([...entries].reverse())), [entries]);
 
-  const handleUndo = async (entry: HistoryEntry) => {
-    if (!backendUrl || !packageIri) return;
-    setBusyId(entry.clientId);
-    try {
-      await undoHistoryTransaction(backendUrl, packageIri, entry);
-      refresh();
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setBusyId(null);
-    }
-  };
+  /** Frozen once per model store — `getAllEntities()` builds a fresh object every call, which would otherwise defeat `OperationGroups`' own memoization on every card, every render. */
+  const modelsBefore = useMemo(() => modelStore?.getAllEntities() ?? {}, [modelStore]);
 
-  const handleMarkVersion = async (entry: HistoryEntry, version: string) => {
-    if (!backendUrl || !packageIri || !modelStore) return;
-    setBusyId(entry.clientId);
-    try {
-      await markHistoryVersion(backendUrl, packageIri, modelStore.projectModelId, entry.clientId, version);
-      refresh();
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setBusyId(null);
-    }
-  };
+  const handleUndo = useCallback(
+    async (entry: HistoryEntry) => {
+      if (!backendUrl || !packageIri) return;
+      setBusyId(entry.clientId);
+      try {
+        await undoHistoryTransaction(backendUrl, packageIri, entry);
+        refresh();
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setBusyId(null);
+      }
+    },
+    [backendUrl, packageIri, refresh],
+  );
+
+  const handleMarkVersion = useCallback(
+    async (entry: HistoryEntry, version: string) => {
+      if (!backendUrl || !packageIri || !modelStore) return;
+      setBusyId(entry.clientId);
+      try {
+        await markHistoryVersion(backendUrl, packageIri, modelStore.projectModelId, entry.clientId, version);
+        refresh();
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setBusyId(null);
+      }
+    },
+    [backendUrl, packageIri, modelStore, refresh],
+  );
 
   if (!packageIri) {
     return (
@@ -104,10 +115,11 @@ export function HistoryPage() {
             <TransactionCard
               key={entry.clientId}
               entry={entry}
+              modelsBefore={modelsBefore}
               busy={busyId !== null}
               language={i18n.language}
-              onUndo={() => handleUndo(entry)}
-              onMarkVersion={(version) => handleMarkVersion(entry, version)}
+              onUndo={handleUndo}
+              onMarkVersion={handleMarkVersion}
             />
           ))}
         </div>
@@ -177,18 +189,20 @@ function SessionHeader({ session, language }: { session: HistoryEntry[]; languag
  * todo This has wrong implementation as it takes current state of the history
  *  and not the state as it was at the time of the transaction.
  */
-function TransactionCard({
+const TransactionCard = memo(function TransactionCard({
   entry,
+  modelsBefore,
   busy,
   language,
   onUndo,
   onMarkVersion,
 }: {
   entry: HistoryEntry;
+  modelsBefore: Record<ModelIdentifier, EntityRecord>;
   busy: boolean;
   language: string;
-  onUndo: () => void;
-  onMarkVersion: (version: string) => void;
+  onUndo: (entry: HistoryEntry) => void;
+  onMarkVersion: (entry: HistoryEntry, version: string) => void;
 }) {
   const { t } = useTranslation();
   const { modelStore } = useModelStore();
@@ -227,12 +241,12 @@ function TransactionCard({
             {entry.isUndone && <Badge variant="secondary">{t("history.badge.undone")}</Badge>}
           </div>
 
-          <OperationGroups modelsBefore={modelStore?.getAllEntities() ?? {}} operations={entry.operations} undoneInModels={entry.undoneInModels} />
+          <OperationGroups modelsBefore={modelsBefore} operations={entry.operations} undoneInModels={entry.undoneInModels} />
         </div>
 
         <div className="flex shrink-0 items-center justify-end gap-1">
-          <MarkVersionButton disabled={busy} onMarkVersion={onMarkVersion} />
-          <Button variant="outline" size="sm" disabled={busy || entry.isUndone} onClick={onUndo} title={t("history.action.undo-description")}>
+          <MarkVersionButton disabled={busy} onMarkVersion={(version) => onMarkVersion(entry, version)} />
+          <Button variant="outline" size="sm" disabled={busy || entry.isUndone} onClick={() => onUndo(entry)} title={t("history.action.undo-description")}>
             <Undo2 className="mr-1 h-4 w-4" />
             {t("history.action.undo")}
           </Button>
@@ -240,7 +254,7 @@ function TransactionCard({
       </div>
     </Card>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // Actions

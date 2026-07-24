@@ -13,7 +13,7 @@ export function SemanticEntityName({ entityId, entities }: { entityId: string | 
   const { i18n: { language } } = useTranslation();
 
   if (!entityId) {
-    return <span className="truncate font-mono text-xs text-muted-foreground">?</span>;
+    return <span className="font-mono text-xs text-muted-foreground">?</span>;
   }
 
   const { name, iri } = entityLabelById(entityId, entities, language);
@@ -22,7 +22,7 @@ export function SemanticEntityName({ entityId, entities }: { entityId: string | 
     return <span className="font-bold">{name}</span>;
   }
 
-  return <span className="ml-1 truncate font-mono text-xs text-muted-foreground">{iri ?? entityId}</span>;
+  return <span className="ml-1 font-mono text-xs text-muted-foreground">{iri ?? entityId}</span>;
 }
 
 /**
