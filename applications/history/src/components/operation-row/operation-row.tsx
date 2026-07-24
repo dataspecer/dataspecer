@@ -85,6 +85,7 @@ import {
 import * as PSM from "@dataspecer/core/data-psm/data-psm-vocabulary";
 import {
   CircleHelp,
+  Image,
   Move,
   PackageMinus,
   PackagePlus,
@@ -903,8 +904,41 @@ function SetEntityRow({ operation, contextBefore }: OperationRowProps) {
   );
 }
 
-function UpdateEntityRow({ operation, contextBefore }: OperationRowProps) {
+function svgDataUri(svg: string): string {
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+/**
+ * Special case: an update that touches only the "svg" field (the visual
+ * model's rendered preview blob) is shown as before/after thumbnails instead
+ * of the usual one-line row.
+ */
+function UpdateEntitySvgRow({ operation }: OperationRowProps) {
+  const { t } = useTranslation();
   const op = operation as UpdateEntityOperation;
+  const svg = (op.update as any).svg;
+  return (
+    <li className="flex flex-col gap-1.5 py-1 text-sm">
+      <span className="flex items-center gap-2">
+        <Image className="h-3.5 w-3.5 shrink-0 text-pink-600 dark:text-pink-400" />
+        {t("history.op.update-entity-svg")}
+      </span>
+      <span className="flex items-center gap-2 pl-5">
+        <img className="h-30 w-60 rounded border border-border object-contain " src={svgDataUri(svg)} />
+      </span>
+    </li>
+  );
+}
+
+function UpdateEntityRow(props: OperationRowProps) {
+  const { operation, contextBefore } = props;
+  const op = operation as UpdateEntityOperation;
+  const fields = changedFields(op.update);
+
+  if (fields.length === 1 && fields[0] === "svg") {
+    return <UpdateEntitySvgRow {...props} />;
+  }
+
   const name = <SemanticEntityName entityId={op.update.id} entities={contextBefore} />;
   return (
     <Row icon={Pencil} colorClass="text-blue-600 dark:text-blue-400" operation={operation}>

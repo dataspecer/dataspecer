@@ -96,6 +96,7 @@
       "psm-set": "Changed {{what}} in the structure",
       "set-entity": "Replaced <name />",
       "update-entity": "Updated <name />",
+      "update-entity-svg": "Updated the diagram",
       "remove-entity": "Removed <name />"
     },
     "psm-part": {

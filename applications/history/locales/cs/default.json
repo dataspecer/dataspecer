@@ -97,6 +97,7 @@
       "psm-set": "Změnil(a) {{what}} ve struktuře",
       "set-entity": "Nahradil(a) <name />",
       "update-entity": "Upravil(a) <name />",
+      "update-entity-svg": "Aktualizovaný diagram",
       "remove-entity": "Odebral(a) <name />"
     },
     "psm-part": {
