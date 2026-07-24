@@ -209,7 +209,7 @@ function DecisionRow({
     <div className={cn("rounded-md border px-3 py-2 space-y-2", applied && "opacity-60")}>
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
         <span className="font-medium">
-          {decision.endRole && `${t(`evolution.end-role.${decision.endRole}`)} · `}
+          {decision.endRole && ["cardinality", "concept"].includes(decision.field) && `${t(`evolution.end-role.${decision.endRole}`)} · `}
           {t(`evolution.field.${decision.field}`)}
         </span>
         <UpstreamDiff decision={decision} />
