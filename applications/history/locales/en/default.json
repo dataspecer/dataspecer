@@ -42,8 +42,6 @@
       "version": "Marked transaction {{transactionId}} as version {{version}}",
       "create-model": "Added {{type}} \"{{name}}\" to the project",
       "remove-model": "Removed {{type}} \"{{name}}\" from the project",
-      "remove-model-entry": "Removed model \"{{name}}\" from the project",
-      "update-model": "Changed model \"{{name}}\"",
       "create-class": "Created class <name />",
       "modify-class": "Changed class <name />",
       "delete-class": "Deleted class <name />",
@@ -98,10 +96,7 @@
       "psm-set": "Changed {{what}} in the structure",
       "set-entity": "Replaced <name />",
       "update-entity": "Updated <name />",
-      "remove-entity": "Removed <name />",
-      "update-svg": "Updated the diagram preview",
-      "update-generator-configuration": "Changed the generator configuration",
-      "generic": "{{text}}"
+      "remove-entity": "Removed <name />"
     },
     "psm-part": {
       "class": "a class",
@@ -158,6 +153,10 @@
     "description": "This specification is dependent on another which has been modified. Please assess how the dependent models should respond to these changes.",
     "empty": "There are no pending changes.",
     "no-project": "No project selected. Open this page with a packageIri query parameter.",
+    "error": {
+      "load": "Failed to load the pending evolution. Please try refreshing the page.",
+      "apply": "Applying the changes failed. Please try again."
+    },
     "overview": {
       "description": "Pending updates of vocabularies and specifications whose changes affect other models. Open an update and review how the dependent models should react.",
       "empty": "There is no pending evolution.",

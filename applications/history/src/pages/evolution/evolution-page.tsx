@@ -1,4 +1,5 @@
 import { OperationGroups } from "@/components/operation-row/operation-list";
+import { ErrorBanner } from "@/components/error-banner";
 import { Button } from "@/components/ui/button";
 import { useModelStore } from "@/contexts/model-store-context";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
@@ -66,6 +67,9 @@ export function EvolutionPage() {
   const [groups, setGroups] = useState<ReviewGroup[] | null>(null);
   const [state, setState] = useState<ReviewState>({});
   const [upstreamApplied, setUpstreamApplied] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [applying, setApplying] = useState(false);
+  const [applyError, setApplyError] = useState(false);
 
   // The analysis is computed once from the fetched operations and the current
   // store state, then frozen — applying operations must not re-derive it.
@@ -73,6 +77,7 @@ export function EvolutionPage() {
     if (!backendUrl || !packageIri || !modelStore) return;
 
     setLoading(true);
+    setLoadError(false);
     setBranches(null);
     setGroups(null);
     setUpstreamApplied(false);
@@ -84,7 +89,10 @@ export function EvolutionPage() {
         setGroups(reviewGroups);
         setState(initializeState(buildReviewItems(reviewGroups)));
       })
-      .catch(console.error)
+      .catch((error) => {
+        console.error(error);
+        setLoadError(true);
+      })
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [packageIri, branchId, modelStore]);
@@ -123,7 +131,7 @@ export function EvolutionPage() {
   const handleManualDone = (key: string, done: boolean) => setState((s) => setManualDone(s, key, done));
 
   const handleApply = async () => {
-    if (!modelStore || !branches) return;
+    if (!modelStore || !branches || applying) return;
 
     const operations: OperationInModel[] = [];
     if (!upstreamApplied) {
@@ -139,6 +147,9 @@ export function EvolutionPage() {
     operations.push(...commit.operations);
     if (operations.length === 0) return;
 
+    setApplying(true);
+    setApplyError(false);
+    try {
     await modelStore.transaction(operations, {}).confirmation;
 
     if (!upstreamApplied && backendUrl && packageIri) {
@@ -151,6 +162,12 @@ export function EvolutionPage() {
     }
     setState((s) => markApplied(s, commit.appliedMarks));
     setUpstreamApplied(true);
+    } catch (error) {
+      console.error(error);
+      setApplyError(true);
+    } finally {
+      setApplying(false);
+    }
   };
 
   // -------------------------------------------------------------------------
@@ -176,6 +193,15 @@ export function EvolutionPage() {
     );
   }
 
+  if (loadError) {
+    return (
+      <div className="space-y-4">
+        <PageHeader packageIri={packageIri} sourceLabel={sourceLabel} />
+        <ErrorBanner message={t("evolution.error.load")} />
+      </div>
+    );
+  }
+
   const upstreamOperationCount = (branches ?? []).reduce((n, branch) => n + branch.operations.length, 0);
   const hasUpstreamOperations = upstreamOperationCount > 0;
   if (!hasUpstreamOperations) {
@@ -190,6 +216,8 @@ export function EvolutionPage() {
   return (
     <div className="space-y-6 pb-24">
       <PageHeader packageIri={packageIri} sourceLabel={sourceLabel} />
+
+      {applyError && <ErrorBanner message={t("evolution.error.apply")} />}
 
       {/* Summary */}
       <div className="sticky top-20 z-10 flex flex-wrap items-center justify-between gap-3 rounded-md border bg-background/95 px-4 py-3 shadow-sm backdrop-blur-sm supports-backdrop-filter:bg-background/80">
@@ -212,7 +240,7 @@ export function EvolutionPage() {
             </Button>
           </div>
         ) : (
-          <Button onClick={handleApply} disabled={upstreamApplied && commit.operations.length === 0}>
+          <Button onClick={handleApply} disabled={applying || (upstreamApplied && commit.operations.length === 0)}>
             <GitMerge className="mr-1 h-4 w-4" />
             {upstreamApplied ? t("evolution.apply-selected", { count: commit.appliedMarks.length }) : t("evolution.apply-all", { count: commit.appliedMarks.length })}
           </Button>

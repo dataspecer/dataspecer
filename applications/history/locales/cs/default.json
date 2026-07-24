@@ -43,8 +43,6 @@
       "version": "Označil(a) transakci {{transactionId}} verzí {{version}}",
       "create-model": "Přidal(a) do projektu {{type}} \"{{name}}\"",
       "remove-model": "Odstranil(a) z projektu {{type}} \"{{name}}\"",
-      "remove-model-entry": "Odstranil(a) z projektu model \"{{name}}\"",
-      "update-model": "Upravil(a) model \"{{name}}\"",
       "create-class": "Vytvořil(a) třídu <name />",
       "modify-class": "Upravil(a) třídu <name />",
       "delete-class": "Smazal(a) třídu <name />",
@@ -99,10 +97,7 @@
       "psm-set": "Změnil(a) {{what}} ve struktuře",
       "set-entity": "Nahradil(a) <name />",
       "update-entity": "Upravil(a) <name />",
-      "remove-entity": "Odebral(a) <name />",
-      "update-svg": "Aktualizoval(a) náhled diagramu",
-      "update-generator-configuration": "Změnil(a) konfiguraci generátorů",
-      "generic": "{{text}}"
+      "remove-entity": "Odebral(a) <name />"
     },
     "psm-part": {
       "class": "třídu",
@@ -159,6 +154,10 @@
     "description": "Tato specifikace závisí na nadřazené specifikaci, která byla nedávno upravena. Vyhodnoťte, jak mají na tyto úpravy reagovat závislé modely.",
     "empty": "Nejsou žádné nevyřízené změny.",
     "no-project": "Není vybrán žádný projekt. Otevřete tuto stránku s parametrem packageIri.",
+    "error": {
+      "load": "Nepodařilo se načíst čekající evoluci. Zkuste stránku obnovit.",
+      "apply": "Použití změn se nezdařilo. Zkuste to prosím znovu."
+    },
     "overview": {
       "description": "Čekající aktualizace slovníků a specifikací, jejichž změny ovlivňují jiné modely. Otevřete konkrétní aktualizaci a projděte si, jak mají závislé modely zareagovat.",
       "empty": "Žádná evoluce nečeká na vyřízení.",
