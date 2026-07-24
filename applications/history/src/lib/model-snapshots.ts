@@ -38,7 +38,7 @@ export interface ModelSnapshot {
  * an operation is skipped rather than allowed to throw and break the whole
  * replay.
  */
-function applyToModel(entities: EntityRecord, operations: Operation[], isProjectModel: boolean, modelType: string | undefined): void {
+export function applyToModel(entities: EntityRecord, operations: Operation[], isProjectModel: boolean, modelType: string | undefined): void {
   for (const operation of operations) {
     try {
       if (isSetEntityOperation(operation) || isUpdateEntityOperation(operation) || isRemoveEntityOperation(operation)) {

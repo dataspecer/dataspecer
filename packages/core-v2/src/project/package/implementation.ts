@@ -156,6 +156,10 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
             const iri = visualModel.getId();
             const name = modelSerialization.modelAlias ?? modelSerialization.alias;
 
+            if (modelSerialization.type === RDFS_MODEL) {
+                modelSerialization.label = {en: name};
+            }
+
             const response = await this.httpFetch(this.getResourceUrl(iri));
             const userMetadata = name ? { label: { en: name } } : {};
             if (response.status !== 200) {

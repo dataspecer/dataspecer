@@ -188,8 +188,9 @@ function deriveNameFromUrl(url: string): string {
  * anything, so the caller can inspect its entities before deciding under
  * which resource iri to store it.
  */
-async function fetchRdfsModel(url: string) {
-  return await createRdfsModel([url], httpFetch);
+async function fetchRdfsModel(urls: string[]) {
+  const name = deriveNameFromUrl(urls[0]);
+  return await createRdfsModel(urls, httpFetch, { en: name});
 }
 
 /**
@@ -199,7 +200,7 @@ async function fetchRdfsModel(url: string) {
 async function persistRdfsModel(repository: ModelRepositoryType, parentIri: string, wrapper: Awaited<ReturnType<typeof fetchRdfsModel>>, newIri: string, userMetadata: any): Promise<SemanticModelEntity[]> {
   const serialization = wrapper.serializeModel();
   serialization.id = newIri;
-  serialization.alias = userMetadata?.label?.en ?? userMetadata?.label?.cs;
+  serialization.label = userMetadata.label;
   await ensureResource(repository, parentIri, newIri, RDFS_MODEL, userMetadata);
   await repository.setModelJson(newIri, serialization);
   return Object.values(wrapper.getEntities()) as SemanticModelEntity[];
@@ -214,7 +215,7 @@ async function persistRdfsModel(repository: ModelRepositoryType, parentIri: stri
  * wrapper should be deprecated.
  */
 async function importRdfsModel(repository: ModelRepositoryType, parentIri: string, url: string, newIri: string, userMetadata: any): Promise<SemanticModelEntity[]> {
-  const wrapper = await fetchRdfsModel(url);
+  const wrapper = await fetchRdfsModel([url]);
   return await persistRdfsModel(repository, parentIri, wrapper, newIri, userMetadata);
 }
 
@@ -599,7 +600,7 @@ async function dsvImport(repository: ModelRepositoryType, store: N3.Store, url: 
       continue;
     }
 
-    const wrapper = await fetchRdfsModel(profile.url);
+    const wrapper = await fetchRdfsModel([profile.url]);
     const baseIri = getDominantBaseIri(Object.values(wrapper.getEntities()) as SemanticModelEntity[]);
     const existingMatchIri = baseIri ? await findRdfsModelChildByBaseIri(repository, rootPackageId, baseIri, claimedExistingIris) : undefined;
     if (existingMatchIri) {
@@ -754,7 +755,7 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
       await modelRepository.setResourceStoreJson(existingResource.iri, { ...data, urls: bodyUrls });
     }
     const urls = bodyUrls ?? data.urls;
-    const newModel = await createRdfsModel(urls, httpFetch);
+    const newModel = await fetchRdfsModel(urls);
     newModel.id = existingResource.iri;
     // Intentionally skip store.setJson() — the blob stays unchanged.
     // The diff is recorded as pending operations on an independent evolution branch.
@@ -762,6 +763,7 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
 
     const previousStates = { [existingResource.iri]: previousEntities };
     const operations = diffModelEntitiesToOperations(existingResource.iri, RDFS_MODEL, previousEntities, nextEntities);
+
     const projectIri = (await modelRepository.getProjectIri(existingResource.iri))!;
     let evolutionBranchId: number | null = null;
     if (query.apply) {
@@ -810,6 +812,7 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
   }
 
   const operations = diffModelStates(previousModels, nextModels);
+
   const projectIri = (await modelRepository.getProjectIri(query.iri))!;
   let evolutionBranchId: number | null = null;
   if (query.apply) {

@@ -9,4 +9,4 @@ export {
 export { createCMEModelStore, createDSEModelStore, createManagerModelStore } from "./factories.ts";
 export { DefaultFrontendModelStore, type ModelInModelStoreBuilder } from "./implementation.ts";
 export { getModelMetadata } from "./metadata.ts";
-export { pimModelEntitiesToSerialization, ReloadModelOperationType, SetModelUrlsOperationType, type SetModelUrl } from "./pim-model.ts";
+export { type MainEntity, pimModelEntitiesToSerialization, ReloadModelOperationType, SetModelUrlsOperationType, type SetModelUrl } from "./pim-model.ts";

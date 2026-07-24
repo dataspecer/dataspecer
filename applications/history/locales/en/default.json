@@ -149,7 +149,7 @@
   },
   "evolution": {
     "title": "Evolution",
-    "review-title": "Evolution of \"{{name}}\"",
+    "review-title": "Evolution of <name />",
     "back-to-overview": "Back to overview",
     "description": "This specification is dependent on another which has been modified. Please assess how the dependent models should respond to these changes.",
     "empty": "There are no pending changes.",

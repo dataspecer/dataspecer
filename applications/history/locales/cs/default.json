@@ -150,7 +150,7 @@
   },
   "evolution": {
     "title": "Evoluce",
-    "review-title": "Evoluce modelu \"{{name}}\"",
+    "review-title": "Evoluce modelu <name />",
     "back-to-overview": "Zpět na přehled",
     "description": "Tato specifikace závisí na nadřazené specifikaci, která byla nedávno upravena. Vyhodnoťte, jak mají na tyto úpravy reagovat závislé modely.",
     "empty": "Nejsou žádné nevyřízené změny.",
