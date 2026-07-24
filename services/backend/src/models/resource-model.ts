@@ -1,4 +1,4 @@
-import { LOCAL_PACKAGE, V1 } from "@dataspecer/core-v2/model/known-models";
+import { LOCAL_PACKAGE, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { LanguageString } from "@dataspecer/core-v2/semantic-model/concepts";
 import { CoreResource } from "@dataspecer/core/core/core-resource";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
@@ -150,7 +150,8 @@ export class ResourceModel {
 
     /**
      * @todo There is this a long-term problem that the title is stored inside the model and also in the user metadata.
-     * This should be unified. For now, there is a workaround for PSM model that uses label from PSM.
+     * This should be unified. For now, there is a workaround for PSM model that uses label from PSM, and RDFS
+     * models that use the label from their main entity (see {@link ModelRepository.updateResource}).
      */
     try {
       if (prismaResource.representationType === V1.PSM && dataStores.model) {
@@ -163,9 +164,15 @@ export class ResourceModel {
             userMetadata.description = schema.dataPsmHumanDescription;
           }
         }
+      } else if (prismaResource.representationType === RDFS_MODEL && dataStores.model) {
+        // We must be careful here as the model may not be loaded yet.
+        const model = await this.getStoreJson(dataStores.model);
+        if (model?.label) {
+          userMetadata.label = model.label as LanguageString;
+        }
       }
     } catch (e) {
-      console.error("Soft error when parsing PSM model to obtain user metadata.");
+      console.error("Soft error when parsing model to obtain user metadata.");
       console.error(e);
     }
 

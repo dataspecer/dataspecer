@@ -1,4 +1,4 @@
-import { CoreResourceReader } from "@dataspecer/core/core";
+import { CoreResourceReader, type LanguageString } from "@dataspecer/core/core";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { deepEqual } from "@dataspecer/utilities";
 import { Entity } from "../../entity-model/entity.ts";
@@ -10,16 +10,19 @@ export class PimStoreWrapper extends InMemoryEntityModel {
     private pimStore: CoreResourceReader;
     private urls?: string[];
 
+    private label: LanguageString = {};
+
     /**
      * Maps the old id of PimAssociationEnd to the new id of SemanticModelRelationship and if it is a source (true) or target (false).
      */
     public relationshipMapping: Record<string, [string, boolean]> = {};
 
-    constructor(pimStore: CoreResourceReader, id?: string, alias?: string, urls?: string[]) {
+    constructor(pimStore: CoreResourceReader, id?: string, alias?: string, urls?: string[], label?: LanguageString) {
         super(id);
         this.pimStore = pimStore;
         this.alias = alias;
         this.urls = urls;
+        this.label = label ?? (alias ? { en: alias } : {});
     }
 
     public fetchFromPimStore() {
@@ -56,6 +59,7 @@ export class PimStoreWrapper extends InMemoryEntityModel {
             alias: this.alias,
             pimStore: this.pimStore,
             urls: this.urls,
+            label: this.label,
         };
     }
 }
@@ -69,7 +73,7 @@ export function serializationToPimModelEntities(serialization: object): {
   entities: EntityRecord;
 } {
   const modelData = {...serialization} as any;
-  const adapter = new PimStoreWrapper(modelData.pimStore, modelData.id, "model", modelData.urls);
+  const adapter = new PimStoreWrapper(modelData.pimStore, modelData.id, "model", modelData.urls, modelData.label);
   adapter.fetchFromPimStore();
 
   delete modelData.pimStore;

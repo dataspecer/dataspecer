@@ -6,18 +6,18 @@ import {
   type SemanticModelAggregator,
 } from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
 import { LOCAL_SEMANTIC_MODEL, RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
-import { isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
+import { isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship, type LanguageString } from "@dataspecer/core-v2/semantic-model/concepts";
 import { isSemanticModelClassProfile, isSemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { diffEntities, type Entity, type EntityRecord } from "@dataspecer/core/entity-model";
 import type { Operation } from "@dataspecer/core/operation";
-import type { DefaultFrontendModelStore } from "@dataspecer/model-store/implementation";
+import { getModelMetadata, type DefaultFrontendModelStore } from "@dataspecer/model-store/implementation";
 import { applyOperationsToSemanticModel } from "@dataspecer/core-v2/semantic-model";
 import { analyzeEvolution, analyzeProfileEvolution } from "@dataspecer/profile-model/hooks";
 import type { ProjectModelEntity } from "@dataspecer/project-model";
 import { getAggregatedEntitiesWithPassthroughForPackage } from "@/components/operation-row/operation-list";
 import type { OperationRowProps } from "@/components/operation-row/operation-row";
 import { modelTypesFromStore } from "@/lib/model-display";
-import { computeModelSnapshots } from "@/lib/model-snapshots";
+import { applyToModel, computeModelSnapshots } from "@/lib/model-snapshots";
 import { collectGroupOperations, type ReviewGroup, type ReviewItem, type ReviewState } from "./review-state";
 
 /**
@@ -108,6 +108,41 @@ export function describeBranchOperations(modelStore: DefaultFrontendModelStore, 
     const snapshot = snapshots[index]!;
     return { ...operation, ...snapshot, contextBefore: snapshot.before, contextAfter: snapshot.after };
   });
+}
+
+/** A model's label before and after a branch's pending operations on it. */
+export interface ModelLabelChange {
+  current: LanguageString;
+  future: LanguageString;
+}
+
+/** Whether two language strings have the same value for every language tag. */
+function languageStringsEqual(a: LanguageString, b: LanguageString): boolean {
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+  return [...keys].every((key) => a[key] === b[key]);
+}
+
+/**
+ * The label of a model before and after a branch's pending operations on it,
+ * resolved via {@link getModelMetadata} - the same source of truth the model
+ * store itself uses to read a model's label off its main entity. Null when
+ * the branch has no operations on the model, or its label does not change.
+ */
+export function branchModelLabelChange(modelStore: DefaultFrontendModelStore, branch: EvolutionBranch, modelId: string): ModelLabelChange | null {
+  const operations = branchOperationsByModel(branch).get(modelId);
+  if (!operations || operations.length === 0) return null;
+
+  const modelType = modelTypesFromStore(modelStore)[modelId];
+  if (!modelType) return null;
+
+  const currentEntities = modelStore.getAllEntities()[modelId] ?? {};
+  const current = getModelMetadata(modelType, currentEntities, modelId)?.label ?? {};
+
+  const futureEntities = { ...currentEntities };
+  applyToModel(futureEntities, operations, false, modelType);
+  const future = getModelMetadata(modelType, futureEntities, modelId)?.label ?? {};
+
+  return languageStringsEqual(current, future) ? null : { current, future };
 }
 
 /**

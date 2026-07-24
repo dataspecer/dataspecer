@@ -6,11 +6,19 @@ import type { EntityRecord } from "@dataspecer/core/entity-model";
 import type { OperationInModel } from "@dataspecer/core/operation";
 import type { EvolutionItem } from "@dataspecer/profile-model/hooks";
 import { Link, useLocation } from "@tanstack/react-router";
-import { ArrowLeft, CheckCircle2, GitMerge } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, GitMerge } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { resolveModelDisplay } from "@/lib/model-display";
-import { buildReviewGroups, cancelEvolutionBranch, effectiveGroupEntities, fetchEvolutionBranches, type EvolutionBranch } from "./evolution-data";
+import { Trans, useTranslation } from "react-i18next";
+import { pickLanguageString, resolveModelDisplay } from "@/lib/model-display";
+import {
+  branchModelLabelChange,
+  buildReviewGroups,
+  cancelEvolutionBranch,
+  effectiveGroupEntities,
+  fetchEvolutionBranches,
+  type EvolutionBranch,
+  type ModelLabelChange,
+} from "./evolution-data";
 import { ItemCard } from "./item-card";
 import {
   buildReviewItems,
@@ -177,13 +185,15 @@ export function EvolutionPage() {
   if (!packageIri) {
     return (
       <div className="space-y-4">
-        <PageHeader packageIri={packageIri} sourceLabel={null} />
+        <PageHeader packageIri={packageIri} sourceLabel={null} labelChange={null} />
         <p className="text-sm text-muted-foreground">{t("evolution.no-project")}</p>
       </div>
     );
   }
 
-  const sourceLabel = modelStore && branchId !== undefined && branches?.length ? resolveModelDisplay(modelStore, branches[0]!.resourceIri, i18n.language).name : null;
+  const reviewedBranch = modelStore && branchId !== undefined ? branches?.[0] : undefined;
+  const sourceLabel = reviewedBranch && modelStore ? resolveModelDisplay(modelStore, reviewedBranch.resourceIri, i18n.language).name : null;
+  const sourceLabelChange = reviewedBranch && modelStore ? branchModelLabelChange(modelStore, reviewedBranch, reviewedBranch.resourceIri) : null;
 
   if (loading || groups === null) {
     return (
@@ -196,7 +206,7 @@ export function EvolutionPage() {
   if (loadError) {
     return (
       <div className="space-y-4">
-        <PageHeader packageIri={packageIri} sourceLabel={sourceLabel} />
+        <PageHeader packageIri={packageIri} sourceLabel={sourceLabel} labelChange={sourceLabelChange} />
         <ErrorBanner message={t("evolution.error.load")} />
       </div>
     );
@@ -207,7 +217,7 @@ export function EvolutionPage() {
   if (!hasUpstreamOperations) {
     return (
       <div className="space-y-4">
-        <PageHeader packageIri={packageIri} sourceLabel={sourceLabel} />
+        <PageHeader packageIri={packageIri} sourceLabel={sourceLabel} labelChange={sourceLabelChange} />
         <p className="text-sm text-muted-foreground">{t("evolution.empty")}</p>
       </div>
     );
@@ -215,7 +225,7 @@ export function EvolutionPage() {
 
   return (
     <div className="space-y-6 pb-24">
-      <PageHeader packageIri={packageIri} sourceLabel={sourceLabel} />
+      <PageHeader packageIri={packageIri} sourceLabel={sourceLabel} labelChange={sourceLabelChange} />
 
       {applyError && <ErrorBanner message={t("evolution.error.apply")} />}
 
@@ -284,8 +294,16 @@ export function EvolutionPage() {
   );
 }
 
-function PageHeader({ packageIri, sourceLabel }: { packageIri: string | undefined; sourceLabel: string | null }) {
-  const { t } = useTranslation();
+function PageHeader({
+  packageIri,
+  sourceLabel,
+  labelChange,
+}: {
+  packageIri: string | undefined;
+  sourceLabel: string | null;
+  labelChange: ModelLabelChange | null;
+}) {
+  const { t, i18n } = useTranslation();
   return (
     <div className="space-y-1">
       {packageIri && (
@@ -294,8 +312,26 @@ function PageHeader({ packageIri, sourceLabel }: { packageIri: string | undefine
           {t("evolution.back-to-overview")}
         </Link>
       )}
-      <h1 className="text-2xl font-semibold tracking-tight">{sourceLabel ? t("evolution.review-title", { name: sourceLabel }) : t("evolution.title")}</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">
+        {sourceLabel ? (
+          <Trans i18nKey="evolution.review-title" components={{ name: <ReviewTitleName sourceLabel={sourceLabel} labelChange={labelChange} language={i18n.language} /> }} />
+        ) : (
+          t("evolution.title")
+        )}
+      </h1>
       <p className="text-sm text-muted-foreground">{t("evolution.description")}</p>
     </div>
+  );
+}
+
+/** The reviewed model's name in the page title — both its current and future label when the pending operations rename it. */
+function ReviewTitleName({ sourceLabel, labelChange, language }: { sourceLabel: string; labelChange: ModelLabelChange | null; language: string }) {
+  if (!labelChange) return <>{sourceLabel}</>;
+  return (
+    <span className="inline-flex items-center gap-1">
+      <span className="text-muted-foreground line-through decoration-muted-foreground/60">{pickLanguageString(labelChange.current, language) ?? sourceLabel}</span>
+      <ArrowRight className="h-4 w-4 text-muted-foreground" />
+      <span>{pickLanguageString(labelChange.future, language) ?? sourceLabel}</span>
+    </span>
   );
 }

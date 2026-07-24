@@ -3,12 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useModelStore } from "@/contexts/model-store-context";
-import { resolveModelDisplay } from "@/lib/model-display";
+import { pickLanguageString, resolveModelDisplay } from "@/lib/model-display";
 import { Link, useLocation } from "@tanstack/react-router";
 import { ArrowRight, ChevronDown, SkipForward, Undo2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  branchModelLabelChange,
   cancelEvolutionBranch,
   countBranchPendingChanges,
   fetchEvolutionBranches,
@@ -16,6 +17,7 @@ import {
   semanticModelRecords,
   type EvolutionBranch,
   type EvolutionEdge,
+  type ModelLabelChange,
   type PendingChangeCounts,
 } from "./evolution-data";
 
@@ -23,6 +25,7 @@ interface PendingBranchRow {
   branch: EvolutionBranch;
   counts: PendingChangeCounts;
   edges: EvolutionEdge[];
+  labelChange: ModelLabelChange | null;
 }
 
 /**
@@ -69,6 +72,7 @@ export function EvolutionOverviewPage() {
         branch,
         counts: countBranchPendingChanges(models, branch),
         edges: findBranchEvolutionEdges(models, branch),
+        labelChange: branchModelLabelChange(modelStore, branch, branch.resourceIri),
       }));
   }, [branches, modelStore]);
 
@@ -146,7 +150,17 @@ export function EvolutionOverviewPage() {
               <div className="min-w-0 space-y-2">
                 <div className="flex items-center gap-2">
                   <SourceIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  <span className="truncate font-medium">{source.name ?? t(`model-type.${source.typeKey}`)}</span>
+                  {row.labelChange ? (
+                    <span className="flex min-w-0 items-center gap-1 truncate font-medium">
+                      <span className="truncate text-muted-foreground line-through decoration-muted-foreground/60">
+                        {pickLanguageString(row.labelChange.current, i18n.language) ?? t(`model-type.${source.typeKey}`)}
+                      </span>
+                      <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground" />
+                      <span className="truncate">{pickLanguageString(row.labelChange.future, i18n.language) ?? t(`model-type.${source.typeKey}`)}</span>
+                    </span>
+                  ) : (
+                    <span className="truncate font-medium">{source.name ?? t(`model-type.${source.typeKey}`)}</span>
+                  )}
                   {source.name !== null && <span className="text-xs text-muted-foreground">{t(`model-type.${source.typeKey}`)}</span>}
                   <Badge variant="destructive">{t("evolution.overview.status.not-in-specification")}</Badge>
                 </div>

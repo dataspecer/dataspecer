@@ -3,6 +3,7 @@ import { createRdfsModel } from "@dataspecer/core-v2/semantic-model/simplified";
 import { PimStoreWrapper, serializationToPimModelEntities, buildPimResources } from "@dataspecer/core-v2/semantic-model/v1-adapters";
 import { applyOperationsToSemanticModel } from "@dataspecer/core-v2/semantic-model";
 import { RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
+import type { LanguageString } from "@dataspecer/core-v2/semantic-model/concepts";
 import type { Entity, EntityRecord } from "@dataspecer/core/entity-model";
 import { diffEntities } from "@dataspecer/core/entity-model";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
@@ -29,8 +30,8 @@ export interface SetModelUrl extends Operation {
 
 export interface MainEntity extends Entity {
   type: ["mainEntity"];
-  alias?: string;
   urls?: string[];
+  label?: LanguageString;
 }
 
 export function getPimModelMetadata(entities: EntityRecord, modelId: ModelIdentifier): ModelMetadata | null {
@@ -39,7 +40,7 @@ export function getPimModelMetadata(entities: EntityRecord, modelId: ModelIdenti
     return null;
   }
   return {
-    label: mainEntity.alias ? { en: mainEntity.alias } : {},
+    label: mainEntity.label ?? {},
     description: {},
   };
 }

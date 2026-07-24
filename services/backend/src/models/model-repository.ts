@@ -1,6 +1,8 @@
-import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL } from "@dataspecer/core-v2/model/known-models";
-import { diffEntities, type EntityRecord } from "@dataspecer/core/entity-model";
-import { isUndoOperation, type Operation, type Transaction } from "@dataspecer/core/operation";
+import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
+import type { LanguageString } from "@dataspecer/core-v2/semantic-model/concepts";
+import { diffEntities, type Entity, type EntityRecord } from "@dataspecer/core/entity-model";
+import { createUpdateEntityOperation, isUndoOperation, type Operation, type Transaction } from "@dataspecer/core/operation";
+import type { MainEntity } from "@dataspecer/model-store/implementation";
 import { createCreateModelOperation, createRemoveModelOperation, isCreateModelOperation, isRemoveModelOperation } from "@dataspecer/project-model";
 import { v4 as uuidv4 } from "uuid";
 import configuration from "../configuration.ts";
@@ -627,9 +629,31 @@ export class ModelRepository implements ModelRepositoryType {
 
   /**
    * Updates user metadata of the resource by merging in the given properties.
+   *
+   * For model types migrating their label out of user metadata it generates an
+   * update operation instead. yet.
    */
-  updateResource(iri: string, userMetadata: object) {
-    return this.resourceModel.updateResource(iri, userMetadata);
+  async updateResource(iri: string, userMetadata: object): Promise<void> {
+    const rest: Record<string, unknown> = { ...userMetadata };
+
+    if ("label" in rest) {
+      const resource = await this.resourceModel.getResource(iri);
+      if (resource !== null && resource.types[0] === RDFS_MODEL) {
+        const label = rest.label as LanguageString | undefined;
+        rest.label = undefined; // remove it by override
+
+        const projectIri = await this.resourceModel.getProjectIri(iri);
+        if (projectIri === null) {
+          console.warn(`Cannot set label on model "${iri}" because its project could not be resolved. The label update is dropped.`);
+        } else {
+          const update: Partial<MainEntity> & Pick<Entity, "id"> = { id: iri, label: label ?? {} };
+          const operation = createUpdateEntityOperation(update);
+          await this.applyTransactions(projectIri, [{ id: uuidv4(), operations: [{ modelId: iri, operation }] }]);
+        }
+      }
+    }
+
+    return this.resourceModel.updateResource(iri, rest);
   }
 
   /**

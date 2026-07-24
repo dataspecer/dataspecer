@@ -35,6 +35,7 @@ import {
   isModelVocabulary,
 } from "./utils.ts";
 import { artefactToDsv } from "./v1/artefact-to-dsv.ts";
+import { MainEntity as RdfsModelMainEntity } from "@dataspecer/model-store/implementation";
 
 /**
  * Id under which the project model (the package hierarchy) is stored in the
@@ -329,15 +330,11 @@ export async function generateSpecification(packageId: string, context: Generate
 
   for (const entity of subResources) {
     if (entity.modelType === RDFS_MODEL) {
-      const data = (getModelBlobData(allModels, entity.id) ?? {}) as {
-        urls?: string[];
-        alias?: string;
-      };
-
+      const data = (getModelBlobData(allModels, entity.id) ?? {}) as RdfsModelMainEntity;
       for (const url of data.urls ?? []) {
         usedVocabularies.push({
           url: url,
-          title: data.alias ? { en: data.alias } : (entity.label ?? undefined),
+          title: data.label ?? entity.label ?? undefined,
         } satisfies ExternalSpecification);
       }
     }
