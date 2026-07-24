@@ -16,14 +16,14 @@ export function SidebarNav() {
   const { pathname } = useLocation();
 
   return (
-    <nav className="w-56 shrink-0 space-y-1">
+    <nav className="flex gap-1 overflow-x-auto pb-1 md:w-56 md:shrink-0 md:flex-col md:overflow-visible md:pb-0">
       {subPages.map(({ to, labelKey, icon: Icon }) => (
         <Link
           key={to}
           to={to}
           search={(prev: Record<string, unknown>) => prev}
           className={cn(
-            "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
+            "flex shrink-0 items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
             pathname === to && "bg-accent text-accent-foreground"
           )}
         >

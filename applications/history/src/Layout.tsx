@@ -45,11 +45,11 @@ function LayoutContent() {
   return (
     <div className="relative flex min-h-screen flex-col bg-background">
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-sm supports-backdrop-filter:bg-background/60">
-        <div className="container flex h-14 items-center justify-between">
-          <a href={import.meta.env.VITE_MANAGER_URL ?? "/"} className="flex items-center gap-2 hover:opacity-80">
-            <strong>Dataspecer</strong> {t("app-name")}
+        <div className="container flex h-14 items-center justify-between gap-2">
+          <a href={import.meta.env.VITE_MANAGER_URL ?? "/"} className="flex min-w-0 items-center gap-2 truncate hover:opacity-80">
+            <strong className="shrink-0">Dataspecer</strong> <span className="truncate">{t("app-name")}</span>
           </a>
-          <div className="flex gap-2">
+          <div className="flex shrink-0 gap-2">
             <GithubLink />
             <ModeToggle />
             <LanguageToggle />
@@ -67,7 +67,7 @@ function LayoutContent() {
           ]}
         />
       </div>
-      <main className="container flex flex-1 items-start gap-6 py-6">
+      <main className="container flex flex-1 flex-col items-stretch gap-4 py-6 md:flex-row md:items-start md:gap-6">
         {isLoading ? (
           <div className="flex flex-1 items-center justify-center py-16">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-foreground" />
