@@ -158,6 +158,8 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
 
             if (modelSerialization.type === RDFS_MODEL) {
                 modelSerialization.label = {en: name};
+                delete modelSerialization.modelAlias;
+                delete modelSerialization.alias;
             }
 
             const response = await this.httpFetch(this.getResourceUrl(iri));
