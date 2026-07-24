@@ -52,6 +52,7 @@ function jsonLdLiteralToLanguageString(literal: Quad_Object[]): LanguageString {
  * error page or empty body as if it were the requested content.
  */
 async function fetchOrThrow(url: string): Promise<Response> {
+  console.log("fetch: ", url);
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error(`Failed to fetch "${url}": ${response.status} ${response.statusText}`);
