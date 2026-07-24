@@ -17,7 +17,7 @@ export function Breadcrumbs({ items }: { items: BreadcrumbItem[] }) {
   const { t } = useTranslation();
 
   return (
-    <nav className="flex items-center gap-1.5 text-sm text-muted-foreground overflow-hidden">
+    <nav className="flex items-center gap-1.5 overflow-x-auto whitespace-nowrap text-sm text-muted-foreground">
       <a href={import.meta.env.VITE_MANAGER_URL ?? "/"} className="hover:text-foreground shrink-0">
         {t("breadcrumbs.home")}
       </a>
@@ -27,11 +27,11 @@ export function Breadcrumbs({ items }: { items: BreadcrumbItem[] }) {
           <Fragment key={index}>
             <ChevronRight className="h-3.5 w-3.5 shrink-0" />
             {item.href && !isLast ? (
-              <a href={item.href} className="hover:text-foreground truncate">
+              <a href={item.href} className="hover:text-foreground shrink-0">
                 {item.label}
               </a>
             ) : (
-              <span className={cn("truncate", isLast && "text-foreground font-medium")}>
+              <span className={cn("shrink-0", isLast && "text-foreground font-medium")}>
                 {item.label}
               </span>
             )}
