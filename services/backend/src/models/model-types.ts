@@ -17,7 +17,7 @@ import {
   type SetModelUrl,
 } from "@dataspecer/model-store/implementation";
 import { SemanticProfileModelOperations } from "@dataspecer/profile-model";
-import { serializationToVisualModelEntities, visualModelEntitiesToSerialization } from "@dataspecer/visual-model";
+import { changesToVisualModelOperations, serializationToVisualModelEntities, visualModelEntitiesToSerialization } from "@dataspecer/visual-model";
 import { applyOperationsToVisualModel } from "@dataspecer/visual-model/executor";
 import { splitModelId } from "./model-id.ts";
 
@@ -91,6 +91,7 @@ const MODEL_TYPES: Record<string, ModelTypeSupport> = {
     deserialize: (_modelId, data) => (data ? serializationToVisualModelEntities(data) : {}),
     serialize: (_modelId, entities) => visualModelEntitiesToSerialization(entities),
     applyOperation: (_modelId, working, operation) => applyOperationsToVisualModel(working, [operation]),
+    changesToOperations: changesToVisualModelOperations,
   },
   [V1.PSM]: {
     // A model with no data yet starts empty, mirroring the frontend: the main

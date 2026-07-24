@@ -83,6 +83,10 @@ export {
     type VisualModelOperation,
 } from "./operations.ts";
 export {
+    changesToVisualModelOperations,
+    type VisualModelOperationsResult,
+} from "./diff.ts";
+export {
     createDefaultVisualModelFactory,
 } from "./visual-model-factory.ts";
 export {
