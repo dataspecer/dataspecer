@@ -5,36 +5,28 @@ url: "/demo/"
 
 Please be aware that any changes made in the demo may be removed at any time. Also, please do not interact with others' work. Create your data specifications.
 
-{{< alert icon="⚠️" text="Keep in mind that the tool is still under development. Some things may be buggy, not work at all, or can be hardcoded for now." />}}
+<p style="text-align:center">
+   <a class="btn btn-primary btn-lg px-4 mb-2" href="https://demo.dataspecer.com" role="button">Go to the demo instance</a>
+</p>
 
-### Brief tutorial
+## What to do?
 
-1. Create a specification.
-2. Choose a source for a conceptual model at the bottom of the page with the detail of your specification.
-3. Create a new data structure.
-4. Insert a root element by searching its name.
-5. Insert child elements by clicking on the plus sign next to the element, and edit existing elements.
-6. Generate a single artifact directly from the editor page or go to the detail and generate everything.
+Because the tool is constantly evolving, we do not have detailed and up to date instructions on how to work with Dataspecer. However, you can check tutorials and scenarios to our demo scientific publications.
 
-### What to try
+- [2022: Structure modeling tutorial.](/docs/tutorial/start/)
+- [2024: Creating a vocabulary, reusing other vocabularies, and creating an application profile.](/papers/iswc2024/)
+- [2026: Change propagation in application profiles.](/papers/iswc2026/)
 
-If you decide to use slovník.gov.cz as the conceptual model source, you can search, for example:
-- Tourist destination
-- Natural Person
-- Thing
+## How to run Dataspecer locally?
 
-You can try our demo RDF vocabularies which are read directly from GitHub. This feature is experimental and currently very slow.
-```text
-https://mff-uk.github.io/demo-vocabularies/original/adms.ttl
-https://mff-uk.github.io/demo-vocabularies/original/dublin_core_terms.ttl
-https://mff-uk.github.io/demo-vocabularies/original/legal.ttl
-https://mff-uk.github.io/demo-vocabularies/original/locn.ttl
-https://mff-uk.github.io/demo-vocabularies/original/org.ttl
-https://mff-uk.github.io/demo-vocabularies/original/regorg.ttl
-https://mff-uk.github.io/demo-vocabularies/original/schema.ttl
-https://mff-uk.github.io/demo-vocabularies/original/skos.rdf
-https://mff-uk.github.io/demo-vocabularies/original/stirdata.ttl
-https://mff-uk.github.io/demo-vocabularies/modified/modifications.ttl
+Use `ghcr.io/dataspecer/ws` Docker image and expose port 80.
+
+```
+docker run -p3000:80 ghcr.io/dataspecer/ws
 ```
 
-<a class="btn btn-primary btn-lg px-4 mb-2" href="https://demo.dataspecer.com" role="button">Go to the demo instance</a>
+Or use the full config
+
+```
+docker run --user=$(id -u) -v ./database:/usr/src/app/database -p3000:80 ghcr.io/dataspecer/ws
+```
