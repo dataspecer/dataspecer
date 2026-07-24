@@ -19,6 +19,8 @@ const PROJECT_MODEL_ID: ModelIdentifier = "_project_model";
 const DEFAULT_VOCABULARY_COLOR = "#f9aa49";
 const DEFAULT_COLOR = "#4998f9";
 
+// todo forcePassThrough should let all the entities go, but some of them may collide, this is problem.
+
 /**
  * Build semantic model aggregator. If onChange is not provided, then the model
  * is static.
@@ -179,6 +181,9 @@ class SemanticModelAggregatorBuilder {
     const explicitConfiguration = rootModel?.modelCompositionConfiguration as ModelCompositionConfiguration | undefined;
 
     if (explicitConfiguration) {
+      if (typeof explicitConfiguration !== "string" && explicitConfiguration.modelType === "application-profile" && packageId === this.mainProjectModelId && this.forcePassThrough) {
+        (explicitConfiguration as ModelCompositionConfigurationApplicationProfile).allowPassThrough = true;
+      }
       return explicitConfiguration;
     }
 

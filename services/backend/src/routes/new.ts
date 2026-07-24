@@ -55,7 +55,7 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
       label: body.label ? { en: body.label } : {},
       description: body.description ? { en: body.description } : {},
     });
-    await modelRepository.setResourceStoreJson(packageIri, {});
+    await modelRepository.setModelJson(packageIri, {});
 
     // Import resources from all specification URLs
     const importResults = [];
@@ -169,7 +169,7 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
 
       profiledEntities = profileModel.getEntities();
     }
-    await modelRepository.setResourceStoreJson(packageIri + "/semantic-model", {
+    await modelRepository.setModelJson(packageIri + "/semantic-model", {
       type: LOCAL_SEMANTIC_MODEL,
       modelId: packageIri + "/semantic-model",
       modelAlias: profileLabel || "Profile",
@@ -183,7 +183,7 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
       label: { en: "View for " + (profileLabel || "Profile") },
       description: { en: "Visual model for the profile" },
     });
-    await modelRepository.setResourceStoreJson(viewIri, {
+    await modelRepository.setModelJson(viewIri, {
       "identifier": viewIri,
       "version": 1,
       "type": VISUAL_MODEL,
@@ -265,14 +265,14 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
           label: schema.dataPsmHumanLabel,
           description: schema.dataPsmHumanDescription,
         });
-        await modelRepository.setResourceStoreJson(schema.iri!, {
+        await modelRepository.setModelJson(schema.iri!, {
           operations: [],
           resources: Object.fromEntries(newStructure.map((r) => [r.iri!, r])),
         });
       }
     }
 
-    await modelRepository.setResourceStoreJson(packageIri, {
+    await modelRepository.setModelJson(packageIri, {
       modelCompositionConfiguration: {
         modelType: "application-profile",
         model: packageIri + "/semantic-model",

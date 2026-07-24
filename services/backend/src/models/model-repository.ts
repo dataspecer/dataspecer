@@ -26,6 +26,7 @@ export interface ModelRepositoryType {
   updateResource(iri: string, userMetadata: object): Promise<void>;
   deleteResource(iri: string): Promise<void>;
   setResourceStoreJson(iri: string, data: unknown, storeName?: string): Promise<void>;
+  setModelJson(iri: string, data: unknown, storeName?: string): Promise<void>;
 }
 
 /**

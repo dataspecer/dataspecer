@@ -201,7 +201,7 @@ async function persistRdfsModel(repository: ModelRepositoryType, parentIri: stri
   serialization.id = newIri;
   serialization.alias = userMetadata?.label?.en ?? userMetadata?.label?.cs;
   await ensureResource(repository, parentIri, newIri, RDFS_MODEL, userMetadata);
-  await repository.setResourceStoreJson(newIri, serialization);
+  await repository.setModelJson(newIri, serialization);
   return Object.values(wrapper.getEntities()) as SemanticModelEntity[];
 }
 
@@ -267,7 +267,7 @@ async function importAllStructureModels(repository: ModelRepositoryType, urls: s
       resources: Object.fromEntries(model.model.map((e) => [e.iri, e])),
     };
 
-    await repository.setResourceStoreJson(model.iri, modelData);
+    await repository.setModelJson(model.iri, modelData);
   }
 }
 
@@ -346,7 +346,7 @@ async function importRdfsAndDsv(repository: ModelRepositoryType, parentIri: stri
       baseIri: bestPrefix,
     } as any;
 
-    await repository.setResourceStoreJson(id, result);
+    await repository.setModelJson(id, result);
   }
 
   /**
@@ -526,7 +526,7 @@ async function dsvImport(repository: ModelRepositoryType, store: N3.Store, url: 
       ...DataSpecificationConfigurator.getFromObject(configurationModel),
       publicBaseUrl: rootHref,
     });
-    await repository.setResourceStoreJson(rootPackageId + "/generator-configuration", configuration);
+    await repository.setModelJson(rootPackageId + "/generator-configuration", configuration);
   }
 
   // Identify important resources to import

@@ -79,9 +79,9 @@ export function serializationToPimModelEntities(serialization: object): {
    * of the data from the root of the blob.
    */
   const mainEntity = {
+    ...modelData,
     id: modelData.id,
     type: [],
-    ...modelData,
   } satisfies Entity;
 
   const entities = {
