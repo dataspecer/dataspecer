@@ -174,7 +174,7 @@ export function prepareProfileSemanticClassOperations(
     descriptionFromProfiled: item.id,
     usageNote: null,
     usageNoteFromProfiled: null,
-    externalDocumentationUrl: item.externalDocumentationUrl ?? null,
+    externalDocumentationUrl: null,
     tags: [],
     controlledVocabularies: [],
   }))
@@ -192,7 +192,7 @@ export function prepareProfileSemanticProfileClassOperations(
     descriptionFromProfiled: item.id,
     usageNote: item.usageNote,
     usageNoteFromProfiled: item.id,
-    externalDocumentationUrl: item.externalDocumentationUrl ?? null,
+    externalDocumentationUrl: null,
     tags: item.tags,
     controlledVocabularies: item.controlledVocabularies,
   }))
@@ -294,7 +294,7 @@ function rangeEndProfile(
     usageNoteFromProfiled: profiled,
     concept: concept,
     cardinality: range.cardinality ?? null,
-    externalDocumentationUrl: range.externalDocumentationUrl ?? null,
+    externalDocumentationUrl: null,
     tags: [],
   }
 }
