@@ -1,6 +1,6 @@
 import { createDefaultSemanticModelBuilder, SemanticModelGeneralization } from "@dataspecer/semantic-model";
 import { describe, test } from "vitest";
-import { createWritableInMemoryProfileModel, ProfileRelationship } from "../../index.ts";
+import { createDefaultProfileModelBuilder, createWritableInMemoryProfileModel, ProfileRelationship, SemanticModelClassProfile } from "../../index.ts";
 import { profileEntities } from "./profile-entities.ts";
 
 describe("profileEntities", () => {
@@ -99,6 +99,29 @@ describe("profileEntities", () => {
     expect(entity).toBeDefined();
     const generalization = entity as SemanticModelGeneralization;
     expect(generalization.child).not.toBe(generalization.parent);
+  });
+
+  test("https://github.com/dataspecer/dataspecer/issues/1508", async () => {
+    const profileModel = createDefaultProfileModelBuilder({
+      baseIdentifier: "profile-",
+      baseIri: "http://profile/",
+    });
+    profileModel.class({ externalDocumentationUrl: "http://external-doc" });
+    const targetModel = createWritableInMemoryProfileModel({
+      identifier: "output-",
+      baseIri: "http://output/",
+    });
+    //
+    const result = await profileEntities(
+      { targetModel: targetModel },
+      { entities: Object.values(profileModel.build().getEntities()) },
+    );
+    //
+    expect(result.classes.length).toBe(1);
+    const actual = targetModel.getEntities()[result.classes[0]];
+    expect(actual).not.toBeNull();
+    expect((actual as SemanticModelClassProfile).externalDocumentationUrl)
+      .toBeNull();
   });
 
 });
