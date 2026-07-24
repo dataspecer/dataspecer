@@ -1,7 +1,7 @@
 import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
 import type { LanguageString } from "@dataspecer/core-v2/semantic-model/concepts";
 import { diffEntities, type Entity, type EntityRecord } from "@dataspecer/core/entity-model";
-import { createUpdateEntityOperation, isUndoOperation, type Operation, type Transaction } from "@dataspecer/core/operation";
+import { createUpdateEntityOperation, isSetEntityOperation, isUndoOperation, isUpdateEntityOperation, type Operation, type Transaction } from "@dataspecer/core/operation";
 import type { MainEntity } from "@dataspecer/model-store/implementation";
 import { createCreateModelOperation, createRemoveModelOperation, isCreateModelOperation, isRemoveModelOperation } from "@dataspecer/project-model";
 import { v4 as uuidv4 } from "uuid";
@@ -263,9 +263,25 @@ export class ModelRepository implements ModelRepositoryType {
           }
 
           await this.resourceModel.deleteResource(operation.modelId);
+        } else if (isUpdateEntityOperation(operation) || isSetEntityOperation(operation)) {
+          // A generic entity operation changing a resource's projection in
+          // the project model - currently only used for label/description
+          // changes (e.g. a package renamed on reload, see
+          // diffModelStates/reloadResource). The structural fields of a
+          // ProjectModelEntity (id, type, modelType, subModels) are derived
+          // from the resource tree elsewhere and are not themselves settable
+          // user metadata, so they are dropped here.
+          const { id: entityId, type, modelType, subModels, ...userMetadata } = (isUpdateEntityOperation(operation) ? operation.update : operation.entity) as Record<string, unknown> & {
+            id: string;
+          };
+          if ((await this.resourceModel.getResource(entityId)) === null) {
+            console.warn(`Cannot update metadata of resource "${entityId}" via the project model because it does not exist. The operation is only recorded.`);
+            continue;
+          }
+          await this.resourceModel.updateResource(entityId, userMetadata);
         } else {
-          // Other operations (e.g. generic entity operations changing the
-          // project structure metadata) are not interpreted yet, only recorded.
+          // Other operations (e.g. project structure metadata changes not
+          // covered above) are not interpreted yet, only recorded.
           console.warn(`Unsupported operation "${operation.type}" for the project model. The operation is only recorded.`);
         }
       }

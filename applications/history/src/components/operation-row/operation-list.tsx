@@ -1,7 +1,7 @@
 import { OperationRow, type OperationRowProps } from "@/components/operation-row/operation-row";
 import { Badge } from "@/components/ui/badge";
 import { useModelStore } from "@/contexts/model-store-context";
-import { resolveModelDisplay } from "@/lib/model-display";
+import { modelTypesFromProjectModel, resolveModelDisplay } from "@/lib/model-display";
 import { applyOperationsToModels } from "@/lib/model-snapshots";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
@@ -65,10 +65,13 @@ export function OperationGroups({
   modelsBefore,
   operations,
   undoneInModels,
+  importantModelTypes,
 }: {
   modelsBefore: Record<ModelIdentifier, EntityRecord>;
   operations: OperationInModel[];
   undoneInModels?: Set<string>;
+  /* When used, non important models become grayed. */
+  importantModelTypes?: string[];
 }) {
   const rows = useMemo((): OperationRowProps[] => {
     const modelsAfter: Record<ModelIdentifier, EntityRecord> = { ...modelsBefore };
@@ -97,20 +100,57 @@ export function OperationGroups({
     for (const entry of rows) {
       byModel.set(entry.modelId, [...(byModel.get(entry.modelId) ?? []), entry]);
     }
-    // The project model first, as its operations are the important ones.
-    return [...byModel.entries()].sort(([a], [b]) => (a === PROJECT_MODEL_ID ? -1 : b === PROJECT_MODEL_ID ? 1 : 0));
-  }, [rows]);
+    const modelTypes = modelTypesFromProjectModel(modelsBefore[PROJECT_MODEL_ID] ?? {});
+    const rank = (modelId: string): number => {
+      if (!importantModelTypes) {
+        if (modelId === PROJECT_MODEL_ID) {
+          return 0;
+        }
+        return 1;
+      } else {
+        if (modelId === PROJECT_MODEL_ID) {
+          if (importantModelTypes.includes(PROJECT_MODEL_ID)) {
+            return 0;
+          } else {
+            return 2;
+          }
+        }
+        return importantModelTypes.includes(modelTypes[modelId] ?? "") ? 1 : 3;
+      }
+    };
+    return [...byModel.entries()]
+      .sort(([a], [b]) => rank(a) - rank(b))
+      .map(([modelId, modelOperations]): [string, OperationRowProps[], boolean] => [modelId, modelOperations, rank(modelId) >= 2]);
+  }, [rows, modelsBefore, importantModelTypes]);
+
+  console.log(groups);
 
   return (
     <div className="space-y-2">
-      {groups.map(([modelId, modelOperations]) => (
-        <SingleModelOperations key={modelId} modelId={modelId} operations={modelOperations} undone={undoneInModels?.has(modelId) ?? false} />
+      {groups.map(([modelId, modelOperations, unimportant]) => (
+        <SingleModelOperations
+          key={modelId}
+          modelId={modelId}
+          operations={modelOperations}
+          undone={undoneInModels?.has(modelId) ?? false}
+          unimportant={unimportant}
+        />
       ))}
     </div>
   );
 }
 
-function SingleModelOperations({ modelId, operations, undone }: { modelId: string; operations: OperationRowProps[]; undone: boolean }) {
+function SingleModelOperations({
+  modelId,
+  operations,
+  undone,
+  unimportant,
+}: {
+  modelId: string;
+  operations: OperationRowProps[];
+  undone: boolean;
+  unimportant?: boolean;
+}) {
   const { t, i18n } = useTranslation();
   const { modelStore } = useModelStore();
 
@@ -120,7 +160,7 @@ function SingleModelOperations({ modelId, operations, undone }: { modelId: strin
   const modelName = display === null ? null : display.isProjectModel ? t("history.project-model") : (display.name ?? typeName);
 
   return (
-    <div className={undone ? "line-through decoration-muted-foreground/60" : ""}>
+    <div className={[undone && "line-through decoration-muted-foreground/60", unimportant && "opacity-50"].filter(Boolean).join(" ")}>
       <div className="mb-1 flex items-center gap-2">
         <Badge
           variant={display?.isProjectModel ? "default" : "secondary"}

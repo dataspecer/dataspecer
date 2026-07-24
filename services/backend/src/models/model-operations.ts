@@ -55,10 +55,11 @@ export function diffModelStates(previous: Record<string, EntityRecord>, next: Re
   const operations: OperationInModel[] = [];
 
   for (const modelId of modelIds) {
-    if (modelId === PROJECT_MODEL_ID) {
-      continue;
-    }
-
+    // The virtual project model itself (modelId === PROJECT_MODEL_ID) is
+    // diffed too, so changes to a resource's label/description (e.g. a
+    // package renamed on reload) are captured as generic update-entity
+    // operations - it has no richer model-type-specific operations, so it
+    // always falls back to NAMED_BLOB_STORE_TYPE below.
     const projectEntity = (next[PROJECT_MODEL_ID]?.[modelId] ?? previous[PROJECT_MODEL_ID]?.[modelId]) as ProjectModelEntity | undefined;
     const modelType = projectEntity?.modelType ?? NAMED_BLOB_STORE_TYPE;
     operations.push(...diffModelEntitiesToOperations(modelId, modelType, previous[modelId] ?? {}, next[modelId] ?? {}));
