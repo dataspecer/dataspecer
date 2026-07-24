@@ -176,38 +176,3 @@ export function modelTypesFromStore(modelStore: DefaultFrontendModelStore): Reco
   }
   return result;
 }
-
-/**
- * Best-effort human-readable name of an entity searched across all models of
- * the store — used as fallback when the history itself does not know the name.
- */
-export function resolveEntityNameAnywhere(modelStore: DefaultFrontendModelStore, entityId: string, language: string): string | null {
-  const allEntities = modelStore.getAllEntities();
-  for (const entities of Object.values(allEntities)) {
-    const entity = entities[entityId] as { name?: unknown; label?: unknown; ends?: { name?: Record<string, string> }[] } | undefined;
-    if (!entity) continue;
-    const name =
-      pickLanguageString(entity.name, language) ??
-      pickLanguageString(entity.label, language) ??
-      pickLanguageString(entity.ends?.find((end) => end.name && Object.keys(end.name).length > 0)?.name, language);
-    if (name !== null) return name;
-  }
-  return null;
-}
-
-/**
- * Label of an entity referenced by another operation (e.g. the domain/range
- * of a relationship, or the parent/child of a generalization) that the
- * operation itself does not carry a name for: its name if found anywhere in
- * the store, else its IRI, else the raw id.
- */
-export function resolveEntityLabelAnywhere(modelStore: DefaultFrontendModelStore, entityId: string, language: string): string {
-  const name = resolveEntityNameAnywhere(modelStore, entityId, language);
-  if (name !== null) return name;
-  const allEntities = modelStore.getAllEntities();
-  for (const entities of Object.values(allEntities)) {
-    const entity = entities[entityId] as { iri?: string | null } | undefined;
-    if (entity?.iri) return entity.iri;
-  }
-  return entityId;
-}
