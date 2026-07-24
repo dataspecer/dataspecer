@@ -213,38 +213,33 @@ const TransactionCard = memo(function TransactionCard({
   const fullTime = new Intl.DateTimeFormat(language, { dateStyle: "medium", timeStyle: "medium" }).format(entry.executedAt);
 
   return (
-    <Card className={`p-4 ${touchesProjectModel ? "border-amber-400/60 bg-amber-50/50 dark:border-amber-500/40 dark:bg-amber-950/20" : ""} ${entry.isUndone ? "opacity-60" : ""}`}>
+    <Card className={`p-4 gap-3 flex flex-col ${touchesProjectModel ? "border-amber-400/60 bg-amber-50/50 dark:border-amber-500/40 dark:bg-amber-950/20" : ""} ${entry.isUndone ? "opacity-60" : ""}`}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 flex-1 space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="font-medium tabular-nums">{time}</span>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" align="start">
-                <p>{fullTime}</p>
-                <p className="font-mono text-[10px] text-muted-foreground">{entry.clientId}</p>
-              </TooltipContent>
-            </Tooltip>
-            {entry.versions.map((version) => (
-              <Badge key={version} className="gap-1 border-transparent bg-purple-600 text-white hover:bg-purple-600 dark:bg-purple-500">
-                <Tag className="h-3 w-3" />
-                {version}
-              </Badge>
-            ))}
-            {touchesProjectModel && (
-              <Badge variant="outline" className="gap-1 border-amber-500/60 text-amber-700 dark:text-amber-400">
-                <Boxes className="h-3 w-3" />
-                {t("history.badge.project-structure")}
-              </Badge>
-            )}
-            {entry.isUndone && <Badge variant="secondary">{t("history.badge.undone")}</Badge>}
-          </div>
-
-          <OperationGroups modelsBefore={modelsBefore} operations={entry.operations} undoneInModels={entry.undoneInModels} />
+        <div className="flex flex-wrap items-center gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="font-medium tabular-nums">{time}</span>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" align="start">
+              <p>{fullTime}</p>
+              <p className="font-mono text-[10px] text-muted-foreground">{entry.clientId}</p>
+            </TooltipContent>
+          </Tooltip>
+          {entry.versions.map((version) => (
+            <Badge key={version} className="gap-1 border-transparent bg-purple-600 text-white hover:bg-purple-600 dark:bg-purple-500">
+              <Tag className="h-3 w-3" />
+              {version}
+            </Badge>
+          ))}
+          {touchesProjectModel && (
+            <Badge variant="outline" className="gap-1 border-amber-500/60 text-amber-700 dark:text-amber-400">
+              <Boxes className="h-3 w-3" />
+              {t("history.badge.project-structure")}
+            </Badge>
+          )}
+          {entry.isUndone && <Badge variant="secondary">{t("history.badge.undone")}</Badge>}
         </div>
-
-        <div className="flex shrink-0 items-center justify-end gap-1">
+        <div className="flex shrink-0 items-center sm:justify-end gap-1">
           <MarkVersionButton disabled={busy} onMarkVersion={(version) => onMarkVersion(entry, version)} />
           <Button variant="outline" size="sm" disabled={busy || entry.isUndone} onClick={() => onUndo(entry)} title={t("history.action.undo-description")}>
             <Undo2 className="mr-1 h-4 w-4" />
@@ -252,6 +247,7 @@ const TransactionCard = memo(function TransactionCard({
           </Button>
         </div>
       </div>
+      <OperationGroups modelsBefore={modelsBefore} operations={entry.operations} undoneInModels={entry.undoneInModels} />
     </Card>
   );
 });
