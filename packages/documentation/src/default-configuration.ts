@@ -493,6 +493,12 @@ export const defaultConfiguration: DocumentationConfiguration = {
           <td><a href="{{{relativePath URL}}}">{{relativePath URL}}</a></td>
         </tr>
       {{/each}}
+      {{#each externalArtifacts.ldes-operations}}
+        <tr>
+          <td>{{#iflng "cs"}}Serializace změn v LDES formátu{{lng}}List of changes in LDES format{{/iflng}}</td>
+          <td><a href="{{{relativePath URL}}}">{{relativePath URL}}</a></td>
+        </tr>
+      {{/each}}
         {{#artifacts}}
         <tr><td>{{translate title}}</td><td><a href="{{{relativePath}}}">{{relativePathAsText}}</a></td></tr>
         {{/artifacts}}
