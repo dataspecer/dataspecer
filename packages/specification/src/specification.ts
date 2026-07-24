@@ -522,7 +522,8 @@ export async function generateSpecification(packageId: string, context: Generate
     if (isModelVocabulary(model.entities) || isModelProfile(model.entities)) {
       const ldesFileName = isModelVocabulary(model.entities) ? "model.owl.ldes.ttl" : "dsv.ldes.ttl";
       const ldesUrl = baseUrl + ldesFileName + queryParams;
-      const ldes = await generateLdesOperationStream(model, modelDescriptions, modelIri, ldesUrl, context.history);
+      // We need to use empty IRI because LDES consumers we tested require the IRI to match the URL
+      const ldes = await generateLdesOperationStream(model, modelDescriptions, modelIri, "", context.history);
       await writeFile(ldesFileName, ldes);
       externalArtifacts["ldes-operations"] = [{ type: ldesFileName, URL: ldesUrl }];
       const ldesDescriptor = {
