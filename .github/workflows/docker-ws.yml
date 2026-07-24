@@ -106,6 +106,7 @@ jobs:
             type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'stable') }}
             type=ref,event=branch,prefix=branch-
             type=raw,enable=${{ github.event_name == 'pull_request' }},value=branch-${{ github.head_ref }}
+            type=ref,event=tag
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
       - name: Export tags as JSON
