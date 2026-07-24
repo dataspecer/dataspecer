@@ -1,6 +1,6 @@
 import { createGeneralization, deleteEntity, modifyGeneralization } from "@dataspecer/core-v2/semantic-model/operations";
 import { createDefaultSemanticModelProfileOperationFactory } from "@dataspecer/core-v2/semantic-model/profile/operations";
-import type { EntityChange } from "@dataspecer/core/entity-model";
+import { createPatch, type EntityChange } from "@dataspecer/core/entity-model";
 import type { Operation } from "@dataspecer/core/operation";
 import { isProfileClass, isProfileGeneralization, isProfileRelationship, type ProfileClass, type ProfileGeneralization, type ProfileRelationship } from "../../index.ts";
 
@@ -40,8 +40,9 @@ export function changesToProfileModelOperations(changes: EntityChange[]): Profil
       } else if (change.next === null) {
         deleteClassOps.push(deleteEntity(change.previous.id));
       } else {
-        const { type: _, id, ...rest } = change.next as ProfileClass;
-        modifyOps.push(factory.modifyClassProfile(id, rest));
+        const patch = createPatch(change.previous as ProfileClass, change.next as ProfileClass);
+        const { type: _, id: __, ...rest } = patch as Partial<ProfileClass>;
+        modifyOps.push(factory.modifyClassProfile(change.next.id, rest));
       }
     } else if (isProfileRelationship(entity)) {
       if (change.previous === null) {
@@ -50,8 +51,9 @@ export function changesToProfileModelOperations(changes: EntityChange[]): Profil
       } else if (change.next === null) {
         deleteRelGenOps.push(deleteEntity(change.previous.id));
       } else {
-        const { type: _, id, ...rest } = change.next as ProfileRelationship;
-        modifyOps.push(factory.modifyRelationshipProfile(id, rest));
+        const patch = createPatch(change.previous as ProfileRelationship, change.next as ProfileRelationship);
+        const { type: _, id: __, ...rest } = patch as Partial<ProfileRelationship>;
+        modifyOps.push(factory.modifyRelationshipProfile(change.next.id, rest));
       }
     } else if (isProfileGeneralization(entity)) {
       if (change.previous === null) {
@@ -62,8 +64,9 @@ export function changesToProfileModelOperations(changes: EntityChange[]): Profil
       } else if (change.next === null) {
         deleteRelGenOps.push(deleteEntity(change.previous.id));
       } else {
-        const { type: _, id, ...rest } = change.next as ProfileGeneralization;
-        modifyOps.push(modifyGeneralization(id, rest));
+        const patch = createPatch(change.previous as ProfileGeneralization, change.next as ProfileGeneralization);
+        const { type: _, id: __, ...rest } = patch as Partial<ProfileGeneralization>;
+        modifyOps.push(modifyGeneralization(change.next.id, rest));
       }
     } else {
       remainingChanges.push(change);

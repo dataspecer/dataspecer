@@ -46,5 +46,18 @@ test("diffing two states built by operations produces operations that transform 
   // another layer.
   expect(remainingChanges).toEqual([]);
 
+  const modifyOp = operations.find((operation) => "identifier" in operation && operation.identifier === "p");
+  expect(modifyOp).toBeDefined();
+  expect(modifyOp).toMatchObject({
+    entity: {
+      name: { en: "P changed" },
+      usageNote: { en: "Note" },
+    },
+  });
+  expect(modifyOp).not.toHaveProperty("entity.iri");
+  expect(modifyOp).not.toHaveProperty("entity.profiling");
+  expect(modifyOp).not.toHaveProperty("entity.id");
+  expect(modifyOp).not.toHaveProperty("entity.type");
+
   expect(apply(previous, operations)).toEqual(next);
 });
