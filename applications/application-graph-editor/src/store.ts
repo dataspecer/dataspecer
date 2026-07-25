@@ -14,6 +14,9 @@ export type NodePositions = Record<string, { x: number; y: number }>;
 
 export type Selection = { kind: "node" | "edge"; id: string } | null;
 
+/** The sidebar view when nothing is selected. Null collapses the sidebar. */
+export type SidebarTab = "problems" | "json" | null;
+
 export type SaveState = "saved" | "saving" | "error";
 
 /** Result of the backend validation, tied to the graph snapshot it was computed for. */
@@ -44,8 +47,10 @@ interface EditorState extends UndoableState {
   metadataError: string | null;
   saveState: SaveState;
   selection: Selection;
-  jsonPanelOpen: boolean;
+  sidebarTab: SidebarTab;
   settingsOpen: boolean;
+  /** Error of the last user action (import, generate), shown in a dismissible strip. */
+  actionError: string | null;
   semanticValidation: SemanticValidation | null;
   focusRequest: FocusRequest | null;
 
@@ -57,8 +62,9 @@ interface EditorState extends UndoableState {
   failMetadata: (message: string) => void;
   setSaveState: (state: SaveState) => void;
   setSelection: (selection: Selection) => void;
-  setJsonPanelOpen: (open: boolean) => void;
+  setSidebarTab: (tab: SidebarTab) => void;
   setSettingsOpen: (open: boolean) => void;
+  setActionError: (message: string | null) => void;
   setSemanticValidation: (validation: SemanticValidation | null) => void;
   requestFocus: (id: string) => void;
 
@@ -103,8 +109,9 @@ export const useEditorStore = create<EditorState>()(
       metadataError: null,
       saveState: "saved",
       selection: null,
-      jsonPanelOpen: true,
+      sidebarTab: "json",
       settingsOpen: false,
+      actionError: null,
       semanticValidation: null,
       focusRequest: null,
 
@@ -123,7 +130,8 @@ export const useEditorStore = create<EditorState>()(
       failMetadata: (metadataError) => set({ metadata: null, metadataError }),
       setSaveState: (saveState) => set({ saveState }),
       setSelection: (selection) => set({ selection, settingsOpen: false }),
-      setJsonPanelOpen: (open) => set({ jsonPanelOpen: open }),
+      setSidebarTab: (sidebarTab) => set({ sidebarTab }),
+      setActionError: (actionError) => set({ actionError }),
       setSettingsOpen: (open) =>
         set(open ? { settingsOpen: true, selection: null } : { settingsOpen: false }),
       setSemanticValidation: (semanticValidation) => set({ semanticValidation }),

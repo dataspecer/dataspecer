@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo } from "react";
 import {
   Background,
+  ConnectionMode,
   Controls,
   ReactFlow,
   useEdgesState,
@@ -19,10 +20,14 @@ import {
 import { nextEdgeId } from "../graph/mutations.ts";
 import { useEditorStore } from "../store.ts";
 import { invalidIds, liveViolations } from "../validation/violations.ts";
+import { CanvasToolbar } from "./canvas-toolbar.tsx";
+import { ConnectionLine } from "./connection-line.tsx";
+import { FloatingEdge } from "./floating-edge.tsx";
 import { graphToFlow, type OperationFlowNode } from "./graph-to-flow.ts";
 import { OperationNode } from "./operation-node.tsx";
 
 const nodeTypes = { operation: OperationNode };
+const edgeTypes = { floating: FloatingEdge };
 
 export function Canvas() {
   const graph = useEditorStore((state) => state.graph);
@@ -118,6 +123,10 @@ export function Canvas() {
       nodes={nodes}
       edges={edges}
       nodeTypes={nodeTypes}
+      edgeTypes={edgeTypes}
+      connectionLineComponent={ConnectionLine}
+      connectionMode={ConnectionMode.Loose}
+      connectionRadius={36}
       fitView
       deleteKeyCode={["Backspace", "Delete"]}
       onNodesChange={onNodesChange}
@@ -130,6 +139,7 @@ export function Canvas() {
     >
       <Background />
       <Controls showInteractive={false} />
+      <CanvasToolbar />
       <FocusHandler />
     </ReactFlow>
   );

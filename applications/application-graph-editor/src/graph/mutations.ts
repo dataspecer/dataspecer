@@ -39,27 +39,48 @@ export function nextNodeId(
   return `${base}-${counter}`;
 }
 
-/** Renames a node and rewrites the edges referencing it. */
+/**
+ * Renames a node and rewrites the edges referencing it. Edge ids in the derived
+ * "source-target" form follow the new endpoint names, manually overwritten edge ids stay.
+ */
 export function renameNode(
   graph: ApplicationGraph,
   currentId: string,
   newId: string,
 ): ApplicationGraph {
+  const rewritten = graph.edges.map((edge) => {
+    const source = edge.source === currentId ? newId : edge.source;
+    const target = edge.target === currentId ? newId : edge.target;
+    const regenerateId = (source !== edge.source || target !== edge.target) && hasDerivedId(edge);
+    return { edge: { ...edge, source, target }, regenerateId };
+  });
+  const used = new Set(rewritten.filter((entry) => !entry.regenerateId).map((entry) => entry.edge.id));
+  const edges = rewritten.map(({ edge, regenerateId }) => {
+    if (!regenerateId) {
+      return edge;
+    }
+    const id = uniqueEdgeId(used, edge.source, edge.target);
+    used.add(id);
+    return { ...edge, id };
+  });
+
   return {
     ...graph,
     nodes: graph.nodes.map((node) => (node.id === currentId ? { ...node, id: newId } : node)),
-    edges: graph.edges.map((edge) => ({
-      ...edge,
-      source: edge.source === currentId ? newId : edge.source,
-      target: edge.target === currentId ? newId : edge.target,
-    })),
+    edges,
   };
 }
 
-/** Derives a unique edge id from its endpoints, for example "graphs.list-graphs.detail". */
-export function nextEdgeId(graph: ApplicationGraph, source: string, target: string): string {
+function hasDerivedId(edge: ApplicationEdge): boolean {
+  const base = `${edge.source}-${edge.target}`;
+  return (
+    edge.id === base ||
+    (edge.id.startsWith(`${base}-`) && /^\d+$/.test(edge.id.slice(base.length + 1)))
+  );
+}
+
+function uniqueEdgeId(used: ReadonlySet<string>, source: string, target: string): string {
   const base = `${source}-${target}`;
-  const used = new Set(graph.edges.map((edge) => edge.id));
   if (!used.has(base)) {
     return base;
   }
@@ -68,6 +89,11 @@ export function nextEdgeId(graph: ApplicationGraph, source: string, target: stri
     counter += 1;
   }
   return `${base}-${counter}`;
+}
+
+/** Derives a unique edge id from its endpoints, for example "graphs.list-graphs.detail". */
+export function nextEdgeId(graph: ApplicationGraph, source: string, target: string): string {
+  return uniqueEdgeId(new Set(graph.edges.map((edge) => edge.id)), source, target);
 }
 
 export function addNode(graph: ApplicationGraph, node: ApplicationNode): ApplicationGraph {

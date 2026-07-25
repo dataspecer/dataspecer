@@ -66,6 +66,36 @@ describe("renameNode", () => {
     expect(graph.edges[0].target).toBe("book.detail");
     expect(graph.edges[0].source).toBe("books.list");
   });
+
+  it("regenerates a derived edge id to follow the new endpoints", () => {
+    const graph = renameNode(graphFixture(), "books.detail", "book.detail");
+    expect(graph.edges[0].id).toBe("books.list-book.detail");
+  });
+
+  it("keeps a hand-written edge id", () => {
+    const base = graphFixture();
+    base.edges[0].id = "list-to-detail";
+    const graph = renameNode(base, "books.detail", "book.detail");
+    expect(graph.edges[0].id).toBe("list-to-detail");
+    expect(graph.edges[0].target).toBe("book.detail");
+  });
+
+  it("dedupes a regenerated edge id against an existing one", () => {
+    const base = graphFixture();
+    base.edges.push({
+      id: "book.list-books.detail",
+      source: "books.list",
+      target: "books.detail",
+      type: EdgeType.Transition,
+    });
+    const graph = renameNode(base, "books.list", "book.list");
+    // the second edge id is manually overwritten relative to its old endpoints, so it stays and the
+    // regenerated first edge id steps around it
+    expect(graph.edges.map((edge) => edge.id)).toEqual([
+      "book.list-books.detail-2",
+      "book.list-books.detail",
+    ]);
+  });
 });
 
 describe("nextEdgeId", () => {

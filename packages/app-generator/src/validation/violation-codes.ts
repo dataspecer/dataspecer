@@ -12,6 +12,7 @@ export enum ViolationCode {
   SemanticCircularComposition = 'SEMANTIC_CIRCULAR_COMPOSITION',
   SemanticDeleteConfigNotAllowed = 'SEMANTIC_DELETE_CONFIG_NOT_ALLOWED',
   SemanticDuplicateAggregateName = 'SEMANTIC_DUPLICATE_AGGREGATE_NAME',
+  SemanticDuplicateEdge = 'SEMANTIC_DUPLICATE_EDGE',
   SemanticDuplicateGeneratedFieldName = 'SEMANTIC_DUPLICATE_GENERATED_FIELD_NAME',
   SemanticDuplicateRouteId = 'SEMANTIC_DUPLICATE_ROUTE_ID',
   SemanticConflictingAssociationKind = 'SEMANTIC_CONFLICTING_ASSOCIATION_KIND',

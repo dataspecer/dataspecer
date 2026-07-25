@@ -64,7 +64,7 @@ export function findMatchingChain(
  * compared.
  */
 export function chainIdentity(classIri: string, chain: AggregateFieldMetadata[]): string {
-  return [classIri, ...chain.map((field) => field.propertyIri ?? field.path)].join('\n');
+  return [classIri, ...chain.map((field) => field.propertyIri ?? field.path)].join('|');
 }
 
 function matchesField(candidate: AggregateFieldMetadata, source: AggregateFieldMetadata): boolean {

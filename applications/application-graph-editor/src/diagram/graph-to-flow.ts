@@ -2,6 +2,7 @@ import { MarkerType, type Edge, type Node } from "@xyflow/react";
 import { EdgeType, type ApplicationGraph, type ApplicationNode } from "@dataspecer/app-generator/graph";
 import type { NodePositions } from "../store.ts";
 import type { InvalidIds } from "../validation/violations.ts";
+import { parallelEdgeOffsets } from "./edge-geometry.ts";
 
 export type OperationFlowNode = Node<{ node: ApplicationNode; invalid: boolean }, "operation">;
 
@@ -23,6 +24,7 @@ export function graphToFlow(
     data: { node, invalid: invalid.nodes.has(node.id) },
   }));
 
+  const offsets = parallelEdgeOffsets(graph.edges);
   const edges: Edge[] = graph.edges.map((edge) => {
     const isRedirect = edge.type === EdgeType.Redirect;
     const isInvalid = invalid.edges.has(edge.id);
@@ -30,7 +32,8 @@ export function graphToFlow(
       id: edge.id,
       source: edge.source,
       target: edge.target,
-      type: "smoothstep",
+      type: "floating",
+      data: { offset: offsets[edge.id] },
       markerEnd: {
         type: MarkerType.ArrowClosed,
         width: 18,
@@ -42,7 +45,6 @@ export function graphToFlow(
         ...(isRedirect ? { strokeDasharray: "6 4" } : {}),
         ...(isInvalid ? { stroke: INVALID_STROKE } : {}),
       },
-      label: isRedirect ? "redirect" : undefined,
     };
   });
 

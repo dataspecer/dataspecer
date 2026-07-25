@@ -69,6 +69,73 @@ describe('validateGraphStructure', () => {
       })
     );
   });
+
+  it('rejects an edge duplicating another one of the same type', () => {
+    const base = validGraph();
+    const result = validateGraphStructure(
+      validGraph({
+        edges: [
+          ...base.edges,
+          {
+            id: 'duplicate',
+            source: 'Book.ReadList',
+            target: 'Book.ReadDetail',
+            type: EdgeType.Transition,
+          },
+        ],
+      })
+    );
+
+    expect(result.valid).toBe(false);
+    expect(result.violations).toContainEqual(
+      expect.objectContaining({
+        code: ViolationCode.SemanticDuplicateEdge,
+        path: '/edges/1',
+      })
+    );
+  });
+
+  it('keeps different node pairs apart when ids contain the key separator', () => {
+    const result = validateGraphStructure(
+      validGraph({
+        nodes: [
+          node('a b', 'https://example.org/aggregate/book-list', Operation.ReadList),
+          node('c', 'https://example.org/aggregate/book-detail', Operation.ReadDetail),
+          node('a', 'https://example.org/aggregate/book-list', Operation.ReadList),
+          node('b c', 'https://example.org/aggregate/book-detail', Operation.ReadDetail),
+        ],
+        edges: [
+          { id: 'first', source: 'a b', target: 'c', type: EdgeType.Transition },
+          { id: 'second', source: 'a', target: 'b c', type: EdgeType.Transition },
+        ],
+      })
+    );
+
+    expect(result.violations).not.toContainEqual(
+      expect.objectContaining({ code: ViolationCode.SemanticDuplicateEdge })
+    );
+  });
+
+  it('allows a transition and a redirect between the same nodes', () => {
+    const base = validGraph();
+    const result = validateGraphStructure(
+      validGraph({
+        edges: [
+          ...base.edges,
+          {
+            id: 'same-pair-redirect',
+            source: 'Book.ReadList',
+            target: 'Book.ReadDetail',
+            type: EdgeType.Redirect,
+          },
+        ],
+      })
+    );
+
+    expect(result.violations).not.toContainEqual(
+      expect.objectContaining({ code: ViolationCode.SemanticDuplicateEdge })
+    );
+  });
 });
 
 function validGraph(overrides: Partial<ApplicationGraph> = {}): ApplicationGraph {

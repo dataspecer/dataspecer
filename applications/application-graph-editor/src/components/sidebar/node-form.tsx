@@ -9,8 +9,8 @@ import {
   type ApplicationNodeConfig,
 } from "@dataspecer/app-generator/graph";
 import { omit } from "es-toolkit";
-import { nextNodeId } from "../graph/mutations.ts";
-import { useEditorStore } from "../store.ts";
+import { nextNodeId } from "../../graph/mutations.ts";
+import { useEditorStore } from "../../store.ts";
 import { FormField, inputClass } from "./form-field.tsx";
 
 const OPERATIONS = [
@@ -59,19 +59,16 @@ export function NodeForm({ node }: { node: ApplicationNode }) {
     updateNode(node.id, { config: normalizeConfig({ ...node.config, ...patch }) });
   };
 
-  // The id of an unconnected node follows its aggregate and operation, so a node created with
-  // defaults gets a telling id once configured. Ids referenced by edges stay stable.
+  // the node id follows its aggregate and operation  (renaming rewrites the edges referencing the
+  // node)
   const applyWithId = (
     patch: Partial<Omit<ApplicationNode, "id">>,
     aggregateIri: string,
     operation: Operation,
   ) => {
     const { graph } = useEditorStore.getState();
-    const connected = graph?.edges.some(
-      (edge) => edge.source === node.id || edge.target === node.id,
-    );
     const name = metadata?.aggregates.find((entry) => entry.iri === aggregateIri)?.name;
-    if (graph && !connected && name) {
+    if (graph && name) {
       renameNode(node.id, nextNodeId(graph, name, operation, node.id), patch);
     } else {
       updateNode(node.id, patch);

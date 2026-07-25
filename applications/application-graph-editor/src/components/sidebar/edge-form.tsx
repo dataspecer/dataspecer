@@ -4,7 +4,7 @@ import {
   isValidTransitionOperation,
   type ApplicationEdge,
 } from "@dataspecer/app-generator/graph";
-import { useEditorStore } from "../store.ts";
+import { useEditorStore } from "../../store.ts";
 import { FormField, inputClass } from "./form-field.tsx";
 
 export function EdgeForm({ edge }: { edge: ApplicationEdge }) {
@@ -38,6 +38,11 @@ export function EdgeForm({ edge }: { edge: ApplicationEdge }) {
           <option value={EdgeType.Transition}>transition</option>
           <option value={EdgeType.Redirect}>redirect</option>
         </select>
+        <p className="mt-1 text-xs text-slate-400">
+          {edge.type === EdgeType.Redirect
+            ? "goes to the target after the source succeeds"
+            : "adds a link to the target on the source page"}
+        </p>
       </FormField>
 
       {!operationPairValid && source && target && (

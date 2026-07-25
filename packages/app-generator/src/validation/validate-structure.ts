@@ -2,6 +2,7 @@ import type { ApplicationGraph } from '../graph/types.ts';
 import type { StructuralValidationContext } from './semantic-validation-context.ts';
 import type { Violation, ValidationResult } from './types.ts';
 import { validateDatasource } from './rules/datasource.ts';
+import { validateDuplicateEdges } from './rules/duplicate-edges.ts';
 import { validateEdgeEndpoints } from './rules/edge-endpoint.ts';
 import { validateNodeConfig } from './rules/node-config.ts';
 import { validateRedirects } from './rules/redirect.ts';
@@ -34,6 +35,7 @@ export function validateGraphStructure(graph: ApplicationGraph): ValidationResul
     ...validateNodeConfig(context),
     ...validateRouteIds(context),
     ...validateEdgeEndpoints(context),
+    ...validateDuplicateEdges(context),
     ...validateRedirects(context),
     ...validateTransitions(context),
   ];

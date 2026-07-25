@@ -234,5 +234,5 @@ function associationKindFrom(value: unknown): AssociationKind | undefined {
 }
 
 function associationKey(aggregateIri: string, path: string): string {
-  return `${aggregateIri}\u0000${path}`;
+  return `${aggregateIri}|${path}`;
 }

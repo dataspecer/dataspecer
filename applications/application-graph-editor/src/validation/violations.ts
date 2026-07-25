@@ -1,3 +1,4 @@
+import { differenceBy } from "es-toolkit";
 import {
   validateGraphStructure,
   validateGraphSyntax,
@@ -12,6 +13,26 @@ import {
 export function liveViolations(graph: ApplicationGraph): Violation[] {
   const syntax = validateGraphSyntax(graph);
   return syntax.valid ? validateGraphStructure(graph).violations : syntax.violations;
+}
+
+function violationKey(violation: Violation): string {
+  return `${violation.code}|${violation.path ?? ""}|${violation.message}`;
+}
+
+/**
+ * Live violations plus the backend's semantic results. The backend runs the same syntax and structural rules, so its
+ * copies of the violations already shown live are dropped.
+ */
+export function combinedViolations(
+  graph: ApplicationGraph,
+  semanticValidation: { violations: Violation[]; forGraph: ApplicationGraph } | null,
+): Violation[] {
+  const live = liveViolations(graph);
+  const semantic =
+    semanticValidation !== null && semanticValidation.forGraph === graph
+      ? differenceBy(semanticValidation.violations, live, violationKey)
+      : [];
+  return [...live, ...semantic];
 }
 
 export type ViolationTarget = { kind: "node" | "edge"; id: string } | null;

@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { Operation } from "@dataspecer/app-generator/graph";
 import { useEditorStore } from "../store.ts";
@@ -40,7 +41,9 @@ export function OperationNode(props: NodeProps<OperationFlowNode>) {
       }`}
       title={`${node.id}\n${node.aggregateIri}`}
     >
-      <Handle type="target" position={Position.Top} />
+      {BORDER_HANDLES.map(({ id, position }) => (
+        <Handle key={id} id={id} type="source" position={position} style={borderHandleStyle(id)} />
+      ))}
       <div className="truncate text-sm font-semibold text-slate-800">{title}</div>
       <div className="mt-1 flex items-center gap-2">
         <span
@@ -50,7 +53,30 @@ export function OperationNode(props: NodeProps<OperationFlowNode>) {
         </span>
         <span className="truncate text-xs text-slate-500">{subtitle ?? node.id}</span>
       </div>
-      <Handle type="source" position={Position.Bottom} />
     </div>
   );
+}
+
+const BORDER_HANDLES = [
+  { id: "top", position: Position.Top },
+  { id: "right", position: Position.Right },
+  { id: "bottom", position: Position.Bottom },
+  { id: "left", position: Position.Left },
+] as const;
+
+const BORDER_HANDLE_THICKNESS = 10;
+
+function borderHandleStyle(side: (typeof BORDER_HANDLES)[number]["id"]): CSSProperties {
+  const horizontal = side === "top" || side === "bottom";
+  return {
+    [side]: 0,
+    ...(horizontal ? { left: 0, width: "100%", height: BORDER_HANDLE_THICKNESS } : {}),
+    ...(horizontal ? {} : { top: 0, height: "100%", width: BORDER_HANDLE_THICKNESS }),
+    transform: "none",
+    borderRadius: 0,
+    border: "none",
+    background: "transparent",
+    minWidth: 0,
+    minHeight: 0,
+  };
 }

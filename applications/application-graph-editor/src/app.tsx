@@ -2,8 +2,8 @@ import { useEffect, type ReactNode } from "react";
 import { type ApplicationGraph } from "@dataspecer/app-generator/graph";
 import { loadGraph, loadMetadata, loadPositions } from "./backend/client.ts";
 import { EditorHeader } from "./components/header.tsx";
-import { Inspector } from "./components/inspector.tsx";
-import { ProblemsPanel } from "./components/problems-panel.tsx";
+import { Sidebar } from "./components/sidebar/sidebar.tsx";
+import { StatusBar } from "./components/status-bar.tsx";
 import { autoLayout } from "./diagram/auto-layout.ts";
 import { Canvas } from "./diagram/canvas.tsx";
 import { useAutosave } from "./hooks/use-autosave.ts";
@@ -83,10 +83,21 @@ function Editor({ graph }: { graph: ApplicationGraph }) {
   useUndoRedoShortcuts();
 
   const metadataError = useEditorStore((state) => state.metadataError);
+  const actionError = useEditorStore((state) => state.actionError);
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col overflow-hidden">
       <EditorHeader graph={graph} flushAutosave={flushAutosave} />
+      {actionError && (
+        <button
+          type="button"
+          className="border-b border-red-200 bg-red-50 px-4 py-1 text-left text-xs text-red-700"
+          title="Dismiss"
+          onClick={() => useEditorStore.getState().setActionError(null)}
+        >
+          {actionError}
+        </button>
+      )}
       {metadataError && (
         <div
           role="alert"
@@ -95,13 +106,13 @@ function Editor({ graph }: { graph: ApplicationGraph }) {
           {metadataError}
         </div>
       )}
-      <div className="flex min-h-0 flex-1">
+      <div className="relative flex min-h-0 flex-1">
         <div className="min-w-0 flex-1">
           <Canvas />
         </div>
-        <Inspector graph={graph} />
+        <Sidebar graph={graph} />
       </div>
-      <ProblemsPanel graph={graph} />
+      <StatusBar graph={graph} />
     </div>
   );
 }
