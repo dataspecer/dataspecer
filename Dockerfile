@@ -103,6 +103,8 @@ COPY --from=builder --chmod=777 /usr/src/app /usr/src/app
 # For the ssh - seems to be the only thing needed, we do not need to create the .ssh directory
 RUN addgroup -g 1001 app1001 && adduser -D -u 1001 -G app1001 app1001
 
+RUN echo "git workflow files:" && find ./database/git-workflows -type f
+
 USER 1000:1000
 VOLUME /usr/src/app/database
 EXPOSE 80
