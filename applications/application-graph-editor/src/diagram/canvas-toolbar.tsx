@@ -1,10 +1,9 @@
-import { useRef } from "react";
+import { useRef, type ReactNode } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Panel } from "@xyflow/react";
 import { Menu, Network, Plus, Redo2, Undo2 } from "lucide-react";
 import { useStore } from "zustand";
 import { Operation } from "@dataspecer/app-generator/graph";
-import { ToolbarButton } from "../components/toolbar-button.tsx";
 import { downloadBlob } from "../utils/download-blob.ts";
 import { applyGraphJson } from "../graph/apply-json.ts";
 import { exportFileName } from "../graph/file-names.ts";
@@ -128,5 +127,32 @@ function MenuItem({ children, onSelect }: { children: string; onSelect: () => vo
     >
       {children}
     </DropdownMenu.Item>
+  );
+}
+
+function ToolbarButton({
+  children,
+  onClick,
+  disabled,
+  title,
+  "aria-label": ariaLabel,
+}: {
+  children: ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+  title?: string;
+  "aria-label"?: string;
+}) {
+  return (
+    <button
+      type="button"
+      className="inline-flex items-center gap-1 rounded border border-slate-300 bg-white px-2 py-1 text-xs text-slate-600 hover:bg-slate-100 disabled:opacity-40"
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      aria-label={ariaLabel}
+    >
+      {children}
+    </button>
   );
 }

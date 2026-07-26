@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Background,
   ConnectionMode,
@@ -19,7 +19,9 @@ import {
 } from "@dataspecer/app-generator/graph";
 import { nextEdgeId } from "../graph/mutations.ts";
 import { useEditorStore } from "../store.ts";
-import { flaggedIds, liveViolations } from "../validation/violations.ts";
+import { useViolations } from "../hooks/use-violations.ts";
+import { flaggedIds } from "../validation/violations.ts";
+import { CanvasContextMenu, type ContextTarget } from "./canvas-context-menu.tsx";
 import { CanvasToolbar } from "./canvas-toolbar.tsx";
 import { ConnectionLine } from "./connection-line.tsx";
 import { FloatingEdge } from "./floating-edge.tsx";
@@ -33,40 +35,25 @@ export function Canvas() {
   const graph = useEditorStore((state) => state.graph);
   const positions = useEditorStore((state) => state.positions);
   const selection = useEditorStore((state) => state.selection);
-  const semanticValidation = useEditorStore((state) => state.semanticValidation);
 
   const [nodes, setNodes, onNodesChange] = useNodesState<OperationFlowNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+  // what the last right click hit, so the context menu knows which actions to offer
+  const [contextTarget, setContextTarget] = useState<ContextTarget>(null);
 
-  // ids to highlight, from the live violations + the semantic ones while they are fresh
-  const flagged = useMemo(() => {
-    if (graph === null) {
-      return { nodes: new Map(), edges: new Map() };
-    }
-    const violations = [
-      ...liveViolations(graph),
-      ...(semanticValidation?.forGraph === graph ? semanticValidation.violations : []),
-    ];
-    return flaggedIds(graph, violations);
-  }, [graph, semanticValidation]);
+  const violations = useViolations(graph);
+  const flagged = useMemo(
+    () => (graph === null ? { nodes: new Map(), edges: new Map() } : flaggedIds(graph, violations)),
+    [graph, violations],
+  );
 
   useEffect(() => {
     if (graph === null) {
       return;
     }
-    const flow = graphToFlow(graph, positions, flagged);
-    setNodes(
-      flow.nodes.map((node) => ({
-        ...node,
-        selected: selection?.kind === "node" && selection.id === node.id,
-      })),
-    );
-    setEdges(
-      flow.edges.map((edge) => ({
-        ...edge,
-        selected: selection?.kind === "edge" && selection.id === edge.id,
-      })),
-    );
+    const flow = graphToFlow(graph, positions, flagged, selection);
+    setNodes(flow.nodes);
+    setEdges(flow.edges);
   }, [graph, positions, selection, flagged, setNodes, setEdges]);
 
   const onNodeDragStop = useCallback((_event: unknown, node: Node) => {
@@ -119,7 +106,8 @@ export function Canvas() {
   }, []);
 
   return (
-    <ReactFlow
+    <CanvasContextMenu target={contextTarget}>
+      <ReactFlow
       nodes={nodes}
       edges={edges}
       nodeTypes={nodeTypes}
@@ -136,12 +124,22 @@ export function Canvas() {
       onNodesDelete={onNodesDelete}
       onEdgesDelete={onEdgesDelete}
       onSelectionChange={onSelectionChange}
+      onNodeContextMenu={(_event, node) => {
+        setContextTarget({ kind: "node", id: node.id });
+        useEditorStore.getState().setSelection({ kind: "node", id: node.id });
+      }}
+      onEdgeContextMenu={(_event, edge) => {
+        setContextTarget({ kind: "edge", id: edge.id });
+        useEditorStore.getState().setSelection({ kind: "edge", id: edge.id });
+      }}
+      onPaneContextMenu={() => setContextTarget(null)}
     >
       <Background />
       <Controls showInteractive={false} />
       <CanvasToolbar />
       <FocusHandler />
-    </ReactFlow>
+      </ReactFlow>
+    </CanvasContextMenu>
   );
 }
 

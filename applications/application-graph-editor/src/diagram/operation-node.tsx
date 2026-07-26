@@ -43,8 +43,7 @@ export function OperationNode(props: NodeProps<OperationFlowNode>) {
     <div
       className={`w-60 rounded-md border px-3 py-2 shadow-sm ${
         violation ? VIOLATION_BORDER[violation] : "border-sky-300 bg-sky-50"
-      }`}
-      title={`${node.id}\n${node.aggregateIri}`}
+      } ${props.selected ? "ring-2 ring-blue-500" : ""}`}
     >
       {BORDER_HANDLES.map(({ id, position }) => (
         <Handle key={id} id={id} type="source" position={position} style={borderHandleStyle(id)} />
@@ -52,12 +51,13 @@ export function OperationNode(props: NodeProps<OperationFlowNode>) {
       <div className="truncate text-sm font-semibold text-slate-800">{title}</div>
       <div className="mt-1 flex items-center gap-2">
         <span
-          className={`rounded px-1.5 py-0.5 text-xs font-medium ${OPERATION_COLORS[node.operation]}`}
+          className={`shrink-0 rounded px-1.5 py-0.5 text-xs font-medium ${OPERATION_COLORS[node.operation]}`}
         >
           {OPERATION_LABELS[node.operation]}
         </span>
-        <span className="truncate text-xs text-slate-500">{subtitle ?? node.id}</span>
+        {subtitle && <span className="min-w-0 truncate text-xs text-slate-500">{subtitle}</span>}
       </div>
+      <div className="mt-1 truncate text-[10px] text-slate-400">{node.id}</div>
     </div>
   );
 }
