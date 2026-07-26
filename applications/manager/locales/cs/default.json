@@ -3,6 +3,7 @@
   "$datetime": "{{val, datetime(dateStyle: long; timeStyle: short)}}",
   "add-imported": {
     "error": "Při importu některých specifikací nastala chyba",
+    "error-title": "Import selhal",
     "file-description": "V tomto dialogu můžete obnovit specifikaci ze záložního ZIP souboru.",
     "file-warning": "Obnovovaná specifikace nesmí v Dataspeceru existovat. Pokud existuje, nejprve ji smažte.",
     "import": "Importovat",
