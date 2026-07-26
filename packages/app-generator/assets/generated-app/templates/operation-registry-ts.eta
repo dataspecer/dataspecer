@@ -1,12 +1,16 @@
 import { createDataSource } from "../data-source/create-data-source.ts";
 import type { OperationKind } from "../shared/operations/operation-kind.ts";
 import type { OperationStrategy } from "../shared/operations/operation-strategy.ts";
-import type { AggregateDescriptor, EntityModel } from "../shared/types/aggregate.ts";
+import type { AggregateDescriptor, AggregateDescriptorMap, EntityModel } from "../shared/types/aggregate.ts";
 import type { OperationNavigationDescriptor } from "../shared/navigation/navigation.ts";
 <%~ it.aggregates.map((aggregate) => `import { ${aggregate.descriptorName} } from "../modules/${aggregate.moduleName}/descriptor.ts";`).join("\n") %>
 <%~ it.pages.map((page) => `import { ${page.operationClassName} } from "../modules/${page.moduleName}/${page.operation.routeId}-operation.ts";`).join("\n") %>
 
 export const dataSource = createDataSource();
+
+export const aggregateRegistry = {
+<%~ it.aggregates.map((aggregate) => `  ${it.json(aggregate.iri)}: ${aggregate.descriptorName},`).join("\n") %>
+} satisfies AggregateDescriptorMap;
 
 export interface RegisteredOperation<TModel extends EntityModel = EntityModel> {
   id: string;

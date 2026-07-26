@@ -10,6 +10,18 @@ This Generated application was produced by the Dataspecer application prototype 
 - Files under `src/data-source/` contain the data source factory and can be replaced with a custom datasource.
 - Files under `src/generated/` and `src/routes.tsx` are graph-specific generated configuration.
 
+## Forms and composite writes
+
+Create and Update forms are generated from Dataspecer aggregate field metadata. Repeating
+primitive and reference fields can be added or removed, while compositions are edited through a
+tree navigator and nested entity editor. Language-tagged fields are omitted from writes and have
+no editable control.
+
+Composition entities are saved from the leaves toward the aggregate root. A failed write stops
+its ancestors from being written, but previously completed writes are not rolled back. Removing an
+existing composition child from an Update form deletes it after the parent no longer references
+it.
+
 ## Commands
 
 ```sh

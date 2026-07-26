@@ -103,11 +103,8 @@ export interface GeneratedDetailDescriptor {
   fields: GeneratedFieldDescriptor[];
 }
 
-// TODO: Replace the placeholder with real form descriptors once Create and Update forms are
-//  implemented (should cover nested composition sub-forms and aggregation selectors)
 export interface GeneratedFormDescriptor {
   fields: GeneratedFieldDescriptor[];
-  placeholder: true;
 }
 
 // TODO: Replace the placeholder with a real delete descriptor once Delete confirmation pages,
@@ -125,6 +122,8 @@ export interface GeneratedFieldDescriptor {
   datatype?: string;
   many: boolean;
   required: boolean;
+  minCount?: number;
+  maxCount?: number | null;
   targetAggregateIri?: string;
   targetClassIri?: string;
   associationKind?: AssociationKind;

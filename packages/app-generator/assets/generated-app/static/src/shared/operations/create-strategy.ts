@@ -1,4 +1,5 @@
 import type { EntityModel } from '../types/aggregate.ts';
+import { createComposite } from './composite-mutation.ts';
 import type { OperationContext, OperationStrategy } from './operation-strategy.ts';
 import type { OperationResult } from './operation-result.ts';
 
@@ -14,10 +15,12 @@ export class DefaultCreateStrategy<TModel extends EntityModel> implements Operat
       };
     }
 
-    const data = await ctx.datasource.create({
-      aggregate: ctx.aggregate,
-      payload: ctx.payload,
-    });
+    const data = await createComposite(
+      ctx.datasource,
+      ctx.aggregate,
+      ctx.aggregates ?? { [ctx.aggregate.iri]: ctx.aggregate },
+      ctx.payload
+    );
     return { ok: true, data };
   }
 }

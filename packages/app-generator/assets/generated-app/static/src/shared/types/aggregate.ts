@@ -2,7 +2,7 @@ export type FieldKind = 'primitive' | 'association';
 
 export type AssociationKind = 'composition' | 'aggregation';
 
-/** The HTML form control a primitive field maps to in the generated Create form. */
+/** The HTML form control a primitive field maps to in generated forms. */
 export type FormControl = 'text' | 'number' | 'date' | 'datetime' | 'checkbox';
 
 export interface FieldDescriptor {
@@ -20,6 +20,10 @@ export interface FieldDescriptor {
   many: boolean;
   /** Whether the field must have at least one value (lower cardinality of one or more). */
   required: boolean;
+  /** Exact lower cardinality when the source provides it. */
+  minCount?: number;
+  /** Exact upper cardinality when the source provides it. Null means unbounded. */
+  maxCount?: number | null;
   /**
    * Set only when the association target is another aggregate (a class reference or the root
    * class of another structure model). Mutually exclusive with the `fields` property.
@@ -44,6 +48,8 @@ export interface AggregateDescriptor<TModel extends EntityModel = EntityModel> {
   fields: FieldDescriptor[];
   createEmpty(): TModel;
 }
+
+export type AggregateDescriptorMap = Record<string, AggregateDescriptor>;
 
 export interface EntityModel {
   id?: string;

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { buildGenerationModel } from '../src/generation-model/build-generation-model.ts';
 import {
+  AssociationKind,
   DatasourceType,
   EdgeType,
   Operation,
@@ -44,6 +45,9 @@ describe('renderGeneratedApp', () => {
         'src/shared/components/list-view.tsx',
       ])
     );
+    expect(Object.keys(first)).not.toContain(
+      'src/shared/components/placeholder-operation-view.tsx'
+    );
   });
 
   it('renders nested association fields in models and descriptors', () => {
@@ -62,6 +66,59 @@ describe('renderGeneratedApp', () => {
     expect(descriptor).toContain('"path": "footnotes"');
     expect(descriptor).toContain('"propertyName": "footnotes"');
     expect(tree.get('src/shared/components/field-value.ts')).toContain('formatFieldValue');
+  });
+
+  it('renders descriptors and schemas for composed aggregates without their own operation', () => {
+    const companyIri = 'https://example.org/aggregate/company';
+    const departmentIri = 'https://example.org/aggregate/department';
+    const graph = graphFixture();
+    graph.nodes = [node('Company.Create', companyIri, Operation.Create)];
+    graph.edges = [];
+    const tree = renderGeneratedApp(
+      buildGenerationModel(graph, {
+        dataSpecificationIri: specificationIri,
+        aggregates: [
+          {
+            iri: companyIri,
+            name: 'Company',
+            classIri: 'https://example.org/class/company',
+            fields: [
+              {
+                path: 'departments',
+                label: 'Departments',
+                kind: FieldKind.Association,
+                associationKind: AssociationKind.Composition,
+                targetAggregateIri: departmentIri,
+                targetClassIri: 'https://example.org/class/department',
+                many: true,
+              },
+            ],
+          },
+          {
+            iri: departmentIri,
+            name: 'Department',
+            classIri: 'https://example.org/class/department',
+            fields: [
+              {
+                path: 'name',
+                label: 'Name',
+                kind: FieldKind.Primitive,
+                datatype: 'http://www.w3.org/2001/XMLSchema#string',
+              },
+            ],
+          },
+        ],
+      })
+    );
+
+    expect(tree.paths()).toContain('src/modules/department/descriptor.ts');
+    expect(tree.paths()).toContain('src/modules/department/ldkit-schema.ts');
+    expect(tree.get('src/generated/operation-registry.ts')).toContain(
+      '"https://example.org/aggregate/department": DepartmentAggregateDescriptor'
+    );
+    expect(tree.get('src/data-source/create-data-source.ts')).toContain(
+      '"https://example.org/aggregate/department": DepartmentLdkitSchema'
+    );
   });
 
   it('renders diacritic labels as ASCII module and property names', () => {
@@ -103,12 +160,19 @@ describe('renderGeneratedApp', () => {
     expect(tree.get('src/routes.tsx')).toContain('path: "/book-read-detail"');
     expect(tree.get('src/routes.tsx')).toContain('requiresEntityId: true');
     expect(tree.get('src/pages/BookReadListPage.tsx')).toContain('invokeOperation');
+    expect(tree.get('src/pages/BookReadListPage.tsx')).not.toContain('PlaceholderOperationView');
     expect(tree.get('src/pages/BookReadListPage.tsx')).not.toContain('"fieldPath": "author"');
     expect(tree.get('src/modules/book-list/model.ts')).toContain('export interface BookListModel');
     expect(tree.get('src/modules/book-list/book-read-list-operation.ts')).toContain(
       'extends DefaultReadListStrategy<BookListModel>'
     );
     expect(tree.get('src/shared/datasource/rdf-ldkit-data-source.ts')).toContain('createLens');
+    expect(tree.get('src/shared/components/form-field.tsx')).toContain(
+      'htmlFor={field.many ? undefined : controlId}'
+    );
+    expect(tree.get('src/shared/components/form-field.tsx')).toContain(
+      'aria-labelledby={field.many ? labelId : undefined}'
+    );
     const readme = tree.get('README.md');
     expect(readme).toContain('Generated/User-Owned Boundaries');
     expect(readme).toMatch(/generated from Dataspecer aggregate\s+field metadata/);

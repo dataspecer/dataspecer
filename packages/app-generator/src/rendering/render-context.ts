@@ -1,6 +1,11 @@
-import type { GeneratedOperationDescriptor, GenerationModel } from '../generation-model/types.ts';
+import type {
+  GeneratedFieldDescriptor,
+  GeneratedOperationDescriptor,
+  GenerationModel,
+} from '../generation-model/types.ts';
 import type { RenderedAggregate } from './rendered-aggregate.ts';
 
+import { AssociationKind } from '../graph/types.ts';
 import { toOperationClassName } from '../utils/naming.ts';
 import { toRenderedAggregate } from './rendered-aggregate.ts';
 
@@ -23,20 +28,36 @@ export interface RenderedPage {
 }
 
 export function buildRenderContext(model: GenerationModel): GeneratedAppRenderContext {
-  // Only aggregates used by a node produce a module. Association targets are inlined or rendered
-  // as reference IRIs, so an aggregate without an operation would generate an unused module.
   const usedAggregateIris = new Set(model.operations.map((operation) => operation.aggregateIri));
+  const aggregateByIri = new Map(model.aggregates.map((aggregate) => [aggregate.iri, aggregate]));
+  const pending = [...usedAggregateIris];
+  while (pending.length > 0) {
+    const aggregateIri = pending.pop() as string;
+    const aggregate = aggregateByIri.get(aggregateIri);
+    if (!aggregate) {
+      continue;
+    }
+    for (const targetIri of compositionTargetIris(aggregate.fields)) {
+      if (!usedAggregateIris.has(targetIri)) {
+        usedAggregateIris.add(targetIri);
+        pending.push(targetIri);
+      }
+    }
+  }
+
+  // Composed aggregate targets need descriptors and schemas even when they have no operation of
+  // their own. Aggregation targets stay plain references and do not need generated modules.
   const aggregates = model.aggregates
     .filter((aggregate) => usedAggregateIris.has(aggregate.iri))
     .map(toRenderedAggregate);
-  const aggregateByIri = new Map(aggregates.map((aggregate) => [aggregate.iri, aggregate]));
+  const renderedAggregateByIri = new Map(aggregates.map((aggregate) => [aggregate.iri, aggregate]));
 
   return {
     model,
     aggregates,
     instanceBaseIri: toInstanceBaseIri(model.app.dataSpecificationIri),
     pages: model.operations.map((operation) => {
-      const aggregate = aggregateByIri.get(operation.aggregateIri);
+      const aggregate = renderedAggregateByIri.get(operation.aggregateIri);
       if (!aggregate) {
         throw new Error(`Missing aggregate render context for "${operation.aggregateIri}".`);
       }
@@ -52,6 +73,15 @@ export function buildRenderContext(model: GenerationModel): GeneratedAppRenderCo
     }),
     json: (value) => JSON.stringify(value, null, 2),
   };
+}
+
+function compositionTargetIris(fields: GeneratedFieldDescriptor[]): string[] {
+  return fields.flatMap((field) => [
+    ...(field.associationKind === AssociationKind.Composition && field.targetAggregateIri
+      ? [field.targetAggregateIri]
+      : []),
+    ...(field.fields ? compositionTargetIris(field.fields) : []),
+  ]);
 }
 
 // Base IRI for generating new entity IRIs in Create forms. A data specification IRI that is a real

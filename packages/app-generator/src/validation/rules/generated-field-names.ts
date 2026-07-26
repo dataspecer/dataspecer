@@ -11,13 +11,8 @@ import { ViolationCode } from '../violation-codes.ts';
  */
 export function validateGeneratedFieldNames(context: SemanticValidationContext): Violation[] {
   const violations: Violation[] = [];
-  const usedAggregateIris = new Set(context.graph.nodes.map((node) => node.aggregateIri));
 
-  for (const aggregateIri of usedAggregateIris) {
-    const aggregate = context.aggregates.get(aggregateIri);
-    if (!aggregate) {
-      continue;
-    }
+  for (const aggregate of context.aggregates.values()) {
     const nestedModelPaths = new Map<string, string>();
     validateFields(aggregate, aggregate.fields, '', nestedModelPaths, violations);
   }

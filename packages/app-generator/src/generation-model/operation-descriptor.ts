@@ -69,7 +69,6 @@ function buildDetailDescriptor(fields: GeneratedFieldDescriptor[]): GeneratedDet
 function buildFormDescriptor(fields: GeneratedFieldDescriptor[]): GeneratedFormDescriptor {
   return {
     fields: sortBy(fields, [(field) => field.path]),
-    placeholder: true,
   };
 }
 

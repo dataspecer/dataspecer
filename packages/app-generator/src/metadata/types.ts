@@ -23,14 +23,18 @@ export interface AggregateFieldMetadata {
   associationKind?: AssociationKind;
   /**
    * True for a reverse (inverse) relation, where the predicate is traversed backwards. The
-   * generated RDF adapter can edit top-level reverse references as an extension to the
-   * specification by writing the reversed triples outside LDKit.
+   * generated RDF adapter can edit reverse references as an extension to the specification by
+   * writing the reversed triples outside LDKit.
    */
   isReverse?: boolean;
   /** Whether the field holds more than one value (upper cardinality above one). */
   many?: boolean;
   /** Whether the field must have at least one value (lower cardinality of one or more). */
   required?: boolean;
+  /** Exact lower cardinality. Defaults to zero when the source does not provide it. */
+  minCount?: number;
+  /** Exact upper cardinality. Null means unbounded. */
+  maxCount?: number | null;
   /**
    * Fields exposed inline by the association target class within this aggregate's structure
    * tree. Present only for associations whose target is defined inline, not for references to

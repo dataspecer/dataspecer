@@ -51,12 +51,10 @@ function buildLdkitProperty(field: RenderedField): Property {
     // An association without a target class stays a bare reference with no @type.
   } else {
     const mapping = datatypeMapping(field.datatype);
-    if (mapping.multilang) {
-      property['@multilang'] = true;
-    } else if (mapping.ldkitType) {
+    if (mapping.ldkitType) {
       property['@type'] = mapping.ldkitType;
     }
-    // A missing datatype mapping leaves the value as a plain string, LDKit's default.
+    // An untyped primitive uses LDKit's default literal handling.
   }
 
   if (field.many) {

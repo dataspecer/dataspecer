@@ -24,10 +24,4 @@ describe('formatFieldValue', () => {
       '2024-05-01T09:30:00.000Z'
     );
   });
-
-  it('formats language maps by preferred language', () => {
-    expect(formatFieldValue(primitiveField, { cs: 'Název', en: 'Title' })).toBe('Title');
-    expect(formatFieldValue(primitiveField, { cs: 'Název' })).toBe('Název');
-    expect(formatFieldValue(primitiveField, { de: 'Titel' })).toBe('Titel');
-  });
 });

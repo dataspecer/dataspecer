@@ -12,23 +12,18 @@ type LdkitDatatype = keyof SupportedDataTypes;
  * The datatype IRIs come from Dataspecer, so the keys reuse Dataspecer's OFN base types and the
  * xsd namespace. The emitted @type reuses LDKit's xsd namespace, which is the set of datatypes
  * LDKit knows how to parse, so the model type stays consistent with what a read returns.
- * Language tagged values (OFN.text or rdf:langString) are read through @multilang as a language
- * to value map, the same signal Dataspecer uses when it emits @container @language.
  */
 
-/** The HTML form control a primitive datatype maps to, consumed by the generated Create form. */
+/** The HTML form control a primitive datatype maps to in generated forms. */
 export type FormControl = 'text' | 'number' | 'date' | 'datetime' | 'checkbox';
 
 export interface DatatypeMapping {
   /**
    * The datatype to emit as the LDKit @type, typed as one of the datatypes LDKit can parse.
-   * Undefined leaves the value as a plain string, the safe fallback for unrecognized or generic
-   * literal types.
+   * Undefined leaves the value untyped.
    */
   ldkitType?: LdkitDatatype;
-  /** Language tagged values, read by LDKit through @multilang as a language to value map. */
-  multilang?: boolean;
-  /** The value type in the generated model, matching what LDKit returns for the datatype. */
+  /** The value type in the generated model. Unsupported mappings use `unknown`. */
   tsType: string;
   /** Expression for an empty value, used by the generated createEmpty helpers. */
   emptyValue: string;
@@ -45,11 +40,7 @@ function literal(
   return { ldkitType, tsType, emptyValue, formControl };
 }
 
-const MULTILANG: DatatypeMapping = {
-  multilang: true,
-  tsType: 'Record<string, string>',
-  emptyValue: '{}',
-};
+const UNSUPPORTED_LANGUAGE: DatatypeMapping = { tsType: 'unknown', emptyValue: 'undefined' };
 
 // The xsd groups mirror how LDKit maps datatypes to native values, so the model type is correct.
 const NUMBER_TYPES = [
@@ -109,9 +100,8 @@ TABLE.set(OFN.integer, literal(xsd.integer, 'number', '0', 'number'));
 TABLE.set(OFN.decimal, literal(xsd.decimal, 'number', '0', 'number'));
 TABLE.set(OFN.url, literal(xsd.anyURI, 'string', '""', 'text'));
 TABLE.set(OFN.string, literal(xsd.string, 'string', '""', 'text'));
-// OFN.rdfLangString is the rdf:langString IRI, so this also covers a raw langString datatype.
-TABLE.set(OFN.text, MULTILANG);
-TABLE.set(OFN.rdfLangString, MULTILANG);
+TABLE.set(OFN.text, UNSUPPORTED_LANGUAGE);
+TABLE.set(OFN.rdfLangString, UNSUPPORTED_LANGUAGE);
 
 // Unrecognized and generic literal datatypes such as rdfs:Literal read as plain strings.
 const FALLBACK: DatatypeMapping = { tsType: 'string', emptyValue: '""', formControl: 'text' };

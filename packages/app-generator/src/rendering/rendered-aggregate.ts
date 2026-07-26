@@ -53,6 +53,8 @@ interface DescriptorField {
   kind: string;
   many: boolean;
   required: boolean;
+  minCount?: number;
+  maxCount?: number | null;
   propertyIri?: string;
   datatype?: string;
   formControl?: FormControl;
@@ -133,6 +135,8 @@ function toDescriptorField(field: RenderedField): DescriptorField {
     kind: field.kind,
     many: field.many,
     required: field.required,
+    ...(field.minCount !== undefined ? { minCount: field.minCount } : {}),
+    ...(field.maxCount !== undefined ? { maxCount: field.maxCount } : {}),
     ...(field.propertyIri ? { propertyIri: field.propertyIri } : {}),
     ...(field.datatype ? { datatype: field.datatype } : {}),
     ...(field.formControl ? { formControl: field.formControl } : {}),
@@ -163,10 +167,6 @@ function toModelType(
   }
 
   const mapping = datatypeMapping(field.datatype);
-  if (mapping.multilang) {
-    // LDKit returns a language to value map, and to value array map when the field repeats.
-    return field.many ? 'Record<string, string[]>' : 'Record<string, string>';
-  }
   return field.many ? `${mapping.tsType}[]` : mapping.tsType;
 }
 
@@ -193,9 +193,5 @@ function toEmptyValue(field: GeneratedFieldDescriptor, children?: RenderedField[
   }
 
   const mapping = datatypeMapping(field.datatype);
-  if (mapping.multilang) {
-    // A language map, empty whether or not the field repeats.
-    return '{}';
-  }
   return field.many ? '[]' : mapping.emptyValue;
 }

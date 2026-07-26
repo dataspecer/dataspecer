@@ -44,6 +44,8 @@ describe('mapDataspecerSpecificationToMetadata', () => {
           datatype: 'http://www.w3.org/2001/XMLSchema#string',
           many: false,
           required: true,
+          minCount: 1,
+          maxCount: 1,
         },
         {
           path: 'chapters',
@@ -54,6 +56,8 @@ describe('mapDataspecerSpecificationToMetadata', () => {
           targetClassIri: 'https://example.org/class/chapter',
           many: true,
           required: false,
+          minCount: 0,
+          maxCount: null,
         },
         {
           path: 'author',
@@ -64,6 +68,8 @@ describe('mapDataspecerSpecificationToMetadata', () => {
           targetClassIri: 'https://example.org/class/author',
           many: false,
           required: false,
+          minCount: 0,
+          maxCount: 1,
         },
       ],
     });
@@ -240,6 +246,28 @@ describe('mapDataspecerSpecificationToMetadata', () => {
     expect(book?.fields.find((field) => field.path === 'title')).toMatchObject({
       many: true,
       required: false,
+      minCount: 0,
+      maxCount: null,
+    });
+  });
+
+  it('preserves cardinality bounds above one', () => {
+    const fixture = dataspecerFixture();
+    const titleAttribute = fixture.structureModels[0].find(
+      (resource) => resource.iri === 'https://example.org/psm/title'
+    ) as DataPsmAttribute;
+    titleAttribute.dataPsmCardinality = [2, 5];
+
+    const metadata = mapDataspecerSpecificationToMetadata(specificationIri, fixture);
+    const book = metadata.aggregates.find(
+      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail'
+    );
+
+    expect(book?.fields.find((field) => field.path === 'title')).toMatchObject({
+      many: true,
+      required: true,
+      minCount: 2,
+      maxCount: 5,
     });
   });
 

@@ -26,6 +26,8 @@ export interface ReadDetailArgs<TModel extends EntityModel> {
 
 export interface MutationArgs<TModel extends EntityModel> {
   aggregate: AggregateDescriptor<TModel>;
+  /** Path to an inline composition target within the aggregate. Empty means the aggregate root. */
+  fieldPath?: readonly string[];
   payload: TModel;
 }
 
@@ -35,10 +37,12 @@ export interface IdentifiedMutationArgs<TModel extends EntityModel> extends Muta
 
 export interface DeleteArgs<TModel extends EntityModel> {
   aggregate: AggregateDescriptor<TModel>;
+  /** Path to an inline composition target within the aggregate. Empty means the aggregate root. */
+  fieldPath?: readonly string[];
   id: string;
 }
 
-/** A selectable reference target: the entity IRI and a human label for a form dropdown. */
+/** A selectable reference target: the entity IRI and a human label for the reference picker. */
 export interface ReferenceOption {
   id: string;
   label: string;
@@ -55,5 +59,5 @@ export interface DataSource {
    * Lists candidate targets of a reference by their RDF class, for reference form controls.
    * Optional because only sources that can answer a type query provide it.
    */
-  listByType?(classIri: string, limit?: number): Promise<ReferenceOption[]>;
+  listByType?(classIri: string): Promise<ReferenceOption[]>;
 }

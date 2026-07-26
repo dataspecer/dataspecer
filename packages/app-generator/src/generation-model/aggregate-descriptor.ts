@@ -26,6 +26,8 @@ function buildFieldDescriptor(field: AggregateFieldMetadata): GeneratedFieldDesc
     ...(field.datatype ? { datatype: field.datatype } : {}),
     many: field.many ?? false,
     required: field.required ?? false,
+    ...(field.minCount !== undefined ? { minCount: field.minCount } : {}),
+    ...(field.maxCount !== undefined ? { maxCount: field.maxCount } : {}),
     ...(field.targetAggregateIri ? { targetAggregateIri: field.targetAggregateIri } : {}),
     ...(field.targetClassIri ? { targetClassIri: field.targetClassIri } : {}),
     ...(field.associationKind ? { associationKind: field.associationKind } : {}),

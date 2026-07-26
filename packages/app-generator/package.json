@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "compile-assets": "node scripts/compile-assets.mjs",
-    "build": "tsc",
+    "build": "tsc && tsc -p tsconfig.static.json",
     "dev": "tsc -w",
     "prebuild": "rimraf lib && npm run compile-assets --silent",
     "predev": "npm run compile-assets --silent",

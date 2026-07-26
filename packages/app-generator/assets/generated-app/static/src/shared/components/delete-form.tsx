@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useId, useState, type FormEvent } from 'react';
 
 import type { DataSource } from '../datasource/data-source.ts';
 import type { OperationNavigationDescriptor } from '../navigation/navigation.ts';
@@ -17,6 +17,7 @@ interface DeleteFormProps<TModel extends EntityModel> {
 
 export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TModel>) {
   const { title, aggregate, strategy, dataSource, navigation, id } = props;
+  const identifierId = useId();
   const [item, setItem] = useState<TModel | null>(null);
   const [issues, setIssues] = useState<ValidationIssue[]>([]);
   const [loading, setLoading] = useState(true);
@@ -112,12 +113,12 @@ export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TM
       <h2>{title}</h2>
       <form className="entity-form" onSubmit={(event) => void handleSubmit(event)}>
         <div className="form-field">
-          <label className="form-label">
+          <label className="form-label" htmlFor={identifierId}>
             Identifier (IRI)
             <span className="form-required"> *</span>
           </label>
           <div className="form-control">
-            <input type="text" value={item?.id ?? id} readOnly />
+            <input id={identifierId} type="text" value={item?.id ?? id} readOnly />
             {errorFor('id') ? <span className="form-error">{errorFor('id')}</span> : null}
           </div>
         </div>

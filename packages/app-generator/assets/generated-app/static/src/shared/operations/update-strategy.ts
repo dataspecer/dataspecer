@@ -1,9 +1,6 @@
 import type { EntityModel } from '../types/aggregate.ts';
-import {
-  stringParam,
-  type OperationContext,
-  type OperationStrategy,
-} from './operation-strategy.ts';
+import { updateComposite } from './composite-mutation.ts';
+import type { OperationContext, OperationStrategy } from './operation-strategy.ts';
 import type { OperationResult } from './operation-result.ts';
 
 export class DefaultUpdateStrategy<TModel extends EntityModel> implements OperationStrategy<
@@ -18,11 +15,25 @@ export class DefaultUpdateStrategy<TModel extends EntityModel> implements Operat
       };
     }
 
-    const data = await ctx.datasource.update({
-      aggregate: ctx.aggregate,
-      id: stringParam(ctx.params, 'id'),
-      payload: ctx.payload,
-    });
+    if (!ctx.originalPayload) {
+      return {
+        ok: false,
+        issues: [
+          {
+            code: 'missing_original_payload',
+            message: 'Original update payload is missing.',
+          },
+        ],
+      };
+    }
+
+    const data = await updateComposite(
+      ctx.datasource,
+      ctx.aggregate,
+      ctx.aggregates ?? { [ctx.aggregate.iri]: ctx.aggregate },
+      ctx.payload,
+      ctx.originalPayload
+    );
     return { ok: true, data };
   }
 }

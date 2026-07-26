@@ -1,30 +1,24 @@
-import type { FieldDescriptor, FormControl } from '../types/aggregate.ts';
+import type { AggregateDescriptorMap, FieldDescriptor, FormControl } from '../types/aggregate.ts';
 import type { ValidationIssue } from '../operations/operation-result.ts';
+import {
+  isCompositionField,
+  maximumCount,
+  minimumCount,
+  resolveCompositionTarget,
+  type EntityTarget,
+} from './entity-target.ts';
 
-// The control a field maps to in the form. Beyond the primitive controls, a single-valued
-// reference renders as a dropdown, and anything the first prototype cannot edit (repeating or
-// nested composition fields) is shown read-only as "unsupported".
-export type FieldControl = FormControl | 'reference' | 'unsupported';
+export type FieldControl = FormControl | 'reference' | 'composition' | 'unsupported';
 
 export function resolveControl(field: FieldDescriptor): FieldControl {
-  if (field.many) {
-    return 'unsupported';
-  }
   if (field.kind === 'association') {
-    // TODO: Replace this shortcut with proper nested aggregation handling. For now,
-    // aggregations are edited as IRI references even when metadata also exposes inline fields.
-    if (field.associationKind === 'aggregation' && field.targetClassIri) {
-      return 'reference';
+    if (isCompositionField(field)) {
+      return 'composition';
     }
-    return field.targetClassIri && !field.fields?.length ? 'reference' : 'unsupported';
+    // Aggregations remain references even when their structure exposes fields for display.
+    return field.targetClassIri ? 'reference' : 'unsupported';
   }
   return field.formControl ?? 'unsupported';
-}
-
-// Fields shown in the form, in descriptor order. Reverse relations are included: a single one
-// edits as a reference dropdown and the datasource writes its reversed triple on save.
-export function formFields(fields: readonly FieldDescriptor[]): FieldDescriptor[] {
-  return [...fields];
 }
 
 // Converts a control's raw input into the value the model and LDKit expect. Empty text clears the
@@ -52,10 +46,12 @@ export function toInputValue(control: FieldControl, value: unknown): string {
     if (Number.isNaN(value.getTime())) {
       return '';
     }
-    // datetime-local wants minutes precision, a date wants the day only.
-    return control === 'datetime'
-      ? value.toISOString().slice(0, 16)
-      : value.toISOString().slice(0, 10);
+    if (control === 'datetime') {
+      // datetime-local displays wall-clock time, while toISOString uses UTC.
+      const localTime = new Date(value.getTime() - value.getTimezoneOffset() * 60_000);
+      return localTime.toISOString().slice(0, 16);
+    }
+    return value.toISOString().slice(0, 10);
   }
   if (typeof value === 'string' || typeof value === 'number') {
     return String(value);
@@ -63,28 +59,130 @@ export function toInputValue(control: FieldControl, value: unknown): string {
   return '';
 }
 
-// Checks required fields client-side, including the generated IRI. Fields the prototype cannot
-// edit are skipped rather than blocking the whole form.
+// Checks identifiers, exact cardinality, duplicate repeated values, and composed entities
+// recursively. Fields without an editable control are excluded.
 export function validateModel(
   model: Record<string, unknown>,
-  fields: readonly FieldDescriptor[]
+  target: EntityTarget,
+  aggregates: AggregateDescriptorMap
 ): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
-  if (typeof model.id !== 'string' || model.id.trim() === '') {
-    issues.push({ code: 'required', message: 'Identifier (IRI) is required.', path: 'id' });
-  }
-  for (const field of fields) {
-    if (!field.required || resolveControl(field) === 'unsupported') {
-      continue;
-    }
-    if (isEmptyValue(model[field.propertyName])) {
-      issues.push({ code: 'required', message: `${field.label} is required.`, path: field.path });
-    }
-  }
+  validateEntity(model, target, aggregates, '', issues);
   return issues;
 }
 
-function isEmptyValue(value: unknown): boolean {
+function validateEntity(
+  model: Record<string, unknown>,
+  target: EntityTarget,
+  aggregates: AggregateDescriptorMap,
+  pathPrefix: string,
+  issues: ValidationIssue[]
+): void {
+  const idPath = joinPath(pathPrefix, 'id');
+  if (typeof model.id !== 'string' || model.id.trim() === '') {
+    issues.push({ code: 'required', message: 'Identifier (IRI) is required.', path: idPath });
+  }
+
+  for (const field of target.fields) {
+    if (resolveControl(field) === 'unsupported') {
+      continue;
+    }
+    const fieldPath = joinPath(pathPrefix, field.path);
+    const value = model[field.propertyName];
+    const values = field.many ? (Array.isArray(value) ? value : []) : [value];
+    const presentValues = values.filter((entry) => !isEmptyValue(entry));
+    const minCount = minimumCount(field);
+    const maxCount = maximumCount(field);
+
+    if (presentValues.length < minCount) {
+      issues.push({
+        code: 'min_count',
+        message:
+          minCount === 1
+            ? `${field.label} is required.`
+            : `${field.label} requires at least ${minCount} values.`,
+        path: fieldPath,
+      });
+    }
+    if (maxCount !== null && presentValues.length > maxCount) {
+      issues.push({
+        code: 'max_count',
+        message: `${field.label} allows at most ${maxCount} values.`,
+        path: fieldPath,
+      });
+    }
+
+    if (field.many && presentValues.length > 1 && hasDuplicateValues(presentValues)) {
+      issues.push({
+        code: 'duplicate',
+        message: `${field.label} contains duplicate values.`,
+        path: fieldPath,
+      });
+    }
+
+    if (!isCompositionField(field)) {
+      continue;
+    }
+
+    const childTarget = resolveCompositionTarget(target, field, aggregates);
+    if (!childTarget) {
+      issues.push({
+        code: 'missing_composition_target',
+        message: `Composition target for ${field.label} is unavailable.`,
+        path: fieldPath,
+      });
+      continue;
+    }
+
+    presentValues.forEach((entry, index) => {
+      if (entry === null || typeof entry !== 'object' || entry instanceof Date) {
+        issues.push({
+          code: 'invalid_composition',
+          message: `${field.label} must contain an entity.`,
+          path: field.many ? `${fieldPath}[${index}]` : fieldPath,
+        });
+        return;
+      }
+      validateEntity(
+        entry as Record<string, unknown>,
+        childTarget,
+        aggregates,
+        field.many ? `${fieldPath}[${index}]` : fieldPath,
+        issues
+      );
+    });
+  }
+}
+
+function hasDuplicateValues(values: unknown[]): boolean {
+  const identities = values.map(valueIdentity).filter((value) => value !== null);
+  return new Set(identities).size !== identities.length;
+}
+
+function valueIdentity(value: unknown): string | null {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : `date:${value.toISOString()}`;
+  }
+  if (value !== null && typeof value === 'object') {
+    const id = (value as { id?: unknown }).id;
+    return typeof id === 'string' && id !== '' ? `id:${id}` : null;
+  }
+  if (
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean' ||
+    typeof value === 'bigint'
+  ) {
+    return `${typeof value}:${String(value)}`;
+  }
+  return null;
+}
+
+function joinPath(prefix: string, segment: string): string {
+  return prefix ? `${prefix}.${segment}` : segment;
+}
+
+export function isEmptyValue(value: unknown): boolean {
   if (value === null || value === undefined) {
     return true;
   }
@@ -92,12 +190,16 @@ function isEmptyValue(value: unknown): boolean {
     return value.trim() === '';
   }
   if (Array.isArray(value)) {
-    return value.length === 0;
+    return value.filter((entry) => !isEmptyValue(entry)).length === 0;
   }
-  // A reference value is an entity IRI object, empty until an IRI is chosen.
-  if (typeof value === 'object' && !(value instanceof Date)) {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime());
+  }
+  if (typeof value === 'object') {
     const id = (value as { id?: unknown }).id;
-    return typeof id !== 'string' || id.trim() === '';
+    if ('id' in value) {
+      return typeof id !== 'string' || id.trim() === '';
+    }
   }
   return false;
 }

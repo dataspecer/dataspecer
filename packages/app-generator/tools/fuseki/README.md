@@ -78,8 +78,8 @@ Version-specific facts that LDKit schema generation must respect for ldkit 2.x:
 - A reference property (an association without inline nested fields) carries only `@id` and
   resolves to the target IRI string. A JSON-LD `"@type": "@id"` is not an ldkit datatype, so
   schema generation must drop it for references.
-- Other supported property keys are `@type` (an xsd datatype for literals), `@optional`,
-  `@array`, `@multilang`, and `@inverse`.
+- Other generated property keys are `@type` (an xsd datatype for literals), `@optional`,
+  `@array`, and `@inverse`.
 - A missing optional value reads as `null`, not `undefined`.
 - Generated read schemas mark fields optional so missing values do not hide existing resources.
 

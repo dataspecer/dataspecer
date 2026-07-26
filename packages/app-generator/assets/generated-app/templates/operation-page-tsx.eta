@@ -4,11 +4,10 @@ import { CreateForm } from "../shared/components/create-form.tsx";
 import { DeleteForm } from "../shared/components/delete-form.tsx";
 import { DetailView } from "../shared/components/detail-view.tsx";
 import { ListView } from "../shared/components/list-view.tsx";
-import { PlaceholderOperationView } from "../shared/components/placeholder-operation-view.tsx";
 import { UpdateForm } from "../shared/components/update-form.tsx";
 import { readRouteEntityId } from "../shared/navigation/navigation.ts";
 import { invokeOperation } from "../shared/operations/operation-strategy.ts";
-import { dataSource, operations } from "../generated/operation-registry.ts";
+import { aggregateRegistry, dataSource, operations } from "../generated/operation-registry.ts";
 import { instanceBaseIri } from "../generated/app-config.ts";
 import type { <%= it.page.modelName %> } from "../modules/<%= it.page.moduleName %>/model.ts";
 
@@ -102,6 +101,7 @@ export function <%= it.page.componentName %>() {<% if (it.page.operation.operati
     <CreateForm
       title={operation.title}
       aggregate={operation.aggregate}
+      aggregates={aggregateRegistry}
       strategy={operation.strategy}
       dataSource={dataSource}
       navigation={operation.navigation}
@@ -115,9 +115,11 @@ export function <%= it.page.componentName %>() {<% if (it.page.operation.operati
     <UpdateForm
       title={operation.title}
       aggregate={operation.aggregate}
+      aggregates={aggregateRegistry}
       strategy={operation.strategy}
       dataSource={dataSource}
       navigation={operation.navigation}
+      instanceBaseIri={instanceBaseIri}
       id={id}
     />
   );
@@ -134,7 +136,5 @@ export function <%= it.page.componentName %>() {<% if (it.page.operation.operati
       id={id}
     />
   );
-<% } else { %>
-  return <PlaceholderOperationView title={operation.title} operation={operation.operation} />;
 <% } -%>
 }

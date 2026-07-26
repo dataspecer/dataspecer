@@ -81,8 +81,8 @@ describe('LDKit schema generation', () => {
     expect(schema.tags['@array']).toBe(true);
   });
 
-  it('reads language tagged values through multilang and omits the type', () => {
-    const schema = schemaFor([
+  it('does not generate special handling or a form control for language-tagged values', () => {
+    const aggregate = renderedAggregate([
       {
         path: 'note',
         label: 'Note',
@@ -93,11 +93,16 @@ describe('LDKit schema generation', () => {
         required: true,
       },
     ]);
+    const schema = buildLdkitSchema(aggregate.classIri, aggregate.fields) as Record<string, any>;
+    const note = aggregate.fields.find((field) => field.path === 'note');
+
     expect(schema.note).toEqual({
       '@id': 'https://example.org/p/note',
-      '@multilang': true,
       '@optional': true,
     });
+    expect(note?.modelType).toBe('unknown');
+    expect(note?.emptyValue).toBe('undefined');
+    expect(note?.formControl).toBeUndefined();
   });
 
   it('leaves unrecognized datatypes as plain strings without a type', () => {
@@ -229,24 +234,6 @@ describe('LDKit schema generation', () => {
     expect(orphan?.emptyValue).toBe('""');
   });
 
-  it('uses an empty language map for repeated multilang fields', () => {
-    const aggregate = renderedAggregate([
-      {
-        path: 'labels',
-        label: 'Labels',
-        kind: FieldKind.Primitive,
-        propertyIri: 'https://example.org/p/labels',
-        datatype: RDF_LANG_STRING,
-        many: true,
-        required: true,
-      },
-    ]);
-    const labels = aggregate.fields.find((field) => field.path === 'labels');
-
-    expect(labels?.modelType).toBe('Record<string, string[]>');
-    expect(labels?.emptyValue).toBe('{}');
-  });
-
   it('marks reverse relations as inverse', () => {
     const schema = schemaFor([
       {
@@ -304,6 +291,6 @@ describe('LDKit schema generation', () => {
 
     expect(created?.modelType).toBe('Date');
     expect(created?.emptyValue).toBe('new Date()');
-    expect(note?.modelType).toBe('Record<string, string>');
+    expect(note?.modelType).toBe('unknown');
   });
 });

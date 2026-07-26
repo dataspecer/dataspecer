@@ -1,12 +1,22 @@
 import type { DataSource } from '../datasource/data-source.ts';
-import type { AggregateDescriptor, EntityModel } from '../types/aggregate.ts';
+import type {
+  AggregateDescriptor,
+  AggregateDescriptorMap,
+  EntityModel,
+} from '../types/aggregate.ts';
 import type { OperationResult, ValidationResult } from './operation-result.ts';
 
 export interface OperationContext<TModel extends EntityModel = EntityModel> {
   aggregate: AggregateDescriptor<TModel>;
   datasource: DataSource;
+  aggregates?: AggregateDescriptorMap;
   params: Record<string, unknown>;
   payload?: TModel;
+  /**
+   * Provides the fully hydrated value the default Update strategy uses to find created and
+   * removed children.
+   */
+  originalPayload?: TModel;
 }
 
 /**

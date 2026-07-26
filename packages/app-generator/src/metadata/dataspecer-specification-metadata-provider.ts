@@ -478,14 +478,18 @@ function fieldLabelFrom(
 function cardinalityFlags(cardinality: Cardinality | null | undefined): {
   many: boolean;
   required: boolean;
+  minCount: number;
+  maxCount: number | null;
 } {
   if (!cardinality) {
     // treat missing cardinality as 0..*
-    return { required: false, many: true };
+    return { required: false, many: true, minCount: 0, maxCount: null };
   }
   return {
     required: cardinality[0] > 0,
     many: cardinality[1] === null || cardinality[1] > 1,
+    minCount: cardinality[0],
+    maxCount: cardinality[1],
   };
 }
 

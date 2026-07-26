@@ -495,6 +495,66 @@ describe('analyzeGraphSemantics', () => {
     );
   });
 
+  it('rejects field-name collisions in composition targets without operation nodes', () => {
+    const parentIri = 'urn:aggregate:parent';
+    const childIri = 'urn:aggregate:child';
+    const graph = validGraph({
+      nodes: [
+        node('Parent.Create', parentIri, Operation.Create, {
+          associations: { child: AssociationKind.Composition },
+        }),
+      ],
+      edges: [],
+    });
+    const metadata = {
+      dataSpecificationIri: specificationIri,
+      aggregates: [
+        {
+          iri: parentIri,
+          name: 'Parent',
+          classIri: 'urn:class:parent',
+          fields: [
+            {
+              path: 'child',
+              label: 'Child',
+              kind: FieldKind.Association,
+              targetAggregateIri: childIri,
+              targetClassIri: 'urn:class:child',
+            },
+          ],
+        },
+        {
+          iri: childIri,
+          name: 'Child',
+          classIri: 'urn:class:child',
+          fields: [
+            {
+              path: 'a-b',
+              label: 'First',
+              kind: FieldKind.Primitive,
+              propertyIri: 'urn:property:first',
+            },
+            {
+              path: 'a.b',
+              label: 'Second',
+              kind: FieldKind.Primitive,
+              propertyIri: 'urn:property:second',
+            },
+          ],
+        },
+      ],
+    };
+
+    const result = analyzeGraphSemantics(graph, metadata);
+
+    expect(result.violations).toContainEqual(
+      expect.objectContaining({
+        code: ViolationCode.SemanticDuplicateGeneratedFieldName,
+        message: expect.stringContaining('aggregate "Child"'),
+      })
+    );
+  });
+
   it('rejects circular compositions across aggregates', () => {
     const createBook = node(
       'Book.Create',
