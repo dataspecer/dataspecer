@@ -1,30 +1,12 @@
-import { useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
 import type { ApplicationGraph } from "@dataspecer/app-generator/graph";
-import { runSemanticValidation } from "../backend/run-validation.ts";
+import { useViolationsBySeverity } from "../hooks/use-violations.ts";
 import { useEditorStore, type SaveState } from "../store.ts";
-import { bySeverity, combinedViolations } from "../validation/violations.ts";
 
 export function StatusBar({ graph }: { graph: ApplicationGraph }) {
-  const semanticValidation = useEditorStore((state) => state.semanticValidation);
   const saveState = useEditorStore((state) => state.saveState);
   const setSidebarTab = useEditorStore((state) => state.setSidebarTab);
-  const [revalidating, setRevalidating] = useState(false);
-
-  const { errors, warnings } = useMemo(
-    () => bySeverity(combinedViolations(graph, semanticValidation)),
-    [graph, semanticValidation],
-  );
-  const semanticStale = semanticValidation !== null && semanticValidation.forGraph !== graph;
-
-  const revalidate = () => {
-    setRevalidating(true);
-    runSemanticValidation(graph)
-      .catch((caught: unknown) => {
-        console.error(caught);
-      })
-      .finally(() => setRevalidating(false));
-  };
+  const { errors, warnings } = useViolationsBySeverity(graph);
 
   return (
     <div className="flex items-center gap-3 border-t border-slate-200 bg-white px-3 py-1">
@@ -51,16 +33,6 @@ export function StatusBar({ graph }: { graph: ApplicationGraph }) {
           </span>
         )}
       </button>
-      {semanticStale && (
-        <button
-          type="button"
-          className="cursor-pointer text-xs text-amber-700"
-          onClick={revalidate}
-          disabled={revalidating}
-        >
-          {revalidating ? "revalidating…" : "semantic results outdated, click to revalidate"}
-        </button>
-      )}
       <div className="grow" />
       <SaveIndicator state={saveState} />
     </div>
@@ -69,7 +41,7 @@ export function StatusBar({ graph }: { graph: ApplicationGraph }) {
 
 function SaveIndicator({ state }: { state: SaveState }) {
   if (state === "saving") {
-    return <span className="text-xs text-slate-400">Saving…</span>;
+    return <span className="text-xs text-slate-400">Saving...</span>;
   }
   if (state === "error") {
     return (

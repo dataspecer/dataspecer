@@ -50,17 +50,6 @@ export async function saveGraph(
   await packageService.setResourceJsonData(iri, positions, POSITIONS_BLOB);
 }
 
-export async function validateGraph(
-  graph: ApplicationGraph,
-): Promise<{ valid: boolean; violations: Violation[] }> {
-  const response = await checkedFetch(`${backendUrl}/app-generator/validate`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(graph),
-  });
-  return (await response.json()) as { valid: boolean; violations: Violation[] };
-}
-
 export type GenerateResult =
   | { ok: true; archive: Blob }
   | { ok: false; violations: Violation[] };

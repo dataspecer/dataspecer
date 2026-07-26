@@ -6,9 +6,9 @@ import type {
   ApplicationGraph,
   ApplicationNode,
   SpecificationMetadata,
-  Violation,
 } from "@dataspecer/app-generator/graph";
 import * as mutations from "./graph/mutations.ts";
+import type { GenerationViolations } from "./validation/violations.ts";
 
 export type NodePositions = Record<string, { x: number; y: number }>;
 
@@ -18,12 +18,6 @@ export type Selection = { kind: "node" | "edge"; id: string } | null;
 export type SidebarTab = "problems" | "json" | null;
 
 export type SaveState = "saved" | "saving" | "error";
-
-/** Result of the backend validation, tied to the graph snapshot it was computed for. */
-export interface SemanticValidation {
-  violations: Violation[];
-  forGraph: ApplicationGraph;
-}
 
 /** One-shot request to bring a node or edge into view. The seq makes repeats distinct. */
 export interface FocusRequest {
@@ -51,7 +45,8 @@ interface EditorState extends UndoableState {
   settingsOpen: boolean;
   /** Error of the last user action (import, generate), shown in a dismissible strip. */
   actionError: string | null;
-  semanticValidation: SemanticValidation | null;
+  /** Violations from the last failed generation, dropped once the graph changes. */
+  generationViolations: GenerationViolations | null;
   focusRequest: FocusRequest | null;
 
   initialize: (resourceIri: string, graph: ApplicationGraph, positions: NodePositions) => void;
@@ -66,7 +61,7 @@ interface EditorState extends UndoableState {
   setSidebarTab: (tab: SidebarTab) => void;
   setSettingsOpen: (open: boolean) => void;
   setActionError: (message: string | null) => void;
-  setSemanticValidation: (validation: SemanticValidation | null) => void;
+  setGenerationViolations: (violations: GenerationViolations | null) => void;
   requestFocus: (id: string) => void;
 
   addNode: (node: ApplicationNode, position: { x: number; y: number }) => void;
@@ -113,7 +108,7 @@ export const useEditorStore = create<EditorState>()(
       sidebarTab: "json",
       settingsOpen: false,
       actionError: null,
-      semanticValidation: null,
+      generationViolations: null,
       focusRequest: null,
 
       initialize: (resourceIri, graph, positions) =>
@@ -140,7 +135,7 @@ export const useEditorStore = create<EditorState>()(
       setActionError: (actionError) => set({ actionError }),
       setSettingsOpen: (open) =>
         set(open ? { settingsOpen: true, selection: null } : { settingsOpen: false }),
-      setSemanticValidation: (semanticValidation) => set({ semanticValidation }),
+      setGenerationViolations: (generationViolations) => set({ generationViolations }),
       requestFocus: (id) =>
         set((state) => ({ focusRequest: { id, seq: (state.focusRequest?.seq ?? 0) + 1 } })),
 

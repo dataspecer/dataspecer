@@ -5,7 +5,7 @@ import { applicationGraphSchema, type ApplicationGraph } from "@dataspecer/app-g
 import { applyGraphJson } from "../../graph/apply-json.ts";
 import { graphElementAtOffset } from "../../graph/json-cursor.ts";
 import { useEditorStore } from "../../store.ts";
-import { combinedViolations } from "../../validation/violations.ts";
+import { useViolations } from "../../hooks/use-violations.ts";
 import { violationRanges } from "../../validation/violation-ranges.ts";
 
 const VIOLATION_MARKER_OWNER = "application-graph-violations";
@@ -28,7 +28,6 @@ function configureJsonLanguage(instance: Monaco) {
  * check. Violations of the applied graph underline the parts their paths point at.
  */
 export function JsonPanel({ graph }: { graph: ApplicationGraph }) {
-  const semanticValidation = useEditorStore((state) => state.semanticValidation);
   const json = useMemo(() => JSON.stringify(graph, null, 2), [graph]);
   const [draft, setDraft] = useState(json);
   const [baseline, setBaseline] = useState(json);
@@ -50,10 +49,7 @@ export function JsonPanel({ graph }: { graph: ApplicationGraph }) {
 
   // violations of the applied graph underline their JSON parts while the view is in sync, an
   // edited draft has shifted offsets and keeps only the schema diagnostics
-  const violations = useMemo(
-    () => combinedViolations(graph, semanticValidation),
-    [graph, semanticValidation],
-  );
+  const violations = useViolations(graph);
 
   useEffect(() => {
     const mounted = editorRef.current;

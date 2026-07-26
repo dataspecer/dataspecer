@@ -1,39 +1,55 @@
 import { differenceBy, partition } from "es-toolkit";
 import {
+  analyzeGraphSemantics,
   validateGraphStructure,
   validateGraphSyntax,
   ViolationSeverity,
   type ApplicationGraph,
+  type SpecificationMetadata,
   type Violation,
 } from "@dataspecer/app-generator/graph";
 
 /**
- * Client-side violations of the given graph: syntax first and structural rules. Semantic violations need specification
- * metadata and come from the backend validate endpoint instead.
+ * Every violation the editor can find on its own. Syntax comes first, because the later rules
+ * need a well formed graph. Aggregate rules need the specification metadata and are skipped
+ * while it is unavailable.
  */
-export function liveViolations(graph: ApplicationGraph): Violation[] {
+function localViolations(
+  graph: ApplicationGraph,
+  metadata: SpecificationMetadata | null,
+): Violation[] {
   const syntax = validateGraphSyntax(graph);
-  return syntax.valid ? validateGraphStructure(graph).violations : syntax.violations;
+  if (!syntax.valid || !syntax.graph) {
+    return syntax.violations;
+  }
+  if (metadata === null) {
+    return validateGraphStructure(graph).violations;
+  }
+  // the semantic analysis runs the structural rules as part of its pass
+  return analyzeGraphSemantics(graph, metadata).violations;
 }
 
 function violationKey(violation: Violation): string {
   return `${violation.code}|${violation.path ?? ""}|${violation.message}`;
 }
 
-/**
- * Live violations plus the backend's semantic results. The backend runs the same syntax and structural rules, so its
- * copies of the violations already shown live are dropped.
- */
+/** Result of the validation, tied to the graph snapshot it was computed for. */
+export interface GenerationViolations {
+  violations: Violation[];
+  forGraph: ApplicationGraph;
+}
+
 export function combinedViolations(
   graph: ApplicationGraph,
-  semanticValidation: { violations: Violation[]; forGraph: ApplicationGraph } | null,
+  metadata: SpecificationMetadata | null,
+  generation: GenerationViolations | null,
 ): Violation[] {
-  const live = liveViolations(graph);
-  const semantic =
-    semanticValidation !== null && semanticValidation.forGraph === graph
-      ? differenceBy(semanticValidation.violations, live, violationKey)
+  const local = localViolations(graph, metadata);
+  const fromGeneration =
+    generation !== null && generation.forGraph === graph
+      ? differenceBy(generation.violations, local, violationKey)
       : [];
-  return [...live, ...semantic];
+  return [...local, ...fromGeneration];
 }
 
 export interface ViolationsBySeverity {
@@ -64,6 +80,19 @@ export function violationTarget(graph: ApplicationGraph, violation: Violation): 
   }
   const edge = graph.edges[index];
   return edge ? { kind: "edge", id: edge.id } : null;
+}
+
+/** The violations pointing at one node or edge, for its form. */
+export function violationsFor(
+  graph: ApplicationGraph,
+  violations: Violation[],
+  kind: "node" | "edge",
+  id: string,
+): Violation[] {
+  return violations.filter((violation) => {
+    const target = violationTarget(graph, violation);
+    return target?.kind === kind && target.id === id;
+  });
 }
 
 export type ViolationLevel = "error" | "warning";

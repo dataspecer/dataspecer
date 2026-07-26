@@ -16,6 +16,8 @@ export type {
   DatasourceConfig,
   DeleteConfig,
 } from './graph/types.ts';
+export { analyzeGraphSemantics } from './validation/analyze-semantics.ts';
+export type { SemanticAnalysisResult } from './validation/analyze-semantics.ts';
 export { validateGraphStructure } from './validation/validate-structure.ts';
 export { validateGraphSyntax } from './validation/validate-syntax.ts';
 export type { SyntaxValidationResult } from './validation/validate-syntax.ts';
