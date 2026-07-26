@@ -82,7 +82,7 @@ export async function generateApp(input: GenerateAppInput): Promise<GenerateAppR
 
   return {
     success: true,
-    violations: [],
+    violations: validation.violations,
     files,
     writtenFiles,
     generationModel,

@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { ViolationCode } from '../src/validation/violation-codes.ts';
+import { ViolationSeverity } from '../src/validation/types.ts';
 import { generateApp } from '../src/generate-app.ts';
 import {
   type ApplicationGraph,
@@ -131,6 +132,29 @@ describe('generateApp', () => {
   it('reports structure violations without loading metadata', async () => {
     const result = await generateApp({
       graph: graphFixture({
+        nodes: [
+          node('Book.List', 'https://example.org/aggregate/book-list', Operation.ReadList),
+          node('book list', 'https://example.org/aggregate/book-list', Operation.ReadList),
+        ],
+        edges: [],
+      }),
+      metadataProvider: {
+        getSpecificationMetadata: () => Promise.reject(new Error('must not be called')),
+      },
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.violations).toContainEqual(
+      expect.objectContaining({ code: ViolationCode.SemanticDuplicateRouteId })
+    );
+    expect(result.violations).not.toContainEqual(
+      expect.objectContaining({ code: ViolationCode.MetadataResolutionFailed })
+    );
+  });
+
+  it('generates an application whose only problems are warnings', async () => {
+    const result = await generateApp({
+      graph: graphFixture({
         edges: [
           {
             id: 'list-detail-redirect',
@@ -140,17 +164,16 @@ describe('generateApp', () => {
           },
         ],
       }),
-      metadataProvider: {
-        getSpecificationMetadata: () => Promise.reject(new Error('must not be called')),
-      },
+      metadataProvider: metadataProvider(),
     });
 
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
+    expect(Object.keys(result.files)).toContain('src/routes.tsx');
     expect(result.violations).toContainEqual(
-      expect.objectContaining({ code: ViolationCode.SemanticInvalidRedirect })
-    );
-    expect(result.violations).not.toContainEqual(
-      expect.objectContaining({ code: ViolationCode.MetadataResolutionFailed })
+      expect.objectContaining({
+        code: ViolationCode.SemanticInvalidRedirect,
+        severity: ViolationSeverity.Warning,
+      })
     );
   });
   it('generates files in memory without an output directory', async () => {

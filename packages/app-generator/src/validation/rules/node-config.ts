@@ -1,4 +1,4 @@
-import { semanticViolation, type Violation } from '../types.ts';
+import { semanticWarning, type Violation } from '../types.ts';
 import { ViolationCode } from '../violation-codes.ts';
 import { Operation } from '../../graph/types.ts';
 import type { StructuralValidationContext } from '../semantic-validation-context.ts';
@@ -16,7 +16,7 @@ export function validateNodeConfig(context: StructuralValidationContext): Violat
 
     if (node.config?.associations && !OPERATIONS_WITH_ASSOCIATION_CONFIG.has(node.operation)) {
       violations.push(
-        semanticViolation(
+        semanticWarning(
           ViolationCode.SemanticAssociationConfigNotAllowed,
           `Node "${node.id}" with operation ${node.operation} cannot configure association kinds.`,
           `/nodes/${index}/config/associations`
@@ -26,7 +26,7 @@ export function validateNodeConfig(context: StructuralValidationContext): Violat
 
     if (node.config?.delete && node.operation !== Operation.Delete) {
       violations.push(
-        semanticViolation(
+        semanticWarning(
           ViolationCode.SemanticDeleteConfigNotAllowed,
           `Node "${node.id}" with operation ${node.operation} cannot configure delete policies.`,
           `/nodes/${index}/config/delete`

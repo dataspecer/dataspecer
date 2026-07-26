@@ -1,4 +1,4 @@
-import { semanticViolation, type Violation } from '../types.ts';
+import { semanticWarning, type Violation } from '../types.ts';
 import { ViolationCode } from '../violation-codes.ts';
 import type { StructuralValidationContext } from '../semantic-validation-context.ts';
 
@@ -14,7 +14,7 @@ export function validateDuplicateEdges(context: StructuralValidationContext): Vi
       return;
     }
     violations.push(
-      semanticViolation(
+      semanticWarning(
         ViolationCode.SemanticDuplicateEdge,
         `Edges "${firstId}" and "${edge.id}" both connect "${edge.source}" to "${edge.target}" as ${edge.type}.`,
         `/edges/${index}`

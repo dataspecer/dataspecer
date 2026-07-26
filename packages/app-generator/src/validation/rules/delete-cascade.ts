@@ -1,4 +1,4 @@
-import { semanticViolation, type Violation } from '../types.ts';
+import { semanticViolation, semanticWarning, type Violation } from '../types.ts';
 import { ViolationCode } from '../violation-codes.ts';
 import {
   AssociationKind,
@@ -62,7 +62,7 @@ export function validateDeleteCascade(context: SemanticValidationContext): Viola
       const chain = resolveAssociationChain(aggregate, path);
       if (!chain) {
         violations.push(
-          semanticViolation(
+          semanticWarning(
             ViolationCode.SemanticDeletePathNotAssociation,
             `Delete cascade path "${path}" is not an association on aggregate "${aggregate.name}".`,
             `/nodes/${nodeIndex}/config/delete/${path}`

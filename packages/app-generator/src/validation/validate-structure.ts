@@ -8,7 +8,7 @@ import { validateNodeConfig } from './rules/node-config.ts';
 import { validateRedirects } from './rules/redirect.ts';
 import { validateRouteIds } from './rules/route-id.ts';
 import { validateTransitions } from './rules/transition.ts';
-import { semanticViolation } from './types.ts';
+import { hasErrors, semanticViolation } from './types.ts';
 import { ViolationCode } from './violation-codes.ts';
 
 /**
@@ -41,7 +41,7 @@ export function validateGraphStructure(graph: ApplicationGraph): ValidationResul
   ];
 
   return {
-    valid: violations.length === 0,
+    valid: !hasErrors(violations),
     violations,
   };
 }

@@ -14,7 +14,7 @@ import {
 } from '../metadata/types.ts';
 import { chainIdentity, resolveAssociationChain } from './association-chain.ts';
 import { splitFieldPath } from './field-path.ts';
-import { semanticViolation, type Violation } from './types.ts';
+import { semanticViolation, semanticWarning, type Violation } from './types.ts';
 import { ViolationCode } from './violation-codes.ts';
 
 export interface MetadataEnrichment {
@@ -60,7 +60,7 @@ export function enrichMetadata(
       const kind = associationKindFrom(value);
       if (!kind) {
         violations.push(
-          semanticViolation(
+          semanticWarning(
             ViolationCode.SemanticInvalidAssociationKind,
             `Association kind for "${path}" must be "composition" or "aggregation".`,
             violationPath
@@ -209,7 +209,7 @@ function notAssociationViolation(
   path: string,
   violationPath: string
 ): Violation {
-  return semanticViolation(
+  return semanticWarning(
     ViolationCode.SemanticAssociationPathNotAssociation,
     `Association config path "${path}" is not an association on aggregate "${aggregate.name}".`,
     violationPath

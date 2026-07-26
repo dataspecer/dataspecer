@@ -1,7 +1,8 @@
-import { differenceBy } from "es-toolkit";
+import { differenceBy, partition } from "es-toolkit";
 import {
   validateGraphStructure,
   validateGraphSyntax,
+  ViolationSeverity,
   type ApplicationGraph,
   type Violation,
 } from "@dataspecer/app-generator/graph";
@@ -35,6 +36,19 @@ export function combinedViolations(
   return [...live, ...semantic];
 }
 
+export interface ViolationsBySeverity {
+  errors: Violation[];
+  warnings: Violation[];
+}
+
+export function bySeverity(violations: Violation[]): ViolationsBySeverity {
+  const [errors, warnings] = partition(
+    violations,
+    (violation) => violation.severity === ViolationSeverity.Error,
+  );
+  return { errors, warnings };
+}
+
 export type ViolationTarget = { kind: "node" | "edge"; id: string } | null;
 
 /** Resolves a violation path such as "/nodes/3/config/..." to the node or edge it points at. */
@@ -52,20 +66,28 @@ export function violationTarget(graph: ApplicationGraph, violation: Violation): 
   return edge ? { kind: "edge", id: edge.id } : null;
 }
 
-export interface InvalidIds {
-  nodes: Set<string>;
-  edges: Set<string>;
+export type ViolationLevel = "error" | "warning";
+
+export interface FlaggedIds {
+  nodes: Map<string, ViolationLevel>;
+  edges: Map<string, ViolationLevel>;
 }
 
-/** Collects the node and edge ids the violations point at (for canvas highlighting). */
-export function invalidIds(graph: ApplicationGraph, violations: Violation[]): InvalidIds {
-  const result: InvalidIds = { nodes: new Set(), edges: new Set() };
+/**
+ * Collects the node and edge ids the violations point at, for canvas highlighting. An element
+ * with both an error and a warning is flagged as an error.
+ */
+export function flaggedIds(graph: ApplicationGraph, violations: Violation[]): FlaggedIds {
+  const result: FlaggedIds = { nodes: new Map(), edges: new Map() };
   for (const violation of violations) {
     const target = violationTarget(graph, violation);
-    if (target?.kind === "node") {
-      result.nodes.add(target.id);
-    } else if (target?.kind === "edge") {
-      result.edges.add(target.id);
+    if (target === null) {
+      continue;
+    }
+    const into = target.kind === "node" ? result.nodes : result.edges;
+    const level = violation.severity === ViolationSeverity.Error ? "error" : "warning";
+    if (level === "error" || !into.has(target.id)) {
+      into.set(target.id, level);
     }
   }
   return result;

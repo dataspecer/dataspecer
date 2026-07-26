@@ -12,6 +12,7 @@ import {
   type ApplicationNodeConfig,
 } from '../src/graph/types.ts';
 import { analyzeGraphSemantics } from '../src/validation/analyze-semantics.ts';
+import { ViolationSeverity } from '../src/validation/types.ts';
 import { FieldKind } from '../src/metadata/types.ts';
 import { basicMetadata, specificationIri } from './fixtures/metadata/basic-metadata.ts';
 
@@ -112,7 +113,7 @@ describe('analyzeGraphSemantics', () => {
       ],
     });
 
-    expectViolations(graph, ViolationCode.SemanticMultipleRedirects);
+    expectWarnings(graph, ViolationCode.SemanticMultipleRedirects);
   });
 
   it('validates redirect operation pairs and same-class detail redirects', () => {
@@ -148,8 +149,8 @@ describe('analyzeGraphSemantics', () => {
       ],
     });
 
-    expectViolations(invalidPair, ViolationCode.SemanticInvalidRedirect);
-    expectViolations(invalidClass, ViolationCode.SemanticRedirectRequiresSameClass);
+    expectWarnings(invalidPair, ViolationCode.SemanticInvalidRedirect);
+    expectWarnings(invalidClass, ViolationCode.SemanticRedirectRequiresSameClass);
   });
 
   it('validates transition operation pairs and class compatibility', () => {
@@ -185,8 +186,8 @@ describe('analyzeGraphSemantics', () => {
       ],
     });
 
-    expectViolations(invalidPair, ViolationCode.SemanticInvalidTransition);
-    expectViolations(invalidClass, ViolationCode.SemanticTransitionRequiresSameClass);
+    expectWarnings(invalidPair, ViolationCode.SemanticInvalidTransition);
+    expectWarnings(invalidClass, ViolationCode.SemanticTransitionRequiresSameClass);
   });
 
   it('allows associated cross-aggregate detail transitions', () => {
@@ -245,7 +246,7 @@ describe('analyzeGraphSemantics', () => {
     });
 
     expect(validatePreparedGraph(detailGraph).valid).toBe(true);
-    expectViolations(listGraph, ViolationCode.SemanticTransitionRequiresAssociation);
+    expectWarnings(listGraph, ViolationCode.SemanticTransitionRequiresAssociation);
   });
 
   it('rejects unrelated cross-aggregate detail transitions', () => {
@@ -266,7 +267,7 @@ describe('analyzeGraphSemantics', () => {
       ],
     });
 
-    expectViolations(graph, ViolationCode.SemanticTransitionRequiresAssociation);
+    expectWarnings(graph, ViolationCode.SemanticTransitionRequiresAssociation);
   });
 
   it('allows delete cascade when no create or update node models the association', () => {
@@ -783,7 +784,19 @@ function expectViolations(graph: ApplicationGraph, code: ViolationCode) {
   const result = validatePreparedGraph(graph);
 
   expect(result.valid).toBe(false);
-  expect(result.violations).toContainEqual(expect.objectContaining({ code }));
+  expect(result.violations).toContainEqual(
+    expect.objectContaining({ code, severity: ViolationSeverity.Error })
+  );
+}
+
+/** The graph still generates, but the reported part does not do what the graph asks for. */
+function expectWarnings(graph: ApplicationGraph, code: ViolationCode) {
+  const result = validatePreparedGraph(graph);
+
+  expect(result.valid).toBe(true);
+  expect(result.violations).toContainEqual(
+    expect.objectContaining({ code, severity: ViolationSeverity.Warning })
+  );
 }
 
 function validatePreparedGraph(graph: ApplicationGraph) {

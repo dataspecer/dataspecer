@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
 import type { ApplicationGraph } from "@dataspecer/app-generator/graph";
 import { runSemanticValidation } from "../backend/run-validation.ts";
 import { useEditorStore, type SaveState } from "../store.ts";
-import { combinedViolations } from "../validation/violations.ts";
+import { bySeverity, combinedViolations } from "../validation/violations.ts";
 
 export function StatusBar({ graph }: { graph: ApplicationGraph }) {
   const semanticValidation = useEditorStore((state) => state.semanticValidation);
@@ -11,8 +11,8 @@ export function StatusBar({ graph }: { graph: ApplicationGraph }) {
   const setSidebarTab = useEditorStore((state) => state.setSidebarTab);
   const [revalidating, setRevalidating] = useState(false);
 
-  const problems = useMemo(
-    () => combinedViolations(graph, semanticValidation),
+  const { errors, warnings } = useMemo(
+    () => bySeverity(combinedViolations(graph, semanticValidation)),
     [graph, semanticValidation],
   );
   const semanticStale = semanticValidation !== null && semanticValidation.forGraph !== graph;
@@ -30,20 +30,25 @@ export function StatusBar({ graph }: { graph: ApplicationGraph }) {
     <div className="flex items-center gap-3 border-t border-slate-200 bg-white px-3 py-1">
       <button
         type="button"
-        className={`inline-flex cursor-pointer items-center gap-1 text-xs ${
-          problems.length === 0 ? "text-slate-600" : "text-red-700"
-        }`}
+        className="inline-flex cursor-pointer items-center gap-2 text-xs"
         onClick={() => setSidebarTab("problems")}
       >
-        {problems.length === 0 ? (
-          <>
+        {errors.length === 0 && warnings.length === 0 && (
+          <span className="inline-flex items-center gap-1 text-slate-600">
             <CheckCircle2 size={13} className="text-green-700" /> No problems
-          </>
-        ) : (
-          <>
+          </span>
+        )}
+        {errors.length > 0 && (
+          <span className="inline-flex items-center gap-1 text-red-700">
             <XCircle size={13} />
-            {problems.length} problem{problems.length === 1 ? "" : "s"}
-          </>
+            {errors.length} error{errors.length === 1 ? "" : "s"}
+          </span>
+        )}
+        {warnings.length > 0 && (
+          <span className="inline-flex items-center gap-1 text-amber-700">
+            <AlertTriangle size={13} />
+            {warnings.length} warning{warnings.length === 1 ? "" : "s"}
+          </span>
         )}
       </button>
       {semanticStale && (

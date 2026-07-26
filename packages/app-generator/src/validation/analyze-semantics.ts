@@ -1,4 +1,4 @@
-import type { Violation, ValidationResult } from './types.ts';
+import { hasErrors, type Violation, type ValidationResult } from './types.ts';
 import type { ApplicationGraph } from '../graph/types.ts';
 import type { SpecificationMetadata } from '../metadata/types.ts';
 import { enrichMetadata } from './enrich-metadata.ts';
@@ -43,7 +43,7 @@ export function analyzeGraphSemantics(
   violations.push(...validateCompositionCycles(context));
 
   return {
-    valid: violations.length === 0,
+    valid: !hasErrors(violations),
     violations,
     enrichedMetadata: enrichment.metadata,
   };

@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent, type ReactNode } from "react";
 import { clamp } from "es-toolkit";
-import { AlertTriangle, ChevronsLeft } from "lucide-react";
+import { AlertTriangle, ChevronsLeft, XCircle } from "lucide-react";
 import type { ApplicationGraph } from "@dataspecer/app-generator/graph";
 import { useEditorStore, type SidebarTab } from "../../store.ts";
-import { combinedViolations } from "../../validation/violations.ts";
+import { bySeverity, combinedViolations } from "../../validation/violations.ts";
 import { EdgeForm } from "./edge-form.tsx";
 import { JsonPanel } from "./json-panel.tsx";
 import { NodeForm } from "./node-form.tsx";
@@ -33,8 +33,8 @@ export function Sidebar({ graph }: { graph: ApplicationGraph }) {
     }
   }, [sidebarTab]);
 
-  const problemCount = useMemo(
-    () => combinedViolations(graph, semanticValidation).length,
+  const { errors, warnings } = useMemo(
+    () => bySeverity(combinedViolations(graph, semanticValidation)),
     [graph, semanticValidation],
   );
 
@@ -68,10 +68,16 @@ export function Sidebar({ graph }: { graph: ApplicationGraph }) {
       <div className="flex items-center gap-1 border-b border-slate-200 px-2 py-1.5">
         <Tab tab="problems" active={sidebarTab}>
           Problems
-          {problemCount > 0 && (
+          {errors.length > 0 && (
+            <span className="inline-flex items-center gap-0.5 text-red-600">
+              <XCircle size={12} />
+              {errors.length}
+            </span>
+          )}
+          {warnings.length > 0 && (
             <span className="inline-flex items-center gap-0.5 text-amber-600">
               <AlertTriangle size={12} />
-              {problemCount}
+              {warnings.length}
             </span>
           )}
         </Tab>

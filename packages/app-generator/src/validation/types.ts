@@ -13,6 +13,7 @@ export interface Violation {
 }
 
 export interface ValidationResult {
+  /** True when no violation has error severity. Warnings leave the graph generatable. */
   valid: boolean;
   violations: Violation[];
 }
@@ -24,4 +25,17 @@ export function semanticViolation(code: ViolationCode, message: string, path: st
     path,
     severity: ViolationSeverity.Error,
   };
+}
+
+export function semanticWarning(code: ViolationCode, message: string, path: string): Violation {
+  return {
+    code,
+    message,
+    path,
+    severity: ViolationSeverity.Warning,
+  };
+}
+
+export function hasErrors(violations: readonly Violation[]): boolean {
+  return violations.some((violation) => violation.severity === ViolationSeverity.Error);
 }

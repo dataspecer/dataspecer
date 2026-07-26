@@ -1,4 +1,4 @@
-import { semanticViolation, type Violation } from '../types.ts';
+import { semanticViolation, semanticWarning, type Violation } from '../types.ts';
 import { ViolationCode } from '../violation-codes.ts';
 import { EdgeType, Operation } from '../../graph/types.ts';
 import { hasAssociationToTarget, haveSameClass } from './aggregate-rules.ts';
@@ -50,7 +50,7 @@ export function validateTransitionClasses(context: SemanticValidationContext): V
       )
     ) {
       return [
-        semanticViolation(
+        semanticWarning(
           ViolationCode.SemanticTransitionRequiresAssociation,
           `Transition "${edge.id}" requires same-class aggregates or an association from source to target.`,
           `/edges/${index}`

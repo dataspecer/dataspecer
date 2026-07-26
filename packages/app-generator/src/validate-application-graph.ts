@@ -14,6 +14,7 @@ export interface ValidateApplicationGraphInput {
 }
 
 export interface ValidateApplicationGraphResult {
+  /** True when nothing blocks generation. The violations can still hold warnings. */
   valid: boolean;
   violations: Violation[];
   /** The parsed graph, present once syntax validation passed. */
@@ -54,7 +55,7 @@ export async function validateApplicationGraph(
 
   return {
     valid: true,
-    violations: [],
+    violations: analysis.violations,
     graph,
     enrichedMetadata: analysis.enrichedMetadata,
   };

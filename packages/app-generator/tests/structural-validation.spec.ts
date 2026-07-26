@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { ViolationCode } from '../src/validation/violation-codes.ts';
+import { ViolationSeverity } from '../src/validation/types.ts';
 import {
   DatasourceType,
   EdgeType,
@@ -18,7 +19,7 @@ describe('validateGraphStructure', () => {
     expect(result.violations).toEqual([]);
   });
 
-  it('rejects invalid transition operation pairs without metadata', () => {
+  it('warns about invalid transition operation pairs without metadata', () => {
     const graph = validGraph({
       edges: [
         {
@@ -32,9 +33,13 @@ describe('validateGraphStructure', () => {
 
     const result = validateGraphStructure(graph);
 
-    expect(result.valid).toBe(false);
+    // the generated application builds and runs, it just gets no navigation for this edge
+    expect(result.valid).toBe(true);
     expect(result.violations).toContainEqual(
-      expect.objectContaining({ code: ViolationCode.SemanticInvalidTransition })
+      expect.objectContaining({
+        code: ViolationCode.SemanticInvalidTransition,
+        severity: ViolationSeverity.Warning,
+      })
     );
   });
 
@@ -70,7 +75,7 @@ describe('validateGraphStructure', () => {
     );
   });
 
-  it('rejects an edge duplicating another one of the same type', () => {
+  it('warns about an edge duplicating another one of the same type', () => {
     const base = validGraph();
     const result = validateGraphStructure(
       validGraph({
@@ -86,11 +91,12 @@ describe('validateGraphStructure', () => {
       })
     );
 
-    expect(result.valid).toBe(false);
+    expect(result.valid).toBe(true);
     expect(result.violations).toContainEqual(
       expect.objectContaining({
         code: ViolationCode.SemanticDuplicateEdge,
         path: '/edges/1',
+        severity: ViolationSeverity.Warning,
       })
     );
   });

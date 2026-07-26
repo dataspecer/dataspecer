@@ -20,7 +20,7 @@ export { validateGraphStructure } from './validation/validate-structure.ts';
 export { validateGraphSyntax } from './validation/validate-syntax.ts';
 export type { SyntaxValidationResult } from './validation/validate-syntax.ts';
 export { ViolationCode } from './validation/violation-codes.ts';
-export { ViolationSeverity } from './validation/types.ts';
+export { hasErrors, ViolationSeverity } from './validation/types.ts';
 export type { ValidationResult, Violation } from './validation/types.ts';
 export {
   isValidRedirectOperation,

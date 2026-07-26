@@ -20,13 +20,18 @@ const OPERATION_COLORS: Record<Operation, string> = {
   [Operation.Delete]: "bg-red-100 text-red-800",
 };
 
+const VIOLATION_BORDER = {
+  error: "border-red-500 bg-red-50",
+  warning: "border-amber-500 bg-amber-50",
+};
+
 /**
  * One application graph node on the canvas. Shows the aggregate name (or the page title as a
  * fallback while metadata is unavailable) with the operation as a subtitle. Nodes the current
  * violations point are highlighted.
  */
 export function OperationNode(props: NodeProps<OperationFlowNode>) {
-  const { node, invalid } = props.data;
+  const { node, violation } = props.data;
   const aggregateName = useEditorStore(
     (state) =>
       state.metadata?.aggregates.find((entry) => entry.iri === node.aggregateIri)?.name,
@@ -37,7 +42,7 @@ export function OperationNode(props: NodeProps<OperationFlowNode>) {
   return (
     <div
       className={`w-60 rounded-md border px-3 py-2 shadow-sm ${
-        invalid ? "border-red-500 bg-red-50" : "border-sky-300 bg-sky-50"
+        violation ? VIOLATION_BORDER[violation] : "border-sky-300 bg-sky-50"
       }`}
       title={`${node.id}\n${node.aggregateIri}`}
     >

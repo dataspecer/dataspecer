@@ -19,7 +19,7 @@ import {
 } from "@dataspecer/app-generator/graph";
 import { nextEdgeId } from "../graph/mutations.ts";
 import { useEditorStore } from "../store.ts";
-import { invalidIds, liveViolations } from "../validation/violations.ts";
+import { flaggedIds, liveViolations } from "../validation/violations.ts";
 import { CanvasToolbar } from "./canvas-toolbar.tsx";
 import { ConnectionLine } from "./connection-line.tsx";
 import { FloatingEdge } from "./floating-edge.tsx";
@@ -39,22 +39,22 @@ export function Canvas() {
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
   // ids to highlight, from the live violations + the semantic ones while they are fresh
-  const invalid = useMemo(() => {
+  const flagged = useMemo(() => {
     if (graph === null) {
-      return { nodes: new Set<string>(), edges: new Set<string>() };
+      return { nodes: new Map(), edges: new Map() };
     }
     const violations = [
       ...liveViolations(graph),
       ...(semanticValidation?.forGraph === graph ? semanticValidation.violations : []),
     ];
-    return invalidIds(graph, violations);
+    return flaggedIds(graph, violations);
   }, [graph, semanticValidation]);
 
   useEffect(() => {
     if (graph === null) {
       return;
     }
-    const flow = graphToFlow(graph, positions, invalid);
+    const flow = graphToFlow(graph, positions, flagged);
     setNodes(
       flow.nodes.map((node) => ({
         ...node,
@@ -67,7 +67,7 @@ export function Canvas() {
         selected: selection?.kind === "edge" && selection.id === edge.id,
       })),
     );
-  }, [graph, positions, selection, invalid, setNodes, setEdges]);
+  }, [graph, positions, selection, flagged, setNodes, setEdges]);
 
   const onNodeDragStop = useCallback((_event: unknown, node: Node) => {
     useEditorStore.getState().setNodePosition(node.id, node.position);

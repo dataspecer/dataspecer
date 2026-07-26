@@ -1,4 +1,13 @@
+/**
+ * Every violation the pipeline can report. The severity of each code comes from the helper the
+ * rule calls, `semanticViolation` or `semanticWarning`, and the grouping below mirrors that.
+ *
+ * An error means the generated application would be broken, would corrupt data, or would rest on
+ * a guess the graph does not make. A warning means the generator skips something and the
+ * application is still correct without it.
+ */
 export enum ViolationCode {
+  // Errors
   GenerateFormatFailed = 'GENERATE_FORMAT_FAILED',
   GenerateWriteFailed = 'GENERATE_WRITE_FAILED',
   GraphDuplicateDatasourceId = 'GRAPH_DUPLICATE_DATASOURCE_ID',
@@ -6,31 +15,33 @@ export enum ViolationCode {
   GraphDuplicateNodeId = 'GRAPH_DUPLICATE_NODE_ID',
   GraphSyntaxInvalid = 'GRAPH_SYNTAX_INVALID',
   MetadataResolutionFailed = 'METADATA_RESOLUTION_FAILED',
-  SemanticAssociationConfigNotAllowed = 'SEMANTIC_ASSOCIATION_CONFIG_NOT_ALLOWED',
   SemanticCannotCascadeAggregation = 'SEMANTIC_CANNOT_CASCADE_AGGREGATION',
   SemanticCascadeRequiresParentCascade = 'SEMANTIC_CASCADE_REQUIRES_PARENT_CASCADE',
   SemanticCircularComposition = 'SEMANTIC_CIRCULAR_COMPOSITION',
-  SemanticDeleteConfigNotAllowed = 'SEMANTIC_DELETE_CONFIG_NOT_ALLOWED',
+  SemanticConflictingAssociationKind = 'SEMANTIC_CONFLICTING_ASSOCIATION_KIND',
   SemanticDuplicateAggregateName = 'SEMANTIC_DUPLICATE_AGGREGATE_NAME',
-  SemanticDuplicateEdge = 'SEMANTIC_DUPLICATE_EDGE',
   SemanticDuplicateGeneratedFieldName = 'SEMANTIC_DUPLICATE_GENERATED_FIELD_NAME',
   SemanticDuplicateRouteId = 'SEMANTIC_DUPLICATE_ROUTE_ID',
-  SemanticConflictingAssociationKind = 'SEMANTIC_CONFLICTING_ASSOCIATION_KIND',
-  SemanticInvalidAssociationKind = 'SEMANTIC_INVALID_ASSOCIATION_KIND',
-  SemanticDeletePathNotAssociation = 'SEMANTIC_DELETE_PATH_NOT_ASSOCIATION',
-  SemanticAssociationPathNotAssociation = 'SEMANTIC_ASSOCIATION_PATH_NOT_ASSOCIATION',
-  SemanticNestedAssociationRequiresComposition = 'SEMANTIC_NESTED_ASSOCIATION_REQUIRES_COMPOSITION',
   SemanticInvalidDeletePolicy = 'SEMANTIC_INVALID_DELETE_POLICY',
   SemanticInvalidRedirect = 'SEMANTIC_INVALID_REDIRECT',
   SemanticInvalidTransition = 'SEMANTIC_INVALID_TRANSITION',
   SemanticMultipleRedirects = 'SEMANTIC_MULTIPLE_REDIRECTS',
+  SemanticNestedAssociationRequiresComposition = 'SEMANTIC_NESTED_ASSOCIATION_REQUIRES_COMPOSITION',
   SemanticNoNodes = 'SEMANTIC_NO_NODES',
   SemanticRedirectRequiresSameClass = 'SEMANTIC_REDIRECT_REQUIRES_SAME_CLASS',
-  SemanticTransitionRequiresAssociation = 'SEMANTIC_TRANSITION_REQUIRES_ASSOCIATION',
   SemanticTransitionRequiresSameClass = 'SEMANTIC_TRANSITION_REQUIRES_SAME_CLASS',
   SemanticUnknownAggregate = 'SEMANTIC_UNKNOWN_AGGREGATE',
   SemanticUnknownEdgeSource = 'SEMANTIC_UNKNOWN_EDGE_SOURCE',
   SemanticUnknownEdgeTarget = 'SEMANTIC_UNKNOWN_EDGE_TARGET',
   SemanticUnsupportedDatasourceCount = 'SEMANTIC_UNSUPPORTED_DATASOURCE_COUNT',
   SemanticUnsupportedDatasourceType = 'SEMANTIC_UNSUPPORTED_DATASOURCE_TYPE',
+
+  // Warnings
+  SemanticAssociationConfigNotAllowed = 'SEMANTIC_ASSOCIATION_CONFIG_NOT_ALLOWED',
+  SemanticAssociationPathNotAssociation = 'SEMANTIC_ASSOCIATION_PATH_NOT_ASSOCIATION',
+  SemanticDeleteConfigNotAllowed = 'SEMANTIC_DELETE_CONFIG_NOT_ALLOWED',
+  SemanticDeletePathNotAssociation = 'SEMANTIC_DELETE_PATH_NOT_ASSOCIATION',
+  SemanticDuplicateEdge = 'SEMANTIC_DUPLICATE_EDGE',
+  SemanticInvalidAssociationKind = 'SEMANTIC_INVALID_ASSOCIATION_KIND',
+  SemanticTransitionRequiresAssociation = 'SEMANTIC_TRANSITION_REQUIRES_ASSOCIATION',
 }
