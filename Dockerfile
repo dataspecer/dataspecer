@@ -63,10 +63,6 @@ RUN bunx prisma@6 migrate deploy --schema /usr/src/app/dist/schema.prisma
 FROM base AS final
 WORKDIR /usr/src/app
 
-# Copy into database directory, otherwise we can not create hardlinks,
-#  we would have to copy the files, which is slower than just creating hardlinks.
-COPY services/backend/git-workflows ./database/git-workflows
-
 RUN apk update && apk add --no-cache git
 RUN apk update && apk add --no-cache openssh
 
@@ -102,6 +98,11 @@ COPY --from=builder --chmod=777 /usr/src/app /usr/src/app
 
 # For the ssh - seems to be the only thing needed, we do not need to create the .ssh directory
 RUN addgroup -g 1001 app1001 && adduser -D -u 1001 -G app1001 app1001
+
+# Copy into database directory, otherwise we can not create hardlinks,
+#  we would have to copy the files, which is slower than just creating hardlinks.
+# Perform it last (it may help with the current issue, but the issue may be caused by the volume.)
+COPY services/backend/git-workflows ./database/git-workflows
 
 RUN echo "git workflow files:" && find ./database/git-workflows -type f
 
