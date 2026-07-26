@@ -113,7 +113,7 @@ describe('analyzeGraphSemantics', () => {
       ],
     });
 
-    expectWarnings(graph, ViolationCode.SemanticMultipleRedirects);
+    expectViolations(graph, ViolationCode.SemanticMultipleRedirects);
   });
 
   it('validates redirect operation pairs and same-class detail redirects', () => {
@@ -149,8 +149,8 @@ describe('analyzeGraphSemantics', () => {
       ],
     });
 
-    expectWarnings(invalidPair, ViolationCode.SemanticInvalidRedirect);
-    expectWarnings(invalidClass, ViolationCode.SemanticRedirectRequiresSameClass);
+    expectViolations(invalidPair, ViolationCode.SemanticInvalidRedirect);
+    expectViolations(invalidClass, ViolationCode.SemanticRedirectRequiresSameClass);
   });
 
   it('validates transition operation pairs and class compatibility', () => {
@@ -186,8 +186,8 @@ describe('analyzeGraphSemantics', () => {
       ],
     });
 
-    expectWarnings(invalidPair, ViolationCode.SemanticInvalidTransition);
-    expectWarnings(invalidClass, ViolationCode.SemanticTransitionRequiresSameClass);
+    expectViolations(invalidPair, ViolationCode.SemanticInvalidTransition);
+    expectViolations(invalidClass, ViolationCode.SemanticTransitionRequiresSameClass);
   });
 
   it('allows associated cross-aggregate detail transitions', () => {
@@ -581,7 +581,7 @@ describe('analyzeGraphSemantics', () => {
     expectViolations(graph, ViolationCode.SemanticCircularComposition);
   });
 
-  it('rejects association config on read nodes', () => {
+  it('warns about association config on read nodes', () => {
     const graph = validGraph({
       nodes: [
         node('Book.ReadList', 'https://example.org/aggregate/book-list', Operation.ReadList, {
@@ -591,10 +591,10 @@ describe('analyzeGraphSemantics', () => {
       edges: [],
     });
 
-    expectViolations(graph, ViolationCode.SemanticAssociationConfigNotAllowed);
+    expectWarnings(graph, ViolationCode.SemanticAssociationConfigNotAllowed);
   });
 
-  it('rejects delete config on non-delete nodes', () => {
+  it('warns about delete config on non-delete nodes', () => {
     const graph = validGraph({
       nodes: [
         node('Book.Create', 'https://example.org/aggregate/book-detail', Operation.Create, {
@@ -605,7 +605,7 @@ describe('analyzeGraphSemantics', () => {
       edges: [],
     });
 
-    expectViolations(graph, ViolationCode.SemanticDeleteConfigNotAllowed);
+    expectWarnings(graph, ViolationCode.SemanticDeleteConfigNotAllowed);
   });
 
   it('rejects nested delete cascade through aggregations', () => {
@@ -639,7 +639,7 @@ describe('analyzeGraphSemantics', () => {
     expectViolations(graph, ViolationCode.SemanticCannotCascadeAggregation);
   });
 
-  it('rejects association config on delete nodes', () => {
+  it('warns about association config on delete nodes', () => {
     const graph = validGraph({
       nodes: [
         node('Book.Delete', 'https://example.org/aggregate/book-detail', Operation.Delete, {
@@ -650,10 +650,10 @@ describe('analyzeGraphSemantics', () => {
       edges: [],
     });
 
-    expectViolations(graph, ViolationCode.SemanticAssociationConfigNotAllowed);
+    expectWarnings(graph, ViolationCode.SemanticAssociationConfigNotAllowed);
   });
 
-  it('rejects invalid association config values', () => {
+  it('warns about invalid association config values', () => {
     const graph = validGraph({
       nodes: [
         node('Book.Update', 'https://example.org/aggregate/book-detail', Operation.Update, {
@@ -663,10 +663,10 @@ describe('analyzeGraphSemantics', () => {
       edges: [],
     });
 
-    expectViolations(graph, ViolationCode.SemanticInvalidAssociationKind);
+    expectWarnings(graph, ViolationCode.SemanticInvalidAssociationKind);
   });
 
-  it('rejects association config paths that are not associations', () => {
+  it('warns about association config paths that are not associations', () => {
     const graph = validGraph({
       nodes: [
         node('Book.Update', 'https://example.org/aggregate/book-detail', Operation.Update, {
@@ -676,7 +676,7 @@ describe('analyzeGraphSemantics', () => {
       edges: [],
     });
 
-    expectViolations(graph, ViolationCode.SemanticAssociationPathNotAssociation);
+    expectWarnings(graph, ViolationCode.SemanticAssociationPathNotAssociation);
   });
 
   it('rejects nested association config below aggregations', () => {
@@ -708,7 +708,7 @@ describe('analyzeGraphSemantics', () => {
       edges: [],
     });
 
-    expectViolations(graph, ViolationCode.SemanticAssociationPathNotAssociation);
+    expectWarnings(graph, ViolationCode.SemanticAssociationPathNotAssociation);
   });
 
   it('rejects nested association config whose parent is configured on another node', () => {

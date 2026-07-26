@@ -157,10 +157,16 @@ describe('generateApp', () => {
       graph: graphFixture({
         edges: [
           {
-            id: 'list-detail-redirect',
+            id: 'book-list-book-detail',
             source: 'Book.ReadList',
             target: 'Book.ReadDetail',
-            type: EdgeType.Redirect,
+            type: EdgeType.Transition,
+          },
+          {
+            id: 'book-list-book-detail-again',
+            source: 'Book.ReadList',
+            target: 'Book.ReadDetail',
+            type: EdgeType.Transition,
           },
         ],
       }),
@@ -171,7 +177,7 @@ describe('generateApp', () => {
     expect(Object.keys(result.files)).toContain('src/routes.tsx');
     expect(result.violations).toContainEqual(
       expect.objectContaining({
-        code: ViolationCode.SemanticInvalidRedirect,
+        code: ViolationCode.SemanticDuplicateEdge,
         severity: ViolationSeverity.Warning,
       })
     );

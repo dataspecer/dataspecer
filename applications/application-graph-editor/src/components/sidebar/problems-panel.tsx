@@ -49,7 +49,7 @@ export function ProblemsPanel({ graph }: { graph: ApplicationGraph }) {
         )}
         <div className="grow" />
         <ToolbarButton onClick={runValidation} disabled={validating}>
-          {validating ? "Validating…" : "Validate"}
+          {validating ? "Checking…" : "Run full check"}
         </ToolbarButton>
       </div>
       {errors.length === 0 && warnings.length === 0 ? (

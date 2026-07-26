@@ -19,7 +19,7 @@ describe('validateGraphStructure', () => {
     expect(result.violations).toEqual([]);
   });
 
-  it('warns about invalid transition operation pairs without metadata', () => {
+  it('rejects invalid transition operation pairs without metadata', () => {
     const graph = validGraph({
       edges: [
         {
@@ -33,12 +33,11 @@ describe('validateGraphStructure', () => {
 
     const result = validateGraphStructure(graph);
 
-    // the generated application builds and runs, it just gets no navigation for this edge
-    expect(result.valid).toBe(true);
+    expect(result.valid).toBe(false);
     expect(result.violations).toContainEqual(
       expect.objectContaining({
         code: ViolationCode.SemanticInvalidTransition,
-        severity: ViolationSeverity.Warning,
+        severity: ViolationSeverity.Error,
       })
     );
   });

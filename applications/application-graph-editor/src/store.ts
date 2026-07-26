@@ -62,6 +62,7 @@ interface EditorState extends UndoableState {
   failMetadata: (message: string) => void;
   setSaveState: (state: SaveState) => void;
   setSelection: (selection: Selection) => void;
+  /** Opens a sidebar tab, dropping whatever took the panel over so the tab becomes visible. */
   setSidebarTab: (tab: SidebarTab) => void;
   setSettingsOpen: (open: boolean) => void;
   setActionError: (message: string | null) => void;
@@ -130,7 +131,12 @@ export const useEditorStore = create<EditorState>()(
       failMetadata: (metadataError) => set({ metadata: null, metadataError }),
       setSaveState: (saveState) => set({ saveState }),
       setSelection: (selection) => set({ selection, settingsOpen: false }),
-      setSidebarTab: (sidebarTab) => set({ sidebarTab }),
+      setSidebarTab: (sidebarTab) =>
+        set(
+          sidebarTab === null
+            ? { sidebarTab }
+            : { sidebarTab, selection: null, settingsOpen: false },
+        ),
       setActionError: (actionError) => set({ actionError }),
       setSettingsOpen: (open) =>
         set(open ? { settingsOpen: true, selection: null } : { settingsOpen: false }),

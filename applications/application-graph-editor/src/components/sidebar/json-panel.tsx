@@ -5,7 +5,7 @@ import { applicationGraphSchema, type ApplicationGraph } from "@dataspecer/app-g
 import { applyGraphJson } from "../../graph/apply-json.ts";
 import { graphElementAtOffset } from "../../graph/json-cursor.ts";
 import { useEditorStore } from "../../store.ts";
-import { liveViolations } from "../../validation/violations.ts";
+import { combinedViolations } from "../../validation/violations.ts";
 import { violationRanges } from "../../validation/violation-ranges.ts";
 
 const VIOLATION_MARKER_OWNER = "application-graph-violations";
@@ -51,10 +51,7 @@ export function JsonPanel({ graph }: { graph: ApplicationGraph }) {
   // violations of the applied graph underline their JSON parts while the view is in sync, an
   // edited draft has shifted offsets and keeps only the schema diagnostics
   const violations = useMemo(
-    () => [
-      ...liveViolations(graph),
-      ...(semanticValidation?.forGraph === graph ? semanticValidation.violations : []),
-    ],
+    () => combinedViolations(graph, semanticValidation),
     [graph, semanticValidation],
   );
 
