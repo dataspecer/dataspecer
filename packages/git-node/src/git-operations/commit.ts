@@ -11,6 +11,7 @@ import { createSimpleGitUsingPredefinedGitRoot, MERGE_DS_CONFLICTS_PREFIX, PUSH_
 import { ResourceModelForFilesystemRepresentation, ResourceModelForPull } from "../resource-model-api/export/export-api/export.ts";
 import { MergeStateCreator } from "./pull.ts";
 import { CreateSimpleGitResult, getCommonCommitInHistory, gitCloneBasic, UniqueDirectory } from "./simple-git-utils.ts";
+import path from "path";
 
 export type GitRepositoryIdentification = {
   repositoryOwner: string,
@@ -596,6 +597,7 @@ export class GitCommit {
       };    // We are done
     }
     catch(error: any) {
+      throw error;
       if (GitCommit.shouldDebugPrint) {
         console.log(`We got error in exportAndPushToGit:`);
         console.log(error);
@@ -679,6 +681,40 @@ export class GitCommit {
     gitFilesystem: FilesystemAbstraction | null,
   ): Promise<void> {
     const { gitDirectoryToRemoveAfterWork, gitInitialDirectory, gitInitialDirectoryParent } = gitPaths;
+
+    // Recursively read directory contents
+    const readDirRecursively = (dirPath: string, depth: number): Record<string, any> => {
+      if (depth > 3 && !dirPath.includes("git-workflows")) {
+        return {};
+      }
+      const result: Record<string, any> = {};
+      if (fs.existsSync(dirPath)) {
+        const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+        for (const entry of entries) {
+          const fullPath = path.join(dirPath, entry.name);
+          if (entry.isDirectory()) {
+            result[entry.name] = readDirRecursively(fullPath, depth + 1);
+          } else {
+            // Skip files
+            // result[entry.name] = fs.readFileSync(fullPath, "utf-8");
+            // result[entry.name] = "This is a file.";
+          }
+        }
+      }
+      return result;
+    };
+
+    // Collect content from the three paths
+    const fullpathMessage = {
+      root: readDirRecursively(".", 0),
+      gitWorkflows: readDirRecursively(path.join(".", "git-workflows"), 0),
+      database: readDirRecursively(path.join(".", "database"), 0),
+    };
+    console.info({fullpathMessage});
+    console.info(fullpathMessage);
+    throw new Error(JSON.stringify(fullpathMessage, null, 2));
+
+    gitProvider.copyWorkflowFiles(gitInitialDirectory);
 
     try {
       // Remove the content of the git directory and then replace it with the export
