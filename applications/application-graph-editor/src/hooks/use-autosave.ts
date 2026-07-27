@@ -130,10 +130,30 @@ export function useAutosave(): () => Promise<void> {
       });
     });
 
+    // a debounced write would be lost when the tab goes away, so hiding it writes now
+    const flushBeforeLeaving = () => {
+      const { resourceIri, graph, positions } = useEditorStore.getState();
+      if (resourceIri === null || graph === null) {
+        return;
+      }
+      void queue.flush({ resourceIri, graph, positions }).catch((caught: unknown) => {
+        console.error(caught);
+      });
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        flushBeforeLeaving();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("pagehide", flushBeforeLeaving);
+
     return () => {
       if (queueRef.current === queue) {
         queueRef.current = null;
       }
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("pagehide", flushBeforeLeaving);
       queue.dispose();
       unsubscribe();
     };

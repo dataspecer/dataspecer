@@ -7,13 +7,18 @@ const NODE_HEIGHT = 72;
 
 const elk = new ELK();
 
+export type LayoutDirection = "DOWN" | "RIGHT";
+
 /** Computes canvas positions for the whole graph with a layered layout. */
-export async function autoLayout(graph: ApplicationGraph): Promise<NodePositions> {
+export async function autoLayout(
+  graph: ApplicationGraph,
+  direction: LayoutDirection = "DOWN",
+): Promise<NodePositions> {
   const result = await elk.layout({
     id: "root",
     layoutOptions: {
       "elk.algorithm": "layered",
-      "elk.direction": "DOWN",
+      "elk.direction": direction,
       "elk.spacing.nodeNode": "60",
       "elk.layered.spacing.nodeNodeBetweenLayers": "90",
     },

@@ -1,15 +1,14 @@
 import { useRef, type ReactNode } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Panel } from "@xyflow/react";
-import { Menu, Network, Plus, Redo2, Undo2 } from "lucide-react";
+import { ChevronDown, Menu, Network, Plus, Redo2, Undo2 } from "lucide-react";
 import { useStore } from "zustand";
-import { Operation } from "@dataspecer/app-generator/graph";
 import { downloadBlob } from "../utils/download-blob.ts";
 import { applyGraphJson } from "../graph/apply-json.ts";
 import { exportFileName } from "../graph/file-names.ts";
-import { nextNodeId } from "../graph/mutations.ts";
+import { newNode } from "../graph/new-node.ts";
 import { useEditorStore } from "../store.ts";
-import { autoLayout } from "./auto-layout.ts";
+import { autoLayout, type LayoutDirection } from "./auto-layout.ts";
 
 export function CanvasToolbar() {
   const { undo, redo, pastStates, futureStates } = useStore(useEditorStore.temporal);
@@ -34,21 +33,17 @@ export function CanvasToolbar() {
     if (graph === null) {
       return;
     }
-    const aggregate = metadata?.aggregates[0];
-    const operation = Operation.ReadList;
-    const id = nextNodeId(graph, aggregate?.name ?? "node", operation);
     // keep freshly added nodes from covering each other
     const offset = (graph.nodes.length % 6) * 36;
-    useEditorStore.getState().addNode(
-      { id, aggregateIri: aggregate?.iri ?? "", operation },
-      { x: 60 + offset, y: 60 + offset },
-    );
+    useEditorStore
+      .getState()
+      .addNode(newNode(graph, metadata), { x: 60 + offset, y: 60 + offset });
   };
 
-  const relayout = async () => {
+  const relayout = async (direction: LayoutDirection) => {
     const { graph, setAllPositions } = useEditorStore.getState();
     if (graph !== null) {
-      setAllPositions(await autoLayout(graph));
+      setAllPositions(await autoLayout(graph, direction));
     }
   };
 
@@ -82,9 +77,27 @@ export function CanvasToolbar() {
       <ToolbarButton onClick={addNode}>
         <Plus size={14} /> Add node
       </ToolbarButton>
-      <ToolbarButton onClick={() => void relayout()}>
-        <Network size={14} /> Layout
-      </ToolbarButton>
+      <DropdownMenu.Root>
+        <DropdownMenu.Trigger asChild>
+          <button
+            type="button"
+            className="inline-flex items-center gap-1 rounded border border-slate-300 bg-white px-2 py-1 text-xs text-slate-600 hover:bg-slate-100"
+          >
+            <Network size={14} /> Layout
+            <ChevronDown size={12} />
+          </button>
+        </DropdownMenu.Trigger>
+        <DropdownMenu.Portal>
+          <DropdownMenu.Content
+            align="start"
+            sideOffset={4}
+            className="min-w-36 rounded border border-slate-200 bg-white py-1 shadow-md"
+          >
+            <MenuItem onSelect={() => void relayout("DOWN")}>Top to bottom</MenuItem>
+            <MenuItem onSelect={() => void relayout("RIGHT")}>Left to right</MenuItem>
+          </DropdownMenu.Content>
+        </DropdownMenu.Portal>
+      </DropdownMenu.Root>
       <ToolbarButton
         onClick={() => undo()}
         disabled={pastStates.length === 0}

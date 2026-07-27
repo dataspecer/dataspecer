@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Background,
   ConnectionMode,
@@ -9,19 +9,26 @@ import {
   useReactFlow,
   type Connection,
   type Edge,
+  type FinalConnectionState,
   type Node,
   type OnSelectionChangeParams,
+  type ReactFlowInstance,
 } from "@xyflow/react";
 import {
   EdgeType,
   isValidRedirectOperation,
   isValidTransitionOperation,
+  type ApplicationNode,
 } from "@dataspecer/app-generator/graph";
 import { nextEdgeId } from "../graph/mutations.ts";
+import { newNode } from "../graph/new-node.ts";
 import { useEditorStore } from "../store.ts";
 import { useViolations } from "../hooks/use-violations.ts";
 import { flaggedIds } from "../validation/violations.ts";
-import { CanvasContextMenu, type ContextTarget } from "./canvas-context-menu.tsx";
+import {
+  CanvasContextMenu,
+  type ContextTarget,
+} from "./canvas-context-menu.tsx";
 import { CanvasToolbar } from "./canvas-toolbar.tsx";
 import { ConnectionLine } from "./connection-line.tsx";
 import { FloatingEdge } from "./floating-edge.tsx";
@@ -40,10 +47,15 @@ export function Canvas() {
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   // what the last right click hit, so the context menu knows which actions to offer
   const [contextTarget, setContextTarget] = useState<ContextTarget>(null);
+  // the instance turns a drop point into canvas coordinates
+  const flowRef = useRef<ReactFlowInstance<OperationFlowNode, Edge>>(undefined);
 
   const violations = useViolations(graph);
   const flagged = useMemo(
-    () => (graph === null ? { nodes: new Map(), edges: new Map() } : flaggedIds(graph, violations)),
+    () =>
+      graph === null
+        ? { nodes: new Map(), edges: new Map() }
+        : flaggedIds(graph, violations),
     [graph, violations],
   );
 
@@ -67,21 +79,45 @@ export function Canvas() {
     }
     const source = current.nodes.find((node) => node.id === connection.source);
     const target = current.nodes.find((node) => node.id === connection.target);
-    // prefer the edge type the operation pair allows, transition when both or neither fit
-    const type =
-      source &&
-      target &&
-      !isValidTransitionOperation(source.operation, target.operation) &&
-      isValidRedirectOperation(source.operation, target.operation)
-        ? EdgeType.Redirect
-        : EdgeType.Transition;
     addEdge({
       id: nextEdgeId(current, connection.source, connection.target),
       source: connection.source,
       target: connection.target,
-      type,
+      type: edgeTypeFor(source, target),
     });
   }, []);
+
+  // dropping a connection on empty canvas creates the node it was reaching for
+  const onConnectEnd = useCallback(
+    (_event: unknown, connection: FinalConnectionState) => {
+      const source = connection.fromNode?.id;
+      if (connection.toNode !== null || !source || !connection.to) {
+        return;
+      }
+      const {
+        graph: current,
+        metadata,
+        addConnectedNode,
+      } = useEditorStore.getState();
+      const flow = flowRef.current;
+      if (current === null || flow === undefined) {
+        return;
+      }
+      const created = newNode(current, metadata);
+      const sourceNode = current.nodes.find((node) => node.id === source);
+      addConnectedNode(
+        created,
+        flow.screenToFlowPosition({ x: connection.to.x, y: connection.to.y }),
+        {
+          id: nextEdgeId(current, source, created.id),
+          source,
+          target: created.id,
+          type: edgeTypeFor(sourceNode, created),
+        },
+      );
+    },
+    [],
+  );
 
   const onNodesDelete = useCallback((deleted: Node[]) => {
     const { removeNode } = useEditorStore.getState();
@@ -108,36 +144,38 @@ export function Canvas() {
   return (
     <CanvasContextMenu target={contextTarget}>
       <ReactFlow
-      nodes={nodes}
-      edges={edges}
-      nodeTypes={nodeTypes}
-      edgeTypes={edgeTypes}
-      connectionLineComponent={ConnectionLine}
-      connectionMode={ConnectionMode.Loose}
-      connectionRadius={36}
-      fitView
-      deleteKeyCode={["Backspace", "Delete"]}
-      onNodesChange={onNodesChange}
-      onEdgesChange={onEdgesChange}
-      onNodeDragStop={onNodeDragStop}
-      onConnect={onConnect}
-      onNodesDelete={onNodesDelete}
-      onEdgesDelete={onEdgesDelete}
-      onSelectionChange={onSelectionChange}
-      onNodeContextMenu={(_event, node) => {
-        setContextTarget({ kind: "node", id: node.id });
-        useEditorStore.getState().setSelection({ kind: "node", id: node.id });
-      }}
-      onEdgeContextMenu={(_event, edge) => {
-        setContextTarget({ kind: "edge", id: edge.id });
-        useEditorStore.getState().setSelection({ kind: "edge", id: edge.id });
-      }}
-      onPaneContextMenu={() => setContextTarget(null)}
-    >
-      <Background />
-      <Controls showInteractive={false} />
-      <CanvasToolbar />
-      <FocusHandler />
+        nodes={nodes}
+        edges={edges}
+        nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
+        connectionLineComponent={ConnectionLine}
+        connectionMode={ConnectionMode.Loose}
+        connectionRadius={36}
+        fitView
+        deleteKeyCode={["Backspace", "Delete"]}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onNodeDragStop={onNodeDragStop}
+        onConnect={onConnect}
+        onConnectEnd={onConnectEnd}
+        onInit={(instance) => (flowRef.current = instance)}
+        onNodesDelete={onNodesDelete}
+        onEdgesDelete={onEdgesDelete}
+        onSelectionChange={onSelectionChange}
+        onNodeContextMenu={(_event, node) => {
+          setContextTarget({ kind: "node", id: node.id });
+          useEditorStore.getState().setSelection({ kind: "node", id: node.id });
+        }}
+        onEdgeContextMenu={(_event, edge) => {
+          setContextTarget({ kind: "edge", id: edge.id });
+          useEditorStore.getState().setSelection({ kind: "edge", id: edge.id });
+        }}
+        onPaneContextMenu={() => setContextTarget(null)}
+      >
+        <Background />
+        <Controls showInteractive={false} />
+        <CanvasToolbar />
+        <FocusHandler />
       </ReactFlow>
     </CanvasContextMenu>
   );
@@ -157,7 +195,9 @@ function FocusHandler() {
       return;
     }
     // an edge is brought into view through its two endpoints
-    const edge = graph.edges.find((candidate) => candidate.id === focusRequest.id);
+    const edge = graph.edges.find(
+      (candidate) => candidate.id === focusRequest.id,
+    );
     const nodeIds = edge ? [edge.source, edge.target] : [focusRequest.id];
     void reactFlow.fitView({
       nodes: nodeIds.map((id) => ({ id })),
@@ -168,4 +208,20 @@ function FocusHandler() {
   }, [focusRequest, reactFlow]);
 
   return null;
+}
+
+/** Prefers the edge type the operation pair allows, transition when both or neither fit. */
+function edgeTypeFor(
+  source: ApplicationNode | undefined,
+  target: ApplicationNode | undefined,
+): EdgeType {
+  if (
+    source &&
+    target &&
+    !isValidTransitionOperation(source.operation, target.operation) &&
+    isValidRedirectOperation(source.operation, target.operation)
+  ) {
+    return EdgeType.Redirect;
+  }
+  return EdgeType.Transition;
 }
