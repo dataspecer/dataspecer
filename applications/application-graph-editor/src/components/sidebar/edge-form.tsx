@@ -24,7 +24,6 @@ function NodeLink({ id }: { id: string }) {
 }
 
 export function EdgeForm({ edge }: { edge: ApplicationEdge }) {
-  const graph = useEditorStore((state) => state.graph);
   const updateEdge = useEditorStore((state) => state.updateEdge);
   const removeEdge = useEditorStore((state) => state.removeEdge);
 
@@ -60,7 +59,7 @@ export function EdgeForm({ edge }: { edge: ApplicationEdge }) {
         Delete edge
       </button>
 
-      {graph && <ElementViolations graph={graph} kind="edge" id={edge.id} />}
+      <ElementViolations kind="edge" id={edge.id} />
     </div>
   );
 }

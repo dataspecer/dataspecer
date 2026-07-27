@@ -1,5 +1,5 @@
-import { ViolationSeverity, type ApplicationGraph } from "@dataspecer/app-generator/graph";
-import { useViolations } from "../../hooks/use-violations.ts";
+import { ViolationSeverity } from "@dataspecer/app-generator/graph";
+import { useValidation } from "../../hooks/use-validation.ts";
 import { violationsFor } from "../../validation/violations.ts";
 import { ViolationItem } from "./violation-item.tsx";
 
@@ -7,15 +7,16 @@ import { ViolationItem } from "./violation-item.tsx";
  * Problems of one node or edge.
  */
 export function ElementViolations({
-  graph,
   kind,
   id,
 }: {
-  graph: ApplicationGraph;
   kind: "node" | "edge";
   id: string;
 }) {
-  const violations = violationsFor(graph, useViolations(graph), kind, id);
+  const validation = useValidation();
+  const violations = validation
+    ? violationsFor(validation.graph, validation.violations, kind, id)
+    : [];
   if (violations.length === 0) {
     return null;
   }

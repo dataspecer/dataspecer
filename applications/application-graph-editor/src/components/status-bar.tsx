@@ -1,12 +1,11 @@
 import { AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
-import type { ApplicationGraph } from "@dataspecer/app-generator/graph";
-import { useViolationsBySeverity } from "../hooks/use-violations.ts";
+import { useViolationsBySeverity } from "../hooks/use-validation.ts";
 import { useEditorStore, type SaveState } from "../store.ts";
 
-export function StatusBar({ graph }: { graph: ApplicationGraph }) {
+export function StatusBar() {
   const saveState = useEditorStore((state) => state.saveState);
   const setSidebarTab = useEditorStore((state) => state.setSidebarTab);
-  const { errors, warnings } = useViolationsBySeverity(graph);
+  const { errors, warnings } = useViolationsBySeverity();
 
   return (
     <div className="flex items-center gap-3 border-t border-slate-200 bg-white px-3 py-1">

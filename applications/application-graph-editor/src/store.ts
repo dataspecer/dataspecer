@@ -8,7 +8,7 @@ import type {
   SpecificationMetadata,
 } from "@dataspecer/app-generator/graph";
 import * as mutations from "./graph/mutations.ts";
-import type { GenerationViolations } from "./validation/violations.ts";
+import type { GenerationViolations, ValidationSnapshot } from "./validation/violations.ts";
 
 export type NodePositions = Record<string, { x: number; y: number }>;
 
@@ -28,8 +28,9 @@ export interface FocusRequest {
 /** The part of the state that undo and redo travel through. */
 interface UndoableState {
   graph: ApplicationGraph | null;
-  /** Canvas positions by node id. Kept outside the graph JSON, which allows no extra fields. */
+  /** Canvas positions by node ID. Kept outside the graph JSON, which allows no extra fields. */
   positions: NodePositions;
+  selection: Selection;
 }
 
 interface EditorState extends UndoableState {
@@ -40,13 +41,23 @@ interface EditorState extends UndoableState {
   metadata: SpecificationMetadata | null;
   metadataError: string | null;
   saveState: SaveState;
-  selection: Selection;
+  /** Element the JSON cursor points at. Highlighted on the canvas without taking the panel. */
+  highlight: Selection;
   sidebarTab: SidebarTab;
+  /**
+   * Edited text of the raw data panel with the JSON it started from, null while the view follows
+   * the graph.
+   */
+  jsonDraft: JsonDraft | null;
   settingsOpen: boolean;
   /** Error of the last user action (import, generate), shown in a dismissible strip. */
   actionError: string | null;
+  /** Question waiting for an answer in the confirmation dialog. */
+  confirmRequest: ConfirmRequest | null;
   /** Violations from the last failed generation, dropped once the graph changes. */
   generationViolations: GenerationViolations | null;
+  /** The last computed violations with the graph they belong to. Null until the first pass. */
+  validation: ValidationSnapshot | null;
   focusRequest: FocusRequest | null;
 
   initialize: (resourceIri: string, graph: ApplicationGraph, positions: NodePositions) => void;
@@ -57,11 +68,17 @@ interface EditorState extends UndoableState {
   failMetadata: (message: string) => void;
   setSaveState: (state: SaveState) => void;
   setSelection: (selection: Selection) => void;
+  setHighlight: (highlight: Selection) => void;
   /** Opens a sidebar tab, dropping whatever took the panel over so the tab becomes visible. */
   setSidebarTab: (tab: SidebarTab) => void;
   setSettingsOpen: (open: boolean) => void;
+  setJsonDraft: (draft: JsonDraft | null) => void;
   setActionError: (message: string | null) => void;
+  /** Asks the user through the confirmation dialog and resolves with the answer. */
+  requestConfirm: (question: ConfirmQuestion) => Promise<boolean>;
+  answerConfirm: (confirmed: boolean) => void;
   setGenerationViolations: (violations: GenerationViolations | null) => void;
+  setValidation: (validation: ValidationSnapshot) => void;
   requestFocus: (id: string) => void;
 
   addNode: (node: ApplicationNode, position: { x: number; y: number }) => void;
@@ -89,6 +106,26 @@ interface EditorState extends UndoableState {
   setAllPositions: (positions: NodePositions) => void;
 }
 
+export interface ConfirmQuestion {
+  title: string;
+  message: string;
+  /** Lines under the message, such as the warnings that do not block generation. */
+  details?: string[];
+  /** Label of the confirming button, "Continue" when not given. */
+  confirmLabel?: string;
+}
+
+export interface JsonDraft {
+  text: string;
+  /** Serialized graph the editing started from. */
+  base: string;
+}
+
+/** A pending question, with the resolver of the promise waiting on the answer. */
+interface ConfirmRequest extends ConfirmQuestion {
+  resolve: (confirmed: boolean) => void;
+}
+
 function withGraph(
   state: EditorState,
   mutate: (graph: ApplicationGraph) => ApplicationGraph,
@@ -101,7 +138,7 @@ function withGraph(
 
 export const useEditorStore = create<EditorState>()(
   temporal(
-    (set) => ({
+    (set, get) => ({
       graph: null,
       positions: {},
       resourceIri: null,
@@ -111,10 +148,14 @@ export const useEditorStore = create<EditorState>()(
       metadataError: null,
       saveState: "saved",
       selection: null,
+      highlight: null,
       sidebarTab: "json",
+      jsonDraft: null,
       settingsOpen: false,
       actionError: null,
+      confirmRequest: null,
       generationViolations: null,
+      validation: null,
       focusRequest: null,
 
       initialize: (resourceIri, graph, positions) =>
@@ -132,16 +173,26 @@ export const useEditorStore = create<EditorState>()(
       failMetadata: (metadataError) => set({ metadata: null, metadataError }),
       setSaveState: (saveState) => set({ saveState }),
       setSelection: (selection) => set({ selection, settingsOpen: false }),
+      setHighlight: (highlight) => set({ highlight }),
       setSidebarTab: (sidebarTab) =>
         set(
           sidebarTab === null
             ? { sidebarTab }
             : { sidebarTab, selection: null, settingsOpen: false },
         ),
+      setJsonDraft: (jsonDraft) => set({ jsonDraft }),
       setActionError: (actionError) => set({ actionError }),
+      requestConfirm: (question) =>
+        new Promise((resolve) => set({ confirmRequest: { ...question, resolve } })),
+      answerConfirm: (confirmed) => {
+        const request = get().confirmRequest;
+        set({ confirmRequest: null });
+        request?.resolve(confirmed);
+      },
       setSettingsOpen: (open) =>
         set(open ? { settingsOpen: true, selection: null } : { settingsOpen: false }),
       setGenerationViolations: (generationViolations) => set({ generationViolations }),
+      setValidation: (validation) => set({ validation }),
       requestFocus: (id) =>
         set((state) => ({ focusRequest: { id, seq: (state.focusRequest?.seq ?? 0) + 1 } })),
 
@@ -202,7 +253,11 @@ export const useEditorStore = create<EditorState>()(
       setAllPositions: (positions) => set({ positions }),
     }),
     {
-      partialize: (state): UndoableState => ({ graph: state.graph, positions: state.positions }),
+      partialize: (state): UndoableState => ({
+        graph: state.graph,
+        positions: state.positions,
+        selection: state.selection,
+      }),
       // reference equality is enough, every mutation builds new graph and position objects
       equality: (a, b) => a.graph === b.graph && a.positions === b.positions,
       limit: 100,

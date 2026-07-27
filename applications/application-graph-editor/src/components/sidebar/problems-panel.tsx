@@ -1,5 +1,5 @@
 import type { ApplicationGraph, Violation } from "@dataspecer/app-generator/graph";
-import { useViolationsBySeverity } from "../../hooks/use-violations.ts";
+import { useValidation, useViolationsBySeverity } from "../../hooks/use-validation.ts";
 import { useEditorStore } from "../../store.ts";
 import { violationTarget } from "../../validation/violations.ts";
 import { ViolationItem } from "./violation-item.tsx";
@@ -11,10 +11,13 @@ import { ViolationItem } from "./violation-item.tsx";
  */
 export function ProblemsPanel({ graph }: { graph: ApplicationGraph }) {
   const metadata = useEditorStore((state) => state.metadata);
-  const { errors, warnings } = useViolationsBySeverity(graph);
+  const validation = useValidation();
+  const { errors, warnings } = useViolationsBySeverity();
+  // violation paths are indexes, so they resolve against the graph they were computed from
+  const validated = validation?.graph ?? graph;
 
   const focusProblem = (violation: Violation) => {
-    const target = violationTarget(graph, violation);
+    const target = violationTarget(validated, violation);
     if (target) {
       const store = useEditorStore.getState();
       store.setSelection(target);
@@ -36,13 +39,13 @@ export function ProblemsPanel({ graph }: { graph: ApplicationGraph }) {
           <ViolationGroup
             title="Errors"
             violations={errors}
-            graph={graph}
+            graph={validated}
             onFocus={focusProblem}
           />
           <ViolationGroup
             title="Warnings"
             violations={warnings}
-            graph={graph}
+            graph={validated}
             onFocus={focusProblem}
           />
         </div>

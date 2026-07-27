@@ -1,12 +1,14 @@
 import { useEffect, type ReactNode } from "react";
 import { type ApplicationGraph } from "@dataspecer/app-generator/graph";
 import { loadGraph, loadMetadata, loadPositions } from "./backend/client.ts";
+import { ConfirmDialog } from "./components/confirm-dialog.tsx";
 import { EditorHeader } from "./components/header.tsx";
 import { Sidebar } from "./components/sidebar/sidebar.tsx";
 import { StatusBar } from "./components/status-bar.tsx";
 import { autoLayout } from "./diagram/auto-layout.ts";
 import { Canvas } from "./diagram/canvas.tsx";
 import { useAutosave } from "./hooks/use-autosave.ts";
+import { useValidationSync } from "./hooks/use-validation.ts";
 import { useUndoRedoShortcuts } from "./hooks/use-undo-redo-shortcuts.ts";
 import { useEditorStore } from "./store.ts";
 
@@ -81,6 +83,7 @@ export function App() {
 function Editor({ graph }: { graph: ApplicationGraph }) {
   const flushAutosave = useAutosave();
   useUndoRedoShortcuts();
+  useValidationSync();
 
   const metadataError = useEditorStore((state) => state.metadataError);
   const actionError = useEditorStore((state) => state.actionError);
@@ -112,7 +115,8 @@ function Editor({ graph }: { graph: ApplicationGraph }) {
         </div>
         <Sidebar graph={graph} />
       </div>
-      <StatusBar graph={graph} />
+      <StatusBar />
+      <ConfirmDialog />
     </div>
   );
 }

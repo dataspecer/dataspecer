@@ -52,6 +52,12 @@ export function combinedViolations(
   return [...local, ...fromGeneration];
 }
 
+/** Violations with the graph they were computed from, so paths resolve against the right one. */
+export interface ValidationSnapshot {
+  graph: ApplicationGraph;
+  violations: Violation[];
+}
+
 export interface ViolationsBySeverity {
   errors: Violation[];
   warnings: Violation[];
@@ -103,7 +109,7 @@ export interface FlaggedIds {
 }
 
 /**
- * Collects the node and edge ids the violations point at, for canvas highlighting. An element
+ * Collects the node and edge IDs the violations point at, for canvas highlighting. An element
  * with both an error and a warning is flagged as an error.
  */
 export function flaggedIds(graph: ApplicationGraph, violations: Violation[]): FlaggedIds {

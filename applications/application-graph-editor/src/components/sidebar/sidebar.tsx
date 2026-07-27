@@ -3,10 +3,11 @@ import { clamp } from "es-toolkit";
 import { AlertTriangle, ChevronsLeft, X, XCircle } from "lucide-react";
 import type { ApplicationGraph } from "@dataspecer/app-generator/graph";
 import { useEditorStore, type SidebarTab } from "../../store.ts";
-import { useViolations } from "../../hooks/use-violations.ts";
-import { bySeverity, violationsFor } from "../../validation/violations.ts";
+import { useValidation, useViolationsBySeverity } from "../../hooks/use-validation.ts";
+import { bySeverity, violationsFor, type ValidationSnapshot } from "../../validation/violations.ts";
 import { EdgeForm } from "./edge-form.tsx";
 import { JsonPanel } from "./json-panel.tsx";
+import { NodeIdReset } from "./node-id-reset.tsx";
 import { NodeForm } from "./node-form.tsx";
 import { ProblemsPanel } from "./problems-panel.tsx";
 import { SettingsForm } from "./settings-form.tsx";
@@ -39,8 +40,8 @@ export function Sidebar({ graph }: { graph: ApplicationGraph }) {
     }
   }, [sidebarTab]);
 
-  const violations = useViolations(graph);
-  const { errors, warnings } = bySeverity(violations);
+  const validation = useValidation();
+  const { errors, warnings } = useViolationsBySeverity();
 
   const node =
     selection?.kind === "node"
@@ -58,7 +59,8 @@ export function Sidebar({ graph }: { graph: ApplicationGraph }) {
       <PanelTitle
         title="Node"
         subtitle={node.id}
-        level={worstLevel(bySeverity(violationsFor(graph, violations, "node", node.id)))}
+        level={violationLevel(validation, "node", node.id)}
+        action={<NodeIdReset node={node} />}
         onClose={() => useEditorStore.getState().setSelection(null)}
       />
     );
@@ -68,7 +70,7 @@ export function Sidebar({ graph }: { graph: ApplicationGraph }) {
       <PanelTitle
         title="Edge"
         subtitle={edge.id}
-        level={worstLevel(bySeverity(violationsFor(graph, violations, "edge", edge.id)))}
+        level={violationLevel(validation, "edge", edge.id)}
         onClose={() => useEditorStore.getState().setSelection(null)}
       />
     );
@@ -195,22 +197,35 @@ function Tab({
   );
 }
 
-function worstLevel({ errors, warnings }: { errors: unknown[]; warnings: unknown[] }) {
-  if (errors.length > 0) {
-    return "error" as const;
+/** The worse of the levels the element's violations carry, null when it has none. */
+function violationLevel(
+  validation: ValidationSnapshot | null,
+  kind: "node" | "edge",
+  id: string,
+): "error" | "warning" | null {
+  if (validation === null) {
+    return null;
   }
-  return warnings.length > 0 ? ("warning" as const) : null;
+  const { errors, warnings } = bySeverity(
+    violationsFor(validation.graph, validation.violations, kind, id),
+  );
+  if (errors.length > 0) {
+    return "error";
+  }
+  return warnings.length > 0 ? "warning" : null;
 }
 
 function PanelTitle({
   title,
   subtitle,
   level,
+  action,
   onClose,
 }: {
   title: string;
   subtitle?: string;
   level?: "error" | "warning" | null;
+  action?: ReactNode;
   onClose: () => void;
 }) {
   return (
@@ -223,6 +238,7 @@ function PanelTitle({
       )}
       {level === "error" && <XCircle size={13} className="shrink-0 text-red-600" />}
       {level === "warning" && <AlertTriangle size={13} className="shrink-0 text-amber-600" />}
+      {action}
       <div className="grow" />
       <CloseButton label={`Close ${title.toLowerCase()} panel`} onClick={onClose} />
     </div>
