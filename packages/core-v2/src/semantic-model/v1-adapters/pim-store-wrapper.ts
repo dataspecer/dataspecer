@@ -5,6 +5,8 @@ import { Entity } from "../../entity-model/entity.ts";
 import { InMemoryEntityModel } from "../../entity-model/in-memory-entity-model.ts";
 import { transformCoreResources } from "./transform-core-resources.ts";
 import { RDFS_MODEL } from "../../model/known-models.ts";
+import type { ModelIdentifier } from "@dataspecer/core/model";
+import { buildPimResources } from "./transform-semantic-to-pim.ts";
 
 export class PimStoreWrapper extends InMemoryEntityModel {
     private pimStore: CoreResourceReader;
@@ -88,6 +90,15 @@ export function serializationToPimModelEntities(serialization: object): {
     type: [],
   } satisfies Entity;
 
+  if (!mainEntity.label || Object.keys(mainEntity.label).length === 0) {
+    mainEntity.label = {};
+    if (mainEntity.alias) {
+      mainEntity.label.en = mainEntity.alias;
+    }
+  }
+
+  delete mainEntity.alias;
+
   const entities = {
     ...adapter.getEntities(),
     [mainEntity.id]: mainEntity,
@@ -96,5 +107,25 @@ export function serializationToPimModelEntities(serialization: object): {
   return {
     entities,
     adapter,
+  };
+}
+
+/**
+ * Serializes the RDFS (PIM store wrapper) model. Inverse of
+ * {@link serializationToPimModelEntities}.
+ */
+export function rdfsModelToSerialization(modelId: ModelIdentifier, entities: EntityRecord): unknown {
+  const mainEntity = entities[modelId];
+  const mainEntityMetadata: Partial<typeof mainEntity> = {
+    ...mainEntity,
+  };
+  delete mainEntityMetadata.id;
+  delete mainEntityMetadata.type;
+
+  return {
+    ...mainEntityMetadata,
+    type: RDFS_MODEL,
+    id: modelId,
+    pimStore: { resources: buildPimResources(entities, modelId) },
   };
 }
