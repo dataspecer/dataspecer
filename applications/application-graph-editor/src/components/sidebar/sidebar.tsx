@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef, useState, type PointerEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from "react";
 import { clamp } from "es-toolkit";
-import { AlertTriangle, ChevronsLeft, XCircle } from "lucide-react";
+import { AlertTriangle, ChevronsLeft, X, XCircle } from "lucide-react";
 import type { ApplicationGraph } from "@dataspecer/app-generator/graph";
 import { useEditorStore, type SidebarTab } from "../../store.ts";
-import { bySeverity, combinedViolations } from "../../validation/violations.ts";
+import { useViolations } from "../../hooks/use-violations.ts";
+import { bySeverity, violationsFor } from "../../validation/violations.ts";
 import { EdgeForm } from "./edge-form.tsx";
 import { JsonPanel } from "./json-panel.tsx";
 import { NodeForm } from "./node-form.tsx";
@@ -11,8 +12,14 @@ import { ProblemsPanel } from "./problems-panel.tsx";
 import { SettingsForm } from "./settings-form.tsx";
 
 const MIN_WIDTH = 280;
-const MAX_WIDTH = 640;
-const DEFAULT_WIDTH = 384;
+
+function defaultWidth(): number {
+  return clamp(Math.round(window.innerWidth * 0.22), 320, 720);
+}
+
+function maximumWidth(): number {
+  return Math.max(MIN_WIDTH, Math.round(window.innerWidth / 2));
+}
 
 /**
  * The resizable/collapsible right side panel. A selected node or edge shows its property form, the settings menu entry
@@ -23,8 +30,7 @@ export function Sidebar({ graph }: { graph: ApplicationGraph }) {
   const selection = useEditorStore((state) => state.selection);
   const settingsOpen = useEditorStore((state) => state.settingsOpen);
   const sidebarTab = useEditorStore((state) => state.sidebarTab);
-  const semanticValidation = useEditorStore((state) => state.semanticValidation);
-  const [width, setWidth] = useState(DEFAULT_WIDTH);
+  const [width, setWidth] = useState(defaultWidth);
 
   const lastTab = useRef<Exclude<SidebarTab, null>>("json");
   useEffect(() => {
@@ -33,10 +39,8 @@ export function Sidebar({ graph }: { graph: ApplicationGraph }) {
     }
   }, [sidebarTab]);
 
-  const { errors, warnings } = useMemo(
-    () => bySeverity(combinedViolations(graph, semanticValidation)),
-    [graph, semanticValidation],
-  );
+  const violations = useViolations(graph);
+  const { errors, warnings } = bySeverity(violations);
 
   const node =
     selection?.kind === "node"
@@ -50,10 +54,24 @@ export function Sidebar({ graph }: { graph: ApplicationGraph }) {
   let header: ReactNode;
   let content: ReactNode;
   if (node) {
-    header = <PanelTitle title="Node" onClose={() => useEditorStore.getState().setSelection(null)} />;
+    header = (
+      <PanelTitle
+        title="Node"
+        subtitle={node.id}
+        level={worstLevel(bySeverity(violationsFor(graph, violations, "node", node.id)))}
+        onClose={() => useEditorStore.getState().setSelection(null)}
+      />
+    );
     content = <FormScroll>{<NodeForm node={node} />}</FormScroll>;
   } else if (edge) {
-    header = <PanelTitle title="Edge" onClose={() => useEditorStore.getState().setSelection(null)} />;
+    header = (
+      <PanelTitle
+        title="Edge"
+        subtitle={edge.id}
+        level={worstLevel(bySeverity(violationsFor(graph, violations, "edge", edge.id)))}
+        onClose={() => useEditorStore.getState().setSelection(null)}
+      />
+    );
     content = <FormScroll>{<EdgeForm edge={edge} />}</FormScroll>;
   } else if (settingsOpen) {
     header = (
@@ -121,7 +139,7 @@ function ResizeHandle({
     const handle = event.currentTarget;
     handle.setPointerCapture(event.pointerId);
     const onMove = (move: globalThis.PointerEvent) => {
-      onWidthChange(clamp(startWidth + (startX - move.clientX), MIN_WIDTH, MAX_WIDTH));
+      onWidthChange(clamp(startWidth + (startX - move.clientX), MIN_WIDTH, maximumWidth()));
     };
     const onUp = () => {
       handle.removeEventListener("pointermove", onMove);
@@ -177,10 +195,35 @@ function Tab({
   );
 }
 
-function PanelTitle({ title, onClose }: { title: string; onClose: () => void }) {
+function worstLevel({ errors, warnings }: { errors: unknown[]; warnings: unknown[] }) {
+  if (errors.length > 0) {
+    return "error" as const;
+  }
+  return warnings.length > 0 ? ("warning" as const) : null;
+}
+
+function PanelTitle({
+  title,
+  subtitle,
+  level,
+  onClose,
+}: {
+  title: string;
+  subtitle?: string;
+  level?: "error" | "warning" | null;
+  onClose: () => void;
+}) {
   return (
-    <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2">
-      <span className="text-sm font-semibold text-slate-700">{title}</span>
+    <div className="flex items-center gap-2 border-b border-slate-200 px-3 py-2">
+      <span className="shrink-0 text-sm font-semibold text-slate-700">{title}</span>
+      {subtitle && (
+        <span className="truncate text-xs text-slate-500" title={subtitle}>
+          {subtitle}
+        </span>
+      )}
+      {level === "error" && <XCircle size={13} className="shrink-0 text-red-600" />}
+      {level === "warning" && <AlertTriangle size={13} className="shrink-0 text-amber-600" />}
+      <div className="grow" />
       <CloseButton label={`Close ${title.toLowerCase()} panel`} onClick={onClose} />
     </div>
   );
@@ -190,11 +233,11 @@ function CloseButton({ label, onClick }: { label: string; onClick: () => void })
   return (
     <button
       type="button"
-      className="rounded px-2 text-slate-500 hover:bg-slate-100"
+      className="rounded p-1 text-slate-500 hover:bg-slate-100"
       onClick={onClick}
       aria-label={label}
     >
-      ×
+      <X size={14} />
     </button>
   );
 }

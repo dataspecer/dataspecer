@@ -1,35 +1,47 @@
-import {
-  EdgeType,
-  isValidRedirectOperation,
-  isValidTransitionOperation,
-  type ApplicationEdge,
-} from "@dataspecer/app-generator/graph";
+import { ArrowRight } from "lucide-react";
+import { EdgeType, type ApplicationEdge } from "@dataspecer/app-generator/graph";
 import { useEditorStore } from "../../store.ts";
+import { ElementViolations } from "./element-violations.tsx";
 import { FormField, inputClass } from "./form-field.tsx";
+
+function NodeLink({ id }: { id: string }) {
+  const select = () => {
+    const store = useEditorStore.getState();
+    store.setSelection({ kind: "node", id });
+    store.requestFocus(id);
+  };
+
+  return (
+    <button
+      type="button"
+      className="min-w-0 cursor-pointer truncate rounded px-1 text-slate-700 hover:bg-slate-100 hover:underline"
+      onClick={select}
+      title={id}
+    >
+      {id}
+    </button>
+  );
+}
 
 export function EdgeForm({ edge }: { edge: ApplicationEdge }) {
   const graph = useEditorStore((state) => state.graph);
   const updateEdge = useEditorStore((state) => state.updateEdge);
   const removeEdge = useEditorStore((state) => state.removeEdge);
 
-  const source = graph?.nodes.find((node) => node.id === edge.source);
-  const target = graph?.nodes.find((node) => node.id === edge.target);
-
-  const operationPairValid =
-    source && target
-      ? edge.type === EdgeType.Redirect
-        ? isValidRedirectOperation(source.operation, target.operation)
-        : isValidTransitionOperation(source.operation, target.operation)
-      : true;
-
   return (
     <div className="flex flex-col gap-3 p-3">
-      <div className="text-xs text-slate-400">{edge.id}</div>
-      <div className="text-xs text-slate-700">
-        {edge.source} → {edge.target}
-      </div>
+      <FormField label="Connected nodes" hint="Click to open a node." asLabel={false}>
+        <div className="flex items-center gap-1 text-xs">
+          <NodeLink id={edge.source} />
+          <ArrowRight size={12} className="shrink-0 text-slate-400" />
+          <NodeLink id={edge.target} />
+        </div>
+      </FormField>
 
-      <FormField label="Type">
+      <FormField
+        label="Type"
+        hint="A transition adds a control the user clicks. A redirect opens the target on its own once the source operation succeeds."
+      >
         <select
           className={inputClass}
           value={edge.type}
@@ -38,18 +50,7 @@ export function EdgeForm({ edge }: { edge: ApplicationEdge }) {
           <option value={EdgeType.Transition}>transition</option>
           <option value={EdgeType.Redirect}>redirect</option>
         </select>
-        <p className="mt-1 text-xs text-slate-400">
-          {edge.type === EdgeType.Redirect
-            ? "goes to the target after the source succeeds"
-            : "adds a link to the target on the source page"}
-        </p>
       </FormField>
-
-      {!operationPairValid && source && target && (
-        <p className="rounded border border-amber-300 bg-amber-50 px-2 py-1 text-xs text-amber-800">
-          A {edge.type} from {source.operation} to {target.operation} is not valid.
-        </p>
-      )}
 
       <button
         type="button"
@@ -58,6 +59,8 @@ export function EdgeForm({ edge }: { edge: ApplicationEdge }) {
       >
         Delete edge
       </button>
+
+      {graph && <ElementViolations graph={graph} kind="edge" id={edge.id} />}
     </div>
   );
 }

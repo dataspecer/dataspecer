@@ -1,10 +1,13 @@
 import { DatasourceType, type ApplicationGraph } from "@dataspecer/app-generator/graph";
 import { useEditorStore } from "../../store.ts";
+import { specificationLink } from "../../utils/specification-links.ts";
+import { ExternalLink } from "../external-link.tsx";
 import { FormField, inputClass } from "./form-field.tsx";
 
 export function SettingsForm({ graph }: { graph: ApplicationGraph }) {
   const updateGraphMeta = useEditorStore((state) => state.updateGraphMeta);
   const datasource = graph.datasources[0] ?? { id: "", type: DatasourceType.Rdf, endpoint: "" };
+  const specification = specificationLink(graph.dataSpecificationIri);
 
   return (
     <div className="flex flex-col gap-3 p-3">
@@ -16,12 +19,15 @@ export function SettingsForm({ graph }: { graph: ApplicationGraph }) {
         />
       </FormField>
 
-      <FormField label="Data specification IRI">
-        <input
-          className={inputClass}
-          value={graph.dataSpecificationIri}
-          onChange={(event) => updateGraphMeta({ dataSpecificationIri: event.target.value })}
-        />
+      <FormField
+        label="Data specification"
+        hint="Pinned to the package that holds this graph."
+        asLabel={false}
+        action={specification && <ExternalLink href={specification} label="Open the specification" />}
+      >
+        <p className="truncate text-xs text-slate-500" title={graph.dataSpecificationIri}>
+          {graph.dataSpecificationIri}
+        </p>
       </FormField>
 
       <FormField label="Datasource id">

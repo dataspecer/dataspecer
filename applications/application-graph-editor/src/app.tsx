@@ -70,7 +70,7 @@ export function App() {
   }, [dataSpecificationIri]);
 
   if (loadState === "loading") {
-    return <Centered>Loading application graph…</Centered>;
+    return <Centered>Loading application graph...</Centered>;
   }
   if (loadState === "error" || graph === null) {
     return <Centered>{loadError ?? "Failed to load the application graph."}</Centered>;

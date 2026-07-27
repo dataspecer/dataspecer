@@ -11,6 +11,10 @@ import {
 import { omit } from "es-toolkit";
 import { nextNodeId } from "../../graph/mutations.ts";
 import { useEditorStore } from "../../store.ts";
+import { aggregateLink } from "../../utils/specification-links.ts";
+import { ExternalLink } from "../external-link.tsx";
+import { Hint } from "../hint.tsx";
+import { ElementViolations } from "./element-violations.tsx";
 import { FormField, inputClass } from "./form-field.tsx";
 
 const OPERATIONS = [
@@ -48,12 +52,14 @@ function normalizeConfig(config: ApplicationNodeConfig): ApplicationNodeConfig |
 }
 
 export function NodeForm({ node }: { node: ApplicationNode }) {
+  const graph = useEditorStore((state) => state.graph);
   const metadata = useEditorStore((state) => state.metadata);
   const updateNode = useEditorStore((state) => state.updateNode);
   const renameNode = useEditorStore((state) => state.renameNode);
   const removeNode = useEditorStore((state) => state.removeNode);
 
   const aggregate = metadata?.aggregates.find((entry) => entry.iri === node.aggregateIri);
+  const link = graph ? aggregateLink(graph.dataSpecificationIri, node.aggregateIri) : null;
 
   const patchConfig = (patch: Partial<ApplicationNodeConfig>) => {
     updateNode(node.id, { config: normalizeConfig({ ...node.config, ...patch }) });
@@ -105,16 +111,21 @@ export function NodeForm({ node }: { node: ApplicationNode }) {
 
   return (
     <div className="flex flex-col gap-3 p-3">
-      <div className="text-xs text-slate-400">{node.id}</div>
 
-      <FormField label="Aggregate">
+      <FormField
+        label="Aggregate"
+        hint="Data structure this page works with."
+        action={
+          link && <ExternalLink href={link} label="Open the structure in the specification editor" />
+        }
+      >
         {metadata ? (
           <select
             className={inputClass}
             value={node.aggregateIri}
             onChange={(event) => changeAggregate(event.target.value)}
           >
-            {!aggregate && <option value={node.aggregateIri}>{node.aggregateIri || "…"}</option>}
+            {!aggregate && <option value={node.aggregateIri}>{node.aggregateIri || "..."}</option>}
             {metadata.aggregates.map((entry) => (
               <option key={entry.iri} value={entry.iri}>
                 {entry.name}
@@ -130,7 +141,7 @@ export function NodeForm({ node }: { node: ApplicationNode }) {
         )}
       </FormField>
 
-      <FormField label="Operation">
+      <FormField label="Operation" hint="What the page does with the aggregate.">
         <select
           className={inputClass}
           value={node.operation}
@@ -144,7 +155,7 @@ export function NodeForm({ node }: { node: ApplicationNode }) {
         </select>
       </FormField>
 
-      <FormField label="Page title">
+      <FormField label="Page title" hint="Heading of the generated page.">
         <input
           className={inputClass}
           value={node.config?.pageTitle ?? ""}
@@ -166,6 +177,8 @@ export function NodeForm({ node }: { node: ApplicationNode }) {
       >
         Delete node
       </button>
+
+      {graph && <ElementViolations graph={graph} kind="node" id={node.id} />}
     </div>
   );
 }
@@ -184,8 +197,11 @@ function AssociationEditor({ node, aggregate, onPatch }: ConfigEditorProps) {
   const current = node.config?.associations ?? {};
 
   return (
-    <fieldset>
-      <legend className="mb-1 text-xs font-medium text-slate-500">Association kinds</legend>
+    <fieldset className="min-w-0">
+      <legend className="mb-1 flex items-center gap-1 text-xs font-medium text-slate-500">
+          Association kinds
+          <Hint text="A composition is part of this entity: it is created, edited and deleted with it. An aggregation exists on its own and is only referenced." />
+        </legend>
       <div className="flex flex-col gap-1">
         {paths.map((path) => (
           <div key={path} className="flex items-center gap-2">
@@ -223,8 +239,11 @@ function CascadeEditor({ node, aggregate, onPatch }: ConfigEditorProps) {
   const current = node.config?.delete ?? {};
 
   return (
-    <fieldset>
-      <legend className="mb-1 text-xs font-medium text-slate-500">Cascade delete</legend>
+    <fieldset className="min-w-0">
+      <legend className="mb-1 flex items-center gap-1 text-xs font-medium text-slate-500">
+        Cascade delete
+        <Hint text="Deleting this entity also deletes the entities on the checked paths. Only compositions can cascade, an aggregation may have other owners." />
+      </legend>
       <div className="flex flex-col gap-1">
         {paths.map((path) => (
           <label key={path} className="flex items-center gap-2 text-xs text-slate-700">

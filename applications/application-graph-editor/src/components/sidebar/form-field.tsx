@@ -1,13 +1,38 @@
 import type { ReactNode } from "react";
+import { Hint } from "../hint.tsx";
 
 export const inputClass =
   "w-full rounded border border-slate-300 bg-white px-2 py-1 text-sm text-slate-800";
 
-export function FormField({ label, children }: { label: string; children: ReactNode }) {
+export function FormField({
+  label,
+  hint,
+  action,
+  asLabel = true,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  /** Rendered at the end of the label row, for example a link to the source of the value. */
+  action?: ReactNode;
+  asLabel?: boolean;
+  children: ReactNode;
+}) {
+  const Wrapper = asLabel ? "label" : "div";
+
   return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-medium text-slate-500">{label}</span>
+    <Wrapper className="block">
+      <span className="mb-1 flex items-center gap-1 text-xs font-medium text-slate-500">
+        {label}
+        {hint && <Hint text={hint} />}
+        {action && (
+          <>
+            <span className="grow" />
+            {action}
+          </>
+        )}
+      </span>
       {children}
-    </label>
+    </Wrapper>
   );
 }
