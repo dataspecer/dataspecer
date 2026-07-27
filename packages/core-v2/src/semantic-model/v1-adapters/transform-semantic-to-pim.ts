@@ -36,6 +36,8 @@ export function buildPimResources(entities: EntityRecord, modelId: string): Reco
         pimRegex: null,
         pimExample: null,
         pimObjectExample: null,
+        pimHumanLabelProperty: cls.nameProperty ?? null,
+        pimHumanDescriptionProperty: cls.descriptionProperty ?? null,
       };
       pimClasses[cls.id] = pimClass;
       result[cls.id] = pimClass;
@@ -80,6 +82,8 @@ export function buildPimResources(entities: EntityRecord, modelId: string): Reco
           pimLanguageStringRequiredLanguages: [],
           pimRegex: null,
           pimExample: null,
+          pimHumanLabelProperty: rightEnd.nameProperty ?? null,
+          pimHumanDescriptionProperty: rightEnd.descriptionProperty ?? null,
         };
       } else {
         // Association: both ends point to classes
@@ -96,6 +100,8 @@ export function buildPimResources(entities: EntityRecord, modelId: string): Reco
           pimPart: leftEnd?.concept ?? null,
           pimCardinalityMin: leftEnd?.cardinality?.[0] ?? null,
           pimCardinalityMax: leftEnd?.cardinality?.[1] ?? null,
+          pimHumanLabelProperty: leftEnd?.nameProperty ?? null,
+          pimHumanDescriptionProperty: leftEnd?.descriptionProperty ?? null,
         };
 
         result[rightEndIri] = {
@@ -108,6 +114,8 @@ export function buildPimResources(entities: EntityRecord, modelId: string): Reco
           pimPart: rightEnd?.concept ?? null,
           pimCardinalityMin: rightEnd?.cardinality?.[0] ?? null,
           pimCardinalityMax: rightEnd?.cardinality?.[1] ?? null,
+          pimHumanLabelProperty: rightEnd?.nameProperty ?? null,
+          pimHumanDescriptionProperty: rightEnd?.descriptionProperty ?? null,
         };
 
         result[rel.id] = {
@@ -119,6 +127,8 @@ export function buildPimResources(entities: EntityRecord, modelId: string): Reco
           pimHumanDescription: emptyToNull(rel.description),
           pimEnd: [leftEndIri, rightEndIri],
           pimIsOriented: false,
+          pimHumanLabelProperty: rel.nameProperty ?? null,
+          pimHumanDescriptionProperty: rel.descriptionProperty ?? null,
         };
       }
     }

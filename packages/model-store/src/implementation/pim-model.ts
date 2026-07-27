@@ -1,9 +1,8 @@
 import type { PackageService } from "@dataspecer/core-v2/project";
-import { createRdfsModel } from "@dataspecer/core-v2/semantic-model/simplified";
-import { PimStoreWrapper, serializationToPimModelEntities, buildPimResources } from "@dataspecer/core-v2/semantic-model/v1-adapters";
 import { applyOperationsToSemanticModel } from "@dataspecer/core-v2/semantic-model";
-import { RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
 import type { LanguageString } from "@dataspecer/core-v2/semantic-model/concepts";
+import { createRdfsModel } from "@dataspecer/core-v2/semantic-model/simplified";
+import { PimStoreWrapper, serializationToPimModelEntities } from "@dataspecer/core-v2/semantic-model/v1-adapters";
 import type { Entity, EntityRecord } from "@dataspecer/core/entity-model";
 import { diffEntities } from "@dataspecer/core/entity-model";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
@@ -126,26 +125,6 @@ export class PimModelInModelStore extends BaseModelInModelStore implements Model
 
     return [createSetEntityOperation(mainEntity)];
   }
-}
-
-/**
- * Serializes the RDFS (PIM store wrapper) model. Inverse of
- * {@link serializationToPimModelEntities}.
- */
-export function pimModelEntitiesToSerialization(modelId: ModelIdentifier, entities: EntityRecord): unknown {
-  const mainEntity = entities[modelId];
-  const mainEntityMetadata: Partial<typeof mainEntity> = {
-    ...mainEntity,
-  };
-  delete mainEntityMetadata.id;
-  delete mainEntityMetadata.type;
-
-  return {
-    ...mainEntityMetadata,
-    type: RDFS_MODEL,
-    id: modelId,
-    pimStore: { resources: buildPimResources(entities, modelId) },
-  };
 }
 
 export function createPimModel(
