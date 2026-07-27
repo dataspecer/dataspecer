@@ -3,6 +3,7 @@ import {
   Background,
   ConnectionMode,
   Controls,
+  MiniMap,
   ReactFlow,
   useEdgesState,
   useNodesState,
@@ -23,7 +24,7 @@ import {
 import { nextEdgeId } from "../graph/mutations.ts";
 import { newNode } from "../graph/new-node.ts";
 import { useEditorStore } from "../store.ts";
-import { useViolations } from "../hooks/use-violations.ts";
+import { useValidation } from "../hooks/use-validation.ts";
 import { flaggedIds } from "../validation/violations.ts";
 import {
   CanvasContextMenu,
@@ -32,8 +33,9 @@ import {
 import { CanvasToolbar } from "./canvas-toolbar.tsx";
 import { ConnectionLine } from "./connection-line.tsx";
 import { FloatingEdge } from "./floating-edge.tsx";
-import { graphToFlow, type OperationFlowNode } from "./graph-to-flow.ts";
+import { projectEdges, projectNodes, type OperationFlowNode } from "./graph-to-flow.ts";
 import { OperationNode } from "./operation-node.tsx";
+import { OPERATION_FILL } from "./operation-style.ts";
 
 const nodeTypes = { operation: OperationNode };
 const edgeTypes = { floating: FloatingEdge };
@@ -42,6 +44,7 @@ export function Canvas() {
   const graph = useEditorStore((state) => state.graph);
   const positions = useEditorStore((state) => state.positions);
   const selection = useEditorStore((state) => state.selection);
+  const highlight = useEditorStore((state) => state.highlight);
 
   const [nodes, setNodes, onNodesChange] = useNodesState<OperationFlowNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -50,23 +53,25 @@ export function Canvas() {
   // the instance turns a drop point into canvas coordinates
   const flowRef = useRef<ReactFlowInstance<OperationFlowNode, Edge>>(undefined);
 
-  const violations = useViolations(graph);
+  const validation = useValidation();
+  // flags are keyed by ID, so a snapshot from the previous keystroke still lines up
   const flagged = useMemo(
     () =>
-      graph === null
+      validation === null
         ? { nodes: new Map(), edges: new Map() }
-        : flaggedIds(graph, violations),
-    [graph, violations],
+        : flaggedIds(validation.graph, validation.violations),
+    [validation],
   );
 
   useEffect(() => {
     if (graph === null) {
       return;
     }
-    const flow = graphToFlow(graph, positions, flagged, selection);
-    setNodes(flow.nodes);
-    setEdges(flow.edges);
-  }, [graph, positions, selection, flagged, setNodes, setEdges]);
+    // the projection reads what React Flow currently holds, so unchanged nodes keep the objects
+    // carrying their measured sizes
+    setNodes((current) => projectNodes(graph, positions, flagged, selection, highlight, current));
+    setEdges((current) => projectEdges(graph, flagged, selection, highlight, current));
+  }, [graph, positions, selection, highlight, flagged, setNodes, setEdges]);
 
   const onNodeDragStop = useCallback((_event: unknown, node: Node) => {
     useEditorStore.getState().setNodePosition(node.id, node.position);
@@ -152,6 +157,8 @@ export function Canvas() {
         connectionMode={ConnectionMode.Loose}
         connectionRadius={36}
         fitView
+        // the default lower bound of 0.5 cannot fit a spread out graph into the pane
+        minZoom={0.2}
         deleteKeyCode={["Backspace", "Delete"]}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
@@ -174,6 +181,7 @@ export function Canvas() {
       >
         <Background />
         <Controls showInteractive={false} />
+        <MiniMap pannable zoomable nodeColor={minimapNodeColor} className="!bottom-2 !right-2" />
         <CanvasToolbar />
         <FocusHandler />
       </ReactFlow>
@@ -224,4 +232,9 @@ function edgeTypeFor(
     return EdgeType.Redirect;
   }
   return EdgeType.Transition;
+}
+
+/** Operation colors for the minimap, so the shape of the graph stays recognizable. */
+function minimapNodeColor(node: OperationFlowNode): string {
+  return OPERATION_FILL[node.data.node.operation];
 }

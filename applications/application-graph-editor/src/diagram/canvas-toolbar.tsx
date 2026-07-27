@@ -8,15 +8,15 @@ import { applyGraphJson } from "../graph/apply-json.ts";
 import { exportFileName } from "../graph/file-names.ts";
 import { newNode } from "../graph/new-node.ts";
 import { useEditorStore } from "../store.ts";
-import { autoLayout, type LayoutDirection } from "./auto-layout.ts";
+import { autoLayout, type LayoutOptions } from "./auto-layout.ts";
 
 export function CanvasToolbar() {
   const { undo, redo, pastStates, futureStates } = useStore(useEditorStore.temporal);
   const importInput = useRef<HTMLInputElement>(null);
 
   const importFile = async (file: File) => {
-    const problem = await applyGraphJson(await file.text());
-    useEditorStore.getState().setActionError(problem && `Import failed: ${problem}`);
+    const { error } = await applyGraphJson(await file.text());
+    useEditorStore.getState().setActionError(error && `Import failed: ${error}`);
   };
 
   const exportGraph = () => {
@@ -40,10 +40,10 @@ export function CanvasToolbar() {
       .addNode(newNode(graph, metadata), { x: 60 + offset, y: 60 + offset });
   };
 
-  const relayout = async (direction: LayoutDirection) => {
+  const relayout = async (options: LayoutOptions) => {
     const { graph, setAllPositions } = useEditorStore.getState();
     if (graph !== null) {
-      setAllPositions(await autoLayout(graph, direction));
+      setAllPositions(await autoLayout(graph, options));
     }
   };
 
@@ -93,8 +93,14 @@ export function CanvasToolbar() {
             sideOffset={4}
             className="min-w-36 rounded border border-slate-200 bg-white py-1 shadow-md"
           >
-            <MenuItem onSelect={() => void relayout("DOWN")}>Top to bottom</MenuItem>
-            <MenuItem onSelect={() => void relayout("RIGHT")}>Left to right</MenuItem>
+            <MenuItem onSelect={() => void relayout({ algorithm: "stress" })}>Organic</MenuItem>
+            <DropdownMenu.Separator className="my-1 border-t border-slate-100" />
+            <MenuItem onSelect={() => void relayout({ algorithm: "layered", direction: "DOWN" })}>
+              Top to bottom
+            </MenuItem>
+            <MenuItem onSelect={() => void relayout({ algorithm: "layered", direction: "RIGHT" })}>
+              Left to right
+            </MenuItem>
           </DropdownMenu.Content>
         </DropdownMenu.Portal>
       </DropdownMenu.Root>

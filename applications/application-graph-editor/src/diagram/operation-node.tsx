@@ -1,24 +1,8 @@
 import type { CSSProperties } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
-import { Operation } from "@dataspecer/app-generator/graph";
 import { useEditorStore } from "../store.ts";
+import { OPERATION_BADGE, OPERATION_LABELS } from "./operation-style.ts";
 import type { OperationFlowNode } from "./graph-to-flow.ts";
-
-const OPERATION_LABELS: Record<Operation, string> = {
-  [Operation.Create]: "Create",
-  [Operation.ReadList]: "Read (list)",
-  [Operation.ReadDetail]: "Read (detail)",
-  [Operation.Update]: "Edit",
-  [Operation.Delete]: "Delete",
-};
-
-const OPERATION_COLORS: Record<Operation, string> = {
-  [Operation.Create]: "bg-green-100 text-green-800",
-  [Operation.ReadList]: "bg-sky-100 text-sky-800",
-  [Operation.ReadDetail]: "bg-sky-100 text-sky-800",
-  [Operation.Update]: "bg-amber-100 text-amber-800",
-  [Operation.Delete]: "bg-red-100 text-red-800",
-};
 
 const VIOLATION_BORDER = {
   error: "border-red-500 bg-red-50",
@@ -31,7 +15,7 @@ const VIOLATION_BORDER = {
  * violations point are highlighted.
  */
 export function OperationNode(props: NodeProps<OperationFlowNode>) {
-  const { node, violation } = props.data;
+  const { node, violation, highlighted } = props.data;
   const aggregateName = useEditorStore(
     (state) =>
       state.metadata?.aggregates.find((entry) => entry.iri === node.aggregateIri)?.name,
@@ -43,7 +27,7 @@ export function OperationNode(props: NodeProps<OperationFlowNode>) {
     <div
       className={`w-60 rounded-md border px-3 py-2 shadow-sm ${
         violation ? VIOLATION_BORDER[violation] : "border-sky-300 bg-sky-50"
-      } ${props.selected ? "ring-2 ring-blue-500" : ""}`}
+      } ${props.selected || highlighted ? "ring-2 ring-blue-500" : ""}`}
     >
       {BORDER_HANDLES.map(({ id, position }) => (
         <Handle key={id} id={id} type="source" position={position} style={borderHandleStyle(id)} />
@@ -51,7 +35,7 @@ export function OperationNode(props: NodeProps<OperationFlowNode>) {
       <div className="truncate text-sm font-semibold text-slate-800">{title}</div>
       <div className="mt-1 flex items-center gap-2">
         <span
-          className={`shrink-0 rounded px-1.5 py-0.5 text-xs font-medium ${OPERATION_COLORS[node.operation]}`}
+          className={`shrink-0 rounded px-1.5 py-0.5 text-xs font-medium ${OPERATION_BADGE[node.operation]}`}
         >
           {OPERATION_LABELS[node.operation]}
         </span>
