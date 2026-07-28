@@ -1,4 +1,4 @@
-import type { Entity, EntityRecord } from "@dataspecer/core/entity-model";
+import { type Entity, type EntityRecord } from "@dataspecer/core/entity-model";
 import { type VisualEntity } from "./concepts/visual-entity.ts";
 
 /**
@@ -43,7 +43,7 @@ export function visualModelEntitiesToSerialization(entities: EntityRecord): unkn
     identifier: "todo",
     version: 2,
     type: "http://dataspecer.com/resources/local/visual-model",
-    entities: Object.fromEntries(entityList.map(entity => [entity.id, entity])),
+    entities: entityList,
   };
 }
 
