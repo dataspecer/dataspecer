@@ -1,3 +1,4 @@
+import type { LanguageString } from "@dataspecer/core/core/core-resource";
 import { generateEntityId } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import { generateOperationId, type Operation } from "@dataspecer/core/operation";
@@ -67,6 +68,9 @@ export interface CreateModelOperation extends Operation {
    * Type of the model to create.
    */
   modelType: string;
+
+  label?: LanguageString;
+  description?: LanguageString;
 }
 
 /**
@@ -90,3 +94,49 @@ export function isCreateModelOperation(operation: Operation): operation is Creat
 }
 
 export type ProjectModelStructureOperation = RemoveModelOperation | CreateModelOperation;
+
+/**
+ * @see {@link CreateProjectOperation}
+ */
+export const CreateProjectOperationType = "http://dataspecer.com/project-model/operation/create-project" as const;
+
+/**
+ * Operation that ensures a project exists.
+ *
+ * A project is the unit operations are recorded in, so this one is dispatched
+ * to the project model of a project that does not exist yet, as the first
+ * operation of its history.
+ *
+ * The location of a project is fixed, hence only its identifier is needed.
+ * Metadata such as the label are set by subsequent operations.
+ *
+ * If the project already exists, the operation is ignored, as required by the
+ * {@link Operation} contract.
+ */
+export interface CreateProjectOperation extends Operation {
+  type: typeof CreateProjectOperationType;
+
+  /**
+   * Identifier of the project to be created.
+   */
+  projectId: ModelIdentifier;
+
+  label?: LanguageString;
+  description?: LanguageString;
+}
+
+export function createCreateProjectOperation(projectId: ModelIdentifier): CreateProjectOperation {
+  if (!(typeof projectId === "string" && projectId.length > 0)) {
+    throw new Error("Invalid project identifier.");
+  }
+
+  return {
+    id: generateOperationId(),
+    type: CreateProjectOperationType,
+    projectId,
+  };
+}
+
+export function isCreateProjectOperation(operation: Operation): operation is CreateProjectOperation {
+  return operation.type === CreateProjectOperationType;
+}

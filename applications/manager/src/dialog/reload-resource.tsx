@@ -78,12 +78,14 @@ export const ReloadResource = ({ id, parentId, isOpen, resolve }: ReloadResource
 
     if (result.ok) {
       await requestLoadPackage(parentId, true);
+      // todo: We need proper functionality to obtain project id, this works only for project package and one level subpackages.
+      const projectId = parentId === "http://dataspecer.com/packages/local-root" ? id : parentId;
       toast.success(t("reload-resource.success"));
       resolve(true);
       if (!apply) {
         const data = (await result.json().catch(() => null)) as { evolutionBranchId?: number | null } | null;
         window.location.href =
-          data?.evolutionBranchId != null ? getEvolutionReviewLink(parentId, data.evolutionBranchId) : getHistoryLink(parentId);
+          data?.evolutionBranchId != null ? getEvolutionReviewLink(projectId, data.evolutionBranchId) : getHistoryLink(parentId);
       }
       return;
     }

@@ -2,9 +2,9 @@ import { LOCAL_SEMANTIC_MODEL, V1 } from "@dataspecer/core-v2/model/known-models
 import { BackendPackageService } from "@dataspecer/core-v2/project";
 import type { LanguageString } from "@dataspecer/core/core/core-resource";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
-import type { Entity } from "@dataspecer/core/entity-model";
+import { generateEntityId, type Entity } from "@dataspecer/core/entity-model";
 import { createSetEntityOperation, generateOperationId, type OperationInModel } from "@dataspecer/core/operation";
-import { createCreateModelOperation } from "@dataspecer/project-model";
+import { createCreateModelOperation, createCreateProjectOperation } from "@dataspecer/project-model";
 
 /**
  * Model id the backend uses to address operations that change the project
@@ -18,7 +18,8 @@ const PROJECT_MODEL_ID = "_project_model";
  */
 export class StructureEditorBackendService extends BackendPackageService {
   /**
-   * Default root package id under which all data specifications are created by default.
+   * Root package the service works with. Data specifications are not created
+   * under it, as the location of a project is fixed.
    */
   protected readonly packageRoot: string;
 
@@ -37,24 +38,24 @@ export class StructureEditorBackendService extends BackendPackageService {
    * @returns Data specification ID
    */
   public async createDataSpecification(set: { tags?: string[]; label?: LanguageString } = {}): Promise<string> {
-    // The package itself becomes a new project (its parent is the root
-    // resource), so it cannot be created through operations: a project's
-    // operation history cannot exist before the project does. Everything
-    // created inside it, however, is created through a single transaction.
-    const pckg = await this.createPackage(this.packageRoot, {
-      userMetadata: {
-        tags: set.tags,
-        label: set.label,
-      },
-    });
+    // The project, its models and their content are created by a single
+    // transaction - the first one of the project's own history.
+    const projectId = generateEntityId();
 
     const modelAlias = set?.label?.en ?? set?.label?.cs ?? "";
 
-    const createPim = createCreateModelOperation(pckg.iri, LOCAL_SEMANTIC_MODEL);
-    const createSgov = createCreateModelOperation(pckg.iri, LOCAL_SEMANTIC_MODEL);
-    const createConfiguration = createCreateModelOperation(pckg.iri, V1.GENERATOR_CONFIGURATION);
+    const createProject = createCreateProjectOperation(projectId);
+    createProject.label = set.label;
+
+    const createPim = createCreateModelOperation(projectId, LOCAL_SEMANTIC_MODEL);
+    createPim.label = { en: "Main Application Profile", cs: "Hlavní aplikační profil" };
+    const createSgov = createCreateModelOperation(projectId, LOCAL_SEMANTIC_MODEL);
+    createSgov.label = { en: "SGOV cache", cs: "SGOV cache" };
+    const createConfiguration = createCreateModelOperation(projectId, V1.GENERATOR_CONFIGURATION);
+    createConfiguration.label = { en: "Artifact configuration" };
 
     const operations: OperationInModel[] = [
+      { modelId: PROJECT_MODEL_ID, operation: createProject },
       { modelId: PROJECT_MODEL_ID, operation: createPim },
       { modelId: PROJECT_MODEL_ID, operation: createSgov },
       { modelId: PROJECT_MODEL_ID, operation: createConfiguration },
@@ -83,9 +84,9 @@ export class StructureEditorBackendService extends BackendPackageService {
         }),
       },
       {
-        modelId: pckg.iri,
+        modelId: projectId,
         operation: createSetEntityOperation({
-          id: pckg.iri,
+          id: projectId,
           type: [],
           modelCompositionConfiguration: {
             modelType: "application-profile",
@@ -96,16 +97,17 @@ export class StructureEditorBackendService extends BackendPackageService {
       },
     ];
 
-    await this.applyTransactions(pckg.iri, [{ id: generateOperationId(), operations }]);
+    if (set.tags !== undefined) {
+      // Tags are not part of the create operation, they are set as metadata of
+      // the project in the project model.
+      operations.push({
+        modelId: PROJECT_MODEL_ID,
+        operation: createSetEntityOperation({ id: projectId, type: [], tags: set.tags } as Entity),
+      });
+    }
 
-    // CreateModelOperation carries no metadata, so the resources' labels are
-    // set afterwards through the legacy metadata endpoint.
-    await Promise.all([
-      this.updatePackage(createPim.modelId, { userMetadata: { label: { en: "Main Application Profile", cs: "Hlavní aplikační profil" } } }),
-      this.updatePackage(createSgov.modelId, { userMetadata: { label: { en: "SGOV cache", cs: "SGOV cache" } } }),
-      this.updatePackage(createConfiguration.modelId, { userMetadata: { label: { en: "Artifact configuration" } } }),
-    ]);
+    await this.applyTransactions(projectId, [{ id: generateOperationId(), operations }]);
 
-    return pckg.iri;
+    return projectId;
   }
 }

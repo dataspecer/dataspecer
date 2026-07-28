@@ -40,6 +40,7 @@
     "op": {
       "undo": "Reverted the changes of transaction {{transactionId}}",
       "version": "Marked transaction {{transactionId}} as version {{version}}",
+      "create-project": "Project \"{{name}}\" created",
       "create-model": "Added {{type}} \"{{name}}\" to the project",
       "remove-model": "Removed {{type}} \"{{name}}\" from the project",
       "create-class": "Created class <name />",
