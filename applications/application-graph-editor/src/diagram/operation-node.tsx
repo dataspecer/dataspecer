@@ -35,13 +35,13 @@ export function OperationNode(props: NodeProps<OperationFlowNode>) {
       <div className="truncate text-sm font-semibold text-slate-800">{title}</div>
       <div className="mt-1 flex items-center gap-2">
         <span
-          className={`shrink-0 rounded px-1.5 py-0.5 text-xs font-medium ${OPERATION_BADGE[node.operation]}`}
+          className={`shrink-0 rounded px-1.5 py-0.5 text-sm font-medium ${OPERATION_BADGE[node.operation]}`}
         >
           {OPERATION_LABELS[node.operation]}
         </span>
-        {subtitle && <span className="min-w-0 truncate text-xs text-slate-500">{subtitle}</span>}
+        {subtitle && <span className="min-w-0 truncate text-sm text-slate-500">{subtitle}</span>}
       </div>
-      <div className="mt-1 truncate text-[10px] text-slate-400">{node.id}</div>
+      <div className="mt-1 truncate text-xs text-slate-400">{node.id}</div>
     </div>
   );
 }

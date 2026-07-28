@@ -183,7 +183,11 @@ export const useEditorStore = create<EditorState>()(
       setJsonDraft: (jsonDraft) => set({ jsonDraft }),
       setActionError: (actionError) => set({ actionError }),
       requestConfirm: (question) =>
-        new Promise((resolve) => set({ confirmRequest: { ...question, resolve } })),
+        new Promise((resolve) => {
+          // a replaced question counts as declined, so nothing keeps waiting on it
+          get().confirmRequest?.resolve(false);
+          set({ confirmRequest: { ...question, resolve } });
+        }),
       answerConfirm: (confirmed) => {
         const request = get().confirmRequest;
         set({ confirmRequest: null });

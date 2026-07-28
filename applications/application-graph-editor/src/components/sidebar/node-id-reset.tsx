@@ -40,7 +40,7 @@ export function NodeIdReset({ node }: { node: ApplicationNode }) {
         <Tooltip.Content
           side="bottom"
           align="end"
-          className="max-w-64 rounded border border-slate-200 bg-white px-2 py-1 text-xs font-normal text-slate-600 shadow-md"
+          className="max-w-64 rounded border border-slate-200 bg-white px-2 py-1 text-sm font-normal text-slate-600 shadow-md"
         >
           Reset the ID to &quot;{generated}&quot;. Edges referring to the node will update as well.
           <Tooltip.Arrow className="fill-white" />

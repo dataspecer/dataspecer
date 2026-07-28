@@ -26,7 +26,7 @@ export function ElementViolations({
       {violations.map((violation, index) => (
         <li
           key={index}
-          className={`rounded border px-2 py-1 text-xs ${
+          className={`rounded border px-2 py-1 text-sm ${
             violation.severity === ViolationSeverity.Error
               ? "border-red-200 bg-red-50"
               : "border-amber-200 bg-amber-50"

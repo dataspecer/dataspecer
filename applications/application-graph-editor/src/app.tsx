@@ -94,7 +94,7 @@ function Editor({ graph }: { graph: ApplicationGraph }) {
       {actionError && (
         <button
           type="button"
-          className="border-b border-red-200 bg-red-50 px-4 py-1 text-left text-xs text-red-700"
+          className="border-b border-red-200 bg-red-50 px-4 py-1 text-left text-sm text-red-700"
           title="Dismiss"
           onClick={() => useEditorStore.getState().setActionError(null)}
         >
@@ -104,7 +104,7 @@ function Editor({ graph }: { graph: ApplicationGraph }) {
       {metadataError && (
         <div
           role="alert"
-          className="border-b border-amber-200 bg-amber-50 px-4 py-1 text-xs text-amber-800"
+          className="border-b border-amber-200 bg-amber-50 px-4 py-1 text-sm text-amber-800"
         >
           {metadataError}
         </div>

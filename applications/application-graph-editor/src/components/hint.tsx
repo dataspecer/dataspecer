@@ -14,7 +14,7 @@ export function Hint({ text }: { text: string }) {
         <Tooltip.Content
           side="top"
           align="start"
-          className="max-w-64 rounded border border-slate-200 bg-white px-2 py-1 text-xs font-normal text-slate-600 shadow-md"
+          className="max-w-64 rounded border border-slate-200 bg-white px-2 py-1 text-sm font-normal text-slate-600 shadow-md"
         >
           {text}
           <Tooltip.Arrow className="fill-white" />

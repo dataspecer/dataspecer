@@ -163,7 +163,7 @@ export function NodeForm({ node }: { node: ApplicationNode }) {
 
       <button
         type="button"
-        className="self-start rounded border border-red-300 px-2 py-1 text-xs text-red-700 hover:bg-red-50"
+        className="self-start rounded border border-red-300 px-2 py-1 text-sm text-red-700 hover:bg-red-50"
         onClick={() => removeNode(node.id)}
       >
         Delete node

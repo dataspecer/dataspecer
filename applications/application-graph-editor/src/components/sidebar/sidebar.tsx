@@ -185,7 +185,7 @@ function Tab({
   return (
     <button
       type="button"
-      className={`inline-flex cursor-pointer items-center gap-1 rounded px-2 py-0.5 text-xs ${
+      className={`inline-flex cursor-pointer items-center gap-1 rounded px-2 py-0.5 text-sm ${
         active === tab
           ? "bg-slate-200 font-medium text-slate-800"
           : "text-slate-500 hover:bg-slate-100"
@@ -232,7 +232,7 @@ function PanelTitle({
     <div className="flex items-center gap-2 border-b border-slate-200 px-3 py-2">
       <span className="shrink-0 text-sm font-semibold text-slate-700">{title}</span>
       {subtitle && (
-        <span className="truncate text-xs text-slate-500" title={subtitle}>
+        <span className="truncate text-sm text-slate-500" title={subtitle}>
           {subtitle}
         </span>
       )}

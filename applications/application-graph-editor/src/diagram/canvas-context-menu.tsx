@@ -63,7 +63,7 @@ function EdgeTypeItem({ edgeId }: { edgeId: string }) {
 function Item({ children, onSelect }: { children: ReactNode; onSelect: () => void }) {
   return (
     <ContextMenu.Item
-      className="cursor-default px-3 py-1 text-xs text-slate-700 outline-none data-highlighted:bg-slate-100"
+      className="cursor-default px-3 py-1 text-sm text-slate-700 outline-none data-highlighted:bg-slate-100"
       onSelect={onSelect}
     >
       {children}

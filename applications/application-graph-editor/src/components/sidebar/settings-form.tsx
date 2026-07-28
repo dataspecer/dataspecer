@@ -25,7 +25,7 @@ export function SettingsForm({ graph }: { graph: ApplicationGraph }) {
         asLabel={false}
         action={specification && <ExternalLink href={specification} label="Open the specification" />}
       >
-        <p className="truncate text-xs text-slate-500" title={graph.dataSpecificationIri}>
+        <p className="truncate text-sm text-slate-500" title={graph.dataSpecificationIri}>
           {graph.dataSpecificationIri}
         </p>
       </FormField>

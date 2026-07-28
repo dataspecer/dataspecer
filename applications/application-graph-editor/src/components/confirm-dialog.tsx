@@ -16,11 +16,11 @@ export function ConfirmDialog() {
             <AlertTriangle size={15} className="text-amber-600" />
             {request?.title}
           </Dialog.Title>
-          <Dialog.Description className="mt-2 text-xs text-slate-600">
+          <Dialog.Description className="mt-2 text-sm text-slate-600">
             {request?.message}
           </Dialog.Description>
           {request?.details && (
-            <ul className="mt-3 max-h-56 list-disc overflow-y-auto pl-5 text-xs text-slate-700">
+            <ul className="mt-3 max-h-56 list-disc overflow-y-auto pl-5 text-sm text-slate-700">
               {request.details.map((detail, index) => (
                 <li key={index} className="mb-1">
                   {detail}
@@ -31,14 +31,14 @@ export function ConfirmDialog() {
           <div className="mt-4 flex justify-end gap-2">
             <button
               type="button"
-              className="cursor-pointer rounded border border-slate-300 px-3 py-1 text-xs text-slate-600 hover:bg-slate-100"
+              className="cursor-pointer rounded border border-slate-300 px-3 py-1 text-sm text-slate-600 hover:bg-slate-100"
               onClick={() => answer(false)}
             >
               Cancel
             </button>
             <button
               type="button"
-              className="cursor-pointer rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700"
+              className="cursor-pointer rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700"
               onClick={() => answer(true)}
             >
               {request?.confirmLabel ?? "Continue"}

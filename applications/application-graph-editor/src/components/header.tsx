@@ -72,7 +72,7 @@ export function EditorHeader({ graph, flushAutosave }: EditorHeaderProps) {
       <div className="grow" />
       <button
         type="button"
-        className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-40"
+        className="rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-40"
         onClick={() => void onGenerate()}
         disabled={generating || errors.length > 0}
         title={

@@ -30,7 +30,7 @@ export function EdgeForm({ edge }: { edge: ApplicationEdge }) {
   return (
     <div className="flex flex-col gap-3 p-3">
       <FormField label="Connected nodes" hint="Click to open a node." asLabel={false}>
-        <div className="flex items-center gap-1 text-xs">
+        <div className="flex items-center gap-1 text-sm">
           <NodeLink id={edge.source} />
           <ArrowRight size={12} className="shrink-0 text-slate-400" />
           <NodeLink id={edge.target} />
@@ -53,7 +53,7 @@ export function EdgeForm({ edge }: { edge: ApplicationEdge }) {
 
       <button
         type="button"
-        className="self-start rounded border border-red-300 px-2 py-1 text-xs text-red-700 hover:bg-red-50"
+        className="self-start rounded border border-red-300 px-2 py-1 text-sm text-red-700 hover:bg-red-50"
         onClick={() => removeEdge(edge.id)}
       >
         Delete edge

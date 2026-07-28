@@ -138,15 +138,15 @@ export function JsonPanel({ graph }: { graph: ApplicationGraph }) {
             insertSpaces: true,
             automaticLayout: true,
             scrollBeyondLastLine: false,
-            fontSize: 11,
+            fontSize: 13,
           }}
         />
       </div>
       {error && (
-        <p className="border-t border-slate-200 px-3 py-1 text-xs text-red-700">{error}</p>
+        <p className="border-t border-slate-200 px-3 py-1 text-sm text-red-700">{error}</p>
       )}
       {dirty && stale && (
-        <p className="border-t border-amber-200 bg-amber-50 px-3 py-1 text-xs text-amber-800">
+        <p className="border-t border-amber-200 bg-amber-50 px-3 py-1 text-sm text-amber-800">
           The graph changed since this draft was last modified. Applying it drops those changes.
         </p>
       )}
@@ -154,14 +154,14 @@ export function JsonPanel({ graph }: { graph: ApplicationGraph }) {
         <div className="flex items-center gap-2 border-t border-slate-200 px-3 py-2">
           <button
             type="button"
-            className="cursor-pointer rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700"
+            className="cursor-pointer rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700"
             onClick={apply}
           >
             Apply
           </button>
           <button
             type="button"
-            className="cursor-pointer rounded border border-slate-300 px-2 py-1 text-xs text-slate-600 hover:bg-slate-100"
+            className="cursor-pointer rounded border border-slate-300 px-2 py-1 text-sm text-slate-600 hover:bg-slate-100"
             onClick={() => {
               setDraft(null);
               setError(null);

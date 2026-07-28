@@ -19,7 +19,7 @@ export async function applyGraphJson(jsonText: string): Promise<ApplyGraphResult
     return { applied: false, error: parsed.error };
   }
 
-  const { graph: current, positions, replaceGraph, requestConfirm } = useEditorStore.getState();
+  const { graph: current, requestConfirm } = useEditorStore.getState();
   // Aggregate IRIs belong to one specification, so pointing the graph at another one invalidates
   // every node. The field is not editable in the form, this is the only way to change it.
   if (current !== null && current.dataSpecificationIri !== parsed.graph.dataSpecificationIri) {
@@ -36,6 +36,8 @@ export async function applyGraphJson(jsonText: string): Promise<ApplyGraphResult
     }
   }
 
+  // read once the question is answered, the canvas may have moved on while it was open
+  const { positions, replaceGraph } = useEditorStore.getState();
   const needsLayout = parsed.graph.nodes.some((node) => !positions[node.id]);
   const layout = needsLayout ? await autoLayout(parsed.graph) : {};
   const merged = Object.fromEntries(

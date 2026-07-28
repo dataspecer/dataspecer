@@ -81,7 +81,7 @@ export function CanvasToolbar() {
         <DropdownMenu.Trigger asChild>
           <button
             type="button"
-            className="inline-flex items-center gap-1 rounded border border-slate-300 bg-white px-2 py-1 text-xs text-slate-600 hover:bg-slate-100"
+            className="inline-flex items-center gap-1 rounded border border-slate-300 bg-white px-2 py-1 text-sm text-slate-600 hover:bg-slate-100"
           >
             <Network size={14} /> Layout
             <ChevronDown size={12} />
@@ -141,7 +141,7 @@ export function CanvasToolbar() {
 function MenuItem({ children, onSelect }: { children: string; onSelect: () => void }) {
   return (
     <DropdownMenu.Item
-      className="cursor-default px-3 py-1 text-xs text-slate-700 outline-none data-highlighted:bg-slate-100"
+      className="cursor-default px-3 py-1 text-sm text-slate-700 outline-none data-highlighted:bg-slate-100"
       onSelect={onSelect}
     >
       {children}
@@ -165,7 +165,7 @@ function ToolbarButton({
   return (
     <button
       type="button"
-      className="inline-flex items-center gap-1 rounded border border-slate-300 bg-white px-2 py-1 text-xs text-slate-600 hover:bg-slate-100 disabled:opacity-40"
+      className="inline-flex items-center gap-1 rounded border border-slate-300 bg-white px-2 py-1 text-sm text-slate-600 hover:bg-slate-100 disabled:opacity-40"
       onClick={onClick}
       disabled={disabled}
       title={title}

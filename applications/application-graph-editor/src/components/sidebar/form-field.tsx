@@ -22,7 +22,7 @@ export function FormField({
 
   return (
     <Wrapper className="block">
-      <span className="mb-1 flex items-center gap-1 text-xs font-medium text-slate-500">
+      <span className="mb-1 flex items-center gap-1 text-sm font-medium text-slate-500">
         {label}
         {hint && <Hint text={hint} />}
         {action && (
