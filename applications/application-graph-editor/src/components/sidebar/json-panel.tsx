@@ -5,7 +5,7 @@ import { applicationGraphSchema, type ApplicationGraph } from "@dataspecer/app-g
 import { applyGraphJson } from "../../graph/apply-json.ts";
 import { graphElementAtOffset } from "../../graph/json-cursor.ts";
 import { useEditorStore } from "../../store.ts";
-import { useViolations } from "../../hooks/use-violations.ts";
+import { useValidation } from "../../hooks/use-validation.ts";
 import { violationRanges } from "../../validation/violation-ranges.ts";
 
 const VIOLATION_MARKER_OWNER = "application-graph-violations";
@@ -29,27 +29,26 @@ function configureJsonLanguage(instance: Monaco) {
  */
 export function JsonPanel({ graph }: { graph: ApplicationGraph }) {
   const json = useMemo(() => JSON.stringify(graph, null, 2), [graph]);
-  const [draft, setDraft] = useState(json);
-  const [baseline, setBaseline] = useState(json);
+  // an untouched view follows the graph, an edited draft stays as it is until applied or reset
+  const setDraft = useEditorStore((state) => state.setJsonDraft);
+  const editing = useEditorStore((state) => state.jsonDraft);
+  const draft = editing?.text ?? json;
   const [error, setError] = useState<string | null>(null);
   const editorRef = useRef<{ editor: monaco.editor.IStandaloneCodeEditor; monaco: Monaco }>(null);
   // the editor mounts asynchronously, the marker effect has to run again once it is there
   const [editorMounted, setEditorMounted] = useState(false);
 
-  // render-phase resync: when the graph changes elsewhere, an untouched draft follows it and
-  // an edited draft is kept
-  if (baseline !== json) {
-    setBaseline(json);
-    if (draft === baseline) {
-      setDraft(json);
-      setError(null);
-    }
-  }
   const dirty = draft !== json;
+  // the graph moved on while the draft waited, so applying it drops whatever happened meanwhile
+  const stale = editing !== null && editing.base !== json;
 
-  // violations of the applied graph underline their JSON parts while the view is in sync, an
-  // edited draft has shifted offsets and keeps only the schema diagnostics
-  const violations = useViolations(graph);
+  // Violations underline their JSON parts while the text matches the graph they were computed
+  // from. An edited draft or a graph changed since the last validation has shifted offsets and
+  // keeps only the schema diagnostics
+  const validation = useValidation();
+  const violations = validation?.graph === graph ? validation.violations : null;
+
+  useEffect(() => () => useEditorStore.getState().setHighlight(null), []);
 
   useEffect(() => {
     const mounted = editorRef.current;
@@ -57,62 +56,65 @@ export function JsonPanel({ graph }: { graph: ApplicationGraph }) {
     if (!mounted || !model) {
       return;
     }
-    const markers = dirty
-      ? []
-      : violationRanges(json, violations).map((range) => {
-          const start = model.getPositionAt(range.start);
-          const end = model.getPositionAt(range.end);
-          return {
-            severity: mounted.monaco.MarkerSeverity.Error,
-            message: `${range.code}: ${range.message}`,
-            startLineNumber: start.lineNumber,
-            startColumn: start.column,
-            endLineNumber: end.lineNumber,
-            endColumn: end.column,
-          };
-        });
+    const markers =
+      dirty || violations === null
+        ? []
+        : violationRanges(json, violations).map((range) => {
+            const start = model.getPositionAt(range.start);
+            const end = model.getPositionAt(range.end);
+            return {
+              severity: mounted.monaco.MarkerSeverity.Error,
+              message: `${range.code}: ${range.message}`,
+              startLineNumber: start.lineNumber,
+              startColumn: start.column,
+              endLineNumber: end.lineNumber,
+              endColumn: end.column,
+            };
+          });
     mounted.monaco.editor.setModelMarkers(model, VIOLATION_MARKER_OWNER, markers);
   }, [json, violations, dirty, editorMounted]);
 
-  const focusGraphElement = (text: string, offset: number) => {
+  // the ID comes from the text, which may be an edited draft, so it counts only while the
+  // applied graph still has it
+  const elementAtCursor = (text: string, offset: number) => {
     const target = graphElementAtOffset(text, offset);
     if (target === null) {
-      return;
+      return null;
     }
-    const store = useEditorStore.getState();
+    const { graph: current } = useEditorStore.getState();
     const exists =
       target.kind === "node"
-        ? store.graph?.nodes.some((node) => node.id === target.id)
-        : store.graph?.edges.some((edge) => edge.id === target.id);
-    if (!exists) {
-      return;
-    }
-    store.requestFocus(target.id);
+        ? current?.nodes.some((node) => node.id === target.id)
+        : current?.edges.some((edge) => edge.id === target.id);
+    return exists ? target : null;
   };
 
   const onMount: OnMount = (editor, instance) => {
     editorRef.current = { editor, monaco: instance };
     setEditorMounted(true);
-    // clicking into a node or edge section centers that element on the canvas
+    // The cursor highlights its element on the canvas, and a click also brings it into view.
+    // Keyboard moves only highlight, so typing does not pan the canvas.
     editor.onDidChangeCursorPosition((event) => {
-      if (event.source !== "mouse") {
-        return;
-      }
       const model = editor.getModel();
       if (!model) {
         return;
       }
-      focusGraphElement(model.getValue(), model.getOffsetAt(event.position));
+      const target = elementAtCursor(model.getValue(), model.getOffsetAt(event.position));
+      const store = useEditorStore.getState();
+      store.setHighlight(target);
+      if (target !== null && event.source === "mouse") {
+        store.requestFocus(target.id);
+      }
     });
   };
 
   const apply = () => {
     applyGraphJson(draft)
-      .then((problem) => {
-        setError(problem);
-        if (problem === null) {
-          // the draft may be formatted differently than the canonical serialization
-          setDraft(JSON.stringify(useEditorStore.getState().graph, null, 2));
+      .then((result) => {
+        setError(result.error);
+        if (result.applied) {
+          // the view follows the graph again, which also reformats a differently written draft
+          setDraft(null);
         }
       })
       .catch((caught: unknown) => {
@@ -127,7 +129,7 @@ export function JsonPanel({ graph }: { graph: ApplicationGraph }) {
         <MonacoEditor
           language="json"
           value={draft}
-          onChange={(value) => setDraft(value ?? "")}
+          onChange={(value) => setDraft({ text: value ?? "", base: editing?.base ?? json })}
           beforeMount={configureJsonLanguage}
           onMount={onMount}
           options={{
@@ -143,20 +145,25 @@ export function JsonPanel({ graph }: { graph: ApplicationGraph }) {
       {error && (
         <p className="border-t border-slate-200 px-3 py-1 text-xs text-red-700">{error}</p>
       )}
+      {dirty && stale && (
+        <p className="border-t border-amber-200 bg-amber-50 px-3 py-1 text-xs text-amber-800">
+          The graph changed since this draft was last modified. Applying it drops those changes.
+        </p>
+      )}
       {dirty && (
         <div className="flex items-center gap-2 border-t border-slate-200 px-3 py-2">
           <button
             type="button"
-            className="rounded border border-slate-300 px-2 py-0.5 text-xs text-slate-600 hover:bg-slate-100"
+            className="cursor-pointer rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700"
             onClick={apply}
           >
             Apply
           </button>
           <button
             type="button"
-            className="rounded border border-slate-300 px-2 py-0.5 text-xs text-slate-600 hover:bg-slate-100"
+            className="cursor-pointer rounded border border-slate-300 px-2 py-1 text-xs text-slate-600 hover:bg-slate-100"
             onClick={() => {
-              setDraft(json);
+              setDraft(null);
               setError(null);
             }}
           >

@@ -30,7 +30,7 @@ export function SettingsForm({ graph }: { graph: ApplicationGraph }) {
         </p>
       </FormField>
 
-      <FormField label="Datasource id">
+      <FormField label="Datasource ID">
         <input
           className={inputClass}
           value={datasource?.id ?? ""}

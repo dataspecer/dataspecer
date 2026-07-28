@@ -14,9 +14,13 @@ const OPERATION_SUFFIXES: Record<Operation, string> = {
   [Operation.Delete]: "delete",
 };
 
+function nodeIdBase(aggregateName: string, operation: Operation): string {
+  return `${kebabCase(deburr(aggregateName)) || "node"}.${OPERATION_SUFFIXES[operation]}`;
+}
+
 /**
- * Derives a unique node id from the aggregate name and operation. When the id is generated for an
- * existing node, that node's current id is excluded from the collision check, so re-generating the
+ * Derives a unique node ID from the aggregate name and operation. When the ID is generated for an
+ * existing node, that node's current ID is excluded from the collision check, so re-generating the
  * same base does not append a counter.
  */
 export function nextNodeId(
@@ -25,7 +29,7 @@ export function nextNodeId(
   operation: Operation,
   excludeNodeId?: string,
 ): string {
-  const base = `${kebabCase(deburr(aggregateName)) || "node"}.${OPERATION_SUFFIXES[operation]}`;
+  const base = nodeIdBase(aggregateName, operation);
   const used = new Set(
     graph.nodes.filter((node) => node.id !== excludeNodeId).map((node) => node.id),
   );
@@ -40,8 +44,23 @@ export function nextNodeId(
 }
 
 /**
- * Renames a node and rewrites the edges referencing it. Edge ids in the derived
- * "source-target" form follow the new endpoint names, manually overwritten edge ids stay.
+ * Whether the ID is the one the scheme would produce for this aggregate and operation, allowing
+ * for the counter a collision adds. A hand written ID is left alone when the node changes.
+ */
+export function isGeneratedNodeId(
+  id: string,
+  aggregateName: string,
+  operation: Operation,
+): boolean {
+  const base = nodeIdBase(aggregateName, operation);
+  return (
+    id === base || (id.startsWith(`${base}-`) && /^\d+$/.test(id.slice(base.length + 1)))
+  );
+}
+
+/**
+ * Renames a node and rewrites the edges referencing it. Edge IDs in the derived
+ * "source-target" form follow the new endpoint names, manually overwritten edge IDs stay.
  */
 export function renameNode(
   graph: ApplicationGraph,
@@ -91,7 +110,7 @@ function uniqueEdgeId(used: ReadonlySet<string>, source: string, target: string)
   return `${base}-${counter}`;
 }
 
-/** Derives a unique edge id from its endpoints, for example "graphs.list-graphs.detail". */
+/** Derives a unique edge ID from its endpoints, for example "graphs.list-graphs.detail". */
 export function nextEdgeId(graph: ApplicationGraph, source: string, target: string): string {
   return uniqueEdgeId(new Set(graph.edges.map((edge) => edge.id)), source, target);
 }

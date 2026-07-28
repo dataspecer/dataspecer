@@ -1,19 +1,13 @@
 import {
-  AssociationKind,
-  DeletePolicy,
-  FieldKind,
   Operation,
-  type AggregateFieldMetadata,
-  type AggregateMetadata,
   type ApplicationNode,
   type ApplicationNodeConfig,
 } from "@dataspecer/app-generator/graph";
-import { omit } from "es-toolkit";
-import { nextNodeId } from "../../graph/mutations.ts";
+import { isGeneratedNodeId, nextNodeId } from "../../graph/mutations.ts";
 import { useEditorStore } from "../../store.ts";
 import { aggregateLink } from "../../utils/specification-links.ts";
 import { ExternalLink } from "../external-link.tsx";
-import { Hint } from "../hint.tsx";
+import { AssociationEditor, CascadeEditor } from "./config-editors.tsx";
 import { ElementViolations } from "./element-violations.tsx";
 import { FormField, inputClass } from "./form-field.tsx";
 
@@ -24,17 +18,6 @@ const OPERATIONS = [
   Operation.Update,
   Operation.Delete,
 ];
-
-/** Flattens the aggregate's association fields into dotted paths. */
-function associationPaths(fields: AggregateFieldMetadata[], prefix = ""): string[] {
-  return fields.flatMap((field) => {
-    if (field.kind !== FieldKind.Association) {
-      return [];
-    }
-    const path = prefix === "" ? field.path : `${prefix}.${field.path}`;
-    return [path, ...associationPaths(field.fields ?? [], path)];
-  });
-}
 
 /** Removes empty config sections so an untouched node keeps no config at all. */
 function normalizeConfig(config: ApplicationNodeConfig): ApplicationNodeConfig | undefined {
@@ -65,16 +48,24 @@ export function NodeForm({ node }: { node: ApplicationNode }) {
     updateNode(node.id, { config: normalizeConfig({ ...node.config, ...patch }) });
   };
 
-  // the node id follows its aggregate and operation  (renaming rewrites the edges referencing the
-  // node)
+  const nameOf = (aggregateIri: string) =>
+    metadata?.aggregates.find((entry) => entry.iri === aggregateIri)?.name;
+
+  // An ID the scheme produced is regenerated when the aggregate or operation changes. A hand
+  // written ID is kept, because it may be a deliberate name and it ends up as a route in the
+  // generated application.
+  const aggregateName = nameOf(node.aggregateIri);
+  const generatedId =
+    aggregateName !== undefined && isGeneratedNodeId(node.id, aggregateName, node.operation);
+
   const applyWithId = (
     patch: Partial<Omit<ApplicationNode, "id">>,
     aggregateIri: string,
     operation: Operation,
   ) => {
     const { graph } = useEditorStore.getState();
-    const name = metadata?.aggregates.find((entry) => entry.iri === aggregateIri)?.name;
-    if (graph && name) {
+    const name = nameOf(aggregateIri);
+    if (graph && name && generatedId) {
       renameNode(node.id, nextNodeId(graph, name, operation, node.id), patch);
     } else {
       updateNode(node.id, patch);
@@ -178,92 +169,7 @@ export function NodeForm({ node }: { node: ApplicationNode }) {
         Delete node
       </button>
 
-      {graph && <ElementViolations graph={graph} kind="node" id={node.id} />}
+      <ElementViolations kind="node" id={node.id} />
     </div>
-  );
-}
-
-interface ConfigEditorProps {
-  node: ApplicationNode;
-  aggregate: AggregateMetadata;
-  onPatch: (patch: Partial<ApplicationNodeConfig>) => void;
-}
-
-function AssociationEditor({ node, aggregate, onPatch }: ConfigEditorProps) {
-  const paths = associationPaths(aggregate.fields);
-  if (paths.length === 0) {
-    return null;
-  }
-  const current = node.config?.associations ?? {};
-
-  return (
-    <fieldset className="min-w-0">
-      <legend className="mb-1 flex items-center gap-1 text-xs font-medium text-slate-500">
-          Association kinds
-          <Hint text="A composition is part of this entity: it is created, edited and deleted with it. An aggregation exists on its own and is only referenced." />
-        </legend>
-      <div className="flex flex-col gap-1">
-        {paths.map((path) => (
-          <div key={path} className="flex items-center gap-2">
-            <span className="min-w-0 flex-1 truncate text-xs text-slate-700" title={path}>
-              {path}
-            </span>
-            <select
-              className="rounded border border-slate-300 bg-white px-1 py-0.5 text-xs"
-              value={current[path] ?? ""}
-              onChange={(event) => {
-                onPatch({
-                  associations:
-                    event.target.value === ""
-                      ? omit(current, [path])
-                      : { ...current, [path]: event.target.value as AssociationKind },
-                });
-              }}
-            >
-              <option value="">—</option>
-              <option value={AssociationKind.Aggregation}>aggregation</option>
-              <option value={AssociationKind.Composition}>composition</option>
-            </select>
-          </div>
-        ))}
-      </div>
-    </fieldset>
-  );
-}
-
-function CascadeEditor({ node, aggregate, onPatch }: ConfigEditorProps) {
-  const paths = associationPaths(aggregate.fields);
-  if (paths.length === 0) {
-    return null;
-  }
-  const current = node.config?.delete ?? {};
-
-  return (
-    <fieldset className="min-w-0">
-      <legend className="mb-1 flex items-center gap-1 text-xs font-medium text-slate-500">
-        Cascade delete
-        <Hint text="Deleting this entity also deletes the entities on the checked paths. Only compositions can cascade, an aggregation may have other owners." />
-      </legend>
-      <div className="flex flex-col gap-1">
-        {paths.map((path) => (
-          <label key={path} className="flex items-center gap-2 text-xs text-slate-700">
-            <input
-              type="checkbox"
-              checked={current[path] === DeletePolicy.Cascade}
-              onChange={(event) => {
-                onPatch({
-                  delete: event.target.checked
-                    ? { ...current, [path]: DeletePolicy.Cascade }
-                    : omit(current, [path]),
-                });
-              }}
-            />
-            <span className="min-w-0 flex-1 truncate" title={path}>
-              {path}
-            </span>
-          </label>
-        ))}
-      </div>
-    </fieldset>
   );
 }

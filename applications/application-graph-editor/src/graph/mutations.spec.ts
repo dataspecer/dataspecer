@@ -8,6 +8,7 @@ import {
 import {
   addEdge,
   addNode,
+  isGeneratedNodeId,
   nextEdgeId,
   nextNodeId,
   removeEdge,
@@ -59,6 +60,26 @@ describe("nextNodeId", () => {
   });
 });
 
+describe("isGeneratedNodeId", () => {
+  it("recognizes the ID the scheme derives", () => {
+    expect(isGeneratedNodeId("books.list", "Books", Operation.ReadList)).toBe(true);
+  });
+
+  it("recognizes an ID with a collision counter", () => {
+    expect(isGeneratedNodeId("books.list-2", "Books", Operation.ReadList)).toBe(true);
+  });
+
+  it("rejects an ID of another aggregate or operation", () => {
+    expect(isGeneratedNodeId("books.list", "Authors", Operation.ReadList)).toBe(false);
+    expect(isGeneratedNodeId("books.list", "Books", Operation.Create)).toBe(false);
+  });
+
+  it("rejects a hand written ID", () => {
+    expect(isGeneratedNodeId("catalogue", "Books", Operation.ReadList)).toBe(false);
+    expect(isGeneratedNodeId("books.list-page", "Books", Operation.ReadList)).toBe(false);
+  });
+});
+
 describe("renameNode", () => {
   it("renames the node and rewrites its edges", () => {
     const graph = renameNode(graphFixture(), "books.detail", "book.detail");
@@ -89,8 +110,8 @@ describe("renameNode", () => {
       type: EdgeType.Transition,
     });
     const graph = renameNode(base, "books.list", "book.list");
-    // the second edge id is manually overwritten relative to its old endpoints, so it stays and the
-    // regenerated first edge id steps around it
+    // the second edge ID is manually overwritten relative to its old endpoints, so it stays and the
+    // regenerated first edge ID steps around it
     expect(graph.edges.map((edge) => edge.id)).toEqual([
       "book.list-books.detail-2",
       "book.list-books.detail",
