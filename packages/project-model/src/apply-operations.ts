@@ -1,7 +1,7 @@
 import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
-import type { Operation } from "@dataspecer/core/operation";
-import { isCreateModelOperation, isRemoveModelOperation, type CreateModelOperation } from "./operations.ts";
+import { type Operation } from "@dataspecer/core/operation";
+import { isCreateModelOperation, isCreateProjectOperation, isRemoveModelOperation, type CreateModelOperation, type CreateProjectOperation } from "./operations.ts";
 import { PROJECT_MODEL_MODEL_ENTITY, type PackageEntity, type ProjectModelEntity } from "./model.ts";
 
 /**
@@ -15,6 +15,8 @@ export function applyOperationsToVirtualProjectModel(entities: EntityRecord<Proj
       applyRemoveModelOperation(entities, operation.modelId);
     } else if (isCreateModelOperation(operation)) {
       applyCreateModelOperation(entities, operation);
+    } else if (isCreateProjectOperation(operation)) {
+      applyCreateProjectOperation(entities, operation);
     }
     // Per the Operation contract, operations that cannot be executed are ignored.
   }
@@ -54,6 +56,26 @@ function applyRemoveModelOperation(entities: EntityRecord<ProjectModelEntity>, m
   }
 }
 
+/**
+ * A project is the root package of its own project model, so it is created as
+ * an empty package entity.
+ */
+function applyCreateProjectOperation(entities: EntityRecord<ProjectModelEntity>, operation: CreateProjectOperation): void {
+  if (entities[operation.projectId]) {
+    return;
+  }
+
+  const projectEntity: PackageEntity = {
+    id: operation.projectId,
+    type: [PROJECT_MODEL_MODEL_ENTITY],
+    label: operation.label ?? {},
+    description: operation.description ?? {},
+    modelType: LOCAL_PACKAGE,
+    subModels: [],
+  };
+  entities[operation.projectId] = projectEntity;
+}
+
 function applyCreateModelOperation(entities: EntityRecord<ProjectModelEntity>, operation: CreateModelOperation): void {
   // Skip if model already exists
   if (entities[operation.modelId]) {
@@ -69,8 +91,8 @@ function applyCreateModelOperation(entities: EntityRecord<ProjectModelEntity>, o
   let newEntity = {
     id: operation.modelId,
     type: [PROJECT_MODEL_MODEL_ENTITY],
-    label: {},
-    description: {},
+    label: operation.label ?? {},
+    description: operation.description ?? {},
     modelType: operation.modelType,
   } satisfies ProjectModelEntity;
 

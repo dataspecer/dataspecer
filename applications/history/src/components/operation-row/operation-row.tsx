@@ -55,7 +55,7 @@ import {
   type RemoveControlledVocabularyAssignment,
 } from "@dataspecer/core-v2/semantic-model/profile/operations";
 import { AddQueryOperationType, ReloadModelOperationType, RemoveQueryOperationType, SetModelUrlsOperationType } from "@dataspecer/model-store/implementation";
-import { CreateModelOperationType, RemoveModelOperationType, type CreateModelOperation, type ProjectModelEntity, type RemoveModelOperation } from "@dataspecer/project-model";
+import { CreateModelOperationType, CreateProjectOperationType, RemoveModelOperationType, type CreateModelOperation, type CreateProjectOperation, type ProjectModelEntity, type RemoveModelOperation } from "@dataspecer/project-model";
 import {
   AddVisualDiagramNodeOperationType,
   AddVisualGroupOperationType,
@@ -93,6 +93,7 @@ import {
   Pencil,
   Plus,
   Replace,
+  Sparkles,
   Tag,
   Trash2,
   Undo2,
@@ -242,12 +243,23 @@ function projectModelLabel(entities: EntityRecord, modelId: string, language: st
   return { name: entity ? pickLanguageString(entity.label, language) : null, typeName: t(`model-type.${typeKey}`) };
 }
 
+function CreateProjectRow({ operation, after }: OperationRowProps) {
+  const { t, i18n } = useTranslation();
+  const op = operation as CreateProjectOperation;
+  const { name, typeName } = projectModelLabel(after, op.projectId, i18n.language, t);
+  return (
+    <Row icon={Sparkles} colorClass="text-yellow-500 dark:text-yellow-400" operation={operation}>
+      <span>{t("history.op.create-project", { type: typeName, name: name ?? t("history.unnamed") })}</span>
+    </Row>
+  );
+}
+
 function CreateModelRow({ operation, after }: OperationRowProps) {
   const { t, i18n } = useTranslation();
   const op = operation as CreateModelOperation;
   const { name, typeName } = projectModelLabel(after, op.modelId, i18n.language, t);
   return (
-    <Row icon={PackagePlus} colorClass="text-amber-700 dark:text-amber-400" operation={operation}>
+    <Row icon={PackagePlus} colorClass="text-amber-700 dark:text-amber-600" operation={operation}>
       <span>{t("history.op.create-model", { type: typeName, name: name ?? t("history.unnamed") })}</span>
     </Row>
   );
@@ -258,7 +270,7 @@ function RemoveModelRow({ operation, before }: OperationRowProps) {
   const op = operation as RemoveModelOperation;
   const { name, typeName } = projectModelLabel(before, op.modelId, i18n.language, t);
   return (
-    <Row icon={PackageMinus} colorClass="text-amber-700 dark:text-amber-400" operation={operation}>
+    <Row icon={PackageMinus} colorClass="text-amber-700 dark:text-amber-600" operation={operation}>
       <span>{t("history.op.remove-model", { type: typeName, name: name ?? t("history.unnamed") })}</span>
     </Row>
   );
@@ -994,6 +1006,7 @@ const OPERATION_ROWS: Record<string, ComponentType<OperationRowProps>> = {
   [VERSION_OPERATION_TYPE]: VersionRow,
 
   // Project structure.
+  [CreateProjectOperationType]: CreateProjectRow,
   [CreateModelOperationType]: CreateModelRow,
   [RemoveModelOperationType]: RemoveModelRow,
 

@@ -1,9 +1,24 @@
 import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
 import type { LanguageString } from "@dataspecer/core-v2/semantic-model/concepts";
 import { diffEntities, type Entity, type EntityRecord } from "@dataspecer/core/entity-model";
-import { createUpdateEntityOperation, isSetEntityOperation, isUndoOperation, isUpdateEntityOperation, type Operation, type Transaction } from "@dataspecer/core/operation";
+import {
+  createUpdateEntityOperation,
+  isSetEntityOperation,
+  isUndoOperation,
+  isUpdateEntityOperation,
+  type Operation,
+  type OperationInModel,
+  type Transaction,
+} from "@dataspecer/core/operation";
 import type { MainEntity } from "@dataspecer/model-store/implementation";
-import { createCreateModelOperation, createRemoveModelOperation, isCreateModelOperation, isRemoveModelOperation } from "@dataspecer/project-model";
+import {
+  createCreateModelOperation,
+  createCreateProjectOperation,
+  createRemoveModelOperation,
+  isCreateModelOperation,
+  isCreateProjectOperation,
+  isRemoveModelOperation,
+} from "@dataspecer/project-model";
 import { v4 as uuidv4 } from "uuid";
 import configuration from "../configuration.ts";
 import { composeModelId, PROJECT_MODEL_ID, splitModelId } from "./model-id.ts";
@@ -18,16 +33,26 @@ import { deserializeModelEntities, deserializeStoredModel, isBlobModelType, NAME
 import type { BaseResource, Package, ResourceModel } from "./resource-model.ts";
 import type { HistoryTransaction, TransactionEvents, TransactionModel, TransactionWithEvents } from "./transaction-model.ts";
 import type { ModelIdentifier } from "@dataspecer/core/model";
+import { deepEqual } from "@dataspecer/utilities";
+
+/** Package that all projects are created directly under. */
+const PROJECT_ROOT_IRI = configuration.localRootIri;
 
 export interface ModelRepositoryType {
   getResource(iri: string): Promise<BaseResource | null>;
   getPackage(iri: string): Promise<Package | null>;
   getModelEntities(modelId: string): Promise<EntityRecord | null>;
+  /** @deprecated Use operations, see {@link ModelRepository.createResource}. */
   createResource(parentIri: string | null, iri: string, type: string, userMetadata: object): Promise<void>;
+  /** @deprecated Use operations, see {@link ModelRepository.createPackage}. */
   createPackage(parentIri: string | null, iri: string, userMetadata: object): Promise<void>;
+  /** @deprecated Use operations, see {@link ModelRepository.updateResource}. */
   updateResource(iri: string, userMetadata: object): Promise<void>;
+  /** @deprecated Use operations, see {@link ModelRepository.deleteResource}. */
   deleteResource(iri: string): Promise<void>;
+  /** @deprecated Use operations, see {@link ModelRepository.setResourceStoreJson}. */
   setResourceStoreJson(iri: string, data: unknown, storeName?: string): Promise<void>;
+  /** @deprecated Use operations, see {@link ModelRepository.setModelJson}. */
   setModelJson(iri: string, data: unknown, storeName?: string): Promise<void>;
 }
 
@@ -60,13 +85,16 @@ interface ModelEventsContribution {
  *    whole JSON snapshot: the snapshot is stored as before, and operations
  *    describing the change are derived by diffing the old and new state.
  *
- * The lifecycle of models (creation and deletion of resources) is part of the
- * history as well: {@link applyTransactions} interprets operations targeting
- * the virtual project model by creating/deleting the backing resources. The
- * direct resource tree methods ({@link createResource},
- * {@link deleteResource}, ...), kept for old clients, only synthesize the
- * equivalent project model operation and execute it the same way, analogous
- * to how {@link setModelJson} derives operations by diffing.
+ * The lifecycle of models (creation and deletion of resources) and their
+ * metadata is part of the history as well: {@link applyTransactions}
+ * interprets operations targeting the virtual project model by
+ * creating/deleting the backing resources and updating their user metadata.
+ * The direct resource tree methods ({@link createResource},
+ * {@link updateResource}, {@link deleteResource}), kept for old clients, only
+ * synthesize the equivalent project model operations and execute them the same
+ * way, analogous to how {@link setModelJson} derives operations by diffing.
+ * Only resources outside any project (the roots) and a project deleted as a
+ * whole are written directly, as there is no history to record them in.
  */
 export class ModelRepository implements ModelRepositoryType {
   private readonly resourceModel: ResourceModel;
@@ -100,7 +128,7 @@ export class ModelRepository implements ModelRepositoryType {
    *
    * Models JSON serialization is deprecated.
    *
-   * @deprecated
+   * @deprecated Use operations to modify models
    */
   async setModelJson(modelIdentifier: ModelIdentifier, data: unknown, storeName: string = "model"): Promise<void> {
     const resource = await this.resourceModel.getResource(modelIdentifier);
@@ -138,42 +166,35 @@ export class ModelRepository implements ModelRepositoryType {
   /**
    * Applies transactions (containing operations) to a given project and updates
    * the project. This is the method that should be used to modify models.
+   *
+   * The project does not have to exist yet if the first operation is a create
+   * project operation.
    */
   async applyTransactions(projectId: ModelIdentifier, transactions: Transaction[]): Promise<void> {
-    // In-memory state of a model the transactions operate on, loaded once and
-    // updated as the transactions are applied to it one by one.
-    interface WorkingModel {
-      iri: string;
-      storeName: string;
-      modelType: string;
-      previousData: unknown;
-      entities: EntityRecord;
-      hadOperations: boolean;
-    }
+    // Models the transactions modify: their stored serialization and the state
+    // the operations are applied to. A model is loaded only to apply
+    // operations to it, hence every entry is written back at the end.
+    const models: Record<ModelIdentifier, { modelType: string; storedData: unknown; entities: EntityRecord }> = {};
 
-    // null marks models whose operations are only recorded and whose snapshot
-    // must not be written: models whose resource does not exist, including
-    // models removed by a project model operation of this batch.
-    const workingModels = new Map<string, WorkingModel | null>();
+    // Loads a model on first use. Returns null if the model has no resource,
+    // in which case its operations can only be recorded.
+    const loadModel = async (modelId: ModelIdentifier) => {
+      const loaded = models[modelId];
+      if (loaded !== undefined) {
+        return loaded;
+      }
 
-    const getWorkingModel = async (modelId: string): Promise<WorkingModel | null> => {
-      let model = workingModels.get(modelId);
-      if (model !== undefined) {
-        return model;
+      const { iri, storeName } = splitModelId(modelId);
+      const resource = await this.resourceModel.getResource(iri);
+      if (resource === null) {
+        console.warn(`Cannot apply operations to model "${modelId}" because its resource does not exist. The operations are only recorded.`);
+        return null;
       }
-      model = null;
-      if (modelId !== PROJECT_MODEL_ID) {
-        const { iri, storeName } = splitModelId(modelId);
-        const resource = await this.resourceModel.getResource(iri);
-        if (resource === null) {
-          console.warn(`Cannot apply operations to model "${modelId}" because its resource does not exist. The operations are only recorded.`);
-        } else {
-          const modelType = resolveStoreModelType(resource.types[0] ?? "", storeName);
-          const previousData = await this.resourceModel.getResourceStoreJson(iri, storeName);
-          model = { iri, storeName, modelType, previousData, entities: deserializeModelEntities(modelId, modelType, previousData), hadOperations: false };
-        }
-      }
-      workingModels.set(modelId, model);
+
+      const modelType = resolveStoreModelType(resource.types[0] ?? "", storeName);
+      const storedData = await this.resourceModel.getResourceStoreJson(iri, storeName);
+      const model = { modelType, storedData, entities: deserializeModelEntities(modelId, modelType, storedData) };
+      models[modelId] = model;
       return model;
     };
 
@@ -204,18 +225,21 @@ export class ModelRepository implements ModelRepositoryType {
       }));
     };
 
-    // Executes operations targeting the virtual project model by modifying
-    // the resource tree: models are created/deleted as resources. Returns
-    // event contributions capturing the content of the removed models (their
-    // state before the removal), so it stays reconstructible from the
-    // history.
-    // TODO: The project model's own entities (project structure and metadata)
-    // have no up/down events recorded yet.
     const applyProjectModelOperations = async (operations: Operation[]): Promise<ModelEventsContribution[]> => {
       const contributions: ModelEventsContribution[] = [];
 
       for (const operation of operations) {
-        if (isCreateModelOperation(operation)) {
+        if (isCreateProjectOperation(operation)) {
+          if (operation.projectId !== projectId) {
+            throw new Error(`Cannot create project "${operation.projectId}" from the history of project "${projectId}".`);
+          }
+          if ((await this.resourceModel.getResource(operation.projectId)) !== null) {
+            // The project already exists, the operation ensures nothing more.
+            continue;
+          }
+          // Label and description of a resource are stored as its user metadata.
+          await this.resourceModel.createResource(PROJECT_ROOT_IRI, operation.projectId, LOCAL_PACKAGE, { label: operation.label, description: operation.description });
+        } else if (isCreateModelOperation(operation)) {
           if ((await this.resourceModel.getResource(operation.modelId)) !== null) {
             // The model already exists, the operation ensures nothing more.
             continue;
@@ -225,15 +249,7 @@ export class ModelRepository implements ModelRepositoryType {
             console.warn(`Cannot create model "${operation.modelId}" because its parent package does not exist. The operation is only recorded.`);
             continue;
           }
-          await this.resourceModel.createResource(operation.parentPackageId, operation.modelId, operation.modelType, {});
-          // Operations dispatched to this model before its creation cached it
-          // as non-existing; drop those entries so that later operations of
-          // this batch are applied to the fresh resource.
-          for (const modelId of [...workingModels.keys()]) {
-            if (splitModelId(modelId).iri === operation.modelId && workingModels.get(modelId) === null) {
-              workingModels.delete(modelId);
-            }
-          }
+          await this.resourceModel.createResource(operation.parentPackageId, operation.modelId, operation.modelType, { label: operation.label, description: operation.description });
         } else if (isRemoveModelOperation(operation)) {
           if ((await this.resourceModel.getResource(operation.modelId)) === null) {
             // The model does not exist (anymore), the operation ensures nothing more.
@@ -242,23 +258,21 @@ export class ModelRepository implements ModelRepositoryType {
 
           // The state a removed model is deleted with may already differ from
           // its snapshot due to earlier operations of this batch.
-          const inMemoryStates = new Map<string, EntityRecord>();
-          for (const [modelId, model] of workingModels) {
-            if (model !== null) {
-              inMemoryStates.set(modelId, model.entities);
-            }
+          const inMemoryStates: Record<ModelIdentifier, EntityRecord> = {};
+          for (const [modelId, model] of Object.entries(models)) {
+            inMemoryStates[modelId] = model.entities;
           }
           const { states, iris } = await this.collectSubtreeModelStates(operation.modelId, inMemoryStates);
-          for (const [removedModelId, entities] of states) {
+          for (const [removedModelId, entities] of Object.entries(states)) {
             contributions.push({ modelId: removedModelId, previousEntities: entities, nextEntities: {}, isBlob: false });
           }
 
-          // The resources are gone: later operations of this batch targeting
-          // them are only recorded, and no snapshot may be written for them.
+          // Forget the removed models so that no snapshot is written for them
+          // and later operations of this batch are only recorded.
           const removedIris = new Set(iris);
-          for (const modelId of workingModels.keys()) {
+          for (const modelId of Object.keys(models)) {
             if (removedIris.has(splitModelId(modelId).iri)) {
-              workingModels.set(modelId, null);
+              delete models[modelId];
             }
           }
 
@@ -291,13 +305,13 @@ export class ModelRepository implements ModelRepositoryType {
 
     // Apply the transactions to the models in memory one by one, recording
     // for each transaction its up/down events. Models whose operations are
-    // only recorded (see getWorkingModel above) have no events.
+    // only recorded (see loadModel above) have no events.
     const transactionsWithEvents = await this.buildTransactionsWithEvents(transactions, async (modelId, operations, processedTransactions) => {
       if (modelId === PROJECT_MODEL_ID) {
         return await applyProjectModelOperations(operations);
       }
 
-      const model = await getWorkingModel(modelId);
+      const model = await loadModel(modelId);
       if (model === null) {
         return null;
       }
@@ -328,21 +342,26 @@ export class ModelRepository implements ModelRepositoryType {
       }
 
       model.entities = working;
-      model.hadOperations = true;
 
       return [{ modelId, previousEntities, nextEntities: model.entities, isBlob: isBlobModelType(model.modelType) }];
     });
 
+    // A project removed by its own transactions is deleted together with its
+    // history, so there is nothing left to record the transactions in.
+    const projectRemoved = transactions.some((transaction) =>
+      transaction.operations.some(({ modelId, operation }) => modelId === PROJECT_MODEL_ID && isRemoveModelOperation(operation) && operation.modelId === projectId),
+    );
+
     // The operation history is the source of truth and is written first; the
     // JSON snapshots below are only a cache derived from it.
-    await this.transactionModel.createTransactions(projectId, transactionsWithEvents);
+    if (!projectRemoved) {
+      await this.transactionModel.createTransactions(projectId, transactionsWithEvents);
+    }
 
-    for (const [modelId, model] of workingModels) {
-      if (model === null || !model.hadOperations) {
-        continue;
-      }
-      const nextData = serializeModelEntities(modelId, model.modelType, model.entities, model.previousData ?? undefined);
-      await this.resourceModel.setResourceStoreJson(model.iri, nextData, model.storeName);
+    for (const [modelId, model] of Object.entries(models)) {
+      const { iri, storeName } = splitModelId(modelId);
+      const nextData = serializeModelEntities(modelId, model.modelType, model.entities, model.storedData ?? undefined);
+      await this.resourceModel.setResourceStoreJson(iri, nextData, storeName);
     }
   }
 
@@ -423,6 +442,9 @@ export class ModelRepository implements ModelRepositoryType {
    * project model operations contribute the content of the models they
    * remove. It also receives the transactions of this batch processed so
    * far, with their events.
+   *
+   * The callback is invoked for the project model up to three times per
+   * transaction, see the grouping below.
    */
   private async buildTransactionsWithEvents(
     transactions: Transaction[],
@@ -434,16 +456,35 @@ export class ModelRepository implements ModelRepositoryType {
       const upEvents: TransactionEvents = {};
       const downEvents: TransactionEvents = {};
 
-      // Group the transaction's operations by model, preserving their relative order.
+      // First create on project model, then all other models, then remove on project model.
+      const creations: Operation[] = [];
+      const removals: Operation[] = [];
       const operationsByModel = new Map<string, Operation[]>();
       for (const { modelId, operation } of transaction.operations) {
+        if (modelId === PROJECT_MODEL_ID) {
+          if (isCreateProjectOperation(operation) || isCreateModelOperation(operation)) {
+            creations.push(operation);
+            continue;
+          }
+          if (isRemoveModelOperation(operation)) {
+            removals.push(operation);
+            continue;
+          }
+        }
         if (!operationsByModel.has(modelId)) {
           operationsByModel.set(modelId, []);
         }
         operationsByModel.get(modelId)!.push(operation);
       }
 
-      for (const [modelId, operations] of operationsByModel) {
+      // Models are created first, removed last, everything else in between.
+      const groups: [ModelIdentifier, Operation[]][] = [[PROJECT_MODEL_ID, creations], ...operationsByModel, [PROJECT_MODEL_ID, removals]];
+
+      for (const [modelId, operations] of groups) {
+        if (operations.length === 0) {
+          continue;
+        }
+
         const contributions = await applyToModel(modelId, operations, transactionsWithEvents);
         if (contributions === null) {
           continue;
@@ -455,10 +496,6 @@ export class ModelRepository implements ModelRepositoryType {
             continue;
           }
           const { up, down } = entityChangesToEvents(changes);
-          // A model may receive several contributions within one transaction
-          // (its own operations, then its removal): for each entity, the down
-          // state of the first contribution and the up state of the last one
-          // describe the transaction as a whole.
           downEvents[contribution.modelId] = { ...down, ...downEvents[contribution.modelId] };
           if (!contribution.isBlob) {
             upEvents[contribution.modelId] = { ...upEvents[contribution.modelId], ...up };
@@ -479,15 +516,18 @@ export class ModelRepository implements ModelRepositoryType {
    * {@link deserializeModelEntities}) and all named stores. Used to record
    * down events when the subtree is deleted.
    *
-   * The `inMemoryStates` map (model id to entities) overrides the stored
-   * snapshots with states already modified in memory and may list models
-   * whose stores are not persisted yet.
+   * The `inMemoryStates` (model id to entities) override the stored snapshots
+   * with states already modified in memory and may list models whose stores
+   * are not persisted yet.
    *
    * Returns the collected non-empty states by model id, and the IRIs of all
    * visited resources.
    */
-  private async collectSubtreeModelStates(rootIri: string, inMemoryStates: Map<string, EntityRecord>): Promise<{ states: Map<string, EntityRecord>; iris: string[] }> {
-    const states = new Map<string, EntityRecord>();
+  private async collectSubtreeModelStates(
+    rootIri: string,
+    inMemoryStates: Record<ModelIdentifier, EntityRecord>,
+  ): Promise<{ states: Record<ModelIdentifier, EntityRecord>; iris: string[] }> {
+    const states: Record<ModelIdentifier, EntityRecord> = {};
     const iris: string[] = [];
 
     const visit = async (iri: string): Promise<void> => {
@@ -498,7 +538,7 @@ export class ModelRepository implements ModelRepositoryType {
       iris.push(iri);
 
       const storeNames = new Set(["model", ...Object.keys(resource.dataStores)]);
-      for (const modelId of inMemoryStates.keys()) {
+      for (const modelId of Object.keys(inMemoryStates)) {
         const split = splitModelId(modelId);
         if (split.iri === iri) {
           storeNames.add(split.storeName);
@@ -507,13 +547,13 @@ export class ModelRepository implements ModelRepositoryType {
 
       for (const storeName of storeNames) {
         const modelId = composeModelId(iri, storeName);
-        let entities = inMemoryStates.get(modelId);
+        let entities = inMemoryStates[modelId];
         if (entities === undefined) {
           const data = await this.resourceModel.getResourceStoreJson(iri, storeName);
           entities = deserializeStoredModel(modelId, resource.types[0] ?? "", data) ?? {};
         }
         if (Object.keys(entities).length > 0) {
-          states.set(modelId, entities);
+          states[modelId] = entities;
         }
       }
 
@@ -563,7 +603,7 @@ export class ModelRepository implements ModelRepositoryType {
       return null;
     }
 
-    if (projectId === configuration.localRootIri) {
+    if (projectId === PROJECT_ROOT_IRI) {
       return {
         ...pkg,
         subResources: await Promise.all(
@@ -593,24 +633,34 @@ export class ModelRepository implements ModelRepositoryType {
   }
 
   /**
+   * Whether the resource is a root resource. Root resources belong to no
+   * project, so there is no history their changes could be recorded in.
+   */
+  private async isRootResource(iri: string): Promise<boolean> {
+    return (await this.resourceModel.getRootResources()).some((root) => root.iri === iri);
+  }
+
+  /**
    * Creates a resource, kept for old clients that manage the resource tree
-   * directly. The creation is expressed as an equivalent project model
-   * operation executed via {@link applyTransactions} - creation of models is
-   * interpreted (and recorded in the history) in a single place.
+   * directly. The creation is expressed as the equivalent project model
+   * operations executed via {@link applyTransactions} - creating the resource
+   * and setting its metadata is interpreted (and recorded in the history) in a
+   * single place.
    *
-   * Two bootstrap cases cannot go through a project's history: a root
-   * resource (parent IRI is null) has no project at all, and a resource
-   * created directly under a root is a project itself, whose history cannot
-   * exist before it does. Those are created directly; the project
-   * additionally records its own creation into its freshly started history.
+   * A resource created directly under a root is a project, so its creation
+   * starts its own history. Only a root resource itself (parent IRI is null)
+   * is created directly, as there is no history to record it in.
+   *
+   * @deprecated Use operations such as {@link CreateModelOperation} or
+   * {@link CreateProjectOperation} to create resources instead of this method.
    */
   async createResource(parentIri: string | null, iri: string, type: string, userMetadata: object): Promise<void> {
     if (parentIri === null) {
       return this.resourceModel.createResource(parentIri, iri, type, userMetadata);
     }
 
-    // Preserve the old interface's errors - the operation itself would treat
-    // both cases as "nothing to ensure" and silently skip.
+    // Preserve the old interface's errors - the operations themselves would
+    // treat both cases as "nothing to ensure" and silently skip.
     if ((await this.resourceModel.getResource(iri)) !== null) {
       throw new Error("Cannot create resource because it already exists.");
     }
@@ -619,57 +669,110 @@ export class ModelRepository implements ModelRepositoryType {
       throw new Error("Cannot create resource because the parent package was not found or is not a package.");
     }
 
-    const isProject = (await this.resourceModel.getRootResources()).some((root) => root.iri === parentIri);
-    if (isProject) {
-      await this.resourceModel.createResource(parentIri, iri, type, userMetadata);
-    }
+    const { label, description, ...otherMetadata } = userMetadata as Record<string, unknown> & { label?: LanguageString; description?: LanguageString };
 
+    const isProject = await this.isRootResource(parentIri);
     const projectIri = isProject ? iri : (await this.resourceModel.getProjectIri(parentIri))!;
-    const operation = createCreateModelOperation(parentIri, type, iri);
-    await this.applyTransactions(projectIri, [{ id: uuidv4(), operations: [{ modelId: PROJECT_MODEL_ID, operation }] }]);
 
-    if (!isProject && Object.keys(userMetadata).length > 0) {
-      // The user metadata is not part of the operation, set it directly.
+    // A package created directly under the project root is a project and is
+    // created the same way new clients create one. Resources under the other
+    // roots cannot be expressed by that operation, as it implies the location,
+    // so they are created as ordinary models of their own project.
+    const createOperation =
+      parentIri === PROJECT_ROOT_IRI && type === LOCAL_PACKAGE ? createCreateProjectOperation(iri) : createCreateModelOperation(parentIri, type, iri);
+    createOperation.label = label;
+    createOperation.description = description;
+
+    const operations: OperationInModel[] = [{ modelId: PROJECT_MODEL_ID, operation: createOperation }];
+    if (Object.keys(otherMetadata).length > 0) {
+      // Only the label and description are part of the creation operation, the
+      // rest of the user metadata is set by a following update.
       // TODO: The project model's own entities (project structure and
       // metadata) have no operations/events recorded yet.
-      await this.resourceModel.updateResource(iri, userMetadata);
+      operations.push({ modelId: PROJECT_MODEL_ID, operation: createUpdateEntityOperation({ id: iri, ...otherMetadata } as Partial<Entity> & Pick<Entity, "id">) });
     }
+
+    await this.applyTransactions(projectIri, [{ id: uuidv4(), operations }]);
   }
 
   /**
    * Creates resource of type LOCAL_PACKAGE. See {@link createResource}.
+   *
+   * @deprecated Use operations such as {@link CreateModelOperation} or
+   * {@link CreateProjectOperation} applied via {@link applyTransactions}.
    */
   createPackage(parentIri: string | null, iri: string, userMetadata: object): Promise<void> {
     return this.createResource(parentIri, iri, LOCAL_PACKAGE, userMetadata);
   }
 
   /**
-   * Updates user metadata of the resource by merging in the given properties.
+   * Updates user metadata of the resource by merging in the given properties,
+   * kept for old clients that manage the resource tree directly. The change is
+   * expressed as an update operation on the resource's entry in the project
+   * model and executed via {@link applyTransactions}.
    *
-   * For model types migrating their label out of user metadata it generates an
-   * update operation instead. yet.
+   * For model types keeping their label in the model itself rather than in the
+   * user metadata, the label is turned into an update operation on that model
+   * and removed from the metadata.
+   *
+   * A root resource has no history its change could be recorded in and is
+   * updated directly.
+   *
+   * @deprecated Use {@link UpdateEntityOperation} applied via
+   * {@link applyTransactions} to change a model's metadata.
    */
-  async updateResource(iri: string, userMetadata: object): Promise<void> {
-    const rest: Record<string, unknown> = { ...userMetadata };
+  async updateResource(resourceId: string, userMetadata: object): Promise<void> {
+    // We need to strip userMetadata of properties that do not change.
 
-    if ("label" in rest) {
-      const resource = await this.resourceModel.getResource(iri);
-      if (resource !== null && resource.types[0] === RDFS_MODEL) {
-        const label = rest.label as LanguageString | undefined;
-        rest.label = undefined; // remove it by override
+    const resource = await this.resourceModel.getResource(resourceId);
+    if (resource === null) {
+      throw new Error(`Resource "${resourceId}" not found.`);
+    }
 
-        const projectIri = await this.resourceModel.getProjectIri(iri);
-        if (projectIri === null) {
-          console.warn(`Cannot set label on model "${iri}" because its project could not be resolved. The label update is dropped.`);
-        } else {
-          const update: Partial<MainEntity> & Pick<Entity, "id"> = { id: iri, label: label ?? {} };
-          const operation = createUpdateEntityOperation(update);
-          await this.applyTransactions(projectIri, [{ id: uuidv4(), operations: [{ modelId: iri, operation }] }]);
+    const projectIri = await this.resourceModel.getProjectIri(resourceId);
+    if (projectIri === null) {
+      return;
+    }
+
+    const currentMetadata: Record<string, unknown> = {...resource.userMetadata};
+    const toUpdateOperation = { ...userMetadata };
+    const toLegacyResourceMetadata: Record<string, unknown> = { ...userMetadata };
+
+    const operations: OperationInModel[] = [];
+
+    if ("label" in toLegacyResourceMetadata && "label" in toUpdateOperation) {
+      const currentModel = await this.getModelEntities(resourceId);
+      const labelChanged = !deepEqual((currentModel?.[resourceId] as MainEntity)?.label, toLegacyResourceMetadata.label);
+
+      if (resource.types[0] === RDFS_MODEL) {
+        if (labelChanged) {
+          const update: Partial<MainEntity> & Pick<Entity, "id"> = { id: resourceId, label: (toLegacyResourceMetadata.label as LanguageString | undefined) ?? {} };
+          operations.push({ modelId: resourceId, operation: createUpdateEntityOperation(update) });
         }
+        // Label never goes to the resource metadata
+        toLegacyResourceMetadata.label = undefined;
+        currentMetadata.label = undefined;
+      }
+
+      if (!labelChanged) {
+        // Label is unchanged, so it won't be updated in the model
+        delete toUpdateOperation.label;
       }
     }
 
-    return this.resourceModel.updateResource(iri, rest);
+    for (const key of Object.keys(toLegacyResourceMetadata)) {
+      if (deepEqual(currentMetadata[key], toLegacyResourceMetadata[key])) {
+        delete toLegacyResourceMetadata[key];
+      }
+    }
+
+    if (Object.keys(toLegacyResourceMetadata).length > 0) {
+      operations.push({ modelId: PROJECT_MODEL_ID, operation: createUpdateEntityOperation({ id: resourceId, ...toLegacyResourceMetadata } as Partial<Entity> & Pick<Entity, "id">) });
+    }
+
+    if (operations.length > 0) {
+      await this.applyTransactions(projectIri, [{ id: uuidv4(), operations }]);
+    }
   }
 
   /**
@@ -681,6 +784,9 @@ export class ModelRepository implements ModelRepositoryType {
    *
    * Deleting a root resource or a whole project is done directly, as its
    * history does not exist or is deleted with it.
+   *
+   * @deprecated Use {@link RemoveModelOperation} applied via
+   * {@link applyTransactions} to remove a model.
    */
   async deleteResource(iri: string): Promise<void> {
     const projectIri = await this.resourceModel.getProjectIri(iri);
@@ -708,6 +814,9 @@ export class ModelRepository implements ModelRepositoryType {
    * (e.g. reload on an evolution branch) or whose content is intentionally
    * outside the history (bootstrap, migrations, backup import). Everything
    * else must use {@link setModelJson} or {@link applyTransactions}.
+   *
+   * @deprecated Use {@link applyTransactions}. The remaining callers are the
+   * flows listed above, which have no operations to record.
    */
   setResourceStoreJson(iri: string, data: unknown, storeName: string = "model") {
     return this.resourceModel.setResourceStoreJson(iri, data, storeName);
@@ -721,6 +830,13 @@ export class ModelRepository implements ModelRepositoryType {
     return this.resourceModel.getResourceStoreBuffer(iri, storeName);
   }
 
+  /**
+   * Deletes the named store of the resource WITHOUT recording the change in
+   * the operation history.
+   *
+   * @deprecated Use {@link applyTransactions} to remove the content of a
+   * model, or {@link RemoveModelOperation} to remove the model itself.
+   */
   deleteResourceStore(iri: string, storeName: string = "model") {
     return this.resourceModel.deleteResourceStore(iri, storeName);
   }

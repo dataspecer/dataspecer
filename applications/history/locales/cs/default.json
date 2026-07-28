@@ -41,6 +41,7 @@
     "op": {
       "undo": "Vrátil(a) zpět změny transakce {{transactionId}}",
       "version": "Označil(a) transakci {{transactionId}} verzí {{version}}",
+      "create-project": "Projekt \"{{name}}\" vytvořen",
       "create-model": "Přidal(a) do projektu {{type}} \"{{name}}\"",
       "remove-model": "Odstranil(a) z projektu {{type}} \"{{name}}\"",
       "create-class": "Vytvořil(a) třídu <name />",
