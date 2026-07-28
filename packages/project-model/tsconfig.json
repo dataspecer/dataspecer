@@ -1,0 +1,25 @@
+// https://www.totaltypescript.com/tsconfig-cheat-sheet
+{
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "declaration": true,
+    "declarationMap": true,
+    "isolatedModules": true,
+    "lib": ["ESNext"],
+    "module": "NodeNext",
+    "moduleDetection": "force",
+    "moduleResolution": "nodenext",
+    "rootDir": "src",
+    "outDir": "lib",
+    "rewriteRelativeImportExtensions": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "strict": true,
+    "target": "ESNext",
+    "types": ["vitest/globals"],
+    "useDefineForClassFields": true,
+    "resolveJsonModule": true,
+  },
+  "include": ["src"],
+  "exclude": ["node_modules"]
+}

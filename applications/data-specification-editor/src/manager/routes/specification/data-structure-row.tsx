@@ -1,4 +1,4 @@
-import { DataSpecification } from "@dataspecer/backend-utils/connectors/specification";
+import type { DataSpecification } from '@dataspecer/specification/specification';
 import { Package } from "@dataspecer/core-v2/project";
 import { Button, Card, CardActions, CardContent, Chip, Typography } from "@mui/material";
 import React from "react";

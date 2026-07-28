@@ -268,6 +268,7 @@ class StructureModelAdapter {
     // XML specific
     const data = DataPsmXmlPropertyExtension.getExtensionData(associationEndData);
     model.xmlIsAttribute = data.isAttribute;
+    model.xmlGmlType = data.gmlType;
 
     const semanticRelationship = this.reader.readResource(
       associationEndData.dataPsmInterpretation
@@ -335,6 +336,7 @@ class StructureModelAdapter {
     // XML specific
     const data = DataPsmXmlPropertyExtension.getExtensionData(attributeData);
     model.xmlIsAttribute = data.isAttribute;
+    model.xmlGmlType = data.gmlType;
 
     const pimAttributeData = this.reader.readResource(
       attributeData.dataPsmInterpretation

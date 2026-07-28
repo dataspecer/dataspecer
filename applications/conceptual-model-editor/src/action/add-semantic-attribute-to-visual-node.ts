@@ -27,5 +27,5 @@ export function addSemanticAttributeToVisualNodeAction(
   const newContent = [...domainNode.content];
   newContent.splice(validPosition, 0, attribute);
 
-  visualModel.updateVisualEntity(domainNode.identifier, { content: newContent });
+  visualModel.updateVisualEntity(domainNode.id, { content: newContent });
 }

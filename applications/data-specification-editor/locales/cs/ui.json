@@ -35,6 +35,7 @@
   "no title": "bez názvu",
   "open data structure": "Otevřít",
   "profile": "Profilovat",
+  "redo": "Opakovat",
   "report a bug": "nahlásit chybu",
   "request a feature": "navrhnout úpravu",
   "return back button": "Jít zpět na {{toolName}}",
@@ -53,5 +54,6 @@
     "system": "Systémový"
   },
   "title": "editor schémat",
+  "undo": "Zpět",
   "version": "Verze"
 }

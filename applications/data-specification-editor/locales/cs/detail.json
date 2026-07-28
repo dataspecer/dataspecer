@@ -75,6 +75,12 @@
   "label regex for value": "Regulární výraz",
   "label string examples": "Příklady řetězců",
   "label technical label": "Technický popisek",
+  "mapping to xml type": {
+    "title": "Mapování na XML typ",
+    "gml:BoundingShapeType": "musí obsahovat element <gml:Envelope>",
+    "gml:EnvelopeType": "má stejný typ jako element <gml:Envelope>",
+    "gml:GeometryPropertyType": "musí obsahovat libovolný geometrický element, např. <gml:Point>, <gml:Polygon>, atd."
+  },
   "no codelist url": "Neobsahuje žádná URL číselníku",
   "no description": "bez popisku",
   "no label": "bez názvu",

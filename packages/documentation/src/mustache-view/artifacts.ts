@@ -59,14 +59,6 @@ const artefactTitle = {
         cs: "ShEx",
         en: "ShEx",
     },
-    "plant-uml": {
-        cs: "PlantUML diagram",
-        en: "PlantUML diagram",
-    },
-    "plant-uml/image": {
-        cs: "Konceptuální diagram",
-        en: "Conceptual diagram",
-    },
     // todo: do not identify artifacts by generator
     "https://schemas.dataspecer.com/generator/template-artifact": {
         cs: "Dokumentace",

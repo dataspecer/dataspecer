@@ -26,9 +26,9 @@ import {
   type CreatedEntityOperationResult,
   createGeneralization,
   type CreateGeneralizationOperation,
-  type Operation,
   type OperationResult,
 } from "@dataspecer/core-v2/semantic-model/operations";
+import type { Operation } from "@dataspecer/core/operation";
 
 interface OperationContext {
 
@@ -57,6 +57,19 @@ interface ProfileEntitiesResult {
 
   generalizations: EntityIdentifier[];
 
+}
+
+/**
+ * Converts absolute or relative IRI to relative IRI by preserving only the last
+ * segment of the IRI.
+ */
+function iriToLastSegment(iri: string | null): string | null {
+  if (iri === null) {
+    return null;
+  }
+
+  const segments = iri.split(/[\/#]/);
+  return segments[segments.length - 1];
 }
 
 const factory = createDefaultSemanticModelProfileOperationFactory();
@@ -153,7 +166,7 @@ function prepareProfileSemanticClassOperations(
   classes: SemanticClass[],
 ): CreateSemanticModelClassProfile[] {
   return classes.map(item => factory.createClassProfile({
-    iri: item.iri,
+    iri: iriToLastSegment(item.iri),
     profiling: [item.id],
     name: item.name,
     nameFromProfiled: item.id,
@@ -161,8 +174,9 @@ function prepareProfileSemanticClassOperations(
     descriptionFromProfiled: item.id,
     usageNote: null,
     usageNoteFromProfiled: null,
-    externalDocumentationUrl: item.externalDocumentationUrl ?? null,
+    externalDocumentationUrl: null,
     tags: [],
+    controlledVocabularies: [],
   }))
 }
 
@@ -170,7 +184,7 @@ function prepareProfileSemanticProfileClassOperations(
   classes: ProfileClass[],
 ): CreateSemanticModelClassProfile[] {
   return classes.map(item => factory.createClassProfile({
-    iri: item.iri,
+    iri: iriToLastSegment(item.iri),
     profiling: [item.id],
     name: item.name,
     nameFromProfiled: item.id,
@@ -178,8 +192,9 @@ function prepareProfileSemanticProfileClassOperations(
     descriptionFromProfiled: item.id,
     usageNote: item.usageNote,
     usageNoteFromProfiled: item.id,
-    externalDocumentationUrl: item.externalDocumentationUrl ?? null,
+    externalDocumentationUrl: null,
     tags: item.tags,
+    controlledVocabularies: item.controlledVocabularies,
   }))
 }
 
@@ -191,9 +206,11 @@ async function createSemanticClassProfiles(
   const classProfiles: EntityIdentifier[] = [];
   (await context.targetModel.executeOperations(operations)).map((item, index) => {
     if (item.success) {
-      const source = operations[index].entity.profiling[0];
+      const source = operations[index].entity.profiling?.[0];
       const target = (item as CreatedEntityOperationResult).id;
-      mappings[source] = target;
+      if (source !== undefined) {
+        mappings[source] = target;
+      }
       classProfiles.push(target);
     }
   });
@@ -268,7 +285,7 @@ function rangeEndProfile(
       : (conceptMapping[range.concept] ?? range.concept);
   return {
     profiling: [profiled],
-    iri: range.iri,
+    iri: iriToLastSegment(range.iri),
     name: range.name,
     nameFromProfiled: profiled,
     description: range.description,
@@ -277,7 +294,7 @@ function rangeEndProfile(
     usageNoteFromProfiled: profiled,
     concept: concept,
     cardinality: range.cardinality ?? null,
-    externalDocumentationUrl: range.externalDocumentationUrl ?? null,
+    externalDocumentationUrl: null,
     tags: [],
   }
 }
@@ -346,7 +363,7 @@ function prepareProfileSemanticGeneralizationOperations(
     }
     generalizationSources.push(item.id);
     generalizationOperations.push(createGeneralization({
-      iri: item.iri,
+      iri: iriToLastSegment(item.iri),
       child,
       parent,
     }));
@@ -368,7 +385,7 @@ function prepareProfileSemanticProfileGeneralizationOperations(
     }
     generalizationSources.push(item.id);
     generalizationOperations.push(createGeneralization({
-      iri: item.iri,
+      iri: iriToLastSegment(item.iri),
       child,
       parent,
     }));

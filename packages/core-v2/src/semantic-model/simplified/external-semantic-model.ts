@@ -7,6 +7,7 @@ import {
 import { Entity } from "../../entity-model/index.ts";
 import { EntityModel } from "../../entity-model/entity-model.ts";
 import { SimpleAsyncQueryableObservableEntityModel } from "../../entity-model/async-queryable/implementation.ts";
+import { QUERYABLE_MODEL } from "../../model/known-models.ts";
 
 export class ExternalSemanticModel implements EntityModel {
     private id: string;
@@ -21,8 +22,7 @@ export class ExternalSemanticModel implements EntityModel {
 
     serializeModel() {
         return {
-            // todo fix
-            type: "https://dataspecer.com/core/model-descriptor/sgov",
+            type: QUERYABLE_MODEL,
             id: this.id,
             queries: Object.keys((this.observableModel as SimpleAsyncQueryableObservableEntityModel).queries),
         };

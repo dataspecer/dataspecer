@@ -58,6 +58,9 @@ async function writeTransformationBegin(model: XmlTransformation, writer: XmlWri
   if (model.usesWktLiterals || model.usesGmlLiterals) {
     await writer.writeAndRegisterNamespaceDeclaration("gsp", "http://www.opengis.net/ont/geosparql#");
   }
+  if (model.usesGmlLiterals) {
+    await writer.writeAndRegisterNamespaceDeclaration("gml", "http://www.opengis.net/gml/3.2");
+  }
   await writer.writeLocalAttributeValue("version", usesVersion3 ? "3.0" : "2.0");
 
   if (model.targetNamespacePrefix != null) {
@@ -347,17 +350,64 @@ async function writeCommonTemplates(model: XmlTransformation, writer: XmlWriter)
 
       await writer.writeElementFull(
         "xsl",
-        "variable",
+        "param",
       )(async (writer) => {
-        await writer.writeLocalAttributeValue("name", "fragment");
-        await writer.writeLocalAttributeValue("select", "parse-xml-fragment(concat('<wrapper>', string($value), '</wrapper>'))/*/node()");
+        await writer.writeLocalAttributeValue("name", "wrapper-name");
+        await writer.writeLocalAttributeValue("select", "''");
       });
 
       await writer.writeElementFull(
         "xsl",
-        "copy-of",
+        "choose",
       )(async (writer) => {
-        await writer.writeLocalAttributeValue("select", "$fragment");
+        await writer.writeElementFull(
+          "xsl",
+          "when",
+        )(async (writer) => {
+          await writer.writeLocalAttributeValue("test", "normalize-space($wrapper-name) != ''");
+
+          await writer.writeElementFull(
+            "xsl",
+            "variable",
+          )(async (writer) => {
+            await writer.writeLocalAttributeValue("name", "fragment");
+            await writer.writeLocalAttributeValue("select", "parse-xml-fragment(concat('<wrapper>', string($value), '</wrapper>'))/*/*[1]");
+          });
+
+          await writer.writeElementFull(
+            "xsl",
+            "copy-of",
+          )(async (writer) => {
+            await writer.writeLocalAttributeValue("select", "$fragment/@*");
+          });
+
+          await writer.writeElementFull(
+            "xsl",
+            "copy-of",
+          )(async (writer) => {
+            await writer.writeLocalAttributeValue("select", "$fragment/node()");
+          });
+        });
+
+        await writer.writeElementFull(
+          "xsl",
+          "otherwise",
+        )(async (writer) => {
+          await writer.writeElementFull(
+            "xsl",
+            "variable",
+          )(async (writer) => {
+            await writer.writeLocalAttributeValue("name", "fragment");
+            await writer.writeLocalAttributeValue("select", "parse-xml-fragment(concat('<wrapper>', string($value), '</wrapper>'))/*/node()");
+          });
+
+          await writer.writeElementFull(
+            "xsl",
+            "copy-of",
+          )(async (writer) => {
+            await writer.writeLocalAttributeValue("select", "$fragment");
+          });
+        });
       });
     });
   }
@@ -824,6 +874,15 @@ async function writePropertyContents(match: XmlMatch, obj: string | null, writer
             await writer.writeLocalAttributeValue("select", `sp:binding[@name=${obj}]/sp:literal`);
           });
         });
+        if (match.wrappingElementName != null) {
+          await writer.writeElementFull(
+            "xsl",
+            "with-param",
+          )(async (writer) => {
+            await writer.writeLocalAttributeValue("name", "wrapper-name");
+            await writer.writeLocalAttributeValue("select", `'${writer.getQName(...match.wrappingElementName)}'`);
+          });
+        }
       });
     } else {
       // For regular literals, apply templates

@@ -270,10 +270,10 @@ function getNewNodeSelectionExtendedByNodeDuplicates(
   for(const [_, visualEntity] of visualEntities) {
     if(isVisualNode(visualEntity)) {
       const isPresentInNodeSelection = selectedNodesAsClasses.includes(visualEntity.representedEntity);
-      const isNewlyPresentInNodeSelection = !extendedNodeSelection.identifiers.includes(visualEntity.identifier);
+      const isNewlyPresentInNodeSelection = !extendedNodeSelection.identifiers.includes(visualEntity.id);
       if(isPresentInNodeSelection && isNewlyPresentInNodeSelection) {
-        extendedNodeSelection.identifiers.push(visualEntity.identifier);
-        newlyAddedNodes.push(visualEntity.identifier);
+        extendedNodeSelection.identifiers.push(visualEntity.id);
+        newlyAddedNodes.push(visualEntity.id);
       }
     }
   }
@@ -292,7 +292,7 @@ function extendExtensionByNodeDuplicates(
   const visualEntities = visualModel.getVisualEntities();
   for(const [_, visualEntity] of visualEntities) {
     if(isVisualNode(visualEntity)) {
-      if(!selectionExtension.selectionExtension.nodeSelection.includes(visualEntity.identifier)) {
+      if(!selectionExtension.selectionExtension.nodeSelection.includes(visualEntity.id)) {
         continue;
       }
       const representations = visualModel.getVisualEntitiesForRepresented(visualEntity.representedEntity);
@@ -302,8 +302,8 @@ function extendExtensionByNodeDuplicates(
         continue;
       }
       for(const node of representations) {
-        if(!selectionExtension.selectionExtension.nodeSelection.includes(node.identifier)) {
-          selectionExtension.selectionExtension.nodeSelection.push(node.identifier);
+        if(!selectionExtension.selectionExtension.nodeSelection.includes(node.id)) {
+          selectionExtension.selectionExtension.nodeSelection.push(node.id);
         }
       }
     }
@@ -445,9 +445,9 @@ function addToExtensionIfSatisfiesVisibilityFilter(
           const ends = edgeWhichAddedClass === SpecialEdge.FromClassProfileToProfiledClass ?
             [visualSource, visualTarget] :
             [visualTarget, visualSource];
-          if(ends[0].identifier === extendedNode && ends[1].representedEntity === classIdToAdd) {
+          if(ends[0].id === extendedNode && ends[1].representedEntity === classIdToAdd) {
             isSemanticEdgeInVisualModel = true;
-            edgeWhichAddedClass = visualEntity.identifier;
+            edgeWhichAddedClass = visualEntity.id;
             break;
           }
         }
@@ -481,10 +481,10 @@ function addToExtensionIfSatisfiesVisibilityFilter(
       }
       for(const visualNodeToAddToSelection of visualNodesForTheAddedClass) {
         const edgesWhichAddedTheNode = edgesWhichAddedVisualNodes
-          .filter(edge => hasEdgeEndInNode(visualNodeToAddToSelection.identifier, edge));
+          .filter(edge => hasEdgeEndInNode(visualNodeToAddToSelection.id, edge));
         for (const edgeWhichAddedTheNode of edgesWhichAddedTheNode) {
           addToSelectionExtension(
-            extension, visualNodeToAddToSelection.identifier, edgeWhichAddedTheNode.identifier, false, null);
+            extension, visualNodeToAddToSelection.id, edgeWhichAddedTheNode.id, false, null);
         }
       }
     }

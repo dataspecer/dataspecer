@@ -120,7 +120,7 @@ function copyVisualEntitiesBetweenModels(
     diagramNodeWhichCausedTheCopy.identifier, copyTo, copyFrom, originalToCopyMap);
 
   // Perform overlap layout so the bounding box doesn't contain any of the already present nodes
-  const helpGroupContent = nodes.map(node => originalToCopyMap[node.identifier]);
+  const helpGroupContent = nodes.map(node => originalToCopyMap[node.id]);
   const helpGroupForLayout = copyTo.addVisualGroup({
     anchored: true,
     content: helpGroupContent
@@ -181,12 +181,12 @@ function rerouteEdgesFromVisualDiagramNodeToItsContent(
           visualModelContainingDiagramNode, modelReferencedByDiagramNode, visualEntity,
           visualRelationshipsToIteratorMap, visualEntity.visualTarget, EdgeEndDirection.Source);
         if(newEnd === null) {
-          visualModelContainingDiagramNode.deleteVisualEntity(visualEntity.identifier);
+          visualModelContainingDiagramNode.deleteVisualEntity(visualEntity.id);
           continue;
         }
 
         const newIdentifier = originalToCopyMap[newEnd];
-        visualModelContainingDiagramNode.updateVisualEntity(visualEntity.identifier, { visualSource: newIdentifier });
+        visualModelContainingDiagramNode.updateVisualEntity(visualEntity.id, { visualSource: newIdentifier });
       }
       else if(visualEntity.visualTarget === diagramNodeToReroute) {
         // Same code but with source instead
@@ -195,13 +195,13 @@ function rerouteEdgesFromVisualDiagramNodeToItsContent(
           visualModelContainingDiagramNode, modelReferencedByDiagramNode, visualEntity,
           visualRelationshipsToIteratorMap, visualEntity.visualSource, EdgeEndDirection.Target);
         if(newEnd === null) {
-          visualModelContainingDiagramNode.deleteVisualEntity(visualEntity.identifier);
+          visualModelContainingDiagramNode.deleteVisualEntity(visualEntity.id);
           continue;
         }
 
         const newIdentifier = originalToCopyMap[newEnd];
 
-        visualModelContainingDiagramNode.updateVisualEntity(visualEntity.identifier, { visualTarget: newIdentifier });
+        visualModelContainingDiagramNode.updateVisualEntity(visualEntity.id, { visualTarget: newIdentifier });
       }
     }
     // Visual profile relationships are handled by visual model refresh and the validation.
@@ -270,7 +270,7 @@ function rerouteToEntityInsideDiagramNode(
     const visitCount = visualRelationshipsToIteratorMap[visualRelationship.representedRelationship];
     const index = visitCount % directReroutingCandidates.length;
     visualRelationshipsToIteratorMap[visualRelationship.representedRelationship]++;
-    return directReroutingCandidates[index].identifier;
+    return directReroutingCandidates[index].id;
   }
   else {
     for (const visualEntity of Object.values(referencedVisualModel.getVisualEntities())) {
@@ -278,7 +278,7 @@ function rerouteToEntityInsideDiagramNode(
         const classes = getClassesAndDiagramNodesModelsFromVisualModelRecursively(
           allAvailableVisualModels, visualEntity.representedVisualModel);
         if(classes.findIndex(cclass => cclass === otherSemanticEndIdentifier) >= 0) {
-          return visualEntity.identifier;
+          return visualEntity.id;
         }
       }
     }
@@ -308,12 +308,12 @@ function addCopiesToVisualModel(
     position.y -= positionShift.y;
     if(isVisualNode(node)) {
       const identifier = addVisualNode(copyTo, { id: node.representedEntity }, node.model, position, [...node.content]);
-      originalToCopyMap[node.identifier] = identifier;
+      originalToCopyMap[node.id] = identifier;
     }
     else if(isVisualDiagramNode(node)) {
       const identifier = addVisualDiagramNode(
         copyTo, position, node.representedVisualModel);
-      originalToCopyMap[node.identifier] = identifier
+      originalToCopyMap[node.id] = identifier
     }
     else {
       notifications.error("The moved edge endpoint is of unknown type");

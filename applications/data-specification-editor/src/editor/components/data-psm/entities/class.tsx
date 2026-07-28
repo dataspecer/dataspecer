@@ -30,6 +30,7 @@ import { CreateNonInterpretedAttribute } from "../../../operations/create-non-in
 import { MakeConcrete } from "../../../operations/make-concrete";
 import { MakeAbstract } from "../../../operations/make-abstract";
 import { ProfileInformation } from "../profiling/profile-information";
+import { isGeometryTypeObject } from "@/editor/utils/known-datatypes";
 
 /**
  * Because classes and containers are so similar, they share this component to make implementation simpler.
@@ -53,7 +54,8 @@ export const DataPsmClassItem: React.FC<{
   const {dataSpecificationIri, dataSpecifications, operationContext, semanticModelAggregator} = useContext(ConfigurationContext);
 
   const {dataPsmResource: dataPsmClass, pimResource: pimClass} = useDataPsmAndInterpretedPim<DataPsmClass, ExtendedSemanticModelClass>(type === "class" ? props.iri : (type === "container" ? partContext.parentDataPsmClassIri : null));
-  const readOnly = false;
+  const isGeometry = pimClass ? isGeometryTypeObject(pimClass) : false;
+  const readOnly = isGeometry;
   const isPrimitive = dataPsmClass?.dataPsmParts.length === 0 && dataPsmClass?.dataPsmEmptyAsComplex !== true;
 
   // @ts-ignore

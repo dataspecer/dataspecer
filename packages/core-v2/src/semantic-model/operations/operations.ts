@@ -1,12 +1,6 @@
-import {SemanticModelClass, SemanticModelGeneralization, SemanticModelRelationship} from "../concepts/index.ts";
-
-/**
- * Each operation is a single JS serializable object identified by its type. The type is a single string as the
- * operation must be executed by corresponding executor and not any more generic one.
- */
-export interface Operation {
-    type: string;
-}
+import { generateEntityId } from "@dataspecer/core/entity-model";
+import {SemanticModelClass, SemanticModelGeneralization, SemanticModelRelationship, SemanticModelRelationshipEnd} from "../concepts/index.ts";
+import { generateOperationId, type Operation } from "@dataspecer/core/operation";
 
 export interface OperationResult {
     success: boolean;
@@ -23,7 +17,7 @@ const CREATE_CLASS_OPERATION = 'create';
 
 export interface CreateClassOperation extends Operation {
     type: typeof CREATE_CLASS_OPERATION;
-    entity: Partial<Omit<SemanticModelClass, "type">>;
+    entity: Partial<Omit<SemanticModelClass, "type">> & Pick<SemanticModelClass, "id">;
 }
 
 export function isCreateClassOperation(operation: Operation): operation is CreateClassOperation {
@@ -32,8 +26,9 @@ export function isCreateClassOperation(operation: Operation): operation is Creat
 
 export function createClass(entity: Partial<Omit<SemanticModelClass, "type">> = {}): CreateClassOperation {
     return {
+        id: generateOperationId(),
         type: CREATE_CLASS_OPERATION,
-        entity
+        entity: { ...entity, id: entity.id ?? generateEntityId() },
     }
 }
 
@@ -43,8 +38,7 @@ const MODIFY_CLASS_OPERATION = 'modify';
 
 export interface ModifyClassOperation extends Operation {
     type: typeof MODIFY_CLASS_OPERATION;
-    id: string;
-    entity: Partial<Omit<SemanticModelClass, "type" | "id">>;
+    entity: Partial<Omit<SemanticModelClass, "type">> & Pick<SemanticModelClass, "id">;
 }
 
 export function isModifyClassOperation(operation: Operation): operation is ModifyClassOperation {
@@ -55,7 +49,10 @@ export function modifyClass(id: string, entity: Partial<Omit<SemanticModelClass,
     return {
         type: MODIFY_CLASS_OPERATION,
         id,
-        entity
+        entity: {
+            ...entity,
+            id,
+        }
     }
 }
 
@@ -65,17 +62,20 @@ const CREATE_RELATIONSHIP_OPERATION = 'create-relation';
 
 export interface CreateRelationshipOperation extends Operation {
     type: typeof CREATE_RELATIONSHIP_OPERATION;
-    entity: Partial<Omit<SemanticModelRelationship, "type">>;
+    entity: Partial<Omit<SemanticModelRelationship, "type" | "ends">>
+        & Pick<SemanticModelRelationship, "id">
+        & { ends?: Partial<SemanticModelRelationshipEnd>[] };
 }
 
 export function isCreateRelationshipOperation(operation: Operation): operation is CreateRelationshipOperation {
     return operation.type === CREATE_RELATIONSHIP_OPERATION;
 }
 
-export function createRelationship(entity: Partial<Omit<SemanticModelRelationship, "type">>): CreateRelationshipOperation {
+export function createRelationship(entity: Partial<Omit<SemanticModelRelationship, "type" | "ends">> & { ends?: Partial<SemanticModelRelationshipEnd>[] } = {}): CreateRelationshipOperation {
     return {
+        id: generateOperationId(),
         type: CREATE_RELATIONSHIP_OPERATION,
-        entity
+        entity: { ...entity, id: entity.id ?? generateEntityId() },
     }
 }
 
@@ -83,10 +83,12 @@ export function createRelationship(entity: Partial<Omit<SemanticModelRelationshi
 
 const MODIFY_RELATIONSHIP_OPERATION = 'modify-relation';
 
+/**
+ * If you modifying individual ends of the relationship, use `ModifyRelationEndOperation` instead.
+ */
 export interface ModifyRelationOperation extends Operation {
     type: typeof MODIFY_RELATIONSHIP_OPERATION;
-    id: string;
-    entity: Partial<Omit<SemanticModelRelationship, "type" | "id">>;
+    entity: Partial<Omit<SemanticModelRelationship, "type">> & Pick<SemanticModelRelationship, "id">;
 }
 
 export function isModifyRelationOperation(operation: Operation): operation is ModifyRelationOperation {
@@ -95,9 +97,40 @@ export function isModifyRelationOperation(operation: Operation): operation is Mo
 
 export function modifyRelation(id: string, entity: Partial<Omit<SemanticModelRelationship, "type" | "id">>): ModifyRelationOperation {
     return {
+        id: generateOperationId(),
         type: MODIFY_RELATIONSHIP_OPERATION,
-        id,
-        entity
+        entity: {
+            ...entity,
+            id,
+        }
+    }
+}
+
+// Modify relationship end
+
+const MODIFY_RELATIONSHIP_END_OPERATION = 'modify-relation-end';
+
+export interface ModifyRelationEndOperation extends Operation {
+    type: typeof MODIFY_RELATIONSHIP_END_OPERATION;
+    entityId: string;
+    /**
+     * Zero-based index of the end to modify.
+     */
+    endIndex: number;
+    end: Partial<SemanticModelRelationshipEnd>;
+}
+
+export function isModifyRelationEndOperation(operation: Operation): operation is ModifyRelationEndOperation {
+    return operation.type === MODIFY_RELATIONSHIP_END_OPERATION;
+}
+
+export function modifyRelationEnd(id: string, endIndex: number, end: Partial<SemanticModelRelationshipEnd>): ModifyRelationEndOperation {
+    return {
+        id: generateOperationId(),
+        type: MODIFY_RELATIONSHIP_END_OPERATION,
+        entityId: id,
+        endIndex,
+        end,
     }
 }
 
@@ -107,17 +140,18 @@ const CREATE_GENERALIZATION_OPERATION = 'create-generalization';
 
 export interface CreateGeneralizationOperation extends Operation {
     type: typeof CREATE_GENERALIZATION_OPERATION;
-    entity: Partial<Omit<SemanticModelGeneralization, "type">>;
+    entity: Partial<Omit<SemanticModelGeneralization, "type">> & Pick<SemanticModelGeneralization, "id">;
 }
 
 export function isCreateGeneralizationOperation(operation: Operation): operation is CreateGeneralizationOperation {
     return operation.type === CREATE_GENERALIZATION_OPERATION;
 }
 
-export function createGeneralization(entity: Partial<Omit<SemanticModelGeneralization, "id" | "type">>): CreateGeneralizationOperation {
+export function createGeneralization(entity: Partial<Omit<SemanticModelGeneralization, "type">> = {}): CreateGeneralizationOperation {
     return {
+        id: generateOperationId(),
         type: CREATE_GENERALIZATION_OPERATION,
-        entity
+        entity: { ...entity, id: entity.id ?? generateEntityId() },
     }
 }
 
@@ -127,8 +161,7 @@ const MODIFY_GENERALIZATION_OPERATION = 'modify-generalization';
 
 export interface ModifyGeneralizationOperation extends Operation {
     type: typeof MODIFY_GENERALIZATION_OPERATION;
-    id: string;
-    entity: Partial<Omit<SemanticModelGeneralization, "id" | "type">>;
+    entity: Partial<Omit<SemanticModelGeneralization, "type">> & Pick<SemanticModelGeneralization, "id">;
 }
 
 export function isModifyGeneralizationOperation(operation: Operation): operation is ModifyGeneralizationOperation {
@@ -137,9 +170,12 @@ export function isModifyGeneralizationOperation(operation: Operation): operation
 
 export function modifyGeneralization(id: string, entity: Partial<Omit<SemanticModelGeneralization, "id" | "type">>): ModifyGeneralizationOperation {
     return {
+        id: generateOperationId(),
         type: MODIFY_GENERALIZATION_OPERATION,
-        id,
-        entity
+        entity: {
+            ...entity,
+            id,
+        }
     }
 }
 
@@ -152,7 +188,7 @@ const DELETE_ENTITY_OPERATION = 'delete';
  */
 export interface DeleteEntityOperation extends Operation {
     type: typeof DELETE_ENTITY_OPERATION;
-    id: string;
+    entityId: string;
 }
 
 export function isDeleteEntityOperation(operation: Operation): operation is DeleteEntityOperation {
@@ -161,7 +197,8 @@ export function isDeleteEntityOperation(operation: Operation): operation is Dele
 
 export function deleteEntity(id: string): DeleteEntityOperation {
     return {
+        id: generateOperationId(),
         type: DELETE_ENTITY_OPERATION,
-        id
+        entityId: id
     }
 }

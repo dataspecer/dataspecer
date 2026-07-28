@@ -4,7 +4,7 @@ import type {
   StructureModelResource,
 } from "@dataspecer/app-generator";
 import { resourceModel } from "../main.ts";
-import { BackendModelRepository } from "./model-repository.ts";
+import { getModelsForPackage } from "./backend-model-store.ts";
 
 /**
  * For a given project id (id/iri of a package) it returns single aggregated
@@ -16,8 +16,8 @@ import { BackendModelRepository } from "./model-repository.ts";
  * complexity that may change in the future.
  */
 export async function getSpecification(projectId: string): Promise<SpecificationSource> {
-  const modelRepository = new BackendModelRepository(resourceModel);
-  const specification = await getDataSpecificationWithModels(projectId, "", modelRepository);
+  const allModels = await getModelsForPackage(projectId, resourceModel);
+  const specification = getDataSpecificationWithModels(projectId, allModels);
 
   // Aggregated semantic model is a single model containing entities.
   const aggregatedWrappedEntities = specification.semanticModelAggregator.getAggregatedEntities();

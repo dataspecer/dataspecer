@@ -1,15 +1,16 @@
 import { LOCAL_SEMANTIC_MODEL } from "@dataspecer/core-v2/model/known-models";
+import type { Entity } from "@dataspecer/core/entity-model";
+import { createUpdateEntityOperation } from "@dataspecer/core/operation";
 import { ModelCompositionConfigurationApplicationProfile, ModelCompositionConfigurationMerge } from "@dataspecer/specification/model-hierarchy";
 import { Alert, Box, Button, Card, CardContent, Checkbox, Divider, FormControlLabel, Radio, RadioGroup, Typography } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { FC, useContext, useState } from "react";
-import { BackendConnectorContext } from "../../../application";
 import { LanguageStringText } from "../../../editor/components/helper/LanguageStringComponents";
-import { SpecificationContext } from "./specification";
+import { ManagerModelStoreContext, SpecificationContext } from "./specification";
 
 export const ConceptualModelTargets: FC = () => {
-  const [specification, updateSpecification] = useContext(SpecificationContext);
-  const backendPackageService = useContext(BackendConnectorContext);
+  const specification = useContext(SpecificationContext);
+  const modelStore = useContext(ManagerModelStoreContext);
 
   const { enqueueSnackbar } = useSnackbar();
 
@@ -31,11 +32,11 @@ export const ConceptualModelTargets: FC = () => {
         models: null,
       } as ModelCompositionConfigurationMerge,
     } satisfies ModelCompositionConfigurationApplicationProfile;
-    await backendPackageService.updateDefaultModelCompositionConfiguration(specification.id, newConfiguration);
-    updateSpecification({
-      ...specification,
-      modelCompositionConfiguration: newConfiguration,
-    });
+    const transaction = modelStore.transaction([{
+      modelId: specification.id,
+      operation: createUpdateEntityOperation({ id: specification.id, modelCompositionConfiguration: newConfiguration } as Partial<Entity> & Pick<Entity, "id">),
+    }], {});
+    await transaction.confirmation;
     enqueueSnackbar("Source configuration saved", { variant: "success" });
   };
 

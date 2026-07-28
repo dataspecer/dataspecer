@@ -45,13 +45,18 @@ export async function generatorConfigurationToRdf(
   // Create root configuration node
   writer.addQuad(IRI(iri), RDF.type, GENERATOR_CONFIGURATION_DSV["configuration"]);
 
-  for (const [key] of Object.entries(configuration)) {
+  const effectiveConfiguration = {...configuration};
+  // We skip properties of Entity that were added for interoperability purposes.
+  delete effectiveConfiguration["id"];
+  delete effectiveConfiguration["type"];
+
+  for (const [key] of Object.entries(effectiveConfiguration)) {
     const configEntryIri = `${iri}${encodeURIComponent(key)}`;
     writer.addQuad(IRI(iri), GENERATOR_CONFIGURATION_DSV["hasConfigurations"], IRI(configEntryIri));
   }
 
   // Iterate over all configuration entries
-  for (const [key, value] of Object.entries(configuration)) {
+  for (const [key, value] of Object.entries(effectiveConfiguration)) {
     // Create IRI for this configuration entry
     const configEntryIri = `${iri}${encodeURIComponent(key)}`;
 

@@ -34,6 +34,14 @@ const PREDEFINED_MODELS: PredefinedModel[] = [{
   "label": "FOAF (Friend of a Friend) Vocabulary",
   "url": "https://datagov-cz.github.io/cache-slovniku/foaf.ttl",
 }, {
+  "identifier": "geo",
+  "label": "GeoSPARQL 1.1 Ontology",
+  "url": "https://opengeospatial.github.io/ogc-geosparql/geosparql11/geo.ttl",
+}, {
+  "identifier": "sf",
+  "label": "GeoSPARQL 1.1 Simple Features Definition",
+  "url": "https://opengeospatial.github.io/ogc-geosparql/geosparql11/sf_geometries.ttl",
+}, {
   "identifier": "odrl",
   "label": "ODRL Version 2.2",
   "url": "https://www.w3.org/ns/odrl/2/ODRL22.ttl",

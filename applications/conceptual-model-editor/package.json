@@ -20,6 +20,7 @@
     "@dataspecer/layout": "0.0.0",
     "@dataspecer/lightweight-owl": "*",
     "@dataspecer/profile-model": "*",
+    "@dataspecer/project-model": "*",
     "@dataspecer/semantic-model": "*",
     "@dataspecer/shacl-v2": "*",
     "@dataspecer/visual-model": "*",
@@ -55,10 +56,10 @@
     "tailwindcss": "^4.2.2",
     "tailwindcss-animate": "^1.0.7",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3",
+    "typescript": "^7.0.2",
     "typescript-eslint": "^8.58.0",
-    "vite": "^8.0.3",
-    "vitest": "^4.1.2",
+    "vite": "^8.0.13",
+    "vitest": "^4.1.7",
     "zustand": "^5.0.12"
   }
 }

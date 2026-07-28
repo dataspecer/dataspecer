@@ -6,7 +6,7 @@ import { FC, useContext } from "react";
 import { useSearchParams } from "react-router-dom";
 import { DefaultConfigurationContext } from "../../../../application";
 import { getDefaultConfigurators } from "../../../../configurators";
-import { getConfiguration } from "../../../../generators/configuration/provided-configuration";
+import { getConfiguration } from "../../../../configuration/provided-configuration";
 import { useAsyncMemo } from "../../../../editor/hooks/use-async-memo";
 import { ArtifactConfigurator } from "@dataspecer/specification/v1";
 import { SpecificationContext } from "../../../routes/specification/specification";
@@ -64,14 +64,6 @@ const artefactTitle = {
       cs: "ShEx",
       en: "ShEx",
   },
-  "plant-uml": {
-      cs: "PlantUML diagram",
-      en: "PlantUML diagram",
-  },
-  "plant-uml/image": {
-      cs: "Konceptuální diagram",
-      en: "Conceptual diagram",
-  },
   // todo: do not identify artifacts by generator
   "https://schemas.dataspecer.com/generator/template-artifact": {
       cs: "Dokumentace",
@@ -91,7 +83,7 @@ export const ArtifactNames: FC<{
   currentConfiguration: object,
   //fullCurrentConfiguration: object,
 }> = ({input, onChange, defaultObject, currentConfiguration}) => {
-  const [specification] = useContext(SpecificationContext);
+  const specification = useContext(SpecificationContext);
   const defaultConfiguration = useContext(DefaultConfigurationContext);
   const [searchParams] = useSearchParams();
   const dataSpecificationIri = searchParams.get("dataSpecificationIri");
@@ -103,7 +95,7 @@ export const ArtifactNames: FC<{
     // @ts-ignore
     clonedSpecification.artefactConfiguration = currentConfiguration;
 
-    const {store, dataSpecifications: ds2} = await getConfiguration(specification.id, "");
+    const { store } = await getConfiguration(specification.id, "");
 
     // We know, that the current data specification and its stores are present
     const configurator = new ArtifactConfigurator(

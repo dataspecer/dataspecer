@@ -8,6 +8,6 @@ export function deleteVisualEntity(
   const entityVisuals = visualModel.getVisualEntitiesForRepresented(
     generalization.identifier);
   for (const entity of entityVisuals) {
-    visualModel.deleteVisualEntity(entity.identifier);
+    visualModel.deleteVisualEntity(entity.id);
   }
 }

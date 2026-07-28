@@ -82,6 +82,8 @@ export class XmlSchemaGenerator implements ArtefactGenerator {
     );
 
     const transformations = [...defaultStructureTransformations];
+    // Populate gml geometry must be placed before transformation of primitive types
+    transformations.push(structureModelPopulateSfGeometry);
     transformations.push(structureModelTransformPrimitiveTypes);
     model = transformStructureModel(
       conceptualModel,
@@ -94,7 +96,6 @@ export class XmlSchemaGenerator implements ArtefactGenerator {
     let xmlModel = structureModelAddXmlProperties(
       model, context.reader
     );
-    xmlModel = structureModelPopulateSfGeometry(xmlModel);
     xmlModel = structureModelMarkGmlLiteralAsReferencing(xmlModel);
 
     const xmlSchemas = await structureModelToXmlSchema(

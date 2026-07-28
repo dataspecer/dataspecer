@@ -166,7 +166,7 @@ const updateNodeVisualEntities = (
   }
   const nextVisualEntities = visualsModel === null ? []
     : visualsModel.getVisualEntitiesForRepresented(node.identifier)
-      .map(item => item.identifier);
+      .map(item => item.id);
   if (compareArrays(nextVisualEntities, node.visualEntities)) {
     // There was no change.
     return node;

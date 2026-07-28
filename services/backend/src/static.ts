@@ -12,7 +12,8 @@ import mime from "mime";
  */
 export function useStaticSpaHandler(basePath: string) {
   return (request: Request, response: Response, next: NextFunction) => {
-    const url = request.params[0] ?? "";
+    const splat = request.params.splat;
+    const url = Array.isArray(splat) ? splat.join("/") : "";
 
     // Helper function to send file with proper MIME type
     const sendFileWithMime = (filePath: string) => {

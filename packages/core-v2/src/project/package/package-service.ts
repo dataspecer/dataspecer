@@ -1,11 +1,20 @@
 import { EntityModel } from "../../entity-model/index.ts";
 import { VisualModel } from "@dataspecer/visual-model";
-import { Package, ResourceEditable } from "../resource/resource.ts";
+import { Package, ResourceEditable, type BaseResource } from "../resource/resource.ts";
+
+/**
+ * Provides basic operations with resources.
+ */
+export interface ResourceService {
+    getResource(resourceId: string): Promise<BaseResource>;
+    getResourceJsonData(resourceId: string, name?: string): Promise<unknown>;
+    setResourceJsonData(resourceId: string, data: unknown, name?: string): Promise<void>;
+}
 
 /**
  * Provides basic operations with packages.
  */
-export interface PackageService {
+export interface PackageService extends ResourceService {
     /**
      * Returns package with all sub-packages.
      */
@@ -25,6 +34,18 @@ export interface PackageService {
      * Removes the package with all models and sub-packages.
      */
     deletePackage(packageId: string): Promise<void>;
+
+    /**
+     * Creates a new resource (a model, not a package) of the given type under
+     * the parent package, with the given id.
+     */
+    createResource(parentPackageId: string, data: ResourceEditable & { type: string }): Promise<BaseResource>;
+
+    /**
+     * Removes the resource identified by its id. If it is a package, all of
+     * its sub-resources are removed as well.
+     */
+    deleteResource(iri: string): Promise<void>;
 }
 
 export interface SemanticModelPackageService extends PackageService {

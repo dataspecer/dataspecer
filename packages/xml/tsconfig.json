@@ -25,7 +25,7 @@
     "declarationMap": true,
 
     "lib": ["ESNext"],
-    "types": ["vitest/globals"]
+    "types": ["vitest/globals", "@types/node"]
   },
   "include": ["src/**/*"]
 }

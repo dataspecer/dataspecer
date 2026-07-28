@@ -89,8 +89,8 @@ function findAllExistingVisualNodeDuplicates(
     .filter((visualEntity, _) =>
       isVisualNode(visualEntity) &&
       visualEntity.representedEntity === originalNode.representedEntity &&
-      duplicateNode.identifier !== visualEntity.identifier)
-    .map(node => node.identifier);
+      duplicateNode.id !== visualEntity.id)
+    .map(node => node.id);
 
   return allExistingNodeDuplicates;
 }
@@ -105,8 +105,8 @@ function findAllExistingVisualDiagramNodeDuplicates(
     .filter((visualEntity, _) =>
       isVisualDiagramNode(visualEntity) &&
       visualEntity.representedVisualModel === originalNode.representedVisualModel &&
-      duplicateNode.identifier !== visualEntity.identifier)
-    .map(node => node.identifier);
+      duplicateNode.id !== visualEntity.id)
+    .map(node => node.id);
 
   return allExistingNodeDuplicates;
 }
@@ -157,8 +157,8 @@ function addRelationshipDuplicate(
       (visualModel[addToVisualModelFunctionName] as ((relationship: any) => string))({
         ...relationship,
         waypoints: createWaypointsForSelfLoop(duplicateNode.position),
-        visualSource: duplicateNode.identifier,
-        visualTarget: duplicateNode.identifier,
+        visualSource: duplicateNode.id,
+        visualTarget: duplicateNode.id,
       });
     }
   }
@@ -168,14 +168,14 @@ function addRelationshipDuplicate(
       (visualModel[addToVisualModelFunctionName] as ((relationship: any) => string))({
         ...relationship,
         waypoints: [],
-        visualSource: duplicateNode.identifier
+        visualSource: duplicateNode.id
       });
     }
     else if(hasEdgeTargetInDuplicates) {
       (visualModel[addToVisualModelFunctionName] as ((relationship: any) => string))({
         ...relationship,
         waypoints: [],
-        visualTarget: duplicateNode.identifier
+        visualTarget: duplicateNode.id
       });
     }
   }

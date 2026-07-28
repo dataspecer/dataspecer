@@ -14,8 +14,8 @@ import { useDataPsmAndInterpretedPim } from "../../../hooks/use-data-psm-and-int
 import { ReplaceDataPsmAssociationEndWithReference } from "../../../operations/replace-data-psm-association-end-with-reference";
 import { ReplaceWithReferenceDialog } from "./replace-with-reference-dialog";
 
-async function getPimClassInterpretationHierarchy(pimClassIri: string, store: FederatedObservableStore): Promise<string[]> {
-    const cls = await store.readResource(pimClassIri) as ExtendedSemanticModelClass;
+function getPimClassInterpretationHierarchy(pimClassIri: string, store: FederatedObservableStore): string[] {
+    const cls = store.readResource(pimClassIri) as ExtendedSemanticModelClass;
     if (cls === null) return [];
     const interpretation = [];
 
@@ -44,23 +44,23 @@ export const ReplaceAssociationEndWithReference: React.FC<{dataPsmAssociationEnd
 
         if (pimClass?.iri) {
             // List all PSM schemas from linked stores
-            const schemas = await store.listResourcesOfType(SCHEMA);
+            const schemas = store.listResourcesOfType(SCHEMA);
 
             for (const schemaIri of schemas) {
-                const schema = await store.readResource(schemaIri) as DataPsmSchema;
+                const schema = store.readResource(schemaIri) as DataPsmSchema;
                 if (schema === null) continue;
                 for (const rootIri of schema.dataPsmRoots) {
-                    const root = await store.readResource(rootIri);
+                    const root = store.readResource(rootIri);
 
                     if (DataPsmClass.is(root)) {
                         if (root.dataPsmInterpretation === null) continue;
-                        const interpretations = await getPimClassInterpretationHierarchy(root.dataPsmInterpretation, store);
+                        const interpretations = getPimClassInterpretationHierarchy(root.dataPsmInterpretation, store);
                         if (interpretations.includes(pimClass.iri)) {
                             foundExistingDataPsms.push(schemaIri);
                         }
                     } else if (DataPsmExternalRoot.is(root)) {
                         if (root.dataPsmTypes.length === 0) continue;
-                        const pim = await store.readResource(root.dataPsmTypes[0]) as ExtendedSemanticModelClass;
+                        const pim = store.readResource(root.dataPsmTypes[0]) as ExtendedSemanticModelClass;
                         if (pim === null) continue;
                         if (pim.iri === pimClass.iri) {
                             foundExistingDataPsms.push(schemaIri);
@@ -72,9 +72,9 @@ export const ReplaceAssociationEndWithReference: React.FC<{dataPsmAssociationEnd
 
                         let found = false;
                         for (const choice of choices) {
-                            const dataPsmClass = await store.readResource(choice) as DataPsmClass;
+                            const dataPsmClass = store.readResource(choice) as DataPsmClass;
                             if (!dataPsmClass || dataPsmClass.dataPsmInterpretation === null) continue;
-                            const interpretations = await getPimClassInterpretationHierarchy(dataPsmClass.dataPsmInterpretation, store);
+                            const interpretations = getPimClassInterpretationHierarchy(dataPsmClass.dataPsmInterpretation, store);
                             if (interpretations.includes(pimClass.iri)) {
                                 found = true;
                                 break;

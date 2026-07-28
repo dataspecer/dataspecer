@@ -13,12 +13,6 @@ export type DataSpecification = Package & {
   tags: string[];
 
   /**
-   * List of IDs of models that are being interpreted as CIMs.
-   * @deprecated Use {@link modelCompositionConfiguration} instead.
-   * */
-  sourceSemanticModelIds: string[];
-
-  /**
    * List of IDs of models that are being interpreted as PIMs.
    * @deprecated Use {@link modelCompositionConfiguration} instead.
    */

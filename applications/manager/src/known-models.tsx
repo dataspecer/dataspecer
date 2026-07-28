@@ -1,12 +1,4 @@
-import {
-  API_SPECIFICATION_MODEL,
-  APPLICATION_GRAPH_NEW,
-  APPLICATION_GRAPH_OLD,
-  LOCAL_PACKAGE,
-  LOCAL_SEMANTIC_MODEL,
-  LOCAL_VISUAL_MODEL,
-  V1,
-} from "@dataspecer/core-v2/model/known-models";
+import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
 import { AppWindowMac, Code, Cog, Eye, Folder, Globe2, LibraryBig } from "lucide-react";
 import { v4 as uuidv4 } from 'uuid';
@@ -110,31 +102,28 @@ export const createModelInstructions = {
       }}))(context);
     },
   },
-  [LOCAL_VISUAL_MODEL]: {
+  [VISUAL_MODEL]: {
     needsNaming: false,
-    createHook: getHookForStandardModel(LOCAL_VISUAL_MODEL, iri => ({
-      "type": "http://dataspecer.com/resources/local/visual-model",
-      "modelId": iri,
-      "visualEntities": {},
-      "modelColors": {
-        "vhfk9": "#ffd670"
-      }
+    createHook: getHookForStandardModel(VISUAL_MODEL, iri => ({
+      "identifier": iri,
+      "version": 1,
+      "type": VISUAL_MODEL,
+      "entities": [
+        {
+          "identifier": iri,
+          "type": [
+            "entity-model-type"
+          ],
+          "label": {
+            "en": "Main view"
+          }
+        }
+      ]
     })),
   },
-  [APPLICATION_GRAPH_OLD]: {
+  [APPLICATION_GRAPH]: {
     needsNaming: true,
-    createHook: getHookForStandardModel(APPLICATION_GRAPH_OLD, (id, context) => ({
-      "id": id,
-      "label": context.label?.cs ?? context.label?.en ?? "Application",
-      "datasources": [],
-      "nodes": [],
-      "edges": [],
-      "dataSpecification": []
-    })),
-  },
-  [APPLICATION_GRAPH_NEW]: {
-    needsNaming: true,
-    createHook: getHookForStandardModel(APPLICATION_GRAPH_NEW, (_iri, context) => ({
+    createHook: getHookForStandardModel(APPLICATION_GRAPH, (_iri, context) => ({
       "name": context.label?.cs ?? context.label?.en ?? "Application",
       "dataSpecificationIri": context.parentIri,
       "datasources": [],
@@ -145,7 +134,7 @@ export const createModelInstructions = {
   [LOCAL_SEMANTIC_MODEL]: {
     needsNaming: false,
     createHook: getHookForStandardModel(LOCAL_SEMANTIC_MODEL, (iri, context) => ({
-      "type": "http://dataspecer.com/resources/local/semantic-model",
+      "type": LOCAL_SEMANTIC_MODEL,
       "modelId": iri,
       "modelAlias": context.modelAlias ?? "",
       "baseIri": context.baseIri ?? iri,
@@ -160,28 +149,24 @@ export const createModelInstructions = {
 
 export const modelTypeToName = {
     [LOCAL_PACKAGE]: "Directory",
-    [LOCAL_VISUAL_MODEL]: "Visual model",
+    [VISUAL_MODEL]: "Visual model",
     [LOCAL_SEMANTIC_MODEL]: "Semantic model",
     [V1.PSM]: "PSM",
     [V1.GENERATOR_CONFIGURATION]: "Generator configuration",
-    "https://dataspecer.com/core/model-descriptor/sgov": "SSP",
-    "https://dataspecer.com/core/model-descriptor/pim-store-wrapper": "PIM Wrapper",
+    [QUERYABLE_MODEL]: "SSP",
+    [RDFS_MODEL]: "PIM Wrapper",
     [API_SPECIFICATION_MODEL]: "OpenAPI Specification",
-    [APPLICATION_GRAPH_OLD]: "Application graph (old)",
-    [APPLICATION_GRAPH_NEW]: "Application graph (new)"
+    [APPLICATION_GRAPH]: "Application graph"
   };
 
 export const ModelIcon = ({ type, className }: { type: string[], className?: string }) => {
-  if (type.includes(APPLICATION_GRAPH_OLD)) {
-    return <AppWindowMac className={cn("text-gray-400", className)} />
-  }
-  if (type.includes(APPLICATION_GRAPH_NEW)) {
+  if (type.includes(APPLICATION_GRAPH)) {
     return <AppWindowMac className={cn("text-rose-600", className)} />
   }
   if (type.includes(LOCAL_PACKAGE)) {
     return <Folder className={cn("text-gray-400", className)} />;
   }
-  if (type.includes(LOCAL_VISUAL_MODEL)) {
+  if (type.includes(VISUAL_MODEL)) {
     return <Eye className={cn("text-purple-400", className)} />;
   }
   if (type.includes(LOCAL_SEMANTIC_MODEL)) {
@@ -193,10 +178,10 @@ export const ModelIcon = ({ type, className }: { type: string[], className?: str
   if (type.includes(V1.GENERATOR_CONFIGURATION)) {
     return <Cog className={cn("text-purple-400", className)} />;
   }
-  if (type.includes("https://dataspecer.com/core/model-descriptor/sgov")) {
+  if (type.includes(QUERYABLE_MODEL)) {
     return <Globe2 className={cn("text-green-400", className)} />;
   }
-  if (type.includes("https://dataspecer.com/core/model-descriptor/pim-store-wrapper")) {
+  if (type.includes(RDFS_MODEL)) {
     return <LibraryBig className={cn("text-orange-400", className)} />;
   }
   if (type.includes(API_SPECIFICATION_MODEL)) {

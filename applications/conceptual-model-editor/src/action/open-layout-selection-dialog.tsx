@@ -57,7 +57,7 @@ function getOnlyEdgesWithBothEndsInGivenNodes(
     .filter(edge => isVisualRelationship(edge) || isVisualProfileRelationship(edge));
   const result = edges
     .filter(edge => nodes.includes(edge.visualSource) && nodes.includes(edge.visualTarget))
-    .map(edge => edge.identifier);
+    .map(edge => edge.id);
 
   return result;
 }

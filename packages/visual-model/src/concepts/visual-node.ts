@@ -1,7 +1,7 @@
-import { Entity, EntityIdentifier } from "../entity-model/entity.ts";
-import { ModelIdentifier } from "../entity-model/entity-model.ts";
 import { VisualEntity } from "./visual-entity.ts";
 import { Position } from "./position.ts";
+import { Entity, EntityIdentifier } from "@dataspecer/core/entity-model";
+import { ModelIdentifier } from "@dataspecer/core/model";
 
 /**
  * Represents an entity, i.g. class or a profile.

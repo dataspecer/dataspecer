@@ -1,5 +1,0 @@
-import { <%= it.read_return_type %> } from <%~ it.read_return_type_path %>;
-
-export interface AggregateInstanceEditor {
-    updateInstance(newInstance: any): Promise<<%= it.read_return_type %>>;
-}

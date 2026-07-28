@@ -13,15 +13,14 @@ interface ChangeEntry {
 const factory = createDefaultSemanticModelProfileOperationFactory();
 
 test("Create class profile.", () => {
-  let counter = 0;
   const actual: ChangeEntry[] = [];
   const executor = createDefaultSemanticModelProfileOperationExecutor(
-    { createIdentifier: () => (++counter).toString() },
     { entity: () => null },
     { change: (updated, removed) => actual.push({ updated, removed }) },
   );
   //
   const result = executor.executeOperation(factory.createClassProfile({
+    id: "1",
     iri: "iri",
     name: { "en": "name" },
     nameFromProfiled: "name-source",
@@ -32,6 +31,7 @@ test("Create class profile.", () => {
     profiling: ["one", "two"],
     externalDocumentationUrl: "http://example.com/document",
     tags: ["main"],
+    controlledVocabularies: [],
   }));
   //
   expect(result).toStrictEqual({ success: true, created: ["1"] });
@@ -51,6 +51,7 @@ test("Create class profile.", () => {
         profiling: ["one", "two"],
         externalDocumentationUrl: "http://example.com/document",
         tags: ["main"],
+        controlledVocabularies: [],
       } as SemanticModelClassProfile
     },
     removed: []
@@ -58,7 +59,6 @@ test("Create class profile.", () => {
 });
 
 test("Modify class profile, change none.", () => {
-  let counter = 0;
   const actual: ChangeEntry[] = [];
   const previous: SemanticModelClassProfile = {
     id: "1",
@@ -73,9 +73,9 @@ test("Modify class profile, change none.", () => {
     profiling: ["one", "two"],
     externalDocumentationUrl: "http://example.com/document",
     tags: ["main"],
+    controlledVocabularies: [],
   };
   const executor = createDefaultSemanticModelProfileOperationExecutor(
-    { createIdentifier: () => (++counter).toString() },
     { entity: () => previous },
     { change: (updated, removed) => actual.push({ updated, removed }) },
   );
@@ -100,6 +100,7 @@ test("Modify class profile, change none.", () => {
         externalDocumentationUrl: "http://example.com/document",
         tags: ["main"],
         order: null,
+        controlledVocabularies: [],
       } as SemanticModelClassProfile
     },
     removed: []
@@ -107,7 +108,6 @@ test("Modify class profile, change none.", () => {
 });
 
 test("Modify class profile, change all.", () => {
-  let counter = 0;
   const actual: ChangeEntry[] = [];
   const previous: SemanticModelClassProfile = {
     id: "1",
@@ -122,9 +122,9 @@ test("Modify class profile, change all.", () => {
     profiling: ["prev-one", "prev-two"],
     externalDocumentationUrl: "http://example.com/document",
     tags: ["main"],
+    controlledVocabularies: [],
   };
   const executor = createDefaultSemanticModelProfileOperationExecutor(
-    { createIdentifier: () => (++counter).toString() },
     { entity: () => previous },
     { change: (updated, removed) => actual.push({ updated, removed }) },
   );
@@ -161,6 +161,7 @@ test("Modify class profile, change all.", () => {
         externalDocumentationUrl: "http://localhost/document",
         tags: ["support"],
         order: null,
+        controlledVocabularies: [],
       } as SemanticModelClassProfile
     },
     removed: []
@@ -168,15 +169,14 @@ test("Modify class profile, change all.", () => {
 });
 
 test("Create relationship profile.", () => {
-  let counter = 0;
   const actual: ChangeEntry[] = [];
   const executor = createDefaultSemanticModelProfileOperationExecutor(
-    { createIdentifier: () => (++counter).toString() },
     { entity: () => null },
     { change: (updated, removed) => actual.push({ updated, removed }) },
   );
   //
   const result = executor.executeOperation(factory.createRelationshipProfile({
+    id: "1",
     ends: [{
       iri: "first",
       name: { "en": "first-name" },
@@ -249,7 +249,6 @@ test("Create relationship profile.", () => {
 });
 
 test("Modify relationship profile.", () => {
-  let counter = 0;
   const actual: ChangeEntry[] = [];
   const previous: SemanticModelRelationshipProfile = {
     id: "1",
@@ -283,7 +282,6 @@ test("Modify relationship profile.", () => {
     }],
   };
   const executor = createDefaultSemanticModelProfileOperationExecutor(
-    { createIdentifier: () => (++counter).toString() },
     { entity: () => previous },
     { change: (updated, removed) => actual.push({ updated, removed }) },
   );
@@ -360,15 +358,14 @@ test("Modify relationship profile.", () => {
 });
 
 test("Relationship use all edges.", () => {
-  let counter = 0;
   const actual: ChangeEntry[] = [];
   const executor = createDefaultSemanticModelProfileOperationExecutor(
-    { createIdentifier: () => (++counter).toString() },
     { entity: () => null },
     { change: (updated, removed) => actual.push({ updated, removed }) },
   );
   //
   const result = executor.executeOperation(factory.createRelationshipProfile({
+    id: "1",
     ends: [{
       iri: "first",
       name: null,
@@ -468,10 +465,8 @@ test("Relationship use all edges.", () => {
 });
 
 test("Issue #917: Change class profile to null.", () => {
-  let counter = 0;
   const entities: Record<EntityIdentifier, Entity> = {};
   const executor = createDefaultSemanticModelProfileOperationExecutor(
-    { createIdentifier: () => (++counter).toString() },
     { entity: (identifier) => entities[identifier] ?? null },
     {
       change: (updated, removed) => {
@@ -484,6 +479,7 @@ test("Issue #917: Change class profile to null.", () => {
   );
   //
   const result = executor.executeOperation(factory.createClassProfile({
+    id: "1",
     iri: "iri",
     name: { "en": "name" },
     nameFromProfiled: "name-source",
@@ -494,6 +490,7 @@ test("Issue #917: Change class profile to null.", () => {
     profiling: ["one"],
     externalDocumentationUrl: "profile-document",
     tags: ["profile-role"],
+    controlledVocabularies: [],
   }));
   expect(result).toStrictEqual({ success: true, created: ["1"] });
   executor.executeOperation(factory.modifyClassProfile("1", {
@@ -523,11 +520,11 @@ test("Issue #917: Change class profile to null.", () => {
     externalDocumentationUrl: null,
     tags: [],
     order: null,
+    controlledVocabularies: [],
   } as SemanticModelClassProfile);
 });
 
 test("Issue #917: Change relationship profile to null.", () => {
-  let counter = 0;
   const actual: ChangeEntry[] = [];
   const previous: SemanticModelRelationshipProfile = {
     id: "1",
@@ -561,7 +558,6 @@ test("Issue #917: Change relationship profile to null.", () => {
     }],
   };
   const executor = createDefaultSemanticModelProfileOperationExecutor(
-    { createIdentifier: () => (++counter).toString() },
     { entity: () => previous },
     { change: (updated, removed) => actual.push({ updated, removed }) },
   );

@@ -4,6 +4,12 @@ import { StructureModelComplexType, StructureModelPrimitiveType } from "@dataspe
 import type { XmlStructureModel } from "../xml-structure-model/model/xml-structure-model.ts";
 import type { GetReferencedSchema } from "./xml-schema-model-adapter.ts";
 import { StructureModelProperty } from "@dataspecer/core/structure-model/model/structure-model-property";
+import { getDataPsmXmlGmlType } from "@dataspecer/core/data-psm/xml-extension/model/data-psm-property-extension";
+import type { StructureModel } from "@dataspecer/core/structure-model/model/index";
+
+export const DataPsmXmlBoundingShapeType = "http://www.opengis.net/gml/3.2#BoundingShapeType" as const;
+export const DataPsmXmlEnvelopeType = "http://www.opengis.net/gml/3.2#EnvelopeType" as const;
+export const DataPsmXmlGeometryPropertyType = "http://www.opengis.net/gml/3.2#GeometryPropertyType" as const;
 
 const RDF_GEOSPARQL_GML_LITERAL = "http://www.opengis.net/ont/geosparql#gmlLiteral";
 const RDF_GEOSPARQL_WKT_LITERAL = "http://www.opengis.net/ont/geosparql#wktLiteral";
@@ -19,18 +25,11 @@ const RDF_SF_PREFIX = "http://www.opengis.net/ont/sf#";
 const RDF_SF_ENVELOPE = RDF_SF_PREFIX + "Envelope";
 
 /**
- * Mapping of RDF type to corresponding gml:* type for xml.
- * This means that the contents of a xml element of such type can be transformed to rdf as gml literal.
- */
-const TYPES_TO_GML_PROPERTY_TYPE = {
-  [RDF_GEOSPARQL_GML_LITERAL]: "GeometryPropertyType",
-};
-
-/**
  * Returns true for types that should be treated as gml literals.
  */
 export function isGmlLiteral(type: string): boolean {
-  return type in TYPES_TO_GML_PROPERTY_TYPE || type.startsWith(XML_GML_NAMESPACE + "#");
+  return type === RDF_GEOSPARQL_GML_LITERAL || // This is RDF geo:gmlLiteral literal type
+    type.startsWith(XML_GML_NAMESPACE + "#"); // This is not RDF, this is XML
 }
 
 /**
@@ -50,8 +49,8 @@ export const GetReferencedSchemaForGml: GetReferencedSchema = (structureId: stri
   return null;
 };
 
-export function structureModelPopulateSfGeometry(structure: XmlStructureModel): XmlStructureModel {
-  const result = clone(structure) as XmlStructureModel;
+export function structureModelPopulateSfGeometry<T extends StructureModel>(structure: T): T {
+  const result = clone(structure) as T;
   const classes = result.getClasses();
 
   for (const structureClass of classes) {
@@ -144,11 +143,9 @@ export function structureModelMarkGmlLiteralAsReferencing(structure: XmlStructur
         let gmlType: string;
         if (dataTypes[0].dataType.startsWith(XML_GML_NAMESPACE + "#")) {
           gmlType = dataTypes[0].dataType.substring((XML_GML_NAMESPACE + "#").length);
-        } else if (dataTypes[0].dataType in TYPES_TO_GML_PROPERTY_TYPE) {
-          gmlType = TYPES_TO_GML_PROPERTY_TYPE[dataTypes[0].dataType]!;
         } else {
-          //this satisfies never;
-          throw new Error("Unexpected data type for GML property: " + dataTypes[0].dataType);
+          const type = getDataPsmXmlGmlType(property.xmlGmlType);
+          gmlType = type.substring(type.lastIndexOf("#") + 1);
         }
 
         const cls = new StructureModelClass();

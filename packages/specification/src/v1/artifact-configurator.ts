@@ -1,8 +1,6 @@
 import { mergeConfigurations } from "@dataspecer/core/configuration/utils";
 import { DataSpecificationConfigurator } from "@dataspecer/core/data-specification/configuration";
 import { DataSpecificationArtefact, DataSpecificationDocumentation } from "@dataspecer/core/data-specification/model";
-import { PlantUmlGenerator } from "@dataspecer/plant-uml";
-import { PlantUmlImageGenerator } from "./plant-uml-image-generator.ts";
 import { DefaultArtifactConfigurator } from "./default-artifact-configurator.ts";
 
 export class ArtifactConfigurator extends DefaultArtifactConfigurator {
@@ -30,30 +28,6 @@ export class ArtifactConfigurator extends DefaultArtifactConfigurator {
     const generatorsEnabledByDefault = dataSpecificationConfiguration.generatorsEnabledByDefault!;
 
     const baseOutputPath = singleSpecificationOnly ? "" : `${dataSpecificationName}/`;
-
-    // PlantUML source
-    const plantUml = new DataSpecificationDocumentation();
-    plantUml.iri = `${dataSpecificationIri}#plantUml`;
-    plantUml.generator = PlantUmlGenerator.IDENTIFIER;
-    const plantUmlFileName = dataSpecificationConfiguration.renameArtifacts?.[plantUml.generator] ?? "conceptual-model.plantuml";
-    plantUml.outputPath = `${baseOutputPath}${plantUmlFileName}`;
-    plantUml.publicUrl = `${this.baseURL}${plantUmlFileName}${this.queryParams}`;
-    plantUml.configuration = configuration;
-    if ((dataSpecificationConfiguration.useGenerators?.["plantUML"] ?? generatorsEnabledByDefault) !== false) {
-      artifacts.push(plantUml);
-    }
-
-    // PlantUml image
-    const plantUmlImage = new DataSpecificationDocumentation();
-    plantUmlImage.iri = `${dataSpecificationIri}#plantUmlImage`;
-    plantUmlImage.generator = PlantUmlImageGenerator.IDENTIFIER;
-    const plantUmlImageFileName = dataSpecificationConfiguration.renameArtifacts?.[plantUmlImage.generator] ?? "conceptual-model.svg";
-    plantUmlImage.outputPath = `${baseOutputPath}${plantUmlImageFileName}`;
-    plantUmlImage.publicUrl = `${this.baseURL}${plantUmlImageFileName}${this.queryParams}`;
-    plantUmlImage.configuration = configuration;
-    if ((dataSpecificationConfiguration.useGenerators?.["plantUML"] ?? generatorsEnabledByDefault) !== false) {
-      artifacts.push(plantUmlImage);
-    }
 
     if ((dataSpecificationConfiguration.useGenerators?.["respec"] ?? generatorsEnabledByDefault) !== false) {
       // Respec

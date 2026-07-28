@@ -1,17 +1,10 @@
 import { Badge } from "@/components/ui/badge";
-import {
-  API_SPECIFICATION_MODEL,
-  APPLICATION_GRAPH_NEW,
-  APPLICATION_GRAPH_OLD,
-  LOCAL_PACKAGE,
-  LOCAL_SEMANTIC_MODEL,
-  LOCAL_VISUAL_MODEL,
-  V1,
-} from "@dataspecer/core-v2/model/known-models";
+import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
-import { ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, EllipsisVertical, FileText, Folder, FolderDown, Import, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, Sparkles, Trash2, WandSparkles } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, EllipsisVertical, FileText, Folder, FolderDown, Import, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, Sparkles, Trash2, WandSparkles } from "lucide-react";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useTheme } from "next-themes";
 import { getValidTime } from "./components/time";
 import { Translate } from "./components/translate";
 import { Button } from "./components/ui/button";
@@ -72,6 +65,7 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
   const resources = useContext(ResourcesContext);
   const resource = resources[iri]!;
   const {t, i18n} = useTranslation();
+  const {theme} = useTheme();
 
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
@@ -119,22 +113,10 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
 
       {resource.userMetadata?.tags?.map(tag => <Badge variant="secondary" key={tag}>{tag}</Badge>)}
 
-      {resource.types.includes(APPLICATION_GRAPH_OLD) &&
-        <Button asChild variant={"ghost"} onClick={stopPropagation()}>
-          <a href={import.meta.env.VITE_BACKEND + "/generate/application?iri=" + encodeURIComponent(iri)}>
-            {t("generate application old")}
-          </a>
-        </Button>
-      }
-      {resource.types.includes(APPLICATION_GRAPH_NEW) && <>
+      {resource.types.includes(APPLICATION_GRAPH) && <>
         <Button asChild variant={"ghost"} onClick={stopPropagation()}>
           <a href={import.meta.env.VITE_APPLICATION_GRAPH_EDITOR + "/?iri=" + encodeURIComponent(iri)}>
-            {t("edit application graph")}
-          </a>
-        </Button>
-        <Button asChild variant={"ghost"} onClick={stopPropagation()}>
-          <a href={import.meta.env.VITE_BACKEND + "/app-generator/generate?iri=" + encodeURIComponent(iri)}>
-            {t("generate application new")}
+            {t("open")}
           </a>
         </Button>
       </>}
@@ -145,7 +127,7 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
         await ensurePackageWorksForDSE(parentIri!);
         window.location.href = import.meta.env.VITE_DATA_SPECIFICATION_EDITOR + "/editor?data-specification=" + encodeURIComponent(parentIri ?? "") + "&data-psm-schema=" + encodeURIComponent(iri);
       }}>{t("open")}</Button>}
-      {resource.types.includes(LOCAL_VISUAL_MODEL) && <Button asChild variant={"ghost"} onClick={stopPropagation()}><a href={import.meta.env.VITE_CME + "/diagram?package-id=" + encodeURIComponent(parentIri ?? "") + "&view-id=" + encodeURIComponent(iri) }>{t("open")}</a></Button>}
+      {resource.types.includes(VISUAL_MODEL) && <Button asChild variant={"ghost"} onClick={stopPropagation()}><a href={import.meta.env.VITE_CME + "/diagram?package-id=" + encodeURIComponent(parentIri ?? "") + "&view-id=" + encodeURIComponent(iri) }>{t("open")}</a></Button>}
       {resource.types.includes(API_SPECIFICATION_MODEL) && <Button asChild variant={"ghost"} onClick={stopPropagation()}><a href={import.meta.env.VITE_API_SPECIFICATION_APPLICATION + "?package-iri=" + encodeURIComponent(parentIri ?? "") + "&model-iri=" + encodeURIComponent(iri) }>{t("open")}</a></Button>}
 
       {resource.types.includes(LOCAL_PACKAGE) && (resource.userMetadata as any)?.importedFromUrl &&
@@ -163,7 +145,7 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
         </Tooltip>
       }
 
-      {resource.types.includes("https://dataspecer.com/core/model-descriptor/pim-store-wrapper") &&
+      {resource.types.includes(RDFS_MODEL) &&
         <Tooltip>
           <TooltipTrigger>
             <Button asChild variant="ghost" size="icon" className="shrink-0" onClick={stopPropagation(() => openModal(ReloadPimWrapper, {id: iri, parentId: parentIri ?? ""}))}>
@@ -235,6 +217,7 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
           {i18n.language !== "en" && resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem asChild><a target="_blank" href={import.meta.env.VITE_BACKEND + `/preview/en/index.html?iri=` + encodeURIComponent(iri)}><FileText className="mr-2 h-4 w-4" /> {t("show-documentation")} (en)</a></DropdownMenuItem>}
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => openModal(ModifyDocumentationTemplate, {iri})}><NotepadTextDashed className="mr-2 h-4 w-4" /> {t("modify-documentation-template")}</DropdownMenuItem>}
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => openModal(AddImported, {id: iri, urlOnly: true})}><Import className="mr-2 h-4 w-4" /> {t("import specification from url")}</DropdownMenuItem>}
+          {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem asChild><a href={import.meta.env.VITE_CONTROLLED_VOCABULARY_MANAGER + "?package-iri=" + encodeURIComponent(iri) + "&language=" + encodeURIComponent(i18n.language) + "&theme=" + encodeURIComponent(theme ?? "system")}><BookOpen className="mr-2 h-4 w-4" /> {t("controlled-vocabularies")}</a></DropdownMenuItem>}
           <DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/resources/export.zip?iri=" + encodeURIComponent(iri)}><CloudDownload className="mr-2 h-4 w-4" /> {t("export")}</a></DropdownMenuItem>
           <DropdownMenuItem onClick={async () => {
             const result = await openModal(RenameResourceDialog, {inputLabel: resource.userMetadata?.label, inputDescription: resource.userMetadata?.description});

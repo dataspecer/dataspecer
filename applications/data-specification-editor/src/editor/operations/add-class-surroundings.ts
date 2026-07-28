@@ -78,7 +78,7 @@ export class AddClassSurroundings implements ComplexOperation {
   private processAssociation(
     association: SemanticModelRelationship,
     orientation: AssociationOrientation, // true if outgoing
-    dataPsmSchema: string
+    dataPsmSchema: string,
   ) {
     const targetClass = this.semanticStore.getLocalEntity(association.ends[orientation ? 1 : 0].concept).aggregatedEntity as SemanticModelClass;
 
@@ -87,8 +87,8 @@ export class AddClassSurroundings implements ComplexOperation {
     const dataPsmCreateClass = new DataPsmCreateClass();
     dataPsmCreateClass.dataPsmInterpretation = targetClass.id;
     dataPsmCreateClass.dataPsmTechnicalLabel = this.context?.getTechnicalLabelFromPim(targetClass.name) ?? null;
-    const dataPsmCreateClassResult = this.store.applyOperation(dataPsmSchema, dataPsmCreateClass);
-    const psmEndRefersToIri = dataPsmCreateClassResult.created[0];
+    this.store.applyOperation(dataPsmSchema, dataPsmCreateClass);
+    const psmEndRefersToIri = dataPsmCreateClass.dataPsmNewIri;
 
     // Data PSM association end
 

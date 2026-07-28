@@ -1,24 +1,30 @@
-import { LanguageString } from "../../concepts/index.ts";
+import { LanguageString } from "@dataspecer/core/core/index";
 
 /**
- * The idea of profile is to put certain entity, or a profile, into given context.
+ * The idea of profile is to use an entity in a user defined context.
  * A single profile entity can profile multiple other entities.
  */
 export interface Profile {
 
   /**
-   * ID of all profiled entities.
+   * Public, usually globally-recognized, identifier of the entity.
+   * Null indicates absence of the public IRI.
+   */
+  iri: string | null;
+
+  /**
+   * Identifiers of all profiled entities.
    */
   profiling: string[];
 
   /**
-   * Optional information about the profile of the entity.
-   * If there is change in the meaning in the new context, is should be explained here.
+   * Information about the meaning of a profile.
    */
   usageNote: LanguageString | null;
 
   /**
-   * If set, the value of respective property must be load from the profile.
+   * Profile from which {@link usageNote} should be read.
+   * When provided value in {@link usageNote} should be ignored.
    */
   usageNoteFromProfiled: string | null;
 

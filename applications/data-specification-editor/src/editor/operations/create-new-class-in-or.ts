@@ -41,12 +41,11 @@ export class CreateNewClassInOr implements ComplexOperation {
     const dataPsmCreateClass = new DataPsmCreateClass();
     dataPsmCreateClass.dataPsmInterpretation = semanticClass.id;
     dataPsmCreateClass.dataPsmTechnicalLabel = this.context?.getTechnicalLabelFromPim(semanticClass.name) ?? null;
-    const dataPsmCreateClassResult = this.store.applyOperation(dataPsmSchema, dataPsmCreateClass);
-    const psmClass = dataPsmCreateClassResult.created[0];
+    this.store.applyOperation(dataPsmSchema, dataPsmCreateClass);
 
     const dataPsmSetChoice = new DataPsmSetChoice();
     dataPsmSetChoice.dataPsmOr = this.dataPsmOrIri;
-    dataPsmSetChoice.dataPsmChoice = psmClass;
+    dataPsmSetChoice.dataPsmChoice = dataPsmCreateClass.dataPsmNewIri as string;
     this.store.applyOperation(dataPsmSchema, dataPsmSetChoice);
   }
 }

@@ -70,13 +70,13 @@ function addAttributesToRemoveToTheMap(
       return;
     }
 
-    if(nodeToRemovedAttributesMap[node.identifier] === undefined) {
-      nodeToRemovedAttributesMap[node.identifier] = {
+    if(nodeToRemovedAttributesMap[node.id] === undefined) {
+      nodeToRemovedAttributesMap[node.id] = {
         node,
         attributesToRemove: []
       };
     }
-    nodeToRemovedAttributesMap[node.identifier].attributesToRemove.push(attributeIdentifier);
+    nodeToRemovedAttributesMap[node.id].attributesToRemove.push(attributeIdentifier);
   }
 }
 

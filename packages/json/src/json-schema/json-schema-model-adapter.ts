@@ -76,11 +76,11 @@ function typePropertyWithValues(typeKeyValues: string[]): JsonSchemaDefinition {
     arr.allOf = typeKeyValues.map((type) => {
       const constProp = new JsonSchemaConst();
       constProp.value = type;
-      
+
       const containsArray = new JsonSchemaArray();
       containsArray.contains = constProp;
       containsArray.items = new JsonSchemaString(null);
-      
+
       return containsArray;
     });
     arr.items = new JsonSchemaString(null);
@@ -493,13 +493,13 @@ function structureModelPrimitiveToJsonDefinition(
       result = new JsonSchemaString(null);
       result.title = context.stringSelector(OFN_LABELS[OFN.string]);
       result.pattern = primitive.regex;
-      result.examples = primitive.example;
+      result.examples = primitive.example ?? [];
       break;
     case XSD.decimal:
     case OFN.decimal:
       // Check configuration to determine if decimal should be string or number
       const useStringForDecimal = context.configuration.jsonLdDecimalAsString ?? true;
-      
+
       if (useStringForDecimal) {
         // Represent decimal as string with regex pattern to avoid double conversion issues in JSON-LD
         result = new JsonSchemaString(null);
@@ -544,7 +544,7 @@ function structureModelPrimitiveToJsonDefinition(
       result = new JsonSchemaString(JsonSchemaStringFormats.iri);
       result.title = context.stringSelector(OFN_LABELS[OFN.url]);
       result.pattern = primitive.regex;
-      result.examples = primitive.example;
+      result.examples = primitive.example ?? [];
       break;
     case OFN.text:
       result = languageString(primitive.languageStringRequiredLanguages);

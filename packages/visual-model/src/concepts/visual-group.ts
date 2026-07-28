@@ -1,4 +1,4 @@
-import { Entity } from "../entity-model/entity.ts";
+import { Entity } from "@dataspecer/core/entity-model";
 import { VisualEntity } from "./visual-entity.ts";
 
 export interface VisualGroup extends VisualEntity {

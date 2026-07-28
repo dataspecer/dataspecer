@@ -206,7 +206,7 @@ function addSemanticClassOrClassProfileToVisualModelCommand(
         model: modelForVisualProfileRelationship.getId(),
         entity: classProfileChild,
         waypoints: [],
-        visualSource: visualClassProfileChild.identifier,
+        visualSource: visualClassProfileChild.id,
         visualTarget: createdNodeIdentifier
       })
     }
@@ -219,7 +219,7 @@ function addSemanticClassOrClassProfileToVisualModelCommand(
         entity: entity.id,
         waypoints: [],
         visualSource: createdNodeIdentifier,
-        visualTarget: visualClassProfileParent.identifier
+        visualTarget: visualClassProfileParent.id
       })
     }
   }
@@ -428,8 +428,8 @@ function addSemanticConnectionBetweenAllValidVisualNodes(
     for (const visualTarget of visualTargets) {
       const isVisualRelationshipAlreadyPresent = existingVisualRelationships
         .find(visualRelationship =>
-          visualRelationship.visualSource === visualSource.identifier &&
-          visualRelationship.visualTarget === visualTarget.identifier) !== undefined;
+          visualRelationship.visualSource === visualSource.id &&
+          visualRelationship.visualTarget === visualTarget.id) !== undefined;
       if (isVisualRelationshipAlreadyPresent) {
         continue;
       }
@@ -438,8 +438,8 @@ function addSemanticConnectionBetweenAllValidVisualNodes(
         representedRelationship: connection.id,
         model: model.getId(),
         waypoints: [],
-        visualSource: visualSource.identifier,
-        visualTarget: visualTarget.identifier
+        visualSource: visualSource.id,
+        visualTarget: visualTarget.id
       });
     }
   }

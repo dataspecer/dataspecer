@@ -10,7 +10,6 @@ import { getDefaultConfiguration } from "./routes/configuration.ts";
 import { getLightweightOwlFromSimplified } from "./routes/experimental.ts";
 import { getSingleFile, getZip } from "./routes/generate.ts";
 import { exportPackageResource, importPackageResource } from "./routes/export-import-raw.ts";
-import { getGenerateApplicationByModelId, getGeneratedApplication } from "./routes/genapp.ts";
 import { importResource, reloadResource } from "./routes/import.ts";
 import {
   copyRecursively,
@@ -128,15 +127,11 @@ application.post(apiBasename + "/experimental/lightweight-owl-from-simplified.tt
 
 application.get(apiBasename + "/generate", getZip);
 application.get(apiBasename + "/experimental/output.zip", getZip);
-application.get(apiBasename + "/preview/*", getSingleFile);
-application.get(apiBasename + "/generate/application", getGenerateApplicationByModelId);
+application.get(apiBasename + "/preview/{*splat}", getSingleFile);
 // todo make post
 application.get(apiBasename + "/app-generator/generate", generateApplicationByModelId);
 application.get(apiBasename + "/app-generator/metadata", getSpecificationMetadataForEditor);
 
-// Generate application
-
-application.post(apiBasename + "/generate-app", getGeneratedApplication);
 
 // System routes
 
@@ -151,13 +146,22 @@ if (configuration.staticFilesPath) {
     console.error("Static files path is set, but no base name is set.");
     process.exit(1);
   }
-  application.get(basename + "/conceptual-model-editor", (_, res) => res.status(302).redirect(basename + "/conceptual-model-editor/"));
-  application.get(basename + "/conceptual-model-editor/**", useStaticSpaHandler(configuration.staticFilesPath + "conceptual-model-editor/"));
 
-  application.get(basename + "/data-specification-editor", (_, res) => res.status(302).redirect(basename + "/data-specification-editor/"));
-  application.get(basename + "/data-specification-editor/**", useStaticSpaHandler(configuration.staticFilesPath + "data-specification-editor/"));
+  // List of directories that host its own SPA applications.
+  // todo automate this
+  const registeredSubdirectorySPAs = [
+    "conceptual-model-editor",
+    "controlled-vocabulary-manager",
+    "data-specification-editor",
+    "application-graph-editor",
+  ];
 
-  application.get(basename + "**", useStaticSpaHandler(configuration.staticFilesPath + ""));
+  for (const subdirectoryApp of registeredSubdirectorySPAs) {
+    application.get(basename + `/${subdirectoryApp}`, (req, res, next) => req.path.endsWith("/") ? next() : res.status(302).redirect(basename + `/${subdirectoryApp}/`));
+    application.get([basename + `/${subdirectoryApp}/`, basename + `/${subdirectoryApp}/{*splat}`], useStaticSpaHandler(configuration.staticFilesPath + `${subdirectoryApp}/`));
+  }
+
+  application.get(basename + "{/*splat}", useStaticSpaHandler(configuration.staticFilesPath + ""));
 }
 
 (async () => {

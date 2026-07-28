@@ -1,18 +1,30 @@
 export {
+  isAggregatedProfiledSemanticModelClass,
   type AggregatedProfiledSemanticModelClass,
+  isAggregatedProfiledSemanticModelRelationship,
   type AggregatedProfiledSemanticModelRelationship,
   type AggregatedProfiledSemanticModelRelationshipEnd,
-} from "./aggregator-model.ts";
+  isAggregatedProfileSemanticModelGeneralization,
+  type AggregatedProfileSemanticModelGeneralization,
+} from "./aggregator-concepts.ts";
 
 export {
   createSemanticProfileAggregator,
-  type ProfileAggregator,
+  type SemanticProfileAggregator,
 } from "./aggregator.ts";
 
 export {
+  createObservableSemanticProfileAggregator,
+  type ObservableSemanticProfileAggregator,
+} from "./observable-aggregator.ts";
+
+export {
   SemanticClassProfileAggregator,
-  isAggregatedProfiledSemanticModelClass,
 } from "./semantic-class-profile-aggregator.ts";
+
+export {
+  SemanticGeneralizationProfileAggregator,
+} from "./semantic-generalization-profile-aggregator.ts";
 
 export {
   SemanticRelationshipProfileAggregator,

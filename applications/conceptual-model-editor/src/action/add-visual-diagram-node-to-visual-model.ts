@@ -38,7 +38,7 @@ export function addVisualDiagramNodeForNewModelToVisualModelAction(
   // Just use the center of screen instead of layouting, User will want to play with it anyways.
   const position = getViewportCenterForClassPlacement(diagram);
 
-  const visualDiagramNode: Omit<VisualDiagramNode, "identifier" | "type"> = {
+  const visualDiagramNode: Omit<VisualDiagramNode, "id" | "type"> = {
     position: {
       ...position,
       anchored: null
@@ -79,20 +79,20 @@ function rerouteAllRelevantEdgesTotheVisualDiagramNode(
       const isTargetInsideVisualDiagramNode = nodesInsideTheVisualDiagramNode.includes(visualEntity.visualTarget);
       if (isSourceInsideVisualDiagramNode && isTargetInsideVisualDiagramNode) {
         // Both ends are inside the newly created visual model representing visual diagram node, so we have to delete it
-        edgesToRemove.push(visualEntity.identifier);
+        edgesToRemove.push(visualEntity.id);
       }
       else if (isSourceInsideVisualDiagramNode && !isTargetInsideVisualDiagramNode) {
         edgesToUpdate.push({
           visualSource: visualDiagramNode,
           visualTarget: visualEntity.visualTarget,
-          edgeIdentifier: visualEntity.identifier
+          edgeIdentifier: visualEntity.id
         });
       }
       else if (!isSourceInsideVisualDiagramNode && isTargetInsideVisualDiagramNode) {
         edgesToUpdate.push({
           visualSource: visualEntity.visualSource,
           visualTarget: visualDiagramNode,
-          edgeIdentifier: visualEntity.identifier
+          edgeIdentifier: visualEntity.id
         });
       }
     }

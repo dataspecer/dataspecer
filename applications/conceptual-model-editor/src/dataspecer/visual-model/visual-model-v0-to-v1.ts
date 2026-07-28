@@ -43,7 +43,7 @@ function migrateVisualNode(
   // Remove if there is no represented entity.
   const represented = entities[entity.representedEntity];
   if (represented === undefined) {
-    visualModel.deleteVisualEntity(entity.identifier);
+    visualModel.deleteVisualEntity(entity.id);
     return;
   }
 
@@ -52,7 +52,7 @@ function migrateVisualNode(
   // deal with situation when it does not happen.
   const representedModel = findSourceModelOfEntity(represented.id, models);
   if (representedModel === null) {
-    visualModel.deleteVisualEntity(entity.identifier);
+    visualModel.deleteVisualEntity(entity.id);
     return;
   }
 
@@ -73,18 +73,18 @@ function migrateVisualNode(
           entity: representedEntity.id,
           model: representedModel.getId(),
           waypoints: [],
-          visualSource: entity.identifier,
-          visualTarget: item.identifier,
+          visualSource: entity.id,
+          visualTarget: item.id,
         });
       })
   } else {
-    visualModel.deleteVisualEntity(entity.identifier);
+    visualModel.deleteVisualEntity(entity.id);
     return;
   }
 
   // We add new information that was missing in the previous model version.
   visualModel.updateVisualEntity(
-    entity.identifier, { model: representedModel.getId() });
+    entity.id, { model: representedModel.getId() });
 }
 
 function migrateVisualRelationship(
@@ -96,7 +96,7 @@ function migrateVisualRelationship(
   // Remove if there is no represented entity.
   const represented = entities[entity.representedRelationship];
   if (represented === undefined) {
-    visualModel.deleteVisualEntity(entity.identifier);
+    visualModel.deleteVisualEntity(entity.id);
     return;
   }
 
@@ -105,7 +105,7 @@ function migrateVisualRelationship(
   // deal with situation when it does not happen.
   const representedModel = findSourceModelOfEntity(represented.id, models);
   if (representedModel === null) {
-    visualModel.deleteVisualEntity(entity.identifier);
+    visualModel.deleteVisualEntity(entity.id);
     return;
   }
 
@@ -115,7 +115,7 @@ function migrateVisualRelationship(
   const representedEntity = represented.aggregatedEntity;
   if (isSemanticModelClass(representedEntity)) {
     // Type miss match.
-    visualModel.deleteVisualEntity(entity.identifier);
+    visualModel.deleteVisualEntity(entity.id);
     return;
   }
 
@@ -124,39 +124,39 @@ function migrateVisualRelationship(
     const { domain, range } = getDomainAndRangeConcepts(representedEntity);
     if (domain === null || range === null) {
       // Invalid entity.
-      visualModel.deleteVisualEntity(entity.identifier);
+      visualModel.deleteVisualEntity(entity.id);
       return;
     }
     const visualSource = visualModel.getVisualEntitiesForRepresented(domain)[0];
     const visualTarget = visualModel.getVisualEntitiesForRepresented(range)[0];
     if (visualSource === undefined || visualTarget === undefined) {
       // Ends are not in the visual model.
-      visualModel.deleteVisualEntity(entity.identifier);
+      visualModel.deleteVisualEntity(entity.id);
       return;
     }
     // We add new information that was missing in the previous model version.
-    visualModel.updateVisualEntity(entity.identifier, {
+    visualModel.updateVisualEntity(entity.id, {
       model: representedModel.getId(),
-      visualSource: visualSource.identifier,
-      visualTarget: visualTarget.identifier,
+      visualSource: visualSource.id,
+      visualTarget: visualTarget.id,
     });
   } else if (isSemanticModelGeneralization(representedEntity)) {
     const visualSource = visualModel.getVisualEntitiesForRepresented(representedEntity.child)[0];
     const visualTarget = visualModel.getVisualEntitiesForRepresented(representedEntity.parent)[0];
     if (visualSource === undefined || visualTarget === undefined) {
       // Ends are not in the visual model.
-      visualModel.deleteVisualEntity(entity.identifier);
+      visualModel.deleteVisualEntity(entity.id);
       return;
     }
     // We add new information that was missing in the previous model version.
-    visualModel.updateVisualEntity(entity.identifier, {
+    visualModel.updateVisualEntity(entity.id, {
       model: representedModel.getId(),
-      visualSource: visualSource.identifier,
-      visualTarget: visualTarget.identifier,
+      visualSource: visualSource.id,
+      visualTarget: visualTarget.id,
     });
   } else {
     // Unknown type of visual relation in this version.
-    visualModel.deleteVisualEntity(entity.identifier);
+    visualModel.deleteVisualEntity(entity.id);
   }
 }
 

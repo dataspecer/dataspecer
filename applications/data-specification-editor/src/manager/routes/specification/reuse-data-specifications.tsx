@@ -1,16 +1,17 @@
 import PowerIcon from "@mui/icons-material/Power";
+import type { Entity } from "@dataspecer/core/entity-model";
+import { createUpdateEntityOperation } from "@dataspecer/core/operation";
 import { Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, Fab, List, ListItem, ListItemButton, ListItemIcon } from "@mui/material";
 import React, { useContext, useEffect, useState } from "react";
-import { BackendConnectorContext } from "../../../application";
 import { LanguageStringText } from "../../../editor/components/helper/LanguageStringComponents";
 import { useToggle } from "../../use-toggle";
-import { AllSpecificationsContext, SpecificationContext } from "./specification";
+import { AllSpecificationsContext, ManagerModelStoreContext, SpecificationContext } from "./specification";
 
 export const ReuseDataSpecifications: React.FC = () => {
   const dialog = useToggle();
 
-  const [specification, updateSpecification] = useContext(SpecificationContext);
-  const backendPackageService = useContext(BackendConnectorContext);
+  const specification = useContext(SpecificationContext);
+  const modelStore = useContext(ManagerModelStoreContext);
 
   const allSpecifications = useContext(AllSpecificationsContext);
 
@@ -36,12 +37,12 @@ export const ReuseDataSpecifications: React.FC = () => {
   }, [specification?.importsDataSpecificationIds]);
 
   const save = async () => {
-    await backendPackageService.updateImportedDataSpecifications(specification.id, selectedSpecificationIds);
-    updateSpecification({
-      ...specification,
-      importsDataSpecificationIds: selectedSpecificationIds,
-    });
+    const transaction = modelStore.transaction([{
+      modelId: specification.id,
+      operation: createUpdateEntityOperation({ id: specification.id, dataStructuresImportPackages: selectedSpecificationIds } as Partial<Entity> & Pick<Entity, "id">),
+    }], {});
 
+    await transaction.confirmation;
     dialog.close();
   };
 

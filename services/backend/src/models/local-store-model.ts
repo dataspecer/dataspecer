@@ -1,7 +1,10 @@
 import { readFile, rm, writeFile } from "fs/promises";
 import path from "path";
 import { v4 as uuidv4 } from 'uuid';
-import { LocalStoreDescriptor } from "./local-store-descriptor.ts";
+
+type StoreDescriptor = {
+    uuid: string;
+};
 
 /**
  * Manages creating, reading, updating and deleting of the store files.
@@ -22,17 +25,17 @@ export class LocalStoreModel {
      * Please note that the store does not contain any schema. The schema needs
      * to be created separately.
      */
-    async create(): Promise<LocalStoreDescriptor> {
-        const name = uuidv4();
-        await writeFile(this.getStorePath(name) as string, "{\"operations\":[],\"resources\":{}}");
-        return new LocalStoreDescriptor(name);
+    async create(): Promise<StoreDescriptor> {
+        const uuid = uuidv4();
+        await writeFile(this.getStorePath(uuid) as string, "{\"operations\":[],\"resources\":{}}");
+        return {uuid};
     }
 
     /**
      * Removes store identified by the given handle.
      * @param localStoreDescriptor
      */
-    async remove(localStoreDescriptor: LocalStoreDescriptor): Promise<void> {
+    async remove(localStoreDescriptor: StoreDescriptor): Promise<void> {
         const path = this.getStorePath(localStoreDescriptor.uuid);
         if (path) {
             try {
@@ -46,8 +49,8 @@ export class LocalStoreModel {
      * Returns already existing store identified by its uuid.
      * @param uuid Internal store identifier
      */
-    getById(uuid: string): LocalStoreDescriptor {
-        return new LocalStoreDescriptor(uuid);
+    getById(uuid: string): StoreDescriptor {
+        return {uuid};
     }
 
     getModelStore(uuid: string, onChangeListeners: (() => Promise<unknown>)[] = []): ModelStore {

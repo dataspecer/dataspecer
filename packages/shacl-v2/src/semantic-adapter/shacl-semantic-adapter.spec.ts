@@ -75,7 +75,8 @@ describe("semanticModelsToShacl", () => {
     // Prepare SHACL
 
     const shacl = semanticModelsToShacl(
-      [xsd.build(), vocabulary.build()], [],
+      [xsd.build(), vocabulary.build()],
+      [profile.build()],
       profile.build(),
       {
         policy: "semic-v1",
@@ -145,7 +146,8 @@ describe("semanticModelsToShacl", () => {
     // Prepare default shacl with all languages.
 
     const shacl = semanticModelsToShacl(
-      [xsd.build(), vocabulary.build()], [],
+      [xsd.build(), vocabulary.build()],
+      [profile.build()],
       profile.build(),
       {
         policy: "semic-v1",
@@ -211,7 +213,8 @@ describe("semanticModelsToShacl", () => {
     // Prepare default shacl with all languages.
 
     const shacl = semanticModelsToShacl(
-      [xsd.build(), vocabulary.build()], [],
+      [xsd.build(), vocabulary.build()],
+      [profile.build()],
       profile.build(),
       {
         policy: "semic-v1",
@@ -273,7 +276,8 @@ describe("semanticModelsToShacl", () => {
     // Prepare default shacl with all languages.
 
     const shacl = semanticModelsToShacl(
-      [xsd.build(), rdfs.build(), vocabulary.build()], [],
+      [xsd.build(), rdfs.build(), vocabulary.build()],
+      [profile.build()],
       profile.build(),
       {
         policy: "semic-v1",
@@ -336,8 +340,9 @@ describe("semanticModelsToShacl", () => {
     // Prepare SHACL
 
     const shacl = semanticModelsToShacl(
-      [xsd.build(), vocabulary.build()], [],
-      profile.build(),
+      [xsd.build(), vocabulary.build()],
+      [profile.build(), profileOfProfile.build()],
+      profileOfProfile.build(),
       {
         policy: "semic-v1",
         languages: [],
@@ -382,7 +387,8 @@ describe("semanticModelsToShacl", () => {
     //
 
     const shacl = semanticModelsToShacl(
-      [xsd.build(), vocabulary.build()], [],
+      [xsd.build(), vocabulary.build()],
+      [profile.build()],
       profile.build(),
       {
         policy: "semic-v1",

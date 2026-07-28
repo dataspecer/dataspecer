@@ -25,8 +25,8 @@ export function addVisualNodeProfile(
       visualModel.addVisualProfileRelationship({
         entity: profile.identifier,
         model: profile.model,
-        visualSource: source.identifier,
-        visualTarget: target.identifier,
+        visualSource: source.id,
+        visualTarget: target.id,
         waypoints: [],
       });
     }

@@ -306,6 +306,11 @@ function RelationshipItem(props: {
         <span>
           - {label}&nbsp;
         </span>
+        {data.options.displayRangeDetail ? (
+          <span>
+            : {data.range?.label ?? ""} &nbsp;
+          </span>
+        ) : null}
         <ProfileOf options={data.options} profileOf={data.profileOf} />
         <Cardinality options={data.options} data={data} />
       </div>

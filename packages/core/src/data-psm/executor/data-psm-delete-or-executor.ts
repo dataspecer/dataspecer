@@ -14,11 +14,12 @@ export function executeDataPsmDeleteOr(
 
   // todo check if the entity is really or and is not referenced by other entities
 
-  schema.dataPsmParts = removeValue(operation.dataPsmOr, schema.dataPsmParts);
-
   return CoreExecutorResult.createSuccess(
       [],
-      [schema],
+      [{
+        ...schema,
+        dataPsmParts: removeValue(operation.dataPsmOr, schema.dataPsmParts),
+      } satisfies typeof schema as typeof schema],
       [operation.dataPsmOr]
   );
 }

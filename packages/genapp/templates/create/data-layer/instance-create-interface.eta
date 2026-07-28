@@ -1,6 +1,0 @@
-// TODO: change template placeholder from "read_" to more generic name reference
-import { <%= it.read_return_type %> } from <%~ it.read_return_type_path %>;
-
-export interface AggregateInstanceCreator {
-    createInstance(newInstance: any): Promise<<%= it.read_return_type %>>;
-}

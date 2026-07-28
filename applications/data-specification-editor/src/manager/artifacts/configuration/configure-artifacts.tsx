@@ -1,7 +1,8 @@
+import { createSetEntityOperation } from "@dataspecer/core/operation";
 import { Button } from "@mui/material";
 import { FC, useCallback, useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { BackendConnectorContext } from "../../../application";
+import { ManagerModelStoreContext } from "../../routes/specification/specification";
 import { useToggle } from "../../use-toggle";
 import { ConfigureArtifactsDialog } from "./configure-artifacts-dialog";
 
@@ -14,19 +15,25 @@ export const ConfigureArtifacts: FC<{
   configurationId: string,
 }> = ({configurationId}) => {
   const {t} = useTranslation("ui");
-  const backendConnector = useContext(BackendConnectorContext);
+  const modelStore = useContext(ManagerModelStoreContext);
 
   const [configuration, setConfiguration] = useState<object>(null);
 
   useEffect(() => {
-    setConfiguration(null);
-    backendConnector.getArtifactConfiguration(configurationId).then(setConfiguration);
-  }, [backendConnector, configurationId]);
+    const entity = modelStore.getAllEntities()[configurationId]?.[configurationId] as unknown as Record<string, unknown> | undefined;
+    const data: Record<string, unknown> = { ...entity };
+    delete data.id;
+    delete data.type;
+    setConfiguration(data);
+  }, [modelStore, configurationId]);
 
   const update = useCallback(async (configuration: object) => {
     setConfiguration(configuration);
-    await backendConnector.updateArtifactConfiguration(configurationId, configuration);
-  }, [backendConnector, configurationId]);
+    modelStore.transaction([{
+      modelId: configurationId,
+      operation: createSetEntityOperation({ id: configurationId, type: [], ...configuration }),
+    }], {});
+  }, [modelStore, configurationId]);
 
   const configureArtifactsDialogOpen = useToggle(false);
 

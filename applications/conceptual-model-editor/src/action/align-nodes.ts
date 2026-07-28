@@ -39,7 +39,7 @@ function alignGeneral(
   coordinateToChange: Coordinate
 ) {
   const nodes = [...visualModel.getVisualEntities().values()]
-    .filter(entity => identifiers.includes(entity.identifier))
+    .filter(entity => identifiers.includes(entity.id))
     .filter(isVisualEdgeEnd);
 
   const coordinateToKeep = getOtherCoordinate(coordinateToChange);
@@ -51,7 +51,7 @@ function alignGeneral(
   case AlignmentHorizontalPosition.Left: {
     const topLeft = getTopLeftPosition(nodes);
     nodes.forEach(node => {
-      visualModel.updateVisualEntity(node.identifier, {
+      visualModel.updateVisualEntity(node.id, {
         position: {
           [coordinateToChange]: topLeft[coordinateToChange],
           [coordinateToKeep]: node.position[coordinateToKeep]
@@ -64,8 +64,8 @@ function alignGeneral(
     const { mid } = getBoundingBoxInfo(diagram, nodes);
     nodes.forEach(node => {
       const changedDimensionValue = getDimensionValue(
-        diagram, dimensionForChangeCoordinate, node.identifier);
-      visualModel.updateVisualEntity(node.identifier, {
+        diagram, dimensionForChangeCoordinate, node.id);
+      visualModel.updateVisualEntity(node.id, {
         position: {
           [coordinateToChange]: placeCoordinateOnGrid(mid[coordinateToChange] - changedDimensionValue / 2, grid),
           [coordinateToKeep]: node.position[coordinateToKeep]
@@ -79,8 +79,8 @@ function alignGeneral(
     const botRight = getBotRightPosition(diagram, nodes);
     nodes.forEach(node => {
       const changedDimensionValue = getDimensionValue(
-        diagram, dimensionForChangeCoordinate, node.identifier);
-      visualModel.updateVisualEntity(node.identifier, {
+        diagram, dimensionForChangeCoordinate, node.id);
+      visualModel.updateVisualEntity(node.id, {
         position: {
           [coordinateToChange]: placeCoordinateOnGrid(botRight[coordinateToChange] - changedDimensionValue, grid),
           [coordinateToKeep]: node.position[coordinateToKeep]

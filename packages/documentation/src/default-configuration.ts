@@ -116,7 +116,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
     {{/if}}
 
     {{#structureModels}}
-      <section>
+      <section id="{{anchor}}">
       <h2>
         {{#iflng "cs"}}Specifikace struktury pro{{lng}}Data structure specification for{{/iflng}}
         {{translate humanLabel}}
@@ -182,6 +182,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
       </tr>
       {{/if}}
   </table>
+
 </section>`,
 
     "semantic-model-class": `<section id="{{anchor}}">
@@ -217,6 +218,11 @@ export const defaultConfiguration: DocumentationConfiguration = {
     </tr>
     {{/if}}
   </table>
+
+  {{#if relationships}}
+    <p><strong>{{#iflng "cs"}}Vlastnosti{{lng}}Properties{{/iflng}}</strong></p>
+    <p>{{#iflng "cs"}}Pro tuto třídu jsou definovány následující vlastnosti: {{lng}}For this class the following properties are defined: {{/iflng}}{{#each relationships}}{{relation}}{{#unless @last}}, {{/unless}}{{#if @last}}.{{/if}}{{/each}}</p>
+  {{/if}}
 </section>`,
 
     "class-profile": `<section id="{{anchor}}">
@@ -310,8 +316,13 @@ export const defaultConfiguration: DocumentationConfiguration = {
     {{/translate}}
   </table>
 
+  {{#if relationships}}
+    <p><strong>{{#iflng "cs"}}Vlastnosti{{lng}}Properties{{/iflng}}</strong></p>
+    <p>{{#iflng "cs"}}Pro tento profil třídy jsou definovány následující vlastnosti: {{lng}}For this class profile the following properties are defined: {{/iflng}}{{#each relationships}}{{relation}}{{#unless @last}}, {{/unless}}{{#if @last}}.{{/if}}{{/each}}</p>
+  {{/if}}
+
   {{#if backwardsRelationships}}
-    <p>{{#iflng "cs"}}Zpětné asociace{{lng}}Backwards associations{{/iflng}}</p>
+    <p><strong>{{#iflng "cs"}}Zpětné asociace{{lng}}Backwards associations{{/iflng}}</strong></p>
     <ul>
       {{#each backwardsRelationships}}
         <li>{{#iflng "cs"}}z domény{{lng}}from domain{{/iflng}} <a href="{{{href ends.0.concept}}}"></a> → <a href="{{{href id}}}"></a></li>

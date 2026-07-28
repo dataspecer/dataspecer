@@ -1,6 +1,4 @@
-import { EntityIdentifier } from "./entity-model/entity.ts";
-import { ModelIdentifier } from "./entity-model/entity-model.ts";
-import { isTypedObject } from "./entity-model/typed-object.ts";
+import { EntityIdentifier } from "@dataspecer/core/entity-model";
 import {
     HexColor,
     VisualEntity,
@@ -11,7 +9,8 @@ import {
     VisualDiagramNode,
     VisualView,
 } from "./concepts/index.ts";
-import { VisualModel } from "./visual-model.ts";
+import { isVisualModel, VisualModel } from "./visual-model.ts";
+import { ModelIdentifier } from "@dataspecer/core/model";
 
 export interface WritableVisualModel extends VisualModel {
 
@@ -19,41 +18,41 @@ export interface WritableVisualModel extends VisualModel {
      * @returns Identifier for the new entity.
      */
     addVisualNode(
-        entity: Omit<VisualNode, "identifier" | "type">,
+        entity: Omit<VisualNode, "id" | "type">,
     ): string;
 
     /**
      * @returns Identifier for the new entity.
      */
     addVisualDiagramNode(
-        entity: Omit<VisualDiagramNode, "identifier" | "type">,
+        entity: Omit<VisualDiagramNode, "id" | "type">,
     ): string;
 
     /**
      * @returns Identifier for the new entity.
      */
     addVisualRelationship(
-        entity: Omit<VisualRelationship, "identifier" | "type">,
+        entity: Omit<VisualRelationship, "id" | "type">,
     ): string;
 
     /**
      * @returns Identifier for the new entity.
      */
     addVisualProfileRelationship(
-        entity: Omit<VisualProfileRelationship, "identifier" | "type">,
+        entity: Omit<VisualProfileRelationship, "id" | "type">,
     ): string;
 
     /**
      * @returns Identifier for the new entity.
      */
-    addVisualGroup(entity: Omit<VisualGroup, "identifier" | "type">): string;
+    addVisualGroup(entity: Omit<VisualGroup, "id" | "type">): string;
 
     /**
      * Perform update of a visual entity with given identifier.
      */
     updateVisualEntity<T extends VisualEntity>(
         identifier: EntityIdentifier,
-        entity: Partial<Omit<T, "identifier" | "type">>,
+        entity: Partial<Omit<T, "id" | "type">>,
     ): void;
 
     /**
@@ -80,7 +79,7 @@ export interface WritableVisualModel extends VisualModel {
      * Set visual view information, this can be set only once
      * for a given visual model.
      */
-    setView(view: Omit<VisualView, "identifier" | "type">): void;
+    setView(view: Omit<VisualView, "id" | "type">): void;
 
 }
 
@@ -89,6 +88,6 @@ export const WRITABLE_VISUAL_MODEL_TYPE = "writable-visual-model";
 export function isWritableVisualModel(
     what: unknown,
 ): what is WritableVisualModel {
-    return isTypedObject(what)
+    return isVisualModel(what)
         && what.getTypes().includes(WRITABLE_VISUAL_MODEL_TYPE);
 }

@@ -1,5 +1,6 @@
 import {CoreOperation, CoreOperationResult, CoreResource, CoreTyped} from "../../core/index.ts";
 import * as PSM from "../data-psm-vocabulary.ts";
+import { generateEntityId } from "../../entity-model/entity.ts";
 
 /**
  * Creates {@link DataPsmInclude} to already existing class.
@@ -7,7 +8,11 @@ import * as PSM from "../data-psm-vocabulary.ts";
 export class DataPsmCreateInclude extends CoreOperation {
   static readonly TYPE = PSM.CREATE_INCLUDE;
 
-  dataPsmNewIri: string | null = null;
+  /**
+   * IRI of the newly created object, generated up-front so that callers can
+   * use it without depending on the (deprecated) return value of applyOperation.
+   */
+  dataPsmNewIri: string | null = generateEntityId();
 
   dataPsmOwner: string | null = null;
 

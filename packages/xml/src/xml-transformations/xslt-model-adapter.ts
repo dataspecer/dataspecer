@@ -36,7 +36,7 @@ import { collectProfilingChain, GEO_SPARQL_WKT_LITERAL } from "../xml-schema/xml
 import { structureModelAddXmlProperties } from "../xml-structure-model/add-xml-properties.ts";
 import { XSLT_LIFTING, XSLT_LOWERING } from "./xslt-vocabulary.ts";
 import { DataSpecificationConfigurator, DefaultDataSpecificationConfiguration, type DataSpecificationConfiguration } from "@dataspecer/core/data-specification/configuration";
-import { isGmlLiteral, XML_GML_NAMESPACE } from "../xml-schema/gml-support.ts";
+import { DataPsmXmlEnvelopeType, isGmlLiteral, XML_GML_NAMESPACE } from "../xml-schema/gml-support.ts";
 
 /**
  * Converts a {@link StructureModel} to an {@link XmlTransformation}.
@@ -493,6 +493,8 @@ class XsltAdapter {
     if (dataTypes.length === 1 && dataTypes[0].dataType.specification === XML_GML_NAMESPACE) {
       // Handle this as gml literal
       this.usesGmlLiterals = true;
+      const dataTypeIri = XML_GML_NAMESPACE + "#" + dataTypes[0].dataType.structureSchema;
+      const wrappingElementName = dataTypeIri === DataPsmXmlEnvelopeType ? (["gml", "Envelope"] as QName) : null;
 
       const baseMatch = {
         interpretations: interpretations,
@@ -501,7 +503,8 @@ class XsltAdapter {
         isReverse: propertyData.isReverse,
         isAttribute: propertyData.xmlIsAttribute,
         minCardinality: propertyData.cardinalityMin ?? 1,
-        dataTypeIri: XML_GML_NAMESPACE + "#" + dataTypes[0].dataType.structureSchema,
+        dataTypeIri,
+        wrappingElementName,
       };
       return {
         ...baseMatch,
@@ -595,9 +598,11 @@ class XsltAdapter {
     // This wont be used because GML literals are not represented as primitive types anymore due to transformation
     if (this.isTypeGmlLiteral(dataTypes[0])) {
       this.usesGmlLiterals = true;
+      const dataTypeIri = this.primitiveToIri(dataTypes[0]);
       return {
         ...baseMatch,
         isGmlLiteral: true,
+        wrappingElementName: dataTypeIri === DataPsmXmlEnvelopeType ? (["gml", "Envelope"] as QName) : null,
       } as XmlGmlLiteralMatch;
     }
 

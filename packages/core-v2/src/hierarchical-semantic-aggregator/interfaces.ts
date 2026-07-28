@@ -43,12 +43,16 @@ export type LocalEntityWrapped<T extends Entity = Entity> = {
 };
 
 /**
- * Each structure schema has exactly one aggregator of this type.
- * The goal of this aggregator is to hide complex structure of connected models and provide simple API for the editor.
+ * Each structure schema has exactly one aggregator of this type. The goal of
+ * this aggregator is to hide complex structure of connected models and provide
+ * simple API for the editor.
+ *
+ * External entity to local is a synchronous operation that ensures that the
+ * given entity exists.
  */
 export interface SemanticModelAggregator {
   search(searchQuery: string): Promise<ExternalEntityWrapped[]>;
-  externalEntityToLocalForSearch(entity: ExternalEntityWrapped): Promise<LocalEntityWrapped>;
+  externalEntityToLocalForSearch(entity: ExternalEntityWrapped): LocalEntityWrapped;
 
   /**
    * Returns the full hierarchy for entity that is local for this model.
@@ -68,14 +72,14 @@ export interface SemanticModelAggregator {
     fromEntity: string,
     entity: ExternalEntityWrapped<SemanticModelRelationship>,
     direction: boolean,
-    sourceSemanticModel: ExternalEntityWrapped[]
-  ): Promise<LocalEntityWrapped>;
+    sourceSemanticModel: ExternalEntityWrapped[],
+  ): LocalEntityWrapped;
   externalEntityToLocalForHierarchyExtension(
     fromEntity: string,
     entity: ExternalEntityWrapped<SemanticModelClass>,
     isEntityMoreGeneral: boolean,
-    sourceSemanticModel: ExternalEntityWrapped[]
-  ): Promise<LocalEntityWrapped>;
+    sourceSemanticModel: ExternalEntityWrapped[],
+  ): LocalEntityWrapped;
 
   execOperation(operation: any): any;
 

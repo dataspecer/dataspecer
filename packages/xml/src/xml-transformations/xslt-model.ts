@@ -185,6 +185,14 @@ export class XmlWktLiteralMatch extends XmlLiteralMatch {
  * GML literals keep their XML content as serialized RDF lexical form.
  */
 export class XmlGmlLiteralMatch extends XmlLiteralMatch {
+  /**
+   * Optional wrapper element used when the literal needs synthetic wrapping.
+   *
+   * Used for example for gml:EnvelopeType which has no wrapping element in XML
+   * and therefore <gml:Envelope> is used as a wrapper.
+   */
+  wrappingElementName: QName | null;
+
   isGmlLiteral: true;
 }
 
