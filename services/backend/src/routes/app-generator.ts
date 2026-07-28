@@ -3,27 +3,8 @@ import express from "express";
 import JSZip from "jszip";
 import { resourceModel } from "../main.ts";
 import { asyncHandler } from "../utils/async-handler.ts";
-import {
-  DataspecerSpecificationMetadataProvider,
-  generateApp,
-  validateApplicationGraph,
-} from "@dataspecer/app-generator";
+import { DataspecerSpecificationMetadataProvider, generateApp } from "@dataspecer/app-generator";
 import { getSpecification } from "../utils/data-specification.ts";
-
-/**
- * Validates an application graph sent in the request body and returns the violations. Runs the
- * same pipeline as generation (syntax, structure, metadata resolution, semantics), so the graph
- * editor reports identical diagnostics without generating anything.
- */
-export const validateApplicationGraphRoute = asyncHandler(
-  async (request: express.Request, response: express.Response) => {
-    const result = await validateApplicationGraph({
-      graph: request.body,
-      metadataProvider: new DataspecerSpecificationMetadataProvider(getSpecification),
-    });
-    response.json({ valid: result.valid, violations: result.violations });
-  },
-);
 
 export const getSpecificationMetadataForEditor = asyncHandler(
   async (request: express.Request, response: express.Response) => {

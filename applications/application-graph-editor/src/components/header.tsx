@@ -6,13 +6,14 @@ import { downloadBlob } from "../utils/download-blob.ts";
 import { archiveFileName } from "../graph/file-names.ts";
 import { useEditorStore } from "../store.ts";
 
-export interface EditorHeaderProps {
+export function EditorHeader({
+  graph,
+  flushAutosave,
+}: {
   graph: ApplicationGraph;
   /** Pushes pending autosave writes to the backend, used before generation. */
   flushAutosave: () => Promise<void>;
-}
-
-export function EditorHeader({ graph, flushAutosave }: EditorHeaderProps) {
+}) {
   const [generating, setGenerating] = useState(false);
   const { errors, warnings } = useViolationsBySeverity();
 
@@ -98,7 +99,7 @@ function Branding() {
     return label;
   }
   return (
-    <a href={managerUrl} title="Back to the manager" className="hover:underline">
+    <a href={managerUrl} title="Back to the manager">
       {label}
     </a>
   );

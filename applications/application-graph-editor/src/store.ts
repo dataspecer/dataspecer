@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { temporal } from "zundo";
-import { mapKeys, omit } from "es-toolkit";
+import { debounce, mapKeys, omit } from "es-toolkit";
 import type {
   ApplicationEdge,
   ApplicationGraph,
@@ -136,6 +136,13 @@ function withGraph(
   return { graph: mutate(state.graph) };
 }
 
+/**
+ * Changes that keep arriving within this delay become one undo step instead of one each. The recorder that does it is
+ * kept here so that an undo can close the run it leaves open.
+ */
+const HISTORY_MERGE_MS = 500;
+let recordStep: { cancel: () => void } | null = null;
+
 export const useEditorStore = create<EditorState>()(
   temporal(
     (set, get) => ({
@@ -262,8 +269,16 @@ export const useEditorStore = create<EditorState>()(
         positions: state.positions,
         selection: state.selection,
       }),
-      // reference equality is enough, every mutation builds new graph and position objects
-      equality: (a, b) => a.graph === b.graph && a.positions === b.positions,
+      equality: (a, b) =>
+        // reference equality is enough, every mutation builds new graph and position objects
+        (a.graph === b.graph && a.positions === b.positions) ||
+        // loading the graph is not a step, so the first edit is not merged into it
+        a.graph === null,
+      handleSet: (record) => {
+        const debounced = debounce(record, HISTORY_MERGE_MS, { edges: ["leading"] });
+        recordStep = debounced;
+        return debounced;
+      },
       limit: 100,
     },
   ),
@@ -272,3 +287,11 @@ export const useEditorStore = create<EditorState>()(
 if (import.meta.env.DEV && typeof window !== "undefined") {
   (window as unknown as Record<string, unknown>).__appGraphEditorStore = useEditorStore;
 }
+
+// An undo moves a state between the stacks without going through the recorder, so the run it
+// leaves behind ends with it and the next change opens a step of its own.
+useEditorStore.temporal.subscribe((state, previous) => {
+  if (state.futureStates.length > previous.futureStates.length) {
+    recordStep?.cancel();
+  }
+});

@@ -17,13 +17,11 @@ export type {
   DeleteConfig,
 } from './graph/types.ts';
 export { analyzeGraphSemantics } from './validation/analyze-semantics.ts';
-export type { SemanticAnalysisResult } from './validation/analyze-semantics.ts';
 export { validateGraphStructure } from './validation/validate-structure.ts';
 export { validateGraphSyntax } from './validation/validate-syntax.ts';
-export type { SyntaxValidationResult } from './validation/validate-syntax.ts';
 export { ViolationCode } from './validation/violation-codes.ts';
-export { hasErrors, ViolationSeverity } from './validation/types.ts';
-export type { ValidationResult, Violation } from './validation/types.ts';
+export { ViolationSeverity } from './validation/types.ts';
+export type { Violation } from './validation/types.ts';
 export {
   isValidRedirectOperation,
   isValidTransitionOperation,
