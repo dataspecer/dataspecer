@@ -29,7 +29,9 @@ afterEach(async () => {
   );
 });
 
-describe('generateApp', () => {
+// Generating an application renders the templates and formats them with prettier, which takes
+// seconds on a CI runner that also runs the other packages' tests at the same time.
+describe('generateApp', { timeout: 30_000 }, () => {
   it('returns violations and writes nothing for invalid graph syntax', async () => {
     const outputDirectory = await createTempDirectory();
 
