@@ -1,7 +1,7 @@
-import { useRef, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { Panel } from "@xyflow/react";
-import { ChevronDown, Menu, Network, Plus, Redo2, Undo2 } from "lucide-react";
+import { Panel, useReactFlow, useStore as useFlowStore } from "@xyflow/react";
+import { ChevronDown, Hand, Menu, MousePointer2, Network, Plus, Redo2, Undo2 } from "lucide-react";
 import { useStore } from "zustand";
 import { downloadBlob } from "../utils/download-blob.ts";
 import { applyGraphJson } from "../graph/apply-json.ts";
@@ -9,11 +9,18 @@ import { exportFileName } from "../graph/file-names.ts";
 import { newNode, nodeBlockedReason } from "../graph/new-node.ts";
 import { useEditorStore } from "../store.ts";
 import { autoLayout, type LayoutOptions } from "./auto-layout.ts";
+import { ShortcutsDialog } from "./shortcuts-dialog.tsx";
 
 export function CanvasToolbar() {
   const { undo, redo, pastStates, futureStates } = useStore(useEditorStore.temporal);
   const importInput = useRef<HTMLInputElement>(null);
   const cannotAddNode = nodeBlockedReason(useEditorStore((state) => state.metadata));
+  const canvasTool = useEditorStore((state) => state.canvasTool);
+  const setCanvasTool = useEditorStore((state) => state.setCanvasTool);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const flow = useReactFlow();
+  const paneWidth = useFlowStore((state) => state.width);
+  const paneHeight = useFlowStore((state) => state.height);
 
   const importFile = async (file: File) => {
     const { setActionError } = useEditorStore.getState();
@@ -36,15 +43,20 @@ export function CanvasToolbar() {
   };
 
   const addNode = () => {
-    const { graph, metadata } = useEditorStore.getState();
+    const { graph, metadata, addNode: add, requestSelect } = useEditorStore.getState();
     if (graph === null) {
       return;
     }
+    // put it where the user is looking
+    const viewport = flow.getViewport();
     // keep freshly added nodes from covering each other
     const offset = (graph.nodes.length % 6) * 36;
-    useEditorStore
-      .getState()
-      .addNode(newNode(graph, metadata), { x: 60 + offset, y: 60 + offset });
+    const node = newNode(graph, metadata);
+    add(node, {
+      x: (paneWidth / 2 - viewport.x) / viewport.zoom + offset,
+      y: (paneHeight / 2 - viewport.y) / viewport.zoom + offset,
+    });
+    requestSelect(node.id);
   };
 
   const relayout = async (options: LayoutOptions) => {
@@ -78,12 +90,32 @@ export function CanvasToolbar() {
             <MenuItem onSelect={() => useEditorStore.getState().setSettingsOpen(true)}>
               Settings
             </MenuItem>
+            <DropdownMenu.Separator className="my-1 border-t border-slate-100" />
+            <MenuItem onSelect={() => setShortcutsOpen(true)}>Shortcuts</MenuItem>
           </DropdownMenu.Content>
         </DropdownMenu.Portal>
       </DropdownMenu.Root>
       <ToolbarButton onClick={addNode} disabled={cannotAddNode !== null} title={cannotAddNode ?? undefined}>
         <Plus size={14} /> Add node
       </ToolbarButton>
+      <ButtonGroup>
+        <GroupButton
+          onClick={() => setCanvasTool("pan")}
+          active={canvasTool === "pan"}
+          title="Drag to pan"
+          aria-label="Pan tool"
+        >
+          <Hand size={14} />
+        </GroupButton>
+        <GroupButton
+          onClick={() => setCanvasTool("select")}
+          active={canvasTool === "select"}
+          title="Drag to select"
+          aria-label="Select tool"
+        >
+          <MousePointer2 size={14} />
+        </GroupButton>
+      </ButtonGroup>
       <DropdownMenu.Root>
         <DropdownMenu.Trigger asChild>
           <button
@@ -111,22 +143,25 @@ export function CanvasToolbar() {
           </DropdownMenu.Content>
         </DropdownMenu.Portal>
       </DropdownMenu.Root>
-      <ToolbarButton
-        onClick={() => undo()}
-        disabled={pastStates.length === 0}
-        title="Undo (Ctrl+Z)"
-        aria-label="Undo"
-      >
-        <Undo2 size={14} />
-      </ToolbarButton>
-      <ToolbarButton
-        onClick={() => redo()}
-        disabled={futureStates.length === 0}
-        title="Redo (Ctrl+Shift+Z)"
-        aria-label="Redo"
-      >
-        <Redo2 size={14} />
-      </ToolbarButton>
+      <ButtonGroup>
+        <GroupButton
+          onClick={() => undo()}
+          disabled={pastStates.length === 0}
+          title="Undo (Ctrl+Z)"
+          aria-label="Undo"
+        >
+          <Undo2 size={14} />
+        </GroupButton>
+        <GroupButton
+          onClick={() => redo()}
+          disabled={futureStates.length === 0}
+          title="Redo (Ctrl+Shift+Z)"
+          aria-label="Redo"
+        >
+          <Redo2 size={14} />
+        </GroupButton>
+      </ButtonGroup>
+      <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
       <input
         ref={importInput}
         type="file"
@@ -142,6 +177,46 @@ export function CanvasToolbar() {
         }}
       />
     </Panel>
+  );
+}
+
+function ButtonGroup({ children }: { children: ReactNode }) {
+  return (
+    <div className="inline-flex overflow-hidden rounded border border-slate-300 bg-white">
+      {children}
+    </div>
+  );
+}
+
+function GroupButton({
+  children,
+  onClick,
+  disabled,
+  active,
+  title,
+  "aria-label": ariaLabel,
+}: {
+  children: ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+  active?: boolean;
+  title: string;
+  "aria-label": string;
+}) {
+  return (
+    <button
+      type="button"
+      className={`px-2 py-1 disabled:opacity-40 ${
+        active ? "bg-slate-200 text-slate-800" : "text-slate-600 hover:bg-slate-100"
+      }`}
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      aria-label={ariaLabel}
+      aria-pressed={active}
+    >
+      {children}
+    </button>
   );
 }
 

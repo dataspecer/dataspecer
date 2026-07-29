@@ -12,9 +12,11 @@ import {
   type Edge,
   type FinalConnectionState,
   type Node,
+  type NodeChange,
   type OnSelectionChangeParams,
   type ReactFlowInstance,
 } from "@xyflow/react";
+import { isEqual } from "es-toolkit";
 import {
   EdgeType,
   isValidRedirectOperation,
@@ -43,8 +45,11 @@ const edgeTypes = { floating: FloatingEdge };
 export function Canvas() {
   const graph = useEditorStore((state) => state.graph);
   const positions = useEditorStore((state) => state.positions);
-  const selection = useEditorStore((state) => state.selection);
   const highlight = useEditorStore((state) => state.highlight);
+  const selectRequest = useEditorStore((state) => state.selectRequest);
+  const selectedNodes = useEditorStore((state) => state.selectedNodes);
+  const selectedEdges = useEditorStore((state) => state.selectedEdges);
+  const canvasTool = useEditorStore((state) => state.canvasTool);
 
   const [nodes, setNodes, onNodesChange] = useNodesState<OperationFlowNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -69,13 +74,36 @@ export function Canvas() {
     }
     // the projection reads what React Flow currently holds, so unchanged nodes keep the objects
     // carrying their measured sizes
-    setNodes((current) => projectNodes(graph, positions, flagged, selection, highlight, current));
-    setEdges((current) => projectEdges(graph, flagged, selection, highlight, current));
-  }, [graph, positions, selection, highlight, flagged, setNodes, setEdges]);
+    const selected = { nodes: new Set(selectedNodes), edges: new Set(selectedEdges) };
+    setNodes((current) => projectNodes(graph, positions, flagged, highlight, current));
+    setEdges((current) => projectEdges(graph, flagged, highlight, selected, current));
+  }, [graph, positions, highlight, flagged, selectedNodes, selectedEdges, setNodes, setEdges]);
 
-  const onNodeDragStop = useCallback((_event: unknown, node: Node) => {
-    useEditorStore.getState().setNodePosition(node.id, node.position);
-  }, []);
+  // a panel asking to select an element makes it the only selected one
+  useEffect(() => {
+    if (selectRequest === null) {
+      return;
+    }
+    const { id } = selectRequest;
+    setNodes((current) => withSelection(current, id));
+    setEdges((current) => withSelection(current, id));
+  }, [selectRequest, setNodes, setEdges]);
+
+  // React Flow reports a move per node at the end of a drag and after a key press
+  const onNodesChangeWithPositions = useCallback(
+    (changes: NodeChange<OperationFlowNode>[]) => {
+      onNodesChange(changes);
+      const moves = changes.flatMap((change) =>
+        change.type === "position" && change.dragging !== true && change.position
+          ? [{ id: change.id, position: change.position }]
+          : [],
+      );
+      if (moves.length > 0) {
+        useEditorStore.getState().moveNodes(moves);
+      }
+    },
+    [onNodesChange],
+  );
 
   const onConnect = useCallback((connection: Connection) => {
     const { graph: current, addEdge } = useEditorStore.getState();
@@ -140,15 +168,21 @@ export function Canvas() {
     deleted.forEach((edge) => removeEdge(edge.id));
   }, []);
 
+  // the sidebar shows one element, the first of whatever the canvas has selected
   const onSelectionChange = useCallback((params: OnSelectionChangeParams) => {
-    const { selection: current, setSelection } = useEditorStore.getState();
+    const store = useEditorStore.getState();
     const next = params.nodes[0]
       ? ({ kind: "node", id: params.nodes[0].id } as const)
       : params.edges[0]
         ? ({ kind: "edge", id: params.edges[0].id } as const)
         : null;
-    if (next?.kind !== current?.kind || next?.id !== current?.id) {
-      setSelection(next);
+    if (next?.kind !== store.selection?.kind || next?.id !== store.selection?.id) {
+      store.setSelection(next);
+    }
+    const nodeIds = params.nodes.map((node) => node.id);
+    const edgeIds = params.edges.map((edge) => edge.id);
+    if (!isEqual(nodeIds, store.selectedNodes) || !isEqual(edgeIds, store.selectedEdges)) {
+      store.setSelectedElements(nodeIds, edgeIds);
     }
   }, []);
 
@@ -162,13 +196,14 @@ export function Canvas() {
         connectionLineComponent={ConnectionLine}
         connectionMode={ConnectionMode.Loose}
         connectionRadius={36}
+        selectionOnDrag={canvasTool === "select"}
+        panOnDrag={canvasTool === "pan" ? true : [1]}
         fitView
         // the default lower bound of 0.5 cannot fit a spread out graph into the pane
         minZoom={0.2}
         deleteKeyCode={["Backspace", "Delete"]}
-        onNodesChange={onNodesChange}
+        onNodesChange={onNodesChangeWithPositions}
         onEdgesChange={onEdgesChange}
-        onNodeDragStop={onNodeDragStop}
         onConnect={onConnect}
         onConnectEnd={onConnectEnd}
         onInit={(instance) => (flowRef.current = instance)}
@@ -177,11 +212,13 @@ export function Canvas() {
         onSelectionChange={onSelectionChange}
         onNodeContextMenu={(_event, node) => {
           setContextTarget({ kind: "node", id: node.id });
-          useEditorStore.getState().setSelection({ kind: "node", id: node.id });
+          setNodes((current) => withSelection(current, node.id));
+          setEdges((current) => withSelection(current, node.id));
         }}
         onEdgeContextMenu={(_event, edge) => {
           setContextTarget({ kind: "edge", id: edge.id });
-          useEditorStore.getState().setSelection({ kind: "edge", id: edge.id });
+          setNodes((current) => withSelection(current, edge.id));
+          setEdges((current) => withSelection(current, edge.id));
         }}
         onPaneContextMenu={() => setContextTarget(null)}
       >
@@ -192,6 +229,18 @@ export function Canvas() {
         <FocusHandler />
       </ReactFlow>
     </CanvasContextMenu>
+  );
+}
+
+/** Marks one element as the only selected one, leaving the objects of the others alone. */
+function withSelection<Element extends { id: string; selected?: boolean }>(
+  elements: Element[],
+  id: string,
+): Element[] {
+  return elements.map((element) =>
+    Boolean(element.selected) === (element.id === id)
+      ? element
+      : { ...element, selected: element.id === id },
   );
 }
 

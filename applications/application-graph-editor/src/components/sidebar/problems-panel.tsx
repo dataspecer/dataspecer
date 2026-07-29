@@ -23,7 +23,7 @@ export function ProblemsPanel({ graph }: { graph: ApplicationGraph }) {
       store.setSidebarTab("json");
       return;
     }
-    store.setSelection(target);
+    store.requestSelect(target.id);
     store.requestFocus(target.id);
   };
 

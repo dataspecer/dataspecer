@@ -7,7 +7,7 @@ import { FormField, inputClass } from "./form-field.tsx";
 function NodeLink({ id }: { id: string }) {
   const select = () => {
     const store = useEditorStore.getState();
-    store.setSelection({ kind: "node", id });
+    store.requestSelect(id);
     store.requestFocus(id);
   };
 

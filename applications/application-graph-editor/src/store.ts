@@ -20,8 +20,10 @@ export type SidebarTab = "problems" | "json" | null;
 
 export type SaveState = "saved" | "saving" | "error" | "invalid";
 
-/** One-shot request to bring a node or edge into view. The seq makes repeats distinct. */
-export interface FocusRequest {
+export type CanvasTool = "select" | "pan";
+
+/** One-shot request about one element. The seq makes repeats distinct. */
+export interface ElementRequest {
   id: string;
   seq: number;
 }
@@ -45,6 +47,7 @@ interface EditorState extends UndoableState {
   /** Element the JSON cursor points at. Highlighted on the canvas without taking the panel. */
   highlight: Selection;
   sidebarTab: SidebarTab;
+  canvasTool: CanvasTool;
   /**
    * Edited text of the raw data panel with the JSON it started from, null while the view follows
    * the graph.
@@ -62,7 +65,10 @@ interface EditorState extends UndoableState {
   generationViolations: Violation[] | null;
   /** The last computed violations with the graph they belong to. Null until the first pass. */
   validation: ValidationSnapshot | null;
-  focusRequest: FocusRequest | null;
+  focusRequest: ElementRequest | null;
+  selectRequest: ElementRequest | null;
+  selectedNodes: string[];
+  selectedEdges: string[];
 
   initialize: (resourceIri: string, graph: ApplicationGraph, positions: NodePositions) => void;
   failLoad: (message: string) => void;
@@ -75,6 +81,7 @@ interface EditorState extends UndoableState {
   setHighlight: (highlight: Selection) => void;
   /** Opens a sidebar tab, dropping whatever took the panel over so the tab becomes visible. */
   setSidebarTab: (tab: SidebarTab) => void;
+  setCanvasTool: (tool: CanvasTool) => void;
   setSettingsOpen: (open: boolean) => void;
   setJsonDraft: (draft: JsonDraft | null) => void;
   setActionError: (message: string | null) => void;
@@ -84,6 +91,8 @@ interface EditorState extends UndoableState {
   setGenerationViolations: (violations: Violation[] | null) => void;
   setValidation: (validation: ValidationSnapshot) => void;
   requestFocus: (id: string) => void;
+  requestSelect: (id: string) => void;
+  setSelectedElements: (nodes: string[], edges: string[]) => void;
 
   addNode: (node: ApplicationNode, position: { x: number; y: number }) => void;
   /** Adds a node and the edge reaching it in one undoable step. */
@@ -106,7 +115,8 @@ interface EditorState extends UndoableState {
   updateGraphMeta: (patch: Partial<Pick<ApplicationGraph, "name" | "dataSpecificationIri" | "datasources">>) => void;
   /** Replaces the whole graph, for imports and JSON panel edits. Undo restores the old one. */
   replaceGraph: (graph: ApplicationGraph, positions: NodePositions) => void;
-  setNodePosition: (nodeId: string, position: { x: number; y: number }) => void;
+  /** Stores the positions React Flow reports, from a drag of one node or of a whole selection. */
+  moveNodes: (moves: { id: string; position: { x: number; y: number } }[]) => void;
   setAllPositions: (positions: NodePositions) => void;
 }
 
@@ -161,6 +171,7 @@ export const useEditorStore = create<EditorState>()(
       selection: null,
       highlight: null,
       sidebarTab: "json",
+      canvasTool: "pan",
       jsonDraft: null,
       settingsOpen: false,
       actionError: null,
@@ -168,6 +179,9 @@ export const useEditorStore = create<EditorState>()(
       generationViolations: null,
       validation: null,
       focusRequest: null,
+      selectRequest: null,
+      selectedNodes: [],
+      selectedEdges: [],
 
       initialize: (resourceIri, graph, positions) =>
         set({
@@ -191,6 +205,7 @@ export const useEditorStore = create<EditorState>()(
             ? { sidebarTab }
             : { sidebarTab, selection: null, settingsOpen: false },
         ),
+      setCanvasTool: (canvasTool) => set({ canvasTool }),
       setJsonDraft: (jsonDraft) => set({ jsonDraft }),
       setActionError: (actionError) => set({ actionError }),
       requestConfirm: (question) =>
@@ -210,6 +225,9 @@ export const useEditorStore = create<EditorState>()(
       setValidation: (validation) => set({ validation }),
       requestFocus: (id) =>
         set((state) => ({ focusRequest: { id, seq: (state.focusRequest?.seq ?? 0) + 1 } })),
+      requestSelect: (id) =>
+        set((state) => ({ selectRequest: { id, seq: (state.selectRequest?.seq ?? 0) + 1 } })),
+      setSelectedElements: (selectedNodes, selectedEdges) => set({ selectedNodes, selectedEdges }),
 
       addNode: (node, position) =>
         set((state) => ({
@@ -263,8 +281,13 @@ export const useEditorStore = create<EditorState>()(
       updateGraphMeta: (patch) =>
         set((state) => withGraph(state, (graph) => ({ ...graph, ...patch }))),
       replaceGraph: (graph, positions) => set({ graph, positions, selection: null }),
-      setNodePosition: (nodeId, position) =>
-        set((state) => ({ positions: { ...state.positions, [nodeId]: position } })),
+      moveNodes: (moves) =>
+        set((state) => ({
+          positions: {
+            ...state.positions,
+            ...Object.fromEntries(moves.map((move) => [move.id, move.position])),
+          },
+        })),
       setAllPositions: (positions) => set({ positions }),
     }),
     {

@@ -46,7 +46,6 @@ export function projectNodes(
   graph: ApplicationGraph,
   positions: NodePositions,
   flagged: FlaggedIds,
-  selection: Selection,
   highlight: Selection,
   current: OperationFlowNode[],
 ): OperationFlowNode[] {
@@ -57,7 +56,7 @@ export function projectNodes(
       id: node.id,
       type: "operation",
       position: positions[node.id] ?? { x: 0, y: 0 },
-      selected: selection?.kind === "node" && selection.id === node.id,
+      selected: known?.selected,
       // the measured size still holds while the node keeps its shape, and keeping it stops the
       // node from being hidden until React Flow measures it again
       measured: known?.measured,
@@ -70,33 +69,44 @@ export function projectNodes(
   });
 }
 
+/** IDs of what the canvas has selected, which the edges are coloured by. */
+export interface SelectedIds {
+  nodes: ReadonlySet<string>;
+  edges: ReadonlySet<string>;
+}
+
 /** Projects the application graph edges onto the React Flow edges. */
 export function projectEdges(
   graph: ApplicationGraph,
   flagged: FlaggedIds,
-  selection: Selection,
   highlight: Selection,
+  selected: SelectedIds,
   current: Edge[],
 ): Edge[] {
   const previous = byId(current);
   const offsets = parallelEdgeOffsets(graph.edges);
   return graph.edges.map((edge) => {
+    const known = previous.get(edge.id);
     const isRedirect = edge.type === EdgeType.Redirect;
     const violation = flagged.edges.get(edge.id);
-    const selected = selection?.kind === "edge" && selection.id === edge.id;
-    const emphasized = selected || (highlight?.kind === "edge" && highlight.id === edge.id);
-    // a violation keeps its color while emphasized, emphasis only thickens the line
-    const stroke = violation
-      ? VIOLATION_STROKE[violation]
-      : emphasized
-        ? SELECTED_STROKE
+    // an edge counts as selected when one of its nodes is
+    const emphasized =
+      selected.edges.has(edge.id) ||
+      selected.nodes.has(edge.source) ||
+      selected.nodes.has(edge.target) ||
+      (highlight?.kind === "edge" && highlight.id === edge.id);
+
+    const stroke = emphasized
+      ? SELECTED_STROKE
+      : violation
+        ? VIOLATION_STROKE[violation]
         : undefined;
-    return reuse(previous.get(edge.id), {
+    return reuse(known, {
       id: edge.id,
       source: edge.source,
       target: edge.target,
       type: "floating",
-      selected,
+      selected: known?.selected,
       data: { offset: offsets[edge.id] },
       markerEnd: {
         type: MarkerType.ArrowClosed,
