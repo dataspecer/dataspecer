@@ -10,6 +10,8 @@ CONCEPTUAL_MODEL_EDITOR="/conceptual-model-editor"
 
 CONTROLLED_VOCABULARY_MANAGER="/controlled-vocabulary-manager"
 
+APPLICATION_GRAPH_EDITOR="/application-graph-editor"
+
 API_SPECIFICATION="/api-specification"
 
 rm -rf .dist
@@ -25,6 +27,10 @@ mv applications/conceptual-model-editor/dist/* .dist$CONCEPTUAL_MODEL_EDITOR
 # Copy controlled-vocabulary-manager application
 mkdir -p .dist$CONTROLLED_VOCABULARY_MANAGER
 mv applications/controlled-vocabulary-manager/dist/* .dist$CONTROLLED_VOCABULARY_MANAGER
+
+# Copy application-graph-editor application
+mkdir -p .dist$APPLICATION_GRAPH_EDITOR
+mv applications/application-graph-editor/dist/* .dist$APPLICATION_GRAPH_EDITOR
 
 # Copy manager application
 mkdir -p .dist$MANAGER
