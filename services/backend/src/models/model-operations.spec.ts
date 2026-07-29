@@ -1,136 +1,228 @@
+import { LOCAL_SEMANTIC_MODEL } from "@dataspecer/core-v2/model/known-models";
 import type { Entity, EntityRecord } from "@dataspecer/core/entity-model";
-import { createRemoveEntityOperation, createSetEntityOperation, createUndoOperation, createUpdateEntityOperation, type Operation } from "@dataspecer/core/operation";
+import type { ModelIdentifier } from "@dataspecer/core/model";
+import {
+  createRemoveEntityOperation,
+  createSetEntityOperation,
+  createUndoOperation,
+  createUpdateEntityOperation,
+  type Operation,
+  type OperationInModel,
+} from "@dataspecer/core/operation";
+import { createCreateModelOperation, createCreateProjectOperation, createRemoveModelOperation, type PackageEntity, type ProjectModelEntity } from "@dataspecer/project-model";
 import { describe, expect, test } from "vitest";
-import { applyUndoOperationToModelEntities, type UndoHistoryEntry } from "./model-operations.ts";
+import { PROJECT_MODEL_ID } from "./model-id.ts";
+import { applyOperationsToModelEntities, applyUndoOperationToModels, groupTransactionOperations, type UndoHistoryTransaction } from "./model-operations.ts";
+import { NAMED_BLOB_STORE_TYPE } from "./model-types.ts";
+import type { TransactionEvents } from "./transaction-model.ts";
 
-const MODEL = "model";
-const TYPE = "test-type";
+const PROJECT = "project";
+const MODEL_A = "model-a";
+const MODEL_B = "model-b";
 
 function entity(id: string, data: Record<string, unknown> = {}): Entity {
   return { id, type: [], ...data };
 }
 
+function inA(...operations: Operation[]): OperationInModel[] {
+  return operations.map((operation) => ({ modelId: MODEL_A, operation }));
+}
+
+function inB(...operations: Operation[]): OperationInModel[] {
+  return operations.map((operation) => ({ modelId: MODEL_B, operation }));
+}
+
+function inProject(...operations: Operation[]): OperationInModel[] {
+  return operations.map((operation) => ({ modelId: PROJECT_MODEL_ID, operation }));
+}
+
 /**
- * Builds the history entries by replaying each transaction's operations from
- * an empty model, recording the down events the backend would have recorded.
- * Returns the history together with the resulting (tip) state.
+ * Replays each transaction from empty models the same way the backend does,
+ * recording the down events it would have recorded. Returns the history
+ * together with the resulting (tip) states of all models.
  */
-function buildHistory(transactions: { clientId: string; operations: Operation[] }[]): { history: UndoHistoryEntry[]; state: EntityRecord } {
-  const history: UndoHistoryEntry[] = [];
-  let state: EntityRecord = {};
+async function buildHistory(transactions: { clientId: string; operations: OperationInModel[] }[]): Promise<{
+  history: UndoHistoryTransaction[];
+  states: Record<ModelIdentifier, EntityRecord>;
+}> {
+  const history: UndoHistoryTransaction[] = [];
+  let states: Record<ModelIdentifier, EntityRecord> = {};
 
   for (const transaction of transactions) {
-    let next = state;
-    const downEvents: Record<string, Entity | null> = {};
+    const { undoOperations, groups } = groupTransactionOperations(transaction.operations);
+    const next: Record<ModelIdentifier, EntityRecord> = { ...states };
 
-    for (const operation of transaction.operations) {
-      const working = { ...next };
-      if (operation.type === "undo") {
-        const result = applyUndoOperationToModelEntities(MODEL, TYPE, working, operation as never, history);
-        expect(result).not.toBeNull();
-        next = result!;
-      } else {
-        if ("entity" in operation) {
-          working[(operation as never as { entity: Entity }).entity.id] = (operation as never as { entity: Entity }).entity;
-        } else if ("update" in operation) {
-          const update = (operation as never as { update: Entity }).update;
-          if (working[update.id]) {
-            working[update.id] = { ...working[update.id]!, ...update };
-          }
-        } else if ("entityId" in operation) {
-          delete working[(operation as never as { entityId: string }).entityId];
+    for (const undoOperation of undoOperations) {
+      const result = await applyUndoOperationToModels(undoOperation, history, async (modelId) => next[modelId] ?? {});
+      expect(result).not.toBeNull();
+      Object.assign(next, result);
+    }
+
+    for (const [modelId, operations] of groups) {
+      const modelType = (next[PROJECT_MODEL_ID]?.[modelId] as ProjectModelEntity | undefined)?.modelType ?? NAMED_BLOB_STORE_TYPE;
+      const projectEntitiesBefore = next[PROJECT_MODEL_ID] ?? {};
+      next[modelId] = applyOperationsToModelEntities(modelId, modelType, next[modelId] ?? {}, operations);
+      if (modelId === PROJECT_MODEL_ID) {
+        // The content of a removed model is deleted together with it.
+        for (const removedId of Object.keys(projectEntitiesBefore).filter((id) => next[PROJECT_MODEL_ID]![id] === undefined)) {
+          next[removedId] = {};
         }
-        next = working;
       }
     }
 
-    for (const id of new Set([...Object.keys(state), ...Object.keys(next)])) {
-      if (state[id] !== next[id]) {
-        downEvents[id] = state[id] ?? null;
+    const downEvents: TransactionEvents = {};
+    for (const modelId of new Set([...Object.keys(states), ...Object.keys(next)])) {
+      const down: Record<string, Entity | null> = {};
+      for (const entityId of new Set([...Object.keys(states[modelId] ?? {}), ...Object.keys(next[modelId] ?? {})])) {
+        if (states[modelId]?.[entityId] !== next[modelId]?.[entityId]) {
+          down[entityId] = states[modelId]?.[entityId] ?? null;
+        }
+      }
+      if (Object.keys(down).length > 0) {
+        downEvents[modelId] = down;
       }
     }
 
     history.push({ clientId: transaction.clientId, operations: transaction.operations, downEvents });
-    state = next;
+    states = next;
   }
 
-  return { history, state };
+  return { history, states };
 }
 
-describe(applyUndoOperationToModelEntities, () => {
-  test("undoes the last transaction", () => {
-    const { history, state } = buildHistory([
-      { clientId: "A", operations: [createSetEntityOperation(entity("e1", { value: "a" }))] },
-      { clientId: "B", operations: [createUpdateEntityOperation({ id: "e1", value: "b" } as never)] },
+/** History prefix creating the project with one semantic model in it. */
+const setUpProject = [
+  { clientId: "P", operations: inProject(createCreateProjectOperation(PROJECT), createCreateModelOperation(PROJECT, LOCAL_SEMANTIC_MODEL, MODEL_A)) },
+];
+
+describe(applyUndoOperationToModels, () => {
+  test("undoes the last transaction", async () => {
+    const { history, states } = await buildHistory([
+      { clientId: "A", operations: inA(createSetEntityOperation(entity("e1", { value: "a" }))) },
+      { clientId: "B", operations: inA(createUpdateEntityOperation({ id: "e1", value: "b" } as never)) },
     ]);
 
-    const result = applyUndoOperationToModelEntities(MODEL, TYPE, state, createUndoOperation("B"), history);
-    expect(result).toEqual({ e1: entity("e1", { value: "a" }) });
+    const result = await applyUndoOperationToModels(createUndoOperation("B"), history, async (modelId) => states[modelId] ?? {});
+    expect(result?.[MODEL_A]).toEqual({ e1: entity("e1", { value: "a" }) });
   });
 
-  test("redo: undoing an undo restores the cancelled transaction", () => {
-    const { history, state } = buildHistory([
-      { clientId: "A", operations: [createSetEntityOperation(entity("e1"))] },
-      { clientId: "U1", operations: [createUndoOperation("A")] },
+  test("cancels the transaction in every model it touched", async () => {
+    const { history, states } = await buildHistory([
+      { clientId: "A", operations: [...inA(createSetEntityOperation(entity("e1"))), ...inB(createSetEntityOperation(entity("e2")))] },
+      { clientId: "B", operations: inB(createSetEntityOperation(entity("e3"))) },
     ]);
-    expect(state).toEqual({});
 
-    const result = applyUndoOperationToModelEntities(MODEL, TYPE, state, createUndoOperation("U1"), history);
-    expect(result).toEqual({ e1: entity("e1") });
+    const result = await applyUndoOperationToModels(createUndoOperation("A"), history, async (modelId) => states[modelId] ?? {});
+    expect(result?.[MODEL_A]).toEqual({});
+    expect(result?.[MODEL_B]).toEqual({ e3: entity("e3") });
   });
 
-  test("cancels a transaction in the middle and replays the rest", () => {
+  test("redo: undoing an undo restores the cancelled transaction", async () => {
+    const { history, states } = await buildHistory([
+      { clientId: "A", operations: inA(createSetEntityOperation(entity("e1"))) },
+      { clientId: "U1", operations: inProject(createUndoOperation("A")) },
+    ]);
+    expect(states[MODEL_A]).toEqual({});
+
+    const result = await applyUndoOperationToModels(createUndoOperation("U1"), history, async (modelId) => states[modelId] ?? {});
+    expect(result?.[MODEL_A]).toEqual({ e1: entity("e1") });
+  });
+
+  test("cancels a transaction in the middle and replays the rest", async () => {
     // C creates e2, D updates it. Undoing C replays D on a state where e2
     // does not exist, so the update is ignored and e2 disappears entirely.
-    const { history, state } = buildHistory([
-      { clientId: "A", operations: [createSetEntityOperation(entity("e1", { value: "a" }))] },
-      { clientId: "C", operations: [createSetEntityOperation(entity("e2", { value: "c" }))] },
-      { clientId: "D", operations: [createUpdateEntityOperation({ id: "e2", value: "d" } as never)] },
-      { clientId: "E", operations: [createSetEntityOperation(entity("e3"))] },
+    const { history, states } = await buildHistory([
+      { clientId: "A", operations: inA(createSetEntityOperation(entity("e1", { value: "a" }))) },
+      { clientId: "C", operations: inA(createSetEntityOperation(entity("e2", { value: "c" }))) },
+      { clientId: "D", operations: inA(createUpdateEntityOperation({ id: "e2", value: "d" } as never)) },
+      { clientId: "E", operations: inA(createSetEntityOperation(entity("e3"))) },
     ]);
 
-    const result = applyUndoOperationToModelEntities(MODEL, TYPE, state, createUndoOperation("C"), history);
-    expect(result).toEqual({ e1: entity("e1", { value: "a" }), e3: entity("e3") });
+    const result = await applyUndoOperationToModels(createUndoOperation("C"), history, async (modelId) => states[modelId] ?? {});
+    expect(result?.[MODEL_A]).toEqual({ e1: entity("e1", { value: "a" }), e3: entity("e3") });
   });
 
-  test("cancelling a transaction whose target precedes an earlier undo", () => {
+  test("cancelling a transaction whose target precedes an earlier undo", async () => {
     // A and B are each cancelled by a different undo; the replay must apply
     // the earlier undo's cancellation as well, leaving nothing.
-    const { history, state } = buildHistory([
-      { clientId: "A", operations: [createSetEntityOperation(entity("e1"))] },
-      { clientId: "B", operations: [createSetEntityOperation(entity("e2"))] },
-      { clientId: "U1", operations: [createUndoOperation("A")] },
+    const { history, states } = await buildHistory([
+      { clientId: "A", operations: inA(createSetEntityOperation(entity("e1"))) },
+      { clientId: "B", operations: inA(createSetEntityOperation(entity("e2"))) },
+      { clientId: "U1", operations: inProject(createUndoOperation("A")) },
     ]);
-    expect(state).toEqual({ e2: entity("e2") });
+    expect(states[MODEL_A]).toEqual({ e2: entity("e2") });
 
-    const result = applyUndoOperationToModelEntities(MODEL, TYPE, state, createUndoOperation("B"), history);
-    expect(result).toEqual({});
+    const result = await applyUndoOperationToModels(createUndoOperation("B"), history, async (modelId) => states[modelId] ?? {});
+    expect(result?.[MODEL_A]).toEqual({});
   });
 
-  test("undo of a remove restores the entity", () => {
-    const { history, state } = buildHistory([
-      { clientId: "A", operations: [createSetEntityOperation(entity("e1", { value: "a" }))] },
-      { clientId: "B", operations: [createRemoveEntityOperation("e1")] },
+  test("undo of a remove restores the entity", async () => {
+    const { history, states } = await buildHistory([
+      { clientId: "A", operations: inA(createSetEntityOperation(entity("e1", { value: "a" }))) },
+      { clientId: "B", operations: inA(createRemoveEntityOperation("e1")) },
     ]);
-    expect(state).toEqual({});
+    expect(states[MODEL_A]).toEqual({});
 
-    const result = applyUndoOperationToModelEntities(MODEL, TYPE, state, createUndoOperation("B"), history);
-    expect(result).toEqual({ e1: entity("e1", { value: "a" }) });
+    const result = await applyUndoOperationToModels(createUndoOperation("B"), history, async (modelId) => states[modelId] ?? {});
+    expect(result?.[MODEL_A]).toEqual({ e1: entity("e1", { value: "a" }) });
   });
 
-  test("returns null for an unknown transaction", () => {
-    const { history, state } = buildHistory([{ clientId: "A", operations: [createSetEntityOperation(entity("e1"))] }]);
+  test("undo of a model creation drops the model from the project structure", async () => {
+    const { history, states } = await buildHistory([
+      ...setUpProject,
+      {
+        clientId: "B",
+        operations: [...inProject(createCreateModelOperation(PROJECT, LOCAL_SEMANTIC_MODEL, MODEL_B)), ...inB(createSetEntityOperation(entity("e1")))],
+      },
+    ]);
+    expect(states[PROJECT_MODEL_ID]?.[MODEL_B]).toBeDefined();
 
-    expect(applyUndoOperationToModelEntities(MODEL, TYPE, state, createUndoOperation("missing"), history)).toBeNull();
+    const result = await applyUndoOperationToModels(createUndoOperation("B"), history, async (modelId) => states[modelId] ?? {});
+    expect(result?.[PROJECT_MODEL_ID]?.[MODEL_B]).toBeUndefined();
+    expect((result?.[PROJECT_MODEL_ID]?.[PROJECT] as PackageEntity).subModels).toEqual([MODEL_A]);
+    expect(result?.[MODEL_B]).toEqual({});
   });
 
-  test("returns null when a transaction to rewind through has no recorded events", () => {
-    const { history, state } = buildHistory([
-      { clientId: "A", operations: [createSetEntityOperation(entity("e1"))] },
-      { clientId: "B", operations: [createSetEntityOperation(entity("e2"))] },
+  test("undo of a model removal restores the model and its content", async () => {
+    const { history, states } = await buildHistory([
+      ...setUpProject,
+      { clientId: "B", operations: inA(createSetEntityOperation(entity("e1", { value: "a" }))) },
+      { clientId: "C", operations: inProject(createRemoveModelOperation(MODEL_A)) },
+    ]);
+    expect(states[PROJECT_MODEL_ID]?.[MODEL_A]).toBeUndefined();
+    expect(states[MODEL_A]).toEqual({});
+
+    const result = await applyUndoOperationToModels(createUndoOperation("C"), history, async (modelId) => states[modelId] ?? {});
+    expect((result?.[PROJECT_MODEL_ID]?.[MODEL_A] as ProjectModelEntity).modelType).toBe(LOCAL_SEMANTIC_MODEL);
+    expect(result?.[MODEL_A]).toEqual({ e1: entity("e1", { value: "a" }) });
+  });
+
+  test("a model removed after the undone transaction stays removed", async () => {
+    const { history, states } = await buildHistory([
+      ...setUpProject,
+      { clientId: "B", operations: inA(createSetEntityOperation(entity("e1"))) },
+      { clientId: "C", operations: inA(createSetEntityOperation(entity("e2"))) },
+      { clientId: "D", operations: inProject(createRemoveModelOperation(MODEL_A)) },
+    ]);
+
+    const result = await applyUndoOperationToModels(createUndoOperation("B"), history, async (modelId) => states[modelId] ?? {});
+    expect(result?.[PROJECT_MODEL_ID]?.[MODEL_A]).toBeUndefined();
+    expect(result?.[MODEL_A]).toEqual({});
+  });
+
+  test("returns null for an unknown transaction", async () => {
+    const { history, states } = await buildHistory([{ clientId: "A", operations: inA(createSetEntityOperation(entity("e1"))) }]);
+
+    expect(await applyUndoOperationToModels(createUndoOperation("missing"), history, async (modelId) => states[modelId] ?? {})).toBeNull();
+  });
+
+  test("returns null when a transaction to rewind through has no recorded events", async () => {
+    const { history, states } = await buildHistory([
+      { clientId: "A", operations: inA(createSetEntityOperation(entity("e1"))) },
+      { clientId: "B", operations: inA(createSetEntityOperation(entity("e2"))) },
     ]);
     history[1] = { ...history[1]!, downEvents: null };
 
-    expect(applyUndoOperationToModelEntities(MODEL, TYPE, state, createUndoOperation("A"), history)).toBeNull();
+    expect(await applyUndoOperationToModels(createUndoOperation("A"), history, async (modelId) => states[modelId] ?? {})).toBeNull();
   });
 });

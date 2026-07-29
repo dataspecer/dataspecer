@@ -7,35 +7,9 @@ import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import { getModelMetadata, resolveAsyncQueryableModelEntities } from "@dataspecer/model-store/implementation";
-import { PROJECT_MODEL_MODEL_ENTITY, type PackageEntity, type ProjectModelEntity } from "@dataspecer/project-model";
 import { type ModelRepositoryType } from "../models/model-repository.ts";
 import { PROJECT_MODEL_ID } from "../models/model-id.ts";
-import type { BaseResource, Package } from "../models/resource-model.ts";
-
-function createRegularResourceEntity(resource: BaseResource): ProjectModelEntity {
-  return {
-    // Resources may carry arbitrary extra metadata fields (e.g. documentBaseUrl,
-    // importedFromUrl) beyond label/description, which callers rely on.
-    ...((resource.userMetadata as object) ?? {}),
-    id: resource.iri,
-    type: [PROJECT_MODEL_MODEL_ENTITY],
-    label: resource.userMetadata?.label ?? {},
-    description: resource.userMetadata?.description ?? {},
-    modelType: resource.types[0] ?? "",
-  };
-}
-
-function createProjectPackageEntity(resource: Package): PackageEntity {
-  return {
-    ...((resource.userMetadata as object) ?? {}),
-    id: resource.iri,
-    type: [PROJECT_MODEL_MODEL_ENTITY],
-    label: resource.userMetadata?.label ?? {},
-    description: resource.userMetadata?.description ?? {},
-    modelType: LOCAL_PACKAGE,
-    subModels: resource.subResources?.map((subResource) => subResource.iri) ?? [],
-  };
-}
+import { createProjectPackageEntity, createRegularResourceEntity } from "../models/project-model-entities.ts";
 
 /**
  * Asynchronously resolves entities that are not part of the model's

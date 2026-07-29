@@ -11,6 +11,7 @@ import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
+import { isUndoOperation, isVersionOperation } from "@dataspecer/core/operation";
 import { fetchProjectHistory, markHistoryVersion, undoHistoryTransaction, type HistoryEntry } from "./history-data";
 
 /**
@@ -55,10 +56,10 @@ export function HistoryPage() {
 
   const handleUndo = useCallback(
     async (entry: HistoryEntry) => {
-      if (!backendUrl || !packageIri) return;
+      if (!backendUrl || !packageIri || !modelStore) return;
       setBusyId(entry.clientId);
       try {
-        await undoHistoryTransaction(backendUrl, packageIri, entry);
+        await undoHistoryTransaction(backendUrl, packageIri, modelStore.projectModelId, entry.clientId);
         refresh();
       } catch (error) {
         console.error(error);
@@ -66,7 +67,7 @@ export function HistoryPage() {
         setBusyId(null);
       }
     },
-    [backendUrl, packageIri, refresh],
+    [backendUrl, packageIri, modelStore, refresh],
   );
 
   const handleMarkVersion = useCallback(
@@ -207,7 +208,11 @@ const TransactionCard = memo(function TransactionCard({
   const { t } = useTranslation();
   const { modelStore } = useModelStore();
 
-  const touchesProjectModel = modelStore !== null && entry.operations.some(({ modelId }) => modelId === modelStore.projectModelId);
+  // Undo and version operations are recorded on the project model as well,
+  // but they say nothing about the structure of the project.
+  const touchesProjectModel =
+    modelStore !== null &&
+    entry.operations.some(({ modelId, operation }) => modelId === modelStore.projectModelId && !isUndoOperation(operation) && !isVersionOperation(operation));
 
   const time = new Intl.DateTimeFormat(language, { timeStyle: "medium" }).format(entry.executedAt);
   const fullTime = new Intl.DateTimeFormat(language, { dateStyle: "medium", timeStyle: "medium" }).format(entry.executedAt);
@@ -247,7 +252,7 @@ const TransactionCard = memo(function TransactionCard({
           </Button>
         </div>
       </div>
-      <OperationGroups modelsBefore={modelsBefore} operations={entry.operations} undoneInModels={entry.undoneInModels} />
+      <OperationGroups modelsBefore={modelsBefore} operations={entry.operations} />
     </Card>
   );
 });

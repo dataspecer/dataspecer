@@ -175,7 +175,11 @@ test("Versions separate the history into chunks.", async () => {
     operations: [{ modelId: "_project_model", operation: createVersionOperation(first.id, "1.0") }],
   };
   const second = { ...transaction("voc", [createClass({ id: "agent", iri: "Agent", name: { en: "Agent" }, description: {} })]), time: "2026-01-03T10:00:00.000Z" };
-  const undo = { ...transaction("voc", [createUndoOperation(second.id)]), time: "2026-01-04T10:00:00.000Z" };
+  const undo = {
+    id: generateOperationId(),
+    time: "2026-01-04T10:00:00.000Z",
+    operations: [{ modelId: "_project_model", operation: createUndoOperation(second.id) }],
+  };
   const secondMarker = {
     id: generateOperationId(),
     time: "2026-01-05T10:00:00.000Z",

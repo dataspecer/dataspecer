@@ -31,10 +31,16 @@ export interface ApplyOperationResult {
 export interface ModelInDefaultFrontendModelStore {
   /**
    * Synchronously applies operations to the model and returns what has changed.
-   *
-   * It is also used for applying undo redo operations.
    */
   applyOperations(transactionId: string, operations: Operation[]): ApplyOperationResult;
+
+  /**
+   * Synchronously restores the state the model had before the given
+   * transaction, as part of the transaction performing the revert, and returns
+   * what has changed. Returns null when the reverted transaction did not
+   * change this model.
+   */
+  revertTransaction(transactionId: string, revertedTransactionId: string): EntityChange[] | null;
 
   /**
    * Subscribes for asynchronous changes that did not come synchronously from applying operations in this model.
@@ -102,13 +108,6 @@ export interface DefaultFrontendModelStoreParams {
  */
 interface Transaction extends CoreTransaction {
   metadata: TransactionMetadata;
-
-  /**
-   * Whether this transaction contains an operation on the project model (i.e.
-   * it creates or removes a model). Such transactions are not added to the
-   * undo/redo stack for simplicity of implementation.
-   */
-  touchesProjectModel: boolean;
 }
 
 /**
@@ -416,13 +415,9 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
         time: new Date().toISOString(),
         metadata: {},
         operations: [],
-        touchesProjectModel: false,
       };
     }
     const currentTransaction = this.currentTransaction;
-    if (operations.some((operation) => operation.modelId === this.projectModelId)) {
-      currentTransaction.touchesProjectModel = true;
-    }
     const transactionId = currentTransaction.id;
 
     // Changes made in this transaction
@@ -507,41 +502,41 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
       // There is nothing to undo, just return.
       return null;
     }
-    const transactionToRevert = this.transactions.find((transaction) => transaction.id === transactionIdToUndo)!;
-
     // This undo transaction
     const transactionId = uuidv4();
 
     // Changes made in this transaction
     const entityChanges: Record<ModelIdentifier, EntityChange[]> = {};
 
-    // The project model is processed first, analogous to addOperationForTransaction.
-    const affectedModels = [...new Set(transactionToRevert.operations.map((operation) => operation.modelId))].sort(this.compareProjectModelFirst);
+    // The models to revert are the ones that remember a state from before the
+    // reverted transaction, i.e. exactly those it changed. They cannot be read
+    // off the transaction's operations, as an undo transaction consists of a
+    // single operation while changing every model the cancelled transaction
+    // touched. The project model is reverted first, analogous to
+    // addOperationForTransaction.
+    const affectedModels = Object.keys(this.models).sort(this.compareProjectModelFirst);
 
-    const allOperations: OperationInModel[] = [];
     for (const modelId of affectedModels) {
-      const model = this.models[modelId];
-      if (!model) {
-        // Model may not be present here, this is absolutely ok.
+      if (this.inactiveModelIds.has(modelId)) {
+        // The model is not part of the project structure anymore - possibly
+        // because the project model was just reverted, which already reported
+        // its entities as gone. Its state is kept as it is so that a redo can
+        // bring the model back with its content intact.
         continue;
       }
 
-      const undoOperation = createUndoOperation(transactionToRevert.id);
-
-      const changes = model.applyOperations(transactionId, [undoOperation]);
-      appendEntityChanges(entityChanges, modelId, changes.entityChanges);
-
-      // The undo cancels the whole transaction, but as every operation is
-      // applied to a single model in isolation, it is recorded once per
-      // model the transaction touched. The backend interprets it using the
-      // recorded history of the cancelled transaction.
-      allOperations.push({ modelId, operation: undoOperation });
+      const changes = this.models[modelId]!.revertTransaction(transactionId, transactionIdToUndo);
+      if (changes === null) {
+        // The reverted transaction did not change this model.
+        continue;
+      }
+      appendEntityChanges(entityChanges, modelId, changes);
 
       if (modelId === this.projectModelId) {
         // React to models being created/removed in the project structure (e.g.
         // undoing the creation of a model deactivates it, undoing the removal
         // of a model reactivates it with its previous state intact).
-        this.applyProjectStructureChanges(changes.entityChanges, entityChanges, true);
+        this.applyProjectStructureChanges(changes, entityChanges, true);
       }
     }
 
@@ -552,10 +547,10 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
       id: transactionId,
       time: new Date().toISOString(),
       metadata: {},
-      operations: allOperations,
-      // Transactions reachable from the undo/redo stacks never touch the
-      // project model, see commitTransaction.
-      touchesProjectModel: false,
+      // The undo cancels the transaction as a whole, in every model it
+      // touched, so it is recorded once and dispatched to the project model.
+      // The backend interprets it using the recorded history.
+      operations: [{ modelId: this.projectModelId, operation: createUndoOperation(transactionIdToUndo) }],
     });
 
     this.internalNotifyEntityChange({ entityChanges });
@@ -588,17 +583,7 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
     this.currentTransaction = null;
 
     // Handle undo/redo stacks
-
-    if (transaction.touchesProjectModel) {
-      // Undoing/redoing the creation or removal of a model would require
-      // un-creating/un-removing the corresponding resource on the backend,
-      // which is not supported yet. Invalidate the whole undo/redo history
-      // instead, so the project model is never asked to undo/redo such a
-      // change.
-      this.transactionIdsToUndoStack = [];
-    } else {
-      this.transactionIdsToUndoStack.push(transaction.id);
-    }
+    this.transactionIdsToUndoStack.push(transaction.id);
     this.transactionIdsToRedoStack = [];
     this.notifyUndoRedoSubscribers();
     this.notifyTransactionCommitSubscribers();

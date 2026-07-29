@@ -1,7 +1,7 @@
 import type { Entity, EntityChange, EntityIdentifier, EntityRecord } from "@dataspecer/core/entity-model";
 import { diffEntities } from "@dataspecer/core/entity-model";
 import type { Model } from "@dataspecer/core/model";
-import { isRemoveEntityOperation, isSetEntityOperation, isUndoOperation, isUpdateEntityOperation, type Operation, type UndoOperation } from "@dataspecer/core/operation";
+import { isRemoveEntityOperation, isSetEntityOperation, isUpdateEntityOperation, type Operation } from "@dataspecer/core/operation";
 import type { ApplyOperationResult, ModelInDefaultFrontendModelStore } from "./implementation.ts";
 
 /**
@@ -141,74 +141,88 @@ export abstract class BaseModelInModelStore<BaseEntityType extends Entity = Enti
    */
   protected abstract applyOperation(operation: Operation, mutableState: EntityRecord<BaseEntityType>): void;
 
-  public applyOperations(transactionId: string, operations: Operation[]): ApplyOperationResult {
-    // Perform snapshot if necessary
+  /**
+   * Hook for subclasses to react to changes the model just made and report
+   * additional ones. Called for every change caused by this model itself, no
+   * matter whether it comes from applying operations or from reverting a
+   * transaction.
+   */
+  protected onEntityChanges(changes: EntityChange[]): EntityChange[] {
+    return changes;
+  }
+
+  /**
+   * Remembers the current state as the state before the given transaction,
+   * unless it is already remembered. This is what {@link revertTransaction}
+   * restores.
+   */
+  private takeSnapshot(transactionId: string): void {
     const lastSnapshotTransactionId = this.snapshots.length > 0 ? this.snapshots[this.snapshots.length - 1].transactionId : null;
-    if (lastSnapshotTransactionId !== transactionId) {
-      this.snapshots.push({
-        stateBefore: {
-          entities: { ...this.state.entities }, // We create copy to conserve the state
-          operations: [...this.state.operations],
-        },
-        transactionId: transactionId,
-      });
+    if (lastSnapshotTransactionId === transactionId) {
+      return;
     }
+    this.snapshots.push({
+      stateBefore: {
+        entities: { ...this.state.entities }, // We create copy to conserve the state
+        operations: [...this.state.operations],
+      },
+      transactionId: transactionId,
+    });
+  }
 
-    if (operations.some(isUndoOperation)) {
-      // Handle UNDO
-      if (operations.length > 1) {
-        throw new Error("Undo operation must be applied separately from other operations!");
-      }
-      const undoOperation = operations[0] as UndoOperation;
+  public applyOperations(transactionId: string, operations: Operation[]): ApplyOperationResult {
+    this.takeSnapshot(transactionId);
 
-      // Todo we trust that caller use undo operations in correct order.
+    const previousState = this.state.entities;
+    this.state.entities = { ...this.state.entities };
 
-      const snapshot = this.snapshots.find((snapshot) => snapshot.transactionId === undoOperation.cancelTransactionId);
-
-      if (!snapshot) {
-        // Backend should be capable to run the undo operation, but this frontend not.
-        throw new Error(`Cannot find snapshot for transaction ID ${undoOperation.cancelTransactionId}`);
-      }
-
-      const previousEntities = { ...this.state.entities };
-      this.state.entities = { ...snapshot.stateBefore.entities };
-
-      const diff = diffEntities(previousEntities, this.state.entities);
-
-      return {
-        transactionId,
-        entityChanges: diff,
-      };
-    } else {
-      const previousState = this.state.entities;
-      this.state.entities = { ...this.state.entities };
-
-      for (const operation of operations) {
-        // todo: we allow running this low level operations on all models, is it correct?
-        if (isSetEntityOperation(operation)) {
-          const entity = operation.entity as BaseEntityType;
-          this.state.entities[entity.id] = entity;
-        } else if (isUpdateEntityOperation(operation)) {
-          const update = operation.update;
-          const entity = this.state.entities[update.id];
-          // If entity does not exist, do nothing
-          if (entity) {
-            this.state.entities[update.id] = { ...entity, ...update };
-          }
-        } else if (isRemoveEntityOperation(operation)) {
-          delete this.state.entities[operation.entityId];
-        } else {
-          this.applyOperation(operation, this.state.entities);
+    for (const operation of operations) {
+      // todo: we allow running this low level operations on all models, is it correct?
+      if (isSetEntityOperation(operation)) {
+        const entity = operation.entity as BaseEntityType;
+        this.state.entities[entity.id] = entity;
+      } else if (isUpdateEntityOperation(operation)) {
+        const update = operation.update;
+        const entity = this.state.entities[update.id];
+        // If entity does not exist, do nothing
+        if (entity) {
+          this.state.entities[update.id] = { ...entity, ...update };
         }
+      } else if (isRemoveEntityOperation(operation)) {
+        delete this.state.entities[operation.entityId];
+      } else {
+        this.applyOperation(operation, this.state.entities);
       }
-
-      const diff = diffEntities(previousState, this.state.entities);
-
-      return {
-        transactionId,
-        entityChanges: diff,
-      };
     }
+
+    return {
+      transactionId,
+      entityChanges: this.onEntityChanges(diffEntities(previousState, this.state.entities)),
+    };
+  }
+
+  /**
+   * Restores the state the model had before the given transaction, as part of
+   * the transaction that performs the revert - so that the revert itself can
+   * be reverted later (redo). Returns the resulting entity changes, or null
+   * when the model has no state remembered for the reverted transaction,
+   * meaning the transaction did not change this model.
+   *
+   * Only the state of the model is restored; the revert is recorded once for
+   * the whole transaction by the caller, see the UndoOperation.
+   */
+  public revertTransaction(transactionId: string, revertedTransactionId: string): EntityChange[] | null {
+    const snapshot = this.snapshots.find((snapshot) => snapshot.transactionId === revertedTransactionId);
+    if (!snapshot) {
+      return null;
+    }
+
+    this.takeSnapshot(transactionId);
+
+    const previousEntities = this.state.entities;
+    this.state.entities = { ...snapshot.stateBefore.entities };
+
+    return this.onEntityChanges(diffEntities(previousEntities, this.state.entities));
   }
 
   /**

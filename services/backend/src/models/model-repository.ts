@@ -4,11 +4,11 @@ import { diffEntities, type Entity, type EntityRecord } from "@dataspecer/core/e
 import {
   createUpdateEntityOperation,
   isSetEntityOperation,
-  isUndoOperation,
   isUpdateEntityOperation,
   type Operation,
   type OperationInModel,
   type Transaction,
+  type UndoOperation,
 } from "@dataspecer/core/operation";
 import type { MainEntity } from "@dataspecer/model-store/implementation";
 import {
@@ -18,17 +18,20 @@ import {
   isCreateModelOperation,
   isCreateProjectOperation,
   isRemoveModelOperation,
+  type PackageEntity,
 } from "@dataspecer/project-model";
 import { v4 as uuidv4 } from "uuid";
 import configuration from "../configuration.ts";
 import { composeModelId, PROJECT_MODEL_ID, splitModelId } from "./model-id.ts";
 import {
   applyOperationsToModelEntities,
-  applyUndoOperationToModelEntities,
+  applyUndoOperationToModels,
   diffModelEntitiesToOperations,
   entityChangesToEvents,
-  type UndoHistoryEntry,
+  groupTransactionOperations,
+  type UndoHistoryTransaction,
 } from "./model-operations.ts";
+import { buildProjectModelEntities } from "./project-model-entities.ts";
 import { deserializeModelEntities, deserializeStoredModel, isBlobModelType, NAMED_BLOB_STORE_TYPE, resolveStoreModelType, serializeModelEntities } from "./model-types.ts";
 import type { BaseResource, Package, ResourceModel } from "./resource-model.ts";
 import type { HistoryTransaction, TransactionEvents, TransactionModel, TransactionWithEvents } from "./transaction-model.ts";
@@ -178,7 +181,7 @@ export class ModelRepository implements ModelRepositoryType {
 
     // Loads a model on first use. Returns null if the model has no resource,
     // in which case its operations can only be recorded.
-    const loadModel = async (modelId: ModelIdentifier) => {
+    const loadModel = async (modelId: ModelIdentifier, warnIfMissing: boolean = true) => {
       const loaded = models[modelId];
       if (loaded !== undefined) {
         return loaded;
@@ -187,7 +190,9 @@ export class ModelRepository implements ModelRepositoryType {
       const { iri, storeName } = splitModelId(modelId);
       const resource = await this.resourceModel.getResource(iri);
       if (resource === null) {
-        console.warn(`Cannot apply operations to model "${modelId}" because its resource does not exist. The operations are only recorded.`);
+        if (warnIfMissing) {
+          console.warn(`Cannot apply operations to model "${modelId}" because its resource does not exist. The operations are only recorded.`);
+        }
         return null;
       }
 
@@ -198,34 +203,43 @@ export class ModelRepository implements ModelRepositoryType {
       return model;
     };
 
+    // Structure of the project as the project model sees it, loaded lazily on
+    // the first operation targeting it. It is kept in sync with the resource
+    // tree below, so that changes of the structure are recorded as events of
+    // the project model and can therefore be undone.
+    let projectEntities: EntityRecord | null = null;
+    const getProjectEntities = async () => (projectEntities ??= await buildProjectModelEntities(projectId, (iri) => this.resourceModel.getPackage(iri)));
+
     // History of the branch the transactions are appended to, loaded lazily
     // when the first undo operation has to be interpreted.
     let storedHistory: HistoryTransaction[] | null = null;
     const getStoredHistory = async () => (storedHistory ??= await this.transactionModel.getBranchHistory(projectId));
 
-    // Projects the history a model's current state reflects - the stored
-    // transactions followed by the ones of this batch already applied - onto
-    // the given model, as needed to interpret an undo operation dispatched
-    // to it.
-    const getModelHistory = async (modelId: string, processedTransactions: TransactionWithEvents[]): Promise<UndoHistoryEntry[]> => {
-      const stored = (await getStoredHistory()).map((transaction) => ({
+    // The history the current state reflects - the stored transactions
+    // followed by the ones of this batch already applied - as needed to
+    // interpret an undo operation.
+    const getHistory = async (processedTransactions: TransactionWithEvents[]): Promise<UndoHistoryTransaction[]> => [
+      ...(await getStoredHistory()).map((transaction) => ({
         clientId: transaction.clientId,
+        operations: transaction.operations,
         downEvents: transaction.downEvents,
-        operations: transaction.operations,
-      }));
-      const processed = processedTransactions.map((transaction) => ({
+      })),
+      ...processedTransactions.map((transaction) => ({
         clientId: transaction.id,
-        downEvents: transaction.downEvents ?? {},
         operations: transaction.operations,
-      }));
-      return [...stored, ...processed].map((transaction) => ({
-        clientId: transaction.clientId,
-        operations: transaction.operations.filter((operation) => operation.modelId === modelId).map((operation) => operation.operation),
-        downEvents: transaction.downEvents === null ? null : (transaction.downEvents[modelId] ?? {}),
-      }));
-    };
+        downEvents: transaction.downEvents ?? {},
+      })),
+    ];
 
     const applyProjectModelOperations = async (operations: Operation[]): Promise<ModelEventsContribution[]> => {
+      const previousProjectEntities = await getProjectEntities();
+      let workingProjectEntities = previousProjectEntities;
+
+      // Mirrors a change just made to the resources in the project structure.
+      const project = (operation: Operation) => {
+        workingProjectEntities = applyOperationsToModelEntities(PROJECT_MODEL_ID, "", workingProjectEntities, [operation]);
+      };
+
       const contributions: ModelEventsContribution[] = [];
 
       for (const operation of operations) {
@@ -239,6 +253,7 @@ export class ModelRepository implements ModelRepositoryType {
           }
           // Label and description of a resource are stored as its user metadata.
           await this.resourceModel.createResource(PROJECT_ROOT_IRI, operation.projectId, LOCAL_PACKAGE, { label: operation.label, description: operation.description });
+          project(operation);
         } else if (isCreateModelOperation(operation)) {
           if ((await this.resourceModel.getResource(operation.modelId)) !== null) {
             // The model already exists, the operation ensures nothing more.
@@ -250,6 +265,7 @@ export class ModelRepository implements ModelRepositoryType {
             continue;
           }
           await this.resourceModel.createResource(operation.parentPackageId, operation.modelId, operation.modelType, { label: operation.label, description: operation.description });
+          project(operation);
         } else if (isRemoveModelOperation(operation)) {
           if ((await this.resourceModel.getResource(operation.modelId)) === null) {
             // The model does not exist (anymore), the operation ensures nothing more.
@@ -277,6 +293,7 @@ export class ModelRepository implements ModelRepositoryType {
           }
 
           await this.resourceModel.deleteResource(operation.modelId);
+          project(operation);
         } else if (isUpdateEntityOperation(operation) || isSetEntityOperation(operation)) {
           // A generic entity operation changing a resource's projection in
           // the project model - currently only used for label/description
@@ -293,10 +310,67 @@ export class ModelRepository implements ModelRepositoryType {
             continue;
           }
           await this.resourceModel.updateResource(entityId, userMetadata);
+          // Only the user metadata reaches the resource, so that is also all
+          // the project structure takes over from the operation.
+          project(createUpdateEntityOperation({ id: entityId, ...userMetadata } as Partial<Entity> & Pick<Entity, "id">));
         } else {
           // Other operations (e.g. project structure metadata changes not
           // covered above) are not interpreted yet, only recorded.
           console.warn(`Unsupported operation "${operation.type}" for the project model. The operation is only recorded.`);
+        }
+      }
+
+      projectEntities = workingProjectEntities;
+      contributions.push({ modelId: PROJECT_MODEL_ID, previousEntities: previousProjectEntities, nextEntities: workingProjectEntities, isBlob: false });
+
+      return contributions;
+    };
+
+    // An undo cancels a whole transaction across all models it touched, so it
+    // is interpreted against the recorded history of the whole project, see
+    // applyUndoOperationToModels. The resulting states replace the states of
+    // all models involved, including the project structure.
+    const applyUndoOperations = async (undoOperations: UndoOperation[], processedTransactions: TransactionWithEvents[]): Promise<ModelEventsContribution[]> => {
+      const contributions: ModelEventsContribution[] = [];
+
+      for (const undoOperation of undoOperations) {
+        const previousStates: Record<ModelIdentifier, EntityRecord> = {};
+        const nextStates = await applyUndoOperationToModels(undoOperation, await getHistory(processedTransactions), async (modelId) => {
+          const entities = modelId === PROJECT_MODEL_ID ? await getProjectEntities() : ((await loadModel(modelId, false))?.entities ?? {});
+          previousStates[modelId] = entities;
+          return entities;
+        });
+
+        if (nextStates === null) {
+          console.warn(`Cannot interpret undo of transaction "${undoOperation.cancelTransactionId}" in project "${projectId}". The operation is only recorded.`);
+          continue;
+        }
+
+        const nextProjectEntities = nextStates[PROJECT_MODEL_ID]!;
+        // The project structure is rewound like any other model, so the
+        // resources it describes have to be brought in line with it.
+        await this.applyProjectStructure(projectId, previousStates[PROJECT_MODEL_ID] ?? {}, nextProjectEntities);
+        projectEntities = nextProjectEntities;
+        contributions.push({ modelId: PROJECT_MODEL_ID, previousEntities: previousStates[PROJECT_MODEL_ID] ?? {}, nextEntities: nextProjectEntities, isBlob: false });
+
+        for (const [modelId, entities] of Object.entries(nextStates)) {
+          if (modelId === PROJECT_MODEL_ID) {
+            continue;
+          }
+          // The resource behind the model may have just been created or
+          // deleted by the reconciliation above, so whether the model still
+          // exists is decided by the resource, not by what was loaded before.
+          if ((await this.resourceModel.getResource(splitModelId(modelId).iri)) === null) {
+            // The model does not exist anymore, its content is not written.
+            delete models[modelId];
+            contributions.push({ modelId, previousEntities: previousStates[modelId] ?? {}, nextEntities: entities, isBlob: false });
+            continue;
+          }
+
+          // Models the undo restored load (and are written back) like any other.
+          const model = (await loadModel(modelId, false))!;
+          model.entities = entities;
+          contributions.push({ modelId, previousEntities: previousStates[modelId] ?? {}, nextEntities: entities, isBlob: isBlobModelType(model.modelType) });
         }
       }
 
@@ -306,45 +380,25 @@ export class ModelRepository implements ModelRepositoryType {
     // Apply the transactions to the models in memory one by one, recording
     // for each transaction its up/down events. Models whose operations are
     // only recorded (see loadModel above) have no events.
-    const transactionsWithEvents = await this.buildTransactionsWithEvents(transactions, async (modelId, operations, processedTransactions) => {
-      if (modelId === PROJECT_MODEL_ID) {
-        return await applyProjectModelOperations(operations);
-      }
-
-      const model = await loadModel(modelId);
-      if (model === null) {
-        return null;
-      }
-
-      const previousEntities = model.entities;
-
-      let working = previousEntities;
-      if (operations.some(isUndoOperation)) {
-        // An undo operation cancels a whole transaction, which may span
-        // several models; it arrives dispatched to each of them and is
-        // interpreted here against the recorded history of this model, see
-        // applyUndoOperationToModelEntities.
-        const modelHistory = await getModelHistory(modelId, processedTransactions);
-        for (const operation of operations) {
-          if (isUndoOperation(operation)) {
-            const undone = applyUndoOperationToModelEntities(modelId, model.modelType, working, operation, modelHistory);
-            if (undone === null) {
-              console.warn(`Cannot interpret undo of transaction "${operation.cancelTransactionId}" in model "${modelId}". The operation is only recorded.`);
-            } else {
-              working = undone;
-            }
-          } else {
-            working = applyOperationsToModelEntities(modelId, model.modelType, working, [operation]);
-          }
+    const transactionsWithEvents = await this.buildTransactionsWithEvents(
+      transactions,
+      async (modelId, operations) => {
+        if (modelId === PROJECT_MODEL_ID) {
+          return await applyProjectModelOperations(operations);
         }
-      } else {
-        working = applyOperationsToModelEntities(modelId, model.modelType, working, operations);
-      }
 
-      model.entities = working;
+        const model = await loadModel(modelId);
+        if (model === null) {
+          return null;
+        }
 
-      return [{ modelId, previousEntities, nextEntities: model.entities, isBlob: isBlobModelType(model.modelType) }];
-    });
+        const previousEntities = model.entities;
+        model.entities = applyOperationsToModelEntities(modelId, model.modelType, previousEntities, operations);
+
+        return [{ modelId, previousEntities, nextEntities: model.entities, isBlob: isBlobModelType(model.modelType) }];
+      },
+      applyUndoOperations,
+    );
 
     // A project removed by its own transactions is deleted together with its
     // history, so there is nothing left to record the transactions in.
@@ -435,20 +489,24 @@ export class ModelRepository implements ModelRepositoryType {
    * transaction. Blob models record only down events - their up state is the
    * next transaction's down event, or the current snapshot.
    *
-   * The given callback applies the operations of one transaction targeting
-   * one model (in order) and returns the entity states before and after them
-   * as event contributions; null means the model's events are not recorded.
-   * Usually the contributions concern only the targeted model itself, but
-   * project model operations contribute the content of the models they
-   * remove. It also receives the transactions of this batch processed so
-   * far, with their events.
+   * The `applyToModel` callback applies the operations of one transaction
+   * targeting one model (in order) and returns the entity states before and
+   * after them as event contributions; null means the model's events are not
+   * recorded. Usually the contributions concern only the targeted model
+   * itself, but project model operations contribute the content of the models
+   * they remove. It is invoked for the project model up to twice per
+   * transaction, see {@link groupTransactionOperations}.
    *
-   * The callback is invoked for the project model up to three times per
-   * transaction, see the grouping below.
+   * The `applyUndo` callback interprets the undo operations of a transaction,
+   * which concern all models at once and are therefore applied before the rest
+   * of the transaction. It also receives the transactions of this batch
+   * processed so far, with their events, as the undo is interpreted against
+   * the history. When it is not given, undo operations are only recorded.
    */
   private async buildTransactionsWithEvents(
     transactions: Transaction[],
-    applyToModel: (modelId: string, operations: Operation[], processedTransactions: TransactionWithEvents[]) => Promise<ModelEventsContribution[] | null>,
+    applyToModel: (modelId: string, operations: Operation[]) => Promise<ModelEventsContribution[] | null>,
+    applyUndo?: (undoOperations: UndoOperation[], processedTransactions: TransactionWithEvents[]) => Promise<ModelEventsContribution[]>,
   ): Promise<TransactionWithEvents[]> {
     const transactionsWithEvents: TransactionWithEvents[] = [];
 
@@ -456,41 +514,8 @@ export class ModelRepository implements ModelRepositoryType {
       const upEvents: TransactionEvents = {};
       const downEvents: TransactionEvents = {};
 
-      // First create on project model, then all other models, then remove on project model.
-      const creations: Operation[] = [];
-      const removals: Operation[] = [];
-      const operationsByModel = new Map<string, Operation[]>();
-      for (const { modelId, operation } of transaction.operations) {
-        if (modelId === PROJECT_MODEL_ID) {
-          if (isCreateProjectOperation(operation) || isCreateModelOperation(operation)) {
-            creations.push(operation);
-            continue;
-          }
-          if (isRemoveModelOperation(operation)) {
-            removals.push(operation);
-            continue;
-          }
-        }
-        if (!operationsByModel.has(modelId)) {
-          operationsByModel.set(modelId, []);
-        }
-        operationsByModel.get(modelId)!.push(operation);
-      }
-
-      // Models are created first, removed last, everything else in between.
-      const groups: [ModelIdentifier, Operation[]][] = [[PROJECT_MODEL_ID, creations], ...operationsByModel, [PROJECT_MODEL_ID, removals]];
-
-      for (const [modelId, operations] of groups) {
-        if (operations.length === 0) {
-          continue;
-        }
-
-        const contributions = await applyToModel(modelId, operations, transactionsWithEvents);
-        if (contributions === null) {
-          continue;
-        }
-
-        for (const contribution of contributions) {
+      const collect = (contributions: ModelEventsContribution[] | null) => {
+        for (const contribution of contributions ?? []) {
           const changes = diffEntities(contribution.previousEntities, contribution.nextEntities);
           if (changes.length === 0) {
             continue;
@@ -501,12 +526,80 @@ export class ModelRepository implements ModelRepositoryType {
             upEvents[contribution.modelId] = { ...upEvents[contribution.modelId], ...up };
           }
         }
+      };
+
+      const { undoOperations, groups } = groupTransactionOperations(transaction.operations);
+
+      if (undoOperations.length > 0 && applyUndo !== undefined) {
+        collect(await applyUndo(undoOperations, transactionsWithEvents));
+      }
+
+      for (const [modelId, operations] of groups) {
+        collect(await applyToModel(modelId, operations));
       }
 
       transactionsWithEvents.push({ ...transaction, upEvents, downEvents });
     }
 
     return transactionsWithEvents;
+  }
+
+  /**
+   * Brings the resource tree in line with a new state of the project model:
+   * resources that are gone from it are deleted, resources it newly lists are
+   * created (parents before their children) and changed user metadata is
+   * written. Used when the project structure is recomputed rather than reached
+   * by operations, i.e. when an undo rewinds it.
+   *
+   * Restoring the content of the models whose resources are (re)created is up
+   * to the caller.
+   */
+  private async applyProjectStructure(projectId: ModelIdentifier, previous: EntityRecord, next: EntityRecord): Promise<void> {
+    // Structural fields follow from the resource tree itself, everything else
+    // of a project model entity is the resource's user metadata.
+    const userMetadataOf = (entity: Entity): Record<string, unknown> => {
+      const { id, type, modelType, subModels, ...userMetadata } = entity as Record<string, unknown> & Entity;
+      return userMetadata;
+    };
+
+    for (const modelId of Object.keys(previous)) {
+      if (next[modelId] === undefined && (await this.resourceModel.getResource(modelId)) !== null) {
+        // Deleting a package deletes its sub-resources as well, so a resource
+        // may already be gone by the time it is visited.
+        await this.resourceModel.deleteResource(modelId);
+      }
+    }
+
+    const create = async (modelId: ModelIdentifier, parentIri: string): Promise<void> => {
+      const entity = next[modelId] as PackageEntity | undefined;
+      if (entity === undefined) {
+        return;
+      }
+      if ((await this.resourceModel.getResource(modelId)) === null) {
+        await this.resourceModel.createResource(parentIri, modelId, entity.modelType, userMetadataOf(entity));
+      }
+      for (const subModelId of entity.subModels ?? []) {
+        await create(subModelId, modelId);
+      }
+    };
+    await create(projectId, PROJECT_ROOT_IRI);
+
+    for (const [modelId, entity] of Object.entries(next)) {
+      const previousEntity = previous[modelId];
+      if (previousEntity === undefined) {
+        // The resource was created above, with its metadata.
+        continue;
+      }
+      const previousMetadata = userMetadataOf(previousEntity);
+      const nextMetadata = userMetadataOf(entity);
+      if (deepEqual(previousMetadata, nextMetadata)) {
+        continue;
+      }
+      // The update merges into the stored metadata, so keys that are gone have
+      // to be listed as undefined to be dropped.
+      const droppedKeys = Object.fromEntries(Object.keys(previousMetadata).map((key) => [key, undefined]));
+      await this.resourceModel.updateResource(modelId, { ...droppedKeys, ...nextMetadata });
+    }
   }
 
   /**

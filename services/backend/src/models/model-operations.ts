@@ -1,4 +1,5 @@
 import { changesToEntityOperations, diffEntities, type Entity, type EntityChange, type EntityRecord } from "@dataspecer/core/entity-model";
+import type { ModelIdentifier } from "@dataspecer/core/model";
 import {
   isRemoveEntityOperation,
   isSetEntityOperation,
@@ -10,9 +11,16 @@ import {
   type Transaction,
   type UndoOperation,
 } from "@dataspecer/core/operation";
-import type { ProjectModelEntity } from "@dataspecer/project-model";
-import { PROJECT_MODEL_ID } from "./model-id.ts";
+import {
+  applyOperationsToVirtualProjectModel,
+  isCreateModelOperation,
+  isCreateProjectOperation,
+  isRemoveModelOperation,
+  type ProjectModelEntity,
+} from "@dataspecer/project-model";
+import { PROJECT_MODEL_ID, splitModelId } from "./model-id.ts";
 import { applyModelTypeOperation, modelTypeChangesToOperations, NAMED_BLOB_STORE_TYPE } from "./model-types.ts";
+import type { TransactionEvents } from "./transaction-model.ts";
 
 /**
  * Converts entity changes of one model to its up/down transaction events: the
@@ -74,8 +82,13 @@ export function diffModelStates(previous: Record<string, EntityRecord>, next: Re
  *
  * The generic set/update/remove entity operations are accepted by all model
  * types; other operations are dispatched to the executor of the given model
- * type. Operations that cannot be executed are ignored, as required by the
- * {@link Operation} contract.
+ * type. The virtual project model has no stored type and is recognized by its
+ * id instead. Operations that cannot be executed are ignored, as required by
+ * the {@link Operation} contract.
+ *
+ * For the project model this only updates the projection of the project
+ * structure; creating and removing the backing resources is the caller's
+ * responsibility.
  */
 export function applyOperationsToModelEntities(modelId: string, modelType: string, entities: EntityRecord, operations: Operation[]): EntityRecord {
   const working = { ...entities };
@@ -91,6 +104,8 @@ export function applyOperationsToModelEntities(modelId: string, modelType: strin
       }
     } else if (isRemoveEntityOperation(operation)) {
       delete working[operation.entityId];
+    } else if (modelId === PROJECT_MODEL_ID) {
+      applyOperationsToVirtualProjectModel(working as EntityRecord<ProjectModelEntity>, [operation]);
     } else {
       applyModelTypeOperation(modelId, modelType, working, operation);
     }
@@ -100,77 +115,107 @@ export function applyOperationsToModelEntities(modelId: string, modelType: strin
 }
 
 /**
- * One transaction of the history, projected onto a single model, as needed to
- * interpret an undo operation in it. See
- * {@link applyUndoOperationToModelEntities}.
+ * Splits the operations of a transaction into the groups they are applied in:
+ * the project model creates its models first, then every other model's
+ * operations follow in the order the models appear, and the project model
+ * removes its models last.
+ *
+ * Undo operations are returned separately, as they cancel a whole transaction
+ * and are therefore interpreted against the history rather than against a
+ * single model, see {@link applyUndoOperationToModels}.
  */
-export interface UndoHistoryEntry {
-  /** Client-generated transaction id. */
-  clientId: string;
-  /** Operations of the transaction targeting the model, in order. */
-  operations: Operation[];
-  /**
-   * Entity states before the transaction for the model, empty when the
-   * transaction did not change the model. Null when the transaction's events
-   * were not recorded at all.
-   */
-  downEvents: Record<string, Entity | null> | null;
+export function groupTransactionOperations(operations: OperationInModel[]): { undoOperations: UndoOperation[]; groups: [ModelIdentifier, Operation[]][] } {
+  const undoOperations: UndoOperation[] = [];
+  const creations: Operation[] = [];
+  const removals: Operation[] = [];
+  const operationsByModel = new Map<ModelIdentifier, Operation[]>();
+
+  for (const { modelId, operation } of operations) {
+    if (isUndoOperation(operation)) {
+      undoOperations.push(operation);
+      continue;
+    }
+    if (modelId === PROJECT_MODEL_ID) {
+      if (isCreateProjectOperation(operation) || isCreateModelOperation(operation)) {
+        creations.push(operation);
+        continue;
+      }
+      if (isRemoveModelOperation(operation)) {
+        removals.push(operation);
+        continue;
+      }
+    }
+    if (!operationsByModel.has(modelId)) {
+      operationsByModel.set(modelId, []);
+    }
+    operationsByModel.get(modelId)!.push(operation);
+  }
+
+  const groups: [ModelIdentifier, Operation[]][] = [[PROJECT_MODEL_ID, creations], ...operationsByModel, [PROJECT_MODEL_ID, removals]];
+  return { undoOperations, groups: groups.filter(([, group]) => group.length > 0) };
 }
 
 /**
- * Interprets an undo operation for one model. The undo cancels the referenced
- * transaction as a whole - possibly spanning several models - but since every
- * operation is applied to a single model in isolation, it arrives dispatched
- * to each model the cancelled transaction touched; this function handles one
- * such model, cancelling the transaction's operations on it as if they never
- * happened.
+ * One transaction of the history, as needed to interpret an undo operation.
+ * See {@link applyUndoOperationToModels}.
+ */
+export interface UndoHistoryTransaction {
+  /** Client-generated transaction id. */
+  clientId: string;
+  /** Operations of the transaction, in order. */
+  operations: OperationInModel[];
+  /**
+   * Entity states before the transaction, per model. Null when the
+   * transaction's events were not recorded at all.
+   */
+  downEvents: TransactionEvents | null;
+}
+
+/**
+ * Interprets an undo operation, cancelling the referenced transaction as a
+ * whole - across every model it touched, including the project model - as if
+ * its operations never happened.
  *
- * The final state is computed from the model's history (oldest first, up to
+ * The final state is computed from the project history (oldest first, up to
  * and including the transaction the current state reflects): the state is
  * rewound to before the earliest transaction ever targeted by an undo, by
  * patching the recorded down events in reverse order, and the operations of
- * the transactions from that point on are replayed, skipping transactions
- * that are effectively cancelled (see {@link resolveCancelledTransactions})
- * and undo operations themselves, whose effect the replay already accounts
- * for.
+ * the transactions from that point on are replayed, skipping transactions that
+ * are effectively cancelled (see {@link resolveCancelledTransactions}) and undo
+ * operations themselves, whose effect the replay already accounts for. The
+ * type a model's operations are interpreted with follows from the project
+ * model state of the replay itself, so models the undo restores are replayed
+ * the same way as models that existed all along.
  *
- * Returns null when the undo cannot be interpreted - the referenced
- * transaction is not in the history, or a transaction that would have to be
- * rewound has no recorded events. The caller should then only record the
- * operation, per the {@link Operation} contract.
+ * `loadModelEntities` provides the current state of a model, an empty record
+ * for models that do not exist (anymore). It is called for every model the
+ * undo may change, including the project model.
  *
- * The input entities are not modified.
+ * Returns the new state of all those models. The project model state is the
+ * new structure of the project, which the caller is expected to reconcile with
+ * the actual resources. Returns null when the undo cannot be interpreted - the
+ * referenced transaction is not in the history, or a transaction that would
+ * have to be rewound has no recorded events. The caller should then only
+ * record the operation, per the {@link Operation} contract.
  */
-export function applyUndoOperationToModelEntities(
-  modelId: string,
-  modelType: string,
-  entities: EntityRecord,
+export async function applyUndoOperationToModels(
   undoOperation: UndoOperation,
-  history: UndoHistoryEntry[],
-): EntityRecord | null {
-  // Pseudo transactions for the cancellation resolution. The undo operation
-  // being applied participates as the last, not yet recorded transaction; as
-  // client-generated ids are always uuids, "current" cannot collide with them.
-  const pseudoTransactions: Transaction[] = history.map((entry) => ({
-    id: entry.clientId,
-    operations: entry.operations.map((operation) => ({ modelId, operation })),
-  }));
-  pseudoTransactions.push({ id: "current", operations: [{ modelId, operation: undoOperation }] });
-
+  history: UndoHistoryTransaction[],
+  loadModelEntities: (modelId: ModelIdentifier) => Promise<EntityRecord>,
+): Promise<Record<ModelIdentifier, EntityRecord> | null> {
   // Find the earliest transaction targeted by any undo operation: everything
   // before it is unaffected by any cancellation, so it is a safe point to
   // rewind to and replay from. Undo targets that are not part of the history
   // never had an effect and are skipped.
   const indexByClientId = new Map<string, number>();
-  history.forEach((entry, index) => indexByClientId.set(entry.clientId, index));
+  history.forEach((transaction, index) => indexByClientId.set(transaction.clientId, index));
 
-  const targetIndex = indexByClientId.get(undoOperation.cancelTransactionId);
-  if (targetIndex === undefined) {
+  let earliestIndex = indexByClientId.get(undoOperation.cancelTransactionId);
+  if (earliestIndex === undefined) {
     return null;
   }
 
-  let earliestIndex = targetIndex;
-  for (const transaction of pseudoTransactions) {
+  for (const transaction of history) {
     for (const { operation } of transaction.operations) {
       if (isUndoOperation(operation)) {
         const index = indexByClientId.get(operation.cancelTransactionId);
@@ -181,7 +226,7 @@ export function applyUndoOperationToModelEntities(
     }
   }
 
-  // Transactions that changed the model but have no recorded events cannot be
+  // Transactions that changed something but have no recorded events cannot be
   // rewound through.
   for (let index = earliestIndex; index < history.length; index++) {
     if (history[index]!.downEvents === null && history[index]!.operations.length > 0) {
@@ -189,31 +234,73 @@ export function applyUndoOperationToModelEntities(
     }
   }
 
-  const cancelled = resolveCancelledTransactions(pseudoTransactions);
-  const isCancelled = (index: number) => cancelled.get(pseudoTransactions[index]!.id)?.has(modelId) ?? false;
+  // Cancellation is resolved on the history extended by the undo operation
+  // being applied, participating as the last, not yet recorded transaction; as
+  // client-generated ids are always uuids, "current" cannot collide with them.
+  const cancelled = resolveCancelledTransactions([
+    ...history.map((transaction): Transaction => ({ id: transaction.clientId, operations: transaction.operations })),
+    { id: "current", operations: [{ modelId: PROJECT_MODEL_ID, operation: undoOperation }] },
+  ]);
+
+  // Models the rewind and the replay touch. The project model is always
+  // included, as it resolves the type of all the others.
+  const modelIds = new Set<ModelIdentifier>([PROJECT_MODEL_ID]);
+  for (let index = earliestIndex; index < history.length; index++) {
+    Object.keys(history[index]!.downEvents ?? {}).forEach((modelId) => modelIds.add(modelId));
+    history[index]!.operations.forEach(({ modelId }) => modelIds.add(modelId));
+  }
+
+  const states: Record<ModelIdentifier, EntityRecord> = {};
+  for (const modelId of modelIds) {
+    states[modelId] = { ...(await loadModelEntities(modelId)) };
+  }
 
   // Rewind to the state before the earliest affected transaction.
-  let working = { ...entities };
   for (let index = history.length - 1; index >= earliestIndex; index--) {
-    for (const [entityId, entity] of Object.entries(history[index]!.downEvents ?? {})) {
-      if (entity === null) {
-        delete working[entityId];
-      } else {
-        working[entityId] = entity;
+    for (const [modelId, events] of Object.entries(history[index]!.downEvents ?? {})) {
+      const working = (states[modelId] ??= {});
+      for (const [entityId, entity] of Object.entries(events)) {
+        if (entity === null) {
+          delete working[entityId];
+        } else {
+          working[entityId] = entity;
+        }
       }
     }
   }
 
   // Replay the effective operations on top of it.
   for (let index = earliestIndex; index < history.length; index++) {
-    if (isCancelled(index)) {
+    if (cancelled.has(history[index]!.clientId)) {
       continue;
     }
-    const operations = history[index]!.operations.filter((operation) => !isUndoOperation(operation));
-    if (operations.length > 0) {
-      working = applyOperationsToModelEntities(modelId, modelType, working, operations);
+    for (const [modelId, operations] of groupTransactionOperations(history[index]!.operations).groups) {
+      const modelType = (states[PROJECT_MODEL_ID]?.[modelId] as ProjectModelEntity | undefined)?.modelType ?? NAMED_BLOB_STORE_TYPE;
+      const previousProjectEntities = states[PROJECT_MODEL_ID];
+      states[modelId] = applyOperationsToModelEntities(modelId, modelType, states[modelId] ?? {}, operations);
+      if (modelId === PROJECT_MODEL_ID) {
+        clearRemovedModels(states, previousProjectEntities ?? {}, states[PROJECT_MODEL_ID]!);
+      }
     }
   }
 
-  return working;
+  return states;
+}
+
+/**
+ * Empties the state of every model that the project structure no longer
+ * contains, mirroring that the content of a model is deleted together with it.
+ * Covers the named stores of the model as well.
+ */
+function clearRemovedModels(states: Record<ModelIdentifier, EntityRecord>, previousProjectEntities: EntityRecord, nextProjectEntities: EntityRecord): void {
+  for (const modelId of Object.keys(previousProjectEntities)) {
+    if (nextProjectEntities[modelId] !== undefined) {
+      continue;
+    }
+    for (const stateModelId of Object.keys(states)) {
+      if (splitModelId(stateModelId).iri === modelId) {
+        states[stateModelId] = {};
+      }
+    }
+  }
 }

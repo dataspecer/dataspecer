@@ -35,8 +35,7 @@
     "session-changes_other": "{{count}} změn",
     "badge": {
       "project-structure": "Mění strukturu projektu",
-      "undone": "Vráceno zpět",
-      "undone-in-model": "vráceno zpět v tomto modelu"
+      "undone": "Vráceno zpět"
     },
     "op": {
       "undo": "Vrátil(a) zpět změny transakce {{transactionId}}",

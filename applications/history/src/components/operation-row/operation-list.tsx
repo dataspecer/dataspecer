@@ -64,12 +64,10 @@ export function getAggregatedEntitiesWithPassthroughForPackage(models: Record<Mo
 export const OperationGroups = memo(function OperationGroups({
   modelsBefore,
   operations,
-  undoneInModels,
   importantModelTypes,
 }: {
   modelsBefore: Record<ModelIdentifier, EntityRecord>;
   operations: OperationInModel[];
-  undoneInModels?: Set<string>;
   /* When used, non important models become grayed. */
   importantModelTypes?: string[];
 }) {
@@ -126,13 +124,7 @@ export const OperationGroups = memo(function OperationGroups({
   return (
     <div className="space-y-2">
       {groups.map(([modelId, modelOperations, unimportant]) => (
-        <SingleModelOperations
-          key={modelId}
-          modelId={modelId}
-          operations={modelOperations}
-          undone={undoneInModels?.has(modelId) ?? false}
-          unimportant={unimportant}
-        />
+        <SingleModelOperations key={modelId} modelId={modelId} operations={modelOperations} unimportant={unimportant} />
       ))}
     </div>
   );
@@ -141,12 +133,10 @@ export const OperationGroups = memo(function OperationGroups({
 const SingleModelOperations = memo(function SingleModelOperations({
   modelId,
   operations,
-  undone,
   unimportant,
 }: {
   modelId: string;
   operations: OperationRowProps[];
-  undone: boolean;
   unimportant?: boolean;
 }) {
   const { t, i18n } = useTranslation();
@@ -158,7 +148,7 @@ const SingleModelOperations = memo(function SingleModelOperations({
   const modelName = display === null ? null : display.isProjectModel ? t("history.project-model") : (display.name ?? typeName);
 
   return (
-    <div className={[undone && "line-through decoration-muted-foreground/60", unimportant && "opacity-50"].filter(Boolean).join(" ")}>
+    <div className={unimportant ? "opacity-50" : ""}>
       <div className="mb-1 flex items-center gap-2">
         <Badge
           variant={display?.isProjectModel ? "default" : "secondary"}
@@ -168,7 +158,6 @@ const SingleModelOperations = memo(function SingleModelOperations({
           {modelName}
         </Badge>
         {display !== null && !display.isProjectModel && display.name !== null && <span className="text-xs text-muted-foreground">{typeName}</span>}
-        {undone && <span className="text-xs text-muted-foreground no-underline">{t("history.badge.undone-in-model")}</span>}
       </div>
       <ul className="space-y-0.5">
         {operations.map((entry, index) => (
