@@ -160,6 +160,34 @@ describe("createAutosaveQueue", () => {
     await expect(latestFlush).rejects.toBe(latestError);
   });
 
+  it("refuses a graph the editor could not load again", async () => {
+    const persist = vi.fn<(_snapshot: AutosaveSnapshot) => Promise<void>>(
+      async () => undefined,
+    );
+    const setSaveState = vi.fn();
+    const queue = createAutosaveQueue(persist, setSaveState);
+
+    await queue.flush(snapshot({ ...graph("valid"), name: "" }));
+
+    expect(persist).not.toHaveBeenCalled();
+    expect(setSaveState).toHaveBeenCalledWith("invalid");
+  });
+
+  it("persists again once the graph is valid", async () => {
+    const persist = vi.fn<(_snapshot: AutosaveSnapshot) => Promise<void>>(
+      async () => undefined,
+    );
+    const setSaveState = vi.fn();
+    const queue = createAutosaveQueue(persist, setSaveState);
+
+    await queue.flush(snapshot({ ...graph("valid"), name: "" }));
+    const repaired = snapshot(graph("repaired"));
+    await queue.flush(repaired);
+
+    expect(persist).toHaveBeenCalledExactlyOnceWith(repaired);
+    expect(setSaveState).toHaveBeenLastCalledWith("saved");
+  });
+
   it("stops persisting after dispose", async () => {
     const settlers: Array<{ resolve: () => void; reject: (error: Error) => void }> = [];
     const persist = vi.fn(

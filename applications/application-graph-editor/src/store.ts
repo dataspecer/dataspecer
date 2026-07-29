@@ -17,7 +17,7 @@ export type Selection = { kind: "node" | "edge"; id: string } | null;
 /** The sidebar view when nothing is selected. Null collapses the sidebar. */
 export type SidebarTab = "problems" | "json" | null;
 
-export type SaveState = "saved" | "saving" | "error";
+export type SaveState = "saved" | "saving" | "error" | "invalid";
 
 /** One-shot request to bring a node or edge into view. The seq makes repeats distinct. */
 export interface FocusRequest {

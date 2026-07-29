@@ -16,6 +16,7 @@ export function EditorHeader({
 }) {
   const [generating, setGenerating] = useState(false);
   const { errors, warnings } = useViolationsBySeverity();
+  const empty = graph.nodes.length === 0;
 
   const generate = async () => {
     setGenerating(true);
@@ -75,11 +76,13 @@ export function EditorHeader({
         type="button"
         className="rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-40"
         onClick={() => void onGenerate()}
-        disabled={generating || errors.length > 0}
+        disabled={generating || empty || errors.length > 0}
         title={
-          errors.length > 0
-            ? `${errors.length} error${errors.length === 1 ? "" : "s"} block generation`
-            : undefined
+          empty
+            ? "Add at least one node before generating."
+            : errors.length > 0
+              ? `${errors.length} error${errors.length === 1 ? "" : "s"} block generation`
+              : undefined
         }
       >
         {generating ? "Generating..." : "Generate"}

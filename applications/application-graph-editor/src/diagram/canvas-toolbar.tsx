@@ -6,13 +6,14 @@ import { useStore } from "zustand";
 import { downloadBlob } from "../utils/download-blob.ts";
 import { applyGraphJson } from "../graph/apply-json.ts";
 import { exportFileName } from "../graph/file-names.ts";
-import { newNode } from "../graph/new-node.ts";
+import { newNode, nodeBlockedReason } from "../graph/new-node.ts";
 import { useEditorStore } from "../store.ts";
 import { autoLayout, type LayoutOptions } from "./auto-layout.ts";
 
 export function CanvasToolbar() {
   const { undo, redo, pastStates, futureStates } = useStore(useEditorStore.temporal);
   const importInput = useRef<HTMLInputElement>(null);
+  const cannotAddNode = nodeBlockedReason(useEditorStore((state) => state.metadata));
 
   const importFile = async (file: File) => {
     const { error } = await applyGraphJson(await file.text());
@@ -74,7 +75,7 @@ export function CanvasToolbar() {
           </DropdownMenu.Content>
         </DropdownMenu.Portal>
       </DropdownMenu.Root>
-      <ToolbarButton onClick={addNode}>
+      <ToolbarButton onClick={addNode} disabled={cannotAddNode !== null} title={cannotAddNode ?? undefined}>
         <Plus size={14} /> Add node
       </ToolbarButton>
       <DropdownMenu.Root>

@@ -42,6 +42,13 @@ function SaveIndicator({ state }: { state: SaveState }) {
   if (state === "saving") {
     return <span className="text-sm text-slate-400">Saving...</span>;
   }
+  if (state === "invalid") {
+    return (
+      <span className="inline-flex items-center gap-1 text-sm text-amber-700">
+        <AlertTriangle size={13} /> Not saved
+      </span>
+    );
+  }
   if (state === "error") {
     return (
       <span className="inline-flex items-center gap-1 text-sm text-red-600">

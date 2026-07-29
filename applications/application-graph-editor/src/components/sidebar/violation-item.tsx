@@ -17,7 +17,10 @@ export function ViolationItem({ violation, heading }: { violation: Violation; he
         </span>
       )}
       <span className="block text-slate-700">{violation.message}</span>
-      <span className="text-xs text-slate-400">{violation.code}</span>
+      <span className="text-xs text-slate-400">
+        {violation.code}
+        {violation.path && violation.path !== "/" && ` · ${violation.path}`}
+      </span>
     </>
   );
 }

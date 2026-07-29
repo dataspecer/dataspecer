@@ -22,11 +22,19 @@ function localViolations(
   if (!syntax.valid || !syntax.graph) {
     return syntax.violations;
   }
+  // an empty graph has not been created yet
+  if (graph.nodes.length === 0) {
+    return [];
+  }
   if (metadata === null) {
     return validateGraphStructure(graph).violations;
   }
   // the semantic analysis runs the structural rules as part of its pass
   return analyzeGraphSemantics(graph, metadata).violations;
+}
+
+export function hasValidSyntax(graph: ApplicationGraph): boolean {
+  return validateGraphSyntax(graph).valid;
 }
 
 function violationKey(violation: Violation): string {

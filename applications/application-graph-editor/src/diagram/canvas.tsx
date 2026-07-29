@@ -22,7 +22,7 @@ import {
   type ApplicationNode,
 } from "@dataspecer/app-generator/graph";
 import { nextEdgeId } from "../graph/mutations.ts";
-import { newNode } from "../graph/new-node.ts";
+import { newNode, nodeBlockedReason } from "../graph/new-node.ts";
 import { useEditorStore } from "../store.ts";
 import { useValidation } from "../hooks/use-validation.ts";
 import { flaggedIds } from "../validation/violations.ts";
@@ -103,9 +103,15 @@ export function Canvas() {
         graph: current,
         metadata,
         addConnectedNode,
+        setActionError,
       } = useEditorStore.getState();
       const flow = flowRef.current;
       if (current === null || flow === undefined) {
+        return;
+      }
+      const blocked = nodeBlockedReason(metadata);
+      if (blocked !== null) {
+        setActionError(blocked);
         return;
       }
       const created = newNode(current, metadata);

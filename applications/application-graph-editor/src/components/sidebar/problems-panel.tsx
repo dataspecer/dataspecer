@@ -17,12 +17,14 @@ export function ProblemsPanel({ graph }: { graph: ApplicationGraph }) {
   const validated = validation?.graph ?? graph;
 
   const focusProblem = (violation: Violation) => {
+    const store = useEditorStore.getState();
     const target = violationTarget(validated, violation);
-    if (target) {
-      const store = useEditorStore.getState();
-      store.setSelection(target);
-      store.requestFocus(target.id);
+    if (target === null) {
+      store.setSidebarTab("json");
+      return;
     }
+    store.setSelection(target);
+    store.requestFocus(target.id);
   };
 
   return (
@@ -81,9 +83,7 @@ function ViolationGroup({
             <li key={index}>
               <button
                 type="button"
-                className={`w-full rounded px-2 py-1 text-left text-sm ${
-                  target ? "cursor-pointer hover:bg-slate-50" : "cursor-default"
-                }`}
+                className="w-full cursor-pointer rounded px-2 py-1 text-left text-sm hover:bg-slate-50"
                 onClick={() => onFocus(violation)}
               >
                 <ViolationItem violation={violation} heading={target ? target.id : "Graph"} />

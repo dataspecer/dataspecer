@@ -87,6 +87,7 @@ function Editor({ graph }: { graph: ApplicationGraph }) {
 
   const metadataError = useEditorStore((state) => state.metadataError);
   const actionError = useEditorStore((state) => state.actionError);
+  const saveState = useEditorStore((state) => state.saveState);
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
@@ -100,6 +101,14 @@ function Editor({ graph }: { graph: ApplicationGraph }) {
         >
           {actionError}
         </button>
+      )}
+      {saveState === "invalid" && (
+        <div
+          role="alert"
+          className="border-b border-amber-200 bg-amber-50 px-4 py-1 text-sm text-amber-800"
+        >
+          Not saved: invalid graph syntax, see the problems panel.
+        </div>
       )}
       {metadataError && (
         <div

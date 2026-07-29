@@ -3,6 +3,7 @@ import { debounce } from "es-toolkit";
 import type { ApplicationGraph } from "@dataspecer/app-generator/graph";
 import { useEditorStore, type NodePositions, type SaveState } from "../store.ts";
 import { saveGraph } from "../backend/client.ts";
+import { hasValidSyntax } from "../validation/violations.ts";
 
 const SAVE_DEBOUNCE_MS = 800;
 
@@ -40,6 +41,11 @@ export function createAutosaveQueue(
       const snapshot = pending;
       pending = null;
       if (snapshot === null || disposed) {
+        return;
+      }
+
+      if (!hasValidSyntax(snapshot.graph)) {
+        setSaveState("invalid");
         return;
       }
 
