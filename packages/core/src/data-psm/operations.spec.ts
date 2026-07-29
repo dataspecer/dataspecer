@@ -1,5 +1,6 @@
-import type { CoreOperationAndOperation, CoreResourceAndEntity } from "../core/index.ts";
+import type { CoreResourceAndEntity } from "../core/index.ts";
 import { type EntityRecord } from "../entity-model/index.ts";
+import type { Operation } from "../operation/index.ts";
 import { applyOperationsToStructureModel } from "./apply-operations.ts";
 import * as PSM from "./data-psm-vocabulary.ts";
 import { initializeStructureModel } from "./entities.ts";
@@ -8,16 +9,16 @@ import { DataPsmCreateClass } from "./operation/index.ts";
 /**
  * Applies structure model operations and returns the new state.
  */
-function apply(entities: EntityRecord<CoreResourceAndEntity>, operations: CoreOperationAndOperation[]): EntityRecord<CoreResourceAndEntity> {
+function apply(entities: EntityRecord<CoreResourceAndEntity>, operations: Operation[]): EntityRecord<CoreResourceAndEntity> {
   const working = { ...entities };
   applyOperationsToStructureModel(working, operations);
   return working;
 }
 
-function createClassOperation(iri: string): CoreOperationAndOperation {
+function createClassOperation(iri: string): Operation {
   const operation = new DataPsmCreateClass();
   operation.dataPsmNewIri = iri;
-  return operation as unknown as CoreOperationAndOperation;
+  return operation;
 }
 
 test("structure model operations build the model", () => {

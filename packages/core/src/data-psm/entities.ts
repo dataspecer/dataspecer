@@ -1,8 +1,7 @@
 import { coreResourceToEntity, type CoreResource, type CoreResourceAndEntity } from "../core/core-resource.ts";
-import { coreOperationToOperation, type CoreOperation, type CoreOperationAndOperation } from "../core/operation/core-operation.ts";
 import type { EntityRecord } from "../entity-model/index.ts";
 import type { ModelIdentifier } from "../model/model.ts";
-import { generateOperationId, type Operation } from "../operation/index.ts";
+import { type Operation } from "../operation/index.ts";
 import { DataPsmCreateSchema } from "./operation/data-psm-create-schema.ts";
 
 export interface StructureModelState {
@@ -13,18 +12,16 @@ export interface StructureModelState {
 /**
  * Generates new operations to initialize a structure model.
  */
-export function initializeStructureModel(modelId: ModelIdentifier): CoreOperationAndOperation[] {
+export function initializeStructureModel(modelId: ModelIdentifier): Operation[] {
   const createSchema = new DataPsmCreateSchema();
-  createSchema.iri = generateOperationId();
   createSchema.dataPsmNewIri = modelId;
-  return [coreOperationToOperation(createSchema)];
+  return [createSchema];
 }
 
 export function serializationToStructureModelEntities(serialization: unknown): StructureModelState {
-  const coreOperations = (serialization as any).operations as CoreOperation[];
+  const operations = (serialization as any).operations as Operation[];
   const coreResources = (serialization as any).resources as Record<string, CoreResource>;
 
-  const operations = coreOperations.map(coreOperationToOperation);
   const entities = Object.fromEntries(Object.entries(coreResources).map(([iri, resource]) => [iri, coreResourceToEntity(resource)])) as EntityRecord<CoreResourceAndEntity>;
 
   return {

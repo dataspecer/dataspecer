@@ -1,21 +1,23 @@
-import { CoreResource, CoreOperation } from "../../core/index.ts";
+import { generateOperationId, type Operation } from "../../operation/index.ts";
 import * as PSM from "../data-psm-vocabulary.ts";
 
-export class DataPsmSetIsClosed extends CoreOperation {
+export class DataPsmSetIsClosed implements Operation {
   static readonly TYPE = PSM.SET_IS_CLOSED;
+
+  id: string;
+
+  type: string;
 
   dataPsmClass: string | null = null;
 
   dataPsmIsClosed: boolean | null = null;
 
   constructor() {
-    super();
-    this.types.push(DataPsmSetIsClosed.TYPE);
+    this.id = generateOperationId();
+    this.type = DataPsmSetIsClosed.TYPE;
   }
 
-  static is(
-    resource: CoreResource | null
-  ): resource is DataPsmSetIsClosed {
-    return resource?.types.includes(DataPsmSetIsClosed.TYPE);
+  static is(operation: Operation | null | undefined): operation is DataPsmSetIsClosed {
+    return operation?.type === DataPsmSetIsClosed.TYPE;
   }
 }

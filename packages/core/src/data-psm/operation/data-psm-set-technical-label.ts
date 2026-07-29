@@ -1,21 +1,23 @@
-import { CoreResource, CoreOperation } from "../../core/index.ts";
+import { generateOperationId, type Operation } from "../../operation/index.ts";
 import * as PSM from "../data-psm-vocabulary.ts";
 
-export class DataPsmSetTechnicalLabel extends CoreOperation {
+export class DataPsmSetTechnicalLabel implements Operation {
   static readonly TYPE = PSM.SET_TECHNICAL_LABEL;
+
+  id: string;
+
+  type: string;
 
   dataPsmResource: string | null = null;
 
   dataPsmTechnicalLabel: string | null = null;
 
   constructor() {
-    super();
-    this.types.push(DataPsmSetTechnicalLabel.TYPE);
+    this.id = generateOperationId();
+    this.type = DataPsmSetTechnicalLabel.TYPE;
   }
 
-  static is(
-    resource: CoreResource | null
-  ): resource is DataPsmSetTechnicalLabel {
-    return resource?.types.includes(DataPsmSetTechnicalLabel.TYPE);
+  static is(operation: Operation | null | undefined): operation is DataPsmSetTechnicalLabel {
+    return operation?.type === DataPsmSetTechnicalLabel.TYPE;
   }
 }

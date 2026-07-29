@@ -2,7 +2,7 @@ import { LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1, VISUAL_MODEL } f
 import { applyOperationsToSemanticModel, semanticModelEntitiesToSerialization, serializationToSemanticModelEntities } from "@dataspecer/core-v2/semantic-model";
 import { changesToSemanticModelOperations } from "@dataspecer/core-v2/semantic-model/operations";
 import { rdfsModelToSerialization, serializationToPimModelEntities } from "@dataspecer/core-v2/semantic-model/v1-adapters";
-import type { CoreOperationAndOperation, CoreResourceAndEntity } from "@dataspecer/core/core";
+import type { CoreResourceAndEntity } from "@dataspecer/core/core";
 import { applyOperationsToStructureModel, serializationToStructureModelEntities, structureModelEntitiesToSerialization } from "@dataspecer/core/data-psm";
 import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import { serializationToBlobModelEntities } from "@dataspecer/core/entity-model/utils";
@@ -102,7 +102,7 @@ const MODEL_TYPES: Record<string, ModelTypeSupport> = {
         operations: (previousSerialization as { operations?: Operation[] })?.operations ?? [],
         entities: entities as EntityRecord<CoreResourceAndEntity>,
       }),
-    applyOperation: (_modelId, working, operation) => applyOperationsToStructureModel(working as EntityRecord<CoreResourceAndEntity>, [operation as CoreOperationAndOperation]),
+    applyOperation: (_modelId, working, operation) => applyOperationsToStructureModel(working as EntityRecord<CoreResourceAndEntity>, [operation]),
   },
   [QUERYABLE_MODEL]: {
     deserialize: (_modelId, data) => (data ? serializationToAsyncQueryableModelEntities(data) : {}),

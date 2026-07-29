@@ -1,5 +1,5 @@
-import { CoreOperation } from "@dataspecer/core/core";
+import type { Operation } from "@dataspecer/core/operation";
 
 export interface FederatedCoreResourceWriter {
-  applyOperation(schema: string, operation: CoreOperation): void;
+  applyOperation(schema: string, operation: Operation): void;
 }

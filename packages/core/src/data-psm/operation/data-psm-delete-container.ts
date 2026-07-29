@@ -1,19 +1,23 @@
-import { CoreResource, CoreOperation } from "../../core/index.ts";
+import { generateOperationId, type Operation } from "../../operation/index.ts";
 import * as PSM from "../data-psm-vocabulary.ts";
 
-export class DataPsmDeleteContainer extends CoreOperation {
+export class DataPsmDeleteContainer implements Operation {
   static readonly TYPE = PSM.DELETE_CONTAINER;
+
+  id: string;
+
+  type: string;
 
   dataPsmOwner: string | null = null;
 
   dataPsmContainer: string | null = null;
 
   constructor() {
-    super();
-    this.types.push(DataPsmDeleteContainer.TYPE);
+    this.id = generateOperationId();
+    this.type = DataPsmDeleteContainer.TYPE;
   }
 
-  static is(resource: CoreResource | null): resource is DataPsmDeleteContainer {
-    return resource?.types.includes(DataPsmDeleteContainer.TYPE);
+  static is(operation: Operation | null | undefined): operation is DataPsmDeleteContainer {
+    return operation?.type === DataPsmDeleteContainer.TYPE;
   }
 }
