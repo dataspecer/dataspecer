@@ -1,7 +1,8 @@
-import {CoreOperation, CoreOperationResult} from "../../operation/index.ts";
+import type { Operation } from "../../../operation/index.ts";
+import { DataPsmOperationResult } from "../../../data-psm/operation/data-psm-operation-result.ts";
 import {CoreResource} from "../../core-resource.ts";
 import {CoreExecutorResult, CoreOperationExecutor, CreateNewIdentifier,} from "../../executor/index.ts";
-import {assert, assertNot} from "../../utilities/assert.ts";
+import {assert} from "../../utilities/assert.ts";
 import {clone} from "../../utilities/clone.ts";
 import {CoreResourceReader} from "../../core-reader.ts";
 import {CoreResourceWriter} from "../../core-writer.ts";
@@ -14,7 +15,7 @@ export class MemoryStore implements CoreResourceReader, CoreResourceWriter {
 
   protected readonly baseIri: string;
 
-  protected operations: CoreOperation[] = [];
+  protected operations: Operation[] = [];
 
   protected resources: { [iri: string]: CoreResource } = {};
 
@@ -36,7 +37,7 @@ export class MemoryStore implements CoreResourceReader, CoreResourceWriter {
 
   static create(
     baseIri: string,
-    executors: CoreOperationExecutor<CoreOperation>[],
+    executors: CoreOperationExecutor<Operation>[],
     createNewIdentifier: CreateNewIdentifier | null = null
   ): MemoryStore {
     const executorForTypes = createExecutorMap(executors);
@@ -62,7 +63,7 @@ export class MemoryStore implements CoreResourceReader, CoreResourceWriter {
     return this.resources[iri] || null;
   }
 
-  applyOperation(operation: CoreOperation): CoreOperationResult {
+  applyOperation(operation: Operation): DataPsmOperationResult {
     const executor = this.findCoreExecutor(operation);
 
     const executorResult = executor.execute(
@@ -88,29 +89,18 @@ export class MemoryStore implements CoreResourceReader, CoreResourceWriter {
   }
 
   protected findCoreExecutor(
-    operation: CoreOperation
-  ): CoreOperationExecutor<CoreOperation> {
-    const candidates: CoreOperationExecutor<CoreOperation>[] = [];
-    operation.types.forEach((type) => {
-      const executor = this.executors[type];
-      if (executor !== undefined) {
-        candidates.push(executor);
-      }
-    });
+    operation: Operation
+  ): CoreOperationExecutor<Operation> {
+    const executor = this.executors[operation.type];
     assert(
-      candidates.length === 1,
-      "Can't determine executor for given operation."
+      executor !== undefined,
+      `Can't determine executor for operation type '${operation.type}'.`
     );
-    return candidates[0];
+    return executor;
   }
 
-  protected addOperation<T extends CoreOperation>(operation: T): T {
+  protected addOperation<T extends Operation>(operation: T): T {
     const result = clone(operation) as T;
-    assertNot(this.baseIri === null, "Base IRI is not defined.");
-    result.iri = this.createNewIdentifier("operation");
-    if (this.operations.length > 0) {
-      result.parent = this.operations[this.operations.length - 1].iri;
-    }
     this.operations.push(result);
     return result;
   }
@@ -128,9 +118,9 @@ export class MemoryStore implements CoreResourceReader, CoreResourceWriter {
 
   protected prepareOperationResult(
     executorResult: CoreExecutorResult,
-    operation: CoreOperation
-  ): CoreOperationResult {
-    const result = executorResult.operationResult;
+    operation: Operation
+  ): DataPsmOperationResult {
+    const result = executorResult.operationResult ?? new DataPsmOperationResult();
     result.operation = operation;
     result.created = Object.keys(executorResult.created);
     result.changed = Object.keys(executorResult.changed);

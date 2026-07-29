@@ -1,11 +1,15 @@
-import { CoreResource, CoreOperation } from "../../core/index.ts";
+import { generateOperationId, type Operation } from "../../operation/index.ts";
 import * as PSM from "../data-psm-vocabulary.ts";
 
 /**
  * Overrides default @id and @type settings for JSON generators
  */
-export class DataPsmSetIdType extends CoreOperation {
+export class DataPsmSetIdType implements Operation {
   static readonly TYPE = PSM.SET_ID_TYPE;
+
+  id: string;
+
+  type: string;
 
   dataPsmResource: string | null = null;
 
@@ -36,13 +40,11 @@ export class DataPsmSetIdType extends CoreOperation {
   jsonTypeRequired: boolean | undefined = undefined;
 
   constructor() {
-    super();
-    this.types.push(DataPsmSetIdType.TYPE);
+    this.id = generateOperationId();
+    this.type = DataPsmSetIdType.TYPE;
   }
 
-  static is(
-    resource: CoreResource | null
-  ): resource is DataPsmSetIdType {
-    return resource?.types.includes(DataPsmSetIdType.TYPE);
+  static is(operation: Operation | null | undefined): operation is DataPsmSetIdType {
+    return operation?.type === DataPsmSetIdType.TYPE;
   }
 }

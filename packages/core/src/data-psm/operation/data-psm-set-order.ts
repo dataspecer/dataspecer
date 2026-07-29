@@ -1,8 +1,12 @@
-import { CoreOperation, CoreResource } from "../../core/index.ts";
+import { generateOperationId, type Operation } from "../../operation/index.ts";
 import * as PSM from "../data-psm-vocabulary.ts";
 
-export class DataPsmSetOrder extends CoreOperation {
+export class DataPsmSetOrder implements Operation {
   static readonly TYPE = PSM.SET_ORDER;
+
+  id: string;
+
+  type: string;
 
   dataPsmOwnerClass: string | null = null;
 
@@ -14,11 +18,11 @@ export class DataPsmSetOrder extends CoreOperation {
   dataPsmMoveAfter: string | null = null;
 
   constructor() {
-    super();
-    this.types.push(DataPsmSetOrder.TYPE);
+    this.id = generateOperationId();
+    this.type = DataPsmSetOrder.TYPE;
   }
 
-  static is(resource: CoreResource | null): resource is DataPsmSetOrder {
-    return resource?.types.includes(DataPsmSetOrder.TYPE);
+  static is(operation: Operation | null | undefined): operation is DataPsmSetOrder {
+    return operation?.type === DataPsmSetOrder.TYPE;
   }
 }

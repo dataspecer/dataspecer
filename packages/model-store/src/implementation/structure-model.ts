@@ -1,5 +1,5 @@
 import type { PackageService } from "@dataspecer/core-v2/project";
-import { type CoreOperationAndOperation, type CoreResourceAndEntity } from "@dataspecer/core/core";
+import { type CoreResourceAndEntity } from "@dataspecer/core/core";
 import { applyOperationsToStructureModel, initializeStructureModel, serializationToStructureModelEntities } from "@dataspecer/core/data-psm";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import type { Model, ModelIdentifier } from "@dataspecer/core/model";
@@ -31,7 +31,7 @@ export class StructureModelInModelStore extends BaseModelInModelStore<CoreResour
   /**
    * Executes given operation and changes the state of the model.
    */
-  protected override applyOperation(operation: CoreOperationAndOperation, mutableState: EntityRecord<CoreResourceAndEntity>): void {
+  protected override applyOperation(operation: Operation, mutableState: EntityRecord<CoreResourceAndEntity>): void {
     applyOperationsToStructureModel(mutableState, [operation]);
   }
 

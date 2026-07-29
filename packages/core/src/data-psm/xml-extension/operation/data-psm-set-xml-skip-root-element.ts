@@ -1,21 +1,23 @@
-import {CoreOperation, CoreResource} from "../../../core/index.ts";
+import { generateOperationId, type Operation } from "../../../operation/index.ts";
 import {SET_SKIP_ROOT_ELEMENT} from "../vocabulary.ts";
 
-export class DataPsmSetXmlSkipRootElement extends CoreOperation {
+export class DataPsmSetXmlSkipRootElement implements Operation {
   static readonly TYPE = SET_SKIP_ROOT_ELEMENT;
+
+  id: string;
+
+  type: string;
 
   dataPsmSchema: string | null = null;
 
   skipRootElement: boolean | null = null;
 
   constructor() {
-    super();
-    this.types.push(DataPsmSetXmlSkipRootElement.TYPE);
+    this.id = generateOperationId();
+    this.type = DataPsmSetXmlSkipRootElement.TYPE;
   }
 
-  static is(
-    resource: CoreResource | null
-  ): resource is DataPsmSetXmlSkipRootElement {
-    return resource?.types.includes(DataPsmSetXmlSkipRootElement.TYPE);
+  static is(operation: Operation | null | undefined): operation is DataPsmSetXmlSkipRootElement {
+    return operation?.type === DataPsmSetXmlSkipRootElement.TYPE;
   }
 }

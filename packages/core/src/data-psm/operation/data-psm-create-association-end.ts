@@ -1,9 +1,29 @@
-import { CoreOperationResult, CoreResource, CoreTyped } from "../../core/index.ts";
-import { DataPsmCreate } from "./data-psm-create.ts";
+import { DataPsmOperationResult } from "./data-psm-operation-result.ts";
+import { generateOperationId, type Operation } from "../../operation/index.ts";
+import { generateEntityId } from "../../entity-model/entity.ts";
+import { LanguageString } from "../../core/index.ts";
 import * as PSM from "../data-psm-vocabulary.ts";
 
-export class DataPsmCreateAssociationEnd extends DataPsmCreate {
+export class DataPsmCreateAssociationEnd implements Operation {
   static readonly TYPE = PSM.CREATE_ASSOCIATION_END;
+
+  id: string;
+
+  type: string;
+
+  /**
+   * IRI of the newly created object, generated up-front so that callers can
+   * use it without depending on the (deprecated) return value of applyOperation.
+   */
+  dataPsmNewIri: string | null = generateEntityId();
+
+  dataPsmInterpretation: string | null = null;
+
+  dataPsmTechnicalLabel: string | null = null;
+
+  dataPsmHumanLabel: LanguageString | null = null;
+
+  dataPsmHumanDescription: LanguageString | null = null;
 
   dataPsmOwner: string | null = null;
 
@@ -14,18 +34,16 @@ export class DataPsmCreateAssociationEnd extends DataPsmCreate {
   dataPsmIsDematerialize: boolean | null = null;
 
   constructor() {
-    super();
-    this.types.push(DataPsmCreateAssociationEnd.TYPE);
+    this.id = generateOperationId();
+    this.type = DataPsmCreateAssociationEnd.TYPE;
   }
 
-  static is(
-    resource: CoreResource | null
-  ): resource is DataPsmCreateAssociationEnd {
-    return resource?.types.includes(DataPsmCreateAssociationEnd.TYPE);
+  static is(operation: Operation | null | undefined): operation is DataPsmCreateAssociationEnd {
+    return operation?.type === DataPsmCreateAssociationEnd.TYPE;
   }
 }
 
-export class DataPsmCreateAssociationEndResult extends CoreOperationResult {
+export class DataPsmCreateAssociationEndResult extends DataPsmOperationResult {
   static readonly TYPE = PSM.CREATE_ASSOCIATION_END_RESULT;
 
   readonly createdDataPsmAssociationEnd: string;
@@ -36,9 +54,7 @@ export class DataPsmCreateAssociationEndResult extends CoreOperationResult {
     this.createdDataPsmAssociationEnd = dataPsmAssociationEnd;
   }
 
-  static is(
-    resource: CoreTyped | null
-  ): resource is DataPsmCreateAssociationEndResult {
-    return resource?.types.includes(DataPsmCreateAssociationEndResult.TYPE);
+  static is(result: DataPsmOperationResult | null | undefined): result is DataPsmCreateAssociationEndResult {
+    return result?.types.includes(DataPsmCreateAssociationEndResult.TYPE) ?? false;
   }
 }

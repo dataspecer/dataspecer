@@ -1,19 +1,23 @@
-import { CoreResource, CoreOperation } from "../../core/index.ts";
+import { generateOperationId, type Operation } from "../../operation/index.ts";
 import * as PSM from "../data-psm-vocabulary.ts";
 
-export class DataPsmSetProfiling extends CoreOperation {
+export class DataPsmSetProfiling implements Operation {
   static readonly TYPE = PSM.SET_PROFILING;
+
+  id: string;
+
+  type: string;
 
   dataPsmResource: string | null = null;
 
   dataPsmProfiling: string[] | null = null;
 
   constructor() {
-    super();
-    this.types.push(DataPsmSetProfiling.TYPE);
+    this.id = generateOperationId();
+    this.type = DataPsmSetProfiling.TYPE;
   }
 
-  static is(resource: CoreResource | null): resource is DataPsmSetProfiling {
-    return resource?.types.includes(DataPsmSetProfiling.TYPE);
+  static is(operation: Operation | null | undefined): operation is DataPsmSetProfiling {
+    return operation?.type === DataPsmSetProfiling.TYPE;
   }
 }

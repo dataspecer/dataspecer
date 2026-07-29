@@ -1,14 +1,14 @@
-import {
-  CoreOperation,
-  CoreOperationResult,
-  CoreResource,
-  CoreTyped,
-} from "../../core/index.ts";
+import { DataPsmOperationResult } from "./data-psm-operation-result.ts";
+import { generateOperationId, type Operation } from "../../operation/index.ts";
 import * as PSM from "../data-psm-vocabulary.ts";
 import { generateEntityId } from "../../entity-model/entity.ts";
 
-export class DataPsmCreateClassReference extends CoreOperation {
+export class DataPsmCreateClassReference implements Operation {
   static readonly TYPE = PSM.CREATE_CLASS_REFERENCE;
+
+  id: string;
+
+  type: string;
 
   /**
    * IRI of the newly created object, generated up-front so that callers can
@@ -27,18 +27,16 @@ export class DataPsmCreateClassReference extends CoreOperation {
   dataPsmClass: string | null = null;
 
   constructor() {
-    super();
-    this.types.push(DataPsmCreateClassReference.TYPE);
+    this.id = generateOperationId();
+    this.type = DataPsmCreateClassReference.TYPE;
   }
 
-  static is(
-    resource: CoreResource | null
-  ): resource is DataPsmCreateClassReference {
-    return resource?.types.includes(DataPsmCreateClassReference.TYPE);
+  static is(operation: Operation | null | undefined): operation is DataPsmCreateClassReference {
+    return operation?.type === DataPsmCreateClassReference.TYPE;
   }
 }
 
-export class DataPsmCreateClassReferenceResult extends CoreOperationResult {
+export class DataPsmCreateClassReferenceResult extends DataPsmOperationResult {
   static readonly TYPE = PSM.CREATE_CLASS_REFERENCE_RESULT;
 
   readonly createdDataPsmClassReference: string;
@@ -49,9 +47,7 @@ export class DataPsmCreateClassReferenceResult extends CoreOperationResult {
     this.createdDataPsmClassReference = dataPsmClass;
   }
 
-  static is(
-    resource: CoreTyped | null
-  ): resource is DataPsmCreateClassReferenceResult {
-    return resource?.types.includes(DataPsmCreateClassReferenceResult.TYPE);
+  static is(result: DataPsmOperationResult | null | undefined): result is DataPsmCreateClassReferenceResult {
+    return result?.types.includes(DataPsmCreateClassReferenceResult.TYPE) ?? false;
   }
 }

@@ -1,25 +1,30 @@
-import {CoreOperation, CoreOperationResult, CoreResource, CoreTyped} from "../../core/index.ts";
+import { DataPsmOperationResult } from "./data-psm-operation-result.ts";
+import { generateOperationId, type Operation } from "../../operation/index.ts";
 import * as PSM from "../data-psm-vocabulary.ts";
 
 /**
  * Removes {@link DataPsmOr} and places its only child in place of it.
  */
-export class DataPsmUnwrapOr extends CoreOperation {
+export class DataPsmUnwrapOr implements Operation {
   static readonly TYPE = PSM.UNWRAP_OR;
+
+  id: string;
+
+  type: string;
 
   dataPsmOr: string | null = null;
 
   constructor() {
-    super();
-    this.types.push(DataPsmUnwrapOr.TYPE);
+    this.id = generateOperationId();
+    this.type = DataPsmUnwrapOr.TYPE;
   }
 
-  static is(resource: CoreResource | null): resource is DataPsmUnwrapOr {
-    return resource?.types.includes(DataPsmUnwrapOr.TYPE);
+  static is(operation: Operation | null | undefined): operation is DataPsmUnwrapOr {
+    return operation?.type === DataPsmUnwrapOr.TYPE;
   }
 }
 
-export class DataPsmUnwrapOrResult extends CoreOperationResult {
+export class DataPsmUnwrapOrResult extends DataPsmOperationResult {
   static readonly TYPE = PSM.UNWRAP_OR_RESULT;
 
   constructor() {
@@ -27,9 +32,7 @@ export class DataPsmUnwrapOrResult extends CoreOperationResult {
     this.types.push(DataPsmUnwrapOrResult.TYPE);
   }
 
-  static is(
-    resource: CoreTyped | null
-  ): resource is DataPsmUnwrapOrResult {
-    return resource?.types.includes(DataPsmUnwrapOrResult.TYPE);
+  static is(result: DataPsmOperationResult | null | undefined): result is DataPsmUnwrapOrResult {
+    return result?.types.includes(DataPsmUnwrapOrResult.TYPE) ?? false;
   }
 }

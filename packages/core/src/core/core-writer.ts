@@ -1,8 +1,9 @@
-import { CoreOperation, CoreOperationResult } from "./operation/index.ts";
+import type { Operation } from "../operation/index.ts";
+import { DataPsmOperationResult } from "../data-psm/operation/data-psm-operation-result.ts";
 
 export interface CoreResourceWriter {
   /**
    * Apply given event and return IRIs of changed resources.
    */
-  applyOperation(operation: CoreOperation): CoreOperationResult;
+  applyOperation(operation: Operation): DataPsmOperationResult;
 }

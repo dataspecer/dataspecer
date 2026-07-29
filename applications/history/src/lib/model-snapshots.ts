@@ -1,4 +1,4 @@
-import { type CoreOperationAndOperation, type CoreResourceAndEntity } from "@dataspecer/core/core";
+import { type CoreResourceAndEntity } from "@dataspecer/core/core";
 import { applyOperationsToStructureModel } from "@dataspecer/core/data-psm";
 import { applyOperationsToEntityModel, type EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
@@ -48,7 +48,7 @@ export function applyToModel(entities: EntityRecord, operations: Operation[], is
       } else if (modelType === VISUAL_MODEL) {
         applyOperationsToVisualModel(entities, [operation]);
       } else if (modelType === V1.PSM) {
-        applyOperationsToStructureModel(entities as EntityRecord<CoreResourceAndEntity>, [operation as CoreOperationAndOperation]);
+        applyOperationsToStructureModel(entities as EntityRecord<CoreResourceAndEntity>, [operation]);
       } else if (modelType === QUERYABLE_MODEL) {
         applyOperationsToAsyncQueryableModel(entities, [operation]);
       } else if (modelType === LOCAL_SEMANTIC_MODEL || modelType === RDFS_MODEL) {

@@ -1,13 +1,12 @@
 import {
-  coreOperationToOperation,
   coreResourceToEntity,
   createExecutorMap,
-  type CoreOperationAndOperation,
   type CoreResource,
   type CoreResourceAndEntity,
   type CoreResourceReader,
 } from "../core/index.ts";
 import { diffEntities, generateEntityId, type EntityChange, type EntityRecord } from "../entity-model/index.ts";
+import type { Operation } from "../operation/index.ts";
 import { dataPsmExecutors } from "./data-psm-executors.ts";
 
 const structureModelExecutors = createExecutorMap([...dataPsmExecutors]);
@@ -17,13 +16,11 @@ const structureModelExecutors = createExecutorMap([...dataPsmExecutors]);
  * the net changes between the original and the resulting state. The entity
  * record is modified in place.
  */
-export function applyOperationsToStructureModel(mutableModel: EntityRecord<CoreResourceAndEntity>, operations: CoreOperationAndOperation[]): EntityChange[] {
+export function applyOperationsToStructureModel(mutableModel: EntityRecord<CoreResourceAndEntity>, operations: Operation[]): EntityChange[] {
   const previous: EntityRecord<CoreResourceAndEntity> = { ...mutableModel };
   const working = mutableModel;
 
   for (let operation of operations) {
-    operation = coreOperationToOperation(operation);
-
     const executor = structureModelExecutors[operation.type];
     if (executor === undefined) {
       throw new Error(`No executor found for operation type "${operation.type}".`);
