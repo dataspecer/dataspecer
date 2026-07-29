@@ -20,8 +20,10 @@ export function EditorHeader({
 
   const generate = async () => {
     setGenerating(true);
-    const { setActionError } = useEditorStore.getState();
+    const { setActionError, setGenerationViolations } = useEditorStore.getState();
     setActionError(null);
+    // the previous attempt says nothing about this one
+    setGenerationViolations(null);
     try {
       // the endpoint reads the saved blob, so flush pending writes before requesting generation
       const { resourceIri, graph: current } = useEditorStore.getState();
@@ -34,10 +36,7 @@ export function EditorHeader({
         downloadBlob(result.archive, archiveFileName(current));
       } else {
         // only the backend knows some failures, such as metadata resolution
-        useEditorStore.getState().setGenerationViolations({
-          violations: result.violations,
-          forGraph: current,
-        });
+        setGenerationViolations(result.violations);
         useEditorStore.getState().setSidebarTab("problems");
         setActionError("Generation failed, see the problems panel.");
       }

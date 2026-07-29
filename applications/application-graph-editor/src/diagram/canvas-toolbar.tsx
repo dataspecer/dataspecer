@@ -16,8 +16,14 @@ export function CanvasToolbar() {
   const cannotAddNode = nodeBlockedReason(useEditorStore((state) => state.metadata));
 
   const importFile = async (file: File) => {
-    const { error } = await applyGraphJson(await file.text());
-    useEditorStore.getState().setActionError(error && `Import failed: ${error}`);
+    const { setActionError } = useEditorStore.getState();
+    try {
+      const { error } = await applyGraphJson(await file.text());
+      setActionError(error && `Import failed: ${error}`);
+    } catch (caught) {
+      console.error(caught);
+      setActionError(`Import failed: ${caught instanceof Error ? caught.message : String(caught)}`);
+    }
   };
 
   const exportGraph = () => {

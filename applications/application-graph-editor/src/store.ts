@@ -6,9 +6,10 @@ import type {
   ApplicationGraph,
   ApplicationNode,
   SpecificationMetadata,
+  Violation,
 } from "@dataspecer/app-generator/graph";
 import * as mutations from "./graph/mutations.ts";
-import type { GenerationViolations, ValidationSnapshot } from "./validation/violations.ts";
+import type { ValidationSnapshot } from "./validation/violations.ts";
 
 export type NodePositions = Record<string, { x: number; y: number }>;
 
@@ -54,8 +55,11 @@ interface EditorState extends UndoableState {
   actionError: string | null;
   /** Question waiting for an answer in the confirmation dialog. */
   confirmRequest: ConfirmRequest | null;
-  /** Violations from the last failed generation, dropped once the graph changes. */
-  generationViolations: GenerationViolations | null;
+  /**
+   * Violations the last generation attempt returned. The editor cannot recompute them, so they
+   * stay listed until the next attempt.
+   */
+  generationViolations: Violation[] | null;
   /** The last computed violations with the graph they belong to. Null until the first pass. */
   validation: ValidationSnapshot | null;
   focusRequest: FocusRequest | null;
@@ -77,7 +81,7 @@ interface EditorState extends UndoableState {
   /** Asks the user through the confirmation dialog and resolves with the answer. */
   requestConfirm: (question: ConfirmQuestion) => Promise<boolean>;
   answerConfirm: (confirmed: boolean) => void;
-  setGenerationViolations: (violations: GenerationViolations | null) => void;
+  setGenerationViolations: (violations: Violation[] | null) => void;
   setValidation: (validation: ValidationSnapshot) => void;
   requestFocus: (id: string) => void;
 

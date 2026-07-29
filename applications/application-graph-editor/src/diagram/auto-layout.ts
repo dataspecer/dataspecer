@@ -29,6 +29,7 @@ export async function autoLayout(
   graph: ApplicationGraph,
   options: LayoutOptions = DEFAULT_LAYOUT,
 ): Promise<NodePositions> {
+  const nodeIds = new Set(graph.nodes.map((node) => node.id));
   const result = await elk.layout({
     id: "root",
     layoutOptions:
@@ -48,11 +49,13 @@ export async function autoLayout(
       width: NODE_WIDTH,
       height: NODE_HEIGHT,
     })),
-    edges: graph.edges.map((edge) => ({
-      id: edge.id,
-      sources: [edge.source],
-      targets: [edge.target],
-    })),
+    edges: graph.edges
+      .filter((edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target))
+      .map((edge) => ({
+        id: edge.id,
+        sources: [edge.source],
+        targets: [edge.target],
+      })),
   });
 
   const positions: NodePositions = {};

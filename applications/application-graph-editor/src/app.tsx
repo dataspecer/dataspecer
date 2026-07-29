@@ -10,7 +10,7 @@ import { Canvas } from "./diagram/canvas.tsx";
 import { useAutosave } from "./hooks/use-autosave.ts";
 import { useValidationSync } from "./hooks/use-validation.ts";
 import { useUndoRedoShortcuts } from "./hooks/use-undo-redo-shortcuts.ts";
-import { useEditorStore } from "./store.ts";
+import { useEditorStore, type NodePositions } from "./store.ts";
 
 export function App() {
   const loadState = useEditorStore((state) => state.loadState);
@@ -27,7 +27,7 @@ export function App() {
     let active = true;
     (async () => {
       const loaded = await loadGraph(iri);
-      const positions = (await loadPositions(iri)) ?? (await autoLayout(loaded));
+      const positions = (await loadPositions(iri)) ?? (await initialLayout(loaded));
       if (active) {
         useEditorStore.getState().initialize(iri, loaded, positions);
         // loading is not undoable
@@ -78,6 +78,15 @@ export function App() {
     return <Centered>{loadError ?? "Failed to load the application graph."}</Centered>;
   }
   return <Editor graph={graph} />;
+}
+
+async function initialLayout(graph: ApplicationGraph): Promise<NodePositions> {
+  try {
+    return await autoLayout(graph);
+  } catch (caught) {
+    console.error(caught);
+    return {};
+  }
 }
 
 function Editor({ graph }: { graph: ApplicationGraph }) {

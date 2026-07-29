@@ -41,23 +41,19 @@ function violationKey(violation: Violation): string {
   return `${violation.code}|${violation.path ?? ""}|${violation.message}`;
 }
 
-/** Result of the validation, tied to the graph snapshot it was computed for. */
-export interface GenerationViolations {
-  violations: Violation[];
-  forGraph: ApplicationGraph;
-}
-
+/**
+ * Every violation the editor can find, plus the ones the last generation attempt returned.
+ */
 export function combinedViolations(
   graph: ApplicationGraph,
   metadata: SpecificationMetadata | null,
-  generation: GenerationViolations | null,
+  fromGeneration: Violation[] | null,
 ): Violation[] {
   const local = localViolations(graph, metadata);
-  const fromGeneration =
-    generation !== null && generation.forGraph === graph
-      ? differenceBy(generation.violations, local, violationKey)
-      : [];
-  return [...local, ...fromGeneration];
+  if (fromGeneration === null) {
+    return local;
+  }
+  return [...local, ...differenceBy(fromGeneration, local, violationKey)];
 }
 
 /** Violations with the graph they were computed from, so paths resolve against the right one. */

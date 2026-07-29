@@ -1,11 +1,3 @@
-/**
- * Every violation the pipeline can report. The severity of each code comes from the helper the
- * rule calls, `semanticViolation` or `semanticWarning`, and the grouping below mirrors that.
- *
- * An error means the generated application would be broken, would corrupt data, or would rest on
- * a guess the graph does not make. A warning means the generator skips something and the
- * application is still correct without it.
- */
 export enum ViolationCode {
   // Errors
   GenerateFormatFailed = 'GENERATE_FORMAT_FAILED',
