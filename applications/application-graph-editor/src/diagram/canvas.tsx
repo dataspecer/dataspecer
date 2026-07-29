@@ -187,7 +187,7 @@ export function Canvas() {
   }, []);
 
   return (
-    <CanvasContextMenu target={contextTarget}>
+    <CanvasContextMenu target={contextTarget} onClose={() => setContextTarget(null)}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -261,7 +261,11 @@ function FocusHandler() {
     const edge = graph.edges.find(
       (candidate) => candidate.id === focusRequest.id,
     );
-    const nodeIds = edge ? [edge.source, edge.target] : [focusRequest.id];
+    const wanted = edge ? [edge.source, edge.target] : [focusRequest.id];
+    const nodeIds = wanted.filter((id) => reactFlow.getNode(id) !== undefined);
+    if (nodeIds.length === 0) {
+      return;
+    }
     void reactFlow.fitView({
       nodes: nodeIds.map((id) => ({ id })),
       duration: 300,

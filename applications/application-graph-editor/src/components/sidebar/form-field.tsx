@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Hint } from "../hint.tsx";
 
 export const inputClass =
-  "w-full rounded border border-slate-300 bg-white px-2 py-1 text-sm text-slate-800";
+  "w-full rounded border border-slate-300 bg-white px-2 py-1 text-sm text-slate-800 disabled:bg-slate-50 disabled:text-slate-500";
 
 export function FormField({
   label,

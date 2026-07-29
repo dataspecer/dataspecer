@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import { EdgeType } from "@dataspecer/app-generator/graph";
 import { useEditorStore } from "../store.ts";
@@ -7,17 +7,17 @@ export type ContextTarget = { kind: "node" | "edge"; id: string } | null;
 
 export function CanvasContextMenu({
   target,
+  onClose,
   children,
 }: {
   target: ContextTarget;
+  onClose: () => void;
   children: ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
-
   return (
     <ContextMenu.Root
-      open={open}
-      onOpenChange={(next) => setOpen(next && target !== null)}
+      open={target !== null}
+      onOpenChange={(next) => !next && onClose()}
       modal={false}
     >
       <ContextMenu.Trigger asChild>{children}</ContextMenu.Trigger>

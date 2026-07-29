@@ -124,11 +124,8 @@ export function NodeForm({ node }: { node: ApplicationNode }) {
             ))}
           </select>
         ) : (
-          <input
-            className={inputClass}
-            value={node.aggregateIri}
-            onChange={(event) => changeAggregate(event.target.value)}
-          />
+          // disabled, because without the aggregates of the specification there is nothing valid to pick
+          <input className={inputClass} value={node.aggregateIri} disabled />
         )}
       </FormField>
 
