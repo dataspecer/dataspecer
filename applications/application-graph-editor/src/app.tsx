@@ -63,7 +63,9 @@ export function App() {
         console.error(caught);
         if (active) {
           const message = caught instanceof Error ? caught.message : String(caught);
-          useEditorStore.getState().failMetadata(`Failed to load aggregate metadata: ${message}`);
+          useEditorStore
+            .getState()
+            .failMetadata(`Failed to load the data structures of the specification: ${message}`);
         }
       });
     return () => {

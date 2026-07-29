@@ -194,7 +194,19 @@ export const useEditorStore = create<EditorState>()(
           metadataError: null,
         }),
       failLoad: (message) => set({ loadState: "error", loadError: message }),
-      setMetadata: (metadata) => set({ metadata, metadataError: null }),
+      setMetadata: (metadata) =>
+        set({
+          metadata:
+            metadata === null
+              ? null
+              : {
+                  ...metadata,
+                  aggregates: [...metadata.aggregates].sort((left, right) =>
+                    left.name.localeCompare(right.name),
+                  ),
+                },
+          metadataError: null,
+        }),
       failMetadata: (metadataError) => set({ metadata: null, metadataError }),
       setSaveState: (saveState) => set({ saveState }),
       setSelection: (selection) => set({ selection, settingsOpen: false }),

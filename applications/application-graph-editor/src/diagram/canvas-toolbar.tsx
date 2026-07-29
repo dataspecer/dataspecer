@@ -14,7 +14,8 @@ import { ShortcutsDialog } from "./shortcuts-dialog.tsx";
 export function CanvasToolbar() {
   const { undo, redo, pastStates, futureStates } = useStore(useEditorStore.temporal);
   const importInput = useRef<HTMLInputElement>(null);
-  const cannotAddNode = nodeBlockedReason(useEditorStore((state) => state.metadata));
+  const metadata = useEditorStore((state) => state.metadata);
+  const cannotAddNode = nodeBlockedReason(metadata);
   const canvasTool = useEditorStore((state) => state.canvasTool);
   const setCanvasTool = useEditorStore((state) => state.setCanvasTool);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
@@ -42,8 +43,8 @@ export function CanvasToolbar() {
     downloadBlob(blob, exportFileName(graph));
   };
 
-  const addNode = () => {
-    const { graph, metadata, addNode: add, requestSelect } = useEditorStore.getState();
+  const addNode = (aggregateIri: string) => {
+    const { graph, addNode: add, requestSelect } = useEditorStore.getState();
     if (graph === null) {
       return;
     }
@@ -51,7 +52,7 @@ export function CanvasToolbar() {
     const viewport = flow.getViewport();
     // keep freshly added nodes from covering each other
     const offset = (graph.nodes.length % 6) * 36;
-    const node = newNode(graph, metadata);
+    const node = newNode(graph, metadata, aggregateIri);
     add(node, {
       x: (paneWidth / 2 - viewport.x) / viewport.zoom + offset,
       y: (paneHeight / 2 - viewport.y) / viewport.zoom + offset,
@@ -68,36 +69,32 @@ export function CanvasToolbar() {
 
   return (
     <Panel position="top-left" className="flex gap-1">
-      <DropdownMenu.Root>
-        <DropdownMenu.Trigger asChild>
-          <button
-            type="button"
-            className="inline-flex items-center rounded border border-slate-300 bg-white px-2 py-1 text-slate-600 hover:bg-slate-100"
-            aria-label="Menu"
-          >
-            <Menu size={14} />
-          </button>
-        </DropdownMenu.Trigger>
-        <DropdownMenu.Portal>
-          <DropdownMenu.Content
-            align="start"
-            sideOffset={4}
-            className="min-w-36 rounded border border-slate-200 bg-white py-1 shadow-md"
-          >
-            <MenuItem onSelect={() => importInput.current?.click()}>Import</MenuItem>
-            <MenuItem onSelect={exportGraph}>Export</MenuItem>
-            <DropdownMenu.Separator className="my-1 border-t border-slate-100" />
-            <MenuItem onSelect={() => useEditorStore.getState().setSettingsOpen(true)}>
-              Settings
-            </MenuItem>
-            <DropdownMenu.Separator className="my-1 border-t border-slate-100" />
-            <MenuItem onSelect={() => setShortcutsOpen(true)}>Shortcuts</MenuItem>
-          </DropdownMenu.Content>
-        </DropdownMenu.Portal>
-      </DropdownMenu.Root>
-      <ToolbarButton onClick={addNode} disabled={cannotAddNode !== null} title={cannotAddNode ?? undefined}>
-        <Plus size={14} /> Add node
-      </ToolbarButton>
+      <Dropdown icon={<Menu size={14} />} label="Menu">
+        <MenuItem onSelect={() => importInput.current?.click()}>Import</MenuItem>
+        <MenuItem onSelect={exportGraph}>Export</MenuItem>
+        <DropdownMenu.Separator className="my-1 border-t border-slate-100" />
+        <MenuItem onSelect={() => useEditorStore.getState().setSettingsOpen(true)}>
+          Settings
+        </MenuItem>
+        <DropdownMenu.Separator className="my-1 border-t border-slate-100" />
+        <MenuItem onSelect={() => setShortcutsOpen(true)}>Shortcuts</MenuItem>
+      </Dropdown>
+      <Dropdown
+        icon={<Plus size={14} />}
+        label="Add node"
+        showLabel
+        disabled={cannotAddNode !== null}
+        title={cannotAddNode ?? "Add a page for a data structure"}
+      >
+        <DropdownMenu.Label className="px-3 py-1 text-xs font-medium text-slate-400">
+          Select data structure
+        </DropdownMenu.Label>
+        {(metadata?.aggregates ?? []).map((aggregate) => (
+          <MenuItem key={aggregate.iri} onSelect={() => addNode(aggregate.iri)}>
+            {aggregate.name}
+          </MenuItem>
+        ))}
+      </Dropdown>
       <ButtonGroup>
         <GroupButton
           onClick={() => setCanvasTool("pan")}
@@ -116,33 +113,16 @@ export function CanvasToolbar() {
           <MousePointer2 size={14} />
         </GroupButton>
       </ButtonGroup>
-      <DropdownMenu.Root>
-        <DropdownMenu.Trigger asChild>
-          <button
-            type="button"
-            className="inline-flex items-center gap-1 rounded border border-slate-300 bg-white px-2 py-1 text-sm text-slate-600 hover:bg-slate-100"
-          >
-            <Network size={14} /> Layout
-            <ChevronDown size={12} />
-          </button>
-        </DropdownMenu.Trigger>
-        <DropdownMenu.Portal>
-          <DropdownMenu.Content
-            align="start"
-            sideOffset={4}
-            className="min-w-36 rounded border border-slate-200 bg-white py-1 shadow-md"
-          >
-            <MenuItem onSelect={() => void relayout({ algorithm: "stress" })}>Organic</MenuItem>
-            <DropdownMenu.Separator className="my-1 border-t border-slate-100" />
-            <MenuItem onSelect={() => void relayout({ algorithm: "layered", direction: "DOWN" })}>
-              Top to bottom
-            </MenuItem>
-            <MenuItem onSelect={() => void relayout({ algorithm: "layered", direction: "RIGHT" })}>
-              Left to right
-            </MenuItem>
-          </DropdownMenu.Content>
-        </DropdownMenu.Portal>
-      </DropdownMenu.Root>
+      <Dropdown icon={<Network size={14} />} label="Layout" showLabel>
+        <MenuItem onSelect={() => void relayout({ algorithm: "stress" })}>Organic</MenuItem>
+        <DropdownMenu.Separator className="my-1 border-t border-slate-100" />
+        <MenuItem onSelect={() => void relayout({ algorithm: "layered", direction: "DOWN" })}>
+          Top to bottom
+        </MenuItem>
+        <MenuItem onSelect={() => void relayout({ algorithm: "layered", direction: "RIGHT" })}>
+          Left to right
+        </MenuItem>
+      </Dropdown>
       <ButtonGroup>
         <GroupButton
           onClick={() => undo()}
@@ -177,6 +157,49 @@ export function CanvasToolbar() {
         }}
       />
     </Panel>
+  );
+}
+
+function Dropdown({
+  icon,
+  label,
+  showLabel,
+  disabled,
+  title,
+  children,
+}: {
+  icon: ReactNode;
+  label: string;
+  showLabel?: boolean;
+  disabled?: boolean;
+  title?: string;
+  children: ReactNode;
+}) {
+  return (
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger asChild>
+        <button
+          type="button"
+          className="inline-flex items-center gap-1 rounded border border-slate-300 bg-white px-2 py-1 text-sm text-slate-600 hover:bg-slate-100 disabled:opacity-40"
+          disabled={disabled}
+          title={title}
+          aria-label={label}
+        >
+          {icon}
+          {showLabel && label}
+          {showLabel && <ChevronDown size={12} />}
+        </button>
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content
+          align="start"
+          sideOffset={4}
+          className="max-h-80 min-w-36 overflow-y-auto rounded border border-slate-200 bg-white py-1 shadow-md"
+        >
+          {children}
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
   );
 }
 
@@ -228,32 +251,5 @@ function MenuItem({ children, onSelect }: { children: string; onSelect: () => vo
     >
       {children}
     </DropdownMenu.Item>
-  );
-}
-
-function ToolbarButton({
-  children,
-  onClick,
-  disabled,
-  title,
-  "aria-label": ariaLabel,
-}: {
-  children: ReactNode;
-  onClick: () => void;
-  disabled?: boolean;
-  title?: string;
-  "aria-label"?: string;
-}) {
-  return (
-    <button
-      type="button"
-      className="inline-flex items-center gap-1 rounded border border-slate-300 bg-white px-2 py-1 text-sm text-slate-600 hover:bg-slate-100 disabled:opacity-40"
-      onClick={onClick}
-      disabled={disabled}
-      title={title}
-      aria-label={ariaLabel}
-    >
-      {children}
-    </button>
   );
 }

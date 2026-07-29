@@ -104,10 +104,10 @@ export function NodeForm({ node }: { node: ApplicationNode }) {
     <div className="flex flex-col gap-3 p-3">
 
       <FormField
-        label="Aggregate"
+        label="Data structure"
         hint="Data structure this page works with."
         action={
-          link && <ExternalLink href={link} label="Open the structure in the specification editor" />
+          link && <ExternalLink href={link} label="Open the data structure in the specification editor" />
         }
       >
         {metadata ? (
@@ -124,12 +124,13 @@ export function NodeForm({ node }: { node: ApplicationNode }) {
             ))}
           </select>
         ) : (
-          // disabled, because without the aggregates of the specification there is nothing valid to pick
+          // disabled, because without the data structures of the specification there is nothing
+          // valid to pick
           <input className={inputClass} value={node.aggregateIri} disabled />
         )}
       </FormField>
 
-      <FormField label="Operation" hint="What the page does with the aggregate.">
+      <FormField label="Operation" hint="What the page does with the data structure.">
         <select
           className={inputClass}
           value={node.operation}

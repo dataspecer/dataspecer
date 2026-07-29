@@ -31,7 +31,7 @@ export function ProblemsPanel({ graph }: { graph: ApplicationGraph }) {
     <div className="flex min-h-0 flex-1 flex-col">
       {metadata === null && (
         <p className="border-b border-slate-100 px-3 py-2 text-sm text-slate-400">
-          Aggregate checks need the specification metadata, which is unavailable.
+          Data structure checks need the specification metadata, which is unavailable.
         </p>
       )}
       {errors.length === 0 && warnings.length === 0 ? (

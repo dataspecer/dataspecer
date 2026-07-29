@@ -27,7 +27,7 @@ export async function applyGraphJson(jsonText: string): Promise<ApplyGraphResult
       title: "Different data specification",
       message:
         `The graph targets "${parsed.graph.dataSpecificationIri}" instead of ` +
-        `"${current.dataSpecificationIri}". Aggregates of the current specification will not ` +
+        `"${current.dataSpecificationIri}". Data structures of the current specification will not ` +
         `resolve.`,
       confirmLabel: "Apply anyway",
     });
