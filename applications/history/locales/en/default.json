@@ -34,8 +34,7 @@
     "session-changes_other": "{{count}} changes",
     "badge": {
       "project-structure": "Changes the project structure",
-      "undone": "Undone",
-      "undone-in-model": "undone in this model"
+      "undone": "Undone"
     },
     "op": {
       "undo": "Reverted the changes of transaction {{transactionId}}",

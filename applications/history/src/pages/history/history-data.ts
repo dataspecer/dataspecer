@@ -6,7 +6,6 @@ import {
   createUndoOperation,
   createVersionOperation,
   generateOperationId,
-  isUndoOperation,
   resolveCancelledTransactions,
   type Operation,
   type OperationInModel,
@@ -39,9 +38,7 @@ export interface HistoryEntry {
   operations: OperationRowProps[];
   /** Version labels this transaction is marked with, like git tags. */
   versions: string[];
-  /** Models in which the transaction is effectively cancelled by an undo. */
-  undoneInModels: Set<string>;
-  /** True when the transaction is cancelled in every model it changed. */
+  /** True when the transaction is effectively cancelled by an undo. */
   isUndone: boolean;
 }
 
@@ -81,15 +78,12 @@ export async function fetchProjectHistory(backendUrl: string, projectIri: string
       const snapshot = snapshots[index]![operationIndex]!;
       return { ...operation, ...snapshot, contextBefore: snapshot.before, contextAfter: snapshot.after };
     });
-    const undoneInModels = cancelled.get(transaction.clientId) ?? new Set<string>();
-    const changedModels = new Set(operations.filter(({ operation }) => !isUndoOperation(operation)).map(({ modelId }) => modelId));
     return {
       clientId: transaction.clientId,
       executedAt: new Date(transaction.createdAt),
       operations,
       versions: versionsByTransaction.get(transaction.clientId) ?? [],
-      undoneInModels,
-      isUndone: changedModels.size > 0 && [...changedModels].every((modelId) => undoneInModels.has(modelId)),
+      isUndone: cancelled.has(transaction.clientId),
     };
   });
 }
@@ -118,14 +112,14 @@ async function applyHistoryTransactions(backendUrl: string, projectIri: string, 
 }
 
 /**
- * Cancels the given transaction: dispatches an undo operation to every model
- * the transaction touched, committed together as one new transaction.
- * Cancelling a transaction that itself contains undo operations re-applies
- * what those undos cancelled (redo).
+ * Cancels the given transaction as a whole, in every model it touched. The
+ * cancellation concerns the project rather than a single model, so it is
+ * recorded as one operation on the project model. Cancelling a transaction
+ * that itself contains an undo operation re-applies what that undo cancelled
+ * (redo).
  */
-export async function undoHistoryTransaction(backendUrl: string, projectIri: string, entry: HistoryEntry): Promise<void> {
-  const modelIds = [...new Set(entry.operations.map(({ modelId }) => modelId))];
-  const operations: OperationInModel[] = modelIds.map((modelId) => ({ modelId, operation: createUndoOperation(entry.clientId) }));
+export async function undoHistoryTransaction(backendUrl: string, projectIri: string, projectModelId: string, transactionClientId: string): Promise<void> {
+  const operations: OperationInModel[] = [{ modelId: projectModelId, operation: createUndoOperation(transactionClientId) }];
   await applyHistoryTransactions(backendUrl, projectIri, [{ id: generateOperationId(), time: new Date().toISOString(), operations }]);
 }
 

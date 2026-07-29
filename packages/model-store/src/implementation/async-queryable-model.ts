@@ -10,7 +10,7 @@ import type { Model, ModelIdentifier } from "@dataspecer/core/model";
 import type { Operation } from "@dataspecer/core/operation";
 import { SgovAdapter } from "@dataspecer/sgov-adapter";
 import { BaseModelInModelStore, type ModelState } from "./base.ts";
-import type { ApplyOperationResult, ModelInDefaultFrontendModelStore } from "./implementation.ts";
+import type { ModelInDefaultFrontendModelStore } from "./implementation.ts";
 
 class IdentityIriProvider implements IriProvider {
   cimToPim = (cimIri: string) => cimIri;
@@ -112,13 +112,8 @@ export class AsyncQueryableModelInModelStore extends BaseModelInModelStore imple
     applyOperationsToAsyncQueryableModel(mutableState, [operation]);
   }
 
-  public override applyOperations(transactionId: string, operations: Operation[]): ApplyOperationResult {
-    const result = super.applyOperations(transactionId, operations);
-    const semanticChanges = this.onUpdateQueryEntities(result.entityChanges as EntityChange<QueryEntity>[]);
-    return {
-      entityChanges: [...result.entityChanges, ...semanticChanges],
-      transactionId: result.transactionId,
-    };
+  protected override onEntityChanges(changes: EntityChange[]): EntityChange[] {
+    return [...changes, ...this.onUpdateQueryEntities(changes as EntityChange<QueryEntity>[])];
   }
 
   /**

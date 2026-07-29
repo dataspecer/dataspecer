@@ -6,10 +6,15 @@ import { generateOperationId, type Operation, type OperationIdentifier } from ".
 export const UNDO_OPERATION_TYPE = "undo" as const;
 
 /**
- * An undo operation "cancels" a specific transaction (a set of operations) in
- * model it targets. The history then behaves as if the cancelled transaction's
- * operations never happened: the state is the state before the cancelled
- * transaction with all later non-cancelled operations replayed on top of it.
+ * An undo operation "cancels" a specific transaction (a set of operations) as
+ * a whole, in every model the transaction touched. The history then behaves as
+ * if the cancelled transaction's operations never happened: the state is the
+ * state before the cancelled transaction with all later non-cancelled
+ * operations replayed on top of it.
+ *
+ * The operation concerns the project as a whole rather than a single model, so
+ * it is recorded once per transaction and dispatched to the project model, in
+ * the same way as the {@link VersionOperation}.
  *
  * The operation can be used to implement undo/redo functionality by canceling
  * the last non-canceled transaction and canceling undo operations to perform
