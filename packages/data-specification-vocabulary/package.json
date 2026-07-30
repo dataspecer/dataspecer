@@ -8,7 +8,8 @@
     "prebuild": "node -e \"fs.rmSync('lib', { recursive: true, force: true })\"",
     "dev": "tsc --watch",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "coverage": "vitest run --coverage"
   },
   "exports": {
     "./semantic-model": "./lib/semantic-model/index.js",
@@ -28,6 +29,7 @@
   "devDependencies": {
     "@types/jsonld": "^1.5.15",
     "@types/n3": "~1.24.2",
+    "@vitest/coverage-istanbul": "^4.1.10",
     "typescript": "^7.0.2",
     "vitest": "^4.1.7"
   }
