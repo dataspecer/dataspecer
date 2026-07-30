@@ -39,6 +39,10 @@ export interface ObservableSemanticProfileAggregator {
 
   onEntityDidChange(entityChaneEvent: EntityChangeEvent): void;
 
+  /**
+   * Notify only about changes in aggregated entities,
+   * all other changes are ignored!
+   */
   subscribeToEntityChanges(listener: Listener): () => void
 
 }
@@ -145,9 +149,17 @@ class DefaultObservableSemanticProfileAggregator
         }
       } else {
         // We compute and store new state.
-        const next = this.computeAggregate(cached.entity, cached.model);
-        this.aggregatedCache[id] = next;
-        this.addChange(changes, next.model, previous?.entity, next.entity);
+        const aggregate = this.computeAggregate(cached.entity, cached.model);
+        if (aggregate === null) {
+          // We do not agregate this, yet we still need to store it
+          // as other may need the entity to derive the value.
+          // However, we do not notify about change!
+          this.aggregatedCache[id] = cached;
+        } else {
+          this.aggregatedCache[id] = aggregate;
+          this.addChange(changes, aggregate.model,
+            previous?.entity, aggregate.entity);
+        }
       }
 
       // Add all derived entities for processing.
@@ -275,6 +287,7 @@ class DefaultObservableSemanticProfileAggregator
 
   /**
    * Add change into the output (first argument) under given model.
+   *
    */
   private addChange(
     output: Record<ModelIdentifier, EntityChange[]>,
@@ -293,16 +306,19 @@ class DefaultObservableSemanticProfileAggregator
     }
   }
 
+  /**
+   * @returns Null if not aggregation for given entity can be computed.
+   */
   private computeAggregate(
     entity: Entity, model: ModelIdentifier,
-  ): EntityInModel {
+  ): EntityInModel | null {
 
     // We start by getting all dependencies.
     const dependencies = this.dependencies(entity);
 
     // Can be a non-profile entity we do not aggregate.
     if (dependencies === null) {
-      return { entity, model };
+      return null;
     }
 
     // Resolve dependencies, try to load from aggregate first.
@@ -345,8 +361,7 @@ class DefaultObservableSemanticProfileAggregator
         model,
       };
     } else {
-      // Something we do not aggregate here.
-      return { entity, model };
+      return null;
     }
   }
 

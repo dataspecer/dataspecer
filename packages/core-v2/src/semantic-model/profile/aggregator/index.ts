@@ -1,4 +1,5 @@
 export {
+  isAggregatedProfiledSemanticModelEntity,
   isAggregatedProfiledSemanticModelClass,
   type AggregatedProfiledSemanticModelClass,
   isAggregatedProfiledSemanticModelRelationship,

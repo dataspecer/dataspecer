@@ -28,7 +28,7 @@ describe("ObservableSemanticProfileAggregator", () => {
 
     //
 
-    const cls = {
+    const cls: SemanticModelClass = {
       id: "class-1",
       type: [SEMANTIC_MODEL_CLASS],
       iri: ":class-1",
@@ -38,9 +38,9 @@ describe("ObservableSemanticProfileAggregator", () => {
       descriptionProperty: null,
       externalDocumentationUrl: null,
       order: null,
-    } satisfies SemanticModelClass;
+    };
 
-    const profile = {
+    const profile: SemanticModelClassProfile = {
       id: "profile-1",
       type: [SEMANTIC_MODEL_CLASS_PROFILE],
       iri: ":profile-1",
@@ -54,7 +54,7 @@ describe("ObservableSemanticProfileAggregator", () => {
       externalDocumentationUrl: null,
       tags: [],
       controlledVocabularies: [],
-    } satisfies SemanticModelClassProfile;
+    };
 
     // Create entities.
 
@@ -92,7 +92,6 @@ describe("ObservableSemanticProfileAggregator", () => {
 
     expect(events).toStrictEqual([{
       "model-1": [
-        { previous: null, next: cls },
         { previous: null, next: aggregatedProfile },
       ],
     }]);
@@ -108,7 +107,7 @@ describe("ObservableSemanticProfileAggregator", () => {
 
     //
 
-    const cls = {
+    const cls: SemanticModelClass = {
       id: "class-1",
       type: [SEMANTIC_MODEL_CLASS],
       iri: ":class-1",
@@ -118,9 +117,9 @@ describe("ObservableSemanticProfileAggregator", () => {
       descriptionProperty: null,
       externalDocumentationUrl: null,
       order: null,
-    } satisfies SemanticModelClass;
+    };
 
-    const profile = {
+    const profile: SemanticModelClassProfile = {
       id: "profile-1",
       type: [SEMANTIC_MODEL_CLASS_PROFILE],
       iri: ":profile-1",
@@ -134,7 +133,7 @@ describe("ObservableSemanticProfileAggregator", () => {
       externalDocumentationUrl: null,
       tags: [],
       controlledVocabularies: [],
-    } satisfies SemanticModelClassProfile;
+    };
 
     // Create entities.
 
@@ -149,10 +148,10 @@ describe("ObservableSemanticProfileAggregator", () => {
 
     // Update class.
 
-    const updatedClass = {
+    const updatedClass: SemanticModelClass = {
       ...cls,
       name: { "": "Updated class" },
-    } satisfies SemanticModelClass;
+    };
 
     aggregator.onEntityDidChange({
       entityChanges: {
@@ -197,7 +196,6 @@ describe("ObservableSemanticProfileAggregator", () => {
 
     expect(events[1]).toStrictEqual({
       "model-1": [
-        { previous: cls, next: updatedClass },
         { previous: oldAggregatedProfile, next: updatedAggregatedProfile },
       ],
     });
@@ -213,7 +211,7 @@ describe("ObservableSemanticProfileAggregator", () => {
 
     //
 
-    const cls = {
+    const cls: SemanticModelClass = {
       id: "class-1",
       type: [SEMANTIC_MODEL_CLASS],
       iri: ":class-1",
@@ -223,9 +221,9 @@ describe("ObservableSemanticProfileAggregator", () => {
       descriptionProperty: null,
       externalDocumentationUrl: null,
       order: null,
-    } satisfies SemanticModelClass;
+    };
 
-    const profile = {
+    const profile: SemanticModelClassProfile = {
       id: "profile-1",
       type: [SEMANTIC_MODEL_CLASS_PROFILE],
       iri: ":profile-1",
@@ -239,7 +237,7 @@ describe("ObservableSemanticProfileAggregator", () => {
       externalDocumentationUrl: null,
       tags: [],
       controlledVocabularies: [],
-    } satisfies SemanticModelClassProfile;
+    };
 
     // Create entities.
 
@@ -323,7 +321,7 @@ describe("ObservableSemanticProfileAggregator", () => {
 
     ///
 
-    const weakClass = {
+    const weakClass: SemanticModelClass = {
       id: "class-1",
       type: [SEMANTIC_MODEL_CLASS],
       iri: ":class-1",
@@ -333,9 +331,9 @@ describe("ObservableSemanticProfileAggregator", () => {
       descriptionProperty: null,
       externalDocumentationUrl: null,
       order: null,
-    } satisfies SemanticModelClass;
+    };
 
-    const strongClass = {
+    const strongClass: SemanticModelClass = {
       id: "class-1",
       type: [SEMANTIC_MODEL_CLASS],
       iri: ":class-1",
@@ -345,7 +343,23 @@ describe("ObservableSemanticProfileAggregator", () => {
       descriptionProperty: null,
       externalDocumentationUrl: null,
       order: null,
-    } satisfies SemanticModelClass;
+    };
+
+    const profile: SemanticModelClassProfile = {
+      id: "profile-1",
+      type: [SEMANTIC_MODEL_CLASS_PROFILE],
+      iri: ":profile-1",
+      name: null,
+      nameFromProfiled: "class-1",
+      description: null,
+      descriptionFromProfiled: "class-1",
+      profiling: ["class-1"],
+      usageNote: null,
+      usageNoteFromProfiled: null,
+      externalDocumentationUrl: null,
+      tags: [],
+      controlledVocabularies: [],
+    };
 
     // Create both entities.
 
@@ -353,14 +367,26 @@ describe("ObservableSemanticProfileAggregator", () => {
       entityChanges: {
         "model-1": [{ previous: null, next: weakClass }],
         "model-2": [{ previous: null, next: strongClass }],
+        "model-3": [{ previous: null, next: profile }]
       },
     });
 
     // Check we got the stronger entity.
 
     expect(events).toStrictEqual([{
-      "model-2": [
-        { previous: null, next: strongClass },
+      "model-3": [{
+        previous: null, next: {
+          ...profile,
+          type: ["class-profile", "aggregate"],
+          name: strongClass.name,
+          nameProperty: null,
+          description: strongClass.description,
+          descriptionProperty: null,
+          conceptIdentifiers: ["class-1"],
+          conceptIris: [":class-1"],
+          order: null,
+        } satisfies AggregatedProfiledSemanticModelClass
+      },
       ],
     }]);
 
@@ -379,12 +405,12 @@ describe("ObservableSemanticProfileAggregator", () => {
 
     //
 
-    const generalizationProfile = {
+    const generalizationProfile: SemanticModelGeneralizationProfile = {
       id: "generalization-1",
       type: ["generalization"],
       child: "class-1",
       parent: "class-2",
-    } satisfies SemanticModelGeneralizationProfile;
+    };
 
     aggregator.onEntityDidChange({
       entityChanges: {
@@ -470,6 +496,41 @@ describe("ObservableSemanticProfileAggregator", () => {
     //
 
     expect(events.length).toBe(0);
+
+  });
+
+  it("Notifies only about aggregates.", () => {
+
+    const aggregator = createObservableSemanticProfileAggregator();
+
+    const events: unknown[] = [];
+    aggregator.subscribeToEntityChanges(
+      event => events.push(event.entityChanges));
+
+    //
+
+    const cls: SemanticModelClass = {
+      id: "class-1",
+      type: [SEMANTIC_MODEL_CLASS],
+      iri: ":class-1",
+      name: { "": "Class" },
+      description: { "": "" },
+      nameProperty: null,
+      descriptionProperty: null,
+      externalDocumentationUrl: null,
+      order: null,
+    };
+
+    aggregator.onEntityDidChange({
+      entityChanges: {
+        "model-1": [
+          { previous: null, next: cls, }]
+      }
+    })
+
+    // Check produced event - there should be none.
+
+    expect(events).toStrictEqual([]);
 
   });
 
