@@ -2,15 +2,14 @@ import type { ReactNode } from "react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import { EdgeType } from "@dataspecer/app-generator/graph";
 import { useEditorStore } from "../store.ts";
-
-export type ContextTarget = { kind: "node" | "edge"; id: string } | null;
+import type { GraphElementRef } from "../graph/graph-element-ref.ts";
 
 export function CanvasContextMenu({
   target,
   onClose,
   children,
 }: {
-  target: ContextTarget;
+  target: GraphElementRef;
   onClose: () => void;
   children: ReactNode;
 }) {

@@ -9,6 +9,7 @@ import { exportFileName } from "../graph/file-names.ts";
 import { newNode, nodeBlockedReason } from "../graph/new-node.ts";
 import { useEditorStore } from "../store.ts";
 import { autoLayout, type LayoutOptions } from "./auto-layout.ts";
+import { centeredOn, paneToGraph } from "./pane-position.ts";
 import { ShortcutsDialog } from "./shortcuts-dialog.tsx";
 
 export function CanvasToolbar() {
@@ -49,14 +50,11 @@ export function CanvasToolbar() {
       return;
     }
     // put it where the user is looking
-    const viewport = flow.getViewport();
+    const center = centeredOn(paneToGraph(flow.getViewport(), { x: paneWidth / 2, y: paneHeight / 2 }));
     // keep freshly added nodes from covering each other
     const offset = (graph.nodes.length % 6) * 36;
     const node = newNode(graph, metadata, aggregateIri);
-    add(node, {
-      x: (paneWidth / 2 - viewport.x) / viewport.zoom + offset,
-      y: (paneHeight / 2 - viewport.y) / viewport.zoom + offset,
-    });
+    add(node, { x: center.x + offset, y: center.y + offset });
     requestSelect(node.id);
   };
 

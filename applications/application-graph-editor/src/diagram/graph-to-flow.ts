@@ -1,7 +1,8 @@
 import { MarkerType, type Edge, type Node } from "@xyflow/react";
 import { isEqual } from "es-toolkit";
 import { EdgeType, type ApplicationGraph, type ApplicationNode } from "@dataspecer/app-generator/graph";
-import type { NodePositions, Selection } from "../store.ts";
+import type { GraphElementRef } from "../graph/graph-element-ref.ts";
+import type { NodePositions } from "../store.ts";
 import type { FlaggedIds, ViolationLevel } from "../validation/violations.ts";
 import { parallelEdgeOffsets } from "./edge-geometry.ts";
 
@@ -47,7 +48,7 @@ export function projectNodes(
   graph: ApplicationGraph,
   positions: NodePositions,
   flagged: FlaggedIds,
-  highlight: Selection,
+  highlight: GraphElementRef,
   dimmed: ReadonlySet<string>,
   current: OperationFlowNode[],
 ): OperationFlowNode[] {
@@ -80,7 +81,7 @@ export interface SelectedIds {
 export function projectEdges(
   graph: ApplicationGraph,
   flagged: FlaggedIds,
-  highlight: Selection,
+  highlight: GraphElementRef,
   selected: SelectedIds,
   current: Edge[],
 ): Edge[] {

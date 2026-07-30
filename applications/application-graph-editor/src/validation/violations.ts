@@ -9,6 +9,7 @@ import {
   type SpecificationMetadata,
   type Violation,
 } from "@dataspecer/app-generator/graph";
+import type { GraphElementRef } from "../graph/graph-element-ref.ts";
 import { connectionEdge } from "../graph/mutations.ts";
 
 /**
@@ -101,10 +102,8 @@ export function bySeverity(violations: Violation[]): ViolationsBySeverity {
   return { errors, warnings };
 }
 
-export type ViolationTarget = { kind: "node" | "edge"; id: string } | null;
-
 /** Resolves a violation path such as "/nodes/3/config/..." to the node or edge it points at. */
-export function violationTarget(graph: ApplicationGraph, violation: Violation): ViolationTarget {
+export function violationTarget(graph: ApplicationGraph, violation: Violation): GraphElementRef {
   const match = violation.path?.match(/^\/(nodes|edges)\/(\d+)/);
   if (!match) {
     return null;

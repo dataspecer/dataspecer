@@ -1,13 +1,13 @@
-import { findNodeAtLocation, findNodeAtOffset, getNodePath, parseTree } from "jsonc-parser";
+import type { GraphElementRef } from "./graph-element-ref.ts";
 
-export type JsonCursorTarget = { kind: "node" | "edge"; id: string } | null;
+import { findNodeAtLocation, findNodeAtOffset, getNodePath, parseTree } from "jsonc-parser";
 
 /**
  * Resolves a text offset in serialized graph JSON to the node or edge whose section contains
  * it. The id comes from the JSON text itself, so the caller has to check it against the edited
  * graph before acting on it.
  */
-export function graphElementAtOffset(text: string, offset: number): JsonCursorTarget {
+export function graphElementAtOffset(text: string, offset: number): GraphElementRef {
   const tree = parseTree(text);
   if (!tree) {
     return null;

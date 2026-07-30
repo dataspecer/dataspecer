@@ -3,6 +3,7 @@ import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { useEditorStore } from "../store.ts";
 import { OPERATION_BADGE, OPERATION_LABELS } from "./operation-style.ts";
 import type { OperationFlowNode } from "./graph-to-flow.ts";
+import { NODE_SIZE } from "./node-size.ts";
 
 const VIOLATION_BORDER = {
   error: "border-red-500 bg-red-50",
@@ -23,7 +24,8 @@ export function OperationNode(props: NodeProps<OperationFlowNode>) {
 
   return (
     <div
-      className={`w-60 rounded-md border px-3 py-2 shadow-sm transition-opacity ${
+      style={{ width: NODE_SIZE.width }}
+      className={`rounded-md border px-3 py-2 shadow-sm transition-opacity ${
         violation ? VIOLATION_BORDER[violation] : "border-sky-300 bg-sky-50"
       } ${props.selected || highlighted ? "ring-2 ring-blue-500" : ""} ${
         dimmed ? "opacity-25" : ""

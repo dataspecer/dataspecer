@@ -1,9 +1,7 @@
 import ELK from "elkjs/lib/elk.bundled.js";
 import type { ApplicationGraph } from "@dataspecer/app-generator/graph";
 import type { NodePositions } from "../store.ts";
-
-const NODE_WIDTH = 240;
-const NODE_HEIGHT = 72;
+import { NODE_SIZE } from "./node-size.ts";
 
 const elk = new ELK();
 
@@ -46,8 +44,8 @@ export async function autoLayout(
           },
     children: graph.nodes.map((node) => ({
       id: node.id,
-      width: NODE_WIDTH,
-      height: NODE_HEIGHT,
+      width: NODE_SIZE.width,
+      height: NODE_SIZE.height,
     })),
     edges: graph.edges
       .filter((edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target))

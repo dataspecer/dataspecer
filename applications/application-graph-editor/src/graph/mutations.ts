@@ -20,6 +20,25 @@ function nodeIdBase(aggregateName: string, operation: Operation): string {
   return `${kebabCase(deburr(aggregateName)) || "node"}.${OPERATION_SUFFIXES[operation]}`;
 }
 
+function edgeIdBase(source: string, target: string): string {
+  return `${source}-${target}`;
+}
+
+function withoutCollision(base: string, used: ReadonlySet<string>): string {
+  if (!used.has(base)) {
+    return base;
+  }
+  let counter = 2;
+  while (used.has(`${base}-${counter}`)) {
+    counter += 1;
+  }
+  return `${base}-${counter}`;
+}
+
+function hasBase(id: string, base: string): boolean {
+  return id === base || (id.startsWith(`${base}-`) && /^\d+$/.test(id.slice(base.length + 1)));
+}
+
 /**
  * Derives a unique node ID from the aggregate name and operation. When the ID is generated for an
  * existing node, that node's current ID is excluded from the collision check, so re-generating the
@@ -31,18 +50,10 @@ export function nextNodeId(
   operation: Operation,
   excludeNodeId?: string,
 ): string {
-  const base = nodeIdBase(aggregateName, operation);
   const used = new Set(
     graph.nodes.filter((node) => node.id !== excludeNodeId).map((node) => node.id),
   );
-  if (!used.has(base)) {
-    return base;
-  }
-  let counter = 2;
-  while (used.has(`${base}-${counter}`)) {
-    counter += 1;
-  }
-  return `${base}-${counter}`;
+  return withoutCollision(nodeIdBase(aggregateName, operation), used);
 }
 
 /**
@@ -55,10 +66,7 @@ export function isGeneratedNodeId(
   aggregateName: string,
   operation: Operation,
 ): boolean {
-  const base = nodeIdBase(aggregateName, operation);
-  return (
-    id === base || (id.startsWith(`${base}-`) && /^\d+$/.test(id.slice(base.length + 1)))
-  );
+  return hasBase(id, nodeIdBase(aggregateName, operation));
 }
 
 /**
@@ -81,7 +89,7 @@ export function renameNode(
     if (!regenerateId) {
       return edge;
     }
-    const id = uniqueEdgeId(used, edge.source, edge.target);
+    const id = withoutCollision(edgeIdBase(edge.source, edge.target), used);
     used.add(id);
     return { ...edge, id };
   });
@@ -94,28 +102,12 @@ export function renameNode(
 }
 
 function hasDerivedId(edge: ApplicationEdge): boolean {
-  const base = `${edge.source}-${edge.target}`;
-  return (
-    edge.id === base ||
-    (edge.id.startsWith(`${base}-`) && /^\d+$/.test(edge.id.slice(base.length + 1)))
-  );
-}
-
-function uniqueEdgeId(used: ReadonlySet<string>, source: string, target: string): string {
-  const base = `${source}-${target}`;
-  if (!used.has(base)) {
-    return base;
-  }
-  let counter = 2;
-  while (used.has(`${base}-${counter}`)) {
-    counter += 1;
-  }
-  return `${base}-${counter}`;
+  return hasBase(edge.id, edgeIdBase(edge.source, edge.target));
 }
 
 /** Derives a unique edge ID from its endpoints, for example "graphs.list-graphs.detail". */
 export function nextEdgeId(graph: ApplicationGraph, source: string, target: string): string {
-  return uniqueEdgeId(new Set(graph.edges.map((edge) => edge.id)), source, target);
+  return withoutCollision(edgeIdBase(source, target), new Set(graph.edges.map((edge) => edge.id)));
 }
 
 export function connectionEdge(

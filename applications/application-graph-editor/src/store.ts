@@ -9,11 +9,10 @@ import type {
   Violation,
 } from "@dataspecer/app-generator/graph";
 import * as mutations from "./graph/mutations.ts";
+import type { GraphElementRef } from "./graph/graph-element-ref.ts";
 import type { ValidationSnapshot } from "./validation/violations.ts";
 
 export type NodePositions = Record<string, { x: number; y: number }>;
-
-export type Selection = { kind: "node" | "edge"; id: string } | null;
 
 /** The sidebar view when nothing is selected. Null collapses the sidebar. */
 export type SidebarTab = "problems" | "json" | null;
@@ -40,13 +39,13 @@ interface EditorState extends UndoableState {
   loadState: "loading" | "ready" | "error";
   loadError: string | null;
   /** Selected sidebar element. */
-  selection: Selection;
+  selection: GraphElementRef;
   /** Aggregates of the graph's data specification. Null while loading or when the fetch failed. */
   metadata: SpecificationMetadata | null;
   metadataError: string | null;
   saveState: SaveState;
   /** Element the JSON cursor points at. Highlighted on the canvas without taking the panel. */
-  highlight: Selection;
+  highlight: GraphElementRef;
   sidebarTab: SidebarTab;
   canvasTool: CanvasTool;
   /**
@@ -78,8 +77,8 @@ interface EditorState extends UndoableState {
   /** Records a failed metadata fetch, clearing any previously loaded metadata. */
   failMetadata: (message: string) => void;
   setSaveState: (state: SaveState) => void;
-  setSelection: (selection: Selection) => void;
-  setHighlight: (highlight: Selection) => void;
+  setSelection: (selection: GraphElementRef) => void;
+  setHighlight: (highlight: GraphElementRef) => void;
   /** Opens a sidebar tab, dropping whatever took the panel over so the tab becomes visible. */
   setSidebarTab: (tab: SidebarTab) => void;
   setCanvasTool: (tool: CanvasTool) => void;
