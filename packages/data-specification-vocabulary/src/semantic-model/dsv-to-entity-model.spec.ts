@@ -1,10 +1,46 @@
 import { SemanticModelEntity, SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
 import { SemanticModelClassProfile, SemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { ClassRole, ApplicationProfile, RequirementLevel } from "./dsv-model.ts";
+import { Cardinality, ClassProfile, ClassRole, ApplicationProfile, ObjectPropertyProfile, RequirementLevel } from "./dsv-model.ts";
 import { conceptualModelToEntityListContainer } from "./dsv-to-entity-model.ts";
 import { EntityListContainer } from "./entity-model.ts";
 import { entityListContainerToDsvModel, createContext } from "./entity-model-to-dsv.ts";
 import { DSV_CLASS_ROLE, DSV_MANDATORY_LEVEL, SKOS } from "./vocabulary.ts";
+
+function classProfile(value: Partial<ClassProfile> & { iri: string }): ClassProfile {
+    return {
+        type: ["class-profile"],
+        prefLabel: {},
+        definition: {},
+        usageNote: {},
+        profileOfIri: [],
+        reusesPropertyValue: [],
+        specializationOfIri: [],
+        externalDocumentationUrl: null,
+        profiledClassIri: [],
+        classRole: ClassRole.undefined,
+        ...value,
+    };
+}
+
+function objectPropertyProfile(
+    value: Partial<ObjectPropertyProfile> & { iri: string, domainIri: string },
+): ObjectPropertyProfile {
+    return {
+        type: ["object-property-profile"],
+        prefLabel: {},
+        definition: {},
+        usageNote: {},
+        profileOfIri: [],
+        reusesPropertyValue: [],
+        specializationOfIri: [],
+        externalDocumentationUrl: null,
+        cardinality: null,
+        profiledPropertyIri: [],
+        requirementLevel: RequirementLevel.undefined,
+        rangeClassIri: [],
+        ...value,
+    };
+}
 
 test("From DSV to entity model and back.", async () => {
 
@@ -386,4 +422,195 @@ test("Issue #1005", () => {
 
   expect(actual).toMatchObject(dsv);
 
+});
+
+test("Uses the default generalizationIdentifier when none is provided.", () => {
+
+  const dsv: ApplicationProfile = {
+    "iri": "http://dcat/model/",
+    "externalDocumentationUrl": null,
+    "classProfiles": [
+      classProfile({ "iri": "http://dcat/model/parent" }),
+      classProfile({
+        "iri": "http://dcat/model/child",
+        "specializationOfIri": ["http://dcat/model/parent"],
+      }),
+    ],
+    "datatypePropertyProfiles": [],
+    "objectPropertyProfiles": [],
+  };
+
+  const actual = conceptualModelToEntityListContainer(dsv, {
+    iriToIdentifier: iri => iri,
+  });
+
+  const generalization = actual.entities.find(
+    item => item.type.includes("generalization"));
+  expect(generalization).toMatchObject({
+    id: "https://dataspecer.com/semantic-models/generalization?"
+      + "fromIri=http://dcat/model/child&toIri=http://dcat/model/parent",
+    child: "http://dcat/model/child",
+    parent: "http://dcat/model/parent",
+  });
+});
+
+test("Warns and keeps the first candidate when multiple reuse entries target the same property.", () => {
+
+  const dsv: ApplicationProfile = {
+    "iri": "http://dcat/model/",
+    "externalDocumentationUrl": null,
+    "classProfiles": [classProfile({
+      "iri": "http://dcat/model/duplicate",
+      "reusesPropertyValue": [{
+        "reusedPropertyIri": SKOS.prefLabel.id,
+        "reusedAsPropertyIri": SKOS.prefLabel.id,
+        "propertyReusedFromResourceIri": "http://dcat/model/first",
+      }, {
+        "reusedPropertyIri": SKOS.prefLabel.id,
+        "reusedAsPropertyIri": SKOS.prefLabel.id,
+        "propertyReusedFromResourceIri": "http://dcat/model/second",
+      }],
+    })],
+    "datatypePropertyProfiles": [],
+    "objectPropertyProfiles": [],
+  };
+
+  const actual = conceptualModelToEntityListContainer(dsv, {
+    generalizationIdentifier: () => "gen",
+    iriToIdentifier: iri => iri,
+  });
+
+  expect(actual.entities[0]).toMatchObject({
+    nameFromProfiled: "http://dcat/model/first",
+  });
+});
+
+test("Skips property profiles with an unresolved or invalid range.", () => {
+
+  const dsv: ApplicationProfile = {
+    "iri": "http://dcat/model/",
+    "externalDocumentationUrl": null,
+    "classProfiles": [],
+    "datatypePropertyProfiles": [{
+      // Datatype property with no range data type - should be skipped.
+      ...objectPropertyProfile({
+        "iri": "http://dcat/model/missingDatatypeRange",
+        "domainIri": "http://dcat/model/domain",
+      }),
+      "type": ["datatype-property-profile"],
+      "rangeDataTypeIri": [],
+    } as any],
+    "objectPropertyProfiles": [
+      objectPropertyProfile({
+        // Object property with no range class - should be skipped.
+        "iri": "http://dcat/model/missingObjectRange",
+        "domainIri": "http://dcat/model/domain",
+        "rangeClassIri": [],
+      }),
+      {
+        // Neither datatype nor object property - should be skipped.
+        ...objectPropertyProfile({
+          "iri": "http://dcat/model/invalidType",
+          "domainIri": "http://dcat/model/domain",
+        }),
+        "type": ["something-else"],
+      } as any,
+    ],
+  };
+
+  const actual = conceptualModelToEntityListContainer(dsv, {
+    generalizationIdentifier: () => "gen",
+    iriToIdentifier: iri => iri,
+  });
+
+  expect(actual.entities).toStrictEqual([]);
+});
+
+test("Maps every Cardinality enum value to the matching [start, end] tuple.", () => {
+
+  const combinations: { cardinality: Cardinality, expected: [number, number | null] }[] = [
+    { cardinality: Cardinality.ZeroToZero, expected: [0, 0] },
+    { cardinality: Cardinality.ZeroToOne, expected: [0, 1] },
+    { cardinality: Cardinality.ZeroToMany, expected: [0, null] },
+    { cardinality: Cardinality.OneToZero, expected: [1, 0] },
+    { cardinality: Cardinality.OneToOne, expected: [1, 1] },
+    { cardinality: Cardinality.OneToMany, expected: [1, null] },
+    { cardinality: Cardinality.ManyToZero, expected: [2, 0] },
+    { cardinality: Cardinality.ManyToOne, expected: [2, 1] },
+    { cardinality: Cardinality.ManyToMany, expected: [2, 0] },
+  ];
+
+  const dsv: ApplicationProfile = {
+    "iri": "http://dcat/model/",
+    "externalDocumentationUrl": null,
+    "classProfiles": [],
+    "datatypePropertyProfiles": [],
+    "objectPropertyProfiles": combinations.map(({ cardinality }, index) => objectPropertyProfile({
+      "iri": `http://dcat/model/property-${index}`,
+      "domainIri": "http://dcat/model/domain",
+      "cardinality": cardinality,
+      "rangeClassIri": ["http://dcat/model/range"],
+    })),
+  };
+
+  const actual = conceptualModelToEntityListContainer(dsv, {
+    generalizationIdentifier: () => "gen",
+    iriToIdentifier: iri => iri,
+  });
+
+  const relationshipProfiles = actual.entities.filter(
+    item => item.type.includes("relationship-profile")) as SemanticModelRelationshipProfile[];
+
+  expect(relationshipProfiles.map(item => item.ends[1]?.cardinality)).toStrictEqual(
+    combinations.map(item => item.expected));
+});
+
+test("Falls back to {} for a null prefLabel/definition/usageNote, and matches reuse by reusedPropertyIri when reusedAsPropertyIri is missing.", () => {
+
+  const dsv: ApplicationProfile = {
+    "iri": "http://dcat/model/",
+    "externalDocumentationUrl": null,
+    "classProfiles": [{
+      ...classProfile({ "iri": "http://dcat/model/class" }),
+      "prefLabel": null,
+      "definition": null,
+      "usageNote": null,
+    } as any],
+    "datatypePropertyProfiles": [],
+    "objectPropertyProfiles": [{
+      ...objectPropertyProfile({
+        "iri": "http://dcat/model/property",
+        "domainIri": "http://dcat/model/domain",
+        "rangeClassIri": ["http://dcat/model/range"],
+        "reusesPropertyValue": [{
+          "reusedPropertyIri": SKOS.prefLabel.id,
+          "reusedAsPropertyIri": undefined,
+          "propertyReusedFromResourceIri": "http://dcat/model/source",
+        } as any],
+      }),
+      "prefLabel": null,
+      "definition": null,
+      "usageNote": null,
+    } as any],
+  };
+
+  const actual = conceptualModelToEntityListContainer(dsv, {
+    generalizationIdentifier: () => "gen",
+    iriToIdentifier: iri => iri,
+  });
+
+  const [classEntity, relationshipEntity] = actual.entities as [
+    SemanticModelClassProfile, SemanticModelRelationshipProfile,
+  ];
+  expect(classEntity.name).toStrictEqual({});
+  expect(classEntity.description).toStrictEqual({});
+  expect(classEntity.usageNote).toStrictEqual({});
+
+  const range = relationshipEntity.ends[1]!;
+  expect(range.name).toStrictEqual({});
+  expect(range.description).toStrictEqual({});
+  expect(range.usageNote).toStrictEqual({});
+  // Falls back to matching by reusedPropertyIri since reusedAsPropertyIri
+  // is missing on the reuse entry.
+  expect(range.nameFromProfiled).toBe("http://dcat/model/source");
 });
