@@ -162,11 +162,11 @@ export function createContext(
       const [_, range] = entity.ends;
       return range.descriptionProperty ?? null
     } else if (isSemanticModelClassProfile(entity)) {
-      return getPropertyForName(
+      return getPropertyForDescription(
         entity.descriptionFromProfiled, [...visited, entityIdentifier]);
     } else if (isSemanticModelRelationshipProfile(entity)) {
       const [_, range] = entity.ends;
-      return getPropertyForName(
+      return getPropertyForDescription(
         range.descriptionFromProfiled, [...visited, entityIdentifier]);
     } else {
       return null;

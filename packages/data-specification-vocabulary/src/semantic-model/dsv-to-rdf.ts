@@ -175,9 +175,6 @@ class DsvWriter {
     if (value === null) {
       return;
     }
-    if (value === null) {
-      return;
-    }
     if (typeof value === 'string') {
       this.writer.addQuad(IRI(subject), predicate, IRI(value));
     } else {

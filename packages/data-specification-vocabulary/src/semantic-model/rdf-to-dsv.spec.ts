@@ -1,8 +1,91 @@
+import { expect, test } from "vitest";
+
 import { rdfToDsv } from "./rdf-to-dsv.ts";
+import { dsvToRdf } from "./dsv-to-rdf.ts";
 import { Cardinality, ClassRole, ApplicationProfile, ObjectPropertyProfile, RequirementLevel, ClassProfile } from "./dsv-model.ts";
 import { conceptualModelToEntityListContainer } from "./dsv-to-entity-model.ts";
 import { DataTypeURIs, isPrimitiveType } from "@dataspecer/core-v2/semantic-model/datatypes";
 import { isSemanticModelClass, isSemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
+
+function classProfile(value: Partial<ClassProfile> & { iri: string }): ClassProfile {
+  return {
+    type: ["class-profile"],
+    prefLabel: {},
+    definition: {},
+    usageNote: {},
+    profileOfIri: [],
+    reusesPropertyValue: [],
+    specializationOfIri: [],
+    externalDocumentationUrl: null,
+    profiledClassIri: [],
+    classRole: ClassRole.undefined,
+    ...value,
+  };
+}
+
+function objectPropertyProfile(
+  value: Partial<ObjectPropertyProfile> & { iri: string, domainIri: string },
+): ObjectPropertyProfile {
+  return {
+    type: ["object-property-profile"],
+    prefLabel: {},
+    definition: {},
+    usageNote: {},
+    profileOfIri: [],
+    reusesPropertyValue: [],
+    specializationOfIri: [],
+    externalDocumentationUrl: null,
+    cardinality: null,
+    profiledPropertyIri: [],
+    requirementLevel: RequirementLevel.undefined,
+    rangeClassIri: [],
+    ...value,
+  };
+}
+
+test("Round-trips every Cardinality, ClassRole, and RequirementLevel value through RDF.", async () => {
+
+  const cardinalities = Object.values(Cardinality);
+  const classRoles = [ClassRole.undefined, ClassRole.main, ClassRole.supportive];
+  const requirementLevels = [
+    RequirementLevel.undefined,
+    RequirementLevel.mandatory,
+    RequirementLevel.optional,
+    RequirementLevel.recommended,
+  ];
+
+  const domain = classProfile({
+    "iri": "http://example.com/domain",
+    "classRole": ClassRole.main,
+  });
+
+  const model: ApplicationProfile = {
+    "iri": "http://example.com/model",
+    "externalDocumentationUrl": null,
+    "classProfiles": [
+      domain,
+      ...classRoles.map((classRole, index) => classProfile({
+        "iri": `http://example.com/class-${index}`,
+        "classRole": classRole,
+      })),
+    ],
+    "datatypePropertyProfiles": [],
+    "objectPropertyProfiles": cardinalities.flatMap((cardinality, cardinalityIndex) =>
+      requirementLevels.map((requirementLevel, requirementLevelIndex) => objectPropertyProfile({
+        "iri": `http://example.com/property-${cardinalityIndex}-${requirementLevelIndex}`,
+        "domainIri": domain.iri,
+        "cardinality": cardinality,
+        "requirementLevel": requirementLevel,
+        "rangeClassIri": [domain.iri],
+      })),
+    ),
+  };
+
+  const rdf = await dsvToRdf(model, {});
+  const parsedModels = await rdfToDsv(rdf);
+  expect(parsedModels).toHaveLength(1);
+  expect(parsedModels[0]).toStrictEqual(model);
+});
 
 test("Regression test.", async () => {
 
@@ -401,4 +484,115 @@ _:n3-813 a dsv:PropertyValueReuse;
     }],
   });
 
+});
+
+test("Ignores unresolved dct:isPartOf, unknown role/requirement-level IRIs, and property profiles without a domain.", async () => {
+
+  const inputRdf = `@prefix dct: <http://purl.org/dc/terms/>.
+@prefix dsv: <https://w3id.org/dsv#>.
+@prefix prof: <http://www.w3.org/ns/dx/prof/>.
+
+<http://example.com/model> a prof:Profile, dsv:ApplicationProfile.
+
+<http://example.com/orphanClass> a dsv:TermProfile, dsv:ClassProfile;
+    dsv:classRole <http://example.com/unknown-role>.
+
+<http://example.com/danglingClass> a dsv:TermProfile, dsv:ClassProfile;
+    dct:isPartOf <http://example.com/no-such-model>.
+
+<http://example.com/noDomainObject> a dsv:TermProfile, dsv:ObjectPropertyProfile;
+    dct:isPartOf <http://example.com/model>.
+
+<http://example.com/noDomainDatatype> a dsv:TermProfile, dsv:DatatypePropertyProfile;
+    dct:isPartOf <http://example.com/model>.
+
+<http://example.com/unknownRequirement> a dsv:TermProfile, dsv:ObjectPropertyProfile;
+    dct:isPartOf <http://example.com/model>;
+    dsv:domain <http://example.com/domain>;
+    dsv:requirementLevel <http://example.com/unknown-requirement>.
+`;
+
+  const actualModels = await rdfToDsv(inputRdf);
+  expect(actualModels).toHaveLength(1);
+
+  const model = actualModels[0]!;
+  // Neither the class without dct:isPartOf, nor the one with a dangling
+  // dct:isPartOf, end up attached to the ApplicationProfile.
+  expect(model.classProfiles).toStrictEqual([]);
+  // Property profiles without dsv:domain are skipped entirely.
+  expect(model.datatypePropertyProfiles).toStrictEqual([]);
+  expect(model.objectPropertyProfiles).toHaveLength(1);
+  expect(model.objectPropertyProfiles[0]?.requirementLevel).toBe(RequirementLevel.undefined);
+});
+
+test("Warns and drops a PropertyValueReuse blank node missing reusedProperty or reusedFromResource.", async () => {
+
+  const inputRdf = `@prefix dct: <http://purl.org/dc/terms/>.
+@prefix dsv: <https://w3id.org/dsv#>.
+@prefix prof: <http://www.w3.org/ns/dx/prof/>.
+@prefix skos: <http://www.w3.org/2004/02/skos/core#>.
+
+<http://example.com/model> a prof:Profile, dsv:ApplicationProfile.
+
+<http://example.com/classWithBadReuse> a dsv:TermProfile, dsv:ClassProfile;
+    dct:isPartOf <http://example.com/model>;
+    dsv:reusesPropertyValue [
+      a dsv:PropertyValueReuse;
+      dsv:reusedAsProperty skos:prefLabel;
+      dsv:reusedFromResource <http://example.com/source>
+    ].
+`;
+
+  const actualModels = await rdfToDsv(inputRdf);
+  expect(actualModels[0]?.classProfiles[0]?.reusesPropertyValue).toStrictEqual([]);
+});
+
+test("Migrates a legacy vann:usageNote reusedProperty to skos:scopeNote.", async () => {
+
+  const inputRdf = `@prefix dct: <http://purl.org/dc/terms/>.
+@prefix dsv: <https://w3id.org/dsv#>.
+@prefix prof: <http://www.w3.org/ns/dx/prof/>.
+@prefix skos: <http://www.w3.org/2004/02/skos/core#>.
+@prefix vann: <http://purl.org/vocab/vann/>.
+
+<http://example.com/model> a prof:Profile, dsv:ApplicationProfile.
+
+<http://example.com/classWithLegacyReuse> a dsv:TermProfile, dsv:ClassProfile;
+    dct:isPartOf <http://example.com/model>;
+    dsv:reusesPropertyValue [
+      a dsv:PropertyValueReuse;
+      dsv:reusedProperty vann:usageNote;
+      dsv:reusedAsProperty skos:scopeNote;
+      dsv:reusedFromResource <http://example.com/source>
+    ].
+`;
+
+  const actualModels = await rdfToDsv(inputRdf);
+  expect(actualModels[0]?.classProfiles[0]?.reusesPropertyValue).toStrictEqual([{
+    "reusedPropertyIri": "http://www.w3.org/2004/02/skos/core#scopeNote",
+    "reusedAsPropertyIri": "http://www.w3.org/2004/02/skos/core#scopeNote",
+    "propertyReusedFromResourceIri": "http://example.com/source",
+  }]);
+});
+
+test("Rejects on malformed Turtle input.", async () => {
+  await expect(rdfToDsv("this is not : valid < turtle @ syntax")).rejects.toThrow();
+});
+
+test("Skips writing a null LanguageString value (defensive handling of malformed input).", async () => {
+  const model = classProfile({
+    "iri": "http://example.com/class",
+  });
+  (model as any).prefLabel = null;
+
+  const applicationProfile: ApplicationProfile = {
+    "iri": "http://example.com/model",
+    "externalDocumentationUrl": null,
+    "classProfiles": [model],
+    "datatypePropertyProfiles": [],
+    "objectPropertyProfiles": [],
+  };
+
+  const rdf = await dsvToRdf(applicationProfile, {});
+  expect(rdf).not.toContain("skos:prefLabel");
 });
