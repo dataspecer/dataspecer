@@ -4,6 +4,7 @@ const SHORTCUTS = [
   { keys: "Space + drag", what: "Pan with either tool" },
   { keys: "Shift + drag", what: "Select nodes" },
   { keys: "Ctrl + click", what: "Add to the selection" },
+  { keys: "Escape", what: "Cancel the connection being dragged" },
   { keys: "Delete", what: "Remove selected element" },
   { keys: "Arrow keys", what: "Move the selected nodes" },
   { keys: "Ctrl + Z, Ctrl + Shift + Z", what: "Undo, redo" },

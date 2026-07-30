@@ -8,6 +8,7 @@ import {
 import {
   addEdge,
   addNode,
+  connectionEdge,
   isGeneratedNodeId,
   nextEdgeId,
   nextNodeId,
@@ -172,5 +173,30 @@ describe("edge mutations", () => {
       type: EdgeType.Redirect,
     });
     expect(graph.edges[0].type).toBe(EdgeType.Redirect);
+  });
+});
+
+describe("connectionEdge", () => {
+  const graph = graphFixture();
+  const list = graph.nodes[0];
+  const detail = graph.nodes[1];
+  const form = { id: "books.create", aggregateIri: "urn:agg:book", operation: Operation.Create };
+
+  it("connects a read with a transition", () => {
+    expect(connectionEdge(graph, list, detail).type).toBe(EdgeType.Transition);
+  });
+
+  it("connects a mutation with a redirect", () => {
+    expect(connectionEdge(graph, form, list).type).toBe(EdgeType.Redirect);
+  });
+
+  it("falls back to a transition when no rule allows the pair", () => {
+    expect(connectionEdge(graph, form, { ...form, id: "books.update" }).type).toBe(
+      EdgeType.Transition,
+    );
+  });
+
+  it("gives the edge an ID no other edge holds", () => {
+    expect(connectionEdge(graph, list, detail).id).toBe("books.list-books.detail-2");
   });
 });

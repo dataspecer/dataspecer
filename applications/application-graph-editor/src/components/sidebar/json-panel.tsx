@@ -24,8 +24,7 @@ function configureJsonLanguage(instance: Monaco) {
 }
 
 /**
- * Synchronized JSON view of the edited graph. The text is editable and Apply makes it the edited graph after a syntax
- * check. Violations of the applied graph underline the parts their paths point at.
+ * Synchronized JSON view of the edited graph.
  */
 export function JsonPanel({ graph }: { graph: ApplicationGraph }) {
   const json = useMemo(() => JSON.stringify(graph, null, 2), [graph]);
@@ -43,8 +42,8 @@ export function JsonPanel({ graph }: { graph: ApplicationGraph }) {
   const stale = editing !== null && editing.base !== json;
 
   // Violations underline their JSON parts while the text matches the graph they were computed
-  // from. An edited draft or a graph changed since the last validation has shifted offsets and
-  // keeps only the schema diagnostics
+  // from. An edited draft, or a graph changed since that validation, has shifted the offsets, so
+  // only the schema diagnostics remain.
   const validation = useValidation();
   const violations = validation?.graph === graph ? validation.violations : null;
 
@@ -74,8 +73,8 @@ export function JsonPanel({ graph }: { graph: ApplicationGraph }) {
     mounted.monaco.editor.setModelMarkers(model, VIOLATION_MARKER_OWNER, markers);
   }, [json, violations, dirty, editorMounted]);
 
-  // the ID comes from the text, which may be an edited draft, so it counts only while the
-  // applied graph still has it
+  // the ID comes from the text, which may be an edited draft, so it counts only while the applied
+  // graph still holds that ID
   const elementAtCursor = (text: string, offset: number) => {
     const target = graphElementAtOffset(text, offset);
     if (target === null) {

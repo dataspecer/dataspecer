@@ -51,7 +51,7 @@ export function useValidationSync(): void {
 }
 
 /**
- * The violations of the graph they were computed from. Paths are resolved against that graph, so
+ * Violations together with the graph they were computed from. Paths resolve against that graph, so
  * a snapshot that lags a keystroke behind still points at the right nodes and edges.
  */
 export function useValidation(): ValidationSnapshot | null {

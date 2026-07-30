@@ -124,8 +124,7 @@ export function NodeForm({ node }: { node: ApplicationNode }) {
             ))}
           </select>
         ) : (
-          // disabled, because without the data structures of the specification there is nothing
-          // valid to pick
+          // disabled, because there is nothing valid to pick until the data structures load
           <input className={inputClass} value={node.aggregateIri} disabled />
         )}
       </FormField>

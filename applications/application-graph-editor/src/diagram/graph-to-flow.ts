@@ -6,7 +6,12 @@ import type { FlaggedIds, ViolationLevel } from "../validation/violations.ts";
 import { parallelEdgeOffsets } from "./edge-geometry.ts";
 
 export type OperationFlowNode = Node<
-  { node: ApplicationNode; violation: ViolationLevel | null; highlighted: boolean },
+  {
+    node: ApplicationNode;
+    violation: ViolationLevel | null;
+    highlighted: boolean;
+    dimmed: boolean;
+  },
   "operation"
 >;
 
@@ -26,11 +31,7 @@ function byId<Element extends { id: string }>(elements: Element[]): Map<string, 
 }
 
 /**
- * Keeps the object React Flow already has when the freshly built one holds the same values. React
- * Flow stores the size it measured on the object it was given, so handing it an equivalent copy
- * makes it measure the node again, and a node without a size gives its edges no endpoints, which
- * unmounts the whole edge layer for a frame. Only the keys of the built object are compared, the
- * ones React Flow adds on its own are left alone.
+ * Returns the object React Flow already has when the freshly built one holds the same values.
  */
 function reuse<Element extends object>(previous: Element | undefined, built: Element): Element {
   if (previous === undefined) {
@@ -47,6 +48,7 @@ export function projectNodes(
   positions: NodePositions,
   flagged: FlaggedIds,
   highlight: Selection,
+  dimmed: ReadonlySet<string>,
   current: OperationFlowNode[],
 ): OperationFlowNode[] {
   const previous = byId(current);
@@ -57,19 +59,18 @@ export function projectNodes(
       type: "operation",
       position: positions[node.id] ?? { x: 0, y: 0 },
       selected: known?.selected,
-      // the measured size still holds while the node keeps its shape, and keeping it stops the
-      // node from being hidden until React Flow measures it again
       measured: known?.measured,
       data: {
         node,
         violation: flagged.nodes.get(node.id) ?? null,
         highlighted: highlight?.kind === "node" && highlight.id === node.id,
+        dimmed: dimmed.has(node.id),
       },
     });
   });
 }
 
-/** IDs of what the canvas has selected, which the edges are coloured by. */
+/** IDs the canvas has selected. The edges take their colour from these. */
 export interface SelectedIds {
   nodes: ReadonlySet<string>;
   edges: ReadonlySet<string>;

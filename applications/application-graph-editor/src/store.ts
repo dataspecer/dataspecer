@@ -33,13 +33,14 @@ interface UndoableState {
   graph: ApplicationGraph | null;
   /** Canvas positions by node ID. Kept outside the graph JSON, which allows no extra fields. */
   positions: NodePositions;
-  selection: Selection;
 }
 
 interface EditorState extends UndoableState {
   resourceIri: string | null;
   loadState: "loading" | "ready" | "error";
   loadError: string | null;
+  /** Selected sidebar element. */
+  selection: Selection;
   /** Aggregates of the graph's data specification. Null while loading or when the fetch failed. */
   metadata: SpecificationMetadata | null;
   metadataError: string | null;
@@ -151,8 +152,8 @@ function withGraph(
 }
 
 /**
- * Changes that keep arriving within this delay become one undo step instead of one each. The recorder that does it is
- * kept here so that an undo can close the run it leaves open.
+ * Changes that keep arriving within this delay become one undo step instead of one each. The
+ * recorder is kept here so an undo can close a step that is still collecting.
  */
 const HISTORY_MERGE_MS = 500;
 let recordStep: { cancel: () => void } | null = null;
@@ -306,7 +307,6 @@ export const useEditorStore = create<EditorState>()(
       partialize: (state): UndoableState => ({
         graph: state.graph,
         positions: state.positions,
-        selection: state.selection,
       }),
       equality: (a, b) =>
         // reference equality is enough, every mutation builds new graph and position objects
@@ -327,8 +327,8 @@ if (import.meta.env.DEV && typeof window !== "undefined") {
   (window as unknown as Record<string, unknown>).__appGraphEditorStore = useEditorStore;
 }
 
-// An undo moves a state between the stacks without going through the recorder, so the run it
-// leaves behind ends with it and the next change opens a step of its own.
+// An undo moves a state between the stacks without going through the recorder. Cancelling here
+// ends the step that was still collecting, so the next change starts a fresh one.
 useEditorStore.temporal.subscribe((state, previous) => {
   if (state.futureStates.length > previous.futureStates.length) {
     recordStep?.cancel();

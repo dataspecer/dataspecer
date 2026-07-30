@@ -18,8 +18,8 @@ export function nodeBlockedReason(metadata: SpecificationMetadata | null): strin
 }
 
 /**
- * A node the user still has to configure. Without a chosen data structure the first one is a guess
- * that keeps the node valid enough to render, so the forms have something to show.
+ * A node the user still has to configure. When no data structure is chosen, the first one is a
+ * guess that keeps the node renderable, so the forms have something to show.
  */
 export function newNode(
   graph: ApplicationGraph,

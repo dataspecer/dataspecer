@@ -21,7 +21,7 @@ export async function applyGraphJson(jsonText: string): Promise<ApplyGraphResult
 
   const { graph: current, requestConfirm } = useEditorStore.getState();
   // Aggregate IRIs belong to one specification, so pointing the graph at another one invalidates
-  // every node. The field is not editable in the form, this is the only way to change it.
+  // every node. The field cannot be edited in the form, so this is the only way to change it.
   if (current !== null && current.dataSpecificationIri !== parsed.graph.dataSpecificationIri) {
     const confirmed = await requestConfirm({
       title: "Different data specification",
@@ -36,7 +36,7 @@ export async function applyGraphJson(jsonText: string): Promise<ApplyGraphResult
     }
   }
 
-  // read once the question is answered, the canvas may have moved on while it was open
+  // read again after the answer, because the canvas may have moved on while the dialog was open
   const { positions, replaceGraph } = useEditorStore.getState();
   const needsLayout = parsed.graph.nodes.some((node) => !positions[node.id]);
   const layout = needsLayout ? await autoLayout(parsed.graph) : {};

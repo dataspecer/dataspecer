@@ -35,7 +35,7 @@ export function EditorHeader({
       if (result.ok) {
         downloadBlob(result.archive, archiveFileName(current));
       } else {
-        // only the backend knows some failures, such as metadata resolution
+        // some failures only show up on the server, such as metadata resolution
         setGenerationViolations(result.violations);
         useEditorStore.getState().setSidebarTab("problems");
         setActionError("Generation failed, see the problems panel.");

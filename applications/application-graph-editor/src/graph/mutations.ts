@@ -1,5 +1,7 @@
 import { deburr, kebabCase } from "es-toolkit";
 import {
+  EdgeType,
+  isValidRedirectOperation,
   Operation,
   type ApplicationEdge,
   type ApplicationGraph,
@@ -44,8 +46,9 @@ export function nextNodeId(
 }
 
 /**
- * Whether the ID is the one the scheme would produce for this aggregate and operation, allowing
- * for the counter a collision adds. A hand written ID is left alone when the node changes.
+ * Whether the ID is the one the scheme would produce for this aggregate and operation. A counter
+ * appended after a collision still counts as generated. A hand written ID is left alone when the
+ * node changes.
  */
 export function isGeneratedNodeId(
   id: string,
@@ -59,8 +62,8 @@ export function isGeneratedNodeId(
 }
 
 /**
- * Renames a node and rewrites the edges referencing it. Edge IDs in the derived
- * "source-target" form follow the new endpoint names, manually overwritten edge IDs stay.
+ * Renames a node and rewrites the edges referencing it. An edge ID in the derived
+ * "source-target" form follows the new endpoint names, while a hand written one stays.
  */
 export function renameNode(
   graph: ApplicationGraph,
@@ -113,6 +116,21 @@ function uniqueEdgeId(used: ReadonlySet<string>, source: string, target: string)
 /** Derives a unique edge ID from its endpoints, for example "graphs.list-graphs.detail". */
 export function nextEdgeId(graph: ApplicationGraph, source: string, target: string): string {
   return uniqueEdgeId(new Set(graph.edges.map((edge) => edge.id)), source, target);
+}
+
+export function connectionEdge(
+  graph: ApplicationGraph,
+  source: ApplicationNode,
+  target: ApplicationNode,
+): ApplicationEdge {
+  return {
+    id: nextEdgeId(graph, source.id, target.id),
+    source: source.id,
+    target: target.id,
+    type: isValidRedirectOperation(source.operation, target.operation)
+      ? EdgeType.Redirect
+      : EdgeType.Transition,
+  };
 }
 
 export function addNode(graph: ApplicationGraph, node: ApplicationNode): ApplicationGraph {

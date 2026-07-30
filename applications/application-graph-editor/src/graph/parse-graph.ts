@@ -8,7 +8,7 @@ export type GraphCheckResult = { graph: ApplicationGraph } | { error: string };
 /**
  * Checks that already parsed JSON is a syntactically valid graph. Every way a graph enters the
  * editor (stored blob, import, JSON panel) goes through this gate. Structural and semantic
- * violations are allowed through, the problems panel reports them.
+ * violations are allowed through, because the problems panel reports them.
  */
 export function checkGraph(data: unknown): GraphCheckResult {
   const syntax = validateGraphSyntax(data);

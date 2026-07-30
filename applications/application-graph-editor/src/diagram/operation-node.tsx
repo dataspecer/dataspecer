@@ -10,12 +10,10 @@ const VIOLATION_BORDER = {
 };
 
 /**
- * One application graph node on the canvas. Shows the aggregate name (or the page title as a
- * fallback while metadata is unavailable) with the operation as a subtitle. Nodes the current
- * violations point are highlighted.
+ * One application graph node on the canvas.
  */
 export function OperationNode(props: NodeProps<OperationFlowNode>) {
-  const { node, violation, highlighted } = props.data;
+  const { node, violation, highlighted, dimmed } = props.data;
   const aggregateName = useEditorStore(
     (state) =>
       state.metadata?.aggregates.find((entry) => entry.iri === node.aggregateIri)?.name,
@@ -25,9 +23,11 @@ export function OperationNode(props: NodeProps<OperationFlowNode>) {
 
   return (
     <div
-      className={`w-60 rounded-md border px-3 py-2 shadow-sm ${
+      className={`w-60 rounded-md border px-3 py-2 shadow-sm transition-opacity ${
         violation ? VIOLATION_BORDER[violation] : "border-sky-300 bg-sky-50"
-      } ${props.selected || highlighted ? "ring-2 ring-blue-500" : ""}`}
+      } ${props.selected || highlighted ? "ring-2 ring-blue-500" : ""} ${
+        dimmed ? "opacity-25" : ""
+      }`}
     >
       {BORDER_HANDLES.map(({ id, position }) => (
         <Handle key={id} id={id} type="source" position={position} style={borderHandleStyle(id)} />

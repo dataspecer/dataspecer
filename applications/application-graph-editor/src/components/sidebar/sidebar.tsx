@@ -23,9 +23,7 @@ function maximumWidth(): number {
 }
 
 /**
- * The resizable/collapsible right side panel. A selected node or edge shows its property form, the settings menu entry
- * shows the graph settings, and otherwise the panel shows the open sidebar tab with problems or the synchronized JSON
- * view.
+ * The resizable and collapsible right side panel.
  */
 export function Sidebar({ graph }: { graph: ApplicationGraph }) {
   const selection = useEditorStore((state) => state.selection);
@@ -199,7 +197,7 @@ function Tab({
   );
 }
 
-/** The worse of the levels the element's violations carry, null when it has none. */
+/** The worse level among the element's violations, null when it has none. */
 function violationLevel(
   validation: ValidationSnapshot | null,
   kind: "node" | "edge",

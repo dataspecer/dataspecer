@@ -8,26 +8,22 @@ import {
   useEdgesState,
   useNodesState,
   useReactFlow,
+  useStoreApi,
   type Connection,
   type Edge,
   type FinalConnectionState,
   type Node,
   type NodeChange,
+  type OnConnectStartParams,
   type OnSelectionChangeParams,
   type ReactFlowInstance,
 } from "@xyflow/react";
 import { isEqual } from "es-toolkit";
-import {
-  EdgeType,
-  isValidRedirectOperation,
-  isValidTransitionOperation,
-  type ApplicationNode,
-} from "@dataspecer/app-generator/graph";
-import { nextEdgeId } from "../graph/mutations.ts";
+import { connectionEdge } from "../graph/mutations.ts";
 import { newNode, nodeBlockedReason } from "../graph/new-node.ts";
 import { useEditorStore } from "../store.ts";
 import { useValidation } from "../hooks/use-validation.ts";
-import { flaggedIds } from "../validation/violations.ts";
+import { connectableTargets, flaggedIds } from "../validation/violations.ts";
 import {
   CanvasContextMenu,
   type ContextTarget,
@@ -38,6 +34,8 @@ import { FloatingEdge } from "./floating-edge.tsx";
 import { projectEdges, projectNodes, type OperationFlowNode } from "./graph-to-flow.ts";
 import { OperationNode } from "./operation-node.tsx";
 import { OPERATION_FILL } from "./operation-style.ts";
+
+const NOTHING_DIMMED: ReadonlySet<string> = new Set();
 
 const nodeTypes = { operation: OperationNode };
 const edgeTypes = { floating: FloatingEdge };
@@ -57,6 +55,9 @@ export function Canvas() {
   const [contextTarget, setContextTarget] = useState<ContextTarget>(null);
   // the instance turns a drop point into canvas coordinates
   const flowRef = useRef<ReactFlowInstance<OperationFlowNode, Edge>>(undefined);
+  // nodes the current edge drag cannot connect to, empty while nothing is being dragged
+  const [dimmed, setDimmed] = useState<ReadonlySet<string>>(NOTHING_DIMMED);
+  const canceled = useRef(false);
 
   const validation = useValidation();
   // flags are keyed by ID, so a snapshot from the previous keystroke still lines up
@@ -72,14 +73,14 @@ export function Canvas() {
     if (graph === null) {
       return;
     }
-    // the projection reads what React Flow currently holds, so unchanged nodes keep the objects
-    // carrying their measured sizes
+    // pass in what React Flow holds now, so an unchanged node keeps its object and the size
+    // measured on it
     const selected = { nodes: new Set(selectedNodes), edges: new Set(selectedEdges) };
-    setNodes((current) => projectNodes(graph, positions, flagged, highlight, current));
+    setNodes((current) => projectNodes(graph, positions, flagged, highlight, dimmed, current));
     setEdges((current) => projectEdges(graph, flagged, highlight, selected, current));
-  }, [graph, positions, highlight, flagged, selectedNodes, selectedEdges, setNodes, setEdges]);
+  }, [graph, positions, highlight, flagged, dimmed, selectedNodes, selectedEdges, setNodes, setEdges]);
 
-  // a panel asking to select an element makes it the only selected one
+  // when a panel asks to select an element, it becomes the only selected one
   useEffect(() => {
     if (selectRequest === null) {
       return;
@@ -105,26 +106,40 @@ export function Canvas() {
     [onNodesChange],
   );
 
+  // dim the nodes this drag is not allowed to reach
+  const onConnectStart = useCallback((_event: unknown, params: OnConnectStartParams) => {
+    canceled.current = false;
+    const { graph: current, metadata } = useEditorStore.getState();
+    const source = current?.nodes.find((node) => node.id === params.nodeId);
+    if (current === null || source === undefined) {
+      return;
+    }
+    const connectable = connectableTargets(current, source, metadata);
+    setDimmed(new Set(current.nodes.map((node) => node.id).filter((id) => !connectable.has(id))));
+  }, []);
+
   const onConnect = useCallback((connection: Connection) => {
     const { graph: current, addEdge } = useEditorStore.getState();
-    if (current === null || !connection.source || !connection.target) {
+    if (canceled.current || current === null) {
       return;
     }
     const source = current.nodes.find((node) => node.id === connection.source);
     const target = current.nodes.find((node) => node.id === connection.target);
-    addEdge({
-      id: nextEdgeId(current, connection.source, connection.target),
-      source: connection.source,
-      target: connection.target,
-      type: edgeTypeFor(source, target),
-    });
+    if (source === undefined || target === undefined) {
+      return;
+    }
+    addEdge(connectionEdge(current, source, target));
   }, []);
 
-  // dropping a connection on empty canvas creates the node it was reaching for
+  // a connection dropped on empty canvas becomes a new node with the edge to it
   const onConnectEnd = useCallback(
     (_event: unknown, connection: FinalConnectionState) => {
+      setDimmed(NOTHING_DIMMED);
+      // clear the flag here, otherwise the next connection would be dropped as well
+      const escaped = canceled.current;
+      canceled.current = false;
       const source = connection.fromNode?.id;
-      if (connection.toNode !== null || !source || !connection.to) {
+      if (escaped || connection.toNode !== null || !source || !connection.to) {
         return;
       }
       const {
@@ -142,17 +157,15 @@ export function Canvas() {
         setActionError(blocked);
         return;
       }
-      const created = newNode(current, metadata);
       const sourceNode = current.nodes.find((node) => node.id === source);
+      if (sourceNode === undefined) {
+        return;
+      }
+      const created = newNode(current, metadata);
       addConnectedNode(
         created,
         flow.screenToFlowPosition({ x: connection.to.x, y: connection.to.y }),
-        {
-          id: nextEdgeId(current, source, created.id),
-          source,
-          target: created.id,
-          type: edgeTypeFor(sourceNode, created),
-        },
+        connectionEdge(current, sourceNode, created),
       );
     },
     [],
@@ -168,7 +181,12 @@ export function Canvas() {
     deleted.forEach((edge) => removeEdge(edge.id));
   }, []);
 
-  // the sidebar shows one element, the first of whatever the canvas has selected
+  const cancelConnection = useCallback(() => {
+    canceled.current = true;
+    setDimmed(NOTHING_DIMMED);
+  }, []);
+
+  // the sidebar shows a single element, so it takes the first one the canvas has selected
   const onSelectionChange = useCallback((params: OnSelectionChangeParams) => {
     const store = useEditorStore.getState();
     const next = params.nodes[0]
@@ -205,6 +223,7 @@ export function Canvas() {
         onNodesChange={onNodesChangeWithPositions}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onConnectStart={onConnectStart}
         onConnectEnd={onConnectEnd}
         onInit={(instance) => (flowRef.current = instance)}
         onNodesDelete={onNodesDelete}
@@ -227,6 +246,7 @@ export function Canvas() {
         <MiniMap pannable zoomable nodeColor={minimapNodeColor} className="!bottom-2 !right-2" />
         <CanvasToolbar />
         <FocusHandler />
+        <ConnectionEscape onCancel={cancelConnection} />
       </ReactFlow>
     </CanvasContextMenu>
   );
@@ -244,6 +264,27 @@ function withSelection<Element extends { id: string; selected?: boolean }>(
   );
 }
 
+/**
+ * Cancels a connection drag on Escape.
+ */
+function ConnectionEscape({ onCancel }: { onCancel: () => void }) {
+  const store = useStoreApi();
+
+  useEffect(() => {
+    const cancelOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || !store.getState().connection.inProgress) {
+        return;
+      }
+      store.getState().cancelConnection();
+      onCancel();
+    };
+    document.addEventListener("keydown", cancelOnEscape);
+    return () => document.removeEventListener("keydown", cancelOnEscape);
+  }, [store, onCancel]);
+
+  return null;
+}
+
 /** Brings the node or edge of the latest focus request into view. */
 function FocusHandler() {
   const focusRequest = useEditorStore((state) => state.focusRequest);
@@ -257,7 +298,7 @@ function FocusHandler() {
     if (graph === null) {
       return;
     }
-    // an edge is brought into view through its two endpoints
+    // bring an edge into view through its two endpoints
     const edge = graph.edges.find(
       (candidate) => candidate.id === focusRequest.id,
     );
@@ -278,20 +319,6 @@ function FocusHandler() {
 }
 
 /** Prefers the edge type the operation pair allows, transition when both or neither fit. */
-function edgeTypeFor(
-  source: ApplicationNode | undefined,
-  target: ApplicationNode | undefined,
-): EdgeType {
-  if (
-    source &&
-    target &&
-    !isValidTransitionOperation(source.operation, target.operation) &&
-    isValidRedirectOperation(source.operation, target.operation)
-  ) {
-    return EdgeType.Redirect;
-  }
-  return EdgeType.Transition;
-}
 
 /** Operation colors for the minimap, so the shape of the graph stays recognizable. */
 function minimapNodeColor(node: OperationFlowNode): string {

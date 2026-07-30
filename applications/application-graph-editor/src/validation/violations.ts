@@ -5,9 +5,11 @@ import {
   validateGraphSyntax,
   ViolationSeverity,
   type ApplicationGraph,
+  type ApplicationNode,
   type SpecificationMetadata,
   type Violation,
 } from "@dataspecer/app-generator/graph";
+import { connectionEdge } from "../graph/mutations.ts";
 
 /**
  * Every violation the editor can find on its own. Syntax comes first, because the later rules
@@ -54,6 +56,30 @@ export function combinedViolations(
     return local;
   }
   return [...local, ...differenceBy(fromGeneration, local, violationKey)];
+}
+
+/**
+ * The nodes an edge from the source is allowed to reach. Every candidate edge is validated in a copy of the graph, and
+ * the target stays open when that adds no error the graph did not have already. An edge that only warns can still be
+ * connected, because it works.
+ */
+export function connectableTargets(
+  graph: ApplicationGraph,
+  source: ApplicationNode,
+  metadata: SpecificationMetadata | null,
+): Set<string> {
+  const before = localViolations(graph, metadata);
+  const connectable = new Set<string>();
+  for (const target of graph.nodes) {
+    const candidate = connectionEdge(graph, source, target);
+    // appended, so the existing edges keep the paths their violations point at
+    const after = localViolations({ ...graph, edges: [...graph.edges, candidate] }, metadata);
+    const added = differenceBy(after, before, violationKey);
+    if (!added.some((violation) => violation.severity === ViolationSeverity.Error)) {
+      connectable.add(target.id);
+    }
+  }
+  return connectable;
 }
 
 /** Violations with the graph they were computed from, so paths resolve against the right one. */
