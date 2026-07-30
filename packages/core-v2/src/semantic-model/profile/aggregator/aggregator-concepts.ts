@@ -16,6 +16,18 @@ import {
 import { NamedThingProfile } from "../concepts/named-thing-profile.ts";
 
 /**
+ * Return true when given entity is an aggregate entity.
+ */
+export function isAggregatedProfiledSemanticModelEntity(
+  entity: Entity | null,
+): boolean {
+  if (entity === null) {
+    return false;
+  }
+  return entity.type.includes(AGGREGATE);
+}
+
+/**
  * Represent type of aggregated entity.
  */
 export const AGGREGATE = "aggregate";
