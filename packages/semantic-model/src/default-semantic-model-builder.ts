@@ -108,7 +108,9 @@ class DefaultSemanticModelBuilder implements SemanticModelBuilder {
         concept: null,
         externalDocumentationUrl: value?.externalDocumentationUrl ?? null,
         name: value?.name ?? {},
-        description: {},
+        description: value?.description ?? {},
+        nameProperty: value?.nameProperty ?? null,
+        descriptionProperty: value?.descriptionProperty ?? null,
       }],
     };
     this.entities[identifier] = entity;
@@ -170,12 +172,16 @@ class DefaultSemanticClassBuilder implements SemanticClassBuilder {
     iri?: string;
     name?: LanguageString;
     description?: LanguageString,
+    nameProperty?: string | null,
+    descriptionProperty?: string | null,
     range: IdentifiableBuilder;
   }): SemanticRelationshipBuilder {
     return this.model.property({
       iri: value.iri,
       name: value.name,
       description: value.description,
+      nameProperty: value.nameProperty,
+      descriptionProperty: value.descriptionProperty,
     })
       .domain(this)
       .range(value.range);

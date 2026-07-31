@@ -2,46 +2,11 @@ import { expect, test } from "vitest";
 
 import { rdfToDsv } from "./rdf-to-dsv.ts";
 import { dsvToRdf } from "./dsv-to-rdf.ts";
-import { Cardinality, ClassRole, ApplicationProfile, ObjectPropertyProfile, RequirementLevel, ClassProfile } from "./dsv-model.ts";
+import { Cardinality, ClassRole, ApplicationProfile, RequirementLevel } from "./dsv-model.ts";
+import { createDefaultApplicationProfileBuilder } from "./default-dsv-model-builder.ts";
 import { conceptualModelToEntityListContainer } from "./dsv-to-entity-model.ts";
 import { DataTypeURIs, isPrimitiveType } from "@dataspecer/core-v2/semantic-model/datatypes";
 import { isSemanticModelClass, isSemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
-
-function classProfile(value: Partial<ClassProfile> & { iri: string }): ClassProfile {
-  return {
-    type: ["class-profile"],
-    prefLabel: {},
-    definition: {},
-    usageNote: {},
-    profileOfIri: [],
-    reusesPropertyValue: [],
-    specializationOfIri: [],
-    externalDocumentationUrl: null,
-    profiledClassIri: [],
-    classRole: ClassRole.undefined,
-    ...value,
-  };
-}
-
-function objectPropertyProfile(
-  value: Partial<ObjectPropertyProfile> & { iri: string, domainIri: string },
-): ObjectPropertyProfile {
-  return {
-    type: ["object-property-profile"],
-    prefLabel: {},
-    definition: {},
-    usageNote: {},
-    profileOfIri: [],
-    reusesPropertyValue: [],
-    specializationOfIri: [],
-    externalDocumentationUrl: null,
-    cardinality: null,
-    profiledPropertyIri: [],
-    requirementLevel: RequirementLevel.undefined,
-    rangeClassIri: [],
-    ...value,
-  };
-}
 
 test("Round-trips every Cardinality, ClassRole, and RequirementLevel value through RDF.", async () => {
 
@@ -54,32 +19,27 @@ test("Round-trips every Cardinality, ClassRole, and RequirementLevel value throu
     RequirementLevel.recommended,
   ];
 
-  const domain = classProfile({
-    "iri": "http://example.com/domain",
-    "classRole": ClassRole.main,
+  const builder = createDefaultApplicationProfileBuilder({ iri: "http://example.com/model" });
+  const domain = builder.classProfile({
+    iri: "http://example.com/domain",
+    classRole: ClassRole.main,
+  });
+  classRoles.forEach((classRole, index) => {
+    builder.classProfile({ iri: `http://example.com/class-${index}`, classRole });
+  });
+  cardinalities.forEach((cardinality, cardinalityIndex) => {
+    requirementLevels.forEach((requirementLevel, requirementLevelIndex) => {
+      builder.objectProperty({
+        iri: `http://example.com/property-${cardinalityIndex}-${requirementLevelIndex}`,
+        domainIri: domain.identifier,
+        cardinality,
+        requirementLevel,
+        rangeClassIri: [domain.identifier],
+      });
+    });
   });
 
-  const model: ApplicationProfile = {
-    "iri": "http://example.com/model",
-    "externalDocumentationUrl": null,
-    "classProfiles": [
-      domain,
-      ...classRoles.map((classRole, index) => classProfile({
-        "iri": `http://example.com/class-${index}`,
-        "classRole": classRole,
-      })),
-    ],
-    "datatypePropertyProfiles": [],
-    "objectPropertyProfiles": cardinalities.flatMap((cardinality, cardinalityIndex) =>
-      requirementLevels.map((requirementLevel, requirementLevelIndex) => objectPropertyProfile({
-        "iri": `http://example.com/property-${cardinalityIndex}-${requirementLevelIndex}`,
-        "domainIri": domain.iri,
-        "cardinality": cardinality,
-        "requirementLevel": requirementLevel,
-        "rangeClassIri": [domain.iri],
-      })),
-    ),
-  };
+  const model = builder.build();
 
   const rdf = await dsvToRdf(model, {});
   const parsedModels = await rdfToDsv(rdf);
@@ -580,18 +540,12 @@ test("Rejects on malformed Turtle input.", async () => {
 });
 
 test("Skips writing a null LanguageString value (defensive handling of malformed input).", async () => {
-  const model = classProfile({
-    "iri": "http://example.com/class",
-  });
-  (model as any).prefLabel = null;
-
-  const applicationProfile: ApplicationProfile = {
-    "iri": "http://example.com/model",
-    "externalDocumentationUrl": null,
-    "classProfiles": [model],
-    "datatypePropertyProfiles": [],
-    "objectPropertyProfiles": [],
-  };
+  const builder = createDefaultApplicationProfileBuilder({ iri: "http://example.com/model" });
+  builder.classProfile({ iri: "http://example.com/class" });
+  const applicationProfile = builder.build();
+  // The builder's typed API can't produce this deliberately-invalid null
+  // (ClassProfile.prefLabel is a LanguageString, never null); set it directly.
+  (applicationProfile.classProfiles[0] as any).prefLabel = null;
 
   const rdf = await dsvToRdf(applicationProfile, {});
   expect(rdf).not.toContain("skos:prefLabel");

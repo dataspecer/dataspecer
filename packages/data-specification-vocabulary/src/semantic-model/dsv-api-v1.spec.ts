@@ -1,204 +1,79 @@
 import { test, expect } from "vitest";
 
-import { SemanticModelClassProfile, SemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { Cardinality, ApplicationProfile, DatatypePropertyProfile, ObjectPropertyProfile, RequirementLevel, ClassRole, ClassProfile } from "./dsv-model.ts";
+import { createDefaultSemanticModelBuilder } from "@dataspecer/semantic-model";
+import { createDefaultProfileModelBuilder } from "@dataspecer/profile-model";
+import { ApplicationProfile, Cardinality, ClassRole, RequirementLevel } from "./dsv-model.ts";
 import { conceptualModelToEntityListContainer } from "./dsv-to-entity-model.ts";
 import { dsvToRdf } from "./dsv-to-rdf.ts";
-import { EntityListContainer } from "./entity-model.ts";
 import { createContext, entityListContainerToDsvModel } from "./entity-model-to-dsv.ts";
 import { rdfToDsv } from "./rdf-to-dsv.ts";
+import { mergeEntityListContainers, toEntityListContainer } from "./entity-list-container-builder.ts";
 import { DSV_CLASS_ROLE, DSV_MANDATORY_LEVEL } from "./vocabulary.ts";
 
 test("End to end test I.", async () => {
 
-  const container = {
-    "baseIri": "http://dcat/model/",
-    "entities": [{
-      "id": "lqo2gocgg4sm7d1ivqx",
-      "iri": "flatBack",
-      "type": ["class"],
-      "name": { "en": "Flat Back" },
-      "description": {}
-    }, {
-      "id": "xg0kzal0g2m7d1ix6t",
-      "iri": "http://localhost/sweetState",
-      "type": ["class"],
-      "name": { "en": "Sweet State" },
-      "description": {}
-    }, {
-      "id": "u42wg5rcg2im7d1j3hm",
-      "type": ["relationship"],
-      "iri": null,
-      "name": {},
-      "description": {},
-      "ends": [{
-        "name": {},
-        "description": {},
-        "cardinality": null,
-        "concept": "xg0kzal0g2m7d1ix6t",
-        "iri": null
-      }, {
-        "name": { "en": "Drab Moment" },
-        "description": {},
-        "cardinality": null,
-        "concept": "lqo2gocgg4sm7d1ivqx",
-        "iri": "drabMoment"
-      }]
-    }, {
-      "id": "ml7qgk4tl6sm7d1j6lj",
-      "type": ["relationship"],
-      "iri": null,
-      "name": {},
-      "description": {},
-      "ends": [{
-        "name": {},
-        "description": {},
-        "concept": "lqo2gocgg4sm7d1ivqx",
-        "iri": null
-      }, {
-        "name": { "en": "Energetic Problem" },
-        "description": {},
-        "concept": "http://www.w3.org/2000/01/rdf-schema#Literal",
-        "iri": "energeticProblem"
-      }]
-    }, {
-      "id": "rz94ir172eqm7d1j8i2",
-      "type": ["relationship"],
-      "iri": null,
-      "name": {},
-      "description": {},
-      "ends": [{
-        "name": {},
-        "description": {},
-        "concept": "xg0kzal0g2m7d1ix6t",
-        "iri": null
-      }, {
-        "name": { "en": "Tight Art" },
-        "description": {},
-        "concept": "http://www.w3.org/2000/01/rdf-schema#Literal",
-        "iri": "tightArt"
-      }]
-    }, {
-      "id": "wa1svaft06dm7d1jcd8",
-      "iri": "upsetProgram",
-      "type": ["class"],
-      "name": { "en": "Upset Program" },
-      "description": {}
-    }, {
-      "id": "s4gk5aa3z48m7d1jgjh",
-      "iri": null,
-      "child": "lqo2gocgg4sm7d1ivqx",
-      "parent": "wa1svaft06dm7d1jcd8",
-      "type": ["generalization"]
-    }, {
-      "iri": "sweetState1",
-      "profiling": ["xg0kzal0g2m7d1ix6t"],
-      "name": { "en": "Sweet State" },
-      "nameFromProfiled": "xg0kzal0g2m7d1ix6t",
-      "description": {},
-      "descriptionFromProfiled": "xg0kzal0g2m7d1ix6t",
-      "usageNote": {},
-      "usageNoteFromProfiled": null,
-      "id": "hwey2q71bvjm7d1jrlq",
-      "type": ["class-profile"],
-      "externalDocumentationUrl": "external-doc-1",
-      "tags": [],
-      controlledVocabularies: [],
-    } as SemanticModelClassProfile, {
-      "id": "94kn5yss8dm7d1jv9z",
-      "type": ["class-profile"],
-      "description": { "en": "Changed in profile" },
-      "descriptionFromProfiled": null,
-      "name": { "en": "Flat Back Changed in Profile" },
-      "nameFromProfiled": null,
-      "iri": "flatBack1",
-      "usageNote": { "en": "usage note" },
-      "usageNoteFromProfiled": null,
-      "profiling": ["lqo2gocgg4sm7d1ivqx"],
-      "externalDocumentationUrl": "external-doc-2",
-      "tags": [DSV_CLASS_ROLE.supportive],
-      "controlledVocabularies": undefined,
-    } as SemanticModelClassProfile, {
-      "ends": [{
-        "name": null,
-        "nameFromProfiled": null,
-        "description": null,
-        "descriptionFromProfiled": null,
-        "iri": null,
-        "cardinality": [0, null],
-        "usageNote": null,
-        "usageNoteFromProfiled": null,
-        "profiling": [],
-        "concept": "hwey2q71bvjm7d1jrlq",
-        "externalDocumentationUrl": "external-doc-3",
-        "tags": [DSV_MANDATORY_LEVEL.optional],
-      }, {
-        "name": { "en": "Drab Moment" },
-        "nameFromProfiled": "u42wg5rcg2im7d1j3hm",
-        "description": {},
-        "descriptionFromProfiled": "u42wg5rcg2im7d1j3hm",
-        "iri": "SweetState.drabMoment",
-        "cardinality": [0, null],
-        "usageNote": {},
-        "usageNoteFromProfiled": null,
-        "profiling": ["u42wg5rcg2im7d1j3hm"],
-        "concept": "94kn5yss8dm7d1jv9z",
-        "externalDocumentationUrl": "external-doc-4",
-        "tags": [DSV_MANDATORY_LEVEL.recommended],
-      }],
-      "id": "fk532ihkfa5m7d1k90e",
-      "type": ["relationship-profile"],
-    } as SemanticModelRelationshipProfile, {
-      "id": "f9tj2irq2gm7d1lcrj",
-      "type": ["relationship"],
-      "iri": null,
-      "name": {},
-      "description": {},
-      "ends": [{
-        "name": {},
-        "description": {},
-        "cardinality": null,
-        "concept": "xg0kzal0g2m7d1ix6t",
-        "iri": null
-      }, {
-        "name": { "en": "Extensive Face" },
-        "description": {},
-        "cardinality": null,
-        "concept": "lqo2gocgg4sm7d1ivqx",
-        "iri": "extensiveFace"
-      }]
-    }, {
-      "ends": [{
-        "name": null,
-        "nameFromProfiled": null,
-        "description": null,
-        "descriptionFromProfiled": null,
-        "iri": null,
-        "cardinality": [0, null],
-        "usageNote": null,
-        "usageNoteFromProfiled": null,
-        "profiling": [],
-        "concept": "hwey2q71bvjm7d1jrlq",
-        "externalDocumentationUrl": null,
-        "tags": [],
-      }, {
-        "name": {},
-        "nameFromProfiled": "rz94ir172eqm7d1j8i2",
-        "description": {},
-        "descriptionFromProfiled": "rz94ir172eqm7d1j8i2",
-        "iri": "SweetState.tightArtChanges",
-        "cardinality": [0, null],
-        "usageNote": {},
-        "usageNoteFromProfiled": null,
-        "profiling": ["rz94ir172eqm7d1j8i2"],
-        "concept": "http://www.w3.org/2000/01/rdf-schema#Literal",
-        "externalDocumentationUrl": "external-doc-4",
-        "tags": [DSV_MANDATORY_LEVEL.recommended],
-      }],
-      "id": "kss58ru9dom7d1omi4",
-      "type": ["relationship-profile"]
-    } as SemanticModelRelationshipProfile]
-  } as EntityListContainer;
+  const vocabulary = createDefaultSemanticModelBuilder({
+    baseIdentifier: "v#",
+    baseIri: "http://dcat/model/",
+  });
+  const flatBack = vocabulary.class({ iri: "flatBack", name: { en: "Flat Back" } });
+  const sweetState = vocabulary.class({ iri: "http://localhost/sweetState", name: { en: "Sweet State" } });
+  const drabMoment = sweetState.property({
+    iri: "drabMoment", name: { en: "Drab Moment" }, range: flatBack,
+  });
+  const tightArt = sweetState.property({
+    iri: "tightArt", name: { en: "Tight Art" },
+    range: { identifier: "http://www.w3.org/2000/01/rdf-schema#Literal" },
+  });
+
+  const profile = createDefaultProfileModelBuilder({
+    baseIdentifier: "p#",
+    baseIri: "http://dcat/model/",
+  });
+  const sweetState1 = profile.class({
+    iri: "sweetState1",
+    externalDocumentationUrl: "external-doc-1",
+  })
+    .reuseName(sweetState)
+    .reuseDescription(sweetState);
+  const flatBack1 = profile.class({
+    iri: "flatBack1",
+    name: { en: "Flat Back Changed in Profile" },
+    description: { en: "Changed in profile" },
+    usageNote: { en: "usage note" },
+    externalDocumentationUrl: "external-doc-2",
+    tags: [DSV_CLASS_ROLE.supportive],
+  })
+    .profile(flatBack);
+
+  const sweetStateDrabMoment = profile.property({
+    iri: "SweetState.drabMoment",
+    cardinality: [0, null],
+  })
+    .domain(sweetState1)
+    .range(flatBack1)
+    .reuseName(drabMoment)
+    .reuseDescription(drabMoment)
+    .recommended();
+  // profile-model's builder doesn't yet forward externalDocumentationUrl
+  // onto a property's range end; set it directly on the underlying entity.
+  (sweetStateDrabMoment as any).entity.ends[1].externalDocumentationUrl = "external-doc-4";
+
+  const sweetStateTightArtChanges = profile.property({
+    iri: "SweetState.tightArtChanges",
+    cardinality: [0, null],
+  })
+    .domain(sweetState1)
+    .range("http://www.w3.org/2000/01/rdf-schema#Literal")
+    .reuseName(tightArt)
+    .reuseDescription(tightArt)
+    .recommended();
+  (sweetStateTightArtChanges as any).entity.ends[1].externalDocumentationUrl = "external-doc-4";
+
+  const container = mergeEntityListContainers(
+    toEntityListContainer(vocabulary.build()),
+    toEntityListContainer(profile.build()),
+  );
 
   const context = createContext([container]);
 
@@ -299,15 +174,15 @@ test("End to end test I.", async () => {
   expect(parsedConceptualModel).toStrictEqual(dsvModel);
 
   const iriToIdentifier: Record<string, string> = {
-    "http://dcat/model/sweetState1": "hwey2q71bvjm7d1jrlq",
-    "http://dcat/model/flatBack1": "94kn5yss8dm7d1jv9z",
-    "http://dcat/model/SweetState.drabMoment": "fk532ihkfa5m7d1k90e",
-    "http://dcat/model/SweetState.tightArtChanges": "kss58ru9dom7d1omi4",
+    "http://dcat/model/sweetState1": sweetState1.identifier,
+    "http://dcat/model/flatBack1": flatBack1.identifier,
+    "http://dcat/model/SweetState.drabMoment": sweetStateDrabMoment.identifier,
+    "http://dcat/model/SweetState.tightArtChanges": sweetStateTightArtChanges.identifier,
     // Vocabulary
-    "http://dcat/model/flatBack": "lqo2gocgg4sm7d1ivqx",
-    "http://dcat/model/tightArt": "rz94ir172eqm7d1j8i2",
-    "http://localhost/sweetState": "xg0kzal0g2m7d1ix6t",
-    "http://dcat/model/drabMoment": "u42wg5rcg2im7d1j3hm",
+    "http://dcat/model/flatBack": flatBack.identifier,
+    "http://dcat/model/tightArt": tightArt.identifier,
+    "http://localhost/sweetState": sweetState.identifier,
+    "http://dcat/model/drabMoment": drabMoment.identifier,
     // Identity for test
     "http://www.w3.org/2000/01/rdf-schema#Literal": "http://www.w3.org/2000/01/rdf-schema#Literal",
   };
@@ -325,19 +200,19 @@ test("End to end test I.", async () => {
     "baseIri": "", // We can not detect the base IRI yet.
     "entities": [{
       "iri": "sweetState1",
-      "profiling": ["xg0kzal0g2m7d1ix6t"],
+      "profiling": [sweetState.identifier],
       "name": {},
-      "nameFromProfiled": "xg0kzal0g2m7d1ix6t",
+      "nameFromProfiled": sweetState.identifier,
       "description": {},
-      "descriptionFromProfiled": "xg0kzal0g2m7d1ix6t",
+      "descriptionFromProfiled": sweetState.identifier,
       "usageNote": {},
       "usageNoteFromProfiled": null,
-      "id": "hwey2q71bvjm7d1jrlq",
+      "id": sweetState1.identifier,
       "type": ["class-profile"],
       "externalDocumentationUrl": "external-doc-1",
       "tags": [],
     }, {
-      "id": "94kn5yss8dm7d1jv9z",
+      "id": flatBack1.identifier,
       "type": ["class-profile"],
       "description": { "en": "Changed in profile" },
       "descriptionFromProfiled": null,
@@ -346,7 +221,7 @@ test("End to end test I.", async () => {
       "iri": "flatBack1",
       "usageNote": { "en": "usage note" },
       "usageNoteFromProfiled": null,
-      "profiling": ["lqo2gocgg4sm7d1ivqx"],
+      "profiling": [flatBack.identifier],
       "externalDocumentationUrl": "external-doc-2",
       "tags": [DSV_CLASS_ROLE.supportive],
     }, {
@@ -357,62 +232,61 @@ test("End to end test I.", async () => {
         "descriptionFromProfiled": null,
         "iri": null,
         // DSV does not support cardinality for domain.
-        "cardinality": null, // [0, null],
+        "cardinality": null,
         "usageNote": {},
         "usageNoteFromProfiled": null,
         "profiling": [],
-        "concept": "hwey2q71bvjm7d1jrlq",
+        "concept": sweetState1.identifier,
         "externalDocumentationUrl": null,
         "tags": [],
       }, {
         "name": {},
-        "nameFromProfiled": "rz94ir172eqm7d1j8i2",
+        "nameFromProfiled": tightArt.identifier,
         "description": {},
-        "descriptionFromProfiled": "rz94ir172eqm7d1j8i2",
+        "descriptionFromProfiled": tightArt.identifier,
         "iri": "SweetState.tightArtChanges",
         "cardinality": [0, null],
         "usageNote": {},
         "usageNoteFromProfiled": null,
-        "profiling": ["rz94ir172eqm7d1j8i2"],
+        "profiling": [tightArt.identifier],
         "concept": "http://www.w3.org/2000/01/rdf-schema#Literal",
         "externalDocumentationUrl": "external-doc-4",
         "tags": [DSV_MANDATORY_LEVEL.recommended],
       }],
-      "id": "kss58ru9dom7d1omi4",
+      "id": sweetStateTightArtChanges.identifier,
       "type": ["relationship-profile"]
-    } as SemanticModelRelationshipProfile, {
+    }, {
       "ends": [{
         "name": {},
         "nameFromProfiled": null,
         "description": {},
         "descriptionFromProfiled": null,
         "iri": null,
-        // DSV does not support cardinality for domain.
-        "cardinality": null, // [0, null],
+        "cardinality": null,
         "usageNote": {},
         "usageNoteFromProfiled": null,
         "profiling": [],
-        "concept": "hwey2q71bvjm7d1jrlq",
+        "concept": sweetState1.identifier,
         "externalDocumentationUrl": null,
         "tags": [],
       }, {
         "name": {},
-        "nameFromProfiled": "u42wg5rcg2im7d1j3hm",
+        "nameFromProfiled": drabMoment.identifier,
         "description": {},
-        "descriptionFromProfiled": "u42wg5rcg2im7d1j3hm",
+        "descriptionFromProfiled": drabMoment.identifier,
         "iri": "SweetState.drabMoment",
         "cardinality": [0, null],
         "usageNote": {},
         "usageNoteFromProfiled": null,
-        "profiling": ["u42wg5rcg2im7d1j3hm"],
-        "concept": "94kn5yss8dm7d1jv9z",
+        "profiling": [drabMoment.identifier],
+        "concept": flatBack1.identifier,
         "externalDocumentationUrl": "external-doc-4",
         "tags": [DSV_MANDATORY_LEVEL.recommended],
       }],
-      "id": "fk532ihkfa5m7d1k90e",
+      "id": sweetStateDrabMoment.identifier,
       "type": ["relationship-profile"]
-    } as SemanticModelRelationshipProfile],
-  } as EntityListContainer;
+    }],
+  };
 
   expect(parsedContainer).toMatchObject(expectedContainer);
 
@@ -420,137 +294,54 @@ test("End to end test I.", async () => {
 
 test("Issue #1005", async () => {
 
-  const container = {
-    "baseIri": "http://dcat/model/",
-    "entities": [{
-      "id": "jv7zjcl0xnfm8lqej9v",
-      "iri": "bulkyForce",
-      "type": ["class"],
-      "name": { "en": "Bulky Force" },
-      "description": {},
-    }, {
-      "id": "dme1xc0ubemm8lqekg1",
-      "iri": "juicyBusiness",
-      "type": ["class"],
-      "name": { "en": "Juicy Business" },
-      "description": {},
-    }, { // 2
-      "id": "v5d9yd13by9m8mvndtv",
-      "type": ["class-profile"],
-      "description": {},
-      "descriptionFromProfiled": "dme1xc0ubemm8lqekg1",
-      "name": { "en": "Juicy Business" },
-      "nameFromProfiled": null,
-      "iri": "juicyBusinessProfile",
-      "usageNote": {},
-      "usageNoteFromProfiled": null,
-      "profiling": ["dme1xc0ubemm8lqekg1"],
-      "externalDocumentationUrl": null,
-      "tags": [],
-    }, { // 3
-      "id": "8ut1fqfcd2dm8mvnh2y",
-      "type": ["class-profile"],
-      "description": {},
-      "descriptionFromProfiled": "jv7zjcl0xnfm8lqej9v",
-      "name": { "en": "Bulky Force" },
-      "nameFromProfiled": null,
-      "iri": "bulkyForceProfile",
-      "usageNote": {},
-      "usageNoteFromProfiled": null,
-      "profiling": ["jv7zjcl0xnfm8lqej9v"],
-      "externalDocumentationUrl": null,
-      "tags": [],
-    }, {
-      "id": "flybrmenrykm8mwsi0o",
-      "type": ["relationship"],
-      "iri": null,
-      "name": {},
-      "description": {},
-      "ends": [{
-        "name": {},
-        "description": {},
-        "concept": "jv7zjcl0xnfm8lqej9v",
-        "iri": null
-      }, {
-        "name": { "en": "Juicy Work" },
-        "description": {},
-        "concept": "dme1xc0ubemm8lqekg1",
-        "iri": "juicyWork",
-      }],
-    }, { // 5
-      "ends": [{
-        "name": {},
-        "nameFromProfiled": null,
-        "description": {},
-        "descriptionFromProfiled": null,
-        "iri": null,
-        "cardinality": null,
-        "usageNote": {},
-        "usageNoteFromProfiled": null,
-        "profiling": [],
-        "concept": "8ut1fqfcd2dm8mvnh2y",
-        "externalDocumentationUrl": null,
-        "tags": [],
-      }, {
-        "name": { "en": "Juicy Work" },
-        "nameFromProfiled": null,
-        "description": {},
-        "descriptionFromProfiled": null,
-        "iri": "BulkyForce.juicyWork",
-        "cardinality": null,
-        "usageNote": {},
-        "usageNoteFromProfiled": null,
-        "profiling": ["flybrmenrykm8mwsi0o"],
-        "concept": "v5d9yd13by9m8mvndtv",
-        "externalDocumentationUrl": null,
-        "tags": [],
-      }],
-      "id": "vaz6nlwa9am8mwszz2",
-      "type": ["relationship-profile"],
-    }, { // 6
-      "id": "yjtb7fast5lm8mwtnpa",
-      "iri": null,
-      "child": "8ut1fqfcd2dm8mvnh2y",
-      "parent": "v5d9yd13by9m8mvndtv",
-      "type": ["generalization"],
-    }, { // 7
-      "id": "bv12356pl4im8mwu7ty",
-      "type": ["relationship-profile"],
-      "ends": [{
-        "name": {},
-        "nameFromProfiled": null,
-        "description": {},
-        "descriptionFromProfiled": null,
-        "iri": null,
-        "cardinality": null,
-        "usageNote": {},
-        "usageNoteFromProfiled": null,
-        "profiling": [],
-        "concept": "8ut1fqfcd2dm8mvnh2y",
-        "externalDocumentationUrl": null,
-        "tags": [],
-      }, {
-        "name": { "en": "Juicy Work" },
-        "nameFromProfiled": null,
-        "description": {},
-        "descriptionFromProfiled": null,
-        "iri": "JuicyBusiness.juicyWorkSpecial",
-        "cardinality": null,
-        "usageNote": {},
-        "usageNoteFromProfiled": null,
-        "profiling": ["flybrmenrykm8mwsi0o"],
-        "concept": "v5d9yd13by9m8mvndtv",
-        "externalDocumentationUrl": null,
-        "tags": [],
-      }],
-    }, { // 8
-      "id": "yjtb5fasdt5lm9mwtbcb",
-      "iri": null,
-      "child": "bv12356pl4im8mwu7ty",
-      "parent": "vaz6nlwa9am8mwszz2",
-      "type": ["generalization"],
-    }],
-  };
+  const vocabulary = createDefaultSemanticModelBuilder({
+    baseIdentifier: "v#",
+    baseIri: "http://dcat/model/",
+  });
+  const bulkyForce = vocabulary.class({ iri: "bulkyForce", name: { en: "Bulky Force" } });
+  const juicyBusiness = vocabulary.class({ iri: "juicyBusiness", name: { en: "Juicy Business" } });
+  const juicyWork = bulkyForce.property({
+    iri: "juicyWork", name: { en: "Juicy Work" }, range: juicyBusiness,
+  });
+
+  const profile = createDefaultProfileModelBuilder({
+    baseIdentifier: "p#",
+    baseIri: "http://dcat/model/",
+  });
+  const juicyBusinessProfile = profile.class({
+    iri: "juicyBusinessProfile",
+    name: { en: "Juicy Business" },
+  })
+    .reuseDescription(juicyBusiness);
+  const bulkyForceProfile = profile.class({
+    iri: "bulkyForceProfile",
+    name: { en: "Bulky Force" },
+  })
+    .reuseDescription(bulkyForce);
+  // bulkyForceProfile specializes juicyBusinessProfile.
+  profile.generalization(juicyBusinessProfile, bulkyForceProfile);
+
+  const bulkyForceJuicyWork = profile.property({
+    iri: "BulkyForce.juicyWork",
+    name: { en: "Juicy Work" },
+  })
+    .domain(bulkyForceProfile)
+    .range(juicyBusinessProfile)
+    .profile(juicyWork);
+  const juicyBusinessJuicyWorkSpecial = profile.property({
+    iri: "JuicyBusiness.juicyWorkSpecial",
+    name: { en: "Juicy Work" },
+  })
+    .domain(bulkyForceProfile)
+    .range(juicyBusinessProfile)
+    .profile(juicyWork);
+  // juicyBusinessJuicyWorkSpecial specializes bulkyForceJuicyWork.
+  profile.generalization(bulkyForceJuicyWork, juicyBusinessJuicyWorkSpecial);
+
+  const container = mergeEntityListContainers(
+    toEntityListContainer(vocabulary.build()),
+    toEntityListContainer(profile.build()),
+  );
 
   const context = createContext([container]);
 
@@ -622,13 +413,13 @@ test("Issue #1005", async () => {
   const parsedConceptualModel = (await rdfToDsv(actualRdf))[0]!;
 
   const iriToIdentifier: Record<string, string> = {
-    "http://dcat/model/bulkyForce": "jv7zjcl0xnfm8lqej9v",
-    "http://dcat/model/juicyBusiness": "dme1xc0ubemm8lqekg1",
-    "http://dcat/model/juicyBusinessProfile": "v5d9yd13by9m8mvndtv",
-    "http://dcat/model/bulkyForceProfile": "8ut1fqfcd2dm8mvnh2y",
-    "http://dcat/model/juicyWork": "flybrmenrykm8mwsi0o",
-    "http://dcat/model/BulkyForce.juicyWork": "vaz6nlwa9am8mwszz2",
-    "http://dcat/model/JuicyBusiness.juicyWorkSpecial": "bv12356pl4im8mwu7ty",
+    "http://dcat/model/bulkyForce": bulkyForce.identifier,
+    "http://dcat/model/juicyBusiness": juicyBusiness.identifier,
+    "http://dcat/model/juicyBusinessProfile": juicyBusinessProfile.identifier,
+    "http://dcat/model/bulkyForceProfile": bulkyForceProfile.identifier,
+    "http://dcat/model/juicyWork": juicyWork.identifier,
+    "http://dcat/model/BulkyForce.juicyWork": bulkyForceJuicyWork.identifier,
+    "http://dcat/model/JuicyBusiness.juicyWorkSpecial": juicyBusinessJuicyWorkSpecial.identifier,
   };
 
   let counter = 0;
@@ -643,22 +434,66 @@ test("Issue #1005", async () => {
   expect(parsedContainer).toMatchObject({
     baseIri: "",
     entities: [{
-      ...container.entities[2],
+      id: juicyBusinessProfile.identifier,
+      iri: "juicyBusinessProfile",
+      type: ["class-profile"],
+      name: { en: "Juicy Business" },
+      nameFromProfiled: null,
       description: {},
+      descriptionFromProfiled: juicyBusiness.identifier,
+      profiling: [juicyBusiness.identifier],
+      usageNote: {},
+      usageNoteFromProfiled: null,
+      externalDocumentationUrl: null,
+      tags: [],
     }, {
-      ...container.entities[3],
+      id: bulkyForceProfile.identifier,
+      iri: "bulkyForceProfile",
+      type: ["class-profile"],
+      name: { en: "Bulky Force" },
+      nameFromProfiled: null,
       description: {},
-    },
-    {
-      ...container.entities[6],
-      id: "id-1"
-    },
-    container.entities[5],
-    container.entities[7],
-    {
-      ...container.entities[8],
-      id: "id-2"
-    }]
+      descriptionFromProfiled: bulkyForce.identifier,
+      profiling: [bulkyForce.identifier],
+      usageNote: {},
+      usageNoteFromProfiled: null,
+      externalDocumentationUrl: null,
+      tags: [],
+    }, {
+      id: "id-1",
+      child: bulkyForceProfile.identifier,
+      parent: juicyBusinessProfile.identifier,
+      type: ["generalization"],
+    }, {
+      id: bulkyForceJuicyWork.identifier,
+      type: ["relationship-profile"],
+      ends: [{
+        concept: bulkyForceProfile.identifier,
+      }, {
+        iri: "BulkyForce.juicyWork",
+        name: { en: "Juicy Work" },
+        nameFromProfiled: null,
+        profiling: [juicyWork.identifier],
+        concept: juicyBusinessProfile.identifier,
+      }],
+    }, {
+      id: juicyBusinessJuicyWorkSpecial.identifier,
+      type: ["relationship-profile"],
+      ends: [{
+        concept: bulkyForceProfile.identifier,
+      }, {
+        iri: "JuicyBusiness.juicyWorkSpecial",
+        name: { en: "Juicy Work" },
+        nameFromProfiled: null,
+        profiling: [juicyWork.identifier],
+        concept: juicyBusinessProfile.identifier,
+      }],
+    }, {
+      id: "id-2",
+      child: juicyBusinessJuicyWorkSpecial.identifier,
+      parent: bulkyForceJuicyWork.identifier,
+      type: ["generalization"],
+    }],
   });
 
 });
