@@ -1,109 +1,64 @@
-import {
-    SemanticModelClass,
-    SemanticModelRelationship,
-} from "@dataspecer/core-v2/semantic-model/concepts";
-import {
-    SemanticModelClassProfile,
-    SemanticModelRelationshipProfile,
-} from "@dataspecer/core-v2/semantic-model/profile/concepts";
+import { createDefaultSemanticModelBuilder } from "@dataspecer/semantic-model";
+import { createDefaultProfileModelBuilder } from "@dataspecer/profile-model";
 import {
     Cardinality,
     ClassRole,
     ApplicationProfile,
-    PropertyProfile,
     RequirementLevel,
     ClassProfile,
 } from "./dsv-model.ts";
-import { EntityListContainer } from "./entity-model.ts";
 import {
     createContext,
     entityListContainerToDsvModel,
 } from "./entity-model-to-dsv.ts";
+import { mergeEntityListContainers, toEntityListContainer } from "./entity-list-container-builder.ts";
 
 test("Issue #608", () => {
 
-    const containers = [{
-        "baseIri": "http://dcat/model/",
-        "entities": [{
-            "id": "hslnicx7yaely6tdyht",
-            "profiling": ["http://www.w3.org/ns/Dataset"],
-            "type": ["class-profile"],
-            "iri": "http://www.w3.org/ns/Dataset-profile",
-            "name": null,
-            "nameFromProfiled": "http://www.w3.org/ns/Dataset",
-            "description": null,
-            "descriptionFromProfiled": "http://www.w3.org/ns/Dataset",
-            "usageNote": {},
-            "usageNoteFromProfiled": null,
-        } as SemanticModelClassProfile, {
-            "usageNote": {},
-            "id": "3sww3fqegbxly6tk8z3",
-            "type": ["relationship-profile"],
-            "ends": [{
-                "name": null,
-                "nameFromProfiled": "",
-                "description": null,
-                "descriptionFromProfiled": null,
-                "cardinality": null,
-                "concept": "hslnicx7yaely6tdyht",
-                "usageNote": {},
-                "usageNoteFromProfiled": null,
-                "iri": null,
-                "profiling": [],
-                "externalDocumentationUrl": null,
-                "tags": [],
-            }, {
-                "name": { "en": "Dataset title" },
-                "nameFromProfiled": null,
-                "description": { "en": "A name given to the dataset." },
-                "descriptionFromProfiled": null,
-                "cardinality": null,
-                "concept": "http://www.w3.org/2000/01/rdf-schema#Literal",
-                "usageNote": {},
-                "usageNoteFromProfiled": null,
-                "iri": "terms-title-profile",
-                "profiling": ["http://purl.org/dc/terms/title"],
-                "externalDocumentationUrl": null,
-                "tags": [],
-            }],
-        } as SemanticModelRelationshipProfile, {
-            "id": "http://www.w3.org/ns/Dataset",
-            "iri": "http://www.w3.org/ns/Dataset",
-            "name": {
-                "cs": "Datová sada",
-                "en": "Dataset"
-            },
-            "description": {
-                "cs": "Kolekce dat, ke stažení.",
-                "en": "A collection of data, published or curated by a single agent, and available for access or download in one or more representations."
-            },
-            "type": ["class"],
-        }, {
-            "id": "http://purl.org/dc/terms/title",
-            "iri": null,
-            "type": ["relationship"],
-            "name": {},
-            "description": {},
-            "ends": [{
-                "cardinality": [0, null],
-                "name": {},
-                "description": {},
-                "concept": "http://www.w3.org/2002/07/owl#Thing",
-            }, {
-                "cardinality": [0, null
-                ],
-                "name": { "en": "Title" },
-                "description": { "en": "A name given to the resource." },
-                "concept": null,
-                "iri": "http://purl.org/dc/terms/title",
-            }],
-        }],
-    }] as any;
+    const vocabulary = createDefaultSemanticModelBuilder({
+        baseIdentifier: "v#",
+        baseIri: "http://dcat/model/",
+    });
+    const dataset = vocabulary.class({
+        iri: "http://www.w3.org/ns/Dataset",
+        name: { cs: "Datová sada", en: "Dataset" },
+        description: {
+            cs: "Kolekce dat, ke stažení.",
+            en: "A collection of data, published or curated by a single agent, and available for access or download in one or more representations.",
+        },
+    });
+    const title = dataset.property({
+        iri: "http://purl.org/dc/terms/title",
+        range: { identifier: "http://www.w3.org/2000/01/rdf-schema#Literal" },
+    });
 
-    const context = createContext(containers);
+    const profile = createDefaultProfileModelBuilder({
+        baseIdentifier: "p#",
+        baseIri: "http://dcat/model/",
+    });
+    const datasetProfile = profile.class({ iri: "http://www.w3.org/ns/Dataset-profile" })
+        .reuseName(dataset)
+        .reuseDescription(dataset);
+    const titleProfile = profile.property({
+        iri: "terms-title-profile",
+        name: { en: "Dataset title" },
+    })
+        .domain(datasetProfile)
+        .range("http://www.w3.org/2000/01/rdf-schema#Literal")
+        .profile(title);
+    // profile-model's builder doesn't yet forward `description` onto a
+    // property's range end (unlike `.class()`); set it directly on the
+    // underlying entity.
+    (titleProfile as any).entity.ends[1].description = { en: "A name given to the dataset." };
+
+    const container = mergeEntityListContainers(
+        toEntityListContainer(vocabulary.build()),
+        toEntityListContainer(profile.build()),
+    );
+    const context = createContext([container]);
 
     const actual = entityListContainerToDsvModel(
-        "http://dcat/model/", containers[0], context);
+        "http://dcat/model/", container, context);
 
     const expected: ApplicationProfile = {
         "iri": "http://dcat/model/",
@@ -155,84 +110,61 @@ test("Issue #608", () => {
 
 test("Default test for profiles.", () => {
 
-    const containers: EntityListContainer[] = [{
-        "baseIri": "http://dcat/model/",
-        "entities": [{
-            "id": "hslnicx7yaely6tdyht",
-            "profiling": ["http://www.w3.org/ns/Dataset"],
-            "type": ["class-profile"],
-            "iri": "http://www.w3.org/ns/Dataset-profile",
-            "name": null,
-            "nameFromProfiled": "http://www.w3.org/ns/Dataset",
-            "description": { "": "ignore this" },
-            "descriptionFromProfiled": "http://www.w3.org/ns/Dataset",
-            "usageNote": { "": "..." },
-            "usageNoteFromProfiled": null,
-            "externalDocumentationUrl": "http://documenation-1",
-            "tags": [],
-            controlledVocabularies: [],
-        } as SemanticModelClassProfile, {
-            "id": "3sww3fqegbxly6tk8z3",
-            "type": ["relationship-profile"],
-            "ends": [{
-                "name": null,
-                "description": null,
-                "cardinality": null,
-                "concept": "hslnicx7yaely6tdyht",
-                "usageNote": {},
-                "iri": null,
-            }, {
-                "name": { "en": "Dataset title" },
-                "nameFromProfiled": null,
-                "description": { "en": "A name given to the dataset." },
-                "descriptionFromProfiled": null,
-                "usageNote": {},
-                "usageNoteFromProfiled": null,
-                "cardinality": null,
-                "concept": "http://www.w3.org/2000/01/rdf-schema#Literal",
-                "iri": "terms-title-profile",
-                "profiling": ["http://purl.org/dc/terms/title"],
-                "externalDocumentationUrl": "http://documenation-2",
-                "tags": [],
-            }],
-        } as SemanticModelRelationshipProfile, {
-            "id": "http://www.w3.org/ns/Dataset",
-            "iri": "http://www.w3.org/ns/Dataset",
-            "name": {
-                "cs": "Datová sada",
-                "en": "Dataset"
-            },
-            "description": {
-                "cs": "Kolekce dat, ke stažení.",
-                "en": "A collection of data, published or curated by a single agent, and available for access or download in one or more representations."
-            },
-            "type": ["class"],
-        } as SemanticModelClass, {
-            "id": "http://purl.org/dc/terms/title",
-            "iri": null,
-            "type": ["relationship"],
-            "name": {},
-            "description": {},
-            "ends": [{
-                "cardinality": [0, null],
-                "name": {},
-                "description": {},
-                "concept": "http://www.w3.org/2002/07/owl#Thing",
-            }, {
-                "cardinality": [0, null
-                ],
-                "name": { "en": "Title" },
-                "description": { "en": "A name given to the resource." },
-                "concept": null,
-                "iri": "http://purl.org/dc/terms/title",
-            }],
-        } as SemanticModelRelationship],
-    }];
+    const vocabulary = createDefaultSemanticModelBuilder({
+        baseIdentifier: "v#",
+        baseIri: "http://dcat/model/",
+    });
+    const dataset = vocabulary.class({
+        iri: "http://www.w3.org/ns/Dataset",
+        name: { cs: "Datová sada", en: "Dataset" },
+        description: {
+            cs: "Kolekce dat, ke stažení.",
+            en: "A collection of data, published or curated by a single agent, and available for access or download in one or more representations.",
+        },
+    });
+    const title = dataset.property({
+        iri: "http://purl.org/dc/terms/title",
+        range: { identifier: "http://www.w3.org/2000/01/rdf-schema#Literal" },
+    });
 
-    const context = createContext(containers);
+    const profile = createDefaultProfileModelBuilder({
+        baseIdentifier: "p#",
+        baseIri: "http://dcat/model/",
+    });
+    const datasetProfile = profile.class({
+        iri: "http://www.w3.org/ns/Dataset-profile",
+        // An own description value is set but ignored downstream, since
+        // reuseDescription below makes descriptionFromProfiled take
+        // precedence over it.
+        description: { "": "ignore this" },
+        usageNote: { "": "..." },
+        externalDocumentationUrl: "http://documenation-1",
+    })
+        .reuseName(dataset)
+        .reuseDescription(dataset);
+    const titleProfile = profile.property({
+        iri: "terms-title-profile",
+        name: { en: "Dataset title" },
+    })
+        .domain(datasetProfile)
+        .range("http://www.w3.org/2000/01/rdf-schema#Literal")
+        .profile(title);
+    // profile-model's builder doesn't yet forward `description`/
+    // `externalDocumentationUrl` onto a property's range end (unlike
+    // `.class()`); set them directly on the underlying entity.
+    Object.assign((titleProfile as any).entity.ends[1], {
+        description: { en: "A name given to the dataset." },
+        externalDocumentationUrl: "http://documenation-2",
+    });
+
+    const container = mergeEntityListContainers(
+        toEntityListContainer(vocabulary.build()),
+        toEntityListContainer(profile.build()),
+    );
+    const context = createContext([container]);
 
     const actual = entityListContainerToDsvModel(
-        "http://dcat/model/", containers[0]!, context);
+        "http://dcat/model/", container, context);
 
     const expected: ApplicationProfile = {
         "iri": "http://dcat/model/",
@@ -284,130 +216,52 @@ test("Default test for profiles.", () => {
 
 test("Issue #1005", () => {
 
-    const containers = [{
-        "baseIri": "http://dcat/model/",
-        "entities": [{
-            "id": "jv7zjcl0xnfm8lqej9v",
-            "iri": "bulkyForce",
-            "type": ["class"],
-            "name": { "en": "Bulky Force" },
-            "description": {},
-        }, {
-            "id": "dme1xc0ubemm8lqekg1",
-            "iri": "juicyBusiness",
-            "type": ["class"],
-            "name": { "en": "Juicy Business" },
-            "description": {},
-        }, {
-            "id": "v5d9yd13by9m8mvndtv",
-            "type": ["class-profile"],
-            "description": {},
-            "descriptionFromProfiled": "dme1xc0ubemm8lqekg1",
-            "name": { "en": "Juicy Business" },
-            "nameFromProfiled": "dme1xc0ubemm8lqekg1",
-            "iri": "juicyBusiness",
-            "usageNote": {},
-            "usageNoteFromProfiled": null,
-            "profiling": ["dme1xc0ubemm8lqekg1"],
-        }, {
-            "id": "8ut1fqfcd2dm8mvnh2y",
-            "type": ["class-profile"],
-            "description": {},
-            "descriptionFromProfiled": "jv7zjcl0xnfm8lqej9v",
-            "name": { "en": "Bulky Force" },
-            "nameFromProfiled": "jv7zjcl0xnfm8lqej9v",
-            "iri": "bulkyForce",
-            "usageNote": {},
-            "usageNoteFromProfiled": null,
-            "profiling": ["jv7zjcl0xnfm8lqej9v"],
-        }, {
-            "id": "flybrmenrykm8mwsi0o",
-            "type": ["relationship"],
-            "iri": null,
-            "name": {},
-            "description": {},
-            "ends": [{
-                "name": {},
-                "description": {},
-                "concept": "jv7zjcl0xnfm8lqej9v",
-                "iri": null
-            }, {
-                "name": { "en": "Juicy Work" },
-                "description": {},
-                "concept": "dme1xc0ubemm8lqekg1",
-                "iri": "juicyWork",
-            }],
-        }, {
-            "ends": [{
-                "name": null,
-                "nameFromProfiled": null,
-                "description": null,
-                "descriptionFromProfiled": null,
-                "iri": null,
-                "cardinality": null,
-                "usageNote": null,
-                "usageNoteFromProfiled": null,
-                "profiling": [],
-                "concept": "8ut1fqfcd2dm8mvnh2y"
-            }, {
-                "name": { "en": "Juicy Work" },
-                "nameFromProfiled": "flybrmenrykm8mwsi0o",
-                "description": {},
-                "descriptionFromProfiled": "flybrmenrykm8mwsi0o",
-                "iri": "BulkyForce.juicyWork",
-                "cardinality": null,
-                "usageNote": {},
-                "usageNoteFromProfiled": null,
-                "profiling": ["flybrmenrykm8mwsi0o"],
-                "concept": "v5d9yd13by9m8mvndtv",
-            }],
-            "id": "vaz6nlwa9am8mwszz2",
-            "type": ["relationship-profile"],
-        }, {
-            "id": "yjtb7fast5lm8mwtnpa",
-            "iri": null,
-            "child": "8ut1fqfcd2dm8mvnh2y",
-            "parent": "v5d9yd13by9m8mvndtv",
-            "type": ["generalization"],
-        }, {
-            "id": "bv12356pl4im8mwu7ty",
-            "type": ["relationship-profile"],
-            "ends": [{
-                "name": null,
-                "nameFromProfiled": null,
-                "description": null,
-                "descriptionFromProfiled": null,
-                "iri": null,
-                "cardinality": null,
-                "usageNote": null,
-                "usageNoteFromProfiled": null,
-                "profiling": [],
-                "concept": "8ut1fqfcd2dm8mvnh2y",
-            }, {
-                "name": { "en": "Juicy Work" },
-                "nameFromProfiled": "flybrmenrykm8mwsi0o",
-                "description": {},
-                "descriptionFromProfiled": "flybrmenrykm8mwsi0o",
-                "iri": "JuicyBusiness.juicyWorkSpecial",
-                "cardinality": null,
-                "usageNote": {},
-                "usageNoteFromProfiled": null,
-                "profiling": ["flybrmenrykm8mwsi0o"],
-                "concept": "v5d9yd13by9m8mvndtv",
-            }],
-        }, {
-            "id": "yjtb5fasdt5lm9mwtbcb",
-            "iri": null,
-            "child": "bv12356pl4im8mwu7ty",
-            "parent": "vaz6nlwa9am8mwszz2",
-            "type": ["generalization"],
-        }],
-    }] as any;
+    const vocabulary = createDefaultSemanticModelBuilder({
+        baseIdentifier: "v#",
+        baseIri: "http://dcat/model/",
+    });
+    const bulkyForce = vocabulary.class({ iri: "bulkyForce", name: { en: "Bulky Force" } });
+    const juicyBusiness = vocabulary.class({ iri: "juicyBusiness", name: { en: "Juicy Business" } });
+    const juicyWork = bulkyForce.property({
+        iri: "juicyWork",
+        name: { en: "Juicy Work" },
+        range: juicyBusiness,
+    });
 
-    const context = createContext(containers);
+    const profile = createDefaultProfileModelBuilder({
+        baseIdentifier: "p#",
+        baseIri: "http://dcat/model/",
+    });
+    const juicyBusinessProfile = profile.class({ iri: "juicyBusiness" })
+        .reuseName(juicyBusiness)
+        .reuseDescription(juicyBusiness);
+    const bulkyForceProfile = profile.class({ iri: "bulkyForce" })
+        .reuseName(bulkyForce)
+        .reuseDescription(bulkyForce);
+    // bulkyForceProfile specializes juicyBusinessProfile.
+    profile.generalization(juicyBusinessProfile, bulkyForceProfile);
+
+    const bulkyForceJuicyWork = profile.property({ iri: "BulkyForce.juicyWork" })
+        .domain(bulkyForceProfile)
+        .range(juicyBusinessProfile)
+        .reuseName(juicyWork)
+        .reuseDescription(juicyWork);
+    const juicyBusinessJuicyWorkSpecial = profile.property({ iri: "JuicyBusiness.juicyWorkSpecial" })
+        .domain(bulkyForceProfile)
+        .range(juicyBusinessProfile)
+        .reuseName(juicyWork)
+        .reuseDescription(juicyWork);
+    // juicyBusinessJuicyWorkSpecial specializes bulkyForceJuicyWork.
+    profile.generalization(bulkyForceJuicyWork, juicyBusinessJuicyWorkSpecial);
+
+    const container = mergeEntityListContainers(
+        toEntityListContainer(vocabulary.build()),
+        toEntityListContainer(profile.build()),
+    );
+    const context = createContext([container]);
 
     const actual = entityListContainerToDsvModel(
-        "http://dcat/model/", containers[0], context);
+        "http://dcat/model/", container, context);
 
     const expected: ApplicationProfile = {
         "iri": "http://dcat/model/",
@@ -509,38 +363,41 @@ test("Issue #1005", () => {
 });
 
 test("Issue #1238 - export reusedAsProperty", () => {
-    const containers = [{
+    const vocabulary = createDefaultSemanticModelBuilder({
+        baseIdentifier: "v#",
         baseIri: "https://mff-uk.github.io/specifications/dcat-dap#",
-        entities: [{
-            id: "dataset",
-            iri: "http://www.w3.org/ns/dcat#Dataset",
-            type: ["class"],
-            name: { en: "Dataset" },
-            description: { en: "A collection of data" },
-            nameProperty: "http://www.example.com/vocabulary#myNameProperty",
-            descriptionProperty: "http://www.w3.org/vocabulary#myDescriptionProperty",
-        }, {
-            id: "dataset-profile",
-            type: ["class-profile"],
-            iri: "Dataset",
-            profiling: ["dataset"],
-            name: null,
-            nameFromProfiled: "dataset",
-            nameProperty: "http://www.example.com/vocabulary#myOtherNameProperty",
-            description: null,
-            descriptionFromProfiled: "dataset",
-            descriptionProperty: null, // test default behavior
-            usageNote: {},
-            usageNoteFromProfiled: null,
-            tags: [],
-            externalDocumentationUrl: null,
-        }],
-    }] as any;
+    });
+    const dataset = vocabulary.class({
+        iri: "http://www.w3.org/ns/dcat#Dataset",
+        name: { en: "Dataset" },
+        description: { en: "A collection of data" },
+        nameProperty: "http://www.example.com/vocabulary#myNameProperty",
+        descriptionProperty: "http://www.w3.org/vocabulary#myDescriptionProperty",
+    });
 
-    const context = createContext(containers);
+    const profile = createDefaultProfileModelBuilder({
+        baseIdentifier: "p#",
+        baseIri: "https://mff-uk.github.io/specifications/dcat-dap#",
+    });
+    profile.class({
+        iri: "Dataset",
+        // Not part of SemanticModelClassProfile's own type (it's an
+        // aggregator-only concept), but read by entity-model-to-dsv.ts
+        // via a structural (nameProperty?) parameter - test default
+        // (unset) behavior for descriptionProperty by leaving it out.
+        nameProperty: "http://www.example.com/vocabulary#myOtherNameProperty",
+    } as any)
+        .reuseName(dataset)
+        .reuseDescription(dataset);
+
+    const container = mergeEntityListContainers(
+        toEntityListContainer(vocabulary.build()),
+        toEntityListContainer(profile.build()),
+    );
+    const context = createContext([container]);
     const actual = entityListContainerToDsvModel(
         "https://mff-uk.github.io/specifications/dcat-dap#",
-        containers[0],
+        container,
         context,
     );
 
@@ -560,108 +417,64 @@ test("Issue #1238 - export reusedAsProperty", () => {
 
 test("Resolves reused name/description property through a chain of class and relationship profiles.", () => {
 
-    const containers = [{
-        "baseIri": "http://dcat/model/",
-        "entities": [{
-            "id": "c1",
-            "iri": "c1",
-            "type": ["class"],
-            "name": {},
-            "description": {},
-            "nameProperty": "ex:nameProp",
-            "descriptionProperty": "ex:descProp",
-        }, {
-            "id": "p1",
-            "iri": "p1",
-            "type": ["class-profile"],
-            "profiling": ["c1"],
-            "name": null,
-            "nameFromProfiled": "c1",
-            "description": null,
-            "descriptionFromProfiled": "c1",
-            "usageNote": {},
-            "usageNoteFromProfiled": null,
-            "tags": [],
-        }, {
-            "id": "p2",
-            "iri": "p2",
-            "type": ["class-profile"],
-            "profiling": ["p1"],
-            "name": null,
-            "nameFromProfiled": "p1",
-            "nameProperty": "ex:overrideName",
-            "description": null,
-            "descriptionFromProfiled": "p1",
-            "descriptionProperty": "ex:overrideDesc",
-            "usageNote": {},
-            "usageNoteFromProfiled": null,
-            "tags": [],
-        }, {
-            "id": "r1",
-            "iri": null,
-            "type": ["relationship"],
-            "name": {},
-            "description": {},
-            "ends": [{
-                "concept": "c1",
-                "name": {},
-                "description": {},
-            }, {
-                "concept": "http://www.w3.org/2000/01/rdf-schema#Literal",
-                "iri": "attribute",
-                "name": {},
-                "description": {},
-                "nameProperty": "ex:relNameProp",
-                "descriptionProperty": "ex:relDescProp",
-            }],
-        }, {
-            "id": "rp1",
-            "type": ["relationship-profile"],
-            "ends": [{
-                "concept": "p1",
-                "name": null,
-                "description": null,
-                "usageNote": {},
-            }, {
-                "concept": "http://www.w3.org/2000/01/rdf-schema#Literal",
-                "iri": "attribute-p1",
-                "cardinality": null,
-                "profiling": ["r1"],
-                "name": null,
-                "nameFromProfiled": "r1",
-                "description": null,
-                "descriptionFromProfiled": "r1",
-                "usageNote": {},
-                "usageNoteFromProfiled": null,
-            }],
-        }, {
-            "id": "rp2",
-            "type": ["relationship-profile"],
-            "ends": [{
-                "concept": "p2",
-                "name": null,
-                "description": null,
-                "usageNote": {},
-            }, {
-                "concept": "http://www.w3.org/2000/01/rdf-schema#Literal",
-                "iri": "attribute-p2",
-                "cardinality": null,
-                "profiling": ["rp1"],
-                "name": null,
-                "nameFromProfiled": "rp1",
-                "nameProperty": "ex:overrideRelName",
-                "description": null,
-                "descriptionFromProfiled": "rp1",
-                "descriptionProperty": "ex:overrideRelDesc",
-                "usageNote": {},
-                "usageNoteFromProfiled": null,
-            }],
-        }],
-    }] as any;
+    const vocabulary = createDefaultSemanticModelBuilder({
+        baseIdentifier: "v#",
+        baseIri: "http://dcat/model/",
+    });
+    const c1 = vocabulary.class({
+        iri: "c1",
+        nameProperty: "ex:nameProp",
+        descriptionProperty: "ex:descProp",
+    });
+    const r1 = c1.property({
+        iri: "attribute",
+        range: { identifier: "http://www.w3.org/2000/01/rdf-schema#Literal" },
+        nameProperty: "ex:relNameProp",
+        descriptionProperty: "ex:relDescProp",
+    });
 
-    const context = createContext(containers);
+    const profile = createDefaultProfileModelBuilder({
+        baseIdentifier: "p#",
+        baseIri: "http://dcat/model/",
+    });
+    const p1 = profile.class({ iri: "p1" })
+        .reuseName(c1)
+        .reuseDescription(c1);
+    // nameProperty/descriptionProperty aren't part of SemanticModelClassProfile
+    // itself (aggregator-only concept), hence the cast.
+    const p2 = profile.class({
+        iri: "p2",
+        nameProperty: "ex:overrideName",
+        descriptionProperty: "ex:overrideDesc",
+    } as any)
+        .reuseName(p1)
+        .reuseDescription(p1);
+
+    const rp1 = profile.property({ iri: "attribute-p1" })
+        .domain(p1)
+        .range("http://www.w3.org/2000/01/rdf-schema#Literal")
+        .reuseName(r1)
+        .reuseDescription(r1);
+    const rp2 = profile.property({ iri: "attribute-p2" })
+        .domain(p2)
+        .range("http://www.w3.org/2000/01/rdf-schema#Literal")
+        .reuseName(rp1)
+        .reuseDescription(rp1);
+    // profile-model's builder doesn't yet forward nameProperty/
+    // descriptionProperty onto a property's range end; set the override
+    // directly on the underlying entity.
+    Object.assign((rp2 as any).entity.ends[1], {
+        nameProperty: "ex:overrideRelName",
+        descriptionProperty: "ex:overrideRelDesc",
+    });
+
+    const container = mergeEntityListContainers(
+        toEntityListContainer(vocabulary.build()),
+        toEntityListContainer(profile.build()),
+    );
+    const context = createContext([container]);
     const actual = entityListContainerToDsvModel(
-        "http://dcat/model/", containers[0], context);
+        "http://dcat/model/", container, context);
 
     // Class profile one level from the vocabulary class.
     expect(actual.classProfiles[0]?.reusesPropertyValue).toStrictEqual([{
@@ -890,37 +703,32 @@ test("Maps every [start, end] cardinality tuple to the matching Cardinality enum
         { start: 2, end: null, expected: Cardinality.ManyToMany },
     ];
 
-    const containers = [{
-        "baseIri": "http://dcat/model/",
-        "entities": [{
-            "id": "c1",
-            "iri": "c1",
-            "type": ["class"],
-            "name": {},
-            "description": {},
-        }, ...combinations.map(({ start, end }, index) => ({
-            "id": `rp-${index}`,
-            "type": ["relationship-profile"],
-            "ends": [{
-                "concept": "c1",
-                "name": {},
-                "description": {},
-                "usageNote": {},
-            }, {
-                "concept": "http://www.w3.org/2000/01/rdf-schema#Literal",
-                "iri": `property-${index}`,
-                "cardinality": [start, end],
-                "name": {},
-                "description": {},
-                "usageNote": {},
-                "profiling": [],
-            }],
-        }))],
-    }] as any;
+    const vocabulary = createDefaultSemanticModelBuilder({
+        baseIdentifier: "v#",
+        baseIri: "http://dcat/model/",
+    });
+    const c1 = vocabulary.class({ iri: "c1" });
 
-    const context = createContext(containers);
+    const profile = createDefaultProfileModelBuilder({
+        baseIdentifier: "p#",
+        baseIri: "http://dcat/model/",
+    });
+    combinations.forEach(({ start, end }, index) => {
+        profile.property({ iri: `property-${index}`, cardinality: [start, end] })
+            // .domain() is typed for a ProfileClassBuilder, but the domain
+            // here is a plain vocabulary class, which is a valid (if
+            // unusual) EntityListContainer shape.
+            .domain(c1 as any)
+            .range("http://www.w3.org/2000/01/rdf-schema#Literal");
+    });
+
+    const container = mergeEntityListContainers(
+        toEntityListContainer(vocabulary.build()),
+        toEntityListContainer(profile.build()),
+    );
+    const context = createContext([container]);
     const actual = entityListContainerToDsvModel(
-        "http://dcat/model/", containers[0], context);
+        "http://dcat/model/", container, context);
 
     expect(actual.datatypePropertyProfiles.map(item => item.cardinality)).toStrictEqual(
         combinations.map(item => item.expected));
@@ -998,26 +806,16 @@ test("Resolves getPropertyForName/getPropertyForDescription cycles and unrecogni
 
 test("Resolves a relative IRI against an empty string when the container has no baseIri.", () => {
 
-    const containers = [{
-        "baseIri": null,
-        "entities": [{
-            "id": "c1",
-            "iri": "relativeClass",
-            "type": ["class-profile"],
-            "profiling": [],
-            "name": {},
-            "nameFromProfiled": null,
-            "description": {},
-            "descriptionFromProfiled": null,
-            "usageNote": {},
-            "usageNoteFromProfiled": null,
-            "tags": [],
-        }],
-    }] as any;
+    const profile = createDefaultProfileModelBuilder({
+        baseIdentifier: "p#",
+        baseIri: null,
+    });
+    profile.class({ iri: "relativeClass" });
 
-    const context = createContext(containers);
+    const container = toEntityListContainer(profile.build());
+    const context = createContext([container]);
     const actual = entityListContainerToDsvModel(
-        "http://dcat/model/", containers[0], context);
+        "http://dcat/model/", container, context);
 
     expect(actual.classProfiles[0]?.iri).toBe("relativeClass");
 });
