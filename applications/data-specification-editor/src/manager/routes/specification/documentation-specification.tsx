@@ -1,4 +1,7 @@
+import { createStructureModel } from "@dataspecer/core/data-psm";
 import { DataSpecificationConfiguration, DataSpecificationConfigurator } from "@dataspecer/core/data-specification/configuration";
+import { type ProjectModelEntity } from "@dataspecer/core/project-model";
+import { useModelStoreEntity } from "@dataspecer/model-store/react";
 import { DefaultArtifactBuilder, GenerateReport } from "@dataspecer/specification/v1";
 import AddIcon from "@mui/icons-material/Add";
 import LoadingButton from "@mui/lab/LoadingButton";
@@ -9,9 +12,9 @@ import React, { memo, useCallback, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { DefaultConfigurationContext } from "../../../application";
+import { getConfiguration } from "../../../configuration/provided-configuration";
 import { LanguageStringText } from "../../../editor/components/helper/LanguageStringComponents";
 import { useDialog } from "../../../editor/dialog";
-import { getConfiguration } from "../../../configuration/provided-configuration";
 import { ZipStreamDictionary } from "../../../generators/zip-stream-dictionary";
 import { ConfigureArtifacts } from "../../artifacts/configuration/configure-artifacts";
 import { ConfigureButton } from "../../artifacts/configuration/configure-button";
@@ -26,9 +29,6 @@ import { ProfileStructureDialog } from "./profile-structure";
 import { RedirectDialog } from "./redirect-dialog";
 import { ReuseDataSpecifications } from "./reuse-data-specifications";
 import { PROJECT_MODEL_ID, SpecificationContext, useModelStore } from "./specification";
-import { createCreateModelOperation, type ProjectModelEntity } from "@dataspecer/project-model";
-import { V1 } from "@dataspecer/core-v2/model/known-models";
-import { useModelStoreEntity } from "@dataspecer/model-store/react";
 
 const ImportedSpecificationLabel: React.FC<{ modelId: string; fallback: string }> = ({ modelId, fallback }) => {
   const entity = useModelStoreEntity<ProjectModelEntity>(PROJECT_MODEL_ID, modelId);
@@ -51,14 +51,12 @@ export const DocumentationSpecification = memo(() => {
   const createDataStructure = useCallback(async () => {
     if (dataSpecificationIri) {
       setRedirecting(true);
-      const op = createCreateModelOperation(dataSpecificationIri, V1.PSM);
-      const transaction = modelStore.transaction([{
-        operation: op,
-        modelId: PROJECT_MODEL_ID,
-      }], {});
+
+      const {operations, modelId} = createStructureModel(dataSpecificationIri);
+      const transaction = modelStore.transaction(operations, {});
       await transaction.confirmation;
 
-      navigate(getEditorLink(dataSpecificationIri, op.modelId));
+      navigate(getEditorLink(dataSpecificationIri, modelId));
       setRedirecting(false);
     }
   }, [navigate, modelStore, dataSpecificationIri]);

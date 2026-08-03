@@ -9,7 +9,7 @@ import {
   type Operation,
   type OperationInModel,
 } from "@dataspecer/core/operation";
-import { createCreateModelOperation, createCreateProjectOperation, createRemoveModelOperation, type PackageEntity, type ProjectModelEntity } from "@dataspecer/project-model";
+import { createCreateModelOperation, createCreateProjectOperation, createRemoveModelOperation, type PackageEntity, type ProjectModelEntity } from "@dataspecer/core/project-model";
 import { describe, expect, test } from "vitest";
 import { PROJECT_MODEL_ID } from "./model-id.ts";
 import { applyOperationsToModelEntities, applyUndoOperationToModels, groupTransactionOperations, type UndoHistoryTransaction } from "./model-operations.ts";

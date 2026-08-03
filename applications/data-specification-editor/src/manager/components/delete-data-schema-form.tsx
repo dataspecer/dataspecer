@@ -5,7 +5,7 @@ import { CloseDialogButton } from "../../editor/components/detail/components/clo
 import { LanguageStringText } from "../../editor/components/helper/LanguageStringComponents";
 import { dialog } from "../../editor/dialog";
 import { PROJECT_MODEL_ID, SpecificationContext, useModelStore } from "../routes/specification/specification";
-import { createRemoveModelOperation } from "@dataspecer/project-model";
+import { createRemoveModelOperation } from "@dataspecer/core/project-model";
 
 export const DeleteDataSchemaForm: FC<{
   isOpen: boolean;

@@ -1,7 +1,7 @@
-import type { LanguageString } from "@dataspecer/core/core/core-resource";
-import { generateEntityId } from "@dataspecer/core/entity-model";
-import type { ModelIdentifier } from "@dataspecer/core/model";
-import { generateOperationId, type Operation } from "@dataspecer/core/operation";
+import type { LanguageString } from "../core/core-resource.ts";
+import { generateEntityId } from "../entity-model/entity.ts";
+import type { ModelIdentifier } from "../model/model.ts";
+import { Operation, generateOperationId } from "../operation/operation.js";
 
 /**
  * @see {@link RemoveModelOperation}
@@ -78,6 +78,10 @@ export interface CreateModelOperation extends Operation {
  * pre-generated, but can be overridden by the caller.
  *
  * You need to specify model type.
+ *
+ * Usually you do not want to use this operation directly as you also need to
+ * initialize the model with its own operations. Therefore, use functions that
+ * generate both the model and the initial entities in the model at once.
  */
 export function createCreateModelOperation(parentPackageId: ModelIdentifier, modelType: string, modelId?: ModelIdentifier): CreateModelOperation {
   return {

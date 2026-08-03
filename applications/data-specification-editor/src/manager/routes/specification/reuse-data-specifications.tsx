@@ -2,7 +2,7 @@ import { BackendPackageService } from "@dataspecer/core-v2/project";
 import type { Entity, EntityRecord } from "@dataspecer/core/entity-model";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
 import { createUpdateEntityOperation } from "@dataspecer/core/operation";
-import { loadProjectsMainEntities, type ProjectModelEntity } from "@dataspecer/project-model";
+import { loadProjectsMainEntities, type ProjectModelEntity } from "@dataspecer/core/project-model";
 import PowerIcon from "@mui/icons-material/Power";
 import { Box, Button, Checkbox, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Fab, List, ListItem, ListItemButton, ListItemIcon } from "@mui/material";
 import React, { useContext, useEffect, useState } from "react";

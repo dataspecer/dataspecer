@@ -3,7 +3,7 @@ import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import { createManagerModelStore, type DefaultFrontendModelStore } from "@dataspecer/model-store/implementation";
 import { ModelStoreContext } from "@dataspecer/model-store/react";
-import { type ProjectModelEntity } from "@dataspecer/project-model";
+import { type ProjectModelEntity } from "@dataspecer/core/project-model";
 import type { DataSpecification } from "@dataspecer/specification/specification";
 import { getDataSpecification } from "@dataspecer/specification/specification";
 import { Box, CircularProgress, Container, Typography } from "@mui/material";

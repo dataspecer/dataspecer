@@ -19,7 +19,6 @@
     "@dataspecer/lightweight-owl": "*",
     "@dataspecer/model-store": "*",
     "@dataspecer/profile-model": "*",
-    "@dataspecer/project-model": "*",
     "@dataspecer/specification": "*",
     "@dataspecer/structure-model": "*",
     "@dataspecer/utilities": "*",

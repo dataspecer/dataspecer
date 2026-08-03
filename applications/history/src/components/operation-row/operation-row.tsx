@@ -55,7 +55,7 @@ import {
   type RemoveControlledVocabularyAssignment,
 } from "@dataspecer/core-v2/semantic-model/profile/operations";
 import { AddQueryOperationType, ReloadModelOperationType, RemoveQueryOperationType, SetModelUrlsOperationType } from "@dataspecer/model-store/implementation";
-import { CreateModelOperationType, CreateProjectOperationType, RemoveModelOperationType, type CreateModelOperation, type CreateProjectOperation, type ProjectModelEntity, type RemoveModelOperation } from "@dataspecer/project-model";
+import { CreateModelOperationType, CreateProjectOperationType, RemoveModelOperationType, type CreateModelOperation, type CreateProjectOperation, type ProjectModelEntity, type RemoveModelOperation } from "@dataspecer/core/project-model";
 import {
   AddVisualDiagramNodeOperationType,
   AddVisualGroupOperationType,

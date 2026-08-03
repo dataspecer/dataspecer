@@ -5,7 +5,7 @@ import { DataSpecification as LegacyDataSpecification } from "@dataspecer/core/d
 import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import { FederatedObservableStore } from "@dataspecer/federated-observable-store/federated-observable-store";
-import type { ProjectModelEntity, PackageEntity } from "@dataspecer/project-model";
+import type { ProjectModelEntity, PackageEntity } from "@dataspecer/core/project-model";
 import { build } from "../model-hierarchy/semantic-model-aggregator-builder.ts";
 import { DataSpecification } from "./model.ts";
 import { TransactionMetadata } from "@dataspecer/model-store";

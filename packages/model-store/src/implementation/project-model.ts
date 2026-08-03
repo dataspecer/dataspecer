@@ -1,66 +1,97 @@
 import type { PackageService } from "@dataspecer/core-v2/project";
-import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
-import type { Model, ModelIdentifier, ModelMetadata } from "@dataspecer/core/model";
+import { diffEntities, type EntityRecord } from "@dataspecer/core/entity-model";
+import type { ModelIdentifier, ModelMetadata } from "@dataspecer/core/model";
 import type { Operation } from "@dataspecer/core/operation";
-import { applyOperationsToVirtualProjectModel, loadProjectStructure, type ProjectModelEntity } from "@dataspecer/project-model";
+import { applyOperationsToVirtualProjectModel, loadProjectStructure, type CreateModelOperation, type ProjectModelEntity } from "@dataspecer/core/project-model";
 import { deepEqual } from "@dataspecer/utilities";
-import { BaseModelInModelStore, type ModelState } from "./base.ts";
-import type { ModelInDefaultFrontendModelStore } from "./implementation.ts";
+import type { ModelInModelStore, StateResult } from "./interface.ts";
 
 /**
  * Adapter for project model into model store.
  *
- * Provides entities that represent the project structure and can modify the project via operations.
+ * Provides entities that represent the project structure and can modify the
+ * project via operations. Metadata of the individual models (label and
+ * description) is read from their content by the model store and layered over
+ * the core state, hence it is part of the output state only.
  */
-export class ProjectModelInModelStore extends BaseModelInModelStore<ProjectModelEntity> implements Model, ModelInDefaultFrontendModelStore {
-  rootProjectId: ModelIdentifier;
-  protected service: PackageService;
+export class ProjectModelInModelStore implements ModelInModelStore {
+  private readonly service: PackageService;
+  private readonly rootProjectId: ModelIdentifier;
 
-  constructor(id: string, service: PackageService, rootProjectId: ModelIdentifier) {
-    super(id);
+  private coreState: EntityRecord<ProjectModelEntity> = {};
+  private outputState: EntityRecord<ProjectModelEntity> = {};
+
+  private metadata: Record<ModelIdentifier, ModelMetadata> = {};
+
+  constructor(service: PackageService, rootProjectId: ModelIdentifier) {
     this.service = service;
     this.rootProjectId = rootProjectId;
   }
 
-  /**
-   * @internal function to append additional information to entities in the
-   * project model. It is used to set metadata about models (label and
-   * description) by reading the individual models and extracting the metadata
-   * from them.
-   */
-  setModelMetadata(modelId: ModelIdentifier, metadata: ModelMetadata): EntityChange[] {
-    const previous = this.getAllEntities()[modelId];
-    if (!previous) {
-      return [];
-    }
-    const next: ProjectModelEntity = { ...previous, label: metadata.label, description: metadata.description };
-    if (deepEqual(previous, next)) {
-      return [];
-    }
-    const changes = [{ previous, next } as EntityChange];
-    this.externalChange(changes);
-    return changes;
+  setState(coreState: EntityRecord): StateResult {
+    return this.setStateWithMetadata(coreState as EntityRecord<ProjectModelEntity>);
   }
 
-  protected async loadInternal(): Promise<ModelState<ProjectModelEntity>> {
+  applyOperationAndSetState(operations: Operation[]): StateResult {
+    const coreState = { ...this.coreState };
+    applyOperationsToVirtualProjectModel(coreState, operations);
+    return this.setStateWithMetadata(coreState);
+  }
+
+  subscribeForAsyncChanges(): () => void {
+    return () => {};
+  }
+
+  async getRemoteState(): Promise<EntityRecord> {
     const entities = await loadProjectStructure(this.service, this.rootProjectId);
-    return {
-      operations: [],
-      entities: Object.fromEntries(entities.map((e) => [e.id, e])) as EntityRecord<ProjectModelEntity>,
-    };
+    const coreState: EntityRecord<ProjectModelEntity> = {};
+    for (const entity of entities) {
+      coreState[entity.id] = entity;
+    }
+    return coreState;
   }
 
-  protected override applyOperation(operation: Operation, mutableState: EntityRecord<ProjectModelEntity>): void {
-    applyOperationsToVirtualProjectModel(mutableState, [operation]);
+  /**
+   * @internal Sets metadata of the given models as computed from their content
+   * by the model store.
+   */
+  setModelsMetadata(metadata: Record<ModelIdentifier, ModelMetadata>): StateResult {
+    let changed = false;
+    for (const modelId in metadata) {
+      if (deepEqual(this.metadata[modelId], metadata[modelId])) {
+        continue;
+      }
+      this.metadata[modelId] = metadata[modelId];
+      changed = true;
+    }
+
+    if (!changed) {
+      return { coreState: this.coreState, outputState: this.outputState, diff: [] };
+    }
+    return this.setStateWithMetadata(this.coreState);
+  }
+
+  private setStateWithMetadata(coreState: EntityRecord<ProjectModelEntity>): StateResult {
+    const outputState: EntityRecord<ProjectModelEntity> = {};
+    for (const id in coreState) {
+      const entity = coreState[id];
+      const metadata = this.metadata[id];
+      outputState[id] = metadata === undefined ? entity : { ...entity, label: metadata.label, description: metadata.description };
+    }
+
+    const diff = diffEntities(this.outputState, outputState);
+    this.coreState = coreState;
+    this.outputState = outputState;
+    return { coreState, outputState, diff };
   }
 }
 
 export function createProjectModel(
-  projectId: ModelIdentifier,
+  _modelId: ModelIdentifier,
   context: {
     service: PackageService;
     rootProjectId: ModelIdentifier;
   },
-): Model & ModelInDefaultFrontendModelStore {
-  return new ProjectModelInModelStore(projectId, context.service, context.rootProjectId);
+): ProjectModelInModelStore {
+  return new ProjectModelInModelStore(context.service, context.rootProjectId);
 }

@@ -9,7 +9,7 @@ import { packageService } from "@/package";
 import { LOCAL_SEMANTIC_MODEL, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { generateEntityId, type Entity } from "@dataspecer/core/entity-model";
 import { createSetEntityOperation, generateOperationId, type OperationInModel } from "@dataspecer/core/operation";
-import { createCreateModelOperation, createCreateProjectOperation } from "@dataspecer/project-model";
+import { createCreateModelOperation, createCreateProjectOperation } from "@dataspecer/core/project-model";
 import { createSetLabelOperation } from "@dataspecer/visual-model";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";

@@ -13,7 +13,7 @@ import type { Operation } from "@dataspecer/core/operation";
 import { getModelMetadata, type DefaultFrontendModelStore } from "@dataspecer/model-store/implementation";
 import { applyOperationsToSemanticModel } from "@dataspecer/core-v2/semantic-model";
 import { analyzeEvolution, analyzeProfileEvolution } from "@dataspecer/profile-model/hooks";
-import type { ProjectModelEntity } from "@dataspecer/project-model";
+import type { ProjectModelEntity } from "@dataspecer/core/project-model";
 import { getAggregatedEntitiesWithPassthroughForPackage } from "@/components/operation-row/operation-list";
 import type { OperationRowProps } from "@/components/operation-row/operation-row";
 import { modelTypesFromProjectModel } from "@/lib/model-display";

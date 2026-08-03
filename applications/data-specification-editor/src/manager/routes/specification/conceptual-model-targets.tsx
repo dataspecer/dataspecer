@@ -2,7 +2,7 @@ import { LOCAL_SEMANTIC_MODEL } from "@dataspecer/core-v2/model/known-models";
 import type { Entity } from "@dataspecer/core/entity-model";
 import { createUpdateEntityOperation } from "@dataspecer/core/operation";
 import { useModelStoreEntity } from "@dataspecer/model-store/react";
-import type { ProjectModelEntity } from "@dataspecer/project-model";
+import type { ProjectModelEntity } from "@dataspecer/core/project-model";
 import { ModelCompositionConfigurationApplicationProfile, ModelCompositionConfigurationMerge } from "@dataspecer/specification/model-hierarchy";
 import { Alert, Box, Button, Card, CardContent, Checkbox, Divider, FormControlLabel, Radio, RadioGroup, Typography } from "@mui/material";
 import { useSnackbar } from "notistack";

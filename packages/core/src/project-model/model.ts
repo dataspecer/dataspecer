@@ -1,8 +1,12 @@
-import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
-import type { LanguageString } from "@dataspecer/core/core/core-resource";
-import type { Entity } from "@dataspecer/core/entity-model";
+import type { LanguageString } from "../core/core-resource.ts";
+import type { Entity } from "../entity-model/entity.ts";
+import type { ModelIdentifier } from "../model/model.ts";
 
 export const PROJECT_MODEL_MODEL_ENTITY = "project-model-entity";
+
+export const PACKAGE_MODEL = "http://dataspecer.com/resources/local/package";
+
+export const PROJECT_MODEL_ID = "_project_model" as const satisfies ModelIdentifier;
 
 /**
  * Package, Model or Project.
@@ -44,11 +48,11 @@ export interface PackageEntity extends ProjectModelEntity {
    */
   subModels: string[];
 
-  modelType: typeof LOCAL_PACKAGE;
+  modelType: typeof PACKAGE_MODEL;
 }
 
 export function isPackageEntity(entity: Entity): entity is PackageEntity {
-  return isProjectModelEntity(entity) && entity.modelType === LOCAL_PACKAGE;
+  return isProjectModelEntity(entity) && entity.modelType === PACKAGE_MODEL;
 }
 
 /**

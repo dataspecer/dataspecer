@@ -15,7 +15,6 @@
     "@dataspecer/core-v2": "*",
     "@dataspecer/model-store": "*",
     "@dataspecer/profile-model": "*",
-    "@dataspecer/project-model": "*",
     "@dataspecer/specification": "*",
     "@dataspecer/visual-model": "*",
     "@radix-ui/react-dropdown-menu": "^2.1.18",
