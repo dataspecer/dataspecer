@@ -20,7 +20,7 @@ import {
   type VocabularySpecificationDocument,
 } from "@dataspecer/data-specification-vocabulary/specification-description";
 import { structureModelToRdf } from "@dataspecer/data-specification-vocabulary/structure-model";
-import type { ProjectModelEntity, PackageEntity } from "@dataspecer/project-model";
+import type { ProjectModelEntity, PackageEntity } from "@dataspecer/core/project-model";
 import { canonicalizeIds, garbageCollect } from "@dataspecer/structure-model";
 import { ModelDescription, type StructureModelDescription } from "./model.ts";
 import { DefaultShaclConfiguration, DefaultShaclFileKey, ShaclV2Configurator } from "./shacl-v2.ts";

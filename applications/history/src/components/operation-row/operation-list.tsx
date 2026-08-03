@@ -7,7 +7,7 @@ import type { EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import type { OperationInModel } from "@dataspecer/core/operation";
 import { build } from "@dataspecer/specification/model-hierarchy";
-import { isPackageEntity } from "@dataspecer/project-model";
+import { isPackageEntity } from "@dataspecer/core/project-model";
 import { memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 

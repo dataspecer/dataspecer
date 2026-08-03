@@ -12,7 +12,7 @@ import { isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRel
 import { isSemanticModelClassProfile, isSemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import type { Entity, EntityRecord } from "@dataspecer/core/entity-model";
 import type { DefaultFrontendModelStore } from "@dataspecer/model-store/implementation";
-import type { ProjectModelEntity } from "@dataspecer/project-model";
+import type { ProjectModelEntity } from "@dataspecer/core/project-model";
 import {
   BookOpen,
   Box,

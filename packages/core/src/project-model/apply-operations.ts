@@ -1,8 +1,7 @@
-import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
-import type { EntityRecord } from "@dataspecer/core/entity-model";
-import { type Operation } from "@dataspecer/core/operation";
+import type { EntityRecord } from "../entity-model/entity.ts";
+import type { Operation } from "../operation/operation.ts";
+import { PACKAGE_MODEL, PROJECT_MODEL_MODEL_ENTITY, type PackageEntity, type ProjectModelEntity } from "./model.ts";
 import { isCreateModelOperation, isCreateProjectOperation, isRemoveModelOperation, type CreateModelOperation, type CreateProjectOperation } from "./operations.ts";
-import { PROJECT_MODEL_MODEL_ENTITY, type PackageEntity, type ProjectModelEntity } from "./model.ts";
 
 /**
  * Applies project-model operations (create/remove model) to the given entities.
@@ -32,7 +31,7 @@ function applyRemoveModelOperation(entities: EntityRecord<ProjectModelEntity>, m
     }
     delete entities[current];
 
-    if (currentEntity.modelType === LOCAL_PACKAGE) {
+    if (currentEntity.modelType === PACKAGE_MODEL) {
       const packageEntity = currentEntity as PackageEntity;
       packageEntity.subModels.forEach((subModelId) => toDelete.push(subModelId));
     }
@@ -41,7 +40,7 @@ function applyRemoveModelOperation(entities: EntityRecord<ProjectModelEntity>, m
   // Remove the (now deleted) model from its parent package's subModels list.
   for (const id in entities) {
     const entity = entities[id];
-    if (entity.modelType !== LOCAL_PACKAGE) {
+    if (entity.modelType !== PACKAGE_MODEL) {
       continue;
     }
     const packageEntity = entity as PackageEntity;
@@ -70,7 +69,7 @@ function applyCreateProjectOperation(entities: EntityRecord<ProjectModelEntity>,
     type: [PROJECT_MODEL_MODEL_ENTITY],
     label: operation.label ?? {},
     description: operation.description ?? {},
-    modelType: LOCAL_PACKAGE,
+    modelType: PACKAGE_MODEL,
     subModels: [],
   };
   entities[operation.projectId] = projectEntity;
@@ -85,7 +84,7 @@ function applyCreateModelOperation(entities: EntityRecord<ProjectModelEntity>, o
   // is not a package.
   // @todo Is this the correct logic?
   const parentEntity = entities[operation.parentPackageId];
-  if (!parentEntity || parentEntity.modelType !== LOCAL_PACKAGE) {
+  if (!parentEntity || parentEntity.modelType !== PACKAGE_MODEL) {
     return;
   }
   let newEntity = {
@@ -96,10 +95,10 @@ function applyCreateModelOperation(entities: EntityRecord<ProjectModelEntity>, o
     modelType: operation.modelType,
   } satisfies ProjectModelEntity;
 
-  if (operation.modelType === LOCAL_PACKAGE) {
+  if (operation.modelType === PACKAGE_MODEL) {
     const packageEntity: PackageEntity = {
       ...newEntity,
-      modelType: LOCAL_PACKAGE,
+      modelType: PACKAGE_MODEL,
       subModels: [],
     };
     newEntity = packageEntity;

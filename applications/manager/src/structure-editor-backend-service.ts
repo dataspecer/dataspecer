@@ -4,7 +4,7 @@ import type { LanguageString } from "@dataspecer/core/core/core-resource";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import { generateEntityId, type Entity } from "@dataspecer/core/entity-model";
 import { createSetEntityOperation, generateOperationId, type OperationInModel } from "@dataspecer/core/operation";
-import { createCreateModelOperation, createCreateProjectOperation } from "@dataspecer/project-model";
+import { createCreateModelOperation, createCreateProjectOperation } from "@dataspecer/core/project-model";
 
 /**
  * Model id the backend uses to address operations that change the project

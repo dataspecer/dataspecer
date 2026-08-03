@@ -1,7 +1,9 @@
 import { coreResourceToEntity, type CoreResource, type CoreResourceAndEntity } from "../core/core-resource.ts";
 import type { EntityRecord } from "../entity-model/index.ts";
 import type { ModelIdentifier } from "../model/model.ts";
-import { type Operation } from "../operation/index.ts";
+import { type Operation, type OperationInModel } from "../operation/index.ts";
+import { PROJECT_MODEL_ID } from "../project-model/model.ts";
+import { createCreateModelOperation } from "../project-model/operations.ts";
 import { DataPsmCreateSchema } from "./operation/data-psm-create-schema.ts";
 
 export interface StructureModelState {
@@ -12,10 +14,31 @@ export interface StructureModelState {
 /**
  * Generates new operations to initialize a structure model.
  */
-export function initializeStructureModel(modelId: ModelIdentifier): Operation[] {
+export function createStructureModel(parentPackageId: ModelIdentifier): {
+  operations: OperationInModel[],
+  modelId: ModelIdentifier,
+} {
+  const createModel = createCreateModelOperation(parentPackageId, "http://dataspecer.com/resources/v1/psm");
+  const modelId = createModel.modelId;
+
   const createSchema = new DataPsmCreateSchema();
   createSchema.dataPsmNewIri = modelId;
-  return [createSchema];
+
+  const operations = [
+    {
+      operation: createModel,
+      modelId: PROJECT_MODEL_ID,
+    },
+    {
+      operation: createSchema,
+      modelId: modelId,
+    }
+  ];
+
+  return {
+    operations,
+    modelId,
+  }
 }
 
 export function serializationToStructureModelEntities(serialization: unknown): StructureModelState {

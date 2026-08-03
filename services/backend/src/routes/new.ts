@@ -5,7 +5,7 @@ import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { createUpdateEntityOperation, type OperationInModel } from "@dataspecer/core/operation";
 import { createWritableInMemoryProfileModel, isSemanticModelClassProfile, isSemanticModelRelationshipProfile, SemanticProfileModelOperations } from "@dataspecer/profile-model";
-import { createCreateModelOperation, createCreateProjectOperation, createRemoveModelOperation, type ProjectModelEntity } from "@dataspecer/project-model";
+import { createCreateModelOperation, createCreateProjectOperation, createRemoveModelOperation, type ProjectModelEntity } from "@dataspecer/core/project-model";
 import { ModelCompositionConfigurationApplicationProfile, type ModelCompositionConfigurationMerge } from "@dataspecer/specification/model-hierarchy";
 import { createStructureProfile } from "@dataspecer/structure-model/profile";
 import { createSetLabelOperation } from "@dataspecer/visual-model";

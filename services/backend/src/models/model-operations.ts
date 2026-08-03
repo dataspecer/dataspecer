@@ -17,7 +17,7 @@ import {
   isCreateProjectOperation,
   isRemoveModelOperation,
   type ProjectModelEntity,
-} from "@dataspecer/project-model";
+} from "@dataspecer/core/project-model";
 import { PROJECT_MODEL_ID, splitModelId } from "./model-id.ts";
 import { applyModelTypeOperation, modelTypeChangesToOperations, NAMED_BLOB_STORE_TYPE } from "./model-types.ts";
 import type { TransactionEvents } from "./transaction-model.ts";

@@ -1,51 +1,59 @@
 import type { PackageService } from "@dataspecer/core-v2/project";
 import { type CoreResourceAndEntity } from "@dataspecer/core/core";
-import { applyOperationsToStructureModel, initializeStructureModel, serializationToStructureModelEntities } from "@dataspecer/core/data-psm";
+import { applyOperationsToStructureModel, serializationToStructureModelEntities } from "@dataspecer/core/data-psm";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
-import type { Model, ModelIdentifier } from "@dataspecer/core/model";
+import type { ModelIdentifier } from "@dataspecer/core/model";
 import { type Operation } from "@dataspecer/core/operation";
-import { BaseModelInModelStore } from "./base.ts";
-import type { ModelInDefaultFrontendModelStore } from "./implementation.ts";
+import type { ModelInModelStore, StateResult } from "./interface.ts";
+import { createStateResult } from "./state.ts";
 
 /**
  * Currently, the structure model is PSM. This will be changed in the future,
  * but we will already call it properly to avoid refactoring in the future.
  */
-export class StructureModelInModelStore extends BaseModelInModelStore<CoreResourceAndEntity> implements Model, ModelInDefaultFrontendModelStore {
-  protected service: PackageService;
+export class StructureModelInModelStore implements ModelInModelStore {
+  private readonly id: ModelIdentifier;
+  private readonly service: PackageService;
 
-  constructor(id: string, service: PackageService) {
-    super(id);
+  private state: EntityRecord<CoreResourceAndEntity> = {};
+
+  constructor(id: ModelIdentifier, service: PackageService) {
+    this.id = id;
     this.service = service;
   }
 
-  /**
-   * Loads structure model state from the backend.
-   * When resolves, everything is loaded and ready to be used.
-   */
-  protected async loadInternal() {
+  setState(coreState: EntityRecord): StateResult {
+    const result = createStateResult(this.state, coreState);
+    this.state = coreState as EntityRecord<CoreResourceAndEntity>;
+    return result;
+  }
+
+  applyOperationAndSetState(operations: Operation[]): StateResult {
+    const coreState = { ...this.state };
+    const diff = applyOperationsToStructureModel(coreState, operations);
+    this.state = coreState;
+    return {
+      coreState,
+      outputState: coreState,
+      diff,
+    };
+  }
+
+  subscribeForAsyncChanges(): () => void {
+    return () => {};
+  }
+
+  async getRemoteState(): Promise<EntityRecord> {
     const data = await this.service.getResourceJsonData(this.id);
-    return serializationToStructureModelEntities(data);
-  }
-
-  /**
-   * Executes given operation and changes the state of the model.
-   */
-  protected override applyOperation(operation: Operation, mutableState: EntityRecord<CoreResourceAndEntity>): void {
-    applyOperationsToStructureModel(mutableState, [operation]);
-  }
-
-  protected override createNewInternal(): Operation[] {
-    return initializeStructureModel(this.id);
+    return data ? serializationToStructureModelEntities(data).entities : {};
   }
 }
-
 
 export function createStructureModel(
   modelId: ModelIdentifier,
   context: {
     service: PackageService;
   },
-): Model & ModelInDefaultFrontendModelStore {
+): StructureModelInModelStore {
   return new StructureModelInModelStore(modelId, context.service);
 }

@@ -15,7 +15,7 @@ import type { ModelIdentifier } from "@dataspecer/core/model";
 import { createSetEntityOperation, type OperationInModel } from "@dataspecer/core/operation";
 import type { TransactionResult } from "@dataspecer/model-store";
 import { useModelStoreEntity } from "@dataspecer/model-store/react";
-import { createCreateModelOperation, type ProjectModelEntity } from "@dataspecer/project-model";
+import { createCreateModelOperation, type ProjectModelEntity } from "@dataspecer/core/project-model";
 import type { DataSpecificationStructure } from "@dataspecer/specification/specification";
 import { createStructureProfile } from "@dataspecer/structure-model/profile";
 import { Alert, Button, CircularProgress, DialogActions, DialogContent, DialogTitle } from "@mui/material";

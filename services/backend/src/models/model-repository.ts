@@ -19,7 +19,7 @@ import {
   isCreateProjectOperation,
   isRemoveModelOperation,
   type PackageEntity,
-} from "@dataspecer/project-model";
+} from "@dataspecer/core/project-model";
 import { v4 as uuidv4 } from "uuid";
 import configuration from "../configuration.ts";
 import { composeModelId, PROJECT_MODEL_ID, splitModelId } from "./model-id.ts";

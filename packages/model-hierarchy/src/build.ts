@@ -1,7 +1,7 @@
 import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
 import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
-import type { ProjectModelEntity, PackageEntity } from "@dataspecer/project-model";
+import type { ProjectModelEntity, PackageEntity } from "@dataspecer/core/project-model";
 import type { ModelCompositionConfiguration, ModelCompositionConfigurationApplicationProfile, ModelCompositionConfigurationMerge } from "@dataspecer/specification/model-hierarchy";
 import { MODEL_HIERARCHY_APPLICATION_PROFILE, MODEL_HIERARCHY_VOCABULARY, type ModelHierarchyEntity } from "./entities.ts";
 import { QUERYABLE_MODEL } from "@dataspecer/core-v2/model/known-models";

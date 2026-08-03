@@ -523,6 +523,7 @@
     "./pim/pim-vocabulary.js": "./lib/pim/pim-vocabulary.js",
     "./pim/store/pim-memory-store.spec": "./lib/pim/store/pim-memory-store.spec.js",
     "./pim/store/pim-memory-store.spec.js": "./lib/pim/store/pim-memory-store.spec.js",
+    "./project-model": "./lib/project-model/index.js",
     "./structure-model/README.md": "./lib/structure-model/README.md",
     "./structure-model/README.md.js": "./lib/structure-model/README.md",
     "./structure-model/adapter/structure-model-adapter": "./lib/structure-model/adapter/structure-model-adapter.js",

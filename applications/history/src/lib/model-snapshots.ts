@@ -6,7 +6,7 @@ import { isSetEntityOperation, isUpdateEntityOperation, isRemoveEntityOperation,
 import { LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { applyOperationsToSemanticModel } from "@dataspecer/core-v2/semantic-model";
 import { applyOperationsToAsyncQueryableModel } from "@dataspecer/model-store/implementation";
-import { applyOperationsToVirtualProjectModel, isCreateModelOperation, isRemoveModelOperation, type ProjectModelEntity } from "@dataspecer/project-model";
+import { applyOperationsToVirtualProjectModel, isCreateModelOperation, isRemoveModelOperation, type ProjectModelEntity } from "@dataspecer/core/project-model";
 import { applyOperationsToVisualModel } from "@dataspecer/visual-model/executor";
 
 /** Fixed id of the virtual project model, shared by every model store instance. */

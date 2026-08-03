@@ -15,7 +15,6 @@
     "@dataspecer/core-v2": "*",
     "@dataspecer/documentation": "*",
     "@dataspecer/layout": "*",
-    "@dataspecer/project-model": "*",
     "@dataspecer/specification": "*",
     "@dataspecer/visual-model": "*",
     "@monaco-editor/react": "^4.6.0",
