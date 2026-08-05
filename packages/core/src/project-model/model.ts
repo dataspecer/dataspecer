@@ -18,6 +18,17 @@ export interface ProjectModelEntity extends Entity {
   description: LanguageString;
 
   modelType: string;
+
+  /**
+   * Identifier of the project (the root package) this model belongs to.
+   *
+   * A project model may describe models of several projects at once, as a
+   * project can reuse other projects. Models of one project therefore share
+   * the same value, which tells the projects apart.
+   *
+   * @see PackageEntity.reusedProjects
+   */
+  projectId: ModelIdentifier;
 }
 
 export function isProjectModelEntity(entity: Entity): entity is ProjectModelEntity {
@@ -49,6 +60,14 @@ export interface PackageEntity extends ProjectModelEntity {
   subModels: string[];
 
   modelType: typeof PACKAGE_MODEL;
+
+  /**
+   * IDs of projects this package reuses, as a subset of {@link subModels}: a
+   * reused project is listed as an ordinary sub-package as well, so that
+   * clients unaware of reuse treat it as any other sub-package, while clients
+   * that do care can tell the two apart.
+   */
+  reusedProjects: ModelIdentifier[];
 }
 
 export function isPackageEntity(entity: Entity): entity is PackageEntity {

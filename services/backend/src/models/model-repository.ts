@@ -4,7 +4,9 @@ import { diffEntities, type Entity, type EntityRecord } from "@dataspecer/core/e
 import {
   createUpdateEntityOperation,
   isSetEntityOperation,
+  isUndoOperation,
   isUpdateEntityOperation,
+  isVersionOperation,
   type Operation,
   type OperationInModel,
   type Transaction,
@@ -172,8 +174,120 @@ export class ModelRepository implements ModelRepositoryType {
    *
    * The project does not have to exist yet if the first operation is a create
    * project operation.
+   *
+   * As a project can reuse other projects, a transaction may target models of
+   * several projects at once. Such a transaction is split per project and the
+   * parts are executed separately, each recorded in the history of the project
+   * it belongs to. The same client transaction id is therefore recorded once
+   * per involved project.
    */
   async applyTransactions(projectId: ModelIdentifier, transactions: Transaction[]): Promise<void> {
+    for (const [targetProjectId, targetTransactions] of await this.splitTransactionsByProject(projectId, transactions)) {
+      await this.applyTransactionsToProject(targetProjectId, targetTransactions);
+    }
+  }
+
+  /**
+   * Splits the transactions per project their operations belong to, keeping
+   * the order of the operations and the client transaction id. The project the
+   * transactions were sent to comes first and is the fallback for operations
+   * whose project cannot be resolved.
+   */
+  private async splitTransactionsByProject(projectId: ModelIdentifier, transactions: Transaction[]): Promise<Map<ModelIdentifier, Transaction[]>> {
+    const result = new Map<ModelIdentifier, Transaction[]>([[projectId, []]]);
+
+    // Projects of models created by the transactions themselves, keyed by
+    // resource iri, as such models have no resource to resolve the project
+    // from yet.
+    const createdModelProjects = new Map<string, ModelIdentifier>();
+
+    const projectOfModel = async (modelId: ModelIdentifier): Promise<ModelIdentifier> => {
+      const { iri } = splitModelId(modelId);
+      return createdModelProjects.get(iri) ?? (await this.resourceModel.getProjectIri(iri)) ?? projectId;
+    };
+
+    for (const transaction of transactions) {
+      const operationsByProject = new Map<ModelIdentifier, OperationInModel[]>();
+      for (const operationInModel of transaction.operations) {
+        for (const targetProjectId of await this.resolveOperationProjects(projectId, operationInModel, projectOfModel, createdModelProjects)) {
+          const operations = operationsByProject.get(targetProjectId);
+          if (operations === undefined) {
+            operationsByProject.set(targetProjectId, [operationInModel]);
+          } else {
+            operations.push(operationInModel);
+          }
+        }
+      }
+
+      for (const [targetProjectId, operations] of operationsByProject) {
+        const targetTransactions = result.get(targetProjectId);
+        const targetTransaction = { ...transaction, operations };
+        if (targetTransactions === undefined) {
+          result.set(targetProjectId, [targetTransaction]);
+        } else {
+          targetTransactions.push(targetTransaction);
+        }
+      }
+    }
+
+    if (result.get(projectId)!.length === 0) {
+      result.delete(projectId);
+    }
+    return result;
+  }
+
+  /**
+   * Projects an operation belongs to. Usually exactly one; an undo or a
+   * version references a transaction that may itself have been split across
+   * several projects, in which case the operation belongs to all of them.
+   */
+  private async resolveOperationProjects(
+    defaultProjectId: ModelIdentifier,
+    { modelId, operation }: OperationInModel,
+    projectOfModel: (modelId: ModelIdentifier) => Promise<ModelIdentifier>,
+    createdModelProjects: Map<string, ModelIdentifier>,
+  ): Promise<ModelIdentifier[]> {
+    if (isUndoOperation(operation)) {
+      return await this.projectsOfTransaction(operation.cancelTransactionId, defaultProjectId);
+    }
+    if (isVersionOperation(operation)) {
+      return await this.projectsOfTransaction(operation.versionedTransactionId, defaultProjectId);
+    }
+    if (modelId !== PROJECT_MODEL_ID) {
+      return [await projectOfModel(modelId)];
+    }
+    if (isCreateProjectOperation(operation)) {
+      createdModelProjects.set(operation.projectId, operation.projectId);
+      return [operation.projectId];
+    }
+    if (isCreateModelOperation(operation)) {
+      const targetProjectId = await projectOfModel(operation.parentPackageId);
+      createdModelProjects.set(operation.modelId, targetProjectId);
+      return [targetProjectId];
+    }
+    if (isRemoveModelOperation(operation)) {
+      return [await projectOfModel(operation.modelId)];
+    }
+    if (isUpdateEntityOperation(operation) || isSetEntityOperation(operation)) {
+      return [await projectOfModel(isUpdateEntityOperation(operation) ? operation.entityId : operation.entity.id)];
+    }
+    return [defaultProjectId];
+  }
+
+  /**
+   * Projects that recorded the transaction with the given client id, falling
+   * back to the given project when it is not recorded anywhere.
+   */
+  private async projectsOfTransaction(clientTransactionId: string, defaultProjectId: ModelIdentifier): Promise<ModelIdentifier[]> {
+    const projectIris = await this.transactionModel.getProjectsOfTransaction(clientTransactionId);
+    return projectIris.length > 0 ? projectIris : [defaultProjectId];
+  }
+
+  /**
+   * Applies transactions that all belong to the given project, see
+   * {@link applyTransactions}.
+   */
+  private async applyTransactionsToProject(projectId: ModelIdentifier, transactions: Transaction[]): Promise<void> {
     // Models the transactions modify: their stored serialization and the state
     // the operations are applied to. A model is loaded only to apply
     // operations to it, hence every entry is written back at the end.
@@ -299,11 +413,22 @@ export class ModelRepository implements ModelRepositoryType {
           // the project model - currently only used for label/description
           // changes (e.g. a package renamed on reload, see
           // diffModelStates/reloadResource). The structural fields of a
-          // ProjectModelEntity (id, type, modelType, subModels) are derived
-          // from the resource tree elsewhere and are not themselves settable
-          // user metadata, so they are dropped here.
+          // ProjectModelEntity (id, type, modelType, subModels, projectId,
+          // reusedProjects) are derived from the resource tree and the models
+          // themselves, and are not settable user metadata, so they are
+          // dropped here.
           const entityId = isUpdateEntityOperation(operation) ? operation.entityId : operation.entity.id;
-          const { id, type, modelType, subModels, ...userMetadata } = (isUpdateEntityOperation(operation) ? operation.update : operation.entity) as Record<string, unknown>;
+          const {
+            id,
+            type,
+            modelType,
+            subModels,
+            projectId: entityProjectId,
+            reusedProjects,
+            ...userMetadata
+          } = (isUpdateEntityOperation(operation) ? operation.update : operation.entity) as Record<string, unknown> & {
+            id: string;
+          };
           if ((await this.resourceModel.getResource(entityId)) === null) {
             console.warn(`Cannot update metadata of resource "${entityId}" via the project model because it does not exist. The operation is only recorded.`);
             continue;

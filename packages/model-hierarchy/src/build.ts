@@ -255,6 +255,15 @@ class ModelHierarchyBuilder {
     return resolved;
   }
 
+  /**
+   * Whether the model belongs to the project being worked on, as opposed to a
+   * project it reuses. Only models of the own project can be written to from
+   * here.
+   */
+  private isOwnModel(modelEntity: ProjectModelEntity): boolean {
+    return modelEntity.projectId === this.mainProjectModelId;
+  }
+
   private emitVocabulary(modelId: ModelIdentifier): void {
     if (this.result[modelId]) {
       return;
@@ -272,7 +281,8 @@ class ModelHierarchyBuilder {
       type: [MODEL_HIERARCHY_VOCABULARY],
       modelType: modelEntity.modelType,
       label: modelEntity.label,
-      writable: isAlwaysReadOnlyModelType(modelEntity.modelType) ? false : this.rootChildIds.has(modelId),
+      projectId: modelEntity.projectId,
+      writable: isAlwaysReadOnlyModelType(modelEntity.modelType) ? false : this.rootChildIds.has(modelId) && this.isOwnModel(modelEntity),
       imports: [],
       passThrough: false,
     };
@@ -295,7 +305,8 @@ class ModelHierarchyBuilder {
       type: [MODEL_HIERARCHY_APPLICATION_PROFILE],
       modelType: modelEntity.modelType,
       label: modelEntity.label,
-      writable,
+      projectId: modelEntity.projectId,
+      writable: writable && this.isOwnModel(modelEntity),
       profiles,
       passThrough,
     };

@@ -211,6 +211,21 @@ export class TransactionModel {
   }
 
   /**
+   * IRIs of the projects that recorded a transaction with the given client id.
+   * A transaction targeting models of several projects is recorded once per
+   * project, so operations referencing it (undo, version) belong to all of
+   * them.
+   */
+  async getProjectsOfTransaction(clientId: string): Promise<string[]> {
+    const rows = await this.prismaClient.transaction.findMany({
+      select: { project: { select: { iri: true } } },
+      where: { clientId },
+      distinct: ["projectId"],
+    });
+    return rows.map((row) => row.project.iri);
+  }
+
+  /**
    * Returns the transaction history of a branch of the project, oldest first,
    * with parsed operations and down events. Used for interpreting undo
    * operations, see the ModelRepository.

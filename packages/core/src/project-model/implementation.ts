@@ -4,12 +4,38 @@ import type { ModelIdentifier } from "../model/model.ts";
 import { PACKAGE_MODEL, PROJECT_MODEL_MODEL_ENTITY, type PackageEntity, type ProjectModelEntity } from "./model.ts";
 
 /**
- * Traverses the package tree and returns entities representing the whole project structure.
+ * Identifiers of projects reused by a package, as recorded in the package's
+ * own model. Accepts the raw model serialization as well as the entity the
+ * model is represented by, as both carry the same properties.
+ */
+export function getReusedProjectIds(packageModel: object | null | undefined): ModelIdentifier[] {
+  return (packageModel as { dataStructuresImportPackages?: ModelIdentifier[] } | null | undefined)?.dataStructuresImportPackages ?? [];
+}
+
+/**
+ * State shared by one traversal of a project structure.
+ */
+interface LoadContext {
+  service: PackageService;
+
+  entities: ProjectModelEntity[];
+
+  /**
+   * Packages that were already traversed. A reused project is thus part of the
+   * structure only once, no matter how many packages reuse it, which also
+   * keeps the structure free of cycles.
+   */
+  visited: Set<ModelIdentifier>;
+}
+
+/**
+ * Traverses the package tree and returns entities representing the whole
+ * project structure, including the structure of projects it reuses.
  */
 export async function loadProjectStructure(service: PackageService, projectId: ModelIdentifier): Promise<ProjectModelEntity[]> {
-  const allModels: ProjectModelEntity[] = [];
-  await loadResource(service, projectId, allModels, new Set());
-  return allModels;
+  const context: LoadContext = { service, entities: [], visited: new Set() };
+  await loadPackage(context, projectId, projectId);
+  return context.entities;
 }
 
 /**
@@ -35,6 +61,8 @@ export async function loadProjectsMainEntities(service: PackageService): Promise
         description: subResource.userMetadata?.description || {},
         modelType: PACKAGE_MODEL,
         subModels: [],
+        projectId: subResource.iri,
+        reusedProjects: [],
       } satisfies PackageEntity as PackageEntity);
     }
   }
@@ -42,27 +70,56 @@ export async function loadProjectsMainEntities(service: PackageService): Promise
   return allModels;
 }
 
-async function loadResource(service: PackageService, resourceId: ModelIdentifier, modelsToCollect: ProjectModelEntity[], visited: Set<ModelIdentifier>): Promise<void> {
-  if (visited.has(resourceId)) {
-    return;
+/**
+ * Collects the package, its content and the projects it reuses. Returns
+ * whether the package became part of the structure, i.e. false when it does
+ * not exist or was already collected.
+ *
+ * @param projectId Project the package belongs to.
+ */
+async function loadPackage(context: LoadContext, packageId: ModelIdentifier, projectId: ModelIdentifier): Promise<boolean> {
+  if (context.visited.has(packageId)) {
+    return false;
   }
-  visited.add(resourceId);
+  context.visited.add(packageId);
 
-  let resource = await service.getPackage(resourceId);
+  const resource = await context.service.getPackage(packageId);
+  if (!resource) {
+    // The package is referenced but does not exist (anymore), for example a
+    // reused project that was deleted. It is simply left out of the structure.
+    return false;
+  }
 
-  for (const subResource of resource.subResources || []) {
-    const isPackage = subResource.types.includes(PACKAGE_MODEL);
+  const subModels: ModelIdentifier[] = [];
 
-    if (isPackage) {
-      await loadResource(service, subResource.iri, modelsToCollect, visited);
-    } else {
-      modelsToCollect.push({
-        id: subResource.iri,
-        type: [PROJECT_MODEL_MODEL_ENTITY],
-        label: subResource.userMetadata?.label || {},
-        description: subResource.userMetadata?.description || {},
-        modelType: subResource.types[0]!,
-      } as ProjectModelEntity);
+  for (const subResource of resource.subResources ?? []) {
+    if (subResource.types.includes(PACKAGE_MODEL)) {
+      if (await loadPackage(context, subResource.iri, projectId)) {
+        subModels.push(subResource.iri);
+      }
+      continue;
+    }
+
+    context.entities.push({
+      id: subResource.iri,
+      type: [PROJECT_MODEL_MODEL_ENTITY],
+      label: subResource.userMetadata?.label || {},
+      description: subResource.userMetadata?.description || {},
+      modelType: subResource.types[0]!,
+      projectId,
+    } as ProjectModelEntity);
+    subModels.push(subResource.iri);
+  }
+
+  // Reused projects are not part of the resource tree, they are referenced by
+  // the package's own model. They are listed among the sub-packages so that
+  // clients that do not know about reuse treat them as any other sub-package.
+  const reusedProjects: ModelIdentifier[] = [];
+  const rawPackageData = await context.service.getResourceJsonData(packageId);
+  for (const reusedProjectId of getReusedProjectIds(rawPackageData as object | null)) {
+    if (await loadPackage(context, reusedProjectId, reusedProjectId)) {
+      subModels.push(reusedProjectId);
+      reusedProjects.push(reusedProjectId);
     }
   }
 
@@ -72,16 +129,11 @@ async function loadResource(service: PackageService, resourceId: ModelIdentifier
     label: resource.userMetadata?.label || {},
     description: resource.userMetadata?.description || {},
     modelType: PACKAGE_MODEL,
-    subModels: resource.subResources?.map((model) => model.iri) ?? [],
+    subModels,
+    projectId,
+    reusedProjects,
   };
-  modelsToCollect.push(packageEntity);
+  context.entities.push(packageEntity);
 
-  // The package's own model may reference other, unrelated packages via
-  // `dataStructuresImportPackages` (used for data structure reuse across
-  // specifications). These are not part of the sub-resource hierarchy, so
-  // they must be loaded explicitly as well.
-  const rawPackageData = (await service.getResourceJsonData(resourceId)) as { dataStructuresImportPackages?: string[] } | undefined;
-  for (const importedPackageId of rawPackageData?.dataStructuresImportPackages ?? []) {
-    await loadResource(service, importedPackageId, modelsToCollect, visited);
-  }
+  return true;
 }

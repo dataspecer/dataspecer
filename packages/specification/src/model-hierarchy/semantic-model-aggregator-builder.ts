@@ -57,7 +57,7 @@ export function build(
 /**
  * Helper function to check if a model type is a semantic model type
  */
-function isSemanticModelType(modelType: string): boolean {
+export function isSemanticModelType(modelType: string): boolean {
   return [LOCAL_SEMANTIC_MODEL, V1.CIM, V1.PIM, QUERYABLE_MODEL, RDFS_MODEL].includes(modelType);
 }
 
@@ -310,23 +310,11 @@ class SemanticModelAggregatorBuilder {
     const entity = this.projectModel[modelId] as ProjectModelEntity | undefined;
 
     if (entity?.modelType === LOCAL_PACKAGE) {
-      // It's a package, recurse
+      // It's a package, recurse. Projects the package reuses are part of the
+      // project structure as its sub-packages, hence there is nothing else to
+      // take into account here.
       const configuration = this.getCompositionConfiguration(modelId);
-      const aggregator = this.buildFromConfiguration(modelId, configuration);
-
-      // The package may reuse data structures from other, unrelated packages
-      // via `dataStructuresImportPackages`. Their models are merged in
-      // alongside the package's own content.
-      const rootModel = this.allModels[modelId]?.[modelId] as Record<string, unknown> | undefined;
-      const importedPackageIds = (rootModel?.dataStructuresImportPackages as string[] | undefined) ?? [];
-      const importedAggregators = importedPackageIds
-        .filter((importedPackageId) => !this.usedModels.has(importedPackageId))
-        .map((importedPackageId) => this.buildFromModelReference(importedPackageId));
-
-      if (importedAggregators.length === 0) {
-        return aggregator;
-      }
-      return new MergeAggregator([aggregator, ...importedAggregators]);
+      return this.buildFromConfiguration(modelId, configuration);
     }
 
     // It's a semantic model

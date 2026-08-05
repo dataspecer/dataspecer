@@ -4,7 +4,7 @@ import { type Entity, type EntityChange, type EntityIdentifier, type EntityRecor
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import type { ModelIdentifier, ModelMetadata } from "@dataspecer/core/model";
 import { createUndoOperation, type Transaction as CoreTransaction, type Operation, type OperationInModel } from "@dataspecer/core/operation";
-import { isCreateModelOperation, type CreateModelOperation, type ProjectModelEntity } from "@dataspecer/core/project-model";
+import { getReusedProjectIds, isCreateModelOperation, isPackageEntity, type CreateModelOperation, type ProjectModelEntity } from "@dataspecer/core/project-model";
 import { v4 as uuidv4 } from "uuid";
 import type { ObservableEntityModelStoreChangeEvent } from "../interfaces/observable.ts";
 import type { ConnectionStatus, RemoteModelStore } from "../interfaces/remote.ts";
@@ -690,6 +690,40 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
     const event: ObservableEntityModelStoreChangeEvent = { entityChanges };
     for (const listener of this.subscribers) {
       listener(event);
+    }
+
+    // Reported last, as it reports changes of the project structure on its own.
+    this.updateProjectModelReuse();
+  }
+
+  /**
+   * Reused projects are declared by the content of the package models, which
+   * the project model itself does not see. The declaration is therefore
+   * recomputed after every change and handed over to it.
+   */
+  protected updateProjectModelReuse(): void {
+    const projectTracked = this.models[this.projectModelId];
+    if (!projectTracked) {
+      return;
+    }
+
+    const reusedProjectIds: Record<ModelIdentifier, ModelIdentifier[]> = {};
+    for (const entity of Object.values(projectTracked.outputState)) {
+      if (!isPackageEntity(entity)) {
+        continue;
+      }
+      const packageModel = this.activeEntities[entity.id]?.[entity.id];
+      if (packageModel === undefined) {
+        // The content of the package is not known yet, which must not be
+        // mistaken for the package reusing nothing.
+        continue;
+      }
+      reusedProjectIds[entity.id] = getReusedProjectIds(packageModel);
+    }
+
+    const loading = this.projectModel.synchronizeReusedProjects(reusedProjectIds);
+    if (loading !== null) {
+      this.modelPromises.push(loading.catch((error) => console.error("Failed to load reused projects.", error)));
     }
   }
 

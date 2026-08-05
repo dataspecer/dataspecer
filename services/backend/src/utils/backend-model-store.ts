@@ -1,11 +1,12 @@
 /**
- * This file partially matches implementation in packages/project-model/src/implementation.ts.
+ * This file partially matches implementation in packages/core/src/project-model/implementation.ts.
  */
 
 import { LOCAL_PACKAGE, QUERYABLE_MODEL, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import type { ModelIdentifier } from "@dataspecer/core/model";
+import { getReusedProjectIds } from "@dataspecer/core/project-model";
 import { getModelMetadata, resolveAsyncQueryableModelEntities } from "@dataspecer/model-store/implementation";
 import { type ModelRepositoryType } from "../models/model-repository.ts";
 import { PROJECT_MODEL_ID } from "../models/model-id.ts";
@@ -41,33 +42,40 @@ export async function getModelsForPackage(
   const projectModelEntities: EntityRecord = {};
   const visitedPackages = new Set<string>();
 
-  async function loadPackageRecursively(id: string): Promise<void> {
+  /**
+   * Returns whether the package became part of the structure, i.e. false when
+   * it does not exist or was already collected.
+   *
+   * @param projectId Project the package belongs to.
+   */
+  async function loadPackageRecursively(id: string, projectId: string): Promise<boolean> {
     if (visitedPackages.has(id)) {
-      return;
+      return false;
     }
     visitedPackages.add(id);
 
     const pkg = await modelRepository.getPackage(id);
     if (!pkg) {
-      return;
+      return false;
     }
 
     models[pkg.iri] = (await modelRepository.getModelEntities(pkg.iri))!;
 
-    // The package's own model entity may reference other, unrelated packages
-    // via `dataStructuresImportPackages` (used for data structure reuse across
-    // specifications). These are not part of the sub-resource hierarchy, so
-    // they must be loaded explicitly as well.
-    const rawPackageData = models[pkg.iri]?.[pkg.iri] as { dataStructuresImportPackages?: string[] } | undefined;
-    for (const importedPackageId of rawPackageData?.dataStructuresImportPackages ?? []) {
-      await loadPackageRecursively(importedPackageId);
+    // Reused projects are not part of the resource tree, they are referenced by
+    // the package's own model. They are listed among the sub-packages so that
+    // clients that do not know about reuse treat them as any other sub-package.
+    const reusedProjects: string[] = [];
+    for (const reusedProjectId of getReusedProjectIds(models[pkg.iri]?.[pkg.iri])) {
+      if (await loadPackageRecursively(reusedProjectId, reusedProjectId)) {
+        reusedProjects.push(reusedProjectId);
+      }
     }
 
     for (const subResource of pkg.subResources ?? []) {
       const subModelType = subResource.types[0] ?? "";
 
       if (subModelType === LOCAL_PACKAGE) {
-        await loadPackageRecursively(subResource.iri);
+        await loadPackageRecursively(subResource.iri, projectId);
       } else {
         models[subResource.iri] = await resolveModelEntities(subModelType, (await modelRepository.getModelEntities(subResource.iri))!);
 
@@ -80,7 +88,7 @@ export async function getModelsForPackage(
       }
 
       if (subModelType !== LOCAL_PACKAGE) {
-        const projectEntity = createRegularResourceEntity(subResource);
+        const projectEntity = createRegularResourceEntity(subResource, projectId);
 
         // The metadata stored inside the model take precedence over the
         // resource's user metadata.
@@ -94,11 +102,13 @@ export async function getModelsForPackage(
       }
     }
 
-    const packageEntity = createProjectPackageEntity(pkg);
+    const packageEntity = createProjectPackageEntity(pkg, projectId, reusedProjects);
     projectModelEntities[packageEntity.id] = packageEntity;
+
+    return true;
   }
 
-  await loadPackageRecursively(packageId);
+  await loadPackageRecursively(packageId, packageId);
   models[PROJECT_MODEL_ID] = projectModelEntities;
 
   return models;
