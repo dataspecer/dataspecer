@@ -13,7 +13,7 @@ export default defineConfig({
   resolve: {
     alias: {
       // https://ui.shadcn.com/docs/installation/vite
-      "@": path.resolve(__dirname, "./src"),
+      "@user-interface": path.resolve(__dirname, "./src/user-interface/"),
     },
   },
 });
