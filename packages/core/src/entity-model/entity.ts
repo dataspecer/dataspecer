@@ -1,4 +1,4 @@
-import { v7 as uuidv7 } from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 import { CoreResource } from '../core/core-resource.ts';
 
 /**
@@ -10,7 +10,7 @@ export type EntityIdentifier = string;
  * Generates random entity identifier.
  */
 export function generateEntityId(): EntityIdentifier {
-  return uuidv7();
+  return uuidv4();
 }
 
 /**

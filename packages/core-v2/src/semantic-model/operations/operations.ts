@@ -13,7 +13,7 @@ export interface CreatedEntityOperationResult extends OperationResult {
 
 // Create class
 
-export const CREATE_CLASS_OPERATION = 'create';
+export const CREATE_CLASS_OPERATION = "https://schemas.dataspecer.com/semantic-model/operations/create-class";
 
 export interface CreateClassOperation extends Operation {
     type: typeof CREATE_CLASS_OPERATION;
@@ -34,7 +34,7 @@ export function createClass(entity: Partial<Omit<SemanticModelClass, "type">> = 
 
 // Modify class
 
-export const MODIFY_CLASS_OPERATION = 'modify';
+export const MODIFY_CLASS_OPERATION = "https://schemas.dataspecer.com/semantic-model/operations/update-class";
 
 export interface ModifyClassOperation extends Operation {
     type: typeof MODIFY_CLASS_OPERATION;
@@ -58,7 +58,7 @@ export function modifyClass(id: string, entity: Partial<Omit<SemanticModelClass,
 
 // Create relationship
 
-export const CREATE_RELATIONSHIP_OPERATION = 'create-relation';
+export const CREATE_RELATIONSHIP_OPERATION = "https://schemas.dataspecer.com/semantic-model/operations/create-relationship";
 
 export interface CreateRelationshipOperation extends Operation {
     type: typeof CREATE_RELATIONSHIP_OPERATION;
@@ -81,7 +81,7 @@ export function createRelationship(entity: Partial<Omit<SemanticModelRelationshi
 
 // Modify relationship
 
-export const MODIFY_RELATIONSHIP_OPERATION = 'modify-relation';
+export const MODIFY_RELATIONSHIP_OPERATION = "https://schemas.dataspecer.com/semantic-model/operations/update-relationship";
 
 /**
  * If you modifying individual ends of the relationship, use `ModifyRelationEndOperation` instead.
@@ -108,7 +108,7 @@ export function modifyRelation(id: string, entity: Partial<Omit<SemanticModelRel
 
 // Modify relationship end
 
-export const MODIFY_RELATIONSHIP_END_OPERATION = 'modify-relation-end';
+export const MODIFY_RELATIONSHIP_END_OPERATION = "https://schemas.dataspecer.com/semantic-model/operations/update-relationship-end";
 
 export interface ModifyRelationEndOperation extends Operation {
     type: typeof MODIFY_RELATIONSHIP_END_OPERATION;
@@ -136,7 +136,7 @@ export function modifyRelationEnd(id: string, endIndex: number, end: Partial<Sem
 
 // Create generalization
 
-export const CREATE_GENERALIZATION_OPERATION = 'create-generalization';
+export const CREATE_GENERALIZATION_OPERATION = "https://schemas.dataspecer.com/semantic-model/operations/create-generalization";
 
 export interface CreateGeneralizationOperation extends Operation {
     type: typeof CREATE_GENERALIZATION_OPERATION;
@@ -157,7 +157,7 @@ export function createGeneralization(entity: Partial<Omit<SemanticModelGeneraliz
 
 // Modify generalization
 
-export const MODIFY_GENERALIZATION_OPERATION = 'modify-generalization';
+export const MODIFY_GENERALIZATION_OPERATION = "https://schemas.dataspecer.com/semantic-model/operations/update-generalization";
 
 export interface ModifyGeneralizationOperation extends Operation {
     type: typeof MODIFY_GENERALIZATION_OPERATION;
@@ -181,7 +181,7 @@ export function modifyGeneralization(id: string, entity: Partial<Omit<SemanticMo
 
 // Delete entity
 
-export const DELETE_ENTITY_OPERATION = 'delete';
+export const DELETE_ENTITY_OPERATION = "https://schemas.dataspecer.com/semantic-model/operations/delete-entity";
 
 /**
  * Deletes any type of entity from the single model.

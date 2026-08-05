@@ -55,8 +55,7 @@ export interface TransactionsToLdesInput {
 
   /**
    * Recorded time of a transaction. Defaults to the {@link Transaction.time}
-   * of the transaction, falling back to the time encoded in its uuidv7
-   * identifier.
+   * of the transaction, falling back to the epoch.
    */
   transactionTime?: (transaction: Transaction) => Date;
 
@@ -233,18 +232,14 @@ function applyTransaction(models: Record<string, EntityRecord>, transaction: Tra
 
 /**
  * Recorded time of a transaction: its own {@link Transaction.time} when
- * present, otherwise the timestamp encoded in its uuidv7 identifier; falls
- * back to the epoch.
+ * present, the epoch otherwise. Transaction identifiers are random, so they
+ * carry no time information.
  */
 function defaultTransactionTime(transaction: Transaction): Date {
   if (transaction.time !== undefined) {
     return new Date(transaction.time);
   }
-  const match = /^([0-9a-f]{8})-([0-9a-f]{4})-7/.exec(transaction.id);
-  if (match === null) {
-    return new Date(0);
-  }
-  return new Date(parseInt(match[1]! + match[2]!, 16));
+  return new Date(0);
 }
 
 /**

@@ -12,7 +12,7 @@ import type { WritableModelStore } from "../interfaces/writable.ts";
 import type { ModelInModelStore, StateResult } from "./interface.ts";
 import { createStateResult } from "./state.ts";
 
-export const ReloadModelOperationType = "http://dataspecer.com/core/operation/reload" as const;
+export const ReloadModelOperationType = "https://schemas.dataspecer.com/rdfs-model/operations/reload" as const;
 /**
  * Operation that triggers refetch of the model data from the backend. After the
  * reload, the model should update itself with the new data.
@@ -21,7 +21,7 @@ export interface ReloadModelOperation extends Operation {
   type: typeof ReloadModelOperationType;
 }
 
-export const SetModelUrlsOperationType = "http://dataspecer.com/core/operation/set-urls" as const;
+export const SetModelUrlsOperationType = "https://schemas.dataspecer.com/rdfs-model/operations/set-urls" as const;
 export interface SetModelUrl extends Operation {
   type: typeof SetModelUrlsOperationType;
 

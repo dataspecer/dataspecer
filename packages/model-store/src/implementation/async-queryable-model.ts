@@ -39,7 +39,7 @@ function createQueryAdapter(httpFetch: HttpFetch): CimAdapterWrapper {
   return new CimAdapterWrapper(adapter);
 }
 
-export const AddQueryOperationType = "http://dataspecer.com/core/operation/add-query" as const;
+export const AddQueryOperationType = "https://schemas.dataspecer.com/queryable-model/operations/create-query" as const;
 export interface AddQueryOperation extends Operation {
   type: typeof AddQueryOperationType;
   query: string;
@@ -47,7 +47,7 @@ export interface AddQueryOperation extends Operation {
 export function isAddQueryOperation(operation: Operation): operation is AddQueryOperation {
   return operation.type === AddQueryOperationType;
 }
-export const RemoveQueryOperationType = "http://dataspecer.com/core/operation/remove-query" as const;
+export const RemoveQueryOperationType = "https://schemas.dataspecer.com/queryable-model/operations/delete-query" as const;
 export interface RemoveQueryOperation extends Operation {
   type: typeof RemoveQueryOperationType;
   query: string;

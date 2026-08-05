@@ -2,7 +2,7 @@ import { generateOperationId, type Operation } from "../../operation/index.ts";
 import * as PSM from "../data-psm-vocabulary.ts";
 
 export class DataPsmSetDematerialized implements Operation {
-  static readonly TYPE = PSM.SET_MATERIALIZED;
+  static readonly TYPE = PSM.SET_DEMATERIALIZED;
 
   id: string;
 

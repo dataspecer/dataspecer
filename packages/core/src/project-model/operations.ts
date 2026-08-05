@@ -6,7 +6,7 @@ import { Operation, generateOperationId } from "../operation/operation.js";
 /**
  * @see {@link RemoveModelOperation}
  */
-export const RemoveModelOperationType = "http://dataspecer.com/project-model/operation/remove-model" as const;
+export const RemoveModelOperationType = "https://schemas.dataspecer.com/project-model/operations/delete-model" as const;
 
 /**
  * Operation that ensures a model is removed from the project structure.
@@ -43,7 +43,7 @@ export function isRemoveModelOperation(operation: Operation): operation is Remov
 /**
  * @see {@link CreateModelOperation}
  */
-export const CreateModelOperationType = "http://dataspecer.com/project-model/operation/create-model" as const;
+export const CreateModelOperationType = "https://schemas.dataspecer.com/project-model/operations/create-model" as const;
 
 /**
  * Operation that ensures a model exists under the given package.
@@ -102,7 +102,7 @@ export type ProjectModelStructureOperation = RemoveModelOperation | CreateModelO
 /**
  * @see {@link CreateProjectOperation}
  */
-export const CreateProjectOperationType = "http://dataspecer.com/project-model/operation/create-project" as const;
+export const CreateProjectOperationType = "https://schemas.dataspecer.com/project-model/operations/create-project" as const;
 
 /**
  * Operation that ensures a project exists.
