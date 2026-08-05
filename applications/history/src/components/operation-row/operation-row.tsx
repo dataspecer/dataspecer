@@ -192,7 +192,7 @@ function ChangedFields({ fields }: { fields: string[] }) {
 }
 
 /**
- * "SetJsonLdDefinedPrefixes" / "set-urls" -> "Set json ld defined prefixes".
+ * "set-json-ld-defined-prefixes" -> "Set json ld defined prefixes".
  */
 function humanizeTypeName(type: string): string {
   const segment = type.split("/").pop() ?? type;
@@ -785,7 +785,7 @@ const PSM_GENERIC_SET_TYPES = [
   PSM.SET_EMPTY_AS_COMPLEX,
   PSM.SET_PART,
   PSM.SET_ROOT_COLLECTION,
-  PSM.SET_MATERIALIZED,
+  PSM.SET_DEMATERIALIZED,
   PSM.SET_ROOTS,
   PSM.SET_JSON_ENFORCE_CONTEXT,
   PSM.SET_JSON_LD_DEFINED_PREFIXES,
@@ -817,7 +817,7 @@ function PsmDeleteRow({ operation }: OperationRowProps) {
 function PsmGenericSetRow({ operation }: OperationRowProps) {
   const { t } = useTranslation();
   const suffix = operation.type.slice(operation.type.lastIndexOf("/") + 1);
-  const what = humanizeTypeName(suffix.replace(/^(Set|Unset)/, "")).toLowerCase();
+  const what = humanizeTypeName(suffix.replace(/^(set|unset)-/, "")).toLowerCase();
   return (
     <Row icon={Pencil} colorClass="text-blue-600 dark:text-blue-400" operation={operation}>
       <span>{t("history.op.psm-set", { what })}</span>

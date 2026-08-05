@@ -1,10 +1,10 @@
-import { v7 as uuidv7 } from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 import type { ModelIdentifier } from '../model/model.ts';
 
 export type OperationIdentifier = string;
 
 export function generateOperationId(): OperationIdentifier {
-  return uuidv7();
+  return uuidv4();
 }
 
 /**

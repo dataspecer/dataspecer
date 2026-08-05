@@ -4,7 +4,7 @@ import { generateOperationId, type Operation } from "./operation.ts";
 /**
  * @see {@link RemoveEntityOperation}
  */
-export const RemoveEntityOperationType = "http://dataspecer.com/core/operation/remove-entity" as const;
+export const RemoveEntityOperationType = "https://schemas.dataspecer.com/core/operations/delete-entity" as const;
 
 /**
  * Operation that ensures that an entity is removed from the model. If the
@@ -37,7 +37,7 @@ export function isRemoveEntityOperation(operation: Operation): operation is Remo
 /**
  * @see {@link SetEntityOperation}
  */
-export const SetEntityOperationType = "http://dataspecer.com/core/operation/set-entity" as const;
+export const SetEntityOperationType = "https://schemas.dataspecer.com/core/operations/set-entity" as const;
 
 /**
  * Operation that ensures that an entity is set in the model with the given
@@ -71,7 +71,7 @@ export function isSetEntityOperation(operation: Operation): operation is SetEnti
 /**
  * @see {@link UpdateEntityOperation}
  */
-export const UpdateEntityOperationType = "http://dataspecer.com/core/operation/update-entity" as const;
+export const UpdateEntityOperationType = "https://schemas.dataspecer.com/core/operations/update-entity" as const;
 
 /**
  * Operation that ensures that an entity is updated in the model with the given

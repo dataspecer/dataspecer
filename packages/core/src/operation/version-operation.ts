@@ -3,7 +3,7 @@ import { generateOperationId, type Operation, type OperationIdentifier, type Tra
 /**
  * @see {@link VersionOperation}
  */
-export const VERSION_OPERATION_TYPE = "version" as const;
+export const VERSION_OPERATION_TYPE = "https://schemas.dataspecer.com/core/operations/version" as const;
 
 /**
  * Marks a specific transaction with a version label, e.g. "1.1" - analogous to

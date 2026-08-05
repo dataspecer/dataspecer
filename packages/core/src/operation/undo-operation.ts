@@ -3,7 +3,7 @@ import { generateOperationId, type Operation, type OperationIdentifier } from ".
 /**
  * @see {@link UndoOperation}
  */
-export const UNDO_OPERATION_TYPE = "undo" as const;
+export const UNDO_OPERATION_TYPE = "https://schemas.dataspecer.com/core/operations/undo" as const;
 
 /**
  * An undo operation "cancels" a specific transaction (a set of operations) as
