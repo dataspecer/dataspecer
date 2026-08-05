@@ -36,101 +36,6 @@ test("Issue #608", () => {
         baseIdentifier: "p#",
         baseIri: "http://dcat/model/",
     });
-    const datasetProfile = profile.class({ iri: "http://www.w3.org/ns/Dataset-profile" })
-        .reuseName(dataset)
-        .reuseDescription(dataset);
-    const titleProfile = profile.property({
-        iri: "terms-title-profile",
-        name: { en: "Dataset title" },
-    })
-        .domain(datasetProfile)
-        .range("http://www.w3.org/2000/01/rdf-schema#Literal")
-        .profile(title);
-    // profile-model's builder doesn't yet forward `description` onto a
-    // property's range end (unlike `.class()`); set it directly on the
-    // underlying entity.
-    (titleProfile as any).entity.ends[1].description = { en: "A name given to the dataset." };
-
-    const container = mergeEntityListContainers(
-        toEntityListContainer(vocabulary.build()),
-        toEntityListContainer(profile.build()),
-    );
-    const context = createContext([container]);
-
-    const actual = entityListContainerToDsvModel(
-        "http://dcat/model/", container, context);
-
-    const expected: ApplicationProfile = {
-        "iri": "http://dcat/model/",
-        "externalDocumentationUrl": null,
-        "classProfiles": [{
-            "iri": "http://www.w3.org/ns/Dataset-profile",
-            "prefLabel": {},
-            "definition": {},
-            "usageNote": {},
-            "profileOfIri": [],
-            "reusesPropertyValue": [{
-                "reusedPropertyIri": "http://www.w3.org/2004/02/skos/core#prefLabel",
-                "reusedAsPropertyIri": "http://www.w3.org/2004/02/skos/core#prefLabel",
-                "propertyReusedFromResourceIri": "http://www.w3.org/ns/Dataset",
-            }, {
-                "reusedPropertyIri": "http://www.w3.org/2004/02/skos/core#definition",
-                "reusedAsPropertyIri": "http://www.w3.org/2004/02/skos/core#definition",
-                "propertyReusedFromResourceIri": "http://www.w3.org/ns/Dataset",
-            }],
-            "type": ["class-profile"],
-            "profiledClassIri": ["http://www.w3.org/ns/Dataset"],
-            "specializationOfIri": [],
-            "classRole": ClassRole.undefined,
-            "externalDocumentationUrl": null,
-        }],
-        "datatypePropertyProfiles": [{
-            "iri": "http://dcat/model/terms-title-profile",
-            "cardinality": null,
-            "prefLabel": { "en": "Dataset title" },
-            "definition": { "en": "A name given to the dataset." },
-            "usageNote": {},
-            "profileOfIri": [],
-            "profiledPropertyIri": ["http://purl.org/dc/terms/title"],
-            "reusesPropertyValue": [],
-            "type": ["datatype-property-profile"],
-            "rangeDataTypeIri": [
-                "http://www.w3.org/2000/01/rdf-schema#Literal"
-            ],
-            "specializationOfIri": [],
-            "externalDocumentationUrl": null,
-            "requirementLevel": RequirementLevel.undefined,
-            "domainIri": "http://www.w3.org/ns/Dataset-profile",
-        }],
-        "objectPropertyProfiles": []
-    };
-
-    expect(actual).toMatchObject(expected);
-});
-
-test("Default test for profiles.", () => {
-
-    const vocabulary = createDefaultSemanticModelBuilder({
-        baseIdentifier: "v#",
-        baseIri: "http://dcat/model/",
-    });
-    const dataset = vocabulary.class({
-        iri: "http://www.w3.org/ns/Dataset",
-        name: { cs: "Datová sada", en: "Dataset" },
-        description: {
-            cs: "Kolekce dat, ke stažení.",
-            en: "A collection of data, published or curated by a single agent, and available for access or download in one or more representations.",
-        },
-    });
-    const title = dataset.property({
-        iri: "http://purl.org/dc/terms/title",
-        range: { identifier: "http://www.w3.org/2000/01/rdf-schema#Literal" },
-    });
-
-    const profile = createDefaultProfileModelBuilder({
-        baseIdentifier: "p#",
-        baseIri: "http://dcat/model/",
-    });
     const datasetProfile = profile.class({
         iri: "http://www.w3.org/ns/Dataset-profile",
         // An own description value is set but ignored downstream, since
@@ -187,8 +92,8 @@ test("Default test for profiles.", () => {
             "type": ["class-profile"],
             "profiledClassIri": ["http://www.w3.org/ns/Dataset"],
             "specializationOfIri": [],
-            "externalDocumentationUrl": "http://documenation-1",
             "classRole": ClassRole.undefined,
+            "externalDocumentationUrl": "http://documenation-1",
         }],
         "datatypePropertyProfiles": [{
             "iri": "http://dcat/model/terms-title-profile",
