@@ -8,7 +8,7 @@ export class DataPsmSetJsonLdDefinedPrefixes implements Operation {
 
   type: string;
 
-  dataPsmEntity: string | null = null;
+  entityId: string | null = null;
   jsonLdDefinedPrefixes: { [prefix: string]: string } | null = null;
 
   constructor() {

@@ -63,7 +63,7 @@ export class ReplaceAlongInheritance implements ComplexOperation {
     // Remove the old class
 
     const dataPsmDeleteClass = new DataPsmDeleteClass();
-    dataPsmDeleteClass.dataPsmClass = fromDataPsmClass.iri;
+    dataPsmDeleteClass.entityId = fromDataPsmClass.iri;
     this.store.applyOperation(dataPsmSchemaIri, dataPsmDeleteClass);
   }
 }

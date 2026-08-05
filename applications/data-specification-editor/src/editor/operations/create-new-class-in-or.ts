@@ -44,7 +44,7 @@ export class CreateNewClassInOr implements ComplexOperation {
     this.store.applyOperation(dataPsmSchema, dataPsmCreateClass);
 
     const dataPsmSetChoice = new DataPsmSetChoice();
-    dataPsmSetChoice.dataPsmOr = this.dataPsmOrIri;
+    dataPsmSetChoice.entityId = this.dataPsmOrIri;
     dataPsmSetChoice.dataPsmChoice = dataPsmCreateClass.dataPsmNewIri as string;
     this.store.applyOperation(dataPsmSchema, dataPsmSetChoice);
   }

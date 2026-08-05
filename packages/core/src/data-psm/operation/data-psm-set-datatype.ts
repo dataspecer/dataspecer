@@ -8,7 +8,7 @@ export class DataPsmSetDatatype implements Operation {
 
   type: string;
 
-  dataPsmAttribute: string | null = null;
+  entityId: string | null = null;
 
   dataPsmDatatype: string | null = null;
 

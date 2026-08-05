@@ -8,7 +8,7 @@ export class DataPsmSetEmptyAsComplex implements Operation {
 
   type: string;
 
-  dataPsmClass: string | null = null;
+  entityId: string | null = null;
 
   dataPsmEmptyAsComplex: boolean | null = null;
 

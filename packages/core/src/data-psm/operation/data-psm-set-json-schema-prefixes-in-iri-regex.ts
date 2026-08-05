@@ -8,7 +8,7 @@ export class DataPsmSetJsonSchemaPrefixesInIriRegex implements Operation {
 
   type: string;
 
-  dataPsmResource: string | null = null;
+  entityId: string | null = null;
 
   jsonSchemaPrefixesInIriRegex: {
     usePrefixes: "ALWAYS" | "NEVER" | "OPTIONAL";

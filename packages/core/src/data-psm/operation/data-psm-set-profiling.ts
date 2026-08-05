@@ -8,7 +8,7 @@ export class DataPsmSetProfiling implements Operation {
 
   type: string;
 
-  dataPsmResource: string | null = null;
+  entityId: string | null = null;
 
   dataPsmProfiling: string[] | null = null;
 

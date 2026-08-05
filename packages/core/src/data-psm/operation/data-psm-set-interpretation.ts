@@ -8,7 +8,7 @@ export class DataPsmSetInterpretation implements Operation {
 
   type: string;
 
-  dataPsmResource: string | null = null;
+  entityId: string | null = null;
 
   dataPsmInterpretation: string | null = null;
 

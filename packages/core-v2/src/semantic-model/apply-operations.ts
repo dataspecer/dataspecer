@@ -130,13 +130,13 @@ function handleSetEntityOperation(change: ChangeCollector, operation: SetEntityO
 }
 
 function handleUpdateEntityOperation(getEntity: EntityGetter, change: ChangeCollector, operation: UpdateEntityOperation): OperationResult {
-  const entity = getEntity(operation.update.id);
+  const entity = getEntity(operation.entityId);
   if (!entity) {
     return {
       success: false,
     };
   }
-  change({ [operation.update.id]: { ...entity, ...operation.update } }, []);
+  change({ [operation.entityId]: { ...entity, ...operation.update } }, []);
   return {
     success: true,
   };
@@ -155,12 +155,12 @@ function handleRemoveEntityOperation(getEntity: EntityGetter, change: ChangeColl
 }
 
 function handleModifyGeneralizationOperation(getEntity: EntityGetter, change: ChangeCollector, operation: ModifyGeneralizationOperation): OperationResult {
-  if (!getEntity(operation.entity.id)) {
+  if (!getEntity(operation.entityId)) {
     return {
       success: false,
     };
   }
-  change({ [operation.entity.id]: { ...getEntity(operation.entity.id)!, ...operation.entity } }, []);
+  change({ [operation.entityId]: { ...getEntity(operation.entityId)!, ...operation.entity } }, []);
   return {
     success: true,
   };
@@ -206,12 +206,12 @@ function handleCreateClassOperation(getEntity: EntityGetter, change: ChangeColle
 }
 
 function handleModifyClassOperation(getEntity: EntityGetter, change: ChangeCollector, operation: ModifyClassOperation): OperationResult {
-  if (!getEntity(operation.entity.id)) {
+  if (!getEntity(operation.entityId)) {
     return {
       success: false,
     };
   }
-  change({ [operation.entity.id]: { ...getEntity(operation.entity.id)!, ...operation.entity } }, []);
+  change({ [operation.entityId]: { ...getEntity(operation.entityId)!, ...operation.entity } }, []);
   return {
     success: true,
   };
@@ -267,7 +267,7 @@ function handleCreateRelationshipOperation(
 }
 
 function handleModifyRelationOperation(getEntity: EntityGetter, change: ChangeCollector, operation: ModifyRelationOperation): OperationResult {
-  const oldRelationship = getEntity(operation.entity.id) as SemanticModelRelationship | undefined;
+  const oldRelationship = getEntity(operation.entityId) as SemanticModelRelationship | undefined;
 
   if (!oldRelationship) {
     return {
@@ -293,7 +293,7 @@ function handleModifyRelationOperation(getEntity: EntityGetter, change: ChangeCo
     iri: operation.entity.iri ?? oldRelationship.iri,
   } as SemanticModelRelationship;
 
-  change({ [operation.entity.id]: updatedRelationship }, []);
+  change({ [operation.entityId]: updatedRelationship }, []);
   return {
     success: true,
   };

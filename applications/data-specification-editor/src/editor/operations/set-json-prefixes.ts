@@ -27,7 +27,7 @@ export class SetJsonPrefixes implements ComplexOperation {
     }
 
     const operation = new DataPsmSetJsonLdDefinedPrefixes();
-    operation.dataPsmEntity = this.entityId;
+    operation.entityId = this.entityId;
     operation.jsonLdDefinedPrefixes = this.prefixes;
     this.store.applyOperation(schema, operation);
   }

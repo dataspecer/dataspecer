@@ -8,7 +8,7 @@ export class DataPsmSetPart implements Operation {
 
   type: string;
 
-  dataPsmAssociationEnd: string | null = null;
+  entityId: string | null = null;
 
   dataPsmPart: string | null = null;
 

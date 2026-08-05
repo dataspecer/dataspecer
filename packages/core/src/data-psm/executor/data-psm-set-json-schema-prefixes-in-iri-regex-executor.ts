@@ -8,7 +8,7 @@ export function executeDataPsmSetJsonSchemaPrefixesInIriRegex(
   _: any,
   operation: DataPsmSetJsonSchemaPrefixesInIriRegex
 ): CoreExecutorResult {
-  const resource = reader.readResource(operation.dataPsmResource);
+  const resource = reader.readResource(operation.entityId);
   if (resource === null || !DataPsmClass.is(resource)) {
     return DataPsmExecutorResultFactory.invalidType(resource, "data-psm class");
   }

@@ -8,7 +8,7 @@ export class DataPsmSetExternalRootTypes implements Operation {
 
   type: string;
 
-  dataPsmExternalRoot: string | null = null;
+  entityId: string | null = null;
 
   dataPsmTypes: string[] = [];
 

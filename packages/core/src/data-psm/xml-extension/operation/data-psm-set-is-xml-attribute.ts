@@ -8,7 +8,7 @@ export class DataPsmSetIsXmlAttribute implements Operation {
 
   type: string;
 
-  dataPsmProperty: string | null = null;
+  entityId: string | null = null;
 
   isAttribute: boolean = true;
 

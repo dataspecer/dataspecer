@@ -45,7 +45,7 @@ export class ReplaceDataPsmAssociationEndWithReference implements ComplexOperati
         // Replace the association end with the reference
 
         const dataPsmSetPart = new DataPsmSetPart();
-        dataPsmSetPart.dataPsmAssociationEnd = this.dataPsmAssociationEnd;
+        dataPsmSetPart.entityId = this.dataPsmAssociationEnd;
         dataPsmSetPart.dataPsmPart = reference;
         this.store.applyOperation(dataPsmSchema, dataPsmSetPart);
 
@@ -55,7 +55,7 @@ export class ReplaceDataPsmAssociationEndWithReference implements ComplexOperati
             const oldClassSchema = this.store.getSchemaForResource(oldClass) as string;
 
             const dataPsmDeleteClass = new DataPsmDeleteClass();
-            dataPsmDeleteClass.dataPsmClass = oldClass;
+            dataPsmDeleteClass.entityId = oldClass;
             this.store.applyOperation(oldClassSchema, dataPsmDeleteClass);
         }
     }

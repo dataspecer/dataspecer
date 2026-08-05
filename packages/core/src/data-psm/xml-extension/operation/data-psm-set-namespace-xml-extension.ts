@@ -8,7 +8,7 @@ export class DataPsmSetNamespaceXmlExtension implements Operation {
 
   type: string;
 
-  dataPsmSchema: string | null = null;
+  entityId: string | null = null;
 
   namespace: string | null = null;
   namespacePrefix: string | null = null;

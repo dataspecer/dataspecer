@@ -8,7 +8,7 @@ export class DataPsmSetUseKeyValueForLangString implements Operation {
 
   type: string;
 
-  dataPsmProperty: string | null = null;
+  entityId: string | null = null;
 
   useKeyValueForLangString: boolean = false;
 

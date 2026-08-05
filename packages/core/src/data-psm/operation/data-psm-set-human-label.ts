@@ -9,7 +9,7 @@ export class DataPsmSetHumanLabel implements Operation {
 
   type: string;
 
-  dataPsmResource: string | null = null;
+  entityId: string | null = null;
 
   dataPsmHumanLabel: LanguageString | null = null;
 

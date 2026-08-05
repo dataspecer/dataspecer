@@ -110,7 +110,7 @@ test("Create and delete data PSM class", async () => {
   expect(pimSchemaChange.deleted).toEqual([]);
 
   const pimDelete = new Operations.DataPsmDeleteClass();
-  pimDelete.dataPsmClass = "http://localhost/class/3";
+  pimDelete.entityId = "http://localhost/class/3";
   const pimDeleteChange = store.applyOperation(pimDelete);
   expect(pimDeleteChange.operation.id).toBeDefined();
   expect(pimDeleteChange.changed).toEqual(["http://localhost/schema/1"]);

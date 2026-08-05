@@ -16,7 +16,7 @@ export function executeDataPsmSetPart(
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmSetPart
 ): CoreExecutorResult {
-  const resource = reader.readResource(operation.dataPsmAssociationEnd);
+  const resource = reader.readResource(operation.entityId);
   if (resource == null || !DataPsmAssociationEnd.is(resource)) {
     return DataPsmExecutorResultFactory.invalidType(
       resource,

@@ -14,9 +14,9 @@ export function applyOperationsToEntityModel(mutableModel: EntityRecord, operati
     if (isSetEntityOperation(operation)) {
       mutableModel[operation.entity.id] = operation.entity;
     } else if (isUpdateEntityOperation(operation)) {
-      const entity = mutableModel[operation.update.id];
+      const entity = mutableModel[operation.entityId];
       if (entity) {
-        mutableModel[operation.update.id] = { ...entity, ...operation.update };
+        mutableModel[operation.entityId] = { ...entity, ...operation.update };
       }
     } else if (isRemoveEntityOperation(operation)) {
       delete mutableModel[operation.entityId];

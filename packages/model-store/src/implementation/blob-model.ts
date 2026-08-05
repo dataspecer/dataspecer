@@ -90,13 +90,13 @@ export function applyOperationsToBlobModel(modelId: ModelIdentifier, mutableMode
       }
       mutableModel[operation.entity.id] = operation.entity;
     } else if (isUpdateEntityOperation(operation)) {
-      if (operation.update.id !== modelId) {
-        throw new Error(`UpdateEntityOperation for blob model "${modelId}" must have update id equal to the model id.`);
+      if (operation.entityId !== modelId) {
+        throw new Error(`UpdateEntityOperation for blob model "${modelId}" must have entity id equal to the model id.`);
       }
-      const existingEntity = mutableModel[operation.update.id];
+      const existingEntity = mutableModel[operation.entityId];
       // Per contract, if the entity does not exist, it is a soft fail - the operation is ignored.
       if (existingEntity) {
-        mutableModel[operation.update.id] = { ...existingEntity, ...operation.update };
+        mutableModel[operation.entityId] = { ...existingEntity, ...operation.update };
       }
     } else {
       throw new Error(`Unsupported operation type "${operation.type}" for blob model "${modelId}".`);

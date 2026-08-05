@@ -8,7 +8,7 @@ export class DataPsmDeleteClass implements Operation {
 
   type: string;
 
-  dataPsmClass: string | null = null;
+  entityId: string | null = null;
 
   constructor() {
     this.id = generateOperationId();

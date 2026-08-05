@@ -97,10 +97,10 @@ export function applyOperationsToModelEntities(modelId: string, modelType: strin
     if (isSetEntityOperation(operation)) {
       working[operation.entity.id] = operation.entity;
     } else if (isUpdateEntityOperation(operation)) {
-      const entity = working[operation.update.id];
+      const entity = working[operation.entityId];
       // If entity does not exist, do nothing
       if (entity) {
-        working[operation.update.id] = { ...entity, ...operation.update };
+        working[operation.entityId] = { ...entity, ...operation.update };
       }
     } else if (isRemoveEntityOperation(operation)) {
       delete working[operation.entityId];

@@ -9,7 +9,7 @@ export class DataPsmSetHumanDescription implements Operation {
 
   type: string;
 
-  dataPsmResource: string | null = null;
+  entityId: string | null = null;
 
   dataPsmHumanDescription: LanguageString | null = null;
 

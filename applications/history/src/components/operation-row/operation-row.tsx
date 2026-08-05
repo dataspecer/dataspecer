@@ -294,7 +294,7 @@ function CreateClassRow({ operation, after }: OperationRowProps) {
 
 function ModifyClassRow({ operation, before }: OperationRowProps) {
   const op = operation as ModifyClassOperation;
-  const name = <SemanticEntityName entityId={op.entity.id} entities={before} />;
+  const name = <SemanticEntityName entityId={op.entityId} entities={before} />;
   return (
     <Row icon={Pencil} colorClass="text-blue-600 dark:text-blue-400" operation={operation}>
       <span>
@@ -317,7 +317,7 @@ function CreateRelationshipRow({ operation, after }: OperationRowProps) {
 }
 
 function ModifyRelationshipRow({ operation, before }: OperationRowProps) {
-  const entityId = isModifyRelationOperation(operation) ? (operation as ModifyRelationOperation).entity.id : (operation as ModifyRelationEndOperation).entityId;
+  const entityId = (operation as ModifyRelationOperation | ModifyRelationEndOperation).entityId;
   const name = <SemanticEntityName entityId={entityId} entities={before} />;
   const fields = isModifyRelationOperation(operation)
     ? changedFields((operation as ModifyRelationOperation).entity)
@@ -951,7 +951,7 @@ function UpdateEntityRow(props: OperationRowProps) {
     return <UpdateEntitySvgRow {...props} />;
   }
 
-  const name = <SemanticEntityName entityId={op.update.id} entities={contextBefore} />;
+  const name = <SemanticEntityName entityId={op.entityId} entities={contextBefore} />;
   return (
     <Row icon={Pencil} colorClass="text-blue-600 dark:text-blue-400" operation={operation}>
       <span>

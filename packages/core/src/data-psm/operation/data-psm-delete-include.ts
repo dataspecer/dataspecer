@@ -10,7 +10,7 @@ export class DataPsmDeleteInclude implements Operation {
 
   dataPsmOwner: string | null = null;
 
-  dataPsmInclude: string | null = null;
+  entityId: string | null = null;
 
   constructor() {
     this.id = generateOperationId();

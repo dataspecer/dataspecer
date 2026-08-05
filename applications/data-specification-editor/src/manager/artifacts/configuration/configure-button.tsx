@@ -24,7 +24,7 @@ export const ConfigureButton: FC = () => {
       const userPreferences = { ...specification.userPreferences, ...configuration };
       modelStore.transaction([{
         modelId: specification.iri,
-        operation: createUpdateEntityOperation({ id: specification.iri, userPreferences } as Partial<Entity> & Pick<Entity, "id">),
+        operation: createUpdateEntityOperation(specification.iri, { userPreferences }),
       }], {});
     },
     [modelStore, specification]
