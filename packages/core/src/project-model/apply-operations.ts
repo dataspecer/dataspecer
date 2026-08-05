@@ -33,11 +33,12 @@ function applyRemoveModelOperation(entities: EntityRecord<ProjectModelEntity>, m
 
     if (currentEntity.modelType === PACKAGE_MODEL) {
       const packageEntity = currentEntity as PackageEntity;
-      packageEntity.subModels.forEach((subModelId) => toDelete.push(subModelId));
+      // Remove own packages, not reused ones
+      packageEntity.subModels.filter((subModelId) => !packageEntity.reusedProjects.includes(subModelId)).forEach((subModelId) => toDelete.push(subModelId));
     }
   }
 
-  // Remove the (now deleted) model from its parent package's subModels list.
+  // Remove the (now deleted) model from its parent package's lists.
   for (const id in entities) {
     const entity = entities[id];
     if (entity.modelType !== PACKAGE_MODEL) {
@@ -50,6 +51,7 @@ function applyRemoveModelOperation(entities: EntityRecord<ProjectModelEntity>, m
     entities[id] = {
       ...packageEntity,
       subModels: packageEntity.subModels.filter((subModelId) => subModelId !== modelId),
+      reusedProjects: packageEntity.reusedProjects.filter((subModelId) => subModelId !== modelId),
     } as PackageEntity;
     break;
   }
@@ -71,6 +73,8 @@ function applyCreateProjectOperation(entities: EntityRecord<ProjectModelEntity>,
     description: operation.description ?? {},
     modelType: PACKAGE_MODEL,
     subModels: [],
+    projectId: operation.projectId,
+    reusedProjects: [],
   };
   entities[operation.projectId] = projectEntity;
 }
@@ -93,6 +97,9 @@ function applyCreateModelOperation(entities: EntityRecord<ProjectModelEntity>, o
     label: operation.label ?? {},
     description: operation.description ?? {},
     modelType: operation.modelType,
+    // A model belongs to the project of the package it is created in, which
+    // may be a reused project.
+    projectId: parentEntity.projectId,
   } satisfies ProjectModelEntity;
 
   if (operation.modelType === PACKAGE_MODEL) {
@@ -100,6 +107,7 @@ function applyCreateModelOperation(entities: EntityRecord<ProjectModelEntity>, o
       ...newEntity,
       modelType: PACKAGE_MODEL,
       subModels: [],
+      reusedProjects: [],
     };
     newEntity = packageEntity;
   }

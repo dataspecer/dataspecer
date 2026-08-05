@@ -4,9 +4,12 @@ import { PROJECT_MODEL_MODEL_ENTITY, type PackageEntity, type ProjectModelEntity
 import type { BaseResource, Package } from "./resource-model.ts";
 
 /**
- * Projection of a resource that is not a package onto its project model entity.
+ * Projection of a resource that is not a package onto its project model
+ * entity.
+ *
+ * @param projectId Project the resource belongs to.
  */
-export function createRegularResourceEntity(resource: BaseResource): ProjectModelEntity {
+export function createRegularResourceEntity(resource: BaseResource, projectId: string): ProjectModelEntity {
   return {
     // Resources may carry arbitrary extra metadata fields (e.g. documentBaseUrl,
     // importedFromUrl) beyond label/description, which callers rely on.
@@ -16,14 +19,19 @@ export function createRegularResourceEntity(resource: BaseResource): ProjectMode
     label: resource.userMetadata?.label ?? {},
     description: resource.userMetadata?.description ?? {},
     modelType: resource.types[0] ?? "",
+    projectId,
   };
 }
 
 /**
  * Projection of a package onto its project model entity, listing its direct
  * sub-resources.
+ *
+ * @param projectId Project the package belongs to.
+ * @param reusedProjects Projects the package reuses. They do not follow from
+ * the resource tree, so they are listed among the sub-packages here.
  */
-export function createProjectPackageEntity(resource: Package): PackageEntity {
+export function createProjectPackageEntity(resource: Package, projectId: string, reusedProjects: string[] = []): PackageEntity {
   return {
     ...((resource.userMetadata as object) ?? {}),
     id: resource.iri,
@@ -31,7 +39,9 @@ export function createProjectPackageEntity(resource: Package): PackageEntity {
     label: resource.userMetadata?.label ?? {},
     description: resource.userMetadata?.description ?? {},
     modelType: LOCAL_PACKAGE,
-    subModels: resource.subResources?.map((subResource) => subResource.iri) ?? [],
+    subModels: [...(resource.subResources?.map((subResource) => subResource.iri) ?? []), ...reusedProjects],
+    projectId,
+    reusedProjects,
   };
 }
 
@@ -60,13 +70,13 @@ export async function buildProjectModelEntities(
     if (resource === null) {
       return;
     }
-    entities[iri] = createProjectPackageEntity(resource);
+    entities[iri] = createProjectPackageEntity(resource, projectIri);
 
     for (const subResource of resource.subResources ?? []) {
       if (subResource.types[0] === LOCAL_PACKAGE) {
         await visit(subResource.iri);
       } else {
-        entities[subResource.iri] = createRegularResourceEntity(subResource);
+        entities[subResource.iri] = createRegularResourceEntity(subResource, projectIri);
       }
     }
   };
