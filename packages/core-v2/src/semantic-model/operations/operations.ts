@@ -1,4 +1,4 @@
-import { generateEntityId } from "@dataspecer/core/entity-model";
+import { generateEntityId, type EntityIdentifier } from "@dataspecer/core/entity-model";
 import {SemanticModelClass, SemanticModelGeneralization, SemanticModelRelationship, SemanticModelRelationshipEnd} from "../concepts/index.ts";
 import { generateOperationId, type Operation } from "@dataspecer/core/operation";
 
@@ -38,7 +38,8 @@ export const MODIFY_CLASS_OPERATION = "https://schemas.dataspecer.com/semantic-m
 
 export interface ModifyClassOperation extends Operation {
     type: typeof MODIFY_CLASS_OPERATION;
-    entity: Partial<Omit<SemanticModelClass, "type">> & Pick<SemanticModelClass, "id">;
+    entityId: EntityIdentifier;
+    entity: Partial<Omit<SemanticModelClass, "id" | "type">>;
 }
 
 export function isModifyClassOperation(operation: Operation): operation is ModifyClassOperation {
@@ -47,12 +48,10 @@ export function isModifyClassOperation(operation: Operation): operation is Modif
 
 export function modifyClass(id: string, entity: Partial<Omit<SemanticModelClass, "type" | "id">>): ModifyClassOperation {
     return {
+        id: generateOperationId(),
         type: MODIFY_CLASS_OPERATION,
-        id,
-        entity: {
-            ...entity,
-            id,
-        }
+        entityId: id,
+        entity,
     }
 }
 
@@ -88,7 +87,8 @@ export const MODIFY_RELATIONSHIP_OPERATION = "https://schemas.dataspecer.com/sem
  */
 export interface ModifyRelationOperation extends Operation {
     type: typeof MODIFY_RELATIONSHIP_OPERATION;
-    entity: Partial<Omit<SemanticModelRelationship, "type">> & Pick<SemanticModelRelationship, "id">;
+    entityId: EntityIdentifier;
+    entity: Partial<Omit<SemanticModelRelationship, "id" | "type">>;
 }
 
 export function isModifyRelationOperation(operation: Operation): operation is ModifyRelationOperation {
@@ -99,10 +99,8 @@ export function modifyRelation(id: string, entity: Partial<Omit<SemanticModelRel
     return {
         id: generateOperationId(),
         type: MODIFY_RELATIONSHIP_OPERATION,
-        entity: {
-            ...entity,
-            id,
-        }
+        entityId: id,
+        entity,
     }
 }
 
@@ -161,7 +159,8 @@ export const MODIFY_GENERALIZATION_OPERATION = "https://schemas.dataspecer.com/s
 
 export interface ModifyGeneralizationOperation extends Operation {
     type: typeof MODIFY_GENERALIZATION_OPERATION;
-    entity: Partial<Omit<SemanticModelGeneralization, "type">> & Pick<SemanticModelGeneralization, "id">;
+    entityId: EntityIdentifier;
+    entity: Partial<Omit<SemanticModelGeneralization, "id" | "type">>;
 }
 
 export function isModifyGeneralizationOperation(operation: Operation): operation is ModifyGeneralizationOperation {
@@ -172,10 +171,8 @@ export function modifyGeneralization(id: string, entity: Partial<Omit<SemanticMo
     return {
         id: generateOperationId(),
         type: MODIFY_GENERALIZATION_OPERATION,
-        entity: {
-            ...entity,
-            id,
-        }
+        entityId: id,
+        entity,
     }
 }
 

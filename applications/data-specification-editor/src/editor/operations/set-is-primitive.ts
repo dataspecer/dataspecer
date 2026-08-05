@@ -20,7 +20,7 @@ export class SetEmptyAsComplex implements ComplexOperation {
     const schema = this.store.getSchemaForResource(this.forDataPsmClass) as string;
 
     const psmSetEmptyAsComplex = new DataPsmSetEmptyAsComplex();
-    psmSetEmptyAsComplex.dataPsmClass = this.forDataPsmClass;
+    psmSetEmptyAsComplex.entityId = this.forDataPsmClass;
     psmSetEmptyAsComplex.dataPsmEmptyAsComplex = this.emptyAsComplex;
     this.store.applyOperation(schema, psmSetEmptyAsComplex);
   }

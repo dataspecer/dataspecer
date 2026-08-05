@@ -8,7 +8,7 @@ export class DataPsmSetInstancesSpecifyTypes implements Operation {
 
   type: string;
 
-  dataPsmClass: string | null = null;
+  entityId: string | null = null;
 
   /**
    * Require explicit instance typing. For example as @type property in JSON-LD.

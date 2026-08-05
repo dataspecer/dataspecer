@@ -8,7 +8,7 @@ export class DataPsmSetTechnicalLabel implements Operation {
 
   type: string;
 
-  dataPsmResource: string | null = null;
+  entityId: string | null = null;
 
   dataPsmTechnicalLabel: string | null = null;
 

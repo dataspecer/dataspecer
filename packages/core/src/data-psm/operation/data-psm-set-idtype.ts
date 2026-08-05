@@ -11,7 +11,7 @@ export class DataPsmSetIdType implements Operation {
 
   type: string;
 
-  dataPsmResource: string | null = null;
+  entityId: string | null = null;
 
   /**
    * Key of property representing ID of the entity.

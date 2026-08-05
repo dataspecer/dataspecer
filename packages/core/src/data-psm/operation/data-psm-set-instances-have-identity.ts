@@ -8,7 +8,7 @@ export class DataPsmSetInstancesHaveIdentity implements Operation {
 
   type: string;
 
-  dataPsmClass: string | null = null;
+  entityId: string | null = null;
 
   /**
    * Whether instances of this class may/must/must not have identity, for example IRI.

@@ -8,7 +8,7 @@ export class DataPsmSetGmlTypeXmlExtension implements Operation {
 
   type: string;
 
-  dataPsmProperty: string | null = null;
+  entityId: string | null = null;
 
   gmlType: string | null = null;
 

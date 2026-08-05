@@ -8,7 +8,7 @@ export class DataPsmSetXmlSkipRootElement implements Operation {
 
   type: string;
 
-  dataPsmSchema: string | null = null;
+  entityId: string | null = null;
 
   skipRootElement: boolean | null = null;
 

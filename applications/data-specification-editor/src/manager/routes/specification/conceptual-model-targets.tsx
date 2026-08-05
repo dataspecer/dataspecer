@@ -42,7 +42,7 @@ export const ConceptualModelTargets: FC = () => {
     } satisfies ModelCompositionConfigurationApplicationProfile;
     const transaction = modelStore.transaction([{
       modelId: specification.id,
-      operation: createUpdateEntityOperation({ id: specification.id, modelCompositionConfiguration: newConfiguration } as Partial<Entity> & Pick<Entity, "id">),
+      operation: createUpdateEntityOperation(specification.id, { modelCompositionConfiguration: newConfiguration }),
     }], {});
     await transaction.confirmation;
     enqueueSnackbar("Source configuration saved", { variant: "success" });

@@ -210,12 +210,11 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
     operations.push({ modelId: viewIri, operation: createSetLabelOperation({ en: "Main view" }) });
 
     // Update package metadata with the final label
-    const updatePackage: Partial<ProjectModelEntity> & Pick<Entity, "id"> = {
-      id: packageIri,
+    const updatePackage: Partial<Omit<ProjectModelEntity, "id" | "type">> = {
       label: { en: profileLabel || "Profile" },
       description: body.description ? { en: body.description } : {},
     };
-    operations.push({ modelId: PROJECT_MODEL_ID, operation: createUpdateEntityOperation(updatePackage) });
+    operations.push({ modelId: PROJECT_MODEL_ID, operation: createUpdateEntityOperation(packageIri, updatePackage) });
 
     /**
      * Now we profile structure models from all imported specifications.
@@ -287,7 +286,6 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
 
     // The package itself holds the composition of the models it contains.
     const updatePackageContent = {
-      id: packageIri,
       modelCompositionConfiguration: {
         modelType: "application-profile",
         model: semanticModelIri,
@@ -298,8 +296,8 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
         canAddEntities: true,
         canModify: true,
       } satisfies ModelCompositionConfigurationApplicationProfile,
-    } as Partial<Entity> & Pick<Entity, "id">;
-    operations.push({ modelId: packageIri, operation: createUpdateEntityOperation(updatePackageContent) });
+    };
+    operations.push({ modelId: packageIri, operation: createUpdateEntityOperation(packageIri, updatePackageContent) });
 
     await modelRepository.applyTransactions(projectIri, [{ id: uuidv4(), operations }]);
 

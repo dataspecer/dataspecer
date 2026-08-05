@@ -13,7 +13,7 @@ test("diffing two states produces operations that transform one into the other",
   const next = { ...previous };
   applyOperationsToEntityModel(next, [
     // Modified entity.
-    createUpdateEntityOperation({ id: "a", value: 42, addedKey: "x" } as Partial<Entity> & { id: string }),
+    createUpdateEntityOperation("a", { value: 42, addedKey: "x" }),
     // Created entity.
     createSetEntityOperation({ id: "c", type: [], value: 3 } as Entity),
     // Deleted entity.

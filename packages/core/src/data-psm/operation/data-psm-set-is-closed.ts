@@ -8,7 +8,7 @@ export class DataPsmSetIsClosed implements Operation {
 
   type: string;
 
-  dataPsmClass: string | null = null;
+  entityId: string | null = null;
 
   dataPsmIsClosed: boolean | null = null;
 

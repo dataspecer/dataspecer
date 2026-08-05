@@ -8,7 +8,7 @@ export class DataPsmSetJsonEnforceContext implements Operation {
 
   type: string;
 
-  dataPsmEntity: string | null = null;
+  entityId: string | null = null;
   jsonEnforceContext?: "no" | "as-is" | "with-extensions";
 
   constructor() {

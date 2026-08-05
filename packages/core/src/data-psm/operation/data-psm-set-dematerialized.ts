@@ -8,7 +8,7 @@ export class DataPsmSetDematerialized implements Operation {
 
   type: string;
 
-  dataPsmAssociationEnd: string | null = null;
+  entityId: string | null = null;
 
   dataPsmIsDematerialized: boolean | null = null;
 

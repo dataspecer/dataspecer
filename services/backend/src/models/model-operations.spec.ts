@@ -99,7 +99,7 @@ describe(applyUndoOperationToModels, () => {
   test("undoes the last transaction", async () => {
     const { history, states } = await buildHistory([
       { clientId: "A", operations: inA(createSetEntityOperation(entity("e1", { value: "a" }))) },
-      { clientId: "B", operations: inA(createUpdateEntityOperation({ id: "e1", value: "b" } as never)) },
+      { clientId: "B", operations: inA(createUpdateEntityOperation("e1", { value: "b" })) },
     ]);
 
     const result = await applyUndoOperationToModels(createUndoOperation("B"), history, async (modelId) => states[modelId] ?? {});
@@ -134,7 +134,7 @@ describe(applyUndoOperationToModels, () => {
     const { history, states } = await buildHistory([
       { clientId: "A", operations: inA(createSetEntityOperation(entity("e1", { value: "a" }))) },
       { clientId: "C", operations: inA(createSetEntityOperation(entity("e2", { value: "c" }))) },
-      { clientId: "D", operations: inA(createUpdateEntityOperation({ id: "e2", value: "d" } as never)) },
+      { clientId: "D", operations: inA(createUpdateEntityOperation("e2", { value: "d" })) },
       { clientId: "E", operations: inA(createSetEntityOperation(entity("e3"))) },
     ]);
 

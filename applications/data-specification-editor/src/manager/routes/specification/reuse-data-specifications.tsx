@@ -40,7 +40,7 @@ export const ReuseDataSpecifications: React.FC = () => {
   const save = async () => {
     const transaction = modelStore.transaction([{
       modelId: specification.id,
-      operation: createUpdateEntityOperation({ id: specification.id, dataStructuresImportPackages: selectedSpecificationIds } as Partial<Entity> & Pick<Entity, "id">),
+      operation: createUpdateEntityOperation(specification.id, { dataStructuresImportPackages: selectedSpecificationIds }),
     }], {});
 
     await transaction.confirmation;

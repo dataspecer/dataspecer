@@ -84,29 +84,37 @@ export const UpdateEntityOperationType = "https://schemas.dataspecer.com/core/op
 export interface UpdateEntityOperation extends Operation {
   type: typeof UpdateEntityOperationType;
 
-  update: Partial<Entity> & Pick<Entity, "id">;
+  /**
+   * Entity to be updated by its identifier.
+   */
+  entityId: EntityIdentifier;
+
+  /**
+   * Properties to be merged into the entity. Identifier and type of an entity
+   * are immutable, use {@link SetEntityOperation} to replace the entity as a
+   * whole instead.
+   */
+  update: Partial<Omit<Entity, "id" | "type">>;
 }
 
-export function createUpdateEntityOperation(update: Partial<Entity> & Pick<Entity, "id">): UpdateEntityOperation {
+export function createUpdateEntityOperation(entityId: EntityIdentifier, update: Partial<Omit<Entity, "id" | "type">>): UpdateEntityOperation {
+  if (!(typeof entityId === "string" && entityId.length > 0)) {
+    throw new Error("Invalid entity identifier.");
+  }
+
   if (!(
     typeof update === "object" &&
     update !== null &&
-    "id" in update &&
-    typeof update.id === "string" &&
-    update.id.length > 0 &&
-    (
-      "type" in update ? (
-        Array.isArray(update.type) &&
-        update.type.every((t) => typeof t === "string")
-      ) : true
-    )
+    !("id" in update) &&
+    !("type" in update)
   )) {
-    throw new Error("Invalid update entity.");
+    throw new Error("Invalid entity update.");
   }
 
   return {
     id: generateOperationId(),
     type: UpdateEntityOperationType,
+    entityId,
     update,
   };
 }

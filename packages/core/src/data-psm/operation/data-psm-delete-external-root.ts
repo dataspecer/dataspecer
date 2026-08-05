@@ -8,7 +8,7 @@ export class DataPsmDeleteExternalRoot implements Operation {
 
   type: string;
 
-  dataPsmExternalRoot: string | null = null;
+  entityId: string | null = null;
 
   constructor() {
     this.id = generateOperationId();

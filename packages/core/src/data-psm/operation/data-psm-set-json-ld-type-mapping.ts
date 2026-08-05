@@ -8,7 +8,7 @@ export class DataPsmSetJsonLdDefinedTypeMapping implements Operation {
 
   type: string;
 
-  dataPsmEntity: string | null = null;
+  entityId: string | null = null;
   jsonLdDefinedTypeMapping: { [prefix: string]: string } | null = null;
 
   constructor() {

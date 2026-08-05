@@ -8,7 +8,7 @@ export class DataPsmDeleteClassReference implements Operation {
 
   type: string;
 
-  dataPsmClassReference: string | null = null;
+  entityId: string | null = null;
 
   constructor() {
     this.id = generateOperationId();

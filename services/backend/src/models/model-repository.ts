@@ -302,9 +302,8 @@ export class ModelRepository implements ModelRepositoryType {
           // ProjectModelEntity (id, type, modelType, subModels) are derived
           // from the resource tree elsewhere and are not themselves settable
           // user metadata, so they are dropped here.
-          const { id: entityId, type, modelType, subModels, ...userMetadata } = (isUpdateEntityOperation(operation) ? operation.update : operation.entity) as Record<string, unknown> & {
-            id: string;
-          };
+          const entityId = isUpdateEntityOperation(operation) ? operation.entityId : operation.entity.id;
+          const { id, type, modelType, subModels, ...userMetadata } = (isUpdateEntityOperation(operation) ? operation.update : operation.entity) as Record<string, unknown>;
           if ((await this.resourceModel.getResource(entityId)) === null) {
             console.warn(`Cannot update metadata of resource "${entityId}" via the project model because it does not exist. The operation is only recorded.`);
             continue;
@@ -312,7 +311,7 @@ export class ModelRepository implements ModelRepositoryType {
           await this.resourceModel.updateResource(entityId, userMetadata);
           // Only the user metadata reaches the resource, so that is also all
           // the project structure takes over from the operation.
-          project(createUpdateEntityOperation({ id: entityId, ...userMetadata } as Partial<Entity> & Pick<Entity, "id">));
+          project(createUpdateEntityOperation(entityId, userMetadata));
         } else {
           // Other operations (e.g. project structure metadata changes not
           // covered above) are not interpreted yet, only recorded.
@@ -782,7 +781,7 @@ export class ModelRepository implements ModelRepositoryType {
       // rest of the user metadata is set by a following update.
       // TODO: The project model's own entities (project structure and
       // metadata) have no operations/events recorded yet.
-      operations.push({ modelId: PROJECT_MODEL_ID, operation: createUpdateEntityOperation({ id: iri, ...otherMetadata } as Partial<Entity> & Pick<Entity, "id">) });
+      operations.push({ modelId: PROJECT_MODEL_ID, operation: createUpdateEntityOperation(iri, otherMetadata) });
     }
 
     await this.applyTransactions(projectIri, [{ id: uuidv4(), operations }]);
@@ -839,8 +838,8 @@ export class ModelRepository implements ModelRepositoryType {
 
       if (resource.types[0] === RDFS_MODEL) {
         if (labelChanged) {
-          const update: Partial<MainEntity> & Pick<Entity, "id"> = { id: resourceId, label: (toLegacyResourceMetadata.label as LanguageString | undefined) ?? {} };
-          operations.push({ modelId: resourceId, operation: createUpdateEntityOperation(update) });
+          const update: Partial<Omit<MainEntity, "id" | "type">> = { label: (toLegacyResourceMetadata.label as LanguageString | undefined) ?? {} };
+          operations.push({ modelId: resourceId, operation: createUpdateEntityOperation(resourceId, update) });
         }
         // Label never goes to the resource metadata
         toLegacyResourceMetadata.label = undefined;
@@ -860,7 +859,7 @@ export class ModelRepository implements ModelRepositoryType {
     }
 
     if (Object.keys(toLegacyResourceMetadata).length > 0) {
-      operations.push({ modelId: PROJECT_MODEL_ID, operation: createUpdateEntityOperation({ id: resourceId, ...toLegacyResourceMetadata } as Partial<Entity> & Pick<Entity, "id">) });
+      operations.push({ modelId: PROJECT_MODEL_ID, operation: createUpdateEntityOperation(resourceId, toLegacyResourceMetadata) });
     }
 
     if (operations.length > 0) {

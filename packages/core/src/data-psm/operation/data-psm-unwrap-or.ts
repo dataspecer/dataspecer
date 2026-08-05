@@ -12,7 +12,7 @@ export class DataPsmUnwrapOr implements Operation {
 
   type: string;
 
-  dataPsmOr: string | null = null;
+  entityId: string | null = null;
 
   constructor() {
     this.id = generateOperationId();

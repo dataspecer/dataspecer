@@ -20,7 +20,7 @@ export class SetXmlIsAttribute implements ComplexOperation {
     const schema = this.store.getSchemaForResource(this.forDataPsmResourceIri) as string;
 
     const op = new DataPsmSetIsXmlAttribute();
-    op.dataPsmProperty = this.forDataPsmResourceIri;
+    op.entityId = this.forDataPsmResourceIri;
     op.isAttribute = this.isAttribute;
     this.store.applyOperation(schema, op);
   }
