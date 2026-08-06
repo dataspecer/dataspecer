@@ -14,7 +14,7 @@ import {
 } from "../../diagram";
 import { UseDiagramType } from "../../diagram/diagram-hook";
 import { UseNotificationServiceWriterType } from "../../notification/notification-service-context";
-import { ClassesContextType } from "@/context/classes-context";
+import { ClassesContextType } from "../../context/classes-context";
 import {
   isSemanticModelAttribute,
   isSemanticModelClass,
@@ -44,9 +44,9 @@ import {
   SemanticModelAggregatorView
 } from "@dataspecer/core-v2/semantic-model/aggregator";
 import { XY } from "@dataspecer/layout";
-import { ModelGraphContextType, UseModelGraphContextType } from "@/context/model-context";
-import { CmeSpecialization } from "@/dataspecer/cme-model/model";
-import { addVisualDiagramNode } from "@/dataspecer/visual-model/operation/add-visual-diagram-node";
+import { ModelGraphContextType, UseModelGraphContextType } from "../../context/model-context";
+import { CmeSpecialization } from "../../dataspecer/cme-model/model";
+import { addVisualDiagramNode } from "../../dataspecer/visual-model/operation/add-visual-diagram-node";
 import {
   isSemanticModelClassProfile,
   isSemanticModelRelationshipProfile,
@@ -56,13 +56,13 @@ import {
 import { addSemanticGeneralizationToVisualModelAction } from "../add-generalization-to-visual-model";
 import { addSemanticRelationshipToVisualModelAction } from "../add-relationship-to-visual-model";
 import { addSemanticRelationshipProfileToVisualModelAction } from "../add-relationship-profile-to-visual-model";
-import { createCmeClassProfile } from "@/dataspecer/cme-model/operation/create-cme-class-profile";
-import { createCmeRelationshipProfile } from "@/dataspecer/cme-model/operation/create-cme-relationship-profile";
+import { createCmeClassProfile } from "../../dataspecer/cme-model/operation/create-cme-class-profile";
+import { createCmeRelationshipProfile } from "../../dataspecer/cme-model/operation/create-cme-relationship-profile";
 import {
   addVisualRelationshipsWithSpecifiedVisualEnds
-} from "@/dataspecer/visual-model/operation/add-visual-relationships";
-import { createCmeModelOperationExecutor } from "@/dataspecer/cme-model";
-import { representRdfsLiteral } from "@/dialog/utilities/dialog-utilities";
+} from "../../dataspecer/visual-model/operation/add-visual-relationships";
+import { createCmeModelOperationExecutor } from "../../dataspecer/cme-model";
+import { representRdfsLiteral } from "../../dialog/utilities/dialog-utilities";
 
 export enum TestedSemanticConnectionType {
   Association,

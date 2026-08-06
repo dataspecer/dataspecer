@@ -5,7 +5,7 @@ import { useQueryParamsContext } from "../context/query-params-context";
 import { languageStringToString } from "../utilities/string";
 import { configuration } from "../application";
 import { useOptions } from "../configuration/options";
-import { useActions } from "@/action/actions-react-binding";
+import { useActions } from "../action/actions-react-binding";
 
 export const ViewManagement = () => {
   const {

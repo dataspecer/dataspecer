@@ -1,9 +1,9 @@
 import { DialogApiContextType } from "../dialog/dialog-service";
 import { Options } from "../application";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
-import { VisualModelDiagramNode } from "@/diagram";
+import { VisualModelDiagramNode } from "../diagram";
 import { VisualModel } from "@dataspecer/visual-model";
-import { ModelGraphContextType } from "@/context/model-context";
+import { ModelGraphContextType } from "../context/model-context";
 import { prepareDataForVisualDiagramNodeDialog } from "./open-edit-visual-diagram-node-dialog";
 import {
   createVisualDiagramNodeInfoDialog

@@ -1,4 +1,4 @@
-import { DialogWrapper } from "@/dialog/dialog-api";
+import { DialogWrapper } from "../../dialog/dialog-api";
 import { PerformLayoutDialogState } from "./perform-layout-controller";
 import {
   AlgorithmName,

@@ -32,11 +32,11 @@ import {
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import {
   createNewAssociationProfileDialogState,
-} from "@/dialog/association-profile/edit-association-profile-dialog-state";
-import { Language } from "@/configuration";
+} from "../dialog/association-profile/edit-association-profile-dialog-state";
+import { Language } from "../configuration";
 import {
   associationProfileDialogStateToNewCmeRelationshipProfileWithOverriddenEnds,
-} from "@/dialog/association-profile/edit-association-profile-dialog-state-adapter";
+} from "../dialog/association-profile/edit-association-profile-dialog-state-adapter";
 import { DialogSemanticTracker } from "../dialog-v2/dialog-semantic-tracker";
 import { LabelResolver } from "../dependency-tracker";
 
