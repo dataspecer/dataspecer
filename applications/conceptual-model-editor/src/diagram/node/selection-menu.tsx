@@ -1,7 +1,7 @@
 import { Node, NodeProps, NodeToolbar, Position, useReactFlow } from "@xyflow/react";
 import { useContext } from "react";
 import { DiagramContext } from "../diagram-controller";
-import { t } from "@/application";
+import { t } from "../../application";
 import { DiagramNodeTypes } from "../diagram-model";
 
 import "./entity-node.css";

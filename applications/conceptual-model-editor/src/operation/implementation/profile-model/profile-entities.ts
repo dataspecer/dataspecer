@@ -1,7 +1,7 @@
 import {
   EntityDsIdentifier,
   ModelDsIdentifier,
-} from "@/dataspecer/entity-model";
+} from "../../../dataspecer/entity-model";
 import { SemanticProfileModelOperations } from "@dataspecer/profile-model";
 
 import { CmeOperationArguments, CmeOperationResult } from "../../operation";

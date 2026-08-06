@@ -25,9 +25,9 @@ import { ClassesContextType } from "../context/classes-context";
 import { ExtensionType, VisibilityFilter, extendSelectionAction } from "./extend-selection-action";
 import { Selections } from "./filter-selection-action";
 import { isSemanticModelAttribute, SemanticModelClass } from "@dataspecer/core-v2/semantic-model/concepts";
-import { addToRecordArray } from "@/utilities/functional";
-import { isSemanticModelAttributeProfile } from "@/dataspecer/semantic-model";
-import { getDomainAndRange } from "@/util/relationship-utils";
+import { addToRecordArray } from "../utilities/functional";
+import { isSemanticModelAttributeProfile } from "../dataspecer/semantic-model";
+import { getDomainAndRange } from "../util/relationship-utils";
 import { SemanticModelClassProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 
 const LOG = createLogger(import.meta.url);

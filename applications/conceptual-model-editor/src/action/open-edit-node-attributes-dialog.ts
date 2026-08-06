@@ -11,7 +11,7 @@ import {
 import { ModelGraphContextType } from "../context/model-context";
 import { SemanticModelClass } from "@dataspecer/core-v2/semantic-model/concepts";
 import { SemanticModelClassProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { getEntityLabelToShowInDiagram } from "@/util/utils";
+import { getEntityLabelToShowInDiagram } from "../util/utils";
 
 export function openEditNodeAttributesDialogAction(
   classesContext: ClassesContextType,
