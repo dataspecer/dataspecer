@@ -58,9 +58,15 @@ export function CanvasToolbar() {
   };
 
   const relayout = async (options: LayoutOptions) => {
-    const { graph, setAllPositions } = useEditorStore.getState();
-    if (graph !== null) {
+    const { graph, setAllPositions, setActionError } = useEditorStore.getState();
+    if (graph === null) {
+      return;
+    }
+    try {
       setAllPositions(await autoLayout(graph, options));
+    } catch (caught) {
+      console.error(caught);
+      setActionError(`Layout failed: ${caught instanceof Error ? caught.message : String(caught)}`);
     }
   };
 

@@ -112,7 +112,11 @@ export function useAutosave(): () => Promise<void> {
       return;
     }
 
-    const queue = createAutosaveQueue(persistSnapshot, initial.setSaveState);
+    let persisted = { graph: initial.graph, positions: initial.positions };
+    const queue = createAutosaveQueue(async (snapshot) => {
+      await persistSnapshot(snapshot);
+      persisted = { graph: snapshot.graph, positions: snapshot.positions };
+    }, initial.setSaveState);
     queueRef.current = queue;
 
     let observedGraph = initial.graph;
@@ -140,6 +144,9 @@ export function useAutosave(): () => Promise<void> {
     const flushBeforeLeaving = () => {
       const { resourceIri, graph, positions } = useEditorStore.getState();
       if (resourceIri === null || graph === null) {
+        return;
+      }
+      if (graph === persisted.graph && positions === persisted.positions) {
         return;
       }
       void queue.flush({ resourceIri, graph, positions }).catch((caught: unknown) => {

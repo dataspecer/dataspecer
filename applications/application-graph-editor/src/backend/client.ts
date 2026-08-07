@@ -59,8 +59,11 @@ export async function generateApplication(iri: string): Promise<GenerateResult> 
     `${backendUrl}/app-generator/generate?iri=${encodeURIComponent(iri)}`,
   );
   if (response.status === 400) {
-    const body = (await response.json()) as { violations: Violation[] };
-    return { ok: false, violations: body.violations };
+    const body = (await response.json().catch(() => null)) as { violations?: Violation[] } | null;
+    const violations = body?.violations;
+    if (Array.isArray(violations)) {
+      return { ok: false, violations };
+    }
   }
   if (!response.ok) {
     throw new Error(`Generation failed with status ${response.status}.`);
