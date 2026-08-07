@@ -8,6 +8,7 @@ import { StatusBar } from "./components/status-bar.tsx";
 import { autoLayout } from "./diagram/auto-layout.ts";
 import { Canvas } from "./diagram/canvas.tsx";
 import { useAutosave } from "./hooks/use-autosave.ts";
+import { useUnloadWarning } from "./hooks/use-unload-warning.ts";
 import { useValidationSync } from "./hooks/use-validation.ts";
 import { useUndoRedoShortcuts } from "./hooks/use-undo-redo-shortcuts.ts";
 import { useEditorStore, type NodePositions } from "./store.ts";
@@ -95,6 +96,7 @@ function Editor({ graph }: { graph: ApplicationGraph }) {
   const flushAutosave = useAutosave();
   useUndoRedoShortcuts();
   useValidationSync();
+  useUnloadWarning();
 
   const metadataError = useEditorStore((state) => state.metadataError);
   const actionError = useEditorStore((state) => state.actionError);

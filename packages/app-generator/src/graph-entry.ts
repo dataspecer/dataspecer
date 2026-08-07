@@ -22,7 +22,7 @@ export { validateGraphSyntax } from './validation/validate-syntax.ts';
 export { ViolationCode } from './validation/violation-codes.ts';
 export { ViolationSeverity } from './validation/types.ts';
 export type { Violation } from './validation/types.ts';
-export { isValidRedirectOperation } from './validation/rules/edge-rules.ts';
+export { isValidRedirectOperation, isValidTransitionOperation } from './validation/rules/edge-rules.ts';
 export { FieldKind } from './metadata/types.ts';
 export type {
   AggregateFieldMetadata,
