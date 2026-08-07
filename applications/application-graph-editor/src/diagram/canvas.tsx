@@ -249,6 +249,7 @@ function CanvasFlow() {
         connectionLineComponent={ConnectionLine}
         connectionMode={ConnectionMode.Loose}
         connectionRadius={36}
+        connectOnClick={false}
         selectionOnDrag={canvasTool === "select"}
         panOnDrag={canvasTool === "pan" ? true : [1]}
         fitView

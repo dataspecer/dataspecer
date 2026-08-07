@@ -45,7 +45,7 @@ export function CanvasToolbar() {
   };
 
   const addNode = (aggregateIri: string) => {
-    const { graph, addNode: add, requestSelect } = useEditorStore.getState();
+    const { graph, addNode: add } = useEditorStore.getState();
     if (graph === null) {
       return;
     }
@@ -55,7 +55,6 @@ export function CanvasToolbar() {
     const offset = (graph.nodes.length % 6) * 36;
     const node = newNode(graph, metadata, aggregateIri);
     add(node, { x: center.x + offset, y: center.y + offset });
-    requestSelect(node.id);
   };
 
   const relayout = async (options: LayoutOptions) => {

@@ -60,7 +60,7 @@ interface EditorState extends UndoableState {
   confirmRequest: ConfirmRequest | null;
   /**
    * Violations the last generation attempt returned. The editor cannot recompute them, so they
-   * stay listed until the next attempt.
+   * stay listed until the next attempt or until the graph changes and makes them stale.
    */
   generationViolations: Violation[] | null;
   /** The last computed violations with the graph they belong to. Null until the first pass. */
@@ -147,7 +147,12 @@ function withGraph(
   if (state.graph === null) {
     return {};
   }
-  return { graph: mutate(state.graph) };
+  // changed graph makes the last generation result stale
+  return { graph: mutate(state.graph), generationViolations: null };
+}
+
+function selectRequestFor(state: EditorState, id: string): ElementRequest {
+  return { id, seq: (state.selectRequest?.seq ?? 0) + 1 };
 }
 
 /**
@@ -237,8 +242,7 @@ export const useEditorStore = create<EditorState>()(
       setValidation: (validation) => set({ validation }),
       requestFocus: (id) =>
         set((state) => ({ focusRequest: { id, seq: (state.focusRequest?.seq ?? 0) + 1 } })),
-      requestSelect: (id) =>
-        set((state) => ({ selectRequest: { id, seq: (state.selectRequest?.seq ?? 0) + 1 } })),
+      requestSelect: (id) => set((state) => ({ selectRequest: selectRequestFor(state, id) })),
       setSelectedElements: (selectedNodes, selectedEdges) => set({ selectedNodes, selectedEdges }),
 
       addNode: (node, position) =>
@@ -246,6 +250,7 @@ export const useEditorStore = create<EditorState>()(
           ...withGraph(state, (graph) => mutations.addNode(graph, node)),
           positions: { ...state.positions, [node.id]: position },
           selection: { kind: "node", id: node.id },
+          selectRequest: selectRequestFor(state, node.id),
           settingsOpen: false,
         })),
       addConnectedNode: (node, position, edge) =>
@@ -255,6 +260,7 @@ export const useEditorStore = create<EditorState>()(
           ),
           positions: { ...state.positions, [node.id]: position },
           selection: { kind: "node", id: node.id },
+          selectRequest: selectRequestFor(state, node.id),
           settingsOpen: false,
         })),
       updateNode: (nodeId, patch) =>
@@ -268,8 +274,13 @@ export const useEditorStore = create<EditorState>()(
           positions: mapKeys(state.positions, (_position, key) =>
             key === currentId ? newId : key,
           ),
-          selection:
-            state.selection?.id === currentId ? { kind: "node", id: newId } : state.selection,
+          // the canvas keys its selection by ID, so the node has to be re-selected under the new one
+          ...(state.selection?.id === currentId
+            ? {
+                selection: { kind: "node", id: newId } as const,
+                selectRequest: selectRequestFor(state, newId),
+              }
+            : {}),
         })),
       removeNode: (nodeId) =>
         set((state) => ({
@@ -281,6 +292,7 @@ export const useEditorStore = create<EditorState>()(
         set((state) => ({
           ...withGraph(state, (graph) => mutations.addEdge(graph, edge)),
           selection: { kind: "edge", id: edge.id },
+          selectRequest: selectRequestFor(state, edge.id),
           settingsOpen: false,
         })),
       updateEdge: (edgeId, patch) =>
@@ -292,7 +304,8 @@ export const useEditorStore = create<EditorState>()(
         })),
       updateGraphMeta: (patch) =>
         set((state) => withGraph(state, (graph) => ({ ...graph, ...patch }))),
-      replaceGraph: (graph, positions) => set({ graph, positions, selection: null }),
+      replaceGraph: (graph, positions) =>
+        set({ graph, positions, selection: null, generationViolations: null }),
       moveNodes: (moves) =>
         set((state) => ({
           positions: {
