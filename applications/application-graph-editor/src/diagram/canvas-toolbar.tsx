@@ -1,7 +1,7 @@
 import { useRef, useState, type ReactNode } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Panel, useReactFlow, useStore as useFlowStore } from "@xyflow/react";
-import { ChevronDown, Hand, Menu, MousePointer2, Network, Plus, Redo2, Undo2 } from "lucide-react";
+import { ChevronDown, Hand, Menu, MousePointer2, Network, Plus, Redo2, Sparkles, Undo2 } from "lucide-react";
 import { useStore } from "zustand";
 import { downloadBlob } from "../utils/download-blob.ts";
 import { applyGraphJson } from "../graph/apply-json.ts";
@@ -10,6 +10,7 @@ import { newNode, nodeBlockedReason } from "../graph/new-node.ts";
 import { useEditorStore } from "../store.ts";
 import { autoLayout, type LayoutOptions } from "./auto-layout.ts";
 import { centeredOn, paneToGraph } from "./pane-position.ts";
+import { GenerateGraphDialog } from "./generate-graph-dialog.tsx";
 import { ShortcutsDialog } from "./shortcuts-dialog.tsx";
 
 export function CanvasToolbar() {
@@ -19,7 +20,9 @@ export function CanvasToolbar() {
   const cannotAddNode = nodeBlockedReason(metadata);
   const canvasTool = useEditorStore((state) => state.canvasTool);
   const setCanvasTool = useEditorStore((state) => state.setCanvasTool);
+  const empty = useEditorStore((state) => (state.graph?.nodes.length ?? 0) === 0);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [generateOpen, setGenerateOpen] = useState(false);
   const flow = useReactFlow();
   const paneWidth = useFlowStore((state) => state.width);
   const paneHeight = useFlowStore((state) => state.height);
@@ -70,7 +73,40 @@ export function CanvasToolbar() {
     }
   };
 
+  const addNodeMenu = (
+    <Dropdown
+      icon={<Plus size={14} />}
+      label="Add node"
+      showLabel
+      disabled={cannotAddNode !== null}
+      title={cannotAddNode ?? "Add a page for a data structure"}
+    >
+      <DropdownMenu.Label className="px-3 py-1 text-xs font-medium text-slate-400">
+        Select data structure
+      </DropdownMenu.Label>
+      {(metadata?.aggregates ?? []).map((aggregate) => (
+        <MenuItem key={aggregate.iri} onSelect={() => addNode(aggregate.iri)}>
+          {aggregate.name}
+        </MenuItem>
+      ))}
+    </Dropdown>
+  );
+
+  const generateButton = (
+    <button
+      type="button"
+      className="inline-flex items-center gap-1 rounded border border-slate-300 bg-white px-2 py-1 text-sm text-slate-600 hover:bg-slate-100 disabled:opacity-40"
+      onClick={() => setGenerateOpen(true)}
+      disabled={cannotAddNode !== null}
+      title={cannotAddNode ?? undefined}
+    >
+      <Sparkles size={14} />
+      Generate graph
+    </button>
+  );
+
   return (
+    <>
     <Panel position="top-left" className="flex gap-1">
       <Dropdown icon={<Menu size={14} />} label="Menu">
         <MenuItem onSelect={() => importInput.current?.click()}>Import</MenuItem>
@@ -81,22 +117,6 @@ export function CanvasToolbar() {
         </MenuItem>
         <DropdownMenu.Separator className="my-1 border-t border-slate-100" />
         <MenuItem onSelect={() => setShortcutsOpen(true)}>Shortcuts</MenuItem>
-      </Dropdown>
-      <Dropdown
-        icon={<Plus size={14} />}
-        label="Add node"
-        showLabel
-        disabled={cannotAddNode !== null}
-        title={cannotAddNode ?? "Add a page for a data structure"}
-      >
-        <DropdownMenu.Label className="px-3 py-1 text-xs font-medium text-slate-400">
-          Select data structure
-        </DropdownMenu.Label>
-        {(metadata?.aggregates ?? []).map((aggregate) => (
-          <MenuItem key={aggregate.iri} onSelect={() => addNode(aggregate.iri)}>
-            {aggregate.name}
-          </MenuItem>
-        ))}
       </Dropdown>
       <ButtonGroup>
         <GroupButton
@@ -116,6 +136,8 @@ export function CanvasToolbar() {
           <MousePointer2 size={14} />
         </GroupButton>
       </ButtonGroup>
+      {addNodeMenu}
+      {generateButton}
       <Dropdown icon={<Network size={14} />} label="Layout" showLabel>
         <MenuItem onSelect={() => void relayout({ algorithm: "stress" })}>Organic</MenuItem>
         <DropdownMenu.Separator className="my-1 border-t border-slate-100" />
@@ -145,6 +167,7 @@ export function CanvasToolbar() {
         </GroupButton>
       </ButtonGroup>
       <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+      <GenerateGraphDialog open={generateOpen} onClose={() => setGenerateOpen(false)} />
       <input
         ref={importInput}
         type="file"
@@ -160,6 +183,20 @@ export function CanvasToolbar() {
         }}
       />
     </Panel>
+    {empty && (
+      <Panel position="top-center" style={{ top: "38%" }}>
+        <div className="flex flex-col items-center gap-3">
+          <p className="text-sm text-slate-500">
+            This graph has no nodes yet. Add one, or generate the whole graph.
+          </p>
+          <div className="flex gap-2">
+            {addNodeMenu}
+            {generateButton}
+          </div>
+        </div>
+      </Panel>
+    )}
+    </>
   );
 }
 
@@ -179,7 +216,7 @@ function Dropdown({
   children: ReactNode;
 }) {
   return (
-    <DropdownMenu.Root>
+    <DropdownMenu.Root modal={false}>
       <DropdownMenu.Trigger asChild>
         <button
           type="button"
@@ -246,11 +283,20 @@ function GroupButton({
   );
 }
 
-function MenuItem({ children, onSelect }: { children: string; onSelect: () => void }) {
+function MenuItem({
+  children,
+  onSelect,
+  disabled,
+}: {
+  children: string;
+  onSelect: () => void;
+  disabled?: boolean;
+}) {
   return (
     <DropdownMenu.Item
-      className="cursor-default px-3 py-1 text-sm text-slate-700 outline-none data-highlighted:bg-slate-100"
+      className="cursor-default px-3 py-1 text-sm text-slate-700 outline-none data-highlighted:bg-slate-100 data-disabled:opacity-40"
       onSelect={onSelect}
+      disabled={disabled}
     >
       {children}
     </DropdownMenu.Item>

@@ -67,6 +67,7 @@ interface EditorState extends UndoableState {
   validation: ValidationSnapshot | null;
   focusRequest: ElementRequest | null;
   selectRequest: ElementRequest | null;
+  fitRequest: number;
   selectedNodes: string[];
   selectedEdges: string[];
 
@@ -92,6 +93,7 @@ interface EditorState extends UndoableState {
   setValidation: (validation: ValidationSnapshot) => void;
   requestFocus: (id: string) => void;
   requestSelect: (id: string) => void;
+  requestFitView: () => void;
   setSelectedElements: (nodes: string[], edges: string[]) => void;
 
   addNode: (node: ApplicationNode, position: { x: number; y: number }) => void;
@@ -185,6 +187,7 @@ export const useEditorStore = create<EditorState>()(
       validation: null,
       focusRequest: null,
       selectRequest: null,
+      fitRequest: 0,
       selectedNodes: [],
       selectedEdges: [],
 
@@ -243,6 +246,7 @@ export const useEditorStore = create<EditorState>()(
       requestFocus: (id) =>
         set((state) => ({ focusRequest: { id, seq: (state.focusRequest?.seq ?? 0) + 1 } })),
       requestSelect: (id) => set((state) => ({ selectRequest: selectRequestFor(state, id) })),
+      requestFitView: () => set((state) => ({ fitRequest: state.fitRequest + 1 })),
       setSelectedElements: (selectedNodes, selectedEdges) => set({ selectedNodes, selectedEdges }),
 
       addNode: (node, position) =>

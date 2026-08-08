@@ -84,7 +84,7 @@ export function EditorHeader({
               : undefined
         }
       >
-        {generating ? "Generating..." : "Generate"}
+        {generating ? "Generating..." : "Generate application"}
       </button>
     </header>
   );

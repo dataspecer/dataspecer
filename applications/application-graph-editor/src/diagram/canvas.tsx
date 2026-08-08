@@ -50,6 +50,7 @@ export function Canvas() {
 function CanvasFlow() {
   const graph = useEditorStore((state) => state.graph);
   const focusRequest = useEditorStore((state) => state.focusRequest);
+  const fitRequest = useEditorStore((state) => state.fitRequest);
   const positions = useEditorStore((state) => state.positions);
   const highlight = useEditorStore((state) => state.highlight);
   const selectRequest = useEditorStore((state) => state.selectRequest);
@@ -200,6 +201,19 @@ function CanvasFlow() {
     document.addEventListener("keydown", cancelOnEscape);
     return () => document.removeEventListener("keydown", cancelOnEscape);
   }, [flowStore]);
+
+  useEffect(() => {
+    if (fitRequest === 0) {
+      return;
+    }
+    // fit after two frames, so the freshly projected nodes are rendered and measured first
+    const frame = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        void flow.fitView({ duration: 300, padding: 0.15, maxZoom: 1 });
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [fitRequest, flow]);
 
   // the latest focus request brings its element into view
   useEffect(() => {
