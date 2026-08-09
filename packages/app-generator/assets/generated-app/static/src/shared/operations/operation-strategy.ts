@@ -9,7 +9,7 @@ import type { OperationResult, ValidationResult } from './operation-result.ts';
 export interface OperationContext<TModel extends EntityModel = EntityModel> {
   aggregate: AggregateDescriptor<TModel>;
   datasource: DataSource;
-  aggregates?: AggregateDescriptorMap;
+  aggregateRegistry: AggregateDescriptorMap;
   params: Record<string, unknown>;
   payload?: TModel;
   /** Composition paths configured to cascade for a Delete operation. */

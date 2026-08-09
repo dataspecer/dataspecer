@@ -17,7 +17,7 @@ export interface EntityPathSegment {
 
 export function createEntityDraft(
   target: EntityTarget,
-  aggregates: AggregateDescriptorMap,
+  aggregateRegistry: AggregateDescriptorMap,
   instanceBaseIri: string
 ): DraftEntity {
   const seed =
@@ -33,13 +33,13 @@ export function createEntityDraft(
           ? [...(seed[field.propertyName] as unknown[])]
           : [];
       while (seeded.length < count) {
-        seeded.push(createFieldValue(field, target, aggregates, instanceBaseIri));
+        seeded.push(createFieldValue(field, target, aggregateRegistry, instanceBaseIri));
       }
       entity[field.propertyName] = seeded;
       continue;
     }
     if (count > 0 && (field.kind === 'association' || !Object.hasOwn(seed, field.propertyName))) {
-      const value = createFieldValue(field, target, aggregates, instanceBaseIri);
+      const value = createFieldValue(field, target, aggregateRegistry, instanceBaseIri);
       if (value !== undefined) {
         entity[field.propertyName] = value;
       }
@@ -51,12 +51,12 @@ export function createEntityDraft(
 function createFieldValue(
   field: FieldDescriptor,
   owner: EntityTarget,
-  aggregates: AggregateDescriptorMap,
+  aggregateRegistry: AggregateDescriptorMap,
   instanceBaseIri: string
 ): unknown {
   if (isCompositionField(field)) {
-    const target = resolveCompositionTarget(owner, field, aggregates);
-    return target ? createEntityDraft(target, aggregates, instanceBaseIri) : undefined;
+    const target = resolveCompositionTarget(owner, field, aggregateRegistry);
+    return target ? createEntityDraft(target, aggregateRegistry, instanceBaseIri) : undefined;
   }
   if (field.kind === 'association') {
     return field.targetClassIri ? { id: '' } : '';
@@ -72,18 +72,18 @@ function createFieldValue(
 export async function hydrateCompositionDraft(
   model: DraftEntity,
   target: EntityTarget,
-  aggregates: AggregateDescriptorMap,
+  aggregateRegistry: AggregateDescriptorMap,
   dataSource: DataSource
 ): Promise<DraftEntity> {
   const result = structuredClone(model);
-  await hydrateCompositionChildren(result, target, aggregates, dataSource);
+  await hydrateCompositionChildren(result, target, aggregateRegistry, dataSource);
   return result;
 }
 
 async function hydrateCompositionChildren(
   entity: DraftEntity,
   target: EntityTarget,
-  aggregates: AggregateDescriptorMap,
+  aggregateRegistry: AggregateDescriptorMap,
   dataSource: DataSource
 ): Promise<void> {
   await Promise.all(
@@ -91,7 +91,7 @@ async function hydrateCompositionChildren(
       if (!isCompositionField(field)) {
         return;
       }
-      const childTarget = resolveCompositionTarget(target, field, aggregates);
+      const childTarget = resolveCompositionTarget(target, field, aggregateRegistry);
       if (!childTarget) {
         throw new Error(`Composition target for "${field.label}" is unavailable.`);
       }
@@ -108,7 +108,7 @@ async function hydrateCompositionChildren(
         const entries = value;
         entity[field.propertyName] = await Promise.all(
           entries.map((entry) =>
-            hydrateCompositionEntry(entry, field, childTarget, aggregates, dataSource)
+            hydrateCompositionEntry(entry, field, childTarget, aggregateRegistry, dataSource)
           )
         );
       } else if (value !== null && value !== undefined) {
@@ -116,7 +116,7 @@ async function hydrateCompositionChildren(
           value,
           field,
           childTarget,
-          aggregates,
+          aggregateRegistry,
           dataSource
         );
       }
@@ -128,7 +128,7 @@ async function hydrateCompositionEntry(
   value: unknown,
   field: FieldDescriptor,
   target: EntityTarget,
-  aggregates: AggregateDescriptorMap,
+  aggregateRegistry: AggregateDescriptorMap,
   dataSource: DataSource
 ): Promise<unknown> {
   if (
@@ -156,7 +156,7 @@ async function hydrateCompositionEntry(
     entity = structuredClone(loaded) as DraftEntity;
   }
 
-  await hydrateCompositionChildren(entity, target, aggregates, dataSource);
+  await hydrateCompositionChildren(entity, target, aggregateRegistry, dataSource);
   return entity;
 }
 

@@ -10,6 +10,7 @@ import {
   deleteComposite,
 } from '../assets/generated-app/static/src/shared/operations/composite-mutation.ts';
 import { DefaultDeleteStrategy } from '../assets/generated-app/static/src/shared/operations/delete-strategy.ts';
+import { ValidationIssueCode } from '../assets/generated-app/static/src/shared/operations/operation-result.ts';
 import { DefaultUpdateStrategy } from '../assets/generated-app/static/src/shared/operations/update-strategy.ts';
 import type {
   AggregateDescriptor,
@@ -100,7 +101,7 @@ const inlineCompanyAggregate: AggregateDescriptor = {
   fields: [partners, inlineDepartments],
 };
 
-const aggregates: AggregateDescriptorMap = {
+const aggregateRegistry: AggregateDescriptorMap = {
   [companyAggregate.iri]: companyAggregate,
   [departmentAggregate.iri]: departmentAggregate,
 };
@@ -130,7 +131,7 @@ describe('composite mutation planning', () => {
       ],
     };
 
-    const plan = buildCompositeCreatePlan(companyAggregate, aggregates, payload);
+    const plan = buildCompositeCreatePlan(companyAggregate, aggregateRegistry, payload);
 
     expect(plan.map((step) => [step.kind, step.id, step.target.fieldPath])).toEqual([
       ['create', 'urn:office', ['offices']],
@@ -154,7 +155,7 @@ describe('composite mutation planning', () => {
       ],
     };
 
-    const plan = buildCompositeUpdatePlan(companyAggregate, aggregates, payload, original);
+    const plan = buildCompositeUpdatePlan(companyAggregate, aggregateRegistry, payload, original);
 
     expect(plan.map((step) => [step.kind, step.id])).toEqual([
       ['create', 'urn:department:new'],
@@ -188,7 +189,7 @@ describe('composite mutation planning', () => {
     };
 
     await expect(
-      createComposite(dataSource, companyAggregate, aggregates, payload)
+      createComposite(dataSource, companyAggregate, aggregateRegistry, payload)
     ).rejects.toThrow('office failed');
     expect(calls).toEqual(['urn:office']);
   });
@@ -234,7 +235,7 @@ describe('composite mutation planning', () => {
       ],
     };
 
-    const plan = buildCompositeDeletePlan(inlineCompanyAggregate, aggregates, payload, [
+    const plan = buildCompositeDeletePlan(inlineCompanyAggregate, aggregateRegistry, payload, [
       'departments',
       'departments.offices',
     ]);
@@ -253,17 +254,17 @@ describe('composite mutation planning', () => {
       departments: [{ id: 'urn:department' }],
     };
 
-    const compositionPlan = buildCompositeDeletePlan(companyAggregate, aggregates, payload, [
+    const compositionPlan = buildCompositeDeletePlan(companyAggregate, aggregateRegistry, payload, [
       'departments',
     ]);
-    const aggregationPlan = buildCompositeDeletePlan(companyAggregate, aggregates, payload, [
+    const aggregationPlan = buildCompositeDeletePlan(companyAggregate, aggregateRegistry, payload, [
       'partners',
     ]);
     const deleteOnlyAggregate: AggregateDescriptor = {
       ...companyAggregate,
       fields: [{ ...departments, associationKind: undefined }],
     };
-    const declaredPlan = buildCompositeDeletePlan(deleteOnlyAggregate, aggregates, payload, [
+    const declaredPlan = buildCompositeDeletePlan(deleteOnlyAggregate, aggregateRegistry, payload, [
       'departments',
     ]);
 
@@ -287,7 +288,7 @@ describe('composite mutation planning', () => {
       deleteComposite(
         dataSource,
         inlineCompanyAggregate,
-        aggregates,
+        aggregateRegistry,
         {
           id: 'urn:company',
           departments: [{ id: 'urn:department', offices: [{ id: 'urn:office' }] }],
@@ -306,7 +307,7 @@ describe('default composite update strategy', () => {
 
     const result = await strategy.execute({
       aggregate: companyAggregate,
-      aggregates,
+      aggregateRegistry,
       datasource: { update } as unknown as DataSource,
       params: { id: 'urn:company' },
       payload: { id: 'urn:company', departments: [] },
@@ -316,7 +317,7 @@ describe('default composite update strategy', () => {
       ok: false,
       issues: [
         {
-          code: 'missing_original_payload',
+          code: ValidationIssueCode.MissingOriginalPayload,
           message: 'Original update payload is missing.',
         },
       ],
@@ -331,7 +332,7 @@ describe('default composite delete strategy', () => {
     const strategy = new DefaultDeleteStrategy();
     const context = {
       aggregate: companyAggregate,
-      aggregates,
+      aggregateRegistry,
       datasource: { delete: remove } as unknown as DataSource,
       params: { id: 'urn:company' },
     };
@@ -339,7 +340,7 @@ describe('default composite delete strategy', () => {
     await expect(strategy.execute(context)).resolves.toEqual({ ok: true, data: undefined });
     await expect(strategy.execute({ ...context, cascadePaths: ['departments'] })).resolves.toEqual({
       ok: false,
-      issues: [{ code: 'missing_payload', message: 'Delete payload is missing.' }],
+      issues: [{ code: ValidationIssueCode.MissingPayload, message: 'Delete payload is missing.' }],
     });
     expect(remove).toHaveBeenCalledOnce();
   });

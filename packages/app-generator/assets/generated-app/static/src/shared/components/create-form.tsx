@@ -1,11 +1,11 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type SubmitEvent } from 'react';
 
 import type { DataSource } from '../datasource/data-source.ts';
 import { createEntityDraft, type DraftEntity } from '../forms/form-draft.ts';
 import { rootEntityTarget } from '../forms/entity-target.ts';
 import { validateModel } from '../forms/form-model.ts';
 import { hrefForAction, type OperationNavigationDescriptor } from '../navigation/navigation.ts';
-import type { ValidationIssue } from '../operations/operation-result.ts';
+import { ValidationIssueCode, type ValidationIssue } from '../operations/operation-result.ts';
 import { invokeOperation, type OperationStrategy } from '../operations/operation-strategy.ts';
 import type {
   AggregateDescriptor,
@@ -17,7 +17,7 @@ import { EntityFormEditor } from './entity-form-editor.tsx';
 interface CreateFormProps<TModel extends EntityModel> {
   title: string;
   aggregate: AggregateDescriptor<TModel>;
-  aggregates: AggregateDescriptorMap;
+  aggregateRegistry: AggregateDescriptorMap;
   strategy: OperationStrategy<TModel>;
   dataSource: DataSource;
   navigation: OperationNavigationDescriptor;
@@ -25,17 +25,18 @@ interface CreateFormProps<TModel extends EntityModel> {
 }
 
 export function CreateForm<TModel extends EntityModel>(props: CreateFormProps<TModel>) {
-  const { title, aggregate, aggregates, strategy, dataSource, navigation, instanceBaseIri } = props;
+  const { title, aggregate, aggregateRegistry, strategy, dataSource, navigation, instanceBaseIri } =
+    props;
   const [model, setModel] = useState<DraftEntity>(() =>
-    createEntityDraft(rootEntityTarget(aggregate), aggregates, instanceBaseIri)
+    createEntityDraft(rootEntityTarget(aggregate), aggregateRegistry, instanceBaseIri)
   );
   const [issues, setIssues] = useState<ValidationIssue[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const generalErrors = issues.filter((issue) => !issue.path);
 
-  const handleSubmit = async (event: FormEvent) => {
+  const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const validation = validateModel(model, rootEntityTarget(aggregate), aggregates);
+    const validation = validateModel(model, rootEntityTarget(aggregate), aggregateRegistry);
     if (validation.length > 0) {
       setIssues(validation);
       return;
@@ -46,7 +47,7 @@ export function CreateForm<TModel extends EntityModel>(props: CreateFormProps<TM
     try {
       const result = await invokeOperation(strategy, {
         aggregate,
-        aggregates,
+        aggregateRegistry,
         datasource: dataSource,
         params: {},
         payload: model as TModel,
@@ -60,7 +61,7 @@ export function CreateForm<TModel extends EntityModel>(props: CreateFormProps<TM
       console.error(caught);
       setIssues([
         {
-          code: 'error',
+          code: ValidationIssueCode.Error,
           message: `${caught instanceof Error ? caught.message : String(caught)} (Some entities may already have been saved.)`,
         },
       ]);
@@ -75,7 +76,7 @@ export function CreateForm<TModel extends EntityModel>(props: CreateFormProps<TM
       <form className="entity-form" onSubmit={(event) => void handleSubmit(event)}>
         <EntityFormEditor
           aggregate={aggregate}
-          aggregates={aggregates}
+          aggregateRegistry={aggregateRegistry}
           model={model}
           dataSource={dataSource}
           instanceBaseIri={instanceBaseIri}

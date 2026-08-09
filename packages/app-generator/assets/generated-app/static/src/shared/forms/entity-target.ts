@@ -34,26 +34,26 @@ export function isCompositionField(field: FieldDescriptor): boolean {
 export function resolveCompositionTarget(
   owner: EntityTarget,
   field: FieldDescriptor,
-  aggregates: AggregateDescriptorMap
+  aggregateRegistry: AggregateDescriptorMap
 ): EntityTarget | null {
   if (!isCompositionField(field)) {
     return null;
   }
 
-  return resolveAssociationTarget(owner, field, aggregates);
+  return resolveAssociationTarget(owner, field, aggregateRegistry);
 }
 
 export function resolveAssociationTarget(
   owner: EntityTarget,
   field: FieldDescriptor,
-  aggregates: AggregateDescriptorMap
+  aggregateRegistry: AggregateDescriptorMap
 ): EntityTarget | null {
   if (field.kind !== 'association') {
     return null;
   }
 
   if (field.targetAggregateIri) {
-    const target = aggregates[field.targetAggregateIri];
+    const target = aggregateRegistry[field.targetAggregateIri];
     return target ? rootEntityTarget(target) : null;
   }
 

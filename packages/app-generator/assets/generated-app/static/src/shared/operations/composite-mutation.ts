@@ -24,29 +24,36 @@ export interface CompositeMutationStep {
 
 export function buildCompositeCreatePlan(
   aggregate: AggregateDescriptor,
-  aggregates: AggregateDescriptorMap,
+  aggregateRegistry: AggregateDescriptorMap,
   payload: DraftEntity
 ): CompositeMutationStep[] {
   const steps: CompositeMutationStep[] = [];
-  collectCreateSteps(payload, rootEntityTarget(aggregate), aggregates, steps);
+  collectCreateSteps(payload, rootEntityTarget(aggregate), aggregateRegistry, steps);
   return steps;
 }
 
 export function buildCompositeUpdatePlan(
   aggregate: AggregateDescriptor,
-  aggregates: AggregateDescriptorMap,
+  aggregateRegistry: AggregateDescriptorMap,
   payload: DraftEntity,
   original: DraftEntity
 ): CompositeMutationStep[] {
   const upserts: CompositeMutationStep[] = [];
   const removals: CompositeMutationStep[] = [];
-  collectUpdateSteps(payload, original, rootEntityTarget(aggregate), aggregates, upserts, removals);
+  collectUpdateSteps(
+    payload,
+    original,
+    rootEntityTarget(aggregate),
+    aggregateRegistry,
+    upserts,
+    removals
+  );
   return [...upserts, ...removals];
 }
 
 export function buildCompositeDeletePlan(
   aggregate: AggregateDescriptor,
-  aggregates: AggregateDescriptorMap,
+  aggregateRegistry: AggregateDescriptorMap,
   payload: DraftEntity,
   cascadePaths: readonly string[]
 ): CompositeMutationStep[] {
@@ -54,7 +61,7 @@ export function buildCompositeDeletePlan(
   collectCascadeDeleteSteps(
     payload,
     rootEntityTarget(aggregate),
-    aggregates,
+    aggregateRegistry,
     new Set(cascadePaths),
     '',
     steps
@@ -65,11 +72,11 @@ export function buildCompositeDeletePlan(
 export async function createComposite<TModel extends EntityModel>(
   dataSource: DataSource,
   aggregate: AggregateDescriptor<TModel>,
-  aggregates: AggregateDescriptorMap,
+  aggregateRegistry: AggregateDescriptorMap,
   payload: TModel
 ): Promise<TModel> {
   const draft = payload as DraftEntity;
-  const steps = buildCompositeCreatePlan(aggregate, aggregates, draft);
+  const steps = buildCompositeCreatePlan(aggregate, aggregateRegistry, draft);
   await executePlan(dataSource, steps);
   return payload;
 }
@@ -77,13 +84,13 @@ export async function createComposite<TModel extends EntityModel>(
 export async function updateComposite<TModel extends EntityModel>(
   dataSource: DataSource,
   aggregate: AggregateDescriptor<TModel>,
-  aggregates: AggregateDescriptorMap,
+  aggregateRegistry: AggregateDescriptorMap,
   payload: TModel,
   original: TModel
 ): Promise<TModel> {
   const steps = buildCompositeUpdatePlan(
     aggregate,
-    aggregates,
+    aggregateRegistry,
     payload as DraftEntity,
     original as DraftEntity
   );
@@ -94,13 +101,13 @@ export async function updateComposite<TModel extends EntityModel>(
 export async function deleteComposite<TModel extends EntityModel>(
   dataSource: DataSource,
   aggregate: AggregateDescriptor<TModel>,
-  aggregates: AggregateDescriptorMap,
+  aggregateRegistry: AggregateDescriptorMap,
   payload: TModel,
   cascadePaths: readonly string[]
 ): Promise<void> {
   const steps = buildCompositeDeletePlan(
     aggregate,
-    aggregates,
+    aggregateRegistry,
     payload as DraftEntity,
     cascadePaths
   );
@@ -138,11 +145,11 @@ async function executePlan(
 function collectCreateSteps(
   entity: DraftEntity,
   target: EntityTarget,
-  aggregates: AggregateDescriptorMap,
+  aggregateRegistry: AggregateDescriptorMap,
   steps: CompositeMutationStep[]
 ): void {
-  visitCompositionChildren(entity, target, aggregates, (child, childTarget) => {
-    collectCreateSteps(child, childTarget, aggregates, steps);
+  visitCompositionChildren(entity, target, aggregateRegistry, (child, childTarget) => {
+    collectCreateSteps(child, childTarget, aggregateRegistry, steps);
   });
   steps.push({
     kind: 'create',
@@ -156,7 +163,7 @@ function collectUpdateSteps(
   entity: DraftEntity,
   original: DraftEntity | undefined,
   target: EntityTarget,
-  aggregates: AggregateDescriptorMap,
+  aggregateRegistry: AggregateDescriptorMap,
   upserts: CompositeMutationStep[],
   removals: CompositeMutationStep[]
 ): void {
@@ -164,7 +171,7 @@ function collectUpdateSteps(
     if (!isCompositionField(field)) {
       continue;
     }
-    const childTarget = requireCompositionTarget(target, field, aggregates);
+    const childTarget = requireCompositionTarget(target, field, aggregateRegistry);
     const currentChildren = compositionEntities(entity[field.propertyName], field);
     const originalChildren = compositionEntities(original?.[field.propertyName], field);
     const originalById = new Map(
@@ -183,7 +190,7 @@ function collectUpdateSteps(
         child,
         id ? originalById.get(id) : undefined,
         childTarget,
-        aggregates,
+        aggregateRegistry,
         upserts,
         removals
       );
@@ -192,7 +199,7 @@ function collectUpdateSteps(
     for (const child of originalChildren) {
       const id = entityId(child);
       if (id && !currentIds.has(id)) {
-        collectDeleteSteps(child, childTarget, aggregates, removals);
+        collectDeleteSteps(child, childTarget, aggregateRegistry, removals);
       }
     }
   }
@@ -209,11 +216,11 @@ function collectUpdateSteps(
 function collectDeleteSteps(
   entity: DraftEntity,
   target: EntityTarget,
-  aggregates: AggregateDescriptorMap,
+  aggregateRegistry: AggregateDescriptorMap,
   removals: CompositeMutationStep[]
 ): void {
-  visitCompositionChildren(entity, target, aggregates, (child, childTarget) => {
-    collectDeleteSteps(child, childTarget, aggregates, removals);
+  visitCompositionChildren(entity, target, aggregateRegistry, (child, childTarget) => {
+    collectDeleteSteps(child, childTarget, aggregateRegistry, removals);
   });
   const id = entityId(entity);
   if (id) {
@@ -224,7 +231,7 @@ function collectDeleteSteps(
 function collectCascadeDeleteSteps(
   entity: DraftEntity,
   target: EntityTarget,
-  aggregates: AggregateDescriptorMap,
+  aggregateRegistry: AggregateDescriptorMap,
   cascadePaths: ReadonlySet<string>,
   pathPrefix: string,
   removals: CompositeMutationStep[]
@@ -239,12 +246,19 @@ function collectCascadeDeleteSteps(
       continue;
     }
 
-    const childTarget = resolveAssociationTarget(target, field, aggregates);
+    const childTarget = resolveAssociationTarget(target, field, aggregateRegistry);
     if (!childTarget) {
       throw new Error(`Cascade target for "${field.label}" is unavailable.`);
     }
     for (const child of compositionEntities(entity[field.propertyName], field)) {
-      collectCascadeDeleteSteps(child, childTarget, aggregates, cascadePaths, fieldPath, removals);
+      collectCascadeDeleteSteps(
+        child,
+        childTarget,
+        aggregateRegistry,
+        cascadePaths,
+        fieldPath,
+        removals
+      );
     }
   }
 
@@ -258,14 +272,14 @@ function collectCascadeDeleteSteps(
 function visitCompositionChildren(
   entity: DraftEntity,
   target: EntityTarget,
-  aggregates: AggregateDescriptorMap,
+  aggregateRegistry: AggregateDescriptorMap,
   visit: (entity: DraftEntity, target: EntityTarget) => void
 ): void {
   for (const field of target.fields) {
     if (!isCompositionField(field)) {
       continue;
     }
-    const childTarget = requireCompositionTarget(target, field, aggregates);
+    const childTarget = requireCompositionTarget(target, field, aggregateRegistry);
     for (const child of compositionEntities(entity[field.propertyName], field)) {
       visit(child, childTarget);
     }
@@ -275,9 +289,9 @@ function visitCompositionChildren(
 function requireCompositionTarget(
   owner: EntityTarget,
   field: FieldDescriptor,
-  aggregates: AggregateDescriptorMap
+  aggregateRegistry: AggregateDescriptorMap
 ): EntityTarget {
-  const target = resolveCompositionTarget(owner, field, aggregates);
+  const target = resolveCompositionTarget(owner, field, aggregateRegistry);
   if (!target) {
     throw new Error(`Composition target for "${field.label}" is unavailable.`);
   }

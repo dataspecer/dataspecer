@@ -1,7 +1,7 @@
 import type { EntityModel } from '../types/aggregate.ts';
 import { updateComposite } from './composite-mutation.ts';
 import type { OperationContext, OperationStrategy } from './operation-strategy.ts';
-import type { OperationResult } from './operation-result.ts';
+import { ValidationIssueCode, type OperationResult } from './operation-result.ts';
 
 export class DefaultUpdateStrategy<TModel extends EntityModel> implements OperationStrategy<
   TModel,
@@ -11,7 +11,9 @@ export class DefaultUpdateStrategy<TModel extends EntityModel> implements Operat
     if (!ctx.payload) {
       return {
         ok: false,
-        issues: [{ code: 'missing_payload', message: 'Update payload is missing.' }],
+        issues: [
+          { code: ValidationIssueCode.MissingPayload, message: 'Update payload is missing.' },
+        ],
       };
     }
 
@@ -20,7 +22,7 @@ export class DefaultUpdateStrategy<TModel extends EntityModel> implements Operat
         ok: false,
         issues: [
           {
-            code: 'missing_original_payload',
+            code: ValidationIssueCode.MissingOriginalPayload,
             message: 'Original update payload is missing.',
           },
         ],
@@ -30,7 +32,7 @@ export class DefaultUpdateStrategy<TModel extends EntityModel> implements Operat
     const data = await updateComposite(
       ctx.datasource,
       ctx.aggregate,
-      ctx.aggregates ?? { [ctx.aggregate.iri]: ctx.aggregate },
+      ctx.aggregateRegistry,
       ctx.payload,
       ctx.originalPayload
     );

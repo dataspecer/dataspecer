@@ -1,11 +1,11 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type SubmitEvent } from 'react';
 
 import type { DataSource } from '../datasource/data-source.ts';
 import { hydrateCompositionDraft, type DraftEntity } from '../forms/form-draft.ts';
 import { rootEntityTarget } from '../forms/entity-target.ts';
 import { validateModel } from '../forms/form-model.ts';
 import { hrefForAction, type OperationNavigationDescriptor } from '../navigation/navigation.ts';
-import type { ValidationIssue } from '../operations/operation-result.ts';
+import { ValidationIssueCode, type ValidationIssue } from '../operations/operation-result.ts';
 import { invokeOperation, type OperationStrategy } from '../operations/operation-strategy.ts';
 import type {
   AggregateDescriptor,
@@ -17,7 +17,7 @@ import { EntityFormEditor } from './entity-form-editor.tsx';
 interface UpdateFormProps<TModel extends EntityModel> {
   title: string;
   aggregate: AggregateDescriptor<TModel>;
-  aggregates: AggregateDescriptorMap;
+  aggregateRegistry: AggregateDescriptorMap;
   strategy: OperationStrategy<TModel>;
   dataSource: DataSource;
   navigation: OperationNavigationDescriptor;
@@ -26,8 +26,16 @@ interface UpdateFormProps<TModel extends EntityModel> {
 }
 
 export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TModel>) {
-  const { title, aggregate, aggregates, strategy, dataSource, navigation, instanceBaseIri, id } =
-    props;
+  const {
+    title,
+    aggregate,
+    aggregateRegistry,
+    strategy,
+    dataSource,
+    navigation,
+    instanceBaseIri,
+    id,
+  } = props;
   const [model, setModel] = useState<DraftEntity | null>(null);
   const [originalModel, setOriginalModel] = useState<DraftEntity | null>(null);
   const [issues, setIssues] = useState<ValidationIssue[]>([]);
@@ -38,7 +46,9 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
     if (!id) {
       setModel(null);
       setOriginalModel(null);
-      setIssues([{ code: 'required', message: 'Missing required entity id.', path: 'id' }]);
+      setIssues([
+        { code: ValidationIssueCode.Required, message: 'Missing required entity id.', path: 'id' },
+      ]);
       setLoading(false);
       return;
     }
@@ -54,13 +64,13 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
         if (!item) {
           setModel(null);
           setOriginalModel(null);
-          setIssues([{ code: 'not_found', message: 'Entity not found.' }]);
+          setIssues([{ code: ValidationIssueCode.NotFound, message: 'Entity not found.' }]);
           return;
         }
         const hydrated = await hydrateCompositionDraft(
           item as DraftEntity,
           rootEntityTarget(aggregate),
-          aggregates,
+          aggregateRegistry,
           dataSource
         );
         if (active) {
@@ -74,7 +84,10 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
           setModel(null);
           setOriginalModel(null);
           setIssues([
-            { code: 'error', message: caught instanceof Error ? caught.message : String(caught) },
+            {
+              code: ValidationIssueCode.Error,
+              message: caught instanceof Error ? caught.message : String(caught),
+            },
           ]);
         }
       } finally {
@@ -88,17 +101,17 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
     return () => {
       active = false;
     };
-  }, [aggregate, aggregates, dataSource, id]);
+  }, [aggregate, aggregateRegistry, dataSource, id]);
 
   const generalErrors = issues.filter((issue) => !issue.path || !model);
 
-  const handleSubmit = async (event: FormEvent) => {
+  const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!model || !originalModel) {
       return;
     }
 
-    const validation = validateModel(model, rootEntityTarget(aggregate), aggregates);
+    const validation = validateModel(model, rootEntityTarget(aggregate), aggregateRegistry);
     if (validation.length > 0) {
       setIssues(validation);
       return;
@@ -109,7 +122,7 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
     try {
       const result = await invokeOperation(strategy, {
         aggregate,
-        aggregates,
+        aggregateRegistry,
         datasource: dataSource,
         params: { id },
         payload: model as TModel,
@@ -124,7 +137,7 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
       console.error(caught);
       setIssues([
         {
-          code: 'error',
+          code: ValidationIssueCode.Error,
           message: `${caught instanceof Error ? caught.message : String(caught)} (Some entities may already have been saved.)`,
         },
       ]);
@@ -149,7 +162,7 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
         {model ? (
           <EntityFormEditor
             aggregate={aggregate}
-            aggregates={aggregates}
+            aggregateRegistry={aggregateRegistry}
             model={model}
             originalModel={originalModel ?? undefined}
             dataSource={dataSource}

@@ -371,7 +371,7 @@ describe('renderGeneratedApp', () => {
     expect(registry).toContain('"cascadePaths": [');
     expect(registry).toContain('"chapters"');
     expect(registry).not.toContain('placeholder');
-    expect(page).toContain('aggregates={aggregateRegistry}');
+    expect(page).toContain('aggregateRegistry={aggregateRegistry}');
     expect(page).toContain('cascadePaths={operation.delete?.cascadePaths ?? []}');
     expect(tree.get('src/shared/components/delete-form.tsx')).toContain('payload: item');
   });

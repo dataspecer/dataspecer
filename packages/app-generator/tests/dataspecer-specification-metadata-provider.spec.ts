@@ -297,7 +297,7 @@ describe('mapDataspecerSpecificationToMetadata', () => {
       (resource) => resource.iri !== 'https://example.org/psm/author-ref'
     );
 
-    expect(() => mapDataspecerSpecificationToMetadata(specificationIri, fixture)).toThrowError(
+    expect(() => mapDataspecerSpecificationToMetadata(specificationIri, fixture)).toThrow(
       DataspecerMetadataMappingError
     );
 

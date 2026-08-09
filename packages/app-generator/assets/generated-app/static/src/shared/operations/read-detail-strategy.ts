@@ -4,7 +4,7 @@ import {
   type OperationContext,
   type OperationStrategy,
 } from './operation-strategy.ts';
-import type { OperationResult } from './operation-result.ts';
+import { ValidationIssueCode, type OperationResult } from './operation-result.ts';
 
 export class DefaultReadDetailStrategy<TModel extends EntityModel> implements OperationStrategy<
   TModel,
@@ -21,7 +21,7 @@ export class DefaultReadDetailStrategy<TModel extends EntityModel> implements Op
       ? { ok: true, data }
       : {
           ok: false,
-          issues: [{ code: 'not_found', message: 'Entity not found.' }],
+          issues: [{ code: ValidationIssueCode.NotFound, message: 'Entity not found.' }],
         };
   }
 }

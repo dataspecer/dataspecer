@@ -13,6 +13,7 @@ import {
   toInputValue,
   validateModel,
 } from '../assets/generated-app/static/src/shared/forms/form-model.ts';
+import { ValidationIssueCode } from '../assets/generated-app/static/src/shared/operations/operation-result.ts';
 import type {
   AggregateDescriptor,
   AggregateDescriptorMap,
@@ -73,7 +74,7 @@ const rootAggregate: AggregateDescriptor = {
   createEmpty: () => ({}),
 };
 
-const aggregates: AggregateDescriptorMap = {
+const aggregateRegistry: AggregateDescriptorMap = {
   [rootAggregate.iri]: rootAggregate,
   [childAggregate.iri]: childAggregate,
 };
@@ -91,7 +92,7 @@ describe('generated recursive form model', () => {
   });
 
   it('creates the minimum number of required composition children', () => {
-    const draft = createEntityDraft(rootEntityTarget(rootAggregate), aggregates, 'urn:test');
+    const draft = createEntityDraft(rootEntityTarget(rootAggregate), aggregateRegistry, 'urn:test');
     const children = draft.children as DraftEntity[];
 
     expect(children).toHaveLength(2);
@@ -110,11 +111,11 @@ describe('generated recursive form model', () => {
       ],
     };
 
-    expect(validateModel(model, rootEntityTarget(rootAggregate), aggregates)).toEqual(
+    expect(validateModel(model, rootEntityTarget(rootAggregate), aggregateRegistry)).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ code: 'duplicate', path: 'tags' }),
-        expect.objectContaining({ code: 'max_count', path: 'children' }),
-        expect.objectContaining({ code: 'min_count', path: 'children[0].name' }),
+        expect.objectContaining({ code: ValidationIssueCode.Duplicate, path: 'tags' }),
+        expect.objectContaining({ code: ValidationIssueCode.MaxCount, path: 'children' }),
+        expect.objectContaining({ code: ValidationIssueCode.MinCount, path: 'children[0].name' }),
       ])
     );
   });
@@ -136,7 +137,7 @@ describe('generated recursive form model', () => {
     const hydrated = await hydrateCompositionDraft(
       source,
       rootEntityTarget(rootAggregate),
-      aggregates,
+      aggregateRegistry,
       dataSource
     );
     const child = (hydrated.children as DraftEntity[])[0];

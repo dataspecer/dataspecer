@@ -1,5 +1,5 @@
 import type { AggregateDescriptorMap, FieldDescriptor, FormControl } from '../types/aggregate.ts';
-import type { ValidationIssue } from '../operations/operation-result.ts';
+import { ValidationIssueCode, type ValidationIssue } from '../operations/operation-result.ts';
 import {
   isCompositionField,
   maximumCount,
@@ -64,23 +64,27 @@ export function toInputValue(control: FieldControl, value: unknown): string {
 export function validateModel(
   model: Record<string, unknown>,
   target: EntityTarget,
-  aggregates: AggregateDescriptorMap
+  aggregateRegistry: AggregateDescriptorMap
 ): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
-  validateEntity(model, target, aggregates, '', issues);
+  validateEntity(model, target, aggregateRegistry, '', issues);
   return issues;
 }
 
 function validateEntity(
   model: Record<string, unknown>,
   target: EntityTarget,
-  aggregates: AggregateDescriptorMap,
+  aggregateRegistry: AggregateDescriptorMap,
   pathPrefix: string,
   issues: ValidationIssue[]
 ): void {
   const idPath = joinPath(pathPrefix, 'id');
   if (typeof model.id !== 'string' || model.id.trim() === '') {
-    issues.push({ code: 'required', message: 'Identifier (IRI) is required.', path: idPath });
+    issues.push({
+      code: ValidationIssueCode.Required,
+      message: 'Identifier (IRI) is required.',
+      path: idPath,
+    });
   }
 
   for (const field of target.fields) {
@@ -96,7 +100,7 @@ function validateEntity(
 
     if (presentValues.length < minCount) {
       issues.push({
-        code: 'min_count',
+        code: ValidationIssueCode.MinCount,
         message:
           minCount === 1
             ? `${field.label} is required.`
@@ -106,7 +110,7 @@ function validateEntity(
     }
     if (maxCount !== null && presentValues.length > maxCount) {
       issues.push({
-        code: 'max_count',
+        code: ValidationIssueCode.MaxCount,
         message: `${field.label} allows at most ${maxCount} values.`,
         path: fieldPath,
       });
@@ -114,7 +118,7 @@ function validateEntity(
 
     if (field.many && presentValues.length > 1 && hasDuplicateValues(presentValues)) {
       issues.push({
-        code: 'duplicate',
+        code: ValidationIssueCode.Duplicate,
         message: `${field.label} contains duplicate values.`,
         path: fieldPath,
       });
@@ -124,10 +128,10 @@ function validateEntity(
       continue;
     }
 
-    const childTarget = resolveCompositionTarget(target, field, aggregates);
+    const childTarget = resolveCompositionTarget(target, field, aggregateRegistry);
     if (!childTarget) {
       issues.push({
-        code: 'missing_composition_target',
+        code: ValidationIssueCode.MissingCompositionTarget,
         message: `Composition target for ${field.label} is unavailable.`,
         path: fieldPath,
       });
@@ -137,7 +141,7 @@ function validateEntity(
     presentValues.forEach((entry, index) => {
       if (entry === null || typeof entry !== 'object' || entry instanceof Date) {
         issues.push({
-          code: 'invalid_composition',
+          code: ValidationIssueCode.InvalidComposition,
           message: `${field.label} must contain an entity.`,
           path: field.many ? `${fieldPath}[${index}]` : fieldPath,
         });
@@ -146,7 +150,7 @@ function validateEntity(
       validateEntity(
         entry as Record<string, unknown>,
         childTarget,
-        aggregates,
+        aggregateRegistry,
         field.many ? `${fieldPath}[${index}]` : fieldPath,
         issues
       );

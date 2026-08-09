@@ -5,7 +5,7 @@ import {
   type OperationContext,
   type OperationStrategy,
 } from './operation-strategy.ts';
-import type { OperationResult } from './operation-result.ts';
+import { ValidationIssueCode, type OperationResult } from './operation-result.ts';
 
 export class DefaultDeleteStrategy<TModel extends EntityModel> implements OperationStrategy<
   TModel,
@@ -17,13 +17,15 @@ export class DefaultDeleteStrategy<TModel extends EntityModel> implements Operat
       if (!ctx.payload) {
         return {
           ok: false,
-          issues: [{ code: 'missing_payload', message: 'Delete payload is missing.' }],
+          issues: [
+            { code: ValidationIssueCode.MissingPayload, message: 'Delete payload is missing.' },
+          ],
         };
       }
       await deleteComposite(
         ctx.datasource,
         ctx.aggregate,
-        ctx.aggregates ?? { [ctx.aggregate.iri]: ctx.aggregate },
+        ctx.aggregateRegistry,
         ctx.payload,
         cascadePaths
       );

@@ -1,5 +1,19 @@
+export enum ValidationIssueCode {
+  // generic error
+  Error = 'error',
+  Required = 'required',
+  NotFound = 'not_found',
+  MissingPayload = 'missing_payload',
+  MissingOriginalPayload = 'missing_original_payload',
+  MinCount = 'min_count',
+  MaxCount = 'max_count',
+  Duplicate = 'duplicate',
+  MissingCompositionTarget = 'missing_composition_target',
+  InvalidComposition = 'invalid_composition',
+}
+
 export interface ValidationIssue {
-  code: string;
+  code: ValidationIssueCode;
   message: string;
   path?: string;
 }

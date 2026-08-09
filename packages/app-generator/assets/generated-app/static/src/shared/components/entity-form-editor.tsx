@@ -29,7 +29,7 @@ import { FormField } from './form-field.tsx';
 
 interface EntityFormEditorProps {
   aggregate: AggregateDescriptor;
-  aggregates: AggregateDescriptorMap;
+  aggregateRegistry: AggregateDescriptorMap;
   model: DraftEntity;
   originalModel?: DraftEntity;
   dataSource: DataSource;
@@ -43,10 +43,10 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
   const [selection, setSelection] = useState<EntityPathSegment[]>([]);
   const identifierId = useId();
   const rootTarget = rootEntityTarget(props.aggregate);
-  const target = targetAtPath(rootTarget, selection, props.aggregates);
+  const target = targetAtPath(rootTarget, selection, props.aggregateRegistry);
   const entity = entityAtPath(props.model, selection);
-  const validationPrefix = validationPathAt(rootTarget, selection, props.aggregates);
-  const existingIds = collectEntityIds(props.originalModel, rootTarget, props.aggregates);
+  const validationPrefix = validationPathAt(rootTarget, selection, props.aggregateRegistry);
+  const existingIds = collectEntityIds(props.originalModel, rootTarget, props.aggregateRegistry);
 
   const updateSelected = (update: (entity: DraftEntity) => DraftEntity) => {
     props.onChange(updateEntityAtPath(props.model, selection, update));
@@ -59,7 +59,7 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
         <EntityTree
           entity={props.model}
           target={rootTarget}
-          aggregates={props.aggregates}
+          aggregateRegistry={props.aggregateRegistry}
           path={[]}
           selectedPath={selection}
           onSelect={setSelection}
@@ -71,7 +71,7 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
           root={props.model}
           rootTarget={rootTarget}
           path={selection}
-          aggregates={props.aggregates}
+          aggregateRegistry={props.aggregateRegistry}
           onSelect={setSelection}
         />
         <h3>
@@ -126,7 +126,7 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
           })}
 
         {target.fields.filter(isCompositionField).map((field) => {
-          const childTarget = resolveCompositionTarget(target, field, props.aggregates);
+          const childTarget = resolveCompositionTarget(target, field, props.aggregateRegistry);
           const fieldPath = joinValidationPath(validationPrefix, field.path);
           return (
             <CompositionCollection
@@ -135,7 +135,7 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
               target={childTarget}
               value={entity[field.propertyName]}
               parentPath={selection}
-              aggregates={props.aggregates}
+              aggregateRegistry={props.aggregateRegistry}
               instanceBaseIri={props.instanceBaseIri}
               issues={props.issues}
               validationPath={fieldPath}
@@ -161,7 +161,7 @@ interface CompositionCollectionProps {
   target: EntityTarget | null;
   value: unknown;
   parentPath: EntityPathSegment[];
-  aggregates: AggregateDescriptorMap;
+  aggregateRegistry: AggregateDescriptorMap;
   instanceBaseIri: string;
   issues: ValidationIssue[];
   validationPath: string;
@@ -189,7 +189,7 @@ function CompositionCollection(props: CompositionCollectionProps) {
   const add = () => {
     const child = createEntityDraft(
       props.target as EntityTarget,
-      props.aggregates,
+      props.aggregateRegistry,
       props.instanceBaseIri
     );
     if (props.field.many) {
@@ -295,7 +295,7 @@ function CompositionCollection(props: CompositionCollectionProps) {
 interface EntityTreeProps {
   entity: DraftEntity;
   target: EntityTarget;
-  aggregates: AggregateDescriptorMap;
+  aggregateRegistry: AggregateDescriptorMap;
   path: EntityPathSegment[];
   selectedPath: EntityPathSegment[];
   onSelect: (path: EntityPathSegment[]) => void;
@@ -313,7 +313,7 @@ function EntityTree(props: EntityTreeProps) {
         {entitySummary(props.target.name, props.target.fields, props.entity)}
       </button>
       {props.target.fields.filter(isCompositionField).map((field) => {
-        const target = resolveCompositionTarget(props.target, field, props.aggregates);
+        const target = resolveCompositionTarget(props.target, field, props.aggregateRegistry);
         const children = compositionEntities(props.entity[field.propertyName], field);
         if (!target || children.length === 0) {
           return null;
@@ -324,7 +324,7 @@ function EntityTree(props: EntityTreeProps) {
             field={field}
             children={children}
             target={target}
-            aggregates={props.aggregates}
+            aggregateRegistry={props.aggregateRegistry}
             parentPath={props.path}
             selectedPath={props.selectedPath}
             onSelect={props.onSelect}
@@ -339,7 +339,7 @@ interface EntityTreeGroupProps {
   field: FieldDescriptor;
   children: DraftEntity[];
   target: EntityTarget;
-  aggregates: AggregateDescriptorMap;
+  aggregateRegistry: AggregateDescriptorMap;
   parentPath: EntityPathSegment[];
   selectedPath: EntityPathSegment[];
   onSelect: (path: EntityPathSegment[]) => void;
@@ -374,7 +374,7 @@ function EntityTreeGroup(props: EntityTreeGroupProps) {
                 key={child.id ?? index}
                 entity={child}
                 target={props.target}
-                aggregates={props.aggregates}
+                aggregateRegistry={props.aggregateRegistry}
                 path={path}
                 selectedPath={props.selectedPath}
                 onSelect={props.onSelect}
@@ -391,7 +391,7 @@ interface BreadcrumbsProps {
   root: DraftEntity;
   rootTarget: EntityTarget;
   path: EntityPathSegment[];
-  aggregates: AggregateDescriptorMap;
+  aggregateRegistry: AggregateDescriptorMap;
   onSelect: (path: EntityPathSegment[]) => void;
 }
 
@@ -410,7 +410,7 @@ function Breadcrumbs(props: BreadcrumbsProps) {
     if (!field) {
       break;
     }
-    const nextTarget = resolveCompositionTarget(target, field, props.aggregates);
+    const nextTarget = resolveCompositionTarget(target, field, props.aggregateRegistry);
     const value: unknown = entity[field.propertyName];
     const child =
       segment.index === undefined
@@ -447,14 +447,14 @@ function Breadcrumbs(props: BreadcrumbsProps) {
 function targetAtPath(
   root: EntityTarget,
   path: readonly EntityPathSegment[],
-  aggregates: AggregateDescriptorMap
+  aggregateRegistry: AggregateDescriptorMap
 ): EntityTarget {
   let target = root;
   for (const segment of path) {
     const field = target.fields.find(
       (candidate) => candidate.propertyName === segment.propertyName
     );
-    const child = field ? resolveCompositionTarget(target, field, aggregates) : null;
+    const child = field ? resolveCompositionTarget(target, field, aggregateRegistry) : null;
     if (!child) {
       throw new Error('The selected nested form descriptor is unavailable.');
     }
@@ -466,7 +466,7 @@ function targetAtPath(
 function validationPathAt(
   root: EntityTarget,
   path: readonly EntityPathSegment[],
-  aggregates: AggregateDescriptorMap
+  aggregateRegistry: AggregateDescriptorMap
 ): string {
   let target = root;
   let result = '';
@@ -474,7 +474,7 @@ function validationPathAt(
     const field = target.fields.find(
       (candidate) => candidate.propertyName === segment.propertyName
     );
-    const child = field ? resolveCompositionTarget(target, field, aggregates) : null;
+    const child = field ? resolveCompositionTarget(target, field, aggregateRegistry) : null;
     if (!field || !child) {
       break;
     }
@@ -508,7 +508,7 @@ function entitySummary(
 function collectEntityIds(
   model: DraftEntity | undefined,
   target: EntityTarget,
-  aggregates: AggregateDescriptorMap,
+  aggregateRegistry: AggregateDescriptorMap,
   result = new Set<string>()
 ): Set<string> {
   if (!model) {
@@ -518,12 +518,12 @@ function collectEntityIds(
     result.add(model.id);
   }
   for (const field of target.fields.filter(isCompositionField)) {
-    const childTarget = resolveCompositionTarget(target, field, aggregates);
+    const childTarget = resolveCompositionTarget(target, field, aggregateRegistry);
     if (!childTarget) {
       continue;
     }
     for (const child of compositionEntities(model[field.propertyName], field)) {
-      collectEntityIds(child, childTarget, aggregates, result);
+      collectEntityIds(child, childTarget, aggregateRegistry, result);
     }
   }
   return result;

@@ -21,6 +21,7 @@ export function <%= it.page.componentName %>() {<% if (it.page.operation.operati
   useEffect(() => {
     invokeOperation(operation.strategy, {
       aggregate: operation.aggregate,
+      aggregateRegistry,
       datasource: dataSource,
       params: {},
     })
@@ -64,6 +65,7 @@ export function <%= it.page.componentName %>() {<% if (it.page.operation.operati
 
     invokeOperation(operation.strategy, {
       aggregate: operation.aggregate,
+      aggregateRegistry,
       datasource: dataSource,
       params: { id },
     })
@@ -101,7 +103,7 @@ export function <%= it.page.componentName %>() {<% if (it.page.operation.operati
     <CreateForm
       title={operation.title}
       aggregate={operation.aggregate}
-      aggregates={aggregateRegistry}
+      aggregateRegistry={aggregateRegistry}
       strategy={operation.strategy}
       dataSource={dataSource}
       navigation={operation.navigation}
@@ -115,7 +117,7 @@ export function <%= it.page.componentName %>() {<% if (it.page.operation.operati
     <UpdateForm
       title={operation.title}
       aggregate={operation.aggregate}
-      aggregates={aggregateRegistry}
+      aggregateRegistry={aggregateRegistry}
       strategy={operation.strategy}
       dataSource={dataSource}
       navigation={operation.navigation}
@@ -130,7 +132,7 @@ export function <%= it.page.componentName %>() {<% if (it.page.operation.operati
     <DeleteForm
       title={operation.title}
       aggregate={operation.aggregate}
-      aggregates={aggregateRegistry}
+      aggregateRegistry={aggregateRegistry}
       strategy={operation.strategy}
       dataSource={dataSource}
       navigation={operation.navigation}

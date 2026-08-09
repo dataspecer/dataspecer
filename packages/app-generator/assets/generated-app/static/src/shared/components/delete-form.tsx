@@ -1,8 +1,8 @@
-import { useEffect, useId, useState, type FormEvent } from 'react';
+import { useEffect, useId, useState, type SubmitEvent } from 'react';
 
 import type { DataSource } from '../datasource/data-source.ts';
 import { hrefForAction, type OperationNavigationDescriptor } from '../navigation/navigation.ts';
-import type { ValidationIssue } from '../operations/operation-result.ts';
+import { ValidationIssueCode, type ValidationIssue } from '../operations/operation-result.ts';
 import { invokeOperation, type OperationStrategy } from '../operations/operation-strategy.ts';
 import type {
   AggregateDescriptor,
@@ -13,7 +13,7 @@ import type {
 interface DeleteFormProps<TModel extends EntityModel> {
   title: string;
   aggregate: AggregateDescriptor<TModel>;
-  aggregates: AggregateDescriptorMap;
+  aggregateRegistry: AggregateDescriptorMap;
   strategy: OperationStrategy<TModel, void>;
   dataSource: DataSource;
   navigation: OperationNavigationDescriptor;
@@ -22,8 +22,16 @@ interface DeleteFormProps<TModel extends EntityModel> {
 }
 
 export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TModel>) {
-  const { title, aggregate, aggregates, strategy, dataSource, navigation, cascadePaths, id } =
-    props;
+  const {
+    title,
+    aggregate,
+    aggregateRegistry,
+    strategy,
+    dataSource,
+    navigation,
+    cascadePaths,
+    id,
+  } = props;
   const identifierId = useId();
   const [item, setItem] = useState<TModel | null>(null);
   const [issues, setIssues] = useState<ValidationIssue[]>([]);
@@ -33,7 +41,9 @@ export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TM
   useEffect(() => {
     if (!id) {
       setItem(null);
-      setIssues([{ code: 'required', message: 'Missing required entity id.', path: 'id' }]);
+      setIssues([
+        { code: ValidationIssueCode.Required, message: 'Missing required entity id.', path: 'id' },
+      ]);
       setLoading(false);
       return;
     }
@@ -51,7 +61,7 @@ export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TM
           setIssues([]);
         } else {
           setItem(null);
-          setIssues([{ code: 'not_found', message: 'Entity not found.' }]);
+          setIssues([{ code: ValidationIssueCode.NotFound, message: 'Entity not found.' }]);
         }
       })
       .catch((caught: unknown) => {
@@ -59,7 +69,10 @@ export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TM
         if (active) {
           setItem(null);
           setIssues([
-            { code: 'error', message: caught instanceof Error ? caught.message : String(caught) },
+            {
+              code: ValidationIssueCode.Error,
+              message: caught instanceof Error ? caught.message : String(caught),
+            },
           ]);
         }
       })
@@ -77,7 +90,7 @@ export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TM
   const errorFor = (path: string) => issues.find((issue) => issue.path === path)?.message;
   const generalErrors = issues.filter((issue) => !issue.path);
 
-  const handleSubmit = async (event: FormEvent) => {
+  const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!item) {
       return;
@@ -88,7 +101,7 @@ export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TM
     try {
       const result = await invokeOperation(strategy, {
         aggregate,
-        aggregates,
+        aggregateRegistry,
         datasource: dataSource,
         params: { id },
         payload: item,
@@ -102,7 +115,10 @@ export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TM
     } catch (caught: unknown) {
       console.error(caught);
       setIssues([
-        { code: 'error', message: caught instanceof Error ? caught.message : String(caught) },
+        {
+          code: ValidationIssueCode.Error,
+          message: caught instanceof Error ? caught.message : String(caught),
+        },
       ]);
     } finally {
       setSubmitting(false);
