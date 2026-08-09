@@ -12,6 +12,8 @@ export interface OperationContext<TModel extends EntityModel = EntityModel> {
   aggregates?: AggregateDescriptorMap;
   params: Record<string, unknown>;
   payload?: TModel;
+  /** Composition paths configured to cascade for a Delete operation. */
+  cascadePaths?: readonly string[];
   /**
    * Provides the fully hydrated value the default Update strategy uses to find created and
    * removed children.

@@ -104,7 +104,7 @@ export class RdfLdkitDataSource implements DataSource {
   }
 
   async delete<TModel extends EntityModel>(args: DeleteArgs<TModel>): Promise<void> {
-    // TODO: Implement recursive composition cascade and incoming reference checks.
+    // TODO: Implement incoming reference checks.
     const { fields, lens } = this.resolveTarget(args.aggregate, args.fieldPath);
     const inverseDeleteQuery = buildInverseDeleteQuery(inverseWritableFields(fields), args.id);
     await this.executeUpdate(inverseDeleteQuery);

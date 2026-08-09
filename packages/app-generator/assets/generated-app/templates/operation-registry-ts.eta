@@ -19,6 +19,7 @@ export interface RegisteredOperation<TModel extends EntityModel = EntityModel> {
   title: string;
   aggregate: AggregateDescriptor<TModel>;
   navigation: OperationNavigationDescriptor;
+  delete?: { cascadePaths: readonly string[] };
   strategy: OperationStrategy<TModel>;
 }
 
@@ -31,6 +32,9 @@ export const operations = {
     title: <%~ it.json(page.operation.pageTitle) %>,
     aggregate: <%= it.aggregates.find((aggregate) => aggregate.moduleName === page.moduleName).descriptorName %>,
     navigation: <%~ it.json(page.operation.navigation) %>,
+<% if (page.operation.delete) { -%>
+    delete: <%~ it.json(page.operation.delete) %>,
+<% } -%>
     strategy: new <%= page.operationClassName %>(),
   },
 <% }) -%>

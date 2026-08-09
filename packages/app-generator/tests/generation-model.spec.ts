@@ -130,6 +130,9 @@ describe('buildGenerationModel', () => {
       targetPath: '/book-read-list',
       requiresEntityId: false,
     });
+    expect(model.operations.find((operation) => operation.id === 'Book.Delete')?.delete).toEqual({
+      cascadePaths: ['chapters'],
+    });
   });
 
   it('falls back to a same-class list when a write has no configured redirect', () => {

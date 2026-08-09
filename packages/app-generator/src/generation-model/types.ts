@@ -106,11 +106,8 @@ export interface GeneratedFormDescriptor {
   fields: GeneratedFieldDescriptor[];
 }
 
-// TODO: Replace the placeholder with a real delete descriptor once Delete confirmation pages,
-//  usage check query, and cascade execution are implemented
 export interface GeneratedDeleteDescriptor {
   cascadePaths: string[];
-  placeholder: true;
 }
 
 export interface GeneratedFieldDescriptor {

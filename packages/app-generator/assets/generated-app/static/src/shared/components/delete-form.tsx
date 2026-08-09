@@ -4,19 +4,26 @@ import type { DataSource } from '../datasource/data-source.ts';
 import { hrefForAction, type OperationNavigationDescriptor } from '../navigation/navigation.ts';
 import type { ValidationIssue } from '../operations/operation-result.ts';
 import { invokeOperation, type OperationStrategy } from '../operations/operation-strategy.ts';
-import type { AggregateDescriptor, EntityModel } from '../types/aggregate.ts';
+import type {
+  AggregateDescriptor,
+  AggregateDescriptorMap,
+  EntityModel,
+} from '../types/aggregate.ts';
 
 interface DeleteFormProps<TModel extends EntityModel> {
   title: string;
   aggregate: AggregateDescriptor<TModel>;
+  aggregates: AggregateDescriptorMap;
   strategy: OperationStrategy<TModel, void>;
   dataSource: DataSource;
   navigation: OperationNavigationDescriptor;
+  cascadePaths: readonly string[];
   id: string;
 }
 
 export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TModel>) {
-  const { title, aggregate, strategy, dataSource, navigation, id } = props;
+  const { title, aggregate, aggregates, strategy, dataSource, navigation, cascadePaths, id } =
+    props;
   const identifierId = useId();
   const [item, setItem] = useState<TModel | null>(null);
   const [issues, setIssues] = useState<ValidationIssue[]>([]);
@@ -81,8 +88,11 @@ export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TM
     try {
       const result = await invokeOperation(strategy, {
         aggregate,
+        aggregates,
         datasource: dataSource,
         params: { id },
+        payload: item,
+        cascadePaths,
       });
       if (result.ok) {
         window.location.href = hrefForAction(navigation.successRedirect, id) ?? '/';

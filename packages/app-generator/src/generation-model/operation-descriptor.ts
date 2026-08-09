@@ -80,7 +80,6 @@ function buildDeleteDescriptor(node: ApplicationNode): GeneratedDeleteDescriptor
 
   return {
     cascadePaths,
-    placeholder: true,
   };
 }
 

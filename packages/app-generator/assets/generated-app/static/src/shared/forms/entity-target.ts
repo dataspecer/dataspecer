@@ -40,6 +40,18 @@ export function resolveCompositionTarget(
     return null;
   }
 
+  return resolveAssociationTarget(owner, field, aggregates);
+}
+
+export function resolveAssociationTarget(
+  owner: EntityTarget,
+  field: FieldDescriptor,
+  aggregates: AggregateDescriptorMap
+): EntityTarget | null {
+  if (field.kind !== 'association') {
+    return null;
+  }
+
   if (field.targetAggregateIri) {
     const target = aggregates[field.targetAggregateIri];
     return target ? rootEntityTarget(target) : null;

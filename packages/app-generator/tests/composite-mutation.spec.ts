@@ -4,9 +4,12 @@ import type { DataSource } from '../assets/generated-app/static/src/shared/datas
 import type { DraftEntity } from '../assets/generated-app/static/src/shared/forms/form-draft.ts';
 import {
   buildCompositeCreatePlan,
+  buildCompositeDeletePlan,
   buildCompositeUpdatePlan,
   createComposite,
+  deleteComposite,
 } from '../assets/generated-app/static/src/shared/operations/composite-mutation.ts';
+import { DefaultDeleteStrategy } from '../assets/generated-app/static/src/shared/operations/delete-strategy.ts';
 import { DefaultUpdateStrategy } from '../assets/generated-app/static/src/shared/operations/update-strategy.ts';
 import type {
   AggregateDescriptor,
@@ -84,6 +87,17 @@ const companyAggregate: AggregateDescriptor = {
   classIri: 'https://example.org/class/company',
   fields: [partners, departments],
   createEmpty: () => ({}),
+};
+
+const inlineDepartments: FieldDescriptor = {
+  ...departments,
+  targetAggregateIri: undefined,
+  fields: departmentAggregate.fields,
+};
+
+const inlineCompanyAggregate: AggregateDescriptor = {
+  ...companyAggregate,
+  fields: [partners, inlineDepartments],
 };
 
 const aggregates: AggregateDescriptorMap = {
@@ -207,6 +221,82 @@ describe('composite mutation planning', () => {
 
     expect(plan[0].payload).not.toHaveProperty('labels');
   });
+
+  it('plans selected nested composition deletes leaves first', () => {
+    const payload: DraftEntity = {
+      id: 'urn:company',
+      partners: [{ id: 'urn:partner' }],
+      departments: [
+        {
+          id: 'urn:department',
+          offices: [{ id: 'urn:office', label: 'Prague' }],
+        },
+      ],
+    };
+
+    const plan = buildCompositeDeletePlan(inlineCompanyAggregate, aggregates, payload, [
+      'departments',
+      'departments.offices',
+    ]);
+
+    expect(plan.map((step) => [step.id, step.target.fieldPath])).toEqual([
+      ['urn:office', ['departments', 'offices']],
+      ['urn:department', ['departments']],
+      ['urn:company', []],
+    ]);
+  });
+
+  it('accepts a declared cascade without a form kind and does not cascade aggregations', () => {
+    const payload: DraftEntity = {
+      id: 'urn:company',
+      partners: [{ id: 'urn:partner' }],
+      departments: [{ id: 'urn:department' }],
+    };
+
+    const compositionPlan = buildCompositeDeletePlan(companyAggregate, aggregates, payload, [
+      'departments',
+    ]);
+    const aggregationPlan = buildCompositeDeletePlan(companyAggregate, aggregates, payload, [
+      'partners',
+    ]);
+    const deleteOnlyAggregate: AggregateDescriptor = {
+      ...companyAggregate,
+      fields: [{ ...departments, associationKind: undefined }],
+    };
+    const declaredPlan = buildCompositeDeletePlan(deleteOnlyAggregate, aggregates, payload, [
+      'departments',
+    ]);
+
+    expect(compositionPlan.map((step) => step.id)).toEqual(['urn:department', 'urn:company']);
+    expect(aggregationPlan.map((step) => step.id)).toEqual(['urn:company']);
+    expect(declaredPlan.map((step) => step.id)).toEqual(['urn:department', 'urn:company']);
+  });
+
+  it('stops cascade execution when a leaf delete fails', async () => {
+    const deleted: string[] = [];
+    const dataSource = {
+      delete: ({ id }: { id: string }) => {
+        deleted.push(id);
+        return id === 'urn:office'
+          ? Promise.reject(new Error('office delete failed'))
+          : Promise.resolve();
+      },
+    } as unknown as DataSource;
+
+    await expect(
+      deleteComposite(
+        dataSource,
+        inlineCompanyAggregate,
+        aggregates,
+        {
+          id: 'urn:company',
+          departments: [{ id: 'urn:department', offices: [{ id: 'urn:office' }] }],
+        },
+        ['departments', 'departments.offices']
+      )
+    ).rejects.toThrow('office delete failed');
+    expect(deleted).toEqual(['urn:office']);
+  });
 });
 
 describe('default composite update strategy', () => {
@@ -232,5 +322,25 @@ describe('default composite update strategy', () => {
       ],
     });
     expect(update).not.toHaveBeenCalled();
+  });
+});
+
+describe('default composite delete strategy', () => {
+  it('requires the loaded payload only when cascade paths are configured', async () => {
+    const remove = vi.fn().mockResolvedValue(undefined);
+    const strategy = new DefaultDeleteStrategy();
+    const context = {
+      aggregate: companyAggregate,
+      aggregates,
+      datasource: { delete: remove } as unknown as DataSource,
+      params: { id: 'urn:company' },
+    };
+
+    await expect(strategy.execute(context)).resolves.toEqual({ ok: true, data: undefined });
+    await expect(strategy.execute({ ...context, cascadePaths: ['departments'] })).resolves.toEqual({
+      ok: false,
+      issues: [{ code: 'missing_payload', message: 'Delete payload is missing.' }],
+    });
+    expect(remove).toHaveBeenCalledOnce();
   });
 });

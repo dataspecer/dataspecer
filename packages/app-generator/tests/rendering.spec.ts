@@ -4,6 +4,7 @@ import { buildGenerationModel } from '../src/generation-model/build-generation-m
 import {
   AssociationKind,
   DatasourceType,
+  DeletePolicy,
   EdgeType,
   Operation,
   type ApplicationGraph,
@@ -351,6 +352,28 @@ describe('renderGeneratedApp', () => {
       expect(source).toContain('onClick={() => window.history.back()}');
       expect(source).not.toContain('href={navigation.successRedirect.targetPath}');
     }
+  });
+
+  it('passes configured cascade paths and the loaded entity to Delete', () => {
+    const graph = graphFixture();
+    graph.nodes = [
+      node('Book.Delete', 'https://example.org/aggregate/book-detail', Operation.Delete, {
+        delete: { chapters: DeletePolicy.Cascade },
+      }),
+    ];
+    graph.edges = [];
+
+    const tree = renderGeneratedApp(buildGenerationModel(graph, basicMetadata));
+    const registry = tree.get('src/generated/operation-registry.ts');
+    const page = tree.get('src/pages/BookDeletePage.tsx');
+
+    expect(registry).toContain('delete: {');
+    expect(registry).toContain('"cascadePaths": [');
+    expect(registry).toContain('"chapters"');
+    expect(registry).not.toContain('placeholder');
+    expect(page).toContain('aggregates={aggregateRegistry}');
+    expect(page).toContain('cascadePaths={operation.delete?.cascadePaths ?? []}');
+    expect(tree.get('src/shared/components/delete-form.tsx')).toContain('payload: item');
   });
 });
 

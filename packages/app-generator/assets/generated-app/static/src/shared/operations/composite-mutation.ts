@@ -3,6 +3,7 @@ import { compositionEntities, type DraftEntity } from '../forms/form-draft.ts';
 import { isEmptyValue, resolveControl } from '../forms/form-model.ts';
 import {
   isCompositionField,
+  resolveAssociationTarget,
   resolveCompositionTarget,
   rootEntityTarget,
   type EntityTarget,
@@ -43,6 +44,24 @@ export function buildCompositeUpdatePlan(
   return [...upserts, ...removals];
 }
 
+export function buildCompositeDeletePlan(
+  aggregate: AggregateDescriptor,
+  aggregates: AggregateDescriptorMap,
+  payload: DraftEntity,
+  cascadePaths: readonly string[]
+): CompositeMutationStep[] {
+  const steps: CompositeMutationStep[] = [];
+  collectCascadeDeleteSteps(
+    payload,
+    rootEntityTarget(aggregate),
+    aggregates,
+    new Set(cascadePaths),
+    '',
+    steps
+  );
+  return steps;
+}
+
 export async function createComposite<TModel extends EntityModel>(
   dataSource: DataSource,
   aggregate: AggregateDescriptor<TModel>,
@@ -70,6 +89,22 @@ export async function updateComposite<TModel extends EntityModel>(
   );
   await executePlan(dataSource, steps);
   return payload;
+}
+
+export async function deleteComposite<TModel extends EntityModel>(
+  dataSource: DataSource,
+  aggregate: AggregateDescriptor<TModel>,
+  aggregates: AggregateDescriptorMap,
+  payload: TModel,
+  cascadePaths: readonly string[]
+): Promise<void> {
+  const steps = buildCompositeDeletePlan(
+    aggregate,
+    aggregates,
+    payload as DraftEntity,
+    cascadePaths
+  );
+  await executePlan(dataSource, steps);
 }
 
 async function executePlan(
@@ -184,6 +219,40 @@ function collectDeleteSteps(
   if (id) {
     removals.push({ kind: 'delete', target, id });
   }
+}
+
+function collectCascadeDeleteSteps(
+  entity: DraftEntity,
+  target: EntityTarget,
+  aggregates: AggregateDescriptorMap,
+  cascadePaths: ReadonlySet<string>,
+  pathPrefix: string,
+  removals: CompositeMutationStep[]
+): void {
+  for (const field of target.fields) {
+    const fieldPath = pathPrefix ? `${pathPrefix}.${field.path}` : field.path;
+    if (
+      !cascadePaths.has(fieldPath) ||
+      field.kind !== 'association' ||
+      field.associationKind === 'aggregation'
+    ) {
+      continue;
+    }
+
+    const childTarget = resolveAssociationTarget(target, field, aggregates);
+    if (!childTarget) {
+      throw new Error(`Cascade target for "${field.label}" is unavailable.`);
+    }
+    for (const child of compositionEntities(entity[field.propertyName], field)) {
+      collectCascadeDeleteSteps(child, childTarget, aggregates, cascadePaths, fieldPath, removals);
+    }
+  }
+
+  removals.push({
+    kind: 'delete',
+    target,
+    id: requireEntityId(entity, target.name),
+  });
 }
 
 function visitCompositionChildren(
