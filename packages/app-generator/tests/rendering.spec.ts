@@ -319,7 +319,7 @@ describe('renderGeneratedApp', () => {
     expect(descriptor).toContain('"formControl": "datetime"');
   });
 
-  it('redirects a create form back to its class list on success', () => {
+  it('renders configured success redirects with entity-aware form navigation', () => {
     const model = buildGenerationModel(graphFixture(), basicMetadata);
     const createOperation = model.operations.find(
       (operation) => operation.operation === Operation.Create
@@ -328,14 +328,29 @@ describe('renderGeneratedApp', () => {
       (operation) => operation.operation === Operation.ReadList
     );
 
-    // Create uses the book-form aggregate and the list uses book-list, so the redirect can only
-    // be found by their shared class rather than by aggregate IRI.
     expect(createOperation?.navigation.successRedirect?.targetPath).toBe(
       `/${listOperation?.routeId}`
     );
-    expect(createOperation?.navigation.successRedirect?.label).toBe('Back to list');
+    expect(createOperation?.navigation.successRedirect?.id).toBe('create-list');
+    expect(createOperation?.navigation.successRedirect?.label).toBe('List');
     // Read operations are not forms, so they have no success redirect.
     expect(listOperation?.navigation.successRedirect).toBeUndefined();
+
+    const tree = renderGeneratedApp(model);
+    expect(tree.get('src/shared/components/create-form.tsx')).toContain(
+      'hrefForAction(navigation.successRedirect, model.id)'
+    );
+    expect(tree.get('src/shared/components/update-form.tsx')).toContain(
+      'hrefForAction(navigation.successRedirect, id)'
+    );
+    expect(tree.get('src/shared/components/delete-form.tsx')).toContain(
+      'hrefForAction(navigation.successRedirect, id)'
+    );
+    for (const form of ['create-form.tsx', 'update-form.tsx', 'delete-form.tsx']) {
+      const source = tree.get(`src/shared/components/${form}`);
+      expect(source).toContain('onClick={() => window.history.back()}');
+      expect(source).not.toContain('href={navigation.successRedirect.targetPath}');
+    }
   });
 });
 

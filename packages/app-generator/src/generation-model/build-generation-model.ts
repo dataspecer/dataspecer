@@ -39,11 +39,16 @@ export function buildGenerationModel(
     graph.edges.filter((edge) => edge.type === EdgeType.Transition),
     [(edge) => edge.id]
   ).map((edge) => buildEdgeDescriptor(edge, operationByNodeId));
+  const redirectDescriptors = sortBy(
+    graph.edges.filter((edge) => edge.type === EdgeType.Redirect),
+    [(edge) => edge.id]
+  ).map((edge) => buildEdgeDescriptor(edge, operationByNodeId));
 
   for (const operation of operations) {
     operation.navigation = buildOperationNavigation(
       operation,
       transitionDescriptors,
+      redirectDescriptors,
       operationById,
       routeByOperationId,
       aggregateByIri
@@ -65,10 +70,7 @@ export function buildGenerationModel(
     operations,
     routes,
     navigation: transitionDescriptors,
-    redirects: sortBy(
-      graph.edges.filter((edge) => edge.type === EdgeType.Redirect),
-      [(edge) => edge.id]
-    ).map((edge) => buildEdgeDescriptor(edge, operationByNodeId)),
+    redirects: redirectDescriptors,
   };
 }
 

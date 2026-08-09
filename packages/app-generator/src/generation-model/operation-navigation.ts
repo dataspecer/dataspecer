@@ -8,12 +8,14 @@ import type {
   GeneratedNavigationDescriptor,
   GeneratedOperationDescriptor,
   GeneratedOperationNavigation,
+  GeneratedRedirectDescriptor,
   GeneratedRouteDescriptor,
 } from './types.ts';
 
 export function buildOperationNavigation(
   sourceOperation: GeneratedOperationDescriptor,
   transitions: readonly GeneratedNavigationDescriptor[],
+  redirects: readonly GeneratedRedirectDescriptor[],
   operationById: ReadonlyMap<string, GeneratedOperationDescriptor>,
   routeByOperationId: ReadonlyMap<string, GeneratedRouteDescriptor>,
   aggregateByIri: ReadonlyMap<string, GeneratedAggregateDescriptor>
@@ -69,6 +71,7 @@ export function buildOperationNavigation(
   const successRedirect = buildSuccessRedirect(
     sourceOperation,
     sourceAggregate,
+    redirects,
     operationById,
     routeByOperationId,
     aggregateByIri
@@ -82,13 +85,10 @@ export function buildOperationNavigation(
   };
 }
 
-// A write form returns to its class's list once it succeeds. The list is matched by class rather
-// than by aggregate IRI, because a list projection and a detail structure are distinct aggregates
-// of the same class, and matched without a graph edge so a Create or Update page always has a
-// destination.
 function buildSuccessRedirect(
   sourceOperation: GeneratedOperationDescriptor,
   sourceAggregate: GeneratedAggregateDescriptor,
+  redirects: readonly GeneratedRedirectDescriptor[],
   operationById: ReadonlyMap<string, GeneratedOperationDescriptor>,
   routeByOperationId: ReadonlyMap<string, GeneratedRouteDescriptor>,
   aggregateByIri: ReadonlyMap<string, GeneratedAggregateDescriptor>
@@ -101,11 +101,23 @@ function buildSuccessRedirect(
     return undefined;
   }
 
-  const listOperation = [...operationById.values()].find(
-    (candidate) =>
-      candidate.operation === Operation.ReadList &&
-      aggregateByIri.get(candidate.aggregateIri)?.classIri === sourceAggregate.classIri
+  const configured = redirects.find(
+    (redirect) => redirect.sourceOperationId === sourceOperation.id
   );
+  if (configured) {
+    const targetOperation = requireOperationById(operationById, configured.targetOperationId);
+    const targetRoute = requireRoute(routeByOperationId, targetOperation.id);
+    return buildNavigationAction(configured.id, targetOperation, targetRoute);
+  }
+
+  // if not configured, fallback redirect to list
+  const listOperation = operationById
+    .values()
+    .find(
+      (candidate) =>
+        candidate.operation === Operation.ReadList &&
+        aggregateByIri.get(candidate.aggregateIri)?.classIri === sourceAggregate.classIri
+    );
   const listRoute = listOperation && routeByOperationId.get(listOperation.id);
   if (!listOperation || !listRoute) {
     return undefined;

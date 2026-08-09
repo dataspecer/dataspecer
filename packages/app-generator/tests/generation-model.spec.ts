@@ -102,6 +102,72 @@ describe('buildGenerationModel', () => {
         targetNodeId: 'Book.ReadDetail',
       },
     ]);
+
+    expect(
+      model.operations.find((operation) => operation.id === 'Book.Create')?.navigation
+        .successRedirect
+    ).toEqual({
+      id: 'create-list',
+      label: 'List',
+      targetPath: '/book-read-list',
+      requiresEntityId: false,
+    });
+    expect(
+      model.operations.find((operation) => operation.id === 'Book.Update')?.navigation
+        .successRedirect
+    ).toEqual({
+      id: 'update-detail',
+      label: 'Detail',
+      targetPath: '/book-read-detail',
+      requiresEntityId: true,
+    });
+    expect(
+      model.operations.find((operation) => operation.id === 'Book.Delete')?.navigation
+        .successRedirect
+    ).toEqual({
+      id: 'delete-list',
+      label: 'List',
+      targetPath: '/book-read-list',
+      requiresEntityId: false,
+    });
+  });
+
+  it('falls back to a same-class list when a write has no configured redirect', () => {
+    const graph = graphFixture();
+    graph.edges = graph.edges.filter((edge) => edge.type !== EdgeType.Redirect);
+
+    const model = buildGenerationModel(graph, preparedMetadataFor(graph));
+    const create = model.operations.find((operation) => operation.id === 'Book.Create');
+
+    expect(create?.navigation.successRedirect).toEqual({
+      id: 'Book.Create:success:Book.ReadList',
+      label: 'Back to list',
+      targetPath: '/book-read-list',
+      requiresEntityId: false,
+    });
+  });
+
+  it('marks a configured Create to ReadDetail redirect as requiring the new entity id', () => {
+    const graph = graphFixture();
+    graph.edges = graph.edges.map((edge) =>
+      edge.id === 'create-list'
+        ? {
+            ...edge,
+            id: 'create-detail',
+            target: 'Book.ReadDetail',
+          }
+        : edge
+    );
+
+    const model = buildGenerationModel(graph, preparedMetadataFor(graph));
+    const create = model.operations.find((operation) => operation.id === 'Book.Create');
+
+    expect(create?.navigation.successRedirect).toEqual({
+      id: 'create-detail',
+      label: 'Detail',
+      targetPath: '/book-read-detail',
+      requiresEntityId: true,
+    });
   });
 
   it('creates read descriptors from aggregate fields', () => {

@@ -4,7 +4,7 @@ import type { DataSource } from '../datasource/data-source.ts';
 import { hydrateCompositionDraft, type DraftEntity } from '../forms/form-draft.ts';
 import { rootEntityTarget } from '../forms/entity-target.ts';
 import { validateModel } from '../forms/form-model.ts';
-import type { OperationNavigationDescriptor } from '../navigation/navigation.ts';
+import { hrefForAction, type OperationNavigationDescriptor } from '../navigation/navigation.ts';
 import type { ValidationIssue } from '../operations/operation-result.ts';
 import { invokeOperation, type OperationStrategy } from '../operations/operation-strategy.ts';
 import type {
@@ -116,7 +116,7 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
         originalPayload: originalModel as TModel,
       });
       if (result.ok) {
-        window.location.href = navigation.successRedirect?.targetPath ?? '/';
+        window.location.href = hrefForAction(navigation.successRedirect, id) ?? '/';
         return;
       }
       setIssues(result.issues);
@@ -172,11 +172,9 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
           <button type="submit" disabled={submitting || !model || !originalModel}>
             {submitting ? 'Saving…' : 'Save'}
           </button>
-          {navigation.successRedirect ? (
-            <a className="form-cancel" href={navigation.successRedirect.targetPath}>
-              Cancel
-            </a>
-          ) : null}
+          <button className="form-cancel" type="button" onClick={() => window.history.back()}>
+            Cancel
+          </button>
         </div>
       </form>
     </section>

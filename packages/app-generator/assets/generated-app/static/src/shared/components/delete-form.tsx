@@ -1,7 +1,7 @@
 import { useEffect, useId, useState, type FormEvent } from 'react';
 
 import type { DataSource } from '../datasource/data-source.ts';
-import type { OperationNavigationDescriptor } from '../navigation/navigation.ts';
+import { hrefForAction, type OperationNavigationDescriptor } from '../navigation/navigation.ts';
 import type { ValidationIssue } from '../operations/operation-result.ts';
 import { invokeOperation, type OperationStrategy } from '../operations/operation-strategy.ts';
 import type { AggregateDescriptor, EntityModel } from '../types/aggregate.ts';
@@ -85,7 +85,7 @@ export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TM
         params: { id },
       });
       if (result.ok) {
-        window.location.href = navigation.successRedirect?.targetPath ?? '/';
+        window.location.href = hrefForAction(navigation.successRedirect, id) ?? '/';
         return;
       }
       setIssues(result.issues);
@@ -135,11 +135,9 @@ export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TM
           <button type="submit" disabled={submitting || !item}>
             {submitting ? 'Deleting…' : 'Delete'}
           </button>
-          {navigation.successRedirect ? (
-            <a className="form-cancel" href={navigation.successRedirect.targetPath}>
-              Cancel
-            </a>
-          ) : null}
+          <button className="form-cancel" type="button" onClick={() => window.history.back()}>
+            Cancel
+          </button>
         </div>
       </form>
     </section>

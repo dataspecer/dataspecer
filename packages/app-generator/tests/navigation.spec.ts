@@ -36,6 +36,7 @@ describe('generated navigation helpers', () => {
         requiresEntityId: false,
       })
     ).toBe('/book-create');
+    expect(hrefForAction(undefined, 'https://example.org/book/1')).toBeUndefined();
   });
 
   it('extracts entity identifiers from references and nested objects', () => {

@@ -17,7 +17,6 @@ export interface OperationNavigationDescriptor {
   pageActions: readonly NavigationActionDescriptor[];
   rowActions: readonly NavigationActionDescriptor[];
   associationActions: readonly AssociationNavigationActionDescriptor[];
-  /** Where a form navigates after a successful write, for example a Create back to its list. */
   successRedirect?: NavigationActionDescriptor;
 }
 
@@ -26,9 +25,12 @@ export function toEntityPath(routePath: string, id: string): string {
 }
 
 export function hrefForAction(
-  action: RoutableActionDescriptor,
+  action: RoutableActionDescriptor | undefined,
   entityId?: string
 ): string | undefined {
+  if (!action) {
+    return undefined;
+  }
   if (!action.requiresEntityId) {
     return action.targetPath;
   }
