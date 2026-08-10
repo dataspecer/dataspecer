@@ -4,8 +4,8 @@ import { useTranslation } from "react-i18next";
 import { CloseDialogButton } from "../../editor/components/detail/components/close-dialog-button";
 import { LanguageStringText } from "../../editor/components/helper/LanguageStringComponents";
 import { dialog } from "../../editor/dialog";
-import { ManagerModelStoreContext, PROJECT_MODEL_ID, SpecificationContext } from "../routes/specification/specification";
-import { createRemoveModelOperation } from "@dataspecer/project-model";
+import { PROJECT_MODEL_ID, SpecificationContext, useModelStore } from "../routes/specification/specification";
+import { createRemoveModelOperation } from "@dataspecer/core/project-model";
 
 export const DeleteDataSchemaForm: FC<{
   isOpen: boolean;
@@ -17,7 +17,7 @@ export const DeleteDataSchemaForm: FC<{
   const specification = useContext(SpecificationContext);
   const structure = specification.dataStructures.find((structure) => structure.id === dataStructureIri);
 
-  const modelStore = useContext(ManagerModelStoreContext);
+  const modelStore = useModelStore();
 
   const del = useCallback(async () => {
     const op = modelStore.transaction(

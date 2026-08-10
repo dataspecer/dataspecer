@@ -1,8 +1,8 @@
-import {ComplexOperation} from "@dataspecer/federated-observable-store/complex-operation";
-import {DataPsmCreateClassReference, DataPsmDeleteClass, DataPsmSetPart} from "@dataspecer/core/data-psm/operation";
-import {DataPsmAssociationEnd, DataPsmSchema} from "@dataspecer/core/data-psm/model";
-import {FederatedObservableStore} from "@dataspecer/federated-observable-store/federated-observable-store";
 import { CoreResource } from "@dataspecer/core/core/core-resource";
+import { DataPsmAssociationEnd, DataPsmClassReference, DataPsmSchema, type DataPsmClass } from "@dataspecer/core/data-psm/model";
+import { DataPsmCreateClassReference, DataPsmDeleteClass, DataPsmDeleteClassReference, DataPsmSetPart } from "@dataspecer/core/data-psm/operation";
+import { ComplexOperation } from "@dataspecer/federated-observable-store/complex-operation";
+import { FederatedObservableStore } from "@dataspecer/federated-observable-store/federated-observable-store";
 
 export class ReplaceDataPsmAssociationEndWithReference implements ComplexOperation {
     private readonly dataPsmAssociationEnd: string;
@@ -32,7 +32,7 @@ export class ReplaceDataPsmAssociationEndWithReference implements ComplexOperati
 
         const replacingClass = schema.dataPsmRoots[0];
         const dataPsmSchema = this.store.getSchemaForResource(this.dataPsmAssociationEnd) as string;
-        const oldClass = associationEnd.dataPsmPart;
+        const oldClassId = associationEnd.dataPsmPart;
 
         // Create a reference to the class
 
@@ -45,18 +45,25 @@ export class ReplaceDataPsmAssociationEndWithReference implements ComplexOperati
         // Replace the association end with the reference
 
         const dataPsmSetPart = new DataPsmSetPart();
-        dataPsmSetPart.dataPsmAssociationEnd = this.dataPsmAssociationEnd;
+        dataPsmSetPart.entityId = this.dataPsmAssociationEnd;
         dataPsmSetPart.dataPsmPart = reference;
         this.store.applyOperation(dataPsmSchema, dataPsmSetPart);
 
         // Remove the old class
 
-        if (oldClass) {
-            const oldClassSchema = this.store.getSchemaForResource(oldClass) as string;
+        if (oldClassId) {
+            const oldClassSchema = this.store.getSchemaForResource(oldClassId) as string;
 
-            const dataPsmDeleteClass = new DataPsmDeleteClass();
-            dataPsmDeleteClass.dataPsmClass = oldClass;
-            this.store.applyOperation(oldClassSchema, dataPsmDeleteClass);
+            const oldClass = this.store.readResource(oldClassId) as DataPsmClass | DataPsmClassReference;
+
+            let deleteOperation: DataPsmDeleteClass | DataPsmDeleteClassReference;
+            if (DataPsmClassReference.is(oldClass)) {
+                deleteOperation = new DataPsmDeleteClassReference();
+            } else {
+                deleteOperation = new DataPsmDeleteClass();
+            }
+            deleteOperation.entityId = oldClassId;
+            this.store.applyOperation(oldClassSchema, deleteOperation);
         }
     }
 }

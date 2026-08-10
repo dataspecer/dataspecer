@@ -12,7 +12,7 @@ import { expect, test } from "vitest";
 
 test("Update data PSM gml type.", async () => {
   const operation = new DataPsmSetGmlTypeXmlExtension();
-  operation.dataPsmProperty = "http://property";
+  operation.entityId = "http://property";
   operation.gmlType = "http://www.opengis.net/gml/3.2#EnvelopeType";
 
   const before = {

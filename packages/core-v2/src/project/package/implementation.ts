@@ -1,4 +1,5 @@
 import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
+import type { Transaction } from "@dataspecer/core/operation";
 import { EntityModel } from "../../entity-model/index.ts";
 import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, RDFS_MODEL } from "../../model/known-models.ts";
 import { createRdfsModel, createSgovModel } from "../../semantic-model/simplified/index.ts";
@@ -80,6 +81,19 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
         });
     }
 
+    async applyTransactions(projectId: string, transactions: Transaction[]): Promise<void> {
+        const response = await this.httpFetch(this.getTransactionsUrl(projectId, "/apply"), {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ transactions }),
+        });
+        if (response.status < 200 || response.status >= 300) {
+            throw new Error(`Failed to apply transactions on the backend, status ${response.status}.`);
+        }
+    }
+
     async getResourceJsonData(id: string, blobId?: string): Promise<object | null> {
         const result = await this.httpFetch(this.getBlobUrl(id, blobId));
         return (result.status >= 200 && result.status < 300) ? (await result.json() as object) : null;
@@ -141,6 +155,12 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
             const modelSerialization = visualModel.serializeModel();
             const iri = visualModel.getId();
             const name = modelSerialization.modelAlias ?? modelSerialization.alias;
+
+            if (modelSerialization.type === RDFS_MODEL) {
+                modelSerialization.label = {en: name};
+                delete modelSerialization.modelAlias;
+                delete modelSerialization.alias;
+            }
 
             const response = await this.httpFetch(this.getResourceUrl(iri));
             const userMetadata = name ? { label: { en: name } } : {};
@@ -240,6 +260,12 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
         if (name) {
             url += "&name=" + encodeURIComponent(name);
         }
+        return url;
+    }
+
+    private getTransactionsUrl(projectIri: string, suffix: string = ""): string {
+        let url = this.backendUrl + "/transactions" + suffix;
+        url += "?" + "projectIri" + "=" + encodeURIComponent(projectIri);
         return url;
     }
 

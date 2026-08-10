@@ -1,91 +1,28 @@
-import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
-import { serializationToSemanticModelEntities } from "@dataspecer/core-v2/semantic-model";
-import { serializationToPimModelEntities } from "@dataspecer/core-v2/semantic-model/v1-adapters";
-import { serializationToStructureModelEntities } from "@dataspecer/core/data-psm";
+/**
+ * This file partially matches implementation in packages/core/src/project-model/implementation.ts.
+ */
+
+import { LOCAL_PACKAGE, QUERYABLE_MODEL, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
-import { serializationToBlobModelEntities } from "@dataspecer/core/entity-model/utils";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
-import { getModelMetadata, resolveAsyncQueryableModelEntities } from "@dataspecer/model-store/implementation";
-import { PROJECT_MODEL_MODEL_ENTITY, type ProjectModelEntity, type PackageEntity } from "@dataspecer/project-model";
-import { serializationToVisualModelEntities } from "@dataspecer/visual-model";
-import type { BaseResource, Package, ResourceModel } from "../models/resource-model.ts";
 import type { ModelIdentifier } from "@dataspecer/core/model";
-
-const PROJECT_MODEL_ID = "_project_model";
-
-function createRegularResourceEntity(resource: BaseResource): ProjectModelEntity {
-  return {
-    // Resources may carry arbitrary extra metadata fields (e.g. documentBaseUrl,
-    // importedFromUrl) beyond label/description, which callers rely on.
-    ...(resource.userMetadata as object ?? {}),
-    id: resource.iri,
-    type: [PROJECT_MODEL_MODEL_ENTITY],
-    label: resource.userMetadata?.label ?? {},
-    description: resource.userMetadata?.description ?? {},
-    modelType: resource.types[0] ?? "",
-  };
-}
-
-function createProjectPackageEntity(resource: Package): PackageEntity {
-  return {
-    ...(resource.userMetadata as object ?? {}),
-    id: resource.iri,
-    type: [PROJECT_MODEL_MODEL_ENTITY],
-    label: resource.userMetadata?.label ?? {},
-    description: resource.userMetadata?.description ?? {},
-    modelType: LOCAL_PACKAGE,
-    subModels: resource.subResources?.map((subResource) => subResource.iri) ?? [],
-  };
-}
+import { getReusedProjectIds } from "@dataspecer/core/project-model";
+import { getModelMetadata, resolveAsyncQueryableModelEntities } from "@dataspecer/model-store/implementation";
+import { type ModelRepositoryType } from "../models/model-repository.ts";
+import { PROJECT_MODEL_ID } from "../models/model-id.ts";
+import { createProjectPackageEntity, createRegularResourceEntity } from "../models/project-model-entities.ts";
 
 /**
- * Loads a named, non-default storage blob of a model (e.g. the "svg" blob of
- * a visual model) and returns it as its own top-level blob model entry, keyed
- * by `${modelId}#${blobName}`. Returns null if the blob does not exist.
+ * Asynchronously resolves entities that are not part of the model's
+ * serialization. For the queryable (SGOV) model it fetches the semantic
+ * entities the query entities resolve to; other models are returned as-is.
  */
-async function loadNamedBlobEntities(modelId: string, blobName: string, resourceModel: ResourceModel): Promise<EntityRecord | null> {
-  const store = await resourceModel.getResourceModelStore(modelId, blobName);
-  const blobData = store ? await store.getJson() : null;
-  if (!blobData) {
-    return null;
-  }
-  return serializationToBlobModelEntities(`${modelId}#${blobName}`, blobData);
-}
-
-async function loadModelEntities(modelId: string, modelType: string, resourceModel: ResourceModel): Promise<EntityRecord> {
-  const store = await resourceModel.getResourceModelStore(modelId);
-  const modelData = store ? await store.getJson() : null;
-
-  if (modelType === LOCAL_PACKAGE) {
-    return serializationToBlobModelEntities(modelId, modelData);
-  }
-
-  if (modelType === LOCAL_SEMANTIC_MODEL) {
-    return serializationToSemanticModelEntities(modelData);
-  }
-
-  if (modelType === VISUAL_MODEL) {
-    return serializationToVisualModelEntities(modelData);
-  }
-
-  if (modelType === V1.PSM) {
-    return serializationToStructureModelEntities(modelData).entities;
-  }
-
+async function resolveModelEntities(modelType: string, entities: EntityRecord): Promise<EntityRecord> {
   if (modelType === QUERYABLE_MODEL) {
-    return await resolveAsyncQueryableModelEntities(modelData, httpFetch);
+    return await resolveAsyncQueryableModelEntities(entities, httpFetch);
   }
 
-  if (modelType === RDFS_MODEL) {
-    return serializationToPimModelEntities(modelData as object).entities;
-  }
-
-  if (modelType === V1.GENERATOR_CONFIGURATION) {
-    return serializationToBlobModelEntities(modelId, modelData);
-  }
-
-  // Fallback to blob model
-  return serializationToBlobModelEntities(modelId, modelData);
+  return entities;
 }
 
 /**
@@ -97,34 +34,53 @@ async function loadModelEntities(modelId: string, modelType: string, resourceMod
  * @todo Add project revision id (branch or commit) parameter
  * @todo Add model type filter parameter
  */
-export async function getModelsForPackage(packageId: ModelIdentifier, resourceModel: ResourceModel): Promise<Record<ModelIdentifier, EntityRecord>> {
+export async function getModelsForPackage(
+  packageId: ModelIdentifier,
+  modelRepository: Pick<ModelRepositoryType, "getPackage" | "getModelEntities">,
+): Promise<Record<ModelIdentifier, EntityRecord>> {
   const models: Record<string, EntityRecord> = {};
   const projectModelEntities: EntityRecord = {};
   const visitedPackages = new Set<string>();
 
-  async function loadPackageRecursively(id: string): Promise<void> {
+  /**
+   * Returns whether the package became part of the structure, i.e. false when
+   * it does not exist or was already collected.
+   *
+   * @param projectId Project the package belongs to.
+   */
+  async function loadPackageRecursively(id: string, projectId: string): Promise<boolean> {
     if (visitedPackages.has(id)) {
-      return;
+      return false;
     }
     visitedPackages.add(id);
 
-    const pkg = await resourceModel.getPackage(id);
+    const pkg = await modelRepository.getPackage(id);
     if (!pkg) {
-      return;
+      return false;
     }
 
-    models[pkg.iri] = await loadModelEntities(pkg.iri, LOCAL_PACKAGE, resourceModel);
+    models[pkg.iri] = (await modelRepository.getModelEntities(pkg.iri))!;
+
+    // Reused projects are not part of the resource tree, they are referenced by
+    // the package's own model. They are listed among the sub-packages so that
+    // clients that do not know about reuse treat them as any other sub-package.
+    const reusedProjects: string[] = [];
+    for (const reusedProjectId of getReusedProjectIds(models[pkg.iri]?.[pkg.iri])) {
+      if (await loadPackageRecursively(reusedProjectId, reusedProjectId)) {
+        reusedProjects.push(reusedProjectId);
+      }
+    }
 
     for (const subResource of pkg.subResources ?? []) {
       const subModelType = subResource.types[0] ?? "";
 
       if (subModelType === LOCAL_PACKAGE) {
-        await loadPackageRecursively(subResource.iri);
+        await loadPackageRecursively(subResource.iri, projectId);
       } else {
-        models[subResource.iri] = await loadModelEntities(subResource.iri, subModelType, resourceModel);
+        models[subResource.iri] = await resolveModelEntities(subModelType, (await modelRepository.getModelEntities(subResource.iri))!);
 
         if (subModelType === VISUAL_MODEL) {
-          const svgEntities = await loadNamedBlobEntities(subResource.iri, "svg", resourceModel);
+          const svgEntities = await modelRepository.getModelEntities(`${subResource.iri}#svg`);
           if (svgEntities) {
             models[`${subResource.iri}#svg`] = svgEntities;
           }
@@ -132,7 +88,7 @@ export async function getModelsForPackage(packageId: ModelIdentifier, resourceMo
       }
 
       if (subModelType !== LOCAL_PACKAGE) {
-        const projectEntity = createRegularResourceEntity(subResource);
+        const projectEntity = createRegularResourceEntity(subResource, projectId);
 
         // The metadata stored inside the model take precedence over the
         // resource's user metadata.
@@ -146,11 +102,13 @@ export async function getModelsForPackage(packageId: ModelIdentifier, resourceMo
       }
     }
 
-    const packageEntity = createProjectPackageEntity(pkg);
+    const packageEntity = createProjectPackageEntity(pkg, projectId, reusedProjects);
     projectModelEntities[packageEntity.id] = packageEntity;
+
+    return true;
   }
 
-  await loadPackageRecursively(packageId);
+  await loadPackageRecursively(packageId, packageId);
   models[PROJECT_MODEL_ID] = projectModelEntities;
 
   return models;

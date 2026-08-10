@@ -111,23 +111,21 @@ export function applyOperationsToVisualModel(writeableVisualModel: EntityRecord,
         del(entity.id);
       }
     } else if (isSetLabelOperation(operation)) {
-      const mainEntity = Object.values(model).find((entity) => entity.type.includes(VISUAL_MODEL_ENTITY_TYPE)) as unknown as ModelEntity;
-      const updatedEntity = {
-        ...mainEntity,
-        label: operation.label,
-      };
-      model[mainEntity.id] = updatedEntity;
-      changes.push({ previous: mainEntity, next: updatedEntity });
+      // There can be only one model entity, create it if it does not exist yet.
+      const mainEntity = Object.values(model).find((entity) => entity.type.includes(VISUAL_MODEL_ENTITY_TYPE)) as unknown as ModelEntity | undefined;
+      if (mainEntity) {
+        update(mainEntity, { ...mainEntity, label: operation.label } as unknown as Entity);
+      } else {
+        const newEntity: ModelEntity = { id: generateEntityId(), type: [VISUAL_MODEL_ENTITY_TYPE], label: operation.label };
+        create(newEntity as unknown as Entity);
+      }
     } else if (isSetViewOperation(operation)) {
-      // There can be only one view entity
-      const viewEntity = Object.values(model).find((entity) => entity.type.includes(VISUAL_VIEW_TYPE)) as unknown as ModelEntity;
+      // There can be only one view entity, create it if it does not exist yet.
+      const viewEntity = Object.values(model).find((entity) => entity.type.includes(VISUAL_VIEW_TYPE)) as unknown as ModelEntity | undefined;
       if (viewEntity) {
-        const updatedViewEntity = {
-          ...viewEntity,
-          ...operation.view,
-        };
-        model[viewEntity.id] = updatedViewEntity;
-        changes.push({ previous: viewEntity, next: updatedViewEntity });
+        update(viewEntity, { ...viewEntity, ...operation.view } as unknown as Entity);
+      } else {
+        create({ id: generateEntityId(), type: [VISUAL_VIEW_TYPE], ...operation.view } as unknown as Entity);
       }
     } else {
       operation satisfies never; // type check

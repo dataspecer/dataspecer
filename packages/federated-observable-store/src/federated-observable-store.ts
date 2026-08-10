@@ -1,5 +1,5 @@
 import { Entity } from "@dataspecer/core-v2";
-import { CoreOperation, CoreResource, CoreResourceReader } from "@dataspecer/core/core";
+import { CoreResource, CoreResourceReader } from "@dataspecer/core/core";
 import type { EntityChange, EntityChangeCreated, EntityIdentifier, EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import { Operation, OperationInModel } from "@dataspecer/core/operation";
@@ -142,14 +142,14 @@ export class FederatedObservableStore implements FederatedCoreResourceWriter, Co
     return () => this.allChangesSubscribers.delete(listener);
   }
 
-  applyOperation(modelId: ModelIdentifier, operation: CoreOperation | Operation): void {
+  applyOperation(modelId: ModelIdentifier, operation: Operation): void {
     if (!this.addOperationForTransaction) {
       throw new Error("The model is read only.");
     }
     this.addOperationForTransaction([
       {
         modelId,
-        operation: operation as Operation,
+        operation,
       },
     ]);
   }

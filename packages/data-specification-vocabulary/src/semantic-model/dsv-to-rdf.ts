@@ -12,6 +12,9 @@ import {
   Cardinality,
   ClassRole,
   RequirementLevel,
+  isClassProfile,
+  isObjectPropertyProfile,
+  isDatatypePropertyProfile,
 } from "./dsv-model.ts";
 
 import {
@@ -88,7 +91,7 @@ function createDefaultConfiguration(): DsvToRdfConfiguration {
     "prettyPrint": true,
   };
 }
-class DsvWriter {
+export class DsvWriter {
 
   private writer: N3.Writer;
 
@@ -108,6 +111,19 @@ class DsvWriter {
       .forEach(item => this.writeObjectPropertyProfile(item));
     this.model.datatypePropertyProfiles
       .forEach(item => this.writeDatatypePropertyProfile(item));
+  }
+
+  /**
+   * Writes a single term profile, dispatching on its type.
+   */
+  writeTermProfile(profile: TermProfile): void {
+    if (isClassProfile(profile)) {
+      this.writeClassProfile(profile);
+    } else if (isObjectPropertyProfile(profile)) {
+      this.writeObjectPropertyProfile(profile as ObjectPropertyProfile);
+    } else if (isDatatypePropertyProfile(profile)) {
+      this.writeDatatypePropertyProfile(profile as DatatypePropertyProfile);
+    }
   }
 
   private addType(subject: string, type: N3.NamedNode) {
@@ -262,7 +278,7 @@ function cardinalityToIri(cardinality: Cardinality | null): N3.NamedNode<string>
 /**
  * Add an empty line before each resource section.
  */
-function prettyPrintTurtle(turtle: string): string {
+export function prettyPrintTurtle(turtle: string): string {
   const lines = turtle.split(/\r?\n|\r|\n/g);
   const linesNext = [];
   for (const line of lines) {

@@ -14,6 +14,6 @@ export function executeDataPsmDeleteInclude(
   return removeFromClass(
     reader,
     operation.dataPsmOwner,
-    operation.dataPsmInclude
+    operation.entityId
   );
 }

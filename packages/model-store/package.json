@@ -10,17 +10,26 @@
   "exports": {
     ".": "./lib/index.js",
     "./implementation": "./lib/implementation/index.js",
-    "./interfaces": "./lib/interfaces/index.js"
+    "./interfaces": "./lib/interfaces/index.js",
+    "./react": "./lib/react/index.js"
   },
   "dependencies": {
     "@dataspecer/core": "*",
     "@dataspecer/core-v2": "*",
-    "@dataspecer/project-model": "*",
     "@dataspecer/sgov-adapter": "*",
     "@dataspecer/utilities": "*",
     "uuid": "^14.0.0"
   },
+  "peerDependencies": {
+    "react": "^19.2.4"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "@types/react": "^19.0.7",
     "typescript": "^7.0.2"
   }
 }

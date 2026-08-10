@@ -20,7 +20,7 @@ export class SetJsonType implements ComplexOperation {
     const schema = this.store.getSchemaForResource(this.iri) as string;
 
     const pimSetExample = new DataPsmSetIdType();
-    pimSetExample.dataPsmResource = this.iri;
+    pimSetExample.entityId = this.iri;
     switch (this.value) {
       case "DEFAULT":
         pimSetExample.jsonTypeKeyAlias = undefined;

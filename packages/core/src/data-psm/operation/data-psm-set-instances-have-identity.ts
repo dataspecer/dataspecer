@@ -1,10 +1,14 @@
-import { CoreOperation, CoreResource } from "../../core/index.ts";
+import { generateOperationId, type Operation } from "../../operation/index.ts";
 import * as PSM from "../data-psm-vocabulary.ts";
 
-export class DataPsmSetInstancesHaveIdentity extends CoreOperation {
+export class DataPsmSetInstancesHaveIdentity implements Operation {
   static readonly TYPE = PSM.SET_INSTANCES_HAVE_IDENTITY;
 
-  dataPsmClass: string | null = null;
+  id: string;
+
+  type: string;
+
+  entityId: string | null = null;
 
   /**
    * Whether instances of this class may/must/must not have identity, for example IRI.
@@ -13,11 +17,11 @@ export class DataPsmSetInstancesHaveIdentity extends CoreOperation {
   instancesHaveIdentity: "ALWAYS" | "NEVER" | "OPTIONAL" | undefined = undefined;
 
   constructor() {
-    super();
-    this.types.push(DataPsmSetInstancesHaveIdentity.TYPE);
+    this.id = generateOperationId();
+    this.type = DataPsmSetInstancesHaveIdentity.TYPE;
   }
 
-  static is(resource: CoreResource | null): resource is DataPsmSetInstancesHaveIdentity {
-    return resource?.types.includes(DataPsmSetInstancesHaveIdentity.TYPE);
+  static is(operation: Operation | null | undefined): operation is DataPsmSetInstancesHaveIdentity {
+    return operation?.type === DataPsmSetInstancesHaveIdentity.TYPE;
   }
 }

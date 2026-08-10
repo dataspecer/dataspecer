@@ -20,7 +20,7 @@ export class SetJsonKeyValueForLangString implements ComplexOperation {
     const schema = this.store.getSchemaForResource(this.forDataPsmResourceIri) as string;
 
     const op = new DataPsmSetUseKeyValueForLangString();
-    op.dataPsmProperty = this.forDataPsmResourceIri;
+    op.entityId = this.forDataPsmResourceIri;
     op.useKeyValueForLangString = this.useKeyValueForLangString;
     this.store.applyOperation(schema, op);
   }

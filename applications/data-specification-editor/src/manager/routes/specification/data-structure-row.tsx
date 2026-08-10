@@ -1,14 +1,13 @@
-import type { DataSpecification } from '@dataspecer/specification/specification';
-import { Package } from "@dataspecer/core-v2/project";
+import type { DataSpecification } from "@dataspecer/specification/specification";
 import { Button, Card, CardActions, CardContent, Chip, Typography } from "@mui/material";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { getEditorLink } from "../../shared/get-schema-generator-link";
 import { LanguageStringFallback } from "../../../editor/components/helper/LanguageStringComponents";
+import { getEditorLink } from "../../shared/get-schema-generator-link";
 
 export interface DataStructureRowProps {
-  specification: DataSpecification & Package;
+  specification: DataSpecification;
   dataStructureIri: string;
   onDelete: () => void;
 }

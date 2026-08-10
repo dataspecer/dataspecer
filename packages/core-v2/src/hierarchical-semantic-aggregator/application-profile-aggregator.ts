@@ -225,7 +225,7 @@ export class ApplicationProfileAggregator implements SemanticModelAggregator {
           const dependsOn = dependsOnWrappedEntities.map((e) => e.aggregatedEntity);
           const aggregatedEntity = this.profileEntityAggregator.aggregateSemanticModelClassProfile(entity, dependsOn);
           // todo workaround with typing
-          const aggregatedEntityClass = { ...aggregatedEntity, type: ["class", "class-profile"] } as unknown as SemanticModelClass;
+          const aggregatedEntityClass = { ...aggregatedEntity, type: ["class", "class-profile", "aggregate"] } as unknown as SemanticModelClass;
           const updatedEntity = {
             id: entity.id,
             type: APPLICATION_PROFILE_AGGREGATOR_TYPE,
@@ -247,7 +247,7 @@ export class ApplicationProfileAggregator implements SemanticModelAggregator {
           const dependsOn = dependsOnWrappedEntities.map((e) => e.aggregatedEntity);
           const aggregatedEntity = this.profileEntityAggregator.aggregateSemanticModelRelationshipProfile(entity, dependsOn);
           // todo workaround with typing
-          const aggregatedEntityRelationship = { ...aggregatedEntity, type: ["relationship", "relationship-profile"] } as unknown as SemanticModelRelationship;
+          const aggregatedEntityRelationship = { ...aggregatedEntity, type: ["relationship", "relationship-profile", "aggregate"] } as unknown as SemanticModelRelationship;
           const updatedEntity = {
             id: entity.id,
             type: APPLICATION_PROFILE_AGGREGATOR_TYPE,

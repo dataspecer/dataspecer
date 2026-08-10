@@ -1,37 +1,39 @@
 import type { PackageService } from "@dataspecer/core-v2/project";
-import type { EntityRecord } from "@dataspecer/core/entity-model";
-import type { Model, ModelIdentifier } from "@dataspecer/core/model";
-import type { Operation } from "@dataspecer/core/operation";
-import { SetEntityOperationType, UpdateEntityOperationType, type SetEntityOperation, type UpdateEntityOperation } from "@dataspecer/core/operation";
-import { BaseModelInModelStore, type ModelState } from "./base.ts";
-import type { ModelInDefaultFrontendModelStore } from "./implementation.ts";
+import { diffEntities, type EntityChange, type EntityRecord } from "@dataspecer/core/entity-model";
 import { serializationToBlobModelEntities } from "@dataspecer/core/entity-model/utils";
+import type { ModelIdentifier } from "@dataspecer/core/model";
+import { isSetEntityOperation, isUpdateEntityOperation, type Operation } from "@dataspecer/core/operation";
+import type { ModelInModelStore, StateResult } from "./interface.ts";
+import { createStateResult } from "./state.ts";
 
 /**
  * For given model returns everything as blob.
  *
  * A resource may have several named storage blobs (the default one simply
- * called "model"). To represent a non-default blob as its own model, use an
- * id of the form `${resourceId}#${blobName}` - this class resolves the
- * resource id and blob name from it and reads/writes that particular blob,
- * while the model itself still has exactly one entity, keyed by its own
- * (full, possibly `#`-suffixed) id.
+ * called "model"). To represent a non-default blob as its own model, use an id
+ * of the form `${resourceId}#${blobName}` - this class resolves the resource id
+ * and blob name from it and reads/writes that particular blob, while the model
+ * itself still has exactly one entity, keyed by its own (full, possibly
+ * `#`-suffixed) id.
  */
-export class BlobModelInModelStore extends BaseModelInModelStore implements Model, ModelInDefaultFrontendModelStore {
-  protected service: PackageService;
+export class BlobModelInModelStore implements ModelInModelStore {
+  private readonly id: ModelIdentifier;
+  private readonly service: PackageService;
 
   /**
    * Id of the underlying resource, with any `#blobName` suffix stripped off.
    */
-  protected readonly resourceId: string;
+  private readonly resourceId: string;
 
   /**
    * Name of the storage blob to read/write, or undefined for the default blob.
    */
-  protected readonly blobName: string | undefined;
+  private readonly blobName: string | undefined;
 
-  constructor(id: string, service: PackageService) {
-    super(id);
+  private state: EntityRecord = {};
+
+  constructor(id: ModelIdentifier, service: PackageService) {
+    this.id = id;
     this.service = service;
 
     const hashIndex = id.indexOf("#");
@@ -39,61 +41,30 @@ export class BlobModelInModelStore extends BaseModelInModelStore implements Mode
     this.blobName = hashIndex === -1 ? undefined : id.slice(hashIndex + 1);
   }
 
-  protected applyOperation(operation: Operation, mutableState: EntityRecord): void {
-    if (operation.type === SetEntityOperationType) {
-      const setOperation = operation as SetEntityOperation;
-      if (setOperation.entity.id !== this.id) {
-        throw new Error(`Blob model can only set entity with id \"${this.id}\".`);
-      }
-      mutableState[this.id] = setOperation.entity;
-      return;
-    }
-
-    if (operation.type !== UpdateEntityOperationType) {
-      throw new Error("Applying operations to blob model is not yet supported!");
-    }
-
-    const updateOperation = operation as UpdateEntityOperation;
-    const currentEntity = mutableState[this.id];
-
-    if (updateOperation.update.id !== this.id) {
-      throw new Error(`Blob model can only update entity with id \"${this.id}\".`);
-    }
-
-    mutableState[this.id] = {
-      ...currentEntity,
-      ...updateOperation.update,
-    };
+  setState(coreState: EntityRecord): StateResult {
+    const result = createStateResult(this.state, coreState);
+    this.state = coreState;
+    return result;
   }
 
-  protected async loadInternal(): Promise<ModelState> {
-    const data = await this.service.getResourceJsonData(this.resourceId, this.blobName) as object;
-    if (!data) {
-      return {
-        entities: serializationToBlobModelEntities(this.id, {}),
-        operations: [],
-      };
-    }
-
-    const entities = serializationToBlobModelEntities(this.id, data);
-
+  applyOperationAndSetState(operations: Operation[]): StateResult {
+    const state = { ...this.state };
+    const diff = applyOperationsToBlobModel(this.id, state, operations);
+    this.state = state;
     return {
-      entities,
-      operations: [],
+      coreState: state,
+      outputState: state,
+      diff,
     };
   }
 
-  override loadInitialStateInternal(): void {
-    // A blob model always has exactly one entity even if empty
-    this.initializeState({
-      entities: serializationToBlobModelEntities(this.id, {}),
-      operations: [],
-    });
+  subscribeForAsyncChanges(): () => void {
+    return () => {};
   }
 
-  protected async saveInternal(state: ModelState): Promise<void> {
-    const data = state.entities[this.id];
-    await this.service.setResourceJsonData(this.resourceId, data, this.blobName);
+  async getRemoteState(): Promise<EntityRecord> {
+    const data = (await this.service.getResourceJsonData(this.resourceId, this.blobName)) as object;
+    return serializationToBlobModelEntities(this.id, data ?? {});
   }
 }
 
@@ -102,6 +73,34 @@ export function createBlobModel(
   context: {
     service: PackageService;
   },
-): Model & ModelInDefaultFrontendModelStore {
+): BlobModelInModelStore {
   return new BlobModelInModelStore(modelId, context.service);
+}
+
+/**
+ * Blob model supports only a single entity, which is the whole blob. Therefore
+ * the set of operations is limited to just create and update.
+ */
+export function applyOperationsToBlobModel(modelId: ModelIdentifier, mutableModel: EntityRecord, operations: Operation[]): EntityChange[] {
+  const previous: EntityRecord = { ...mutableModel };
+  for (const operation of operations) {
+    if (isSetEntityOperation(operation)) {
+      if (operation.entity.id !== modelId) {
+        throw new Error(`SetEntityOperation for blob model "${modelId}" must have entity id equal to the model id.`);
+      }
+      mutableModel[operation.entity.id] = operation.entity;
+    } else if (isUpdateEntityOperation(operation)) {
+      if (operation.entityId !== modelId) {
+        throw new Error(`UpdateEntityOperation for blob model "${modelId}" must have entity id equal to the model id.`);
+      }
+      const existingEntity = mutableModel[operation.entityId];
+      // Per contract, if the entity does not exist, it is a soft fail - the operation is ignored.
+      if (existingEntity) {
+        mutableModel[operation.entityId] = { ...existingEntity, ...operation.update };
+      }
+    } else {
+      throw new Error(`Unsupported operation type "${operation.type}" for blob model "${modelId}".`);
+    }
+  }
+  return diffEntities(previous, mutableModel);
 }
