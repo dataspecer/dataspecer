@@ -15,8 +15,8 @@ import { isDataType } from "../datatypes/index.ts";
 export function buildPimResources(entities: EntityRecord, modelId: string): Record<string, object> {
   const result: Record<string, object> = {};
 
-  // First pass: create PimClass objects (keyed by id for generalization update)
-  const pimClasses: Record<string, { pimExtends: string[]; [key: string]: unknown }> = {};
+  // First pass: create PIM resources keyed by id for generalization updates
+  const pimResources: Record<string, { pimExtends: string[]; [key: string]: unknown }> = {};
 
   for (const entity of Object.values(entities)) {
     if (!entity || entity.id === modelId) continue;
@@ -39,25 +39,12 @@ export function buildPimResources(entities: EntityRecord, modelId: string): Reco
         pimHumanLabelProperty: cls.nameProperty ?? null,
         pimHumanDescriptionProperty: cls.descriptionProperty ?? null,
       };
-      pimClasses[cls.id] = pimClass;
+      pimResources[cls.id] = pimClass;
       result[cls.id] = pimClass;
     }
   }
 
-  // Second pass: embed generalizations into pimExtends on the child class
-  for (const entity of Object.values(entities)) {
-    if (!entity || entity.id === modelId) continue;
-
-    if (isSemanticModelGeneralization(entity)) {
-      const gen = entity as SemanticModelGeneralization;
-      const childClass = pimClasses[gen.child];
-      if (childClass) {
-        childClass.pimExtends.push(gen.parent);
-      }
-    }
-  }
-
-  // Third pass: convert relationships
+  // Second pass: convert relationships
   for (const entity of Object.values(entities)) {
     if (!entity || entity.id === modelId) continue;
 
@@ -68,10 +55,11 @@ export function buildPimResources(entities: EntityRecord, modelId: string): Reco
 
       if (rightEnd?.concept && isDataType(rightEnd.concept)) {
         // Attribute: right end points to a datatype
-        result[rel.id] = {
+        const attributeResource = {
           types: [PIM.ATTRIBUTE],
           iri: rel.id,
           pimInterpretation: rightEnd.iri ?? null,
+          pimExtends: [] as string[],
           pimTechnicalLabel: null,
           pimHumanLabel: emptyToNull(rightEnd.name),
           pimHumanDescription: emptyToNull(rightEnd.description),
@@ -85,6 +73,8 @@ export function buildPimResources(entities: EntityRecord, modelId: string): Reco
           pimHumanLabelProperty: rightEnd.nameProperty ?? null,
           pimHumanDescriptionProperty: rightEnd.descriptionProperty ?? null,
         };
+        pimResources[rel.id] = attributeResource;
+        result[rel.id] = attributeResource;
       } else {
         // Association: both ends point to classes
         const leftEndIri = rel.id + "/end-0";
@@ -118,10 +108,11 @@ export function buildPimResources(entities: EntityRecord, modelId: string): Reco
           pimHumanDescriptionProperty: rightEnd?.descriptionProperty ?? null,
         };
 
-        result[rel.id] = {
+        const associationResource = {
           types: [PIM.ASSOCIATION],
           iri: rel.id,
           pimInterpretation: rightEnd?.iri ?? null,
+          pimExtends: [] as string[],
           pimTechnicalLabel: null,
           pimHumanLabel: emptyToNull(rel.name),
           pimHumanDescription: emptyToNull(rel.description),
@@ -130,6 +121,23 @@ export function buildPimResources(entities: EntityRecord, modelId: string): Reco
           pimHumanLabelProperty: rel.nameProperty ?? null,
           pimHumanDescriptionProperty: rel.descriptionProperty ?? null,
         };
+        pimResources[rel.id] = associationResource;
+        result[rel.id] = associationResource;
+      }
+    }
+  }
+
+  // Third pass: embed generalizations into pimExtends on the child class
+  for (const entity of Object.values(entities)) {
+    if (!entity || entity.id === modelId) continue;
+
+    if (isSemanticModelGeneralization(entity)) {
+      const gen = entity as SemanticModelGeneralization;
+      const childResource = pimResources[gen.child];
+      if (childResource) {
+        childResource.pimExtends.push(gen.parent);
+      } else {
+        throw new Error(`Generalization child resource not found for id: ${gen.child}`);
       }
     }
   }
