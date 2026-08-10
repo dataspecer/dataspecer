@@ -55,17 +55,16 @@ function aggregateSemanticModelRelationshipProfile(
 
       // We try to get an entity to get the name from.
       // Since all entities share name we just try to read it directly.
-      // For the property we need to check if the value is a non-profile.
       const nameProfiled = getProfiled(end.nameFromProfiled);
       const name = nameProfiled?.ends[index]?.name ?? end.name;
-      const nameProperty = isSemanticModelRelationship(nameProfiled)
-        ? (nameProfiled.ends[index]?.nameProperty ?? null) : null;
+      // We inherit the property only for vocabulary entities and already aggregated entities.
+      const nameProperty = (nameProfiled as SemanticModelRelationship | AggregatedProfiledSemanticModelRelationship)?.ends[index]?.nameProperty ?? null;
 
       // Description is similar to name in processing.
       const descriptionProfiled = getProfiled(end.descriptionFromProfiled);
       const description = descriptionProfiled?.ends[index]?.description ?? end.description;
-      const descriptionProperty = isSemanticModelRelationship(descriptionProfiled)
-        ? (descriptionProfiled.ends[index]?.descriptionProperty ?? null) : null;
+      // We inherit the property only for vocabulary entities and already aggregated entities.
+      const descriptionProperty = (descriptionProfiled as SemanticModelRelationship | AggregatedProfiledSemanticModelRelationship)?.ends[index]?.descriptionProperty ?? null;
 
       // Unlike name and description usage note does not exists on a class.
       // As a result we type check before reading it.
@@ -81,7 +80,8 @@ function aggregateSemanticModelRelationshipProfile(
       // We need to collect IRI from vocabulary and propagate it toward
       // the aggregated profile.
       const conceptIris: string[] = profiled.map(entity => {
-        if (isSemanticModelRelationship(entity)) {
+        // todo Part of Dataspecer expects the aggregated profile to be of type relationship, so we cannot check only for relationship type here.
+        if (isSemanticModelRelationship(entity) && !isSemanticModelRelationshipProfile(entity)) {
           const end = entity.ends[index];
           if (end === undefined || end.iri === null) {
             return [];
