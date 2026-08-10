@@ -40,7 +40,7 @@ export const applyTransactions = asyncHandler(async (request: express.Request, r
 /**
  * Lists all branches of a project, with their internal id, optional name
  * (for named branches, e.g. "main") and optional tracked resource IRI (for
- * unnamed evolution branches, see {@link TransactionModel.getOrCreateEvolutionBranch}).
+ * unnamed evolution branches, see {@link TransactionModel.createEvolutionBranch}).
  *
  * Example: GET /transactions/branches?projectIri=...
  */
