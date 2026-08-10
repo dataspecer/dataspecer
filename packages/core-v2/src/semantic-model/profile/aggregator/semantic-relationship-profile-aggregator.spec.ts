@@ -11,6 +11,26 @@ import {
 import {
   AggregatedProfiledSemanticModelRelationship,
 } from "./aggregator-concepts.ts";
+import { EntityRecord } from "@dataspecer/core/entity-model";
+import { Operation } from "@dataspecer/core/operation";
+import { applyOperationsToSemanticModel } from "../../apply-operations.ts";
+import { createRelationship } from "../../operations/operations.ts";
+import {
+  createDefaultSemanticModelProfileOperationFactory,
+} from "../operations/index.ts";
+
+const profileOperationFactory =
+  createDefaultSemanticModelProfileOperationFactory();
+
+/**
+ * Builds entities using operations, so that all not given properties
+ * are set to their default values.
+ */
+function buildEntities(operations: Operation[]): EntityRecord {
+  const entities: EntityRecord = {};
+  applyOperationsToSemanticModel(entities, operations);
+  return entities;
+}
 
 describe("SemanticRelationshipProfileAggregator", () => {
 
@@ -222,6 +242,59 @@ describe("SemanticRelationshipProfileAggregator", () => {
     expect(end).toBeDefined();
     expect(end!.conceptIris).toStrictEqual(["http://example.com/title"]);
     expect(end!.conceptIdentifiers).toStrictEqual(["rel-1"]);
+  });
+
+  it("Aggregate relationship with cardinality set on the profile.", () => {
+    const entities = buildEntities([
+      createRelationship({
+        id: "2",
+        ends: [
+          { cardinality: [1, 3] },
+          // There is no cardinality to profile.
+          {},
+        ],
+      }),
+      profileOperationFactory.createRelationshipProfile({
+        id: "1",
+        ends: [
+          // There is no cardinality, the profiled one is used.
+          { concept: "1-1-concept", profiling: ["2"] },
+          { concept: "1-2-concept", profiling: ["2"], cardinality: [1, 1] },
+        ],
+      }),
+    ]);
+    const actual = SemanticRelationshipProfileAggregator.aggregate(
+      entities["1"] as SemanticModelRelationshipProfile,
+      [entities["2"] as SemanticModelRelationship]);
+    expect(actual.ends[0]?.cardinality).toStrictEqual([1, 3]);
+    expect(actual.ends[1]?.cardinality).toStrictEqual([1, 1]);
+  });
+
+  it("Aggregate relationship with cardinality relaxed by the profile.", () => {
+    const entities = buildEntities([
+      createRelationship({
+        id: "2",
+        ends: [
+          { cardinality: [1, 1] },
+          { cardinality: [1, 5] },
+        ],
+      }),
+      profileOperationFactory.createRelationshipProfile({
+        id: "1",
+        ends: [
+          // Both bounds are relaxed.
+          { concept: "1-1-concept", profiling: ["2"], cardinality: [0, null] },
+          // Only the upper bound is relaxed.
+          { concept: "1-2-concept", profiling: ["2"], cardinality: [1, 8] },
+        ],
+      }),
+    ]);
+    const actual = SemanticRelationshipProfileAggregator.aggregate(
+      entities["1"] as SemanticModelRelationshipProfile,
+      [entities["2"] as SemanticModelRelationship]);
+    // The profile can not relax the profiled cardinality.
+    expect(actual.ends[0]?.cardinality).toStrictEqual([1, 1]);
+    expect(actual.ends[1]?.cardinality).toStrictEqual([1, 5]);
   });
 
   it("Aggregate relationship with a profiles.", () => {

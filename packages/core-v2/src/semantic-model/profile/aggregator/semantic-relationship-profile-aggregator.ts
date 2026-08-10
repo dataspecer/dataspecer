@@ -7,7 +7,6 @@ import {
 } from "../concepts/index.ts";
 import {
   AggregatedProfiledSemanticModelRelationship,
-  AggregatedProfiledSemanticModelRelationshipEnd,
   isAggregatedProfiledSemanticModelRelationship,
 } from "./aggregator-concepts.ts";
 import { createProfiledGetter } from "./utilities.ts";
@@ -130,9 +129,10 @@ function aggregateSemanticModelRelationshipProfile(
       const base = profiledEnds.reduce(
         (previous, current) => ({ ...previous, ...current }), {});
 
+      // The cardinality of the end is part of the intersection, so it can
+      // only restrict the cardinality of the profiled ends.
       const cardinality = cardinalityIntersection(
-        profiledEnds.map(item => item.cardinality)
-          .filter(item => item !== undefined && item !== null));
+        [...profiledEnds.map(item => item.cardinality), end.cardinality]);
 
       return {
         // We expand the base and values from this end.
@@ -164,17 +164,21 @@ function aggregateSemanticModelRelationshipProfile(
 }
 
 /**
+ * Values with no cardinality carry no restriction and are ignored.
  * @returns Null if there is no information about the cardinality.
+ * @todo Should we return null or [0, null] if there is no information about the cardinality?
  */
 function cardinalityIntersection(
-  cardinalities: [number, number | null][]
+  cardinalities: ([number, number | null] | null | undefined)[]
 ): [number, number | null] | null {
-  if (cardinalities.length === 0) {
+  const known = cardinalities.filter(c => c !== null && c !== undefined) as [number, number | null][];
+
+  if (known.length === 0) {
     return null;
   }
 
   // We need to determine the intersection.
-  return cardinalities.reduce((previous, current) => {
+  return known.reduce((previous, current) => {
     const lower = Math.max(previous[0], current[0]);
     if (previous[1] === null && current[1] === null) {
       return [lower, null];
