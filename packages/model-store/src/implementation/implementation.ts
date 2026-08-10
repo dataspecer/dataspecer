@@ -1,16 +1,16 @@
-import { LOCAL_PACKAGE, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
+import { VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { type PackageService } from "@dataspecer/core-v2/project";
-import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
+import { type Entity, type EntityChange, type EntityIdentifier, type EntityRecord } from "@dataspecer/core/entity-model";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
-import type { Model, ModelIdentifier } from "@dataspecer/core/model";
-import type { Transaction as CoreTransaction, Operation, OperationInModel } from "@dataspecer/core/operation";
-import type { ProjectModelEntity } from "@dataspecer/project-model";
+import type { ModelIdentifier, ModelMetadata } from "@dataspecer/core/model";
+import { createUndoOperation, type Transaction as CoreTransaction, type Operation, type OperationInModel } from "@dataspecer/core/operation";
+import { getReusedProjectIds, isCreateModelOperation, isPackageEntity, type CreateModelOperation, type ProjectModelEntity } from "@dataspecer/core/project-model";
+import { v4 as uuidv4 } from "uuid";
 import type { ObservableEntityModelStoreChangeEvent } from "../interfaces/observable.ts";
 import type { ConnectionStatus, RemoteModelStore } from "../interfaces/remote.ts";
-import type { TransactionMetadata, TransactionResult } from "../interfaces/writable.ts";
-import { v4 as uuidv4 } from "uuid";
-import { UNDO_OPERATION_TYPE, type UndoOperation } from "./base.ts";
 import type { UndoRedoState } from "../interfaces/undo-redo.ts";
+import type { TransactionMetadata, TransactionResult } from "../interfaces/writable.ts";
+import type { ModelInModelStore, StateResult } from "./interface.ts";
 import { getModelMetadata } from "./metadata.ts";
 import type { ProjectModelInModelStore } from "./project-model.ts";
 
@@ -20,50 +20,14 @@ import type { ProjectModelInModelStore } from "./project-model.ts";
  * It is not a real model type stored anywhere.
  */
 export const VISUAL_MODEL_SVG_BLOB_TYPE = "#svg";
-export interface ApplyOperationResult {
-  entityChanges: EntityChange[];
-  transactionId: string;
-}
 
-/**
- * @internal Interface for communication between DefaultFrontendModelStore and individual models.
- */
-export interface ModelInDefaultFrontendModelStore {
-  /**
-   * Synchronously applies operations to the model and returns what has changed.
-   *
-   * It is also used for applying undo redo operations.
-   */
-  applyOperations(transactionId: string, operations: Operation[]): ApplyOperationResult;
-
-  /**
-   * Subscribes for asynchronous changes that did not come synchronously from applying operations in this model.
-   */
-  subscribeForAsyncChanges(listener: (changeEvent: EntityChange[]) => void): () => void;
-
-  /**
-   * Instructs model to load. Currently there are two options for loading:
-   * - load from backend (set to false)
-   * - initialize as empty (set to true)
-   * @default false (load from backend)
-   */
-  load(doNotFetch?: boolean): Promise<void>;
-
-  save(): Promise<void>;
-
-  /**
-   * Immutable object (record) containing entities.
-   */
-  getAllEntities(): EntityRecord;
-
-  //subscribeForReadinessChange(): () => void;
-}
-
-export type ModelInModelStoreBuilder = (modelId: ModelIdentifier, context: {
+export interface ModelInModelStoreContext {
   service: PackageService;
   httpFetch: HttpFetch;
   rootProjectId: ModelIdentifier;
-}) => Model & ModelInDefaultFrontendModelStore;
+}
+
+export type ModelInModelStoreBuilder = (modelId: ModelIdentifier, context: ModelInModelStoreContext) => ModelInModelStore;
 
 export interface DefaultFrontendModelStoreParams {
   projectId: ModelIdentifier;
@@ -72,7 +36,7 @@ export interface DefaultFrontendModelStoreParams {
    * Builder of the main project model that reads the project structure and
    * based on that creates other models.
    */
-  projectModelBuilder: ModelInModelStoreBuilder;
+  projectModelBuilder: (modelId: ModelIdentifier, context: ModelInModelStoreContext) => ProjectModelInModelStore;
 
   /**
    * Individual builders for each model type. If there is no builder for given
@@ -90,32 +54,78 @@ export interface DefaultFrontendModelStoreParams {
  */
 interface Transaction extends CoreTransaction {
   metadata: TransactionMetadata;
-
-  /**
-   * Whether this transaction contains an operation on the project model (i.e.
-   * it creates or removes a model). Such transactions are not added to the
-   * undo/redo stack for simplicity of implementation.
-   */
-  touchesProjectModel: boolean;
 }
 
 /**
- * Adds entity changes to the existing entity changes per model record.
+ * Model tracked by the model store together with the state the store manages
+ * for it.
  */
-function appendEntityChanges(
-  entityChanges: Record<ModelIdentifier, EntityChange[]>,
-  modelId: ModelIdentifier,
-  changes: EntityChange[],
-): void {
-  if (changes.length > 0) {
-    entityChanges[modelId] = [...(entityChanges[modelId] ?? []), ...changes];
+interface TrackedModel {
+  model: ModelInModelStore;
+
+  coreState: EntityRecord;
+  outputState: EntityRecord;
+
+  /**
+   * Models that were removed from the project structure are inactive. Such a
+   * model is intentionally kept (together with its state) so that bringing it
+   * back by undo or redo restores its exact previous state.
+   */
+  active: boolean;
+}
+
+/**
+ * Core states of the models a transaction changed, as they were before the
+ * transaction. Restoring them cancels the transaction.
+ */
+interface StateSnapshot {
+  /**
+   * Transaction that is cancelled by restoring the states.
+   */
+  transactionId: string;
+
+  states: Record<ModelIdentifier, EntityRecord>;
+}
+
+/**
+ * Models that are created by the operations of the transaction that is
+ * currently being applied. Initial operations of such models are merged into
+ * the operations of the transaction, so that they are recorded and applied with
+ * it.
+ */
+interface LocalCreation {
+  createOperations: Map<ModelIdentifier, CreateModelOperation>;
+  operations: Record<ModelIdentifier, Operation[]>;
+}
+
+/**
+ * Adds entity changes to the existing entity changes per model record. Takes
+ * the ownership of the given array.
+ */
+function appendEntityChanges(entityChanges: Record<ModelIdentifier, EntityChange[]>, modelId: ModelIdentifier, changes: EntityChange[]): void {
+  if (changes.length === 0) {
+    return;
+  }
+  const existingChanges = entityChanges[modelId];
+  if (existingChanges === undefined) {
+    entityChanges[modelId] = changes;
+  } else {
+    existingChanges.push(...changes);
   }
 }
 
+function entitiesAsCreated(entities: EntityRecord): EntityChange[] {
+  return Object.values(entities).map((entity) => ({ previous: null, next: entity }));
+}
+
+function entitiesAsRemoved(entities: EntityRecord): EntityChange[] {
+  return Object.values(entities).map((entity) => ({ previous: entity, next: null }));
+}
+
 /**
- * This wont store data of individual models.
- * This will only manage synchronization via operations and model readiness.
- * The clearest implementation should simply do writing and ignore the actual entities.
+ * Model store that owns the state of all models in the project. Individual
+ * models only interpret operations and compute their state. The store then
+ * manages synchronization via operations, undo/redo and change notifications.
  */
 export class DefaultFrontendModelStore implements RemoteModelStore {
   /**
@@ -127,47 +137,43 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
    */
   public readonly projectModelId: ModelIdentifier = "_project_model";
 
-  /**
-   * Main project id (root package id) that this model store is connected to.
-   */
-  protected rootProjectId: ModelIdentifier;
-
   protected service: PackageService;
 
-  protected projectModelBuilder: ModelInModelStoreBuilder;
+  protected projectModelBuilder: DefaultFrontendModelStoreParams["projectModelBuilder"];
   protected modelBuilders: Record<string, ModelInModelStoreBuilder>;
+
+  protected modelContext: ModelInModelStoreContext;
 
   protected subscribers: ((event: ObservableEntityModelStoreChangeEvent) => void)[] = [];
 
   /**
-   * All models that are subscribed to. This includes the main project model
-   * that this model store is subscribed to and create other models.
+   * Used for initialization only. This contains all promises of models that are being loaded.
    */
-  protected models: Record<string, ModelInDefaultFrontendModelStore> = {};
-  protected httpFetch: HttpFetch;
+  protected modelPromises: Promise<void>[] = [];
 
   /**
-   * Ids of regular transactions that can be undone.
+   * All models that are tracked. This includes the main project model that
+   * creates the other models.
    */
-  private transactionIdsToUndoStack: string[] = [];
+  protected models: Record<ModelIdentifier, TrackedModel> = {};
 
   /**
-   * Ids of undo operations that can be undone, thus redone.
+   * Main project model, available after {@link initialize}.
    */
-  private transactionIdsToRedoStack: string[] = [];
+  protected projectModel!: ProjectModelInModelStore;
 
   /**
-   * Ids of models in {@link models} that were removed from the project
-   * structure (via {@link RemoveModelOperation}, or by undoing the operation
-   * that created them) and are thus currently inactive.
-   *
-   * The model instance itself is intentionally never removed from
-   * {@link models} - it is kept around (together with its undo/redo snapshots)
-   * so that re-creating it (by undoing its removal, or redoing its creation)
-   * can restore its exact previous state instead of starting over from an empty
-   * model.
+   * Output states of active models, i.e. what is reported to the user.
    */
-  protected inactiveModelIds: Set<ModelIdentifier> = new Set();
+  private activeEntities: Record<ModelIdentifier, EntityRecord> = {};
+
+  /**
+   * Immutable snapshot of {@link activeEntities}, invalidated on every change.
+   */
+  private activeEntitiesSnapshot: Record<ModelIdentifier, EntityRecord> | null = null;
+
+  private undoStack: StateSnapshot[] = [];
+  private redoStack: StateSnapshot[] = [];
 
   /**
    * Creates a model store that is connected to the backend to the specific
@@ -175,101 +181,141 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
    */
   constructor(params: DefaultFrontendModelStoreParams) {
     this.service = params.packageService;
-    this.rootProjectId = params.projectId;
     this.projectModelBuilder = params.projectModelBuilder;
     this.modelBuilders = { ...params.modelBuilders };
-    this.httpFetch = params.httpFetch;
+    this.modelContext = {
+      service: params.packageService,
+      httpFetch: params.httpFetch,
+      rootProjectId: params.projectId,
+    };
   }
-  loadByOverride(): Promise<void> {
-    throw new Error("Method not implemented.");
+
+  async loadByOverride(): Promise<void> {
+    await this.initialize();
+    await this.waitForModelsToLoad();
   }
 
   getAllEntities(): Record<ModelIdentifier, EntityRecord> {
-    const allEntities: Record<ModelIdentifier, EntityRecord> = {};
-    for (const modelId in this.models) {
-      if (this.inactiveModelIds.has(modelId)) {
-        // Model was removed from the project structure, ignore it.
-        continue;
-      }
-      const model = this.models[modelId]!;
-      allEntities[modelId] = model.getAllEntities();
-    }
-    return allEntities;
+    return (this.activeEntitiesSnapshot ??= { ...this.activeEntities });
   }
 
-  /**
-   * Helper method to build an internal model as part of this Model Store that
-   * tracks one of the project's model.
-   * @param modelType null for project model
-   */
-  protected buildModel(modelId: ModelIdentifier, modelType: string | null) {
-    const context = {
-      service: this.service,
-      httpFetch: this.httpFetch,
-      rootProjectId: this.rootProjectId,
-    };
-    const builder = modelType === null
-      ? this.projectModelBuilder
-      : this.modelBuilders[modelType];
-    if (!builder) {
-      return null;
-    }
-    const model = builder(modelId, context);
-    this.models[modelId] = model;
-    return model;
+  getEntity(modelId: ModelIdentifier, entityId: EntityIdentifier): Entity | null {
+    return this.activeEntities[modelId]?.[entityId] ?? null;
   }
 
   /**
    * Loads everything
    */
   async initialize(): Promise<void> {
-    const projectModel = this.buildModel(this.projectModelId, null)!;
-    projectModel.subscribeForAsyncChanges((changes) => this.onProjectModelEntityChange(changes));
-    await projectModel.load();
+    this.projectModel = this.projectModelBuilder(this.projectModelId, this.modelContext);
+    this.trackModel(this.projectModelId, this.projectModel);
+    this.updateModelState(this.projectModelId, this.projectModel.setState(await this.projectModel.getRemoteState()));
   }
-
-  protected modelPromises: Promise<void>[] = [];
 
   async waitForModelsToLoad(): Promise<void> {
     await Promise.all(this.modelPromises);
   }
 
   /**
-   * This method listens on changes in the project model and create/deletes
-   * other models based on that.
+   * Starts tracking the model, with an empty state.
    */
-  protected onProjectModelEntityChange(changedEntities: EntityChange[]): void {
-    const entityChanges: Record<ModelIdentifier, EntityChange[]> = {};
-    this.applyProjectStructureChanges(changedEntities, entityChanges, false);
-    if (Object.keys(entityChanges).length > 0) {
-      this.internalNotifyEntityChange({ entityChanges });
-    }
+  private trackModel(modelId: ModelIdentifier, model: ModelInModelStore): void {
+    this.models[modelId] = {
+      model,
+      coreState: {},
+      outputState: {},
+      active: true,
+    };
+    this.activeEntities[modelId] = {};
+    this.activeEntitiesSnapshot = null;
+
+    model.subscribeForAsyncChanges((stateResult) => this.updateModelState(modelId, stateResult));
   }
 
   /**
-   * Reacts to changes in project structure and updates the models and their
-   * data.
+   * Helper method to build an internal model as part of this Model Store that
+   * tracks one of the project's model. Returns null if there is no builder for
+   * the given model type, i.e. the model is not meant to be tracked.
+   */
+  protected buildModel(modelId: ModelIdentifier, modelType: string): ModelInModelStore | null {
+    const builder = this.modelBuilders[modelType];
+    if (!builder) {
+      return null;
+    }
+    const model = builder(modelId, this.modelContext);
+    model.modelStore = this;
+    this.trackModel(modelId, model);
+    return model;
+  }
+
+  /**
+   * Records the new state of the model, reacts to project structure changes and
+   * notifies subscribers.
+   */
+  private updateModelState(modelId: ModelIdentifier, stateResult: StateResult): void {
+    const entityChanges: Record<ModelIdentifier, EntityChange[]> = {};
+    this.setModelState(modelId, stateResult, entityChanges);
+    if (modelId === this.projectModelId) {
+      this.applyProjectStructureChanges(stateResult.diff, entityChanges, null);
+    }
+    this.notifyEntityChanges(entityChanges);
+  }
+
+  /**
+   * Records the new state of the model and collects the reported changes.
+   * Changes of inactive models are not reported as their entities are hidden.
+   */
+  private setModelState(modelId: ModelIdentifier, stateResult: StateResult, entityChanges: Record<ModelIdentifier, EntityChange[]>): void {
+    const tracked = this.models[modelId];
+    tracked.coreState = stateResult.coreState;
+    tracked.outputState = stateResult.outputState;
+
+    if (!tracked.active) {
+      return;
+    }
+    this.activeEntities[modelId] = stateResult.outputState;
+    this.activeEntitiesSnapshot = null;
+    appendEntityChanges(entityChanges, modelId, stateResult.diff);
+  }
+
+  /**
+   * Loads the state of the model from the backend and reports it.
+   */
+  private async loadModel(modelId: ModelIdentifier): Promise<void> {
+    const model = this.models[modelId].model;
+    const state = await model.getRemoteState();
+    this.updateModelState(modelId, model.setState(state));
+  }
+
+  /**
+   * Reacts to changes in project structure and activates or deactivates the
+   * models accordingly.
    *
-   * @param entityChanges Mutable object of entities in individual models that
-   * were changed.
-   * @param isLocalChange Set to true if the change is local and thus potential
-   * models do not exist on backend.
+   * @param localCreation Models created by the current transaction, null if the
+   * change does not come from operations applied right now.
    */
   protected applyProjectStructureChanges(
     structuralChanges: EntityChange[],
     entityChanges: Record<ModelIdentifier, EntityChange[]>,
-    isLocalChange: boolean,
+    localCreation: LocalCreation | null,
   ): void {
     for (const change of structuralChanges) {
       if (change.previous === null) {
         // New model was created
         const modelEntity = change.next as ProjectModelEntity;
-        this.activateModel(modelEntity.id, modelEntity.modelType, isLocalChange, entityChanges);
+        this.activateModel(modelEntity.id, modelEntity.modelType, localCreation, entityChanges);
+
         if (modelEntity.modelType === VISUAL_MODEL) {
           // A visual model may have an additional "svg" blob attached to it.
           // It is tracked as its own companion model, analogous to how the
-          // default "model" blob is tracked.
-          this.activateModel(`${modelEntity.id}${VISUAL_MODEL_SVG_BLOB_TYPE}`, VISUAL_MODEL_SVG_BLOB_TYPE, isLocalChange, entityChanges);
+          // default "model" blob is tracked. It is created by the very same
+          // operation as the visual model itself.
+          const svgModelId = `${modelEntity.id}${VISUAL_MODEL_SVG_BLOB_TYPE}`;
+          const createOperation = localCreation?.createOperations.get(modelEntity.id);
+          if (createOperation) {
+            localCreation!.createOperations.set(svgModelId, { ...createOperation, modelId: svgModelId, modelType: VISUAL_MODEL_SVG_BLOB_TYPE });
+          }
+          this.activateModel(svgModelId, VISUAL_MODEL_SVG_BLOB_TYPE, localCreation, entityChanges);
         }
       } else if (change.next === null) {
         // Model was deleted
@@ -286,74 +332,59 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
   }
 
   /**
-   * Ensures the model with the given id is active, building (or reusing) and
-   * subscribing to it as needed, and records its appearance into
-   * `entityChanges`.
+   * Ensures the model with the given id is tracked and active, and reports its
+   * entities as appeared. A model that is created by the current transaction
+   * starts empty and gets its initial operations recorded, any other model is
+   * loaded from the backend.
    */
   private activateModel(
     modelId: ModelIdentifier,
     modelType: string,
-    createFresh: boolean,
+    localCreation: LocalCreation | null,
     entityChanges: Record<ModelIdentifier, EntityChange[]>,
   ): void {
-    let model = this.models[modelId];
+    const tracked = this.models[modelId];
 
-    if (!model) {
-      // First time we see this model - build and subscribe to it.
-      const createdModel = this.buildModel(modelId, modelType);
-      if (!createdModel) {
-        // This model is not meant to be subscribed to, ignore it.
+    if (tracked) {
+      if (tracked.active) {
         return;
       }
-      model = createdModel;
-
-      model.subscribeForAsyncChanges(modelChanges => {
-        this.internalNotifyEntityChange({ entityChanges: { [modelId]: modelChanges } });
-      });
-
-      this.modelPromises.push(model.load(createFresh));
-
+      tracked.active = true;
+      this.activeEntities[modelId] = tracked.outputState;
+      this.activeEntitiesSnapshot = null;
+      appendEntityChanges(entityChanges, modelId, entitiesAsCreated(tracked.outputState));
       return;
     }
 
-    if (!this.inactiveModelIds.has(modelId)) {
-      // The model is already active, nothing to do.
+    const model = this.buildModel(modelId, modelType);
+    if (!model) {
+      // This model is not meant to be tracked, ignore it.
       return;
     }
 
-    // The model already existed (it was previously deactivated) - reactivate
-    // it. It already retains its previous entities (and undo/redo history),
-    // so we only need to report them as visible again.
-    this.inactiveModelIds.delete(modelId);
-    appendEntityChanges(
-      entityChanges,
-      modelId,
-      Object.values(model.getAllEntities()).map((entity) => ({ previous: null, next: entity }))
-    );
+    const createOperation = localCreation?.createOperations.get(modelId);
+    if (!createOperation) {
+      this.modelPromises.push(this.loadModel(modelId));
+    }
   }
 
   /**
-   * Deactivates the model with the given id (if it exists and is currently
-   * active) and records the disappearance of all of its entities into
-   * `entityChanges`. The model instance itself is preserved.
+   * Deactivates the model with the given id (if it is tracked and currently
+   * active) and reports its entities as gone. The state of the model is
+   * preserved.
    */
   private deactivateModel(modelId: ModelIdentifier, entityChanges: Record<ModelIdentifier, EntityChange[]>): void {
-    const model = this.models[modelId];
-    if (!model || this.inactiveModelIds.has(modelId)) {
+    const tracked = this.models[modelId];
+    if (!tracked || !tracked.active) {
       return;
     }
 
-    this.inactiveModelIds.add(modelId);
-    appendEntityChanges(
-      entityChanges,
-      modelId,
-      Object.values(model.getAllEntities()).map((entity) => ({ previous: entity, next: null }))
-    );
+    tracked.active = false;
+    delete this.activeEntities[modelId];
+    this.activeEntitiesSnapshot = null;
+    appendEntityChanges(entityChanges, modelId, entitiesAsRemoved(tracked.outputState));
   }
 
-  getModel(id: ModelIdentifier | null | undefined): Model | null {
-    throw new Error("Method not implemented.");
-  }
   getConnectionStatus(): ConnectionStatus {
     throw new Error("Method not implemented.");
   }
@@ -368,6 +399,12 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
   protected transactions: Transaction[] = [];
 
   /**
+   * Number of leading entries of {@link transactions} whose operations were
+   * already uploaded to the backend.
+   */
+  private uploadedTransactionCount: number = 0;
+
+  /**
    * Current transaction that is being executed. null if there is no transaction.
    *
    * @see addOperationForTransaction
@@ -375,68 +412,95 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
   protected currentTransaction: Transaction | null = null;
 
   /**
-   * Comparator that sorts the project model's id first, leaving the relative
-   * order of all other ids unchanged. Used so that the project model's
-   * operations are always processed first within a transaction, see
-   * {@link addOperationForTransaction} and {@link undoRedo}.
+   * Core states of the models before the current transaction changed them.
+   *
+   * @see StateSnapshot
    */
-  private compareProjectModelFirst = (a: ModelIdentifier, b: ModelIdentifier): number =>
-    a === this.projectModelId ? -1 : b === this.projectModelId ? 1 : 0;
+  private currentTransactionStates: Record<ModelIdentifier, EntityRecord> = {};
 
   /**
    * Allows executing a set of operations by calling this method multiple times
    * and then committing them all at once.
+   *
+   * @deprecated This method is intended to be used only by legacy clients.
+   * Please use {@link transaction} instead.
    */
   addOperationForTransaction(operations: OperationInModel[]): void {
     // Start transaction if there is no transaction yet.
-    if (!this.currentTransaction) {
-      this.currentTransaction = {
-        id: uuidv4(),
-        metadata: {},
-        operations: [],
-        touchesProjectModel: false,
-      };
+    const transaction = (this.currentTransaction ??= {
+      id: uuidv4(),
+      time: new Date().toISOString(),
+      metadata: {},
+      operations: [],
+    });
+
+    const operationsByModel: Record<ModelIdentifier, Operation[]> = {};
+    for (const operationInModel of operations) {
+      (operationsByModel[operationInModel.modelId] ??= []).push(operationInModel.operation);
     }
-    this.currentTransaction.operations.push(...operations);
-    if (operations.some((operation) => operation.modelId === this.projectModelId)) {
-      this.currentTransaction.touchesProjectModel = true;
-    }
-    const transactionId = this.currentTransaction.id;
 
     // Changes made in this transaction
     const entityChanges: Record<ModelIdentifier, EntityChange[]> = {};
-
-    // Todo maybe group by is not ideal because in one transaction, we might need to create new model or delete model after/before applying some operations.
-    const groupedOperations = Object.groupBy(operations, (operation) => operation.modelId);
 
     // The project model is processed first so that models it creates (or
     // removes) within this same transaction are already active (or
     // deactivated) by the time operations targeting them directly are
     // processed below.
-    const modelIds = Object.keys(groupedOperations).sort(this.compareProjectModelFirst);
+    const projectOperations = operationsByModel[this.projectModelId];
+    if (projectOperations) {
+      delete operationsByModel[this.projectModelId];
 
-    for (const modelId of modelIds) {
-      const thisModelOperations = groupedOperations[modelId]!;
-      const pureOperations = thisModelOperations.map((operation) => operation.operation);
-
-      const model = this.models[modelId];
-      if (!model || this.inactiveModelIds.has(modelId)) {
-        console.error(`Model ${modelId} does not exist or is not active. Operations will be ignored!`);
-        continue;
+      const localCreation: LocalCreation = { createOperations: new Map(), operations: operationsByModel };
+      for (const operation of projectOperations) {
+        if (isCreateModelOperation(operation)) {
+          localCreation.createOperations.set(operation.modelId, operation);
+        }
       }
 
-      const changes = model.applyOperations(transactionId, pureOperations);
-      if (changes.entityChanges.length !== 0) {
-        entityChanges[modelId] = changes.entityChanges;
-      }
-
-      if (modelId === this.projectModelId) {
+      const stateResult = this.applyOperations(this.projectModelId, projectOperations, transaction, entityChanges);
+      if (stateResult) {
         // React to models being created/removed in the project structure.
-        this.applyProjectStructureChanges(changes.entityChanges, entityChanges, true);
+        this.applyProjectStructureChanges(stateResult.diff, entityChanges, localCreation);
       }
     }
 
-    this.internalNotifyEntityChange({ entityChanges });
+    // The operations are recorded in the order they are applied, so that the
+    // initial operations of models created by the project model are recorded
+    // before operations targeting them.
+    for (const modelId in operationsByModel) {
+      this.applyOperations(modelId, operationsByModel[modelId], transaction, entityChanges);
+    }
+
+    this.notifyEntityChanges(entityChanges);
+  }
+
+  /**
+   * Records the operations as a part of the transaction and applies them to the
+   * model. Returns null when the model is not tracked or is not active, in
+   * which case the operations are only recorded.
+   */
+  private applyOperations(
+    modelId: ModelIdentifier,
+    operations: Operation[],
+    transaction: Transaction,
+    entityChanges: Record<ModelIdentifier, EntityChange[]>,
+  ): StateResult | null {
+    if (operations.length === 0) {
+      return null;
+    }
+    transaction.operations.push(...operations.map((operation) => ({ modelId, operation })));
+
+    const tracked = this.models[modelId];
+    if (!tracked || !tracked.active) {
+      console.warn(`Model ${modelId} does not exist locally or is not active. Its operations are only recorded, not applied locally.`);
+      return null;
+    }
+
+    this.currentTransactionStates[modelId] ??= tracked.coreState;
+
+    const stateResult = tracked.model.applyOperationAndSetState(operations);
+    this.setModelState(modelId, stateResult, entityChanges);
+    return stateResult;
   }
 
   undo(): TransactionResult | null {
@@ -449,8 +513,8 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
 
   getUndoRedoState(): UndoRedoState {
     return {
-      canUndo: this.transactionIdsToUndoStack.length > 0,
-      canRedo: this.transactionIdsToRedoStack.length > 0,
+      canUndo: this.undoStack.length > 0,
+      canRedo: this.redoStack.length > 0,
     };
   }
 
@@ -477,77 +541,89 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
       throw new Error("Cannot undo/redo while there is an ongoing transaction!");
     }
 
-    const transactionIdToUndo = (isUndoNotRedo ? this.transactionIdsToUndoStack : this.transactionIdsToRedoStack).pop();
-    if (!transactionIdToUndo) {
+    const snapshot = (isUndoNotRedo ? this.undoStack : this.redoStack).pop();
+    if (!snapshot) {
       // There is nothing to undo, just return.
       return null;
     }
-    const transactionToRevert = this.transactions.find((transaction) => transaction.id === transactionIdToUndo)!;
 
     // This undo transaction
     const transactionId = uuidv4();
 
-    // Changes made in this transaction
-    const entityChanges: Record<ModelIdentifier, EntityChange[]> = {};
-
-    // The project model is processed first, analogous to addOperationForTransaction.
-    const affectedModels = [...new Set(transactionToRevert.operations.map((operation) => operation.modelId))].sort(this.compareProjectModelFirst);
-
-    const allOperations: OperationInModel<UndoOperation>[] = [];
-    for (const modelId of affectedModels) {
-      const model = this.models[modelId];
-      if (!model) {
-        // Model may not be present here, this is absolutely ok.
-        continue;
-      }
-
-      const undoOperation = {
-        id: uuidv4(),
-        type: UNDO_OPERATION_TYPE,
-        cancelTransactionId: transactionToRevert.id,
-      } satisfies UndoOperation;
-      allOperations.push({
-        modelId,
-        operation: undoOperation,
-      });
-
-      const changes = model.applyOperations(transactionId, [undoOperation]);
-      entityChanges[modelId] = changes.entityChanges;
-
-      if (modelId === this.projectModelId) {
-        // React to models being created/removed in the project structure (e.g.
-        // undoing the creation of a model deactivates it, undoing the removal
-        // of a model reactivates it with its previous state intact).
-        this.applyProjectStructureChanges(changes.entityChanges, entityChanges, true);
-      }
+    // The current states are what the opposite operation (redo of this undo,
+    // or undo of this redo) restores.
+    const states: Record<ModelIdentifier, EntityRecord> = {};
+    for (const modelId in snapshot.states) {
+      states[modelId] = this.models[modelId].coreState;
     }
-
-    // Handle undo/redo stacks
-    (isUndoNotRedo ? this.transactionIdsToRedoStack : this.transactionIdsToUndoStack).push(transactionId);
+    (isUndoNotRedo ? this.redoStack : this.undoStack).push({ transactionId, states });
 
     this.transactions.push({
       id: transactionId,
+      time: new Date().toISOString(),
       metadata: {},
-      operations: allOperations,
-      // Transactions reachable from the undo/redo stacks never touch the
-      // project model, see commitTransaction.
-      touchesProjectModel: false,
+      // The undo cancels the transaction as a whole, in every model it
+      // touched, so it is recorded once and dispatched to the project model.
+      // The backend interprets it using the recorded history.
+      operations: [{ modelId: this.projectModelId, operation: createUndoOperation(snapshot.transactionId) }],
     });
 
-    this.internalNotifyEntityChange({ entityChanges });
+    this.notifyEntityChanges(this.restoreStates(snapshot.states));
 
     this.notifyUndoRedoSubscribers();
     this.notifyTransactionCommitSubscribers();
+    // The undo transaction is uploaded on the next save like any other
+    // transaction, so its confirmation goes through the same queue.
     return {
       transactionId,
-      confirmation: Promise.resolve({}),
+      confirmation: this.createConfirmation(),
     };
+  }
+
+  /**
+   * Sets the given core states back to the models. The project model goes first
+   * so that models it brings back (or hides) are handled before their own state
+   * is restored.
+   */
+  private restoreStates(states: Record<ModelIdentifier, EntityRecord>): Record<ModelIdentifier, EntityChange[]> {
+    const entityChanges: Record<ModelIdentifier, EntityChange[]> = {};
+
+    const projectState = states[this.projectModelId];
+    if (projectState) {
+      const stateResult = this.projectModel.setState(projectState);
+      this.setModelState(this.projectModelId, stateResult, entityChanges);
+      this.applyProjectStructureChanges(stateResult.diff, entityChanges, null);
+    }
+
+    for (const modelId in states) {
+      if (modelId === this.projectModelId) {
+        continue;
+      }
+      const tracked = this.models[modelId];
+      if (!tracked.active) {
+        // The model is not part of the project structure anymore - possibly
+        // because the project model was just restored, which already reported
+        // its entities as gone. Its state is kept as it is so that the opposite
+        // operation can bring the model back with its content intact.
+        continue;
+      }
+      this.setModelState(modelId, tracked.model.setState(states[modelId]), entityChanges);
+    }
+
+    return entityChanges;
   }
 
   protected transactionConfirmations: ((value: {}) => void)[] = [];
 
+  private createConfirmation(): Promise<{}> {
+    return new Promise<{}>((resolve) => this.transactionConfirmations.push(resolve));
+  }
+
   /**
    * Commits all operations added via {@link addOperationForTransaction}.
+   *
+   * @deprecated This method is intended to be used only by legacy clients.
+   * Please use {@link transaction} instead.
    */
   commitTransaction(metadata: TransactionMetadata): TransactionResult {
     if (!this.currentTransaction) {
@@ -561,27 +637,16 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
     this.currentTransaction = null;
 
     // Handle undo/redo stacks
-
-    if (transaction.touchesProjectModel) {
-      // Undoing/redoing the creation or removal of a model would require
-      // un-creating/un-removing the corresponding resource on the backend,
-      // which is not supported yet. Invalidate the whole undo/redo history
-      // instead, so the project model is never asked to undo/redo such a
-      // change.
-      this.transactionIdsToUndoStack = [];
-    } else {
-      this.transactionIdsToUndoStack.push(transaction.id);
-    }
-    this.transactionIdsToRedoStack = [];
+    this.undoStack.push({ transactionId: transaction.id, states: this.currentTransactionStates });
+    this.currentTransactionStates = {};
+    this.redoStack = [];
     this.notifyUndoRedoSubscribers();
     this.notifyTransactionCommitSubscribers();
 
-    const confirmation = new Promise<{}>(resolve => this.transactionConfirmations.push(resolve));
-
     return {
       transactionId: transaction.id,
-      confirmation,
-    }
+      confirmation: this.createConfirmation(),
+    };
   }
 
   protected transactionCommitSubscribers: Set<() => void> = new Set();
@@ -614,12 +679,51 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
     return this.commitTransaction(metadata);
   }
 
-  protected internalNotifyEntityChange(entityChaneEvent: ObservableEntityModelStoreChangeEvent): void {
-    // Modifies entityChanges in place
-    this.updateProjectModelMetadata(entityChaneEvent.entityChanges);
+  protected notifyEntityChanges(entityChanges: Record<ModelIdentifier, EntityChange[]>): void {
+    if (Object.keys(entityChanges).length === 0) {
+      return;
+    }
 
+    // Modifies entityChanges in place
+    this.updateProjectModelMetadata(entityChanges);
+
+    const event: ObservableEntityModelStoreChangeEvent = { entityChanges };
     for (const listener of this.subscribers) {
-      listener(entityChaneEvent);
+      listener(event);
+    }
+
+    // Reported last, as it reports changes of the project structure on its own.
+    this.updateProjectModelReuse();
+  }
+
+  /**
+   * Reused projects are declared by the content of the package models, which
+   * the project model itself does not see. The declaration is therefore
+   * recomputed after every change and handed over to it.
+   */
+  protected updateProjectModelReuse(): void {
+    const projectTracked = this.models[this.projectModelId];
+    if (!projectTracked) {
+      return;
+    }
+
+    const reusedProjectIds: Record<ModelIdentifier, ModelIdentifier[]> = {};
+    for (const entity of Object.values(projectTracked.outputState)) {
+      if (!isPackageEntity(entity)) {
+        continue;
+      }
+      const packageModel = this.activeEntities[entity.id]?.[entity.id];
+      if (packageModel === undefined) {
+        // The content of the package is not known yet, which must not be
+        // mistaken for the package reusing nothing.
+        continue;
+      }
+      reusedProjectIds[entity.id] = getReusedProjectIds(packageModel);
+    }
+
+    const loading = this.projectModel.synchronizeReusedProjects(reusedProjectIds);
+    if (loading !== null) {
+      this.modelPromises.push(loading.catch((error) => console.error("Failed to load reused projects.", error)));
     }
   }
 
@@ -632,91 +736,81 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
    * in the same batch as the changes that caused it.
    */
   protected updateProjectModelMetadata(entityChanges: Record<ModelIdentifier, EntityChange[]>): void {
-    const projectModel = this.models[this.projectModelId] as ProjectModelInModelStore | undefined;
-    if (!projectModel) {
+    const projectTracked = this.models[this.projectModelId];
+    if (!projectTracked) {
       return;
     }
-    const projectEntities = projectModel.getAllEntities();
+    const projectEntities = projectTracked.outputState;
+    let metadata: Record<ModelIdentifier, ModelMetadata> | null = null;
 
     for (const modelId in entityChanges) {
       if (modelId === this.projectModelId) {
         continue;
       }
-      const projectEntity = projectEntities[modelId];
+      const projectEntity = projectEntities[modelId] as ProjectModelEntity | undefined;
       if (!projectEntity) {
         continue;
       }
 
       const changedEntities: EntityRecord = {};
-      for (const change of entityChanges[modelId]!) {
+      for (const change of entityChanges[modelId]) {
         if (change.next) {
           changedEntities[change.next.id] = change.next;
         }
       }
 
-      const metadata = getModelMetadata(projectEntity.modelType, changedEntities, modelId);
-      if (metadata === null) {
+      const modelMetadata = getModelMetadata(projectEntity.modelType, changedEntities, modelId);
+      if (modelMetadata === null) {
         continue;
       }
-      appendEntityChanges(entityChanges, this.projectModelId, projectModel.setModelMetadata(modelId, metadata));
+      (metadata ??= {})[modelId] = modelMetadata;
     }
+
+    if (metadata === null) {
+      return;
+    }
+    this.setModelState(this.projectModelId, this.projectModel.setModelsMetadata(metadata), entityChanges);
   }
 
   subscribeToEntityChanges(listener: (entityChaneEvent: ObservableEntityModelStoreChangeEvent) => void): () => void {
     this.subscribers.push(listener);
     return () => {
       this.subscribers = this.subscribers.filter((l) => l !== listener);
-    }
+    };
   }
 
   /**
-   * Saves all models that support saving and were changed since the last
-   * save (or load). Models that do not support saving (currently the
-   * virtual project model) are skipped.
+   * Chain of pending {@link saveByOverride} uploads, so that concurrent saves
+   * run one after another. Overlapping saves would slice the pending
+   * transactions from the same {@link uploadedTransactionCount} and upload
+   * them twice, duplicating the recorded history.
    */
-  async saveByOverride(): Promise<void> {
-    await this.synchronizeProjectStructureWithBackend();
-
-    const savePromises: Promise<void>[] = [];
-    for (const modelId in this.models) {
-      if (modelId === this.projectModelId) {
-        // The project model is virtual and does not support saving yet.
-        continue;
-      }
-      if (this.inactiveModelIds.has(modelId)) {
-        // Model was removed from the project structure, nothing to save.
-        continue;
-      }
-      savePromises.push(this.models[modelId]!.save());
-    }
-    await Promise.all(savePromises);
-    this.transactionConfirmations.forEach((resolve) => resolve({}));
-    this.transactionConfirmations = [];
-  }
+  private saveLock: Promise<void> = Promise.resolve();
 
   /**
-   * Creates and removes the backend resources for models that were locally
-   * created/removed in the project structure since the last save. Once a
-   * model is created on the backend, the regular save loop in
-   * {@link saveByOverride} is responsible for storing its actual data.
+   * Applies all operations that happened since the last successful save to the backend.
+   *
+   * @todo Rename this method, it is not "by override" anymore
    */
-  protected async synchronizeProjectStructureWithBackend(): Promise<void> {
-    const projectModel = this.models[this.projectModelId] as ProjectModelInModelStore;
+  saveByOverride(): Promise<void> {
+    const result = this.saveLock.then(() => this.uploadPendingTransactions());
+    this.saveLock = result.catch(() => {});
+    return result;
+  }
 
-    const { creations, deletions } = projectModel.takePendingStructuralChanges();
+  private async uploadPendingTransactions(): Promise<void> {
+    const pendingTransactions = this.transactions.slice(this.uploadedTransactionCount).filter((transaction) => transaction.operations.length > 0);
+    const transactionCount = this.transactions.length;
+    // Transactions committed while the upload below is in flight are not part
+    // of it; their confirmations must wait for the next upload.
+    const confirmationCount = this.transactionConfirmations.length;
 
-    // Created sequentially (in the order they happened) so that a parent
-    // package always exists on the backend before its children are created.
-    for (const creation of creations) {
-      if (creation.modelType === LOCAL_PACKAGE) {
-        await this.service.createPackage(creation.parentPackageId, { iri: creation.modelId, userMetadata: {} });
-      } else {
-        await this.service.createResource(creation.parentPackageId, { iri: creation.modelId, type: creation.modelType, userMetadata: {} });
-      }
+    if (pendingTransactions.length > 0) {
+      await this.service.applyTransactions(this.modelContext.rootProjectId, pendingTransactions);
     }
 
-    for (const modelId of deletions) {
-      await this.service.deleteResource(modelId);
-    }
+    this.uploadedTransactionCount = transactionCount;
+
+    this.transactionConfirmations.splice(0, confirmationCount).forEach((resolve) => resolve({}));
   }
 }

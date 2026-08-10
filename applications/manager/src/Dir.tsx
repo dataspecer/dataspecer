@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
-import { BookOpen, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, EllipsisVertical, FileText, Folder, FolderDown, Import, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, Sparkles, Trash2, WandSparkles } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, EllipsisVertical, FileText, Folder, FolderDown, History, Import, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, Sparkles, Trash2, WandSparkles } from "lucide-react";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "next-themes";
@@ -16,7 +16,7 @@ import { ProjectWizard } from "./dialog/project-wizard/project-wizard";
 import { RenameResourceDialog } from "./dialog/rename-resource";
 import { ResourceDetail } from "./dialog/resource-detail";
 import { useToggle } from "./hooks/use-toggle";
-import { ModelIcon, modelTypeToName } from "./known-models";
+import { getHistoryLink, ModelIcon, modelTypeToName } from "./known-models";
 import { useBetterModal } from "./lib/better-modal";
 import { ResourcesContext, ensurePackageWorksForDSE, modifyUserMetadata, requestLoadPackage } from "./package";
 import { ModifyDocumentationTemplate } from "./dialog/modify-documentation-template";
@@ -25,9 +25,8 @@ import { SortModelsContext } from "./components/sort-models";
 import { ModifyRawDialog } from "./dialog/modify-raw";
 import { Autolayout } from "./dialog/autolayout";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./components/ui/tooltip";
-import { ReloadImported } from "./dialog/reload-imported";
+import { ReloadResource } from "./dialog/reload-resource";
 import { AddImported } from "./dialog/add-imported";
-import { ReloadPimWrapper } from "./dialog/reload-pim-wrapper";
 import { stopPropagation } from "./utils/events";
 
 export function lng(text: LanguageString | undefined): string | undefined {
@@ -133,7 +132,7 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
       {resource.types.includes(LOCAL_PACKAGE) && (resource.userMetadata as any)?.importedFromUrl &&
         <Tooltip>
           <TooltipTrigger>
-            <Button asChild variant="ghost" size="icon" className="shrink-0" onClick={stopPropagation(() => openModal(ReloadImported, {id: iri, parentId: parentIri ?? ""}))}>
+            <Button asChild variant="ghost" size="icon" className="shrink-0" onClick={stopPropagation(() => openModal(ReloadResource, {id: iri, parentId: parentIri ?? ""}))}>
               <span>
                 <RotateCw className="h-4 w-4" />
               </span>
@@ -148,7 +147,7 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
       {resource.types.includes(RDFS_MODEL) &&
         <Tooltip>
           <TooltipTrigger>
-            <Button asChild variant="ghost" size="icon" className="shrink-0" onClick={stopPropagation(() => openModal(ReloadPimWrapper, {id: iri, parentId: parentIri ?? ""}))}>
+            <Button asChild variant="ghost" size="icon" className="shrink-0" onClick={stopPropagation(() => openModal(ReloadResource, {id: iri, parentId: parentIri ?? ""}))}>
               <span>
                 <RotateCw className="h-4 w-4" />
               </span>
@@ -195,6 +194,24 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
           </TooltipTrigger>
           <TooltipContent>
             <p>{t("conceptual editor button")}</p>
+          </TooltipContent>
+        </Tooltip>
+      }
+
+      {resource.types.includes(LOCAL_PACKAGE) &&
+        <Tooltip>
+          <TooltipTrigger>
+            <Button asChild variant="ghost" size="icon" className="relative shrink-0" onClick={stopPropagation()}>
+              <a href={getHistoryLink(iri ?? "")}>
+                <History className="h-4 w-4" />
+                {resource.hasPendingEvolution &&
+                  <span aria-hidden="true" className="absolute top-1.5 right-1.5 size-2 rounded-full bg-red-500"></span>
+                }
+              </a>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{t(resource.hasPendingEvolution ? "history button pending evolution" : "history button")}</p>
           </TooltipContent>
         </Tooltip>
       }

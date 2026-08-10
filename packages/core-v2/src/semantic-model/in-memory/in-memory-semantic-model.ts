@@ -2,6 +2,9 @@ import { InMemoryEntityModel } from "../../entity-model/in-memory-entity-model.t
 import { LOCAL_SEMANTIC_MODEL } from "../../model/known-models.ts";
 import { WritableSemanticModelAdapter } from "../writable-semantic-model-adapter.ts";
 
+/**
+ * @deprecated Use model store instead to manage the model state.
+ */
 export class InMemorySemanticModel extends WritableSemanticModelAdapter {
     private baseIri: string = "";
     public modelMetadata: object = {};

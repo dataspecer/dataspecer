@@ -9,7 +9,7 @@ import * as PSM from "../data-psm-vocabulary.ts";
 
 test("Update jsonSchemaPrefixesInIriRegex property.", async () => {
   const operation = new DataPsmSetJsonSchemaPrefixesInIriRegex();
-  operation.dataPsmResource = "http://class";
+  operation.entityId = "http://class";
   operation.jsonSchemaPrefixesInIriRegex = {
     usePrefixes: "ALWAYS",
     includeParentPrefixes: true,

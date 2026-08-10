@@ -1,18 +1,18 @@
-import { CoreOperation } from "../operation/index.ts";
+import type { Operation } from "../../operation/index.ts";
 import { CoreResourceReader } from "../core-reader.ts";
 import { CoreExecutorResult } from "./core-executor-result.ts";
 
 /**
- * Given a CoreOperation check if operation is of given sub-type.
+ * Given an operation check if it is of given sub-type.
  */
-export type CoreOperationTypeCheck<T extends CoreOperation> = (
-  operation: CoreOperation
+export type CoreOperationTypeCheck<T extends Operation> = (
+  operation: Operation | null | undefined
 ) => operation is T;
 
 /**
  * Execute particular operation sub-type.
  */
-export type CoreOperationSpecificExecutor<T extends CoreOperation> = (
+export type CoreOperationSpecificExecutor<T extends Operation> = (
   reader: CoreResourceReader,
   createNewIdentifier: CreateNewIdentifier,
   operation: T
@@ -28,7 +28,7 @@ export type CreateNewIdentifier = (resourceType: string) => string;
  * function-based implementation while provide type safety and
  * package all operation execution relevant information together.
  */
-export class CoreOperationExecutor<T extends CoreOperation> {
+export class CoreOperationExecutor<T extends Operation> {
   readonly typeChek: CoreOperationTypeCheck<T>;
 
   readonly executor: CoreOperationSpecificExecutor<T>;
@@ -45,7 +45,7 @@ export class CoreOperationExecutor<T extends CoreOperation> {
     this.type = type;
   }
 
-  static create<T extends CoreOperation>(
+  static create<T extends Operation>(
     check: CoreOperationTypeCheck<T>,
     executor: CoreOperationSpecificExecutor<T>,
     type: string
@@ -59,7 +59,7 @@ export class CoreOperationExecutor<T extends CoreOperation> {
   execute(
     reader: CoreResourceReader,
     createNewIdentifier: CreateNewIdentifier,
-    operation: CoreOperation
+    operation: Operation
   ): CoreExecutorResult {
     if (!this.typeChek(operation)) {
       return CoreExecutorResult.createError("Invalid operation type.");

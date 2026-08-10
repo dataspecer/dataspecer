@@ -6,7 +6,7 @@ import { CONTROLLED_VOCABULARY_TYPE } from "../concepts/controlled-vocabulary.ts
 
 // Create vocabulary
 
-const CREATE_VOCABULARY_OPERATION = "create-vocabulary" as const;
+const CREATE_VOCABULARY_OPERATION = "https://schemas.dataspecer.com/controlled-vocabulary-model/operations/create-vocabulary" as const;
 
 export interface CreateVocabularyOperation extends Operation {
   type: typeof CREATE_VOCABULARY_OPERATION;
@@ -30,7 +30,7 @@ export function createVocabulary(entity: Partial<Omit<ControlledVocabulary, "typ
 
 // Modify vocabulary
 
-const MODIFY_VOCABULARY_OPERATION = "modify-vocabulary" as const;
+const MODIFY_VOCABULARY_OPERATION = "https://schemas.dataspecer.com/controlled-vocabulary-model/operations/update-vocabulary" as const;
 
 export interface ModifyVocabularyOperation extends Operation {
   type: typeof MODIFY_VOCABULARY_OPERATION;
@@ -56,7 +56,7 @@ export function modifyVocabulary(
 
 // Delete vocabulary
 
-const DELETE_VOCABULARY_OPERATION = "delete-vocabulary" as const;
+const DELETE_VOCABULARY_OPERATION = "https://schemas.dataspecer.com/controlled-vocabulary-model/operations/delete-vocabulary" as const;
 
 export interface DeleteVocabularyOperation extends Operation {
   type: typeof DELETE_VOCABULARY_OPERATION;

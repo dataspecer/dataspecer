@@ -5,14 +5,15 @@ import multer from "multer";
 import configuration from "./configuration.ts";
 import { Migrate } from "./migrations/migrate.ts";
 import { LocalStoreModel } from "./models/local-store-model.ts";
+import { ModelRepository } from "./models/model-repository.ts";
 import { ResourceModel } from "./models/resource-model.ts";
+import { TransactionModel } from "./models/transaction-model.ts";
 import { getDefaultConfiguration } from "./routes/configuration.ts";
 import { getLightweightOwlFromSimplified } from "./routes/experimental.ts";
 import { getSingleFile, getZip } from "./routes/generate.ts";
 import { exportPackageResource, importPackageResource } from "./routes/export-import-raw.ts";
 import { importResource, reloadResource } from "./routes/import.ts";
 import {
-  copyRecursively,
   createPackageResource,
   createResource,
   deleteBlob,
@@ -27,14 +28,16 @@ import {
 import { getSimplifiedSemanticModel, setSimplifiedSemanticModel } from "./routes/simplified-semantic-model.ts";
 import { getSystemData } from "./routes/system.ts";
 import { useStaticSpaHandler } from "./static.ts";
-import { migratePR419 } from "./tools/migrate-pr419.ts";
 import { newApplicationProfile } from "./routes/new.ts";
+import { applyTransactions, deleteEvolutionBranch, getTransactionsDiff, listBranches } from "./routes/transaction.ts";
 
 // Create application models
 
-export const storeModel = new LocalStoreModel("./database/stores");
+const storeModel = new LocalStoreModel("./database/stores");
 export const prismaClient = new PrismaClient();
-export const resourceModel = new ResourceModel(storeModel, prismaClient);
+const resourceModel = new ResourceModel(storeModel, prismaClient);
+export const transactionModel = new TransactionModel(prismaClient);
+export const modelRepository = new ModelRepository(resourceModel, transactionModel);
 const migration = new Migrate(prismaClient);
 
 let fullUrl: string;
@@ -94,7 +97,14 @@ application.delete(apiBasename + "/resources/packages", deleteResource); // same
 // Special operation to list all root packages
 application.get(apiBasename + "/resources/root-resources", getRootPackages); // ---
 
-application.post(apiBasename + "/repository/copy-recursively", copyRecursively);
+// disabled for now
+// application.post(apiBasename + "/repository/copy-recursively", copyRecursively);
+
+// Side-channel for storing operations performed on the project, see TransactionModel.
+application.post(apiBasename + "/transactions/apply", applyTransactions);
+application.get(apiBasename + "/transactions/branches", listBranches);
+application.delete(apiBasename + "/transactions/branches/:branchId", deleteEvolutionBranch);
+application.get(apiBasename + "/transactions/log/:range", getTransactionsDiff);
 
 application.post(apiBasename + "/new/application-profile", newApplicationProfile);
 
@@ -156,6 +166,9 @@ if (configuration.staticFilesPath) {
     application.get([basename + `/${subdirectoryApp}/`, basename + `/${subdirectoryApp}/{*splat}`], useStaticSpaHandler(configuration.staticFilesPath + `${subdirectoryApp}/`));
   }
 
+  application.get(basename + "/history", (_, res) => res.status(302).redirect(basename + "/history/"));
+  application.get(basename + "/history/{*splat}", useStaticSpaHandler(configuration.staticFilesPath + "history/"));
+
   application.get(basename + "{/*splat}", useStaticSpaHandler(configuration.staticFilesPath + ""));
 }
 
@@ -165,24 +178,21 @@ if (configuration.staticFilesPath) {
 
   // Command-line arguments
   if (process.argv.length > 2) {
-    // Some command line arguments are present
-    if (process.argv[2] === "migrate-pr419") {
-      await migratePR419();
-      process.exit(0);
-    } else {
+    // if (process.argv[2] === "...") {
+      //   process.exit(0);
+    // }
       console.error("Unknown command line arguments.");
       process.exit(0);
-    }
-  } else {
+      } else {
     // Create local root
-    if (!(await resourceModel.getResource(configuration.localRootIri))) {
+    if (!(await modelRepository.getResource(configuration.localRootIri))) {
       console.log("There is no default root package. Creating one...");
-      await resourceModel.createPackage(null, configuration.localRootIri, configuration.localRootMetadata);
+      await modelRepository.createPackage(null, configuration.localRootIri, configuration.localRootMetadata);
     }
     // Create root models for the common use and for the v1 adapter.
-    if (!(await resourceModel.getResource(configuration.v1RootIri))) {
+    if (!(await modelRepository.getResource(configuration.v1RootIri))) {
       console.log("There is no root package for data specifications from v1 dataspecer. Creating one...");
-      await resourceModel.createPackage(null, configuration.v1RootIri, configuration.v1RootMetadata);
+      await modelRepository.createPackage(null, configuration.v1RootIri, configuration.v1RootMetadata);
     }
 
     application.listen(Number(configuration.port), () => {

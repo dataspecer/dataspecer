@@ -1,4 +1,3 @@
-import { LocalEntityWrapped } from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
 import { ConceptualModel } from "@dataspecer/core/conceptual-model";
 import { assertFailed, assertNot, createStringSelector, LanguageString } from "@dataspecer/core/core";
 import { DataSpecificationConfiguration, DataSpecificationConfigurator, DefaultDataSpecificationConfiguration } from "@dataspecer/core/data-specification/configuration";
@@ -11,6 +10,7 @@ import { DefaultJsonConfiguration, JsonConfiguration, JsonConfigurator } from ".
 import { MAIN_JSON_PARTIAL } from "../documentation/configuration.ts";
 import { createJsonSchemaViewModel } from "../documentation/view-adapter.ts";
 import { structureModelAddJsonProperties } from "../json-structure-model/add-json-properties.ts";
+import { getAggregatedSemanticModel } from "../semantic-model.ts";
 import { structureModelAddIdAndTypeProperties } from "./json-id-transformations.ts";
 import { structureModelToJsonSchema } from "./json-schema-model-adapter.ts";
 import { JsonSchema } from "./json-schema-model.ts";
@@ -83,9 +83,8 @@ export class JsonSchemaGenerator implements ArtefactGenerator {
     structureModel = structureModelAddDefaultValues(structureModel, globalConfiguration);
     structureModel = shortenByIriPrefixes(mergedConceptualModel, structureModel);
 
-    // Semantic model from aggregator
-    // @ts-ignore
-    const semanticModel = specification.semanticModel.getAggregatedEntities() as Record<string, LocalEntityWrapped>;
+    // Semantic model from aggregators
+    const semanticModel = getAggregatedSemanticModel(specification);
 
     if (!skipIdAndTypeProperties) {
       structureModel = structureModelAddIdAndTypeProperties(structureModel, configuration, semanticModel);

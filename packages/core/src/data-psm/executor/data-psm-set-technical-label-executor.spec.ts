@@ -9,7 +9,7 @@ import * as PSM from "../data-psm-vocabulary.ts";
 
 test("Update data PSM resource technical label.", async () => {
   const operation = new DataPsmSetTechnicalLabel();
-  operation.dataPsmResource = "http://class";
+  operation.entityId = "http://class";
   operation.dataPsmTechnicalLabel = "technical";
 
   const before = {

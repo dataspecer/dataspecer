@@ -54,17 +54,17 @@ export class ReplaceStructuralClassWithReference implements ComplexOperation {
 
     if (DataPsmOr.is(owningEntity)) {
       const remove = new DataPsmUnsetChoice();
-      remove.dataPsmOr = this.owningEntityId;
+      remove.entityId = this.owningEntityId;
       remove.dataPsmChoice = this.structuralClassId;
       this.store.applyOperation(dataPsmSchema, remove);
 
       const add = new DataPsmSetChoice();
-      add.dataPsmOr = this.owningEntityId;
+      add.entityId = this.owningEntityId;
       add.dataPsmChoice = reference;
       this.store.applyOperation(dataPsmSchema, add);
     } else if (DataPsmAssociationEnd.is(owningEntity)) {
       const dataPsmSetPart = new DataPsmSetPart();
-      dataPsmSetPart.dataPsmAssociationEnd = this.structuralClassId;
+      dataPsmSetPart.entityId = this.structuralClassId;
       dataPsmSetPart.dataPsmPart = reference;
       this.store.applyOperation(dataPsmSchema, dataPsmSetPart);
     }
@@ -75,7 +75,7 @@ export class ReplaceStructuralClassWithReference implements ComplexOperation {
       const oldClassSchema = this.store.getSchemaForResource(oldClass) as string;
 
       const dataPsmDeleteClass = new DataPsmDeleteClass();
-      dataPsmDeleteClass.dataPsmClass = oldClass;
+      dataPsmDeleteClass.entityId = oldClass;
       this.store.applyOperation(oldClassSchema, dataPsmDeleteClass);
     }
   }

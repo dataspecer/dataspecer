@@ -10,7 +10,7 @@ import * as PSM from "../data-psm-vocabulary.ts";
 test("Delete data PSM attribute.", async () => {
   const operation = new DataPsmDeleteAttribute();
   operation.dataPsmOwner = "http://class";
-  operation.dataPsmAttribute = "http://attribute";
+  operation.entityId = "http://attribute";
 
   const before = {
     "http://schema": {

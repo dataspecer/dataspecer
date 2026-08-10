@@ -1,5 +1,5 @@
 import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
-import { BackendPackageService, type PackageService } from "@dataspecer/core-v2/project";
+import { BackendPackageService } from "@dataspecer/core-v2/project";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import { createAsyncQueryableModel } from "./async-queryable-model.ts";

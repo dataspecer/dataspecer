@@ -10,7 +10,7 @@ export function executeDataPsmSetGmlTypeXmlExtension(
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmSetGmlTypeXmlExtension
 ): CoreExecutorResult {
-  const resource = reader.readResource(operation.dataPsmProperty) as DataPsmXmlPropertyExtension;
+  const resource = reader.readResource(operation.entityId) as DataPsmXmlPropertyExtension;
   if (resource == null || (!DataPsmAttribute.is(resource) && !DataPsmAssociationEnd.is(resource))) {
     return DataPsmExecutorResultFactory.invalidType(
       resource,
