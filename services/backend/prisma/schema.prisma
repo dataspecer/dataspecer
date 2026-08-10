@@ -58,76 +58,6 @@ model Resource {
   evolutionBranches Branch[] @relation("BranchResource")
 }
 
-
-// These tables are preserved for migration purposes.
-
-// Represents a data specification with additional metadata needed for the
-// application to work.
-model DataSpecification {
-  // ID is a part of the final IRI of the data specification.
-  id        String @id
-  // Iri of the pim schema.
-  pimSchema String @unique
-
-  importsDataSpecifications     DataSpecification[] @relation("DataSpecificationReuse")
-  isImportedByDataSpecification DataSpecification[] @relation("DataSpecificationReuse")
-
-  // List of DataStructures that belongs to this specification
-  dataStructures DataStructure[]
-
-  // Assigns a store id for given PIM schema.
-  // Currently every PIM and PSM schemas has its own store managed by the backand.
-  storeId String @unique
-
-  // Tags as means of categorization
-  // JSON array of strings
-  tags String @default("[]")
-
-  // User defined data specification object
-  // JSON serialized object
-  artifactsConfiguration String @default("[]")
-
-  cimAdapters String @default("[]")
-
-  // Type of data specification.
-  type String @default("http://dataspecer.com/vocabularies/data-specification/documentation")
-}
-
-// Data structure represents single Data PSM schema with its entities. It
-// belongs to DataSpecification.
-model DataStructure {
-  id      String @id
-  // Assigns a store id for the given PSM schema.
-  // Currently every PIM and PSM schemas has its own store managed by the backand.
-  storeId String
-
-  psmSchema String @unique
-
-  // List of artifacts that should be generated with from the schema.
-  // Due to limitations of SQLite, we can't use array here, therefore the list
-  // is a comma separated string.
-  //artifacts String
-
-  belongsToDataSpecification   DataSpecification? @relation(fields: [belongsToDataSpecificationId], references: [id])
-  belongsToDataSpecificationId String?
-}
-
-model Package {
-  // Internal Package Id
-  id Int @id @default(autoincrement())
-
-  // Parent Package Id, if any
-  parentPackageId Int?
-
-  // Chunk of puclic ID that is composed of parent package id and this package id...
-  iriChunk String
-
-  // Structured pakcage metadata
-  metadata String @default("{}")
-
-  @@unique([parentPackageId, iriChunk], name: "unique_chunk")
-}
-
 model system {
   key String @id
   value String
@@ -217,9 +147,11 @@ model Branch {
   projectId Int
   project   Resource @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  /* The transaction this branch currently points to. Null for a newly created empty branch. */
-  transactionId Int?
-  transaction   Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+  /* The transaction this branch currently points to, i.e. the tip of its
+     history. A branch always has one - a project with no transactions yet
+     simply has no branches. */
+  transactionId Int
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Restrict)
 
   /* The resource that this branch tracks pending evolution updates for. Only
      set for unnamed, independent evolution branches created by reload. */

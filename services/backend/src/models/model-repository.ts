@@ -579,9 +579,7 @@ export class ModelRepository implements ModelRepositoryType {
       return [{ modelId, previousEntities, nextEntities, isBlob }];
     });
 
-    const branchId = await this.transactionModel.getOrCreateEvolutionBranch(projectIri, resourceIri);
-    await this.transactionModel.createTransactions(projectIri, transactionsWithEvents, branchId);
-    return branchId;
+    return await this.transactionModel.createEvolutionBranch(projectIri, resourceIri, transactionsWithEvents);
   }
 
   /**
