@@ -13,6 +13,7 @@ import { ClassProfileDialogState } from "./edit-class-profile-dialog-state";
 import { useClassProfileDialogController } from "./edit-class-profile-dialog-controller";
 import { InputText } from "../components/input-text";
 import { SelectBuildIn } from "../components/select-build-in";
+import { SelectControlledVocabulariesView } from "../controlled-vocabularies";
 
 export const EditClassProfileDialog = (props: DialogProps<ClassProfileDialogState>) => {
   const controller = useClassProfileDialogController(props);
@@ -138,6 +139,15 @@ export const EditClassProfileDialog = (props: DialogProps<ClassProfileDialogStat
             items={state.availableRoles}
             value={state.role}
             onChange={controller.setRole}
+          />
+        </DialogDetailRow>
+        <DialogDetailRow detailKey={t("modify-class-profile-dialog.controlled-vocabularies")}>
+          <SelectControlledVocabulariesView
+            state={state.controlledVocabularies}
+            setState={next => props.changeState(prev => ({
+              ...prev,
+              controlledVocabularies: next(prev.controlledVocabularies),
+            }))}
           />
         </DialogDetailRow>
       </div>
