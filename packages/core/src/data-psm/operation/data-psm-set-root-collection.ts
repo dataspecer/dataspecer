@@ -1,21 +1,25 @@
-import { CoreOperation, CoreResource } from "../../core/index.ts";
+import { generateOperationId, type Operation } from "../../operation/index.ts";
 import * as PSM from "../data-psm-vocabulary.ts";
 
-export class DataPsmSetRootCollection extends CoreOperation {
+export class DataPsmSetRootCollection implements Operation {
   static readonly TYPE = PSM.SET_ROOT_COLLECTION;
+
+  id: string;
+
+  type: string;
 
   entityId: string | null = null;
 
-  dataPsmCollectionTechnicalLabel: string | null;
+  dataPsmCollectionTechnicalLabel: string | null = null;
 
-  dataPsmEnforceCollection: boolean;
+  dataPsmEnforceCollection: boolean = false;
 
   constructor() {
-    super();
-    this.types.push(DataPsmSetRootCollection.TYPE);
+    this.id = generateOperationId();
+    this.type = DataPsmSetRootCollection.TYPE;
   }
 
-  static is(resource: CoreResource | null): resource is DataPsmSetRootCollection {
-    return resource?.types.includes(DataPsmSetRootCollection.TYPE);
+  static is(operation: Operation | null | undefined): operation is DataPsmSetRootCollection {
+    return operation?.type === DataPsmSetRootCollection.TYPE;
   }
 }

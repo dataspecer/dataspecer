@@ -9,7 +9,7 @@ import * as PSM from "../data-psm-vocabulary.ts";
 
 test("Delete data PSM class.", async () => {
   const operation = new DataPsmDeleteClass();
-  operation.dataPsmClass = "http://class";
+  operation.entityId = "http://class";
 
   const before = {
     "http://schema": {

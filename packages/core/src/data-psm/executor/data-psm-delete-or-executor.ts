@@ -18,8 +18,8 @@ export function executeDataPsmDeleteOr(
       [],
       [{
         ...schema,
-        dataPsmParts: removeValue(operation.dataPsmOr, schema.dataPsmParts),
+        dataPsmParts: removeValue(operation.entityId, schema.dataPsmParts),
       } satisfies typeof schema as typeof schema],
-      [operation.dataPsmOr]
+      [operation.entityId]
   );
 }

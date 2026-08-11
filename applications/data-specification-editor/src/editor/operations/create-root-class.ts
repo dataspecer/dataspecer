@@ -63,14 +63,14 @@ export class CreateRootClass implements ComplexOperation {
 
     if (this.schemaHumanLabel) {
       const dataPsmSetHumanLabel = new DataPsmSetHumanLabel();
-      dataPsmSetHumanLabel.dataPsmResource = this.dataPsmSchemaIri;
+      dataPsmSetHumanLabel.entityId = this.dataPsmSchemaIri;
       dataPsmSetHumanLabel.dataPsmHumanLabel = this.schemaHumanLabel;
       this.store.applyOperation(this.dataPsmSchemaIri, dataPsmSetHumanLabel);
     }
 
     if (this.schemaHumanDescription) {
       const dataPsmSetHumanDescription = new DataPsmSetHumanDescription();
-      dataPsmSetHumanDescription.dataPsmResource = this.dataPsmSchemaIri;
+      dataPsmSetHumanDescription.entityId = this.dataPsmSchemaIri;
       dataPsmSetHumanDescription.dataPsmHumanDescription = this.schemaHumanDescription;
       this.store.applyOperation(this.dataPsmSchemaIri, dataPsmSetHumanDescription);
     }

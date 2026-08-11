@@ -1,21 +1,23 @@
-import {CoreOperation, CoreResource} from "../../../core/index.ts";
+import { generateOperationId, type Operation } from "../../../operation/index.ts";
 import {SET_IS_XML_ATTRIBUTE} from "../vocabulary.ts";
 
-export class DataPsmSetIsXmlAttribute extends CoreOperation {
+export class DataPsmSetIsXmlAttribute implements Operation {
   static readonly TYPE = SET_IS_XML_ATTRIBUTE;
 
-  dataPsmProperty: string | null = null;
+  id: string;
+
+  type: string;
+
+  entityId: string | null = null;
 
   isAttribute: boolean = true;
 
   constructor() {
-    super();
-    this.types.push(DataPsmSetIsXmlAttribute.TYPE);
+    this.id = generateOperationId();
+    this.type = DataPsmSetIsXmlAttribute.TYPE;
   }
 
-  static is(
-    resource: CoreResource | null
-  ): resource is DataPsmSetIsXmlAttribute {
-    return resource?.types.includes(DataPsmSetIsXmlAttribute.TYPE);
+  static is(operation: Operation | null | undefined): operation is DataPsmSetIsXmlAttribute {
+    return operation?.type === DataPsmSetIsXmlAttribute.TYPE;
   }
 }

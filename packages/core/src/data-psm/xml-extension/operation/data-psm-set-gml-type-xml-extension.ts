@@ -1,21 +1,23 @@
-import { CoreOperation, CoreResource } from "../../../core/index.ts";
+import { generateOperationId, type Operation } from "../../../operation/index.ts";
 import { SET_GML_TYPE } from "../vocabulary.ts";
 
-export class DataPsmSetGmlTypeXmlExtension extends CoreOperation {
+export class DataPsmSetGmlTypeXmlExtension implements Operation {
   static readonly TYPE = SET_GML_TYPE;
 
-  dataPsmProperty: string | null = null;
+  id: string;
+
+  type: string;
+
+  entityId: string | null = null;
 
   gmlType: string | null = null;
 
   constructor() {
-    super();
-    this.types.push(DataPsmSetGmlTypeXmlExtension.TYPE);
+    this.id = generateOperationId();
+    this.type = DataPsmSetGmlTypeXmlExtension.TYPE;
   }
 
-  static is(
-    resource: CoreResource | null
-  ): resource is DataPsmSetGmlTypeXmlExtension {
-    return resource?.types.includes(DataPsmSetGmlTypeXmlExtension.TYPE);
+  static is(operation: Operation | null | undefined): operation is DataPsmSetGmlTypeXmlExtension {
+    return operation?.type === DataPsmSetGmlTypeXmlExtension.TYPE;
   }
 }

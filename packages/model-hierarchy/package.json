@@ -14,7 +14,6 @@
     "@dataspecer/core": "*",
     "@dataspecer/core-v2": "*",
     "@dataspecer/model-store": "*",
-    "@dataspecer/project-model": "*",
     "@dataspecer/specification": "*"
   },
   "devDependencies": {

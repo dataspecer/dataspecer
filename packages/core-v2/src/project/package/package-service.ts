@@ -1,5 +1,6 @@
 import { EntityModel } from "../../entity-model/index.ts";
 import { VisualModel } from "@dataspecer/visual-model";
+import type { Transaction } from "@dataspecer/core/operation";
 import { Package, ResourceEditable, type BaseResource } from "../resource/resource.ts";
 
 /**
@@ -46,6 +47,14 @@ export interface PackageService extends ResourceService {
      * its sub-resources are removed as well.
      */
     deleteResource(iri: string): Promise<void>;
+
+    /**
+     * Uploads transactions (in order) to the backend, which records them in the
+     * operation history and applies their operations to the stored models. This
+     * is the actual write of the models and thus throws when the backend
+     * rejects it.
+     */
+    applyTransactions(projectId: string, transactions: Transaction[]): Promise<void>;
 }
 
 export interface SemanticModelPackageService extends PackageService {

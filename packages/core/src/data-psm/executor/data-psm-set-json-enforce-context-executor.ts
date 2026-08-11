@@ -8,7 +8,7 @@ export function executeDataPsmSetJsonEnforceContext(
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmSetJsonEnforceContext,
 ): CoreExecutorResult {
-  const resource = reader.readResource(operation.dataPsmEntity);
+  const resource = reader.readResource(operation.entityId);
   if (resource == null || !DataPsmSchema.is(resource)) {
     return DataPsmExecutorResultFactory.invalidType(resource, "data-psm schema");
   }

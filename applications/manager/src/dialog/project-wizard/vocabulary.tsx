@@ -3,14 +3,29 @@ import { LoadingButton } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { createModelInstructions, getCMELink } from "@/known-models";
+import { getCMELink } from "@/known-models";
 import { BetterModalProps } from "@/lib/better-modal";
-import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
+import { packageService } from "@/package";
+import { LOCAL_SEMANTIC_MODEL, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
+import { generateEntityId, type Entity } from "@dataspecer/core/entity-model";
+import { createSetEntityOperation, generateOperationId, type OperationInModel } from "@dataspecer/core/operation";
+import { createCreateModelOperation, createCreateProjectOperation } from "@dataspecer/core/project-model";
+import { createSetLabelOperation } from "@dataspecer/visual-model";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+/**
+ * Model id the backend uses to address operations that change the project
+ * structure itself (creating/removing models), as opposed to a specific
+ * model's own content.
+ */
+const PROJECT_MODEL_ID = "_project_model";
 
-export const Vocabulary = ({ isOpen, resolve, iri }: { iri: string } & BetterModalProps<boolean>) => {
+/**
+ * Creates a new project for a vocabulary with a semantic model and a view.
+ * The location of a project is fixed, hence the parent package is not used.
+ */
+export const Vocabulary = ({ isOpen, resolve }: { iri: string } & BetterModalProps<boolean>) => {
   const {t, i18n} = useTranslation();
   const [loading, setLoading] = useState(false);
 
@@ -21,34 +36,49 @@ export const Vocabulary = ({ isOpen, resolve, iri }: { iri: string } & BetterMod
 
     try {
       const name = (event.target as any)["name"].value;
+      const description = (event.target as any)["description"].value;
+      const baseIri = (event.target as any)["base-url"].value;
 
-      // Create package
-      const packageIri = await createModelInstructions[LOCAL_PACKAGE].createHook({
-        parentIri: iri,
-        label: {[i18n.language]: name},
-        description: {[i18n.language]: (event.target as any)["description"].value},
-        //documentBaseUrl: (event.target as any)["documentation-url"].value ?? undefined,
-      }) as string;
+      //
 
-      // Create semantic model
-      await createModelInstructions[LOCAL_SEMANTIC_MODEL].createHook({
-        parentIri: packageIri,
-        label: {en: name},
-        description: {en: "Semantic model for the vocabulary"},
-        baseIri: (event.target as any)["base-url"].value,
-        //documentBaseUrl: (event.target as any)["documentation-url"].value ?? undefined,
-        modelAlias: name,
-      });
+      const projectId = generateEntityId();
 
-      // Create view model
-      const viewIri = await createModelInstructions[VISUAL_MODEL].createHook({
-        parentIri: packageIri,
-        label: {en: "Main view"},
-        description: {en: "View model for the vocabulary"},
-      }) as string;
+      const createProject = createCreateProjectOperation(projectId);
+      createProject.label = {[i18n.language]: name};
+      createProject.description = {[i18n.language]: description};
+
+      const createSemanticModel = createCreateModelOperation(projectId, LOCAL_SEMANTIC_MODEL);
+      createSemanticModel.label = {en: name};
+      createSemanticModel.description = {en: "Semantic model for the vocabulary"};
+
+      const createVisualModel = createCreateModelOperation(projectId, VISUAL_MODEL);
+      createVisualModel.label = {en: "Main view"};
+      createVisualModel.description = {en: "View model for the vocabulary"};
+
+      // The models and their initial content are created by a single transaction.
+      const operations: OperationInModel[] = [
+        { modelId: PROJECT_MODEL_ID, operation: createProject },
+        { modelId: PROJECT_MODEL_ID, operation: createSemanticModel },
+        { modelId: PROJECT_MODEL_ID, operation: createVisualModel },
+        {
+          modelId: createSemanticModel.modelId,
+          operation: createSetEntityOperation({
+            id: createSemanticModel.modelId,
+            type: [LOCAL_SEMANTIC_MODEL],
+            modelAlias: name,
+            baseIri,
+          } as Entity),
+        },
+        {
+          modelId: createVisualModel.modelId,
+          operation: createSetLabelOperation({en: "Main view"}),
+        },
+      ];
+
+      await packageService.applyTransactions(projectId, [{ id: generateOperationId(), operations }]);
 
       // Redirect to url
-      window.location.href = getCMELink(packageIri, viewIri);
+      window.location.href = getCMELink(projectId, createVisualModel.modelId);
 
       // Never resolve as we need to redirect!
       // resolve(true);

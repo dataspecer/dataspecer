@@ -1,10 +1,14 @@
-import { CoreOperation, CoreResource } from "../../core/index.ts";
+import { generateOperationId, type Operation } from "../../operation/index.ts";
 import * as PSM from "../data-psm-vocabulary.ts";
 
-export class DataPsmSetJsonSchemaPrefixesInIriRegex extends CoreOperation {
+export class DataPsmSetJsonSchemaPrefixesInIriRegex implements Operation {
   static readonly TYPE = PSM.SET_JSON_SCHEMA_PREFIXES_IN_IRI_REGEX;
 
-  dataPsmResource: string | null = null;
+  id: string;
+
+  type: string;
+
+  entityId: string | null = null;
 
   jsonSchemaPrefixesInIriRegex: {
     usePrefixes: "ALWAYS" | "NEVER" | "OPTIONAL";
@@ -12,11 +16,11 @@ export class DataPsmSetJsonSchemaPrefixesInIriRegex extends CoreOperation {
   } | null = null;
 
   constructor() {
-    super();
-    this.types.push(DataPsmSetJsonSchemaPrefixesInIriRegex.TYPE);
+    this.id = generateOperationId();
+    this.type = DataPsmSetJsonSchemaPrefixesInIriRegex.TYPE;
   }
 
-  static is(resource: CoreResource | null): resource is DataPsmSetJsonSchemaPrefixesInIriRegex {
-    return resource?.types.includes(DataPsmSetJsonSchemaPrefixesInIriRegex.TYPE);
+  static is(operation: Operation | null | undefined): operation is DataPsmSetJsonSchemaPrefixesInIriRegex {
+    return operation?.type === DataPsmSetJsonSchemaPrefixesInIriRegex.TYPE;
   }
 }

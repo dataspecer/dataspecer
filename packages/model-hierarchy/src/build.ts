@@ -1,7 +1,7 @@
 import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
 import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
-import type { ProjectModelEntity, PackageEntity } from "@dataspecer/project-model";
+import type { ProjectModelEntity, PackageEntity } from "@dataspecer/core/project-model";
 import type { ModelCompositionConfiguration, ModelCompositionConfigurationApplicationProfile, ModelCompositionConfigurationMerge } from "@dataspecer/specification/model-hierarchy";
 import { MODEL_HIERARCHY_APPLICATION_PROFILE, MODEL_HIERARCHY_VOCABULARY, type ModelHierarchyEntity } from "./entities.ts";
 import { QUERYABLE_MODEL } from "@dataspecer/core-v2/model/known-models";
@@ -255,6 +255,15 @@ class ModelHierarchyBuilder {
     return resolved;
   }
 
+  /**
+   * Whether the model belongs to the project being worked on, as opposed to a
+   * project it reuses. Only models of the own project can be written to from
+   * here.
+   */
+  private isOwnModel(modelEntity: ProjectModelEntity): boolean {
+    return modelEntity.projectId === this.mainProjectModelId;
+  }
+
   private emitVocabulary(modelId: ModelIdentifier): void {
     if (this.result[modelId]) {
       return;
@@ -272,7 +281,8 @@ class ModelHierarchyBuilder {
       type: [MODEL_HIERARCHY_VOCABULARY],
       modelType: modelEntity.modelType,
       label: modelEntity.label,
-      writable: isAlwaysReadOnlyModelType(modelEntity.modelType) ? false : this.rootChildIds.has(modelId),
+      projectId: modelEntity.projectId,
+      writable: isAlwaysReadOnlyModelType(modelEntity.modelType) ? false : this.rootChildIds.has(modelId) && this.isOwnModel(modelEntity),
       imports: [],
       passThrough: false,
     };
@@ -295,7 +305,8 @@ class ModelHierarchyBuilder {
       type: [MODEL_HIERARCHY_APPLICATION_PROFILE],
       modelType: modelEntity.modelType,
       label: modelEntity.label,
-      writable,
+      projectId: modelEntity.projectId,
+      writable: writable && this.isOwnModel(modelEntity),
       profiles,
       passThrough,
     };

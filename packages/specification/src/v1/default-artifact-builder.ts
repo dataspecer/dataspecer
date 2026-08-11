@@ -9,7 +9,7 @@ import { GenerateReport } from "./generate-report.ts";
 import { StreamDictionary } from "@dataspecer/core/io/stream/stream-dictionary";
 import { ArtifactConfigurator } from "./artifact-configurator.ts";
 import { getArtefactGenerators, getDefaultConfigurators } from "./artefact-generators.ts";
-import { generateSpecification } from "../specification.ts";
+import { generateSpecification, type GenerateSpecificationContext } from "../specification.ts";
 import { DataSpecification } from "../specification/model.ts";
 
 /**
@@ -30,6 +30,13 @@ export class DefaultArtifactBuilder {
      * Whether to generate a single specification only. This will affect the file structure.
      */
     singleSpecificationOnly = false;
+
+    /**
+     * Transaction history of the project, used to publish the operations
+     * (chunked by the versions marked in the history) as an LDES stream. See
+     * {@link GenerateSpecificationContext.history}.
+     */
+    history: GenerateSpecificationContext["history"];
 
     public constructor(
         store: CoreResourceReader,
@@ -147,6 +154,7 @@ export class DefaultArtifactBuilder {
                 {
                     models: this.models,
                     output: zip,
+                    history: this.history,
 
                     fetch: this.httpFetch,
 
