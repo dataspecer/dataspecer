@@ -45,7 +45,7 @@ export function openEditClassProfileDialogAction(
 
   const initialState = createEditClassProfileDialogState(
     visualModel, options.language, model, rawEntity, graph.models, tracker,
-    labelResolver);
+    labelResolver, graph);
 
   const onConfirm = (state: ClassProfileDialogState) => {
 

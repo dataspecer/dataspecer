@@ -142,7 +142,7 @@ async function createDefaultClassProfile(
 
   const profileClassState = createNewProfileClassDialogState(
     visualModel, language, [classOrClassProfileToBeProfiled.id], tracker,
-    labelResolver);
+    labelResolver, graph);
   const createdClassProfile = createClassProfile(profileClassState, cmeExecutor);
   if (shouldBeAddedToVisualModel) {
     if (isWritableVisualModel(visualModel)) {

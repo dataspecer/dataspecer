@@ -70,7 +70,8 @@ export function openCreateProfileDialogAction(
   //
   if (isSemanticModelClass(entity) || isSemanticModelClassProfile(entity)) {
     const initialState = createNewProfileClassDialogState(
-      visualModel, options.language, [entity.id], tracker, labelResolver);
+      visualModel, options.language, [entity.id], tracker, labelResolver,
+      graph);
     const onConfirm = (state: ClassProfileDialogState) => {
 
       const result = cmeExecutor.createClassProfile(
