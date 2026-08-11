@@ -1,4 +1,4 @@
-import type { AggregateDescriptor, EntityModel } from '../types/aggregate.ts';
+import type { AggregateDescriptor, EntityModel, FieldDescriptor } from '../types/aggregate.ts';
 
 export enum DataSourceKind {
   Rdf = 'rdf',
@@ -7,16 +7,24 @@ export enum DataSourceKind {
   Other = 'other',
 }
 
-export interface Order {
-  property: string;
-  direction: 'asc' | 'desc';
-}
+export type SortDirection = 'asc' | 'desc';
+
+export type ReadListSort =
+  | { kind: 'iri'; direction: SortDirection }
+  | { kind: 'field'; fieldPath: string; direction: SortDirection };
+
+export const DEFAULT_READ_LIST_SORT: ReadListSort = { kind: 'iri', direction: 'asc' };
 
 export interface ReadListArgs<TModel extends EntityModel> {
   aggregate: AggregateDescriptor<TModel>;
-  page?: number;
-  pageSize?: number;
-  orderBy?: Order;
+  page: number;
+  pageSize: number;
+  sort: ReadListSort;
+}
+
+export interface ReadListResult<TModel extends EntityModel> {
+  items: TModel[];
+  total: number;
 }
 
 export interface ReadDetailArgs<TModel extends EntityModel> {
@@ -50,7 +58,7 @@ export interface ReferenceOption {
 
 export interface DataSource {
   kind: DataSourceKind;
-  readList<TModel extends EntityModel>(args: ReadListArgs<TModel>): Promise<TModel[]>;
+  readList<TModel extends EntityModel>(args: ReadListArgs<TModel>): Promise<ReadListResult<TModel>>;
   readDetail<TModel extends EntityModel>(args: ReadDetailArgs<TModel>): Promise<TModel | null>;
   create<TModel extends EntityModel>(args: MutationArgs<TModel>): Promise<TModel>;
   update<TModel extends EntityModel>(args: IdentifiedMutationArgs<TModel>): Promise<TModel>;
@@ -60,4 +68,12 @@ export interface DataSource {
    * Optional because only sources that can answer a type query provide it.
    */
   listByType?(classIri: string): Promise<ReferenceOption[]>;
+}
+
+export function isListFieldSortable(
+  field: FieldDescriptor
+): field is FieldDescriptor & { propertyIri: string } {
+  return (
+    field.kind === 'primitive' && !field.many && !field.isReverse && Boolean(field.propertyIri)
+  );
 }

@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import {
   createEntityDraft,
   hydrateCompositionDraft,
-  type DraftEntity,
 } from '../assets/generated-app/static/src/shared/forms/form-draft.ts';
 import type { DataSource } from '../assets/generated-app/static/src/shared/datasource/data-source.ts';
 import { rootEntityTarget } from '../assets/generated-app/static/src/shared/forms/entity-target.ts';
@@ -14,10 +13,12 @@ import {
   validateModel,
 } from '../assets/generated-app/static/src/shared/forms/form-model.ts';
 import { ValidationIssueCode } from '../assets/generated-app/static/src/shared/operations/operation-result.ts';
-import type {
-  AggregateDescriptor,
-  AggregateDescriptorMap,
-  FieldDescriptor,
+import {
+  fieldValues,
+  type AggregateDescriptor,
+  type AggregateDescriptorMap,
+  type EntityRecord,
+  type FieldDescriptor,
 } from '../assets/generated-app/static/src/shared/types/aggregate.ts';
 
 const nameField: FieldDescriptor = {
@@ -91,16 +92,21 @@ describe('generated recursive form model', () => {
     expect(toInputValue('datetime', value)).toBe('2026-07-27T12:34');
   });
 
+  it('accepts an absent repeating value but rejects a present scalar', () => {
+    expect(fieldValues(undefined, tagsField)).toEqual([]);
+    expect(() => fieldValues('tag', tagsField)).toThrow('Tags must contain a list of values.');
+  });
+
   it('creates the minimum number of required composition children', () => {
     const draft = createEntityDraft(rootEntityTarget(rootAggregate), aggregateRegistry, 'urn:test');
-    const children = draft.children as DraftEntity[];
+    const children = draft.children as EntityRecord[];
 
     expect(children).toHaveLength(2);
     expect(children.every((child) => child.id?.startsWith('urn:test/'))).toBe(true);
   });
 
   it('validates exact cardinality and nested fields with indexed paths', () => {
-    const model: DraftEntity = {
+    const model: EntityRecord = {
       id: 'urn:root',
       tags: ['same', 'same'],
       children: [
@@ -121,7 +127,7 @@ describe('generated recursive form model', () => {
   });
 
   it('hydrates cross-aggregate composition references without changing loaded values', async () => {
-    const loadedChild: DraftEntity = { id: 'urn:child:1', name: 'Loaded child' };
+    const loadedChild: EntityRecord = { id: 'urn:child:1', name: 'Loaded child' };
     const readIds: string[] = [];
     const dataSource = {
       readDetail: ({ id }: { id: string }) => {
@@ -129,7 +135,7 @@ describe('generated recursive form model', () => {
         return Promise.resolve(loadedChild);
       },
     } as unknown as DataSource;
-    const source: DraftEntity = {
+    const source: EntityRecord = {
       id: 'urn:root',
       children: [{ id: 'urn:child:1' }],
     };
@@ -140,12 +146,12 @@ describe('generated recursive form model', () => {
       aggregateRegistry,
       dataSource
     );
-    const child = (hydrated.children as DraftEntity[])[0];
+    const child = (hydrated.children as EntityRecord[])[0];
     child.name = 'Edited';
 
     expect(readIds).toEqual(['urn:child:1']);
     expect(child).toMatchObject({ id: 'urn:child:1', name: 'Edited' });
     expect(loadedChild.name).toBe('Loaded child');
-    expect((source.children as DraftEntity[])[0]).toEqual({ id: 'urn:child:1' });
+    expect((source.children as EntityRecord[])[0]).toEqual({ id: 'urn:child:1' });
   });
 });

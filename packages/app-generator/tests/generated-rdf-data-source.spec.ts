@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  buildPageIriQuery,
   buildInverseDeleteQuery,
   buildInverseInsertQuads,
   toLdkitEntity,
@@ -10,6 +11,37 @@ import type {
   AggregateDescriptor,
   EntityModel,
 } from '../assets/generated-app/static/src/shared/types/aggregate.ts';
+
+const listAggregate: AggregateDescriptor<EntityModel> = {
+  iri: 'https://example.org/aggregate/book',
+  name: 'Book',
+  classIri: 'https://example.org/class/book',
+  fields: [
+    {
+      path: 'title',
+      propertyName: 'title',
+      label: 'Title',
+      kind: 'primitive',
+      propertyIri: 'https://example.org/property/title',
+      datatype: 'http://www.w3.org/2001/XMLSchema#string',
+      formControl: 'text',
+      many: false,
+      required: false,
+    },
+    {
+      path: 'tags',
+      propertyName: 'tags',
+      label: 'Tags',
+      kind: 'primitive',
+      propertyIri: 'https://example.org/property/tag',
+      datatype: 'http://www.w3.org/2001/XMLSchema#string',
+      formControl: 'text',
+      many: true,
+      required: false,
+    },
+  ],
+  createEmpty: () => ({}),
+};
 
 const inverseField: AggregateDescriptor<EntityModel>['fields'][number] = {
   path: 'books',
@@ -52,6 +84,47 @@ describe('generated RDF inverse relation queries', () => {
     expect(() => toSparqlNamedNode('https://example.org/> } ; DROP ALL; #', 'Test IRI')).toThrow(
       'safe absolute IRI'
     );
+  });
+
+  it('rejects inverse writes without an entity identifier', () => {
+    expect(() => buildInverseInsertQuads([inverseField], {})).toThrow(
+      'Entity IRI must be a safe absolute IRI.'
+    );
+  });
+});
+
+describe('generated RDF list queries', () => {
+  it('selects a stable page of entity IRIs', () => {
+    const query = buildPageIriQuery(listAggregate, 20, 40);
+
+    expect(query).toContain('SELECT DISTINCT ?iri');
+    expect(query).toContain('?iri a <https://example.org/class/book>');
+    expect(query).toContain('ORDER BY ASC(STR(?iri))');
+    expect(query).toContain('LIMIT 20');
+    expect(query).toContain('OFFSET 40');
+  });
+
+  it('orders scalar fields with missing values last and the IRI as a stable tie-breaker', () => {
+    const query = buildPageIriQuery(listAggregate, 20, 0, {
+      kind: 'field',
+      fieldPath: 'title',
+      direction: 'desc',
+    });
+
+    expect(query).toContain('MIN(?value) AS ?sortValue');
+    expect(query).toContain('<https://example.org/property/title> ?value');
+    expect(query).toContain('GROUP BY ?iri');
+    expect(query).toContain('ORDER BY ASC(!BOUND(?sortValue)) DESC(?sortValue) ASC(STR(?iri))');
+  });
+
+  it('rejects ordering by repeating fields', () => {
+    expect(() =>
+      buildPageIriQuery(listAggregate, 20, 0, {
+        kind: 'field',
+        fieldPath: 'tags',
+        direction: 'asc',
+      })
+    ).toThrow('cannot be used for list sorting');
   });
 });
 

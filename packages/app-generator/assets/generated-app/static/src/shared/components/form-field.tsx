@@ -1,7 +1,7 @@
 import { useId } from 'react';
 
 import type { DataSource } from '../datasource/data-source.ts';
-import type { FieldDescriptor } from '../types/aggregate.ts';
+import { fieldValues, type FieldDescriptor } from '../types/aggregate.ts';
 import {
   coerceValue,
   resolveControl,
@@ -93,7 +93,7 @@ function SingleControl(props: ControlProps) {
 function ManyControl(props: ControlProps) {
   const { field, value, dataSource, controlId, onChange } = props;
   const control = resolveControl(field);
-  const values = Array.isArray(value) ? value : [];
+  const values = fieldValues(value, field);
 
   if (control === 'reference') {
     const ids = values.flatMap((entry) => {

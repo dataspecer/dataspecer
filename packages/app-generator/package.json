@@ -28,7 +28,11 @@
     "./graph": "./lib/graph-entry.js"
   },
   "devDependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
     "@eslint/js": "^10.0.1",
+    "@mui/material": "^9.3.1",
+    "@mui/x-data-grid": "^9.6.0",
     "@types/node": "^20.19.37",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",

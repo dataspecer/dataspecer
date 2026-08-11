@@ -1,8 +1,3 @@
-/*
- * Minimal styling for the generated application. The goal is a readable, comfortable layout for
- * local testing, not a polished product design. Plain CSS, no framework.
- */
-
 :root {
     color-scheme: light;
 }
@@ -93,26 +88,9 @@ section h2 {
     background: #e2e6ec;
 }
 
-.data-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.data-table th,
-.data-table td {
-    padding: 0.5rem 0.7rem;
-    border: 1px solid #dfe3e8;
-    text-align: left;
-    vertical-align: top;
-    overflow-wrap: anywhere;
-}
-
-.data-table thead th {
-    background: #eef1f5;
-}
-
-.data-table tbody tr:nth-child(even) {
-    background: #fafbfc;
+.data-grid .actions {
+    margin: 0;
+    flex-wrap: nowrap;
 }
 
 /* Detail view: label/value rows, with nested associations indented as a collapsible tree. */

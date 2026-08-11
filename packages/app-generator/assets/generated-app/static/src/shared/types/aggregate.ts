@@ -54,3 +54,31 @@ export type AggregateDescriptorMap = Record<string, AggregateDescriptor>;
 export interface EntityModel {
   id?: string;
 }
+
+export type EntityRecord = EntityModel & Record<string, unknown>;
+
+export function fieldValues(value: unknown, field: FieldDescriptor): unknown[] {
+  if (value === null || value === undefined) {
+    return [];
+  }
+  if (field.many) {
+    if (!Array.isArray(value)) {
+      throw new Error(`${field.label} must contain a list of values.`);
+    }
+    return value;
+  }
+  return [value];
+}
+
+export function isEntityRecord(value: unknown): value is EntityRecord {
+  if (
+    value === null ||
+    typeof value !== 'object' ||
+    value instanceof Date ||
+    Array.isArray(value)
+  ) {
+    return false;
+  }
+  const id = (value as { id?: unknown }).id;
+  return id === undefined || typeof id === 'string';
+}

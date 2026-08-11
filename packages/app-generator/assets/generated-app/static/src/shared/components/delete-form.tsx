@@ -2,7 +2,11 @@ import { useEffect, useId, useState, type SubmitEvent } from 'react';
 
 import type { DataSource } from '../datasource/data-source.ts';
 import { hrefForAction, type OperationNavigationDescriptor } from '../navigation/navigation.ts';
-import { ValidationIssueCode, type ValidationIssue } from '../operations/operation-result.ts';
+import {
+  errorMessage,
+  ValidationIssueCode,
+  type ValidationIssue,
+} from '../operations/operation-result.ts';
 import { invokeOperation, type OperationStrategy } from '../operations/operation-strategy.ts';
 import type {
   AggregateDescriptor,
@@ -71,7 +75,7 @@ export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TM
           setIssues([
             {
               code: ValidationIssueCode.Error,
-              message: caught instanceof Error ? caught.message : String(caught),
+              message: errorMessage(caught),
             },
           ]);
         }
@@ -117,7 +121,7 @@ export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TM
       setIssues([
         {
           code: ValidationIssueCode.Error,
-          message: caught instanceof Error ? caught.message : String(caught),
+          message: errorMessage(caught),
         },
       ]);
     } finally {

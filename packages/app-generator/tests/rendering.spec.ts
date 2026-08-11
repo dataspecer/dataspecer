@@ -161,6 +161,12 @@ describe('renderGeneratedApp', () => {
     expect(tree.get('src/routes.tsx')).toContain('path: "/book-read-detail"');
     expect(tree.get('src/routes.tsx')).toContain('requiresEntityId: true');
     expect(tree.get('src/pages/BookReadListPage.tsx')).toContain('invokeOperation');
+    expect(tree.get('src/pages/BookReadListPage.tsx')).toContain('page: paginationModel.page + 1');
+    expect(tree.get('src/pages/BookReadListPage.tsx')).toContain(
+      'pageSize: paginationModel.pageSize'
+    );
+    expect(tree.get('src/pages/BookReadListPage.tsx')).toContain('sort,');
+    expect(tree.get('src/pages/BookReadListPage.tsx')).toContain('setTotal(result.data.total)');
     expect(tree.get('src/pages/BookReadListPage.tsx')).not.toContain('PlaceholderOperationView');
     expect(tree.get('src/pages/BookReadListPage.tsx')).not.toContain('"fieldPath": "author"');
     expect(tree.get('src/modules/book-list/model.ts')).toContain('export interface BookListModel');
@@ -168,6 +174,10 @@ describe('renderGeneratedApp', () => {
       'extends DefaultReadListStrategy<BookListModel>'
     );
     expect(tree.get('src/shared/datasource/rdf-ldkit-data-source.ts')).toContain('createLens');
+    expect(tree.get('src/shared/components/list-view.tsx')).toContain('<DataGrid');
+    expect(tree.get('src/shared/components/list-view.tsx')).toContain('paginationMode="server"');
+    expect(tree.get('src/shared/components/list-view.tsx')).toContain('sortingMode="server"');
+    expect(tree.get('package.json')).toContain('"@mui/x-data-grid": "^9.6.0"');
     expect(tree.get('src/shared/components/form-field.tsx')).toContain(
       'htmlFor={field.many ? undefined : controlId}'
     );
@@ -230,8 +240,9 @@ describe('renderGeneratedApp', () => {
     expect(tree.get('src/shared/components/list-view.tsx')).toContain('rowActions');
     expect(tree.get('src/shared/components/detail-view.tsx')).toContain('associationActions');
     expect(tree.get('src/App.tsx')).not.toContain('example-id');
+    expect(tree.get('src/App.tsx')).toContain('Page not found');
     expect(tree.get('src/shared/operations/read-detail-strategy.ts')).toContain(
-      "stringParam(ctx.params, 'id')"
+      'ctx.params.id as string'
     );
   });
 

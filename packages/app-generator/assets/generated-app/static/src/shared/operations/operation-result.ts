@@ -32,3 +32,7 @@ export type OperationResult<TData = unknown> =
       ok: false;
       issues: ValidationIssue[];
     };
+
+export function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}

@@ -1,15 +1,20 @@
 import { useEffect, useState, type SubmitEvent } from 'react';
 
 import type { DataSource } from '../datasource/data-source.ts';
-import { hydrateCompositionDraft, type DraftEntity } from '../forms/form-draft.ts';
+import { hydrateCompositionDraft } from '../forms/form-draft.ts';
 import { rootEntityTarget } from '../forms/entity-target.ts';
 import { validateModel } from '../forms/form-model.ts';
 import { hrefForAction, type OperationNavigationDescriptor } from '../navigation/navigation.ts';
-import { ValidationIssueCode, type ValidationIssue } from '../operations/operation-result.ts';
+import {
+  errorMessage,
+  ValidationIssueCode,
+  type ValidationIssue,
+} from '../operations/operation-result.ts';
 import { invokeOperation, type OperationStrategy } from '../operations/operation-strategy.ts';
 import type {
   AggregateDescriptor,
   AggregateDescriptorMap,
+  EntityRecord,
   EntityModel,
 } from '../types/aggregate.ts';
 import { EntityFormEditor } from './entity-form-editor.tsx';
@@ -36,8 +41,8 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
     instanceBaseIri,
     id,
   } = props;
-  const [model, setModel] = useState<DraftEntity | null>(null);
-  const [originalModel, setOriginalModel] = useState<DraftEntity | null>(null);
+  const [model, setModel] = useState<EntityRecord | null>(null);
+  const [originalModel, setOriginalModel] = useState<EntityRecord | null>(null);
   const [issues, setIssues] = useState<ValidationIssue[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -68,7 +73,7 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
           return;
         }
         const hydrated = await hydrateCompositionDraft(
-          item as DraftEntity,
+          item as EntityRecord,
           rootEntityTarget(aggregate),
           aggregateRegistry,
           dataSource
@@ -86,7 +91,7 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
           setIssues([
             {
               code: ValidationIssueCode.Error,
-              message: caught instanceof Error ? caught.message : String(caught),
+              message: errorMessage(caught),
             },
           ]);
         }
@@ -138,7 +143,7 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
       setIssues([
         {
           code: ValidationIssueCode.Error,
-          message: `${caught instanceof Error ? caught.message : String(caught)} (Some entities may already have been saved.)`,
+          message: `${errorMessage(caught)} (Some entities may already have been saved.)`,
         },
       ]);
     } finally {

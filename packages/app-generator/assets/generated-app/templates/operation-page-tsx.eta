@@ -6,50 +6,91 @@ import { DetailView } from "../shared/components/detail-view.tsx";
 import { ListView } from "../shared/components/list-view.tsx";
 import { UpdateForm } from "../shared/components/update-form.tsx";
 import { readRouteEntityId } from "../shared/navigation/navigation.ts";
+import { errorMessage } from "../shared/operations/operation-result.ts";
 import { invokeOperation } from "../shared/operations/operation-strategy.ts";
+<% if (it.page.operation.operation === "ReadList") { -%>
+import { DEFAULT_READ_LIST_SORT } from "../shared/datasource/data-source.ts";
+import { DEFAULT_PAGE_SIZE } from "../shared/operations/read-list-strategy.ts";
+<% } -%>
 import { aggregateRegistry, dataSource, operations } from "../generated/operation-registry.ts";
 import { instanceBaseIri } from "../generated/app-config.ts";
 import type { <%= it.page.modelName %> } from "../modules/<%= it.page.moduleName %>/model.ts";
 
 const operation = operations[<%~ it.json(it.page.operation.id) %>];
 
-// TODO: Make this more pretty (styling)
 export function <%= it.page.componentName %>() {<% if (it.page.operation.operation === "ReadList") { %>
   const [items, setItems] = useState<<%= it.page.modelName %>[]>([]);
+  const [total, setTotal] = useState(0);
+  const [paginationModel, setPaginationModel] = useState({
+    page: 0,
+    pageSize: DEFAULT_PAGE_SIZE,
+  });
+  const [sort, setSort] = useState(DEFAULT_READ_LIST_SORT);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError(null);
     invokeOperation(operation.strategy, {
       aggregate: operation.aggregate,
       aggregateRegistry,
       datasource: dataSource,
-      params: {},
+      params: {
+        page: paginationModel.page + 1,
+        pageSize: paginationModel.pageSize,
+        sort,
+      },
     })
       .then((result) => {
+        if (!active) {
+          return;
+        }
         if (result.ok) {
-          setItems(result.data);
+          setItems(result.data.items);
+          setTotal(result.data.total);
         } else {
           setError(result.issues.map((issue) => issue.message).join(", "));
         }
       })
       .catch((caught: unknown) => {
+        if (!active) {
+          return;
+        }
         console.error(caught);
-        setError(caught instanceof Error ? caught.message : String(caught));
+        setError(errorMessage(caught));
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
       });
-  }, []);
+
+    return () => {
+      active = false;
+    };
+  }, [paginationModel, sort]);
 
   return (
-    <>
-      {error ? <p role="alert">{error}</p> : null}
-      <ListView
-        title={operation.title}
-        fields={operation.aggregate.fields}
-        items={items}
-        pageActions={operation.navigation.pageActions}
-        rowActions={operation.navigation.rowActions}
-        associationActions={operation.navigation.associationActions}
-      />
-    </>
+    <ListView
+      title={operation.title}
+      fields={operation.aggregate.fields}
+      items={items}
+      total={total}
+      paginationModel={paginationModel}
+      sort={sort}
+      loading={loading}
+      error={error}
+      onPaginationModelChange={setPaginationModel}
+      onSortChange={(nextSort) => {
+        setSort(nextSort);
+        setPaginationModel((current) => ({ ...current, page: 0 }));
+      }}
+      pageActions={operation.navigation.pageActions}
+      rowActions={operation.navigation.rowActions}
+      associationActions={operation.navigation.associationActions}
+    />
   );
 <% } else if (it.page.operation.operation === "ReadDetail") { %>
   const id = readRouteEntityId(window.location.search);
@@ -78,7 +119,7 @@ export function <%= it.page.componentName %>() {<% if (it.page.operation.operati
       })
       .catch((caught: unknown) => {
         console.error(caught);
-        setError(caught instanceof Error ? caught.message : String(caught));
+        setError(errorMessage(caught));
       });
   }, [id]);
 

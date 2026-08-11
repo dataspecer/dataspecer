@@ -9,6 +9,9 @@ import { DefaultUpdateStrategy } from "../../shared/operations/update-strategy.t
 <% } else { %>
 import { DefaultDeleteStrategy } from "../../shared/operations/delete-strategy.ts";
 <% } %>
+<% if (it.page.operation.operation === "ReadList") { -%>
+import type { ReadListResult } from "../../shared/datasource/data-source.ts";
+<% } -%>
 import type { OperationContext } from "../../shared/operations/operation-strategy.ts";
 import type { OperationResult, ValidationResult } from "../../shared/operations/operation-result.ts";
 import type { <%= it.page.modelName %> } from "./model.ts";
@@ -22,8 +25,8 @@ export class <%= it.page.operationClassName %> extends <% if (it.page.operation.
 
   async postprocess(
     _ctx: OperationContext<<%= it.page.modelName %>>,
-    result: OperationResult<<% if (it.page.operation.operation === "ReadList") { %><%= it.page.modelName %>[]<% } else if (it.page.operation.operation === "Delete") { %>void<% } else { %><%= it.page.modelName %><% } %>>,
-  ): Promise<OperationResult<<% if (it.page.operation.operation === "ReadList") { %><%= it.page.modelName %>[]<% } else if (it.page.operation.operation === "Delete") { %>void<% } else { %><%= it.page.modelName %><% } %>>> {
+    result: OperationResult<<% if (it.page.operation.operation === "ReadList") { %>ReadListResult<<%= it.page.modelName %>><% } else if (it.page.operation.operation === "Delete") { %>void<% } else { %><%= it.page.modelName %><% } %>>,
+  ): Promise<OperationResult<<% if (it.page.operation.operation === "ReadList") { %>ReadListResult<<%= it.page.modelName %>><% } else if (it.page.operation.operation === "Delete") { %>void<% } else { %><%= it.page.modelName %><% } %>>> {
     return result;
   }
 }

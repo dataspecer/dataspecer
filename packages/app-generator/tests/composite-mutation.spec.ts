@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import type { DataSource } from '../assets/generated-app/static/src/shared/datasource/data-source.ts';
-import type { DraftEntity } from '../assets/generated-app/static/src/shared/forms/form-draft.ts';
 import {
   buildCompositeCreatePlan,
   buildCompositeDeletePlan,
@@ -15,6 +14,7 @@ import { DefaultUpdateStrategy } from '../assets/generated-app/static/src/shared
 import type {
   AggregateDescriptor,
   AggregateDescriptorMap,
+  EntityRecord,
   FieldDescriptor,
 } from '../assets/generated-app/static/src/shared/types/aggregate.ts';
 
@@ -106,7 +106,7 @@ const aggregateRegistry: AggregateDescriptorMap = {
   [departmentAggregate.iri]: departmentAggregate,
 };
 
-const original: DraftEntity = {
+const original: EntityRecord = {
   id: 'urn:company',
   departments: [
     {
@@ -119,7 +119,7 @@ const original: DraftEntity = {
 
 describe('composite mutation planning', () => {
   it('creates inline leaves, aggregate children, and the root in post-order', () => {
-    const payload: DraftEntity = {
+    const payload: EntityRecord = {
       id: 'urn:company',
       partners: [{ id: 'urn:partner', displayName: 'Not part of the writable reference' }],
       departments: [
@@ -144,7 +144,7 @@ describe('composite mutation planning', () => {
   });
 
   it('updates children before their parent and deletes removed subtrees after unlinking', () => {
-    const payload: DraftEntity = {
+    const payload: EntityRecord = {
       id: 'urn:company',
       departments: [
         {
@@ -169,7 +169,7 @@ describe('composite mutation planning', () => {
   it('stops before creating an ancestor when a child write fails', async () => {
     const calls: string[] = [];
     const dataSource = {
-      create: ({ payload }: { payload: DraftEntity }) => {
+      create: ({ payload }: { payload: EntityRecord }) => {
         calls.push(payload.id as string);
         if (payload.id === 'urn:office') {
           return Promise.reject(new Error('office failed'));
@@ -177,7 +177,7 @@ describe('composite mutation planning', () => {
         return Promise.resolve(payload);
       },
     } as unknown as DataSource;
-    const payload: DraftEntity = {
+    const payload: EntityRecord = {
       id: 'urn:company',
       departments: [
         {
@@ -223,8 +223,28 @@ describe('composite mutation planning', () => {
     expect(plan[0].payload).not.toHaveProperty('labels');
   });
 
+  it('rejects malformed repeating references instead of clearing them', () => {
+    expect(() =>
+      buildCompositeUpdatePlan(
+        companyAggregate,
+        aggregateRegistry,
+        { id: 'urn:company', partners: { id: 'urn:partner' }, departments: [] },
+        { id: 'urn:company', partners: [], departments: [] }
+      )
+    ).toThrow('Partners must contain a list of values.');
+
+    expect(() =>
+      buildCompositeUpdatePlan(
+        companyAggregate,
+        aggregateRegistry,
+        { id: 'urn:company', partners: [{ id: 42 }], departments: [] },
+        { id: 'urn:company', partners: [], departments: [] }
+      )
+    ).toThrow('Partners must contain a reference.');
+  });
+
   it('plans selected nested composition deletes leaves first', () => {
-    const payload: DraftEntity = {
+    const payload: EntityRecord = {
       id: 'urn:company',
       partners: [{ id: 'urn:partner' }],
       departments: [
@@ -248,7 +268,7 @@ describe('composite mutation planning', () => {
   });
 
   it('accepts a declared cascade without a form kind and does not cascade aggregations', () => {
-    const payload: DraftEntity = {
+    const payload: EntityRecord = {
       id: 'urn:company',
       partners: [{ id: 'urn:partner' }],
       departments: [{ id: 'urn:department' }],

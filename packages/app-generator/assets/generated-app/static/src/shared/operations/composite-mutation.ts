@@ -1,5 +1,5 @@
 import type { DataSource } from '../datasource/data-source.ts';
-import { compositionEntities, type DraftEntity } from '../forms/form-draft.ts';
+import { compositionEntities } from '../forms/form-draft.ts';
 import { isEmptyValue, resolveControl } from '../forms/form-model.ts';
 import {
   isCompositionField,
@@ -8,24 +8,27 @@ import {
   rootEntityTarget,
   type EntityTarget,
 } from '../forms/entity-target.ts';
-import type {
-  AggregateDescriptor,
-  AggregateDescriptorMap,
-  EntityModel,
-  FieldDescriptor,
+import {
+  fieldValues,
+  isEntityRecord,
+  type AggregateDescriptor,
+  type AggregateDescriptorMap,
+  type EntityRecord,
+  type EntityModel,
+  type FieldDescriptor,
 } from '../types/aggregate.ts';
 
 export interface CompositeMutationStep {
   kind: 'create' | 'update' | 'delete';
   target: EntityTarget;
-  payload?: DraftEntity;
+  payload?: EntityRecord;
   id: string;
 }
 
 export function buildCompositeCreatePlan(
   aggregate: AggregateDescriptor,
   aggregateRegistry: AggregateDescriptorMap,
-  payload: DraftEntity
+  payload: EntityRecord
 ): CompositeMutationStep[] {
   const steps: CompositeMutationStep[] = [];
   collectCreateSteps(payload, rootEntityTarget(aggregate), aggregateRegistry, steps);
@@ -35,8 +38,8 @@ export function buildCompositeCreatePlan(
 export function buildCompositeUpdatePlan(
   aggregate: AggregateDescriptor,
   aggregateRegistry: AggregateDescriptorMap,
-  payload: DraftEntity,
-  original: DraftEntity
+  payload: EntityRecord,
+  original: EntityRecord
 ): CompositeMutationStep[] {
   const upserts: CompositeMutationStep[] = [];
   const removals: CompositeMutationStep[] = [];
@@ -54,7 +57,7 @@ export function buildCompositeUpdatePlan(
 export function buildCompositeDeletePlan(
   aggregate: AggregateDescriptor,
   aggregateRegistry: AggregateDescriptorMap,
-  payload: DraftEntity,
+  payload: EntityRecord,
   cascadePaths: readonly string[]
 ): CompositeMutationStep[] {
   const steps: CompositeMutationStep[] = [];
@@ -75,7 +78,7 @@ export async function createComposite<TModel extends EntityModel>(
   aggregateRegistry: AggregateDescriptorMap,
   payload: TModel
 ): Promise<TModel> {
-  const draft = payload as DraftEntity;
+  const draft = payload as EntityRecord;
   const steps = buildCompositeCreatePlan(aggregate, aggregateRegistry, draft);
   await executePlan(dataSource, steps);
   return payload;
@@ -91,8 +94,8 @@ export async function updateComposite<TModel extends EntityModel>(
   const steps = buildCompositeUpdatePlan(
     aggregate,
     aggregateRegistry,
-    payload as DraftEntity,
-    original as DraftEntity
+    payload as EntityRecord,
+    original as EntityRecord
   );
   await executePlan(dataSource, steps);
   return payload;
@@ -108,7 +111,7 @@ export async function deleteComposite<TModel extends EntityModel>(
   const steps = buildCompositeDeletePlan(
     aggregate,
     aggregateRegistry,
-    payload as DraftEntity,
+    payload as EntityRecord,
     cascadePaths
   );
   await executePlan(dataSource, steps);
@@ -129,21 +132,21 @@ async function executePlan(
       await dataSource.create({
         aggregate: step.target.aggregate,
         fieldPath: step.target.fieldPath,
-        payload: step.payload as DraftEntity,
+        payload: step.payload as EntityRecord,
       });
     } else {
       await dataSource.update({
         aggregate: step.target.aggregate,
         fieldPath: step.target.fieldPath,
         id: step.id,
-        payload: step.payload as DraftEntity,
+        payload: step.payload as EntityRecord,
       });
     }
   }
 }
 
 function collectCreateSteps(
-  entity: DraftEntity,
+  entity: EntityRecord,
   target: EntityTarget,
   aggregateRegistry: AggregateDescriptorMap,
   steps: CompositeMutationStep[]
@@ -160,8 +163,8 @@ function collectCreateSteps(
 }
 
 function collectUpdateSteps(
-  entity: DraftEntity,
-  original: DraftEntity | undefined,
+  entity: EntityRecord,
+  original: EntityRecord | undefined,
   target: EntityTarget,
   aggregateRegistry: AggregateDescriptorMap,
   upserts: CompositeMutationStep[],
@@ -177,7 +180,7 @@ function collectUpdateSteps(
     const originalById = new Map(
       originalChildren
         .map((child) => [entityId(child), child] as const)
-        .filter((entry): entry is [string, DraftEntity] => entry[0] !== null)
+        .filter((entry): entry is [string, EntityRecord] => entry[0] !== null)
     );
     const currentIds = new Set<string>();
 
@@ -214,7 +217,7 @@ function collectUpdateSteps(
 }
 
 function collectDeleteSteps(
-  entity: DraftEntity,
+  entity: EntityRecord,
   target: EntityTarget,
   aggregateRegistry: AggregateDescriptorMap,
   removals: CompositeMutationStep[]
@@ -229,7 +232,7 @@ function collectDeleteSteps(
 }
 
 function collectCascadeDeleteSteps(
-  entity: DraftEntity,
+  entity: EntityRecord,
   target: EntityTarget,
   aggregateRegistry: AggregateDescriptorMap,
   cascadePaths: ReadonlySet<string>,
@@ -270,10 +273,10 @@ function collectCascadeDeleteSteps(
 }
 
 function visitCompositionChildren(
-  entity: DraftEntity,
+  entity: EntityRecord,
   target: EntityTarget,
   aggregateRegistry: AggregateDescriptorMap,
-  visit: (entity: DraftEntity, target: EntityTarget) => void
+  visit: (entity: EntityRecord, target: EntityTarget) => void
 ): void {
   for (const field of target.fields) {
     if (!isCompositionField(field)) {
@@ -299,11 +302,11 @@ function requireCompositionTarget(
 }
 
 function serializeEntity(
-  entity: DraftEntity,
+  entity: EntityRecord,
   target: EntityTarget,
   mode: 'create' | 'update'
-): DraftEntity {
-  const payload: DraftEntity = { id: requireEntityId(entity, target.name) };
+): EntityRecord {
+  const payload: EntityRecord = { id: requireEntityId(entity, target.name) };
   for (const field of target.fields) {
     if (resolveControl(field) === 'unsupported') {
       continue;
@@ -314,9 +317,7 @@ function serializeEntity(
       : field.kind === 'association'
         ? aggregationReferences(fieldValue, field)
         : field.many
-          ? Array.isArray(fieldValue)
-            ? fieldValue.filter((entry) => !isEmptyValue(entry))
-            : []
+          ? fieldValues(fieldValue, field).filter((entry) => !isEmptyValue(entry))
           : fieldValue;
 
     if (isEmptyValue(value)) {
@@ -338,11 +339,7 @@ function compositionReferences(value: unknown, field: FieldDescriptor): unknown 
 }
 
 function aggregationReferences(value: unknown, field: FieldDescriptor): unknown {
-  const values: unknown[] = field.many
-    ? Array.isArray(value)
-      ? (value as unknown[])
-      : []
-    : [value];
+  const values = fieldValues(value, field);
   const references: Array<string | { id: string }> = [];
   for (const entry of values) {
     if (typeof entry === 'string') {
@@ -351,17 +348,21 @@ function aggregationReferences(value: unknown, field: FieldDescriptor): unknown 
       }
       continue;
     }
-    if (entry !== null && typeof entry === 'object' && !(entry instanceof Date)) {
-      const id = (entry as { id?: unknown }).id;
-      if (typeof id === 'string' && id.trim() !== '') {
-        references.push({ id });
-      }
+    if (!isEntityRecord(entry)) {
+      throw new Error(`${field.label} must contain a reference.`);
     }
+    const id = entry.id;
+    if (typeof id === 'string' && id.trim() === '') {
+      continue;
+    }
+    references.push({
+      id: requireEntityId(entry, `Reference in ${field.label}`),
+    });
   }
   return field.many ? references : references[0];
 }
 
-function requireEntityId(entity: DraftEntity, label: string): string {
+function requireEntityId(entity: EntityRecord, label: string): string {
   const id = entityId(entity);
   if (!id) {
     throw new Error(`${label} is missing its identifier.`);
@@ -369,6 +370,6 @@ function requireEntityId(entity: DraftEntity, label: string): string {
   return id;
 }
 
-function entityId(entity: DraftEntity): string | null {
+function entityId(entity: EntityRecord): string | null {
   return typeof entity.id === 'string' && entity.id.trim() !== '' ? entity.id : null;
 }

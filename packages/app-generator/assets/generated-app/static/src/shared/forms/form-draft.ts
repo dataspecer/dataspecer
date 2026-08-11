@@ -1,14 +1,18 @@
 import type { DataSource } from '../datasource/data-source.ts';
-import type { AggregateDescriptorMap, FieldDescriptor, EntityModel } from '../types/aggregate.ts';
+import {
+  fieldValues,
+  isEntityRecord,
+  type AggregateDescriptorMap,
+  type EntityRecord,
+  type FieldDescriptor,
+} from '../types/aggregate.ts';
 import { generateIri } from './generate-iri.ts';
 import {
+  type EntityTarget,
   isCompositionField,
   minimumCount,
   resolveCompositionTarget,
-  type EntityTarget,
 } from './entity-target.ts';
-
-export type DraftEntity = EntityModel & Record<string, unknown>;
 
 export interface EntityPathSegment {
   propertyName: string;
@@ -19,19 +23,18 @@ export function createEntityDraft(
   target: EntityTarget,
   aggregateRegistry: AggregateDescriptorMap,
   instanceBaseIri: string
-): DraftEntity {
+): EntityRecord {
   const seed =
     target.fieldPath.length === 0
-      ? (target.aggregate.createEmpty() as DraftEntity)
-      : ({} as DraftEntity);
-  const entity: DraftEntity = { ...seed, id: generateIri(instanceBaseIri) };
+      ? (target.aggregate.createEmpty() as EntityRecord)
+      : ({} as EntityRecord);
+  const entity: EntityRecord = { ...seed, id: generateIri(instanceBaseIri) };
   for (const field of target.fields) {
     const count = minimumCount(field);
     if (field.many) {
-      const seeded =
-        !isCompositionField(field) && Array.isArray(seed[field.propertyName])
-          ? [...(seed[field.propertyName] as unknown[])]
-          : [];
+      const seeded = !isCompositionField(field)
+        ? [...fieldValues(seed[field.propertyName], field)]
+        : [];
       while (seeded.length < count) {
         seeded.push(createFieldValue(field, target, aggregateRegistry, instanceBaseIri));
       }
@@ -70,18 +73,18 @@ function createFieldValue(
  * only its IRI and needs a separate read.
  */
 export async function hydrateCompositionDraft(
-  model: DraftEntity,
+  model: EntityRecord,
   target: EntityTarget,
   aggregateRegistry: AggregateDescriptorMap,
   dataSource: DataSource
-): Promise<DraftEntity> {
+): Promise<EntityRecord> {
   const result = structuredClone(model);
   await hydrateCompositionChildren(result, target, aggregateRegistry, dataSource);
   return result;
 }
 
 async function hydrateCompositionChildren(
-  entity: DraftEntity,
+  entity: EntityRecord,
   target: EntityTarget,
   aggregateRegistry: AggregateDescriptorMap,
   dataSource: DataSource
@@ -131,16 +134,11 @@ async function hydrateCompositionEntry(
   aggregateRegistry: AggregateDescriptorMap,
   dataSource: DataSource
 ): Promise<unknown> {
-  if (
-    value === null ||
-    typeof value !== 'object' ||
-    value instanceof Date ||
-    Array.isArray(value)
-  ) {
+  if (!isEntityRecord(value)) {
     throw new Error(`Composed ${field.label} must contain an entity.`);
   }
 
-  let entity = value as DraftEntity;
+  let entity = value;
   if (field.targetAggregateIri) {
     const id = typeof entity.id === 'string' ? entity.id : '';
     if (!id) {
@@ -153,14 +151,14 @@ async function hydrateCompositionEntry(
     if (!loaded) {
       throw new Error(`Composed ${field.label} "${id}" was not found.`);
     }
-    entity = structuredClone(loaded) as DraftEntity;
+    entity = structuredClone(loaded) as EntityRecord;
   }
 
   await hydrateCompositionChildren(entity, target, aggregateRegistry, dataSource);
   return entity;
 }
 
-export function entityAtPath(root: DraftEntity, path: readonly EntityPathSegment[]): DraftEntity {
+export function entityAtPath(root: EntityRecord, path: readonly EntityPathSegment[]): EntityRecord {
   let current = root;
   for (const segment of path) {
     const value: unknown = current[segment.propertyName];
@@ -170,19 +168,19 @@ export function entityAtPath(root: DraftEntity, path: readonly EntityPathSegment
         : Array.isArray(value)
           ? (value as unknown[])[segment.index]
           : null;
-    if (child === null || typeof child !== 'object' || child instanceof Date) {
+    if (!isEntityRecord(child)) {
       throw new Error('The selected nested form no longer exists.');
     }
-    current = child as DraftEntity;
+    current = child;
   }
   return current;
 }
 
 export function updateEntityAtPath(
-  root: DraftEntity,
+  root: EntityRecord,
   path: readonly EntityPathSegment[],
-  update: (entity: DraftEntity) => DraftEntity
-): DraftEntity {
+  update: (entity: EntityRecord) => EntityRecord
+): EntityRecord {
   if (path.length === 0) {
     return update(root);
   }
@@ -190,27 +188,33 @@ export function updateEntityAtPath(
   const [segment, ...rest] = path;
   const value: unknown = root[segment.propertyName];
   if (segment.index === undefined) {
-    if (value === null || typeof value !== 'object' || value instanceof Date) {
+    if (!isEntityRecord(value)) {
       throw new Error('The selected nested form no longer exists.');
     }
     return {
       ...root,
-      [segment.propertyName]: updateEntityAtPath(value as DraftEntity, rest, update),
+      [segment.propertyName]: updateEntityAtPath(value, rest, update),
     };
   }
 
-  if (!Array.isArray(value) || !value[segment.index]) {
+  if (!Array.isArray(value)) {
     throw new Error('The selected nested form no longer exists.');
   }
   const entries = [...(value as unknown[])];
-  entries[segment.index] = updateEntityAtPath(entries[segment.index] as DraftEntity, rest, update);
+  const child = entries[segment.index];
+  if (!isEntityRecord(child)) {
+    throw new Error('The selected nested form no longer exists.');
+  }
+  entries[segment.index] = updateEntityAtPath(child, rest, update);
   return { ...root, [segment.propertyName]: entries };
 }
 
-export function compositionEntities(value: unknown, field: FieldDescriptor): DraftEntity[] {
-  const values = field.many ? (Array.isArray(value) ? value : []) : [value];
-  return values.filter(
-    (entry): entry is DraftEntity =>
-      entry !== null && typeof entry === 'object' && !(entry instanceof Date)
-  );
+export function compositionEntities(value: unknown, field: FieldDescriptor): EntityRecord[] {
+  const values = fieldValues(value, field);
+  return values.map((entry) => {
+    if (!isEntityRecord(entry)) {
+      throw new Error(`${field.label} must contain an entity.`);
+    }
+    return entry;
+  });
 }

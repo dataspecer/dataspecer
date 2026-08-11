@@ -1,4 +1,10 @@
-import type { AggregateDescriptorMap, FieldDescriptor, FormControl } from '../types/aggregate.ts';
+import {
+  fieldValues,
+  isEntityRecord,
+  type AggregateDescriptorMap,
+  type FieldDescriptor,
+  type FormControl,
+} from '../types/aggregate.ts';
 import { ValidationIssueCode, type ValidationIssue } from '../operations/operation-result.ts';
 import {
   isCompositionField,
@@ -93,7 +99,7 @@ function validateEntity(
     }
     const fieldPath = joinPath(pathPrefix, field.path);
     const value = model[field.propertyName];
-    const values = field.many ? (Array.isArray(value) ? value : []) : [value];
+    const values = fieldValues(value, field);
     const presentValues = values.filter((entry) => !isEmptyValue(entry));
     const minCount = minimumCount(field);
     const maxCount = maximumCount(field);
@@ -139,7 +145,7 @@ function validateEntity(
     }
 
     presentValues.forEach((entry, index) => {
-      if (entry === null || typeof entry !== 'object' || entry instanceof Date) {
+      if (!isEntityRecord(entry)) {
         issues.push({
           code: ValidationIssueCode.InvalidComposition,
           message: `${field.label} must contain an entity.`,
@@ -148,7 +154,7 @@ function validateEntity(
         return;
       }
       validateEntity(
-        entry as Record<string, unknown>,
+        entry,
         childTarget,
         aggregateRegistry,
         field.many ? `${fieldPath}[${index}]` : fieldPath,

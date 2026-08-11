@@ -1,9 +1,14 @@
 import type { Lens, Schema, QueryContext } from 'ldkit';
 import { createLens, QueryEngine } from 'ldkit';
 import { DataFactory, type RDF } from 'ldkit/rdf';
-import { sparql } from 'ldkit/sparql';
+import { SELECT, sparql } from 'ldkit/sparql';
 
-import type { AggregateDescriptor, EntityModel, FieldDescriptor } from '../types/aggregate.ts';
+import {
+  fieldValues,
+  type AggregateDescriptor,
+  type EntityModel,
+  type FieldDescriptor,
+} from '../types/aggregate.ts';
 import type {
   DataSource,
   DeleteArgs,
@@ -11,9 +16,11 @@ import type {
   MutationArgs,
   ReadDetailArgs,
   ReadListArgs,
+  ReadListResult,
   ReferenceOption,
+  ReadListSort,
 } from './data-source.ts';
-import { DataSourceKind } from './data-source.ts';
+import { DEFAULT_READ_LIST_SORT, DataSourceKind, isListFieldSortable } from './data-source.ts';
 
 const LABEL_PREDICATES = [
   'http://www.w3.org/2000/01/rdf-schema#label',
@@ -39,21 +46,38 @@ export class RdfLdkitDataSource implements DataSource {
     private readonly schemas: LdkitSchemaMap
   ) {}
 
-  async readList<TModel extends EntityModel>(args: ReadListArgs<TModel>): Promise<TModel[]> {
-    const lens = this.buildLens(args.aggregate);
-    // TODO: Handle args.orderBy and pagination in the generated list page
-    const result = await lens.find({
-      take: args.pageSize ?? 100,
-      skip: ((args.page ?? 1) - 1) * (args.pageSize ?? 100),
-    });
+  async readList<TModel extends EntityModel>(
+    args: ReadListArgs<TModel>
+  ): Promise<ReadListResult<TModel>> {
+    const lens = this.resolveTarget(args.aggregate).lens;
+    const skip = (args.page - 1) * args.pageSize;
+    const iriQuery = buildPageIriQuery(args.aggregate, args.pageSize, skip, args.sort);
+    const [total, iriBindings] = await Promise.all([
+      lens.count(),
+      new QueryEngine()
+        .queryBindings(iriQuery, this.context())
+        .then((stream) => collectStream(stream)),
+    ]);
+    const iris = iriBindings.map((binding) => binding.get('iri')!.value);
+    if (iris.length === 0) {
+      return { items: [], total };
+    }
 
-    return result.map((entity) => toModel<TModel>(entity));
+    const items = (await lens.findByIris(iris)).map((entity) => toModel<TModel>(entity));
+    const itemById = new Map(items.map((item) => [item.id, item]));
+    return {
+      items: iris.flatMap((iri) => {
+        const item = itemById.get(iri);
+        return item ? [item] : [];
+      }),
+      total,
+    };
   }
 
   async readDetail<TModel extends EntityModel>(
     args: ReadDetailArgs<TModel>
   ): Promise<TModel | null> {
-    const lens = this.buildLens(args.aggregate);
+    const lens = this.resolveTarget(args.aggregate).lens;
     const result = await lens.findByIri(args.id);
     return result ? toModel<TModel>(result) : null;
   }
@@ -128,19 +152,12 @@ export class RdfLdkitDataSource implements DataSource {
     // without a label fall back to the IRI itself.
     const labels = new Map<string, string>();
     for (const binding of bindings) {
-      const iri = binding.get('iri')?.value;
-      if (iri && !labels.has(iri)) {
+      const iri = binding.get('iri')!.value;
+      if (!labels.has(iri)) {
         labels.set(iri, binding.get('label')?.value ?? iri);
       }
     }
     return [...labels].map(([id, label]) => ({ id, label }));
-  }
-
-  private buildLens<TModel extends EntityModel>(
-    aggregate: AggregateDescriptor<TModel>,
-    fieldPath: readonly string[] = []
-  ): Lens<Schema> {
-    return this.resolveTarget(aggregate, fieldPath).lens;
   }
 
   private resolveTarget<TModel extends EntityModel>(
@@ -185,6 +202,36 @@ export class RdfLdkitDataSource implements DataSource {
   }
 }
 
+export function buildPageIriQuery(
+  aggregate: Pick<AggregateDescriptor, 'name' | 'classIri' | 'fields'>,
+  take: number,
+  skip: number,
+  sort: ReadListSort = DEFAULT_READ_LIST_SORT
+): string {
+  const classNode = toSparqlNamedNode(aggregate.classIri, 'Aggregate class IRI');
+  if (sort.kind === 'iri') {
+    const order = sort.direction === 'asc' ? 'ASC(STR(?iri))' : 'DESC(STR(?iri))';
+    return SELECT.DISTINCT`?iri`.WHERE`?iri a ${classNode} .`.ORDER_BY`${order}`
+      .LIMIT(take)
+      .OFFSET(skip)
+      .build();
+  }
+
+  const field = aggregate.fields.find((candidate) => candidate.path === sort.fieldPath);
+  if (!field || !isListFieldSortable(field)) {
+    throw new Error(`Field "${aggregate.name}.${sort.fieldPath}" cannot be used for list sorting.`);
+  }
+
+  const propertyNode = toSparqlNamedNode(field.propertyIri, 'Sort property IRI');
+  const valueOrder = sort.direction === 'asc' ? 'ASC(?sortValue)' : 'DESC(?sortValue)';
+  return SELECT`?iri (MIN(?value) AS ?sortValue)`
+    .WHERE`?iri a ${classNode} . OPTIONAL { ?iri ${propertyNode} ?value . }`.GROUP_BY`?iri`
+    .ORDER_BY`ASC(!BOUND(?sortValue)) ${valueOrder} ASC(STR(?iri))`
+    .LIMIT(take)
+    .OFFSET(skip)
+    .build();
+}
+
 /**
  * Builds the reversed triples LDKit cannot write through an `@inverse` schema property.
  */
@@ -192,19 +239,15 @@ export function buildInverseInsertQuads<TModel extends EntityModel>(
   fields: readonly FieldDescriptor[],
   payload: TModel
 ): RDF.Quad[] {
-  const entityId = payload.id;
-  if (fields.length === 0 || typeof entityId !== 'string' || entityId === '') {
+  if (fields.length === 0) {
     return [];
   }
 
-  const entityNode = toSparqlNamedNode(entityId, 'Entity IRI');
+  const entityNode = toSparqlNamedNode(payload.id as string, 'Entity IRI');
   const record = payload as Record<string, unknown>;
   return fields.flatMap((field) => {
-    if (!field.propertyIri) {
-      return [];
-    }
-    const predicate = toSparqlNamedNode(field.propertyIri, 'Inverse predicate IRI');
-    return referenceIds(record[field.propertyName]).map((targetId) =>
+    const predicate = toSparqlNamedNode(field.propertyIri as string, 'Inverse predicate IRI');
+    return referenceIds(record[field.propertyName], field).map((targetId) =>
       dataFactory.quad(
         toSparqlNamedNode(targetId, 'Inverse relation target IRI'),
         predicate,
@@ -218,8 +261,8 @@ export function buildInverseDeleteQuery(
   fields: readonly FieldDescriptor[],
   entityId: string
 ): string | null {
-  const predicates = fields.flatMap((field) =>
-    field.propertyIri ? [toSparqlNamedNode(field.propertyIri, 'Inverse predicate IRI')] : []
+  const predicates = fields.map((field) =>
+    toSparqlNamedNode(field.propertyIri as string, 'Inverse predicate IRI')
   );
   if (predicates.length === 0) {
     return null;
@@ -257,17 +300,11 @@ function omitFields<TModel extends EntityModel>(
 
 // Extracts target IRIs from entity IRI objects (or bare IRI strings when no target class was
 // available). Empty ids are skipped so an unset reference contributes no triple.
-function referenceIds(value: unknown): string[] {
-  const values = Array.isArray(value) ? value : [value];
-  return values
-    .map((entry) =>
-      typeof entry === 'string'
-        ? entry
-        : entry && typeof entry === 'object'
-          ? (entry as { id?: unknown }).id
-          : undefined
-    )
-    .filter((id): id is string => typeof id === 'string' && id !== '');
+function referenceIds(value: unknown, field: FieldDescriptor): string[] {
+  return fieldValues(value, field).flatMap((entry) => {
+    const id = typeof entry === 'string' ? entry : (entry as { id: string }).id;
+    return id === '' ? [] : [id];
+  });
 }
 
 // Drains an LDKit result stream into an array. The stream is event based, so this resolves once
@@ -333,7 +370,7 @@ export function toLdkitEntity(value: unknown, mode: 'create' | 'update'): unknow
   const result: Record<string, unknown> = {};
   for (const [key, nested] of Object.entries(source)) {
     if (key === 'id') {
-      if (typeof nested === 'string' && nested !== '') {
+      if (nested !== '') {
         result.$id = nested;
       }
       continue;

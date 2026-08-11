@@ -2,9 +2,8 @@ import { routes } from "./routes.tsx";
 
 export function App() {
   const currentPath = window.location.pathname;
-  const route =
-    routes.find((candidate) => matchPath(candidate.path, currentPath)) ?? routes[0];
-  const Page = route.component;
+  const route = routes.find((candidate) => matchPath(candidate.path, currentPath));
+  const Page = route?.component;
 
   return (
     <main className="app">
@@ -18,7 +17,14 @@ export function App() {
           ))}
         </nav>
       </header>
-      <Page />
+      {Page ? (
+        <Page />
+      ) : (
+        <section>
+          <h2>Page not found</h2>
+          <p>The requested page does not exist.</p>
+        </section>
+      )}
     </main>
   );
 }

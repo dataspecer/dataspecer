@@ -3,6 +3,7 @@ import { hrefForAction, type NavigationActionDescriptor } from '../navigation/na
 interface ActionLinksProps {
   actions: readonly NavigationActionDescriptor[];
   entityId?: string;
+  tabIndex?: number;
 }
 
 /** Renders navigation actions as a row of links, skipping any that resolve to no href. */
@@ -16,7 +17,7 @@ export function ActionLinks(props: ActionLinksProps) {
       {props.actions.map((action) => {
         const href = hrefForAction(action, props.entityId);
         return href ? (
-          <a key={action.id} href={href}>
+          <a key={action.id} href={href} tabIndex={props.tabIndex}>
             {action.label}
           </a>
         ) : null;

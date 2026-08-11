@@ -1,15 +1,20 @@
 import { useState, type SubmitEvent } from 'react';
 
 import type { DataSource } from '../datasource/data-source.ts';
-import { createEntityDraft, type DraftEntity } from '../forms/form-draft.ts';
+import { createEntityDraft } from '../forms/form-draft.ts';
 import { rootEntityTarget } from '../forms/entity-target.ts';
 import { validateModel } from '../forms/form-model.ts';
 import { hrefForAction, type OperationNavigationDescriptor } from '../navigation/navigation.ts';
-import { ValidationIssueCode, type ValidationIssue } from '../operations/operation-result.ts';
+import {
+  errorMessage,
+  ValidationIssueCode,
+  type ValidationIssue,
+} from '../operations/operation-result.ts';
 import { invokeOperation, type OperationStrategy } from '../operations/operation-strategy.ts';
 import type {
   AggregateDescriptor,
   AggregateDescriptorMap,
+  EntityRecord,
   EntityModel,
 } from '../types/aggregate.ts';
 import { EntityFormEditor } from './entity-form-editor.tsx';
@@ -27,7 +32,7 @@ interface CreateFormProps<TModel extends EntityModel> {
 export function CreateForm<TModel extends EntityModel>(props: CreateFormProps<TModel>) {
   const { title, aggregate, aggregateRegistry, strategy, dataSource, navigation, instanceBaseIri } =
     props;
-  const [model, setModel] = useState<DraftEntity>(() =>
+  const [model, setModel] = useState<EntityRecord>(() =>
     createEntityDraft(rootEntityTarget(aggregate), aggregateRegistry, instanceBaseIri)
   );
   const [issues, setIssues] = useState<ValidationIssue[]>([]);
@@ -62,7 +67,7 @@ export function CreateForm<TModel extends EntityModel>(props: CreateFormProps<TM
       setIssues([
         {
           code: ValidationIssueCode.Error,
-          message: `${caught instanceof Error ? caught.message : String(caught)} (Some entities may already have been saved.)`,
+          message: `${errorMessage(caught)} (Some entities may already have been saved.)`,
         },
       ]);
     } finally {

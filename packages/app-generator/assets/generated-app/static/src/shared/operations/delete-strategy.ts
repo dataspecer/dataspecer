@@ -1,10 +1,6 @@
 import type { EntityModel } from '../types/aggregate.ts';
 import { deleteComposite } from './composite-mutation.ts';
-import {
-  stringParam,
-  type OperationContext,
-  type OperationStrategy,
-} from './operation-strategy.ts';
+import type { OperationContext, OperationStrategy } from './operation-strategy.ts';
 import { ValidationIssueCode, type OperationResult } from './operation-result.ts';
 
 export class DefaultDeleteStrategy<TModel extends EntityModel> implements OperationStrategy<
@@ -34,7 +30,7 @@ export class DefaultDeleteStrategy<TModel extends EntityModel> implements Operat
 
     await ctx.datasource.delete({
       aggregate: ctx.aggregate,
-      id: stringParam(ctx.params, 'id'),
+      id: ctx.params.id as string,
     });
     return { ok: true, data: undefined };
   }

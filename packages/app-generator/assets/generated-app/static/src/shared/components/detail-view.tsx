@@ -120,9 +120,7 @@ interface NestedEntitiesProps {
 }
 
 function NestedEntities(props: NestedEntitiesProps) {
-  const entities: unknown[] = Array.isArray(props.value)
-    ? (props.value as unknown[])
-    : [props.value];
+  const entities: unknown[] = Array.isArray(props.value) ? props.value : [props.value];
   return (
     <>
       {entities.map((entity, index) => (

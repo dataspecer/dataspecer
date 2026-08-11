@@ -6,7 +6,6 @@ import {
   createEntityDraft,
   entityAtPath,
   updateEntityAtPath,
-  type DraftEntity,
   type EntityPathSegment,
 } from '../forms/form-draft.ts';
 import {
@@ -23,20 +22,22 @@ import type { ValidationIssue } from '../operations/operation-result.ts';
 import type {
   AggregateDescriptor,
   AggregateDescriptorMap,
+  EntityRecord,
   FieldDescriptor,
 } from '../types/aggregate.ts';
+import { isEntityRecord } from '../types/aggregate.ts';
 import { FormField } from './form-field.tsx';
 
 interface EntityFormEditorProps {
   aggregate: AggregateDescriptor;
   aggregateRegistry: AggregateDescriptorMap;
-  model: DraftEntity;
-  originalModel?: DraftEntity;
+  model: EntityRecord;
+  originalModel?: EntityRecord;
   dataSource: DataSource;
   instanceBaseIri: string;
   issues: ValidationIssue[];
   rootIdentifierReadOnly: boolean;
-  onChange: (model: DraftEntity) => void;
+  onChange: (model: EntityRecord) => void;
 }
 
 export function EntityFormEditor(props: EntityFormEditorProps) {
@@ -48,7 +49,7 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
   const validationPrefix = validationPathAt(rootTarget, selection, props.aggregateRegistry);
   const existingIds = collectEntityIds(props.originalModel, rootTarget, props.aggregateRegistry);
 
-  const updateSelected = (update: (entity: DraftEntity) => DraftEntity) => {
+  const updateSelected = (update: (entity: EntityRecord) => EntityRecord) => {
     props.onChange(updateEntityAtPath(props.model, selection, update));
   };
   const errorAt = (path: string) => props.issues.find((issue) => issue.path === path)?.message;
@@ -293,7 +294,7 @@ function CompositionCollection(props: CompositionCollectionProps) {
 }
 
 interface EntityTreeProps {
-  entity: DraftEntity;
+  entity: EntityRecord;
   target: EntityTarget;
   aggregateRegistry: AggregateDescriptorMap;
   path: EntityPathSegment[];
@@ -337,7 +338,7 @@ function EntityTree(props: EntityTreeProps) {
 
 interface EntityTreeGroupProps {
   field: FieldDescriptor;
-  children: DraftEntity[];
+  children: EntityRecord[];
   target: EntityTarget;
   aggregateRegistry: AggregateDescriptorMap;
   parentPath: EntityPathSegment[];
@@ -388,7 +389,7 @@ function EntityTreeGroup(props: EntityTreeGroupProps) {
 }
 
 interface BreadcrumbsProps {
-  root: DraftEntity;
+  root: EntityRecord;
   rootTarget: EntityTarget;
   path: EntityPathSegment[];
   aggregateRegistry: AggregateDescriptorMap;
@@ -418,11 +419,11 @@ function Breadcrumbs(props: BreadcrumbsProps) {
         : Array.isArray(value)
           ? (value as unknown[])[segment.index]
           : null;
-    if (!nextTarget || child === null || typeof child !== 'object' || child instanceof Date) {
+    if (!nextTarget || !isEntityRecord(child)) {
       break;
     }
     traversed.push(segment);
-    entity = child as DraftEntity;
+    entity = child;
     target = nextTarget;
     entries.push({
       label: entitySummary(field.label, target.fields, entity),
@@ -488,7 +489,7 @@ function validationPathAt(
 function entitySummary(
   fallback: string,
   fields: readonly FieldDescriptor[],
-  entity: DraftEntity
+  entity: EntityRecord
 ): string {
   const primitive = fields.find(
     (field) =>
@@ -506,7 +507,7 @@ function entitySummary(
 }
 
 function collectEntityIds(
-  model: DraftEntity | undefined,
+  model: EntityRecord | undefined,
   target: EntityTarget,
   aggregateRegistry: AggregateDescriptorMap,
   result = new Set<string>()
