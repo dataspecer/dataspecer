@@ -384,7 +384,18 @@ describe('renderGeneratedApp', () => {
     expect(registry).not.toContain('placeholder');
     expect(page).toContain('aggregateRegistry={aggregateRegistry}');
     expect(page).toContain('cascadePaths={operation.delete?.cascadePaths ?? []}');
-    expect(tree.get('src/shared/components/delete-form.tsx')).toContain('payload: item');
+    const deleteForm = tree.get('src/shared/components/delete-form.tsx');
+    expect(deleteForm).toContain('payload: item');
+    expect(deleteForm).toContain('.listIncomingReferences(id)');
+    expect(deleteForm).toContain('<Alert severity="warning">');
+    expect(deleteForm).toContain('Deleting it may leave broken references.');
+    expect(deleteForm).toContain('You can still delete it.');
+    expect(deleteForm).toContain('{reference.subject}');
+    expect(deleteForm).toContain('{reference.predicate}');
+    expect(tree.get('src/shared/datasource/data-source.ts')).toContain(
+      'listIncomingReferences(id: string): Promise<IncomingReference[]>'
+    );
+    expect(tree.get('README.md')).toContain('`listIncomingReferences(id)`');
   });
 });
 

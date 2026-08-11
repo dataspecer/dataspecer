@@ -13,6 +13,7 @@ import type {
   DataSource,
   DeleteArgs,
   IdentifiedMutationArgs,
+  IncomingReference,
   MutationArgs,
   ReadDetailArgs,
   ReadListArgs,
@@ -20,7 +21,12 @@ import type {
   ReferenceOption,
   ReadListSort,
 } from './data-source.ts';
-import { DEFAULT_READ_LIST_SORT, DataSourceKind, isListFieldSortable } from './data-source.ts';
+import {
+  DEFAULT_READ_LIST_SORT,
+  DataSourceKind,
+  INCOMING_REFERENCE_LIMIT,
+  isListFieldSortable,
+} from './data-source.ts';
 
 const LABEL_PREDICATES = [
   'http://www.w3.org/2000/01/rdf-schema#label',
@@ -54,9 +60,7 @@ export class RdfLdkitDataSource implements DataSource {
     const iriQuery = buildPageIriQuery(args.aggregate, args.pageSize, skip, args.sort);
     const [total, iriBindings] = await Promise.all([
       lens.count(),
-      new QueryEngine()
-        .queryBindings(iriQuery, this.context())
-        .then((stream) => collectStream(stream)),
+      new QueryEngine().queryBindings(iriQuery, this.context()).then(readBindings),
     ]);
     const iris = iriBindings.map((binding) => binding.get('iri')!.value);
     if (iris.length === 0) {
@@ -66,6 +70,7 @@ export class RdfLdkitDataSource implements DataSource {
     const items = (await lens.findByIris(iris)).map((entity) => toModel<TModel>(entity));
     const itemById = new Map(items.map((item) => [item.id, item]));
     return {
+      // findByIris does not preserve the order of the requested IRIs
       items: iris.flatMap((iri) => {
         const item = itemById.get(iri);
         return item ? [item] : [];
@@ -128,11 +133,22 @@ export class RdfLdkitDataSource implements DataSource {
   }
 
   async delete<TModel extends EntityModel>(args: DeleteArgs<TModel>): Promise<void> {
-    // TODO: Implement incoming reference checks.
     const { fields, lens } = this.resolveTarget(args.aggregate, args.fieldPath);
     const inverseDeleteQuery = buildInverseDeleteQuery(inverseWritableFields(fields), args.id);
     await this.executeUpdate(inverseDeleteQuery);
     await lens.delete(args.id);
+  }
+
+  async listIncomingReferences(id: string): Promise<IncomingReference[]> {
+    const stream = await new QueryEngine().queryBindings(
+      buildIncomingReferencesQuery(id),
+      this.context()
+    );
+    const bindings = readBindings(stream);
+    return bindings.map((binding) => ({
+      subject: binding.get('subject')!.value,
+      predicate: binding.get('predicate')!.value,
+    }));
   }
 
   async listByType(classIri: string): Promise<ReferenceOption[]> {
@@ -146,7 +162,7 @@ export class RdfLdkitDataSource implements DataSource {
     // This SELECT is not tied to a schema, so it runs directly on the query engine with the same
     // endpoint context as the lenses.
     const stream = await new QueryEngine().queryBindings(query, this.context());
-    const bindings = await collectStream(stream);
+    const bindings = readBindings(stream);
 
     // Keep the first label seen per IRI, so a repeated label does not duplicate the option. IRIs
     // without a label fall back to the IRI itself.
@@ -232,6 +248,14 @@ export function buildPageIriQuery(
     .build();
 }
 
+export function buildIncomingReferencesQuery(entityId: string): string {
+  const entityNode = toSparqlNamedNode(entityId, 'Entity IRI');
+  return SELECT.DISTINCT`?subject ?predicate`.WHERE`?subject ?predicate ${entityNode} .`
+    .ORDER_BY`STR(?subject) STR(?predicate)`
+    .LIMIT(INCOMING_REFERENCE_LIMIT)
+    .build();
+}
+
 /**
  * Builds the reversed triples LDKit cannot write through an `@inverse` schema property.
  */
@@ -307,15 +331,13 @@ function referenceIds(value: unknown, field: FieldDescriptor): string[] {
   });
 }
 
-// Drains an LDKit result stream into an array. The stream is event based, so this resolves once
-// all items have arrived.
-function collectStream<T>(stream: RDF.ResultStream<T>): Promise<T[]> {
-  return new Promise((resolve, reject) => {
-    const items: T[] = [];
-    stream.on('data', (item: T) => items.push(item));
-    stream.on('end', () => resolve(items));
-    stream.on('error', reject);
-  });
+// LDKit's QueryEngine buffers the SPARQL JSON response before returning its result stream.
+function readBindings(stream: RDF.ResultStream<RDF.Bindings>): RDF.Bindings[] {
+  const bindings: RDF.Bindings[] = [];
+  for (let binding = stream.read(); binding !== null; binding = stream.read()) {
+    bindings.push(binding);
+  }
+  return bindings;
 }
 
 // LDKit exposes the entity IRI as $id, at the root and in nested entities. The generated models

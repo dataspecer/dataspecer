@@ -1,9 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
-  buildPageIriQuery,
+  buildIncomingReferencesQuery,
   buildInverseDeleteQuery,
   buildInverseInsertQuads,
+  buildPageIriQuery,
+  RdfLdkitDataSource,
   toLdkitEntity,
   toSparqlNamedNode,
 } from '../assets/generated-app/static/src/shared/datasource/rdf-ldkit-data-source.ts';
@@ -90,6 +92,87 @@ describe('generated RDF inverse relation queries', () => {
     expect(() => buildInverseInsertQuads([inverseField], {})).toThrow(
       'Entity IRI must be a safe absolute IRI.'
     );
+  });
+});
+
+describe('generated RDF incoming reference query', () => {
+  it('lists up to ten triples that point to the entity in stable order', () => {
+    const query = buildIncomingReferencesQuery('https://example.org/book/1');
+
+    expect(query).toContain('SELECT DISTINCT ?subject ?predicate');
+    expect(query).toContain('?subject ?predicate <https://example.org/book/1>');
+    expect(query).toContain('ORDER BY STR(?subject) STR(?predicate)');
+    expect(query).toContain('LIMIT 10');
+  });
+
+  it('rejects an unsafe entity IRI', () => {
+    expect(() => buildIncomingReferencesQuery('https://example.org/> } ASK {} #')).toThrow(
+      'Entity IRI must be a safe absolute IRI.'
+    );
+  });
+
+  it('resolves an empty result stream', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          head: { vars: ['subject', 'predicate'] },
+          results: { bindings: [] },
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/sparql-results+json' },
+        }
+      )
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    try {
+      const dataSource = new RdfLdkitDataSource('https://example.org/sparql', {});
+
+      await expect(
+        dataSource.listIncomingReferences('https://example.org/book/1')
+      ).resolves.toEqual([]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('reads reference bindings from the result stream', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          head: { vars: ['subject', 'predicate'] },
+          results: {
+            bindings: [
+              {
+                subject: { type: 'uri', value: 'https://example.org/review/1' },
+                predicate: { type: 'uri', value: 'https://example.org/property/book' },
+              },
+            ],
+          },
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/sparql-results+json' },
+        }
+      )
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    try {
+      const dataSource = new RdfLdkitDataSource('https://example.org/sparql', {});
+
+      await expect(
+        dataSource.listIncomingReferences('https://example.org/book/1')
+      ).resolves.toEqual([
+        {
+          subject: 'https://example.org/review/1',
+          predicate: 'https://example.org/property/book',
+        },
+      ]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
 

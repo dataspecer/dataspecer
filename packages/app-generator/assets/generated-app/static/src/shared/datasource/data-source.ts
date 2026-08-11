@@ -14,6 +14,12 @@ export type ReadListSort =
   | { kind: 'field'; fieldPath: string; direction: SortDirection };
 
 export const DEFAULT_READ_LIST_SORT: ReadListSort = { kind: 'iri', direction: 'asc' };
+export const INCOMING_REFERENCE_LIMIT = 10;
+
+export interface IncomingReference {
+  subject: string;
+  predicate: string;
+}
 
 export interface ReadListArgs<TModel extends EntityModel> {
   aggregate: AggregateDescriptor<TModel>;
@@ -63,6 +69,8 @@ export interface DataSource {
   create<TModel extends EntityModel>(args: MutationArgs<TModel>): Promise<TModel>;
   update<TModel extends EntityModel>(args: IdentifiedMutationArgs<TModel>): Promise<TModel>;
   delete<TModel extends EntityModel>(args: DeleteArgs<TModel>): Promise<void>;
+  /** Lists up to ten RDF references to the entity. */
+  listIncomingReferences(id: string): Promise<IncomingReference[]>;
   /**
    * Lists candidate targets of a reference by their RDF class, for reference form controls.
    * Optional because only sources that can answer a type query provide it.

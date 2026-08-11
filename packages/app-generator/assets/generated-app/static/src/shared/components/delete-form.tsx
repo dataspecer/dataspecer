@@ -1,6 +1,11 @@
 import { useEffect, useId, useState, type SubmitEvent } from 'react';
+import Alert from '@mui/material/Alert';
 
-import type { DataSource } from '../datasource/data-source.ts';
+import {
+  INCOMING_REFERENCE_LIMIT,
+  type DataSource,
+  type IncomingReference,
+} from '../datasource/data-source.ts';
 import { hrefForAction, type OperationNavigationDescriptor } from '../navigation/navigation.ts';
 import {
   errorMessage,
@@ -25,6 +30,10 @@ interface DeleteFormProps<TModel extends EntityModel> {
   id: string;
 }
 
+type IncomingReferenceCheck =
+  | { status: 'loaded'; references: IncomingReference[] }
+  | { status: 'failed' };
+
 export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TModel>) {
   const {
     title,
@@ -39,12 +48,15 @@ export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TM
   const identifierId = useId();
   const [item, setItem] = useState<TModel | null>(null);
   const [issues, setIssues] = useState<ValidationIssue[]>([]);
+  const [incomingReferenceCheck, setIncomingReferenceCheck] =
+    useState<IncomingReferenceCheck | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!id) {
       setItem(null);
+      setIncomingReferenceCheck(null);
       setIssues([
         { code: ValidationIssueCode.Required, message: 'Missing required entity id.', path: 'id' },
       ]);
@@ -54,17 +66,26 @@ export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TM
 
     let active = true;
     setLoading(true);
-    dataSource
-      .readDetail({ aggregate, id })
-      .then((result) => {
+    setIncomingReferenceCheck(null);
+    const referenceRequest: Promise<IncomingReferenceCheck> = dataSource
+      .listIncomingReferences(id)
+      .then((references): IncomingReferenceCheck => ({ status: 'loaded', references }))
+      .catch((caught: unknown): IncomingReferenceCheck => {
+        console.error(caught);
+        return { status: 'failed' };
+      });
+    Promise.all([dataSource.readDetail({ aggregate, id }), referenceRequest])
+      .then(([result, referenceCheck]) => {
         if (!active) {
           return;
         }
         if (result) {
           setItem(result);
           setIssues([]);
+          setIncomingReferenceCheck(referenceCheck);
         } else {
           setItem(null);
+          setIncomingReferenceCheck(null);
           setIssues([{ code: ValidationIssueCode.NotFound, message: 'Entity not found.' }]);
         }
       })
@@ -72,6 +93,7 @@ export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TM
         console.error(caught);
         if (active) {
           setItem(null);
+          setIncomingReferenceCheck(null);
           setIssues([
             {
               code: ValidationIssueCode.Error,
@@ -153,6 +175,8 @@ export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TM
           </div>
         </div>
 
+        <IncomingReferenceWarning check={incomingReferenceCheck} />
+
         {generalErrors.length > 0 ? (
           <div role="alert" className="form-errors">
             {generalErrors.map((issue, index) => (
@@ -171,5 +195,34 @@ export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TM
         </div>
       </form>
     </section>
+  );
+}
+
+function IncomingReferenceWarning(props: { check: IncomingReferenceCheck | null }) {
+  if (props.check === null) {
+    return null;
+  }
+  if (props.check.status === 'failed') {
+    return (
+      <Alert severity="warning">
+        Could not check whether this entity is referenced elsewhere. You can still delete it.
+      </Alert>
+    );
+  }
+  if (props.check.references.length === 0) {
+    return null;
+  }
+  return (
+    <Alert severity="warning">
+      This entity is referenced elsewhere. Deleting it may leave broken references.
+      <ul>
+        {props.check.references.map((reference, index) => (
+          <li key={index}>
+            <code>{reference.subject}</code> via <code>{reference.predicate}</code>
+          </li>
+        ))}
+      </ul>
+      Showing up to {INCOMING_REFERENCE_LIMIT} references.
+    </Alert>
   );
 }
