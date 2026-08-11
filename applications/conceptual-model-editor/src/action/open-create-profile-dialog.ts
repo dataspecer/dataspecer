@@ -47,6 +47,7 @@ import {
   associationProfileDialogStateToNewCmeRelationshipProfile,
 } from "../dialog/association-profile/edit-association-profile-dialog-state-adapter";
 import { LabelResolver } from "../dependency-tracker";
+import { applyControlledVocabularySelection } from "./apply-controlled-vocabulary-selection";
 
 export function openCreateProfileDialogAction(
   cmeExecutor: CmeModelOperationExecutor,
@@ -78,6 +79,8 @@ export function openCreateProfileDialogAction(
         classProfileDialogStateToNewCmeClassProfile(state));
       cmeExecutor.updateSpecialization(result, state.model.identifier,
         [], state.specializations);
+      applyControlledVocabularySelection(
+        cmeExecutor, result, [], state.controlledVocabularies.items);
 
       if (isWritableVisualModel(visualModel)) {
         // TODO PeSk Update visual model
