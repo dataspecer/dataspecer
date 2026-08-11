@@ -7,9 +7,9 @@ export function executeDataPsmSetProfiling(
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmSetProfiling,
 ): CoreExecutorResult {
-  const resource = reader.readResource(operation.dataPsmResource);
+  const resource = reader.readResource(operation.entityId);
   if (resource == null) {
-    return CoreExecutorResult.createError(`Missing data-psm resource '${operation.dataPsmResource}'.`);
+    return CoreExecutorResult.createError(`Missing data-psm resource '${operation.entityId}'.`);
   }
 
   if (!hasProfiling(resource)) {

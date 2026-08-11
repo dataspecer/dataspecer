@@ -27,7 +27,7 @@ export class SetJsonEnforceContext implements ComplexOperation {
     }
 
     const operation = new DataPsmSetJsonEnforceContext();
-    operation.dataPsmEntity = this.entityId;
+    operation.entityId = this.entityId;
     operation.jsonEnforceContext = this.enforceContext;
     this.store.applyOperation(schema, operation);
   }

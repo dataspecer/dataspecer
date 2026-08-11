@@ -20,7 +20,7 @@ export class SetXmlGmlType implements ComplexOperation {
     const schema = this.store.getSchemaForResource(this.forDataPsmResourceIri) as string;
 
     const op = new DataPsmSetGmlTypeXmlExtension();
-    op.dataPsmProperty = this.forDataPsmResourceIri;
+    op.entityId = this.forDataPsmResourceIri;
     op.gmlType = this.gmlType;
     this.store.applyOperation(schema, op);
   }

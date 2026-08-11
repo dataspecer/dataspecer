@@ -12,7 +12,7 @@ export interface CreateSemanticModelClassProfile extends Operation {
   entity: Partial<Omit<SemanticModelClassProfile, "type">> & Pick<SemanticModelClassProfile, "id">;
 }
 
-export const CREATE_SEMANTIC_MODEL_CLASS_PROFILE = "create-class-profile";
+export const CREATE_SEMANTIC_MODEL_CLASS_PROFILE = "https://schemas.dataspecer.com/semantic-model/operations/create-class-profile";
 
 export function isCreateSemanticModelClassProfile(operation: Operation)
   : operation is CreateSemanticModelClassProfile {
@@ -29,7 +29,7 @@ export interface ModifySemanticModelClassProfile extends Operation {
 
 }
 
-export const MODIFY_SEMANTIC_MODEL_CLASS_PROFILE = "modify-class-profile";
+export const MODIFY_SEMANTIC_MODEL_CLASS_PROFILE = "https://schemas.dataspecer.com/semantic-model/operations/update-class-profile";
 
 export function isModifySemanticModelClassProfile(operation: Operation)
   : operation is ModifySemanticModelClassProfile {
@@ -57,7 +57,7 @@ export interface CreateSemanticModelRelationshipProfile extends Operation {
 
 }
 
-export const CREATE_SEMANTIC_MODEL_RELATIONSHIP_PROFILE = "create-relation-profile";
+export const CREATE_SEMANTIC_MODEL_RELATIONSHIP_PROFILE = "https://schemas.dataspecer.com/semantic-model/operations/create-relationship-profile";
 
 export function isCreateSemanticModelRelationshipProfile(operation: Operation)
   : operation is CreateSemanticModelRelationshipProfile {
@@ -78,7 +78,7 @@ export interface ModifySemanticModelRelationshipProfile extends Operation {
 
 }
 
-export const MODIFY_SEMANTIC_MODEL_RELATIONSHIP_PROFILE = "modify-relation-profile";
+export const MODIFY_SEMANTIC_MODEL_RELATIONSHIP_PROFILE = "https://schemas.dataspecer.com/semantic-model/operations/update-relationship-profile";
 
 export function isModifySemanticModelRelationshipProfile(operation: Operation)
   : operation is ModifySemanticModelRelationshipProfile {
@@ -100,7 +100,7 @@ export interface ModifySemanticModelRelationshipEndProfile extends Operation {
 
 }
 
-export const MODIFY_SEMANTIC_MODEL_RELATIONSHIP_END_PROFILE = "modify-relation-end-profile";
+export const MODIFY_SEMANTIC_MODEL_RELATIONSHIP_END_PROFILE = "https://schemas.dataspecer.com/semantic-model/operations/update-relationship-end-profile";
 
 export function isModifySemanticModelRelationshipEndProfile(operation: Operation)
   : operation is ModifySemanticModelRelationshipEndProfile {
@@ -113,7 +113,7 @@ export interface AddControlledVocabularyAssignment extends Operation {
   assignment: ControlledVocabularyAssignment;
 }
 
-export const ADD_CONTROLLED_VOCABULARY_ASSIGNMENT = "add-controlled-vocabulary-assignment";
+export const ADD_CONTROLLED_VOCABULARY_ASSIGNMENT = "https://schemas.dataspecer.com/semantic-model/operations/create-controlled-vocabulary-assignment";
 
 export function isAddControlledVocabularyAssignment(op: Operation): op is AddControlledVocabularyAssignment {
   return op.type === ADD_CONTROLLED_VOCABULARY_ASSIGNMENT;
@@ -125,7 +125,7 @@ export interface RemoveControlledVocabularyAssignment extends Operation {
   controlledVocabularyIdentifier: EntityIdentifier;
 }
 
-export const REMOVE_CONTROLLED_VOCABULARY_ASSIGNMENT = "remove-controlled-vocabulary-assignment";
+export const REMOVE_CONTROLLED_VOCABULARY_ASSIGNMENT = "https://schemas.dataspecer.com/semantic-model/operations/delete-controlled-vocabulary-assignment";
 
 export function isRemoveControlledVocabularyAssignment(op: Operation): op is RemoveControlledVocabularyAssignment {
   return op.type === REMOVE_CONTROLLED_VOCABULARY_ASSIGNMENT;
@@ -138,7 +138,7 @@ export interface ModifyControlledVocabularyAssignment extends Operation {
   changes: Partial<Pick<ControlledVocabularyAssignment, "qualifier" | "override">>;
 }
 
-export const MODIFY_CONTROLLED_VOCABULARY_ASSIGNMENT = "modify-controlled-vocabulary-assignment";
+export const MODIFY_CONTROLLED_VOCABULARY_ASSIGNMENT = "https://schemas.dataspecer.com/semantic-model/operations/update-controlled-vocabulary-assignment";
 
 export function isModifyControlledVocabularyAssignment(op: Operation): op is ModifyControlledVocabularyAssignment {
   return op.type === MODIFY_CONTROLLED_VOCABULARY_ASSIGNMENT;

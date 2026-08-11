@@ -8,7 +8,7 @@ export function executeDataPsmSetJsonLdTypeMapping(
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmSetJsonLdDefinedTypeMapping
 ): CoreExecutorResult {
-  const resource = reader.readResource(operation.dataPsmEntity);
+  const resource = reader.readResource(operation.entityId);
   if (resource == null || (!DataPsmSchema.is(resource) && !DataPsmClass.is(resource))) {
     return DataPsmExecutorResultFactory.invalidType(resource, "data-psm schema or class");
   }

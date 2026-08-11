@@ -1,6 +1,6 @@
 import { deepEqual } from "@dataspecer/utilities";
 import type { Entity, EntityRecord } from "./entity.ts";
-import type { EntityChange, EntityChangeCreated } from "./observable.ts";
+import type { EntityChange, EntityChangeCreated, EntityChangeUpdated } from "./observable.ts";
 import { createRemoveEntityOperation, createSetEntityOperation, createUpdateEntityOperation, type RemoveEntityOperation, type SetEntityOperation, type UpdateEntityOperation } from "../operation/entity-operations.ts";
 
 /**
@@ -52,17 +52,19 @@ export function changesToEntityOperations(
   // should be created before A.
 
   const creations = changes.filter((change) => change.previous === null) as EntityChangeCreated[];
-  const updates = changes.filter((change) => change.previous !== null && change.next !== null);
+  const updates = changes.filter((change) => change.previous !== null && change.next !== null) as EntityChangeUpdated[];
   const deletions = changes.filter((change) => change.next === null);
 
   return [
     ...creations.map(change => createSetEntityOperation(change.next)),
-    ...updates.map(change => createUpdateEntityOperation(
-      {
-        ...createPatch(change.previous, change.next),
-        id: change.previous.id, // id is required for update operation
+    ...updates.map(change => {
+      const patch = createPatch(change.previous, change.next);
+      // The type of an entity is immutable, so such a change is a replacement.
+      if ("type" in patch) {
+        return createSetEntityOperation(change.next);
       }
-    )),
+      return createUpdateEntityOperation(change.previous.id, patch);
+    }),
     ...deletions.map(change => createRemoveEntityOperation(change.previous.id)),
   ]
 }

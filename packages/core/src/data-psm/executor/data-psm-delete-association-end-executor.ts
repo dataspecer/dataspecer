@@ -14,6 +14,6 @@ export function executeDataPsmDeleteAssociationEnd(
   return removeFromClass(
     reader,
     operation.dataPsmOwner,
-    operation.dataPsmAssociationEnd
+    operation.entityId
   );
 }

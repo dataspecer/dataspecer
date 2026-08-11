@@ -116,8 +116,14 @@ export function createContext(
     }
   };
 
-  const getPropertyForName = (
+  /**
+   * Returns the property used to store the name or the description.
+   * When the entity does not declare the property we continue with the entity
+   * the value is inherited from.
+   */
+  const getPropertyFor = (
     entityIdentifier: string | null,
+    type: "name" | "description",
     visited: string[] = [],
   ): string | null => {
     if (entityIdentifier === null || visited.includes(entityIdentifier)) {
@@ -127,23 +133,30 @@ export function createContext(
     if (entity === null) {
       return null;
     }
-    // Based on the entity type we can either
-    if (isSemanticModelClass(entity)) {
-      return entity.nameProperty ?? null;
-    } else if (isSemanticModelRelationship(entity)) {
-      const [_, range] = entity.ends;
-      return range.nameProperty ?? null
-    } else if (isSemanticModelClassProfile(entity)) {
-      return getPropertyForName(
-        entity.nameFromProfiled, [...visited, entityIdentifier]);
-    } else if (isSemanticModelRelationshipProfile(entity)) {
-      const [_, range] = entity.ends;
-      return getPropertyForName(
-        range.nameFromProfiled, [...visited, entityIdentifier]);
-    } else {
-      return null;
+    // Relationships, and their profiles, store the values in the range end.
+    const source = (
+      isSemanticModelRelationship(entity)
+        || isSemanticModelRelationshipProfile(entity)
+        ? entity.ends[1] : entity
+    ) as {
+      nameProperty?: string | null,
+      nameFromProfiled?: string | null,
+      descriptionProperty?: string | null,
+      descriptionFromProfiled?: string | null,
+    } | undefined;
+    const property = type === "name"
+      ? source?.nameProperty : source?.descriptionProperty;
+    if (property !== undefined && property !== null) {
+      return property;
     }
+    const fromProfiled = type === "name"
+      ? source?.nameFromProfiled : source?.descriptionFromProfiled;
+    return getPropertyFor(
+      fromProfiled ?? null, type, [...visited, entityIdentifier]);
   };
+
+  const getPropertyForName = (entityIdentifier: string | null): string | null =>
+    getPropertyFor(entityIdentifier, "name");
 
   const getPropertyForDescription = (
     entityIdentifier: string | null,

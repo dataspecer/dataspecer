@@ -20,6 +20,7 @@ export interface FetchResponse {
   text(): Promise<string>;
 
   status: number;
+  statusText: string;
 }
 
 export interface FetchHeaders {

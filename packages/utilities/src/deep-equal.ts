@@ -21,8 +21,12 @@ export function deepEqual(a: unknown, b: unknown): boolean {
     }
     return true;
   }
-  const keysA = new Set(Object.keys(a));
-  const keysB = new Set(Object.keys(b));
+
+  const entriesA = Object.entries(a as Record<string, unknown>).filter(([, value]) => value !== undefined);
+  const entriesB = Object.entries(b as Record<string, unknown>).filter(([, value]) => value !== undefined);
+
+  const keysA = new Set(entriesA.map(([key]) => key));
+  const keysB = new Set(entriesB.map(([key]) => key));
   if (keysA.symmetricDifference(keysB).size > 0) {
     return false;
   }

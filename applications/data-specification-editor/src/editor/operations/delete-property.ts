@@ -27,24 +27,24 @@ export class DeleteProperty implements ComplexOperation {
     // Decide based on property type
     if (DataPsmAttribute.is(property)) {
       const operation = new DataPsmDeleteAttribute();
-      operation.dataPsmAttribute = this.propertyIri;
+      operation.entityId = this.propertyIri;
       operation.dataPsmOwner = this.ownerClassIri;
       this.store.applyOperation(schema, operation);
     } else if (DataPsmAssociationEnd.is(property)) {
       const operation = new DataPsmDeleteAssociationEnd();
-      operation.dataPsmAssociationEnd = this.propertyIri;
+      operation.entityId = this.propertyIri;
       operation.dataPsmOwner = this.ownerClassIri;
       this.store.applyOperation(schema, operation);
       // todo garbage collect associated object
     } else if (DataPsmInclude.is(property)) {
       const dataPsmDeleteInclude = new DataPsmDeleteInclude();
-      dataPsmDeleteInclude.dataPsmInclude = this.propertyIri;
+      dataPsmDeleteInclude.entityId = this.propertyIri;
       dataPsmDeleteInclude.dataPsmOwner = this.ownerClassIri;
       this.store.applyOperation(schema, dataPsmDeleteInclude);
       // todo garbage collect associated object
     } else if (DataPsmContainer.is(property)) {
       const dataPsmDeleteContainer = new DataPsmDeleteContainer();
-      dataPsmDeleteContainer.dataPsmContainer = this.propertyIri;
+      dataPsmDeleteContainer.entityId = this.propertyIri;
       dataPsmDeleteContainer.dataPsmOwner = this.ownerClassIri;
       this.store.applyOperation(schema, dataPsmDeleteContainer);
     } else {

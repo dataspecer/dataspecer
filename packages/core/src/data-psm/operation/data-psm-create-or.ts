@@ -1,9 +1,14 @@
-import {CoreOperation, CoreOperationResult, CoreResource, CoreTyped} from "../../core/index.ts";
+import { DataPsmOperationResult } from "./data-psm-operation-result.ts";
+import { generateOperationId, type Operation } from "../../operation/index.ts";
 import * as PSM from "../data-psm-vocabulary.ts";
 import { generateEntityId } from "../../entity-model/entity.ts";
 
-export class DataPsmCreateOr extends CoreOperation {
+export class DataPsmCreateOr implements Operation {
   static readonly TYPE = PSM.CREATE_OR;
+
+  id: string;
+
+  type: string;
 
   /**
    * IRI of the newly created object, generated up-front so that callers can
@@ -14,16 +19,16 @@ export class DataPsmCreateOr extends CoreOperation {
   dataPsmChoices: string[] = [];
 
   constructor() {
-    super();
-    this.types.push(DataPsmCreateOr.TYPE);
+    this.id = generateOperationId();
+    this.type = DataPsmCreateOr.TYPE;
   }
 
-  static is(resource: CoreResource | null): resource is DataPsmCreateOr {
-    return resource?.types.includes(DataPsmCreateOr.TYPE);
+  static is(operation: Operation | null | undefined): operation is DataPsmCreateOr {
+    return operation?.type === DataPsmCreateOr.TYPE;
   }
 }
 
-export class DataPsmCreateOrResult extends CoreOperationResult {
+export class DataPsmCreateOrResult extends DataPsmOperationResult {
   static readonly TYPE = PSM.CREATE_OR_RESULT;
 
   readonly createdDataPsmOr: string;
@@ -34,9 +39,7 @@ export class DataPsmCreateOrResult extends CoreOperationResult {
     this.createdDataPsmOr = dataPsmOr;
   }
 
-  static is(
-    resource: CoreTyped | null
-  ): resource is DataPsmCreateOrResult {
-    return resource?.types.includes(DataPsmCreateOrResult.TYPE);
+  static is(result: DataPsmOperationResult | null | undefined): result is DataPsmCreateOrResult {
+    return result?.types.includes(DataPsmCreateOrResult.TYPE) ?? false;
   }
 }

@@ -20,10 +20,10 @@ export function executeDataPsmSetTechnicalLabel(
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmSetTechnicalLabel
 ): CoreExecutorResult {
-  const resource = reader.readResource(operation.dataPsmResource);
+  const resource = reader.readResource(operation.entityId);
   if (resource == null) {
     return CoreExecutorResult.createError(
-      `Missing data-psm resource '${operation.dataPsmResource}'.`
+      `Missing data-psm resource '${operation.entityId}'.`
     );
   }
 
