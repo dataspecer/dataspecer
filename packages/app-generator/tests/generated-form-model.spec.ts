@@ -67,12 +67,49 @@ const tagsField: FieldDescriptor = {
   maxCount: null,
 };
 
-const rootAggregate: AggregateDescriptor = {
+const scoresField: FieldDescriptor = {
+  path: 'scores',
+  propertyName: 'scores',
+  label: 'Scores',
+  kind: 'primitive',
+  formControl: 'integer',
+  many: true,
+  required: true,
+  minCount: 2,
+  maxCount: null,
+};
+
+const activeField: FieldDescriptor = {
+  path: 'active',
+  propertyName: 'active',
+  label: 'Active',
+  kind: 'primitive',
+  formControl: 'checkbox',
+  many: false,
+  required: true,
+  minCount: 1,
+  maxCount: 1,
+};
+
+const ownerField: FieldDescriptor = {
+  path: 'owner',
+  propertyName: 'owner',
+  label: 'Owner',
+  kind: 'association',
+  associationKind: 'aggregation',
+  targetClassIri: 'https://example.org/class/owner',
+  many: false,
+  required: true,
+  minCount: 1,
+  maxCount: 1,
+};
+
+const rootAggregate: AggregateDescriptor<EntityRecord> = {
   iri: 'https://example.org/aggregate/root',
   name: 'Root',
   classIri: 'https://example.org/class/root',
-  fields: [tagsField, childrenField],
-  createEmpty: () => ({}),
+  fields: [tagsField, scoresField, activeField, ownerField, childrenField],
+  createEmpty: () => ({ tags: [], scores: [], children: [] }),
 };
 
 const aggregateRegistry: AggregateDescriptorMap = {
@@ -92,6 +129,10 @@ describe('generated recursive form model', () => {
     expect(toInputValue('datetime', value)).toBe('2026-07-27T12:34');
   });
 
+  it('coerces integer controls to numbers', () => {
+    expect(coerceValue('integer', '42', false)).toBe(42);
+  });
+
   it('accepts an absent repeating value but rejects a present scalar', () => {
     expect(fieldValues(undefined, tagsField)).toEqual([]);
     expect(() => fieldValues('tag', tagsField)).toThrow('Tags must contain a list of values.');
@@ -103,6 +144,16 @@ describe('generated recursive form model', () => {
 
     expect(children).toHaveLength(2);
     expect(children.every((child) => child.id?.startsWith('urn:test/'))).toBe(true);
+  });
+
+  it('leaves primitive and aggregation values empty while creating required controls', () => {
+    const draft = createEntityDraft(rootEntityTarget(rootAggregate), aggregateRegistry, 'urn:test');
+
+    expect(draft.tags).toEqual([]);
+    expect(draft.scores).toEqual([undefined, undefined]);
+    expect(draft).not.toHaveProperty('active');
+    expect(draft).not.toHaveProperty('owner');
+    expect((draft.children as EntityRecord[])[0]).not.toHaveProperty('name');
   });
 
   it('validates exact cardinality and nested fields with indexed paths', () => {

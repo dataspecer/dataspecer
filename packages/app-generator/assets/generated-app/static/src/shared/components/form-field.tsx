@@ -148,12 +148,18 @@ function PrimitiveControl(props: PrimitiveControlProps) {
     );
   }
 
-  const inputType = props.control === 'datetime' ? 'datetime-local' : props.control;
+  const inputType =
+    props.control === 'datetime'
+      ? 'datetime-local'
+      : props.control === 'integer'
+        ? 'number'
+        : props.control;
   return (
     <input
       id={props.id}
       aria-label={props.ariaLabel}
       type={inputType}
+      step={props.control === 'number' ? 'any' : undefined}
       value={toInputValue(props.control, props.value)}
       onChange={(event) => props.onChange(coerceValue(props.control, event.target.value, false))}
     />

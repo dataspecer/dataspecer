@@ -316,6 +316,7 @@ describe('renderGeneratedApp', () => {
             primitive('label', 'http://www.w3.org/2001/XMLSchema#string'),
             primitive('active', 'http://www.w3.org/2001/XMLSchema#boolean'),
             primitive('count', 'http://www.w3.org/2001/XMLSchema#integer'),
+            primitive('ratio', 'http://www.w3.org/2001/XMLSchema#decimal'),
             primitive('releasedOn', 'http://www.w3.org/2001/XMLSchema#date'),
             primitive('createdAt', 'http://www.w3.org/2001/XMLSchema#dateTime'),
           ],
@@ -326,9 +327,50 @@ describe('renderGeneratedApp', () => {
 
     expect(descriptor).toContain('"formControl": "text"');
     expect(descriptor).toContain('"formControl": "checkbox"');
+    expect(descriptor).toContain('"formControl": "integer"');
     expect(descriptor).toContain('"formControl": "number"');
     expect(descriptor).toContain('"formControl": "date"');
     expect(descriptor).toContain('"formControl": "datetime"');
+    expect(renderGeneratedApp(model).get('src/shared/components/form-field.tsx')).toContain(
+      "step={props.control === 'number' ? 'any' : undefined}"
+    );
+  });
+
+  it('renders new entity drafts without invented primitive values', () => {
+    const graph = graphFixture();
+    graph.nodes = [node('Widget.Create', 'https://example.org/aggregate/widget', Operation.Create)];
+    graph.edges = [];
+    const model = buildGenerationModel(graph, {
+      dataSpecificationIri: specificationIri,
+      aggregates: [
+        {
+          iri: 'https://example.org/aggregate/widget',
+          name: 'Widget',
+          classIri: 'https://example.org/class/widget',
+          fields: [
+            { ...primitive('label', 'http://www.w3.org/2001/XMLSchema#string'), required: true },
+            { ...primitive('count', 'http://www.w3.org/2001/XMLSchema#integer'), required: true },
+            {
+              ...primitive('createdAt', 'http://www.w3.org/2001/XMLSchema#dateTime'),
+              required: true,
+            },
+            { ...primitive('active', 'http://www.w3.org/2001/XMLSchema#boolean'), required: true },
+            {
+              ...primitive('tags', 'http://www.w3.org/2001/XMLSchema#string'),
+              many: true,
+            },
+          ],
+        },
+      ],
+    });
+    const source = renderGeneratedApp(model).get('src/modules/widget/model.ts');
+
+    expect(source).toContain('createEmptyWidgetModel(): Partial<WidgetModel>');
+    expect(source).toContain('tags: []');
+    expect(source).not.toContain('label: ""');
+    expect(source).not.toContain('count: 0');
+    expect(source).not.toContain('createdAt: new Date()');
+    expect(source).not.toContain('active: false');
   });
 
   it('renders configured success redirects with entity-aware form navigation', () => {

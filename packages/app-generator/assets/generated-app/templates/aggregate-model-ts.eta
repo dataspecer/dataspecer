@@ -14,10 +14,10 @@ export interface <%= it.aggregate.modelName %> extends EntityModel {
 <% }) -%>
 }
 
-export function createEmpty<%= it.aggregate.modelName %>(): <%= it.aggregate.modelName %> {
+export function createEmpty<%= it.aggregate.modelName %>(): Partial<<%= it.aggregate.modelName %>> {
   return {
-<% it.aggregate.fields.filter((field) => field.required).forEach((field) => { -%>
-    <%= field.propertyName %>: <%~ field.emptyValue %>,
+<% it.aggregate.fields.filter((field) => field.many).forEach((field) => { -%>
+    <%= field.propertyName %>: [],
 <% }) -%>
   };
 }

@@ -34,8 +34,6 @@ export interface RenderedField extends GeneratedFieldDescriptor {
   nestedModelName?: string;
   /** The field as a TypeScript member declaration, for example `name?: string | null`. */
   modelDeclaration: string;
-  /** TypeScript expression producing the default value for required fields. */
-  emptyValue: string;
   /** Form control for an editable primitive field. Absent for associations. */
   formControl?: FormControl;
   fields?: RenderedField[];
@@ -105,7 +103,6 @@ function toRenderedField(
     ...(nestedModelName ? { nestedModelName } : {}),
     modelType,
     modelDeclaration: toModelDeclaration(propertyName, field.required, modelType),
-    emptyValue: toEmptyValue(field, children),
     ...(formControl ? { formControl } : {}),
   };
 }
@@ -168,30 +165,4 @@ function toModelType(
 
   const mapping = datatypeMapping(field.datatype);
   return field.many ? `${mapping.tsType}[]` : mapping.tsType;
-}
-
-function toEmptyValue(field: GeneratedFieldDescriptor, children?: RenderedField[]): string {
-  if (field.kind === FieldKind.Association) {
-    if (field.many) {
-      return '[]';
-    }
-    if (hasNestedSchema(field) && children) {
-      const requiredChildren = children.filter((child) => child.required);
-      if (requiredChildren.length === 0) {
-        return '{}';
-      }
-      return `{ ${requiredChildren
-        .map((child) => `${child.propertyName}: ${child.emptyValue}`)
-        .join(', ')} }`;
-    }
-    if (field.targetClassIri) {
-      // A reference reads and writes as an entity IRI object.
-      return "{ id: '' }";
-    }
-    // A bare reference with no target class is an IRI string.
-    return '""';
-  }
-
-  const mapping = datatypeMapping(field.datatype);
-  return field.many ? '[]' : mapping.emptyValue;
 }

@@ -31,6 +31,7 @@ export function resolveControl(field: FieldDescriptor): FieldControl {
 // value so an unset optional field is not written.
 export function coerceValue(control: FieldControl, raw: string, checked: boolean): unknown {
   switch (control) {
+    case 'integer':
     case 'number':
       return raw === '' ? undefined : Number(raw);
     case 'date':

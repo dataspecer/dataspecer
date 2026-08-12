@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { FieldKind } from '../src/metadata/types.ts';
 import type { GeneratedAggregateDescriptor } from '../src/generation-model/types.ts';
+import { datatypeMapping } from '../src/rendering/datatypes.ts';
 import { buildLdkitSchema } from '../src/rendering/ldkit-schema.ts';
 import { toRenderedAggregate } from '../src/rendering/rendered-aggregate.ts';
 
@@ -101,7 +102,6 @@ describe('LDKit schema generation', () => {
       '@optional': true,
     });
     expect(note?.modelType).toBe('unknown');
-    expect(note?.emptyValue).toBe('undefined');
     expect(note?.formControl).toBeUndefined();
   });
 
@@ -231,7 +231,6 @@ describe('LDKit schema generation', () => {
 
     expect(schema.orphan).toEqual({ '@id': 'https://example.org/p/orphan', '@optional': true });
     expect(orphan?.modelType).toBe('string');
-    expect(orphan?.emptyValue).toBe('""');
   });
 
   it('marks reverse relations as inverse', () => {
@@ -290,7 +289,14 @@ describe('LDKit schema generation', () => {
     const note = fields.find((field) => field.path === 'note');
 
     expect(created?.modelType).toBe('Date');
-    expect(created?.emptyValue).toBe('new Date()');
     expect(note?.modelType).toBe('unknown');
+  });
+
+  it('uses separate controls for integer and fractional numbers', () => {
+    expect(datatypeMapping(`${XSD}integer`).formControl).toBe('integer');
+    expect(datatypeMapping(`${XSD}unsignedLong`).formControl).toBe('integer');
+    expect(datatypeMapping(`${XSD}decimal`).formControl).toBe('number');
+    expect(datatypeMapping(`${XSD}float`).formControl).toBe('number');
+    expect(datatypeMapping(`${XSD}double`).formControl).toBe('number');
   });
 });

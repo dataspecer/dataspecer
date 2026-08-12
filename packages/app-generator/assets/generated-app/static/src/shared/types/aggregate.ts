@@ -3,7 +3,7 @@ export type FieldKind = 'primitive' | 'association';
 export type AssociationKind = 'composition' | 'aggregation';
 
 /** The HTML form control a primitive field maps to in generated forms. */
-export type FormControl = 'text' | 'number' | 'date' | 'datetime' | 'checkbox';
+export type FormControl = 'text' | 'integer' | 'number' | 'date' | 'datetime' | 'checkbox';
 
 export interface FieldDescriptor {
   path: string;
@@ -46,7 +46,7 @@ export interface AggregateDescriptor<TModel extends EntityModel = EntityModel> {
   name: string;
   classIri: string;
   fields: FieldDescriptor[];
-  createEmpty(): TModel;
+  createEmpty(): Partial<TModel>;
 }
 
 export type AggregateDescriptorMap = Record<string, AggregateDescriptor>;

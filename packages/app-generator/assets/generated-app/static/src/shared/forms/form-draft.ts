@@ -24,24 +24,25 @@ export function createEntityDraft(
   aggregateRegistry: AggregateDescriptorMap,
   instanceBaseIri: string
 ): EntityRecord {
-  const seed =
-    target.fieldPath.length === 0
-      ? (target.aggregate.createEmpty() as EntityRecord)
-      : ({} as EntityRecord);
-  const entity: EntityRecord = { ...seed, id: generateIri(instanceBaseIri) };
+  const entity: EntityRecord = {
+    ...(target.fieldPath.length === 0 ? target.aggregate.createEmpty() : {}),
+    id: generateIri(instanceBaseIri),
+  };
   for (const field of target.fields) {
     const count = minimumCount(field);
     if (field.many) {
-      const seeded = !isCompositionField(field)
-        ? [...fieldValues(seed[field.propertyName], field)]
-        : [];
-      while (seeded.length < count) {
-        seeded.push(createFieldValue(field, target, aggregateRegistry, instanceBaseIri));
+      const values = isCompositionField(field)
+        ? []
+        : [...fieldValues(entity[field.propertyName], field)];
+      if (field.kind === 'primitive' || isCompositionField(field)) {
+        while (values.length < count) {
+          values.push(createFieldValue(field, target, aggregateRegistry, instanceBaseIri));
+        }
       }
-      entity[field.propertyName] = seeded;
+      entity[field.propertyName] = values;
       continue;
     }
-    if (count > 0 && (field.kind === 'association' || !Object.hasOwn(seed, field.propertyName))) {
+    if (count > 0 && isCompositionField(field)) {
       const value = createFieldValue(field, target, aggregateRegistry, instanceBaseIri);
       if (value !== undefined) {
         entity[field.propertyName] = value;
@@ -61,10 +62,7 @@ function createFieldValue(
     const target = resolveCompositionTarget(owner, field, aggregateRegistry);
     return target ? createEntityDraft(target, aggregateRegistry, instanceBaseIri) : undefined;
   }
-  if (field.kind === 'association') {
-    return field.targetClassIri ? { id: '' } : '';
-  }
-  return field.formControl === 'checkbox' ? false : field.formControl === 'text' ? '' : undefined;
+  return undefined;
 }
 
 /**
