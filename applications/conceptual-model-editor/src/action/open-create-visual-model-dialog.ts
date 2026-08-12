@@ -4,8 +4,8 @@ import { DialogApiContextType } from "../dialog/dialog-service";
 import { Options } from "../application";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { createNewVisualModelAction } from "./create-new-visual-model-from-source-visual-model";
-import { QueryParamsContextType } from "@/context/query-params-context";
-import { createVisualModelDialog } from "@/dialog/visual-model/create-visual-model/edit-visual-model-dialog";
+import { QueryParamsContextType } from "../context/query-params-context";
+import { createVisualModelDialog } from "../dialog/visual-model/create-visual-model/edit-visual-model-dialog";
 import { changeVisualModelAction } from "./change-visual-model";
 import {
   createEditVisualModelDialogState,

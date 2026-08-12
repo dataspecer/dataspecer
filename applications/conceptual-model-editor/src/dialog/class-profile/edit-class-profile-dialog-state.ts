@@ -18,7 +18,7 @@ import { semanticModelTrackerToCmeSemanticModel } from "../../dataspecer/cme-mod
 import { configuration } from "../../application";
 import { LabelResolver } from "../../dependency-tracker";
 import { SemanticModelClassProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { CmeClassProfileRole } from "@/dataspecer/cme-model/model";
+import { CmeClassProfileRole } from "../../dataspecer/cme-model/model";
 
 export interface ClassProfileDialogState
   extends BaseEntityProfileDialogState<EntityRepresentative> {

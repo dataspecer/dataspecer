@@ -11,7 +11,7 @@ import {
 import { ModelGraphContextType, UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
-import { createWritableVisualModel } from "@/dataspecer/visual-model/visual-model-factory";
+import { createWritableVisualModel } from "../dataspecer/visual-model/visual-model-factory";
 
 /**
  *

@@ -17,14 +17,14 @@ import {
   SemanticModelClassProfile,
   SemanticModelRelationshipProfile
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { isSemanticModelAttributeProfile } from "@/dataspecer/semantic-model";
+import { isSemanticModelAttributeProfile } from "../dataspecer/semantic-model";
 import {
   getDomainAndRange,
   getDomainAndRangeConcepts,
   getSemanticConnectionEndConcepts
-} from "@/util/relationship-utils";
+} from "../util/relationship-utils";
 import { addSemanticClassToVisualModelAction } from "./add-class-to-visual-model";
-import { findSourceModelOfEntity } from "@/service/model-service";
+import { findSourceModelOfEntity } from "../service/model-service";
 import { addSemanticClassProfileToVisualModelAction } from "./add-class-profile-to-visual-model";
 import { findPositionForNewNodesUsingLayouting, findPositionForNewNodeUsingLayouting } from "./layout-visual-model";
 import { getVisualNodeContentBasedOnExistingEntities } from "./utilities";

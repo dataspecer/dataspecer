@@ -20,7 +20,7 @@ import {
 import "./developer-tools.css";
 import { useExploration } from "../../context/highlighting-exploration-mode";
 import { t } from "../../application";
-import { useActions } from "@/action/actions-react-binding";
+import { useActions } from "../../action/actions-react-binding";
 
 /**
  * Provides some internal information.

@@ -9,13 +9,13 @@ import { isVisualDiagramNode,
   VisualRelationship,
   WritableVisualModel
 } from "@dataspecer/visual-model";
-import { VisualModelDiagramNode } from "@/diagram";
-import { ModelGraphContextType } from "@/context/model-context";
-import { UseNotificationServiceWriterType } from "@/notification/notification-service-context";
+import { VisualModelDiagramNode } from "../diagram";
+import { ModelGraphContextType } from "../context/model-context";
+import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { AnchorOverrideSetting, getDefaultUserGivenAlgorithmConfigurationsFull, XY } from "@dataspecer/layout";
-import { addVisualNode } from "@/dataspecer/visual-model/operation/add-visual-node";
-import { UseDiagramType } from "@/diagram/diagram-hook";
-import { addVisualDiagramNode } from "@/dataspecer/visual-model/operation/add-visual-diagram-node";
+import { addVisualNode } from "../dataspecer/visual-model/operation/add-visual-node";
+import { UseDiagramType } from "../diagram/diagram-hook";
+import { addVisualDiagramNode } from "../dataspecer/visual-model/operation/add-visual-diagram-node";
 import {
   getBotRightPosition,
   getClassesAndDiagramNodesModelsFromVisualModelRecursively,
@@ -23,7 +23,7 @@ import {
   isVisualEdgeEnd,
   VisualEdgeEndPoint
 } from "./utilities";
-import { ClassesContextType } from "@/context/classes-context";
+import { ClassesContextType } from "../context/classes-context";
 import {
   SemanticModelClass,
   SemanticModelGeneralization,
@@ -33,7 +33,7 @@ import {
   SemanticModelClassProfile,
   SemanticModelRelationshipProfile
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { getSemanticConnectionEndConcepts } from "@/util/relationship-utils";
+import { getSemanticConnectionEndConcepts } from "../util/relationship-utils";
 import { layoutActiveVisualModelAction } from "./layout-visual-model";
 
 /**
