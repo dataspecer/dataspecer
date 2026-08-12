@@ -18,7 +18,7 @@ import {
   usePerformLayoutDialogController
 } from "./perform-layout-controller";
 import { JSX } from "react";
-import { t } from "@/application";
+import { t } from "../../application";
 import LayeredAlgorithmDirectionDropdown from "./direction-combobox-react-component/direction-combobox";
 
 export const PerformLayoutDialog = (props: DialogProps<PerformLayoutDialogState>) => {

@@ -21,6 +21,7 @@ import {
   type OnConnectEnd,
   type IsValidConnection,
   type FinalConnectionState,
+  type OnNodeDrag,
   MarkerType,
   useKeyPress,
   NodeSelectionChange,
@@ -251,11 +252,11 @@ interface UseDiagramControllerType {
 
   isValidConnection: IsValidConnection<EdgeType>;
 
-  onNodeDrag: (event: React.MouseEvent, node: Node, nodes: Node[]) => void;
+  onNodeDrag: OnNodeDrag<Node>;
 
-  onNodeDragStart: (event: React.MouseEvent, node: Node, nodes: Node[]) => void;
+  onNodeDragStart: OnNodeDrag<Node>;
 
-  onNodeDragStop: (event: React.MouseEvent, node: Node, nodes: Node[]) => void;
+  onNodeDragStop: OnNodeDrag<Node>;
 
   onPaneClick: (event: React.MouseEvent) => void;
 
@@ -583,8 +584,8 @@ function createOnSelectionStartHandler(
   }
 }
 
-const createOnNodeDragHandler = () => {
-  return (_: React.MouseEvent, _node: Node, _nodes: Node[]) => {
+const createOnNodeDragHandler = (): OnNodeDrag<Node> => {
+  return (_event, _node, _nodes) => {
     // EMPTY
   };
 };
@@ -593,8 +594,8 @@ const createOnNodeDragStartHandler = (
   alignmentController: AlignmentController,
   disableExplorationModeHighlightingChanges: () => void,
   closeCanvasMenu: () => void,
-) => {
-  return (_: React.MouseEvent, node: Node, _nodes: Node[]) => {
+): OnNodeDrag<Node> => {
+  return (_event, node, _nodes) => {
     closeCanvasMenu();
     disableExplorationModeHighlightingChanges();
     alignmentController.alignmentSetUpOnNodeDragStart(node);
@@ -657,8 +658,8 @@ const createOnNodeDragStopHandler = (
   api: UseDiagramType,
   alignmentController: AlignmentController,
   enableExplorationModeHighlightingChanges: () => void,
-) => {
-  return (_event: React.MouseEvent, node: Node, _nodes: Node[]) => {
+): OnNodeDrag<Node> => {
+  return (_event, node, _nodes) => {
     enableExplorationModeHighlightingChanges();
     alignmentController.alignmentCleanUpOnNodeDragStop(node);
   };

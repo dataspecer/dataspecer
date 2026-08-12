@@ -6,9 +6,9 @@ import { usePackageService } from "./package-service-context";
 import { getLocalizedStringFromLanguageString } from "../util/language-utils";
 import { type Package } from "@dataspecer/core-v2/project";
 import { useActions } from "../action/actions-react-binding";
-import { packageService } from "@/header/package-service";
+import { packageService } from "../header/package-service";
 import { createDefaultConfigurationModelFromJsonObject } from "@dataspecer/core-v2/configuration-model";
-import { useLayoutConfigurationContext } from "@/context/layout-configuration-context";
+import { useLayoutConfigurationContext } from "../context/layout-configuration-context";
 import { applyLayoutConfiguration } from "@dataspecer/layout";
 
 const MGR_REDIRECT_PATH = import.meta.env.VITE_PUBLIC_MANAGER_PATH;
