@@ -12,7 +12,7 @@ import {
   type SpecificationMetadata,
   FieldKind,
 } from '../metadata/types.ts';
-import { chainIdentity, resolveAssociationChain } from './association-chain.ts';
+import { chainIdentity } from './association-chain.ts';
 import { splitFieldPath } from './field-path.ts';
 import { semanticViolation, semanticWarning, type Violation } from './types.ts';
 import { ViolationCode } from './violation-codes.ts';
@@ -27,7 +27,8 @@ export interface MetadataEnrichment {
  * fields. Every node config is self-contained, so a nested path requires its parent path to be
  * configured as a composition in the same node config. Configured kinds must agree across all
  * aggregates of the same class, because a kind describes the underlying semantic association,
- * not one structure. An unconfigured association is treated as an aggregation.
+ * not one structure. Matching fields inherit an explicit kind, associations without one default
+ * to aggregation.
  */
 export function enrichMetadata(
   graph: ApplicationGraph,
@@ -35,7 +36,6 @@ export function enrichMetadata(
 ): MetadataEnrichment {
   const violations: Violation[] = [];
   const aggregates = new Map(metadata.aggregates.map((aggregate) => [aggregate.iri, aggregate]));
-  const resolvedKinds = new Map<string, AssociationKind>();
   const kindsByClassChain = new Map<string, AssociationKind>();
 
   graph.nodes.forEach((node, nodeIndex) => {
@@ -74,24 +74,19 @@ export function enrichMetadata(
         continue;
       }
 
-      const normalizedPath = resolveAssociationPath(
+      const chain = resolveConfiguredAssociationChain(
         aggregate,
         path,
         violationPath,
         nodeKinds,
         violations
       );
-      if (!normalizedPath) {
-        continue;
-      }
-
-      nodeKinds.set(normalizedPath, kind);
-
-      // The chain resolves whenever the path resolved, so this is a formality for typing.
-      const chain = resolveAssociationChain(aggregate, normalizedPath);
       if (!chain) {
         continue;
       }
+
+      const normalizedPath = chain.map((field) => field.path).join('.');
+      nodeKinds.set(normalizedPath, kind);
 
       const classKey = chainIdentity(aggregate.classIri, chain);
       const previous = kindsByClassChain.get(classKey);
@@ -107,7 +102,6 @@ export function enrichMetadata(
       }
 
       kindsByClassChain.set(classKey, kind);
-      resolvedKinds.set(associationKey(aggregate.iri, normalizedPath), kind);
     }
   });
 
@@ -116,7 +110,12 @@ export function enrichMetadata(
       ...metadata,
       aggregates: metadata.aggregates.map((aggregate) => ({
         ...aggregate,
-        fields: withResolvedAssociationKinds(aggregate.fields, aggregate.iri, '', resolvedKinds),
+        fields: withResolvedAssociationKinds(
+          aggregate.fields,
+          aggregate.classIri,
+          [],
+          kindsByClassChain
+        ),
       })),
     },
     violations,
@@ -125,44 +124,41 @@ export function enrichMetadata(
 
 function withResolvedAssociationKinds(
   fields: AggregateFieldMetadata[],
-  aggregateIri: string,
-  pathPrefix: string,
-  resolvedKinds: Map<string, AssociationKind>
+  classIri: string,
+  parentChain: AggregateFieldMetadata[],
+  kindsByClassChain: Map<string, AssociationKind>
 ): AggregateFieldMetadata[] {
   return fields.map((field) => {
     if (field.kind !== FieldKind.Association) {
       return field;
     }
 
-    const fieldPath = pathPrefix ? `${pathPrefix}.${field.path}` : field.path;
-    const resolvedKind = resolvedKinds.get(associationKey(aggregateIri, fieldPath));
+    const chain = [...parentChain, field];
+    const associationKind =
+      kindsByClassChain.get(chainIdentity(classIri, chain)) ?? AssociationKind.Aggregation;
     const children = field.fields
-      ? withResolvedAssociationKinds(field.fields, aggregateIri, fieldPath, resolvedKinds)
+      ? withResolvedAssociationKinds(field.fields, classIri, chain, kindsByClassChain)
       : undefined;
 
-    if (!resolvedKind && children === field.fields) {
-      return field;
-    }
     return {
       ...field,
-      ...(resolvedKind ? { associationKind: resolvedKind } : {}),
+      associationKind,
       ...(children ? { fields: children } : {}),
     };
   });
 }
 
 /**
- * Walks the config path through the aggregate's field tree. Returns the normalized dotted path
- * when every segment is an association field and all intermediate segments are configured as
- * compositions in the same node config.
+ * Walks the config path through the aggregate's field tree. Returns the association chain when
+ * every segment is an association and all intermediate segments are compositions in this config.
  */
-function resolveAssociationPath(
+function resolveConfiguredAssociationChain(
   aggregate: AggregateMetadata,
   path: string,
   violationPath: string,
   nodeKinds: Map<string, AssociationKind>,
   violations: Violation[]
-): string | undefined {
+): AggregateFieldMetadata[] | undefined {
   const segments = splitFieldPath(path);
   if (segments.length === 0) {
     violations.push(notAssociationViolation(aggregate, path, violationPath));
@@ -170,6 +166,7 @@ function resolveAssociationPath(
   }
 
   let fields = aggregate.fields;
+  const chain: AggregateFieldMetadata[] = [];
   const resolvedSegments: string[] = [];
 
   for (const [index, segment] of segments.entries()) {
@@ -179,9 +176,10 @@ function resolveAssociationPath(
       return undefined;
     }
 
+    chain.push(field);
     resolvedSegments.push(segment);
     if (index === segments.length - 1) {
-      return resolvedSegments.join('.');
+      return chain;
     }
 
     const parentKind = nodeKinds.get(resolvedSegments.join('.'));
@@ -231,8 +229,4 @@ function associationKindFrom(value: unknown): AssociationKind | undefined {
     return value;
   }
   return undefined;
-}
-
-function associationKey(aggregateIri: string, path: string): string {
-  return `${aggregateIri}|${path}`;
 }

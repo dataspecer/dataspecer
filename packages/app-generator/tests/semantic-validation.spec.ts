@@ -270,7 +270,7 @@ describe('analyzeGraphSemantics', () => {
     expectWarnings(graph, ViolationCode.SemanticTransitionRequiresAssociation);
   });
 
-  it('allows delete cascade when no create or update node models the association', () => {
+  it('defaults unconfigured associations to aggregation', () => {
     const deleteBook = node(
       'Book.Delete',
       'https://example.org/aggregate/book-detail',
@@ -286,12 +286,19 @@ describe('analyzeGraphSemantics', () => {
 
     const result = validatePreparedGraph(graph);
 
-    expect(result.valid).toBe(true);
+    expect(result.valid).toBe(false);
+    expect(result.violations).toContainEqual(
+      expect.objectContaining({ code: ViolationCode.SemanticCannotCascadeAggregation })
+    );
+    const book = result.enrichedMetadata.aggregates.find(
+      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail'
+    );
+    expect(book?.fields.find((field) => field.path === 'chapters')?.associationKind).toBe(
+      AssociationKind.Aggregation
+    );
   });
 
-  it('allows delete cascade when the create node structure does not contain the association', () => {
-    // BookForm shares the Book class but has no chapters field, so it cannot contradict the
-    // cascade declared on BookDetail.
+  it('rejects delete cascade when no operation configures the matching association', () => {
     const createBook = node(
       'Book.Create',
       'https://example.org/aggregate/book-form',
@@ -310,9 +317,7 @@ describe('analyzeGraphSemantics', () => {
       edges: [],
     });
 
-    const result = validatePreparedGraph(graph);
-
-    expect(result.valid).toBe(true);
+    expectViolations(graph, ViolationCode.SemanticCannotCascadeAggregation);
   });
 
   it('rejects delete cascade when an update node declares the association as an aggregation', () => {
@@ -341,7 +346,6 @@ describe('analyzeGraphSemantics', () => {
   });
 
   it('rejects delete cascade when the association is unconfigured on an update node', () => {
-    // An unconfigured association on an update node of the same class defaults to aggregation.
     const updateBook = node(
       'Book.Update',
       'https://example.org/aggregate/book-detail',
@@ -361,6 +365,70 @@ describe('analyzeGraphSemantics', () => {
     });
 
     expectViolations(graph, ViolationCode.SemanticCannotCascadeAggregation);
+  });
+
+  it('inherits a composition on another node of the same aggregate', () => {
+    const graph = validGraph({
+      nodes: [
+        node('Book.Create', 'https://example.org/aggregate/book-detail', Operation.Create, {
+          associations: { chapters: AssociationKind.Composition },
+        }),
+        node('Book.Update', 'https://example.org/aggregate/book-detail', Operation.Update),
+        node('Book.Delete', 'https://example.org/aggregate/book-detail', Operation.Delete, {
+          delete: { chapters: DeletePolicy.Cascade },
+        }),
+      ],
+      edges: [],
+    });
+
+    const result = validatePreparedGraph(graph);
+
+    expect(result.valid).toBe(true);
+    const book = result.enrichedMetadata.aggregates.find(
+      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail'
+    );
+    expect(book?.fields.find((field) => field.path === 'chapters')?.associationKind).toBe(
+      AssociationKind.Composition
+    );
+  });
+
+  it('inherits a composition across matching aggregates of the same class', () => {
+    const metadata = structuredClone(basicMetadata);
+    const detailAuthor = metadata.aggregates
+      .find((aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail')
+      ?.fields.find((field) => field.path === 'author');
+    const listAuthor = metadata.aggregates
+      .find((aggregate) => aggregate.iri === 'https://example.org/aggregate/book-list')
+      ?.fields.find((field) => field.path === 'author');
+    if (!detailAuthor || !listAuthor) {
+      throw new Error('Missing author fields in the test metadata.');
+    }
+    detailAuthor.propertyIri = 'https://example.org/property/author';
+    listAuthor.path = 'writer';
+    listAuthor.propertyIri = detailAuthor.propertyIri;
+
+    const graph = validGraph({
+      nodes: [
+        node('Book.Create', 'https://example.org/aggregate/book-detail', Operation.Create, {
+          associations: { author: AssociationKind.Composition },
+        }),
+        node('BookRow.Update', 'https://example.org/aggregate/book-list', Operation.Update),
+        node('BookRow.Delete', 'https://example.org/aggregate/book-list', Operation.Delete, {
+          delete: { writer: DeletePolicy.Cascade },
+        }),
+      ],
+      edges: [],
+    });
+
+    const result = analyzeGraphSemantics(graph, metadata);
+
+    expect(result.valid).toBe(true);
+    const bookList = result.enrichedMetadata.aggregates.find(
+      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-list'
+    );
+    expect(bookList?.fields.find((field) => field.path === 'writer')?.associationKind).toBe(
+      AssociationKind.Composition
+    );
   });
 
   it('allows nested delete cascade through compositions declared on an update node', () => {
@@ -644,7 +712,6 @@ describe('analyzeGraphSemantics', () => {
       nodes: [
         node('Book.Delete', 'https://example.org/aggregate/book-detail', Operation.Delete, {
           associations: { chapters: AssociationKind.Composition },
-          delete: { chapters: DeletePolicy.Cascade },
         }),
       ],
       edges: [],

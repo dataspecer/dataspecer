@@ -269,9 +269,9 @@ describe('buildGenerationModel', () => {
     const chapterDetail = model.aggregates.find(
       (aggregate) => aggregate.iri === 'https://example.org/aggregate/chapter-detail'
     );
-    expect(
-      chapterDetail?.fields.find((field) => field.path === 'editor')?.associationKind
-    ).toBeUndefined();
+    expect(chapterDetail?.fields.find((field) => field.path === 'editor')?.associationKind).toBe(
+      AssociationKind.Aggregation
+    );
   });
 
   it('classifies transitions into operation navigation descriptors', () => {

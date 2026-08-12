@@ -32,44 +32,10 @@ export function resolveAssociationChain(
 }
 
 /**
- * Finds the association chain in another aggregate that addresses the same semantic associations.
- * Fields match by property IRI, or by technical label when property IRIs are not available.
- * Structures of the same class can model different subsets of its properties, so a chain may
- * have no counterpart in the other aggregate.
- */
-export function findMatchingChain(
-  aggregate: AggregateMetadata,
-  chain: AggregateFieldMetadata[]
-): AggregateFieldMetadata[] | undefined {
-  let fields = aggregate.fields;
-  const matched: AggregateFieldMetadata[] = [];
-
-  for (const source of chain) {
-    const field = fields.find(
-      (candidate) => candidate.kind === FieldKind.Association && matchesField(candidate, source)
-    );
-    if (!field) {
-      return undefined;
-    }
-    matched.push(field);
-    fields = field.fields ?? [];
-  }
-
-  return matched;
-}
-
-/**
  * Identity of an association chain within a class. Aggregates of the same class refer to the
  * same semantic association through it, so kinds configured on different aggregates can be
  * compared.
  */
 export function chainIdentity(classIri: string, chain: AggregateFieldMetadata[]): string {
   return [classIri, ...chain.map((field) => field.propertyIri ?? field.path)].join('|');
-}
-
-function matchesField(candidate: AggregateFieldMetadata, source: AggregateFieldMetadata): boolean {
-  if (candidate.propertyIri && source.propertyIri) {
-    return candidate.propertyIri === source.propertyIri;
-  }
-  return candidate.path === source.path;
 }
