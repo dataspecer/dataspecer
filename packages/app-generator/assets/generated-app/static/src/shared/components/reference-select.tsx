@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { DataSource, ReferenceOption } from '../datasource/data-source.ts';
-import { maximumCount, minimumCount } from '../forms/entity-target.ts';
-import type { FieldDescriptor } from '../types/aggregate.ts';
+import { maximumCount, minimumCount, referenceDisplayFields } from '../forms/entity-target.ts';
+import type { AggregateDescriptorMap, FieldDescriptor } from '../types/aggregate.ts';
 
 interface ReferenceSelectProps {
   field: FieldDescriptor;
   values: string[];
   multiple: boolean;
   dataSource: DataSource;
+  aggregateRegistry: AggregateDescriptorMap;
   controlId: string;
   onChange: (values: string[]) => void;
 }
@@ -18,8 +19,12 @@ interface ReferenceSelectProps {
  * the datasource cannot enumerate instances of the target class.
  */
 export function ReferenceSelect(props: ReferenceSelectProps) {
-  const { field, values, multiple, dataSource, controlId, onChange } = props;
+  const { field, values, multiple, dataSource, aggregateRegistry, controlId, onChange } = props;
   const classIri = field.targetClassIri;
+  const displayFields = useMemo(
+    () => referenceDisplayFields(field, aggregateRegistry),
+    [aggregateRegistry, field]
+  );
   const dialog = useRef<HTMLDialogElement>(null);
   const [options, setOptions] = useState<ReferenceOption[] | null>(null);
   const [failed, setFailed] = useState(false);
@@ -37,7 +42,12 @@ export function ReferenceSelect(props: ReferenceSelectProps) {
     }
     let active = true;
     dataSource
-      .listByType(classIri)
+      .listByType({
+        classIri,
+        displayProperties: displayFields.flatMap((displayField) =>
+          displayField.propertyIri ? [displayField.propertyIri] : []
+        ),
+      })
       .then((result) => {
         if (active) {
           setOptions(result);
@@ -53,7 +63,7 @@ export function ReferenceSelect(props: ReferenceSelectProps) {
     return () => {
       active = false;
     };
-  }, [classIri, dataSource]);
+  }, [classIri, dataSource, displayFields]);
 
   const optionById = useMemo(
     () => new Map((options ?? []).map((option) => [option.id, option])),
@@ -115,7 +125,7 @@ export function ReferenceSelect(props: ReferenceSelectProps) {
               <button
                 type="button"
                 aria-label={`Remove ${optionById.get(id)?.label ?? id}`}
-                disabled={values.length <= minimum}
+                disabled={multiple && values.length <= minimum}
                 onClick={() => onChange(values.filter((entry) => entry !== id))}
               >
                 Remove
@@ -159,7 +169,9 @@ export function ReferenceSelect(props: ReferenceSelectProps) {
                       type={multiple ? 'checkbox' : 'radio'}
                       name={`reference-${field.path}`}
                       checked={checked}
-                      disabled={!checked && maximum !== null && selection.length >= maximum}
+                      disabled={
+                        multiple && !checked && maximum !== null && selection.length >= maximum
+                      }
                       onChange={() => toggle(option.id)}
                     />
                     <span>

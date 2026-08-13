@@ -1,5 +1,5 @@
 import type { DataSource } from '../datasource/data-source.ts';
-import { compositionEntities } from '../forms/form-draft.ts';
+import { compositionEntities, hydrateCompositionTree } from '../forms/form-draft.ts';
 import { isEmptyValue, resolveControl } from '../forms/form-model.ts';
 import {
   isCompositionField,
@@ -108,12 +108,13 @@ export async function deleteComposite<TModel extends EntityModel>(
   payload: TModel,
   cascadePaths: readonly string[]
 ): Promise<void> {
-  const steps = buildCompositeDeletePlan(
-    aggregate,
-    aggregateRegistry,
+  const hydrated = await hydrateCompositionTree(
     payload as EntityRecord,
-    cascadePaths
+    rootEntityTarget(aggregate),
+    aggregateRegistry,
+    dataSource
   );
+  const steps = buildCompositeDeletePlan(aggregate, aggregateRegistry, hydrated, cascadePaths);
   await executePlan(dataSource, steps);
 }
 

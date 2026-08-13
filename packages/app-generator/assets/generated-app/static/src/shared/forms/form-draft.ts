@@ -66,11 +66,11 @@ function createFieldValue(
 }
 
 /**
- * Loads composed aggregate references for Update. Inline compositions are already expanded by
- * the owning LDKit schema, while a composition that points to another aggregate initially carries
- * only its IRI and needs a separate read.
+ * Loads a complete composition tree. Inline compositions are already expanded by the owning
+ * LDKit schema, while a composition that points to another aggregate initially carries only its
+ * IRI and needs a separate read.
  */
-export async function hydrateCompositionDraft(
+export async function hydrateCompositionTree(
   model: EntityRecord,
   target: EntityTarget,
   aggregateRegistry: AggregateDescriptorMap,

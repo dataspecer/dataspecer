@@ -62,6 +62,11 @@ export interface ReferenceOption {
   label: string;
 }
 
+export interface ReferenceListArgs {
+  classIri: string;
+  displayProperties: readonly string[];
+}
+
 export interface DataSource {
   kind: DataSourceKind;
   readList<TModel extends EntityModel>(args: ReadListArgs<TModel>): Promise<ReadListResult<TModel>>;
@@ -72,10 +77,10 @@ export interface DataSource {
   /** Lists up to ten RDF references to the entity. */
   listIncomingReferences(id: string): Promise<IncomingReference[]>;
   /**
-   * Lists candidate targets of a reference by their RDF class, for reference form controls.
-   * Optional because only sources that can answer a type query provide it.
+   * Lists candidate targets of a reference by RDF class and formats them from the requested
+   * primitive fields. Optional because only sources that can answer a type query provide it.
    */
-  listByType?(classIri: string): Promise<ReferenceOption[]>;
+  listByType?(args: ReferenceListArgs): Promise<ReferenceOption[]>;
 }
 
 export function isListFieldSortable(

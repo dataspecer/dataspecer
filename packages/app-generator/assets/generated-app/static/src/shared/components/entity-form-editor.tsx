@@ -116,6 +116,7 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
                 value={entity[field.propertyName]}
                 error={errorAt(fieldPath)}
                 dataSource={props.dataSource}
+                aggregateRegistry={props.aggregateRegistry}
                 onChange={(value) =>
                   updateSelected((current) => ({
                     ...current,

@@ -1,13 +1,13 @@
-import type { Lens, Schema, QueryContext } from 'ldkit';
+import type { Lens, QueryContext, Schema } from 'ldkit';
 import { createLens, QueryEngine } from 'ldkit';
 import { DataFactory, type RDF } from 'ldkit/rdf';
-import { SELECT, sparql } from 'ldkit/sparql';
+import { DELETE, OPTIONAL, SELECT } from 'ldkit/sparql';
 
 import {
-  fieldValues,
   type AggregateDescriptor,
   type EntityModel,
   type FieldDescriptor,
+  fieldValues,
 } from '../types/aggregate.ts';
 import type {
   DataSource,
@@ -18,20 +18,21 @@ import type {
   ReadDetailArgs,
   ReadListArgs,
   ReadListResult,
-  ReferenceOption,
   ReadListSort,
+  ReferenceListArgs,
+  ReferenceOption,
 } from './data-source.ts';
 import {
-  DEFAULT_READ_LIST_SORT,
   DataSourceKind,
+  DEFAULT_READ_LIST_SORT,
   INCOMING_REFERENCE_LIMIT,
   isListFieldSortable,
 } from './data-source.ts';
 
-const LABEL_PREDICATES = [
-  'http://www.w3.org/2000/01/rdf-schema#label',
-  'http://www.w3.org/2004/02/skos/core#prefLabel',
+const FALLBACK_LABEL_PROPERTIES = [
   'http://purl.org/dc/terms/title',
+  'http://www.w3.org/2004/02/skos/core#prefLabel',
+  'http://www.w3.org/2000/01/rdf-schema#label',
 ];
 const dataFactory = new DataFactory();
 const absoluteIri = /^[a-z][a-z0-9+.-]*:/i;
@@ -151,29 +152,38 @@ export class RdfLdkitDataSource implements DataSource {
     }));
   }
 
-  async listByType(classIri: string): Promise<ReferenceOption[]> {
-    const labelPath = LABEL_PREDICATES.map((predicate) => `<${predicate}>`).join('|');
-    const classNode = toSparqlNamedNode(classIri, 'Reference target class IRI');
-    const query = sparql`SELECT DISTINCT ?iri ?label WHERE {
-  ?iri a ${classNode} .
-  OPTIONAL { ?iri ${labelPath} ?label }
-} LIMIT 200`;
+  async listByType(args: ReferenceListArgs): Promise<ReferenceOption[]> {
+    const query = buildReferenceOptionsQuery(args);
+    const displayProperties = referenceDisplayProperties(args);
 
     // This SELECT is not tied to a schema, so it runs directly on the query engine with the same
     // endpoint context as the lenses.
     const stream = await new QueryEngine().queryBindings(query, this.context());
     const bindings = readBindings(stream);
 
-    // Keep the first label seen per IRI, so a repeated label does not duplicate the option. IRIs
-    // without a label fall back to the IRI itself.
-    const labels = new Map<string, string>();
+    const valuesByIri = new Map<string, Array<Set<string>>>();
     for (const binding of bindings) {
       const iri = binding.get('iri')!.value;
-      if (!labels.has(iri)) {
-        labels.set(iri, binding.get('label')?.value ?? iri);
+      const values = valuesByIri.get(iri) ?? displayProperties.map(() => new Set<string>());
+      displayProperties.forEach((_, index) => {
+        const value = binding.get(`value${index}`)?.value;
+        if (value !== undefined) {
+          values[index].add(value);
+        }
+      });
+      if (!valuesByIri.has(iri)) {
+        valuesByIri.set(iri, values);
       }
     }
-    return [...labels].map(([id, label]) => ({ id, label }));
+    return [...valuesByIri].map(([id, values]) => {
+      const sortedValues = values.map((fieldValues) => [...fieldValues].sort());
+      const labelValues =
+        args.displayProperties.length > 0
+          ? sortedValues.flat()
+          : (sortedValues.find((fieldValues) => fieldValues.length > 0) ?? []);
+      const label = labelValues.join(', ');
+      return { id, label: label || id };
+    });
   }
 
   private resolveTarget<TModel extends EntityModel>(
@@ -256,6 +266,26 @@ export function buildIncomingReferencesQuery(entityId: string): string {
     .build();
 }
 
+export function buildReferenceOptionsQuery(args: ReferenceListArgs): string {
+  const classNode = toSparqlNamedNode(args.classIri, 'Reference target class IRI');
+  const displayProperties = referenceDisplayProperties(args);
+  const valueVariables = displayProperties.map((_, index) => `?value${index}`);
+  const pageQuery = SELECT.DISTINCT`?iri`.WHERE`?iri a ${classNode} .`.ORDER_BY`STR(?iri)`.LIMIT(
+    200
+  );
+  const optionalPatterns = displayProperties.map((propertyIri, index) => {
+    const predicate = toSparqlNamedNode(propertyIri, 'Reference display property IRI');
+    return OPTIONAL`?iri ${predicate} ${valueVariables[index]} .`;
+  });
+
+  return SELECT`?iri ${valueVariables.join(' ')}`.WHERE`{ ${pageQuery} } ${optionalPatterns}`
+    .ORDER_BY`STR(?iri)`.build();
+}
+
+function referenceDisplayProperties(args: ReferenceListArgs): readonly string[] {
+  return args.displayProperties.length > 0 ? args.displayProperties : FALLBACK_LABEL_PROPERTIES;
+}
+
 /**
  * Builds the reversed triples LDKit cannot write through an `@inverse` schema property.
  */
@@ -293,11 +323,10 @@ export function buildInverseDeleteQuery(
   }
 
   const entityNode = toSparqlNamedNode(entityId, 'Entity IRI');
-  return sparql`DELETE { ?target ?predicate ${entityNode} }
-WHERE {
-  VALUES ?predicate { ${predicates} }
-  ?target ?predicate ${entityNode}
-}`;
+  return DELETE`?target ?predicate ${entityNode}`.WHERE`
+    VALUES ?predicate { ${predicates} } 
+    ?target ?predicate ${entityNode}
+  `.build();
 }
 
 export function toSparqlNamedNode(value: string, label: string): RDF.NamedNode {

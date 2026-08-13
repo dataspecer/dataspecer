@@ -318,6 +318,36 @@ describe('composite mutation planning', () => {
     ).rejects.toThrow('office delete failed');
     expect(deleted).toEqual(['urn:office']);
   });
+
+  it('loads cross-aggregate composition fields before planning a nested cascade', async () => {
+    const readIds: string[] = [];
+    const deleted: string[] = [];
+    const dataSource = {
+      readDetail: ({ id }: { id: string }) => {
+        readIds.push(id);
+        return Promise.resolve({
+          id,
+          name: 'Research',
+          offices: [{ id: 'urn:office', label: 'Prague' }],
+        });
+      },
+      delete: ({ id }: { id: string }) => {
+        deleted.push(id);
+        return Promise.resolve();
+      },
+    } as unknown as DataSource;
+
+    await deleteComposite(
+      dataSource,
+      companyAggregate,
+      aggregateRegistry,
+      { id: 'urn:company', departments: [{ id: 'urn:department' }] },
+      ['departments', 'departments.offices']
+    );
+
+    expect(readIds).toEqual(['urn:department']);
+    expect(deleted).toEqual(['urn:office', 'urn:department', 'urn:company']);
+  });
 });
 
 describe('default composite update strategy', () => {

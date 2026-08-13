@@ -2,10 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import {
   createEntityDraft,
-  hydrateCompositionDraft,
+  hydrateCompositionTree,
 } from '../assets/generated-app/static/src/shared/forms/form-draft.ts';
 import type { DataSource } from '../assets/generated-app/static/src/shared/datasource/data-source.ts';
-import { rootEntityTarget } from '../assets/generated-app/static/src/shared/forms/entity-target.ts';
+import {
+  referenceDisplayFields,
+  rootEntityTarget,
+} from '../assets/generated-app/static/src/shared/forms/entity-target.ts';
 import {
   coerceValue,
   resolveControl,
@@ -26,6 +29,7 @@ const nameField: FieldDescriptor = {
   propertyName: 'name',
   label: 'Name',
   kind: 'primitive',
+  propertyIri: 'https://example.org/property/name',
   formControl: 'text',
   many: false,
   required: true,
@@ -123,6 +127,55 @@ describe('generated recursive form model', () => {
     expect(resolveControl(childrenField)).toBe('composition');
   });
 
+  it('uses exposed primitive fields to label references', () => {
+    const emailField: FieldDescriptor = {
+      path: 'email',
+      propertyName: 'email',
+      label: 'Email',
+      kind: 'primitive',
+      propertyIri: 'https://example.org/property/email',
+      formControl: 'text',
+      many: false,
+      required: false,
+    };
+    const association: FieldDescriptor = {
+      ...ownerField,
+      fields: [nameField, emailField],
+    };
+
+    expect(referenceDisplayFields(association, aggregateRegistry)).toEqual([nameField, emailField]);
+    expect(referenceDisplayFields(childrenField, aggregateRegistry)).toEqual([nameField]);
+  });
+
+  it('prefers name over title and label when no primitive field is exposed', () => {
+    const fallbackFields = ['label', 'title', 'name'].map(
+      (path): FieldDescriptor => ({
+        path,
+        propertyName: path,
+        label: path,
+        kind: 'primitive',
+        propertyIri: `https://example.org/property/${path}`,
+        formControl: 'text',
+        many: false,
+        required: false,
+      })
+    );
+    const fallbackAggregate: AggregateDescriptor = {
+      iri: 'https://example.org/aggregate/owner',
+      name: 'Owner',
+      classIri: 'https://example.org/class/owner',
+      fields: fallbackFields,
+      createEmpty: () => ({}),
+    };
+
+    expect(
+      referenceDisplayFields(
+        { ...ownerField, fields: [] },
+        { ...aggregateRegistry, [fallbackAggregate.iri]: fallbackAggregate }
+      )
+    ).toEqual([fallbackFields[2]]);
+  });
+
   it('round-trips datetime-local values without a timezone shift', () => {
     const value = coerceValue('datetime', '2026-07-27T12:34', false);
 
@@ -191,7 +244,7 @@ describe('generated recursive form model', () => {
       children: [{ id: 'urn:child:1' }],
     };
 
-    const hydrated = await hydrateCompositionDraft(
+    const hydrated = await hydrateCompositionTree(
       source,
       rootEntityTarget(rootAggregate),
       aggregateRegistry,

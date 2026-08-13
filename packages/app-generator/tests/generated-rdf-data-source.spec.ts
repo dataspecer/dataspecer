@@ -5,6 +5,7 @@ import {
   buildInverseDeleteQuery,
   buildInverseInsertQuads,
   buildPageIriQuery,
+  buildReferenceOptionsQuery,
   RdfLdkitDataSource,
   toLdkitEntity,
   toSparqlNamedNode,
@@ -170,6 +171,112 @@ describe('generated RDF incoming reference query', () => {
           predicate: 'https://example.org/property/book',
         },
       ]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});
+
+describe('generated RDF reference options', () => {
+  const args = {
+    classIri: 'https://example.org/class/person',
+    displayProperties: ['https://example.org/property/name', 'https://example.org/property/email'],
+  };
+
+  it('queries a bounded set of IRIs and their configured display properties', () => {
+    const query = buildReferenceOptionsQuery(args);
+
+    expect(query).toContain('?iri a <https://example.org/class/person>');
+    expect(query).toContain('LIMIT 200');
+    expect(query).toContain('OPTIONAL { ?iri <https://example.org/property/name> ?value0 . }');
+    expect(query).toContain('OPTIONAL { ?iri <https://example.org/property/email> ?value1 . }');
+  });
+
+  it('joins display values in field order and falls back to the IRI', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          head: { vars: ['iri', 'value0', 'value1'] },
+          results: {
+            bindings: [
+              {
+                iri: { type: 'uri', value: 'https://example.org/person/1' },
+                value0: { type: 'literal', value: 'Alice' },
+                value1: { type: 'literal', value: 'alice@example.org' },
+              },
+              {
+                iri: { type: 'uri', value: 'https://example.org/person/1' },
+                value0: { type: 'literal', value: 'Alice' },
+                value1: { type: 'literal', value: 'alice@work.example' },
+              },
+              {
+                iri: { type: 'uri', value: 'https://example.org/person/2' },
+              },
+            ],
+          },
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/sparql-results+json' },
+        }
+      )
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    try {
+      const dataSource = new RdfLdkitDataSource('https://example.org/sparql', {});
+
+      await expect(dataSource.listByType(args)).resolves.toEqual([
+        {
+          id: 'https://example.org/person/1',
+          label: 'Alice, alice@example.org, alice@work.example',
+        },
+        {
+          id: 'https://example.org/person/2',
+          label: 'https://example.org/person/2',
+        },
+      ]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('uses conventional title and label predicates when the structure has no display field', async () => {
+    const query = buildReferenceOptionsQuery({
+      classIri: args.classIri,
+      displayProperties: [],
+    });
+    expect(query).toContain('<http://purl.org/dc/terms/title> ?value0');
+    expect(query).toContain('<http://www.w3.org/2000/01/rdf-schema#label> ?value2');
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            head: { vars: ['iri', 'value0', 'value1', 'value2'] },
+            results: {
+              bindings: [
+                {
+                  iri: { type: 'uri', value: 'https://example.org/person/1' },
+                  value2: { type: 'literal', value: 'Alice' },
+                },
+              ],
+            },
+          }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/sparql-results+json' },
+          }
+        )
+      )
+    );
+
+    try {
+      const dataSource = new RdfLdkitDataSource('https://example.org/sparql', {});
+      await expect(
+        dataSource.listByType({ classIri: args.classIri, displayProperties: [] })
+      ).resolves.toEqual([{ id: 'https://example.org/person/1', label: 'Alice' }]);
     } finally {
       vi.unstubAllGlobals();
     }

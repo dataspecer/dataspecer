@@ -70,6 +70,46 @@ export function resolveAssociationTarget(
   };
 }
 
+export function referenceDisplayFields(
+  field: FieldDescriptor,
+  aggregateRegistry: AggregateDescriptorMap
+): FieldDescriptor[] {
+  const exposedFields = primitiveFields(field.fields);
+  if (exposedFields.length > 0) {
+    return exposedFields;
+  }
+
+  const targetAggregate = field.targetAggregateIri
+    ? aggregateRegistry[field.targetAggregateIri]
+    : undefined;
+  if (targetAggregate) {
+    const targetFields = primitiveFields(targetAggregate.fields);
+    if (targetFields.length > 0) {
+      return targetFields;
+    }
+  }
+
+  const fallbackAggregate = Object.values(aggregateRegistry).find(
+    (aggregate) => aggregate.classIri === field.targetClassIri
+  );
+  const fallbackFields = primitiveFields(fallbackAggregate?.fields);
+  for (const name of ['name', 'title', 'label']) {
+    const fallback = fallbackFields.find(
+      (candidate) =>
+        candidate.path.toLocaleLowerCase() === name ||
+        candidate.propertyName.toLocaleLowerCase() === name
+    );
+    if (fallback) {
+      return [fallback];
+    }
+  }
+  return [];
+}
+
+function primitiveFields(fields: readonly FieldDescriptor[] | undefined): FieldDescriptor[] {
+  return (fields ?? []).filter((field) => field.kind === 'primitive' && Boolean(field.propertyIri));
+}
+
 export function minimumCount(field: FieldDescriptor): number {
   return field.minCount ?? (field.required ? 1 : 0);
 }

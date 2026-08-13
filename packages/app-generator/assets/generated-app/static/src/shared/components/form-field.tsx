@@ -1,7 +1,11 @@
 import { useId } from 'react';
 
 import type { DataSource } from '../datasource/data-source.ts';
-import { fieldValues, type FieldDescriptor } from '../types/aggregate.ts';
+import {
+  fieldValues,
+  type AggregateDescriptorMap,
+  type FieldDescriptor,
+} from '../types/aggregate.ts';
 import {
   coerceValue,
   resolveControl,
@@ -16,11 +20,12 @@ interface FormFieldProps {
   value: unknown;
   error?: string;
   dataSource: DataSource;
+  aggregateRegistry: AggregateDescriptorMap;
   onChange: (value: unknown) => void;
 }
 
 export function FormField(props: FormFieldProps) {
-  const { field, value, error, dataSource, onChange } = props;
+  const { field, value, error, dataSource, aggregateRegistry, onChange } = props;
   const control = resolveControl(field);
   const controlId = useId();
   const labelId = `${controlId}-label`;
@@ -41,6 +46,7 @@ export function FormField(props: FormFieldProps) {
             field={field}
             value={value}
             dataSource={dataSource}
+            aggregateRegistry={aggregateRegistry}
             controlId={controlId}
             onChange={onChange}
           />
@@ -49,6 +55,7 @@ export function FormField(props: FormFieldProps) {
             field={field}
             value={value}
             dataSource={dataSource}
+            aggregateRegistry={aggregateRegistry}
             controlId={controlId}
             onChange={onChange}
           />
@@ -66,7 +73,7 @@ export function FormField(props: FormFieldProps) {
 type ControlProps = Omit<FormFieldProps, 'error'> & { controlId: string };
 
 function SingleControl(props: ControlProps) {
-  const { field, value, dataSource, controlId, onChange } = props;
+  const { field, value, dataSource, aggregateRegistry, controlId, onChange } = props;
   const control = resolveControl(field);
 
   if (control === 'unsupported' || control === 'composition') {
@@ -81,6 +88,7 @@ function SingleControl(props: ControlProps) {
         values={typeof id === 'string' && id !== '' ? [id] : []}
         multiple={false}
         dataSource={dataSource}
+        aggregateRegistry={aggregateRegistry}
         controlId={controlId}
         onChange={(ids) => onChange(ids[0] ? { id: ids[0] } : undefined)}
       />
@@ -91,7 +99,7 @@ function SingleControl(props: ControlProps) {
 }
 
 function ManyControl(props: ControlProps) {
-  const { field, value, dataSource, controlId, onChange } = props;
+  const { field, value, dataSource, aggregateRegistry, controlId, onChange } = props;
   const control = resolveControl(field);
   const values = fieldValues(value, field);
 
@@ -106,6 +114,7 @@ function ManyControl(props: ControlProps) {
         values={ids}
         multiple
         dataSource={dataSource}
+        aggregateRegistry={aggregateRegistry}
         controlId={controlId}
         onChange={(next) => onChange(next.map((id) => ({ id })))}
       />

@@ -1,7 +1,7 @@
 import { useEffect, useState, type SubmitEvent } from 'react';
 
 import type { DataSource } from '../datasource/data-source.ts';
-import { hydrateCompositionDraft } from '../forms/form-draft.ts';
+import { hydrateCompositionTree } from '../forms/form-draft.ts';
 import { rootEntityTarget } from '../forms/entity-target.ts';
 import { validateModel } from '../forms/form-model.ts';
 import { hrefForAction, type OperationNavigationDescriptor } from '../navigation/navigation.ts';
@@ -72,7 +72,7 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
           setIssues([{ code: ValidationIssueCode.NotFound, message: 'Entity not found.' }]);
           return;
         }
-        const hydrated = await hydrateCompositionDraft(
+        const hydrated = await hydrateCompositionTree(
           item as EntityRecord,
           rootEntityTarget(aggregate),
           aggregateRegistry,
