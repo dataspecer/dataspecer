@@ -23,7 +23,7 @@ interface CreateFormProps<TModel extends EntityModel> {
   title: string;
   aggregate: AggregateDescriptor<TModel>;
   aggregateRegistry: AggregateDescriptorMap;
-  strategy: OperationStrategy<TModel>;
+  strategy: OperationStrategy<TModel, TModel>;
   dataSource: DataSource;
   navigation: OperationNavigationDescriptor;
   instanceBaseIri: string;
@@ -67,7 +67,8 @@ export function CreateForm<TModel extends EntityModel>(props: CreateFormProps<TM
         payload: model as TModel,
       });
       if (result.ok) {
-        window.location.href = hrefForAction(navigation.successRedirect, model.id) ?? '/';
+        window.location.href =
+          hrefForAction(navigation.successRedirect, result.data.id ?? model.id) ?? '/';
         return;
       }
       setIssues(result.issues);

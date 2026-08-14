@@ -3,7 +3,6 @@ import { compositionEntities, hydrateCompositionTree } from '../forms/form-draft
 import { isEmptyValue, resolveControl } from '../forms/form-model.ts';
 import {
   isCompositionField,
-  resolveAssociationTarget,
   resolveCompositionTarget,
   rootEntityTarget,
   type EntityTarget,
@@ -112,7 +111,8 @@ export async function deleteComposite<TModel extends EntityModel>(
     payload as EntityRecord,
     rootEntityTarget(aggregate),
     aggregateRegistry,
-    dataSource
+    dataSource,
+    cascadePaths
   );
   const steps = buildCompositeDeletePlan(aggregate, aggregateRegistry, hydrated, cascadePaths);
   await executePlan(dataSource, steps);
@@ -242,18 +242,11 @@ function collectCascadeDeleteSteps(
 ): void {
   for (const field of target.fields) {
     const fieldPath = pathPrefix ? `${pathPrefix}.${field.path}` : field.path;
-    if (
-      !cascadePaths.has(fieldPath) ||
-      field.kind !== 'association' ||
-      field.associationKind === 'aggregation'
-    ) {
+    if (!cascadePaths.has(fieldPath) || !isCompositionField(field)) {
       continue;
     }
 
-    const childTarget = resolveAssociationTarget(target, field, aggregateRegistry);
-    if (!childTarget) {
-      throw new Error(`Cascade target for "${field.label}" is unavailable.`);
-    }
+    const childTarget = requireCompositionTarget(target, field, aggregateRegistry);
     for (const child of compositionEntities(entity[field.propertyName], field)) {
       collectCascadeDeleteSteps(
         child,

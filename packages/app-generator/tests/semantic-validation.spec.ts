@@ -431,6 +431,48 @@ describe('analyzeGraphSemantics', () => {
     );
   });
 
+  it('inherits a nested association kind in an aggregate rooted at the nested class', () => {
+    const metadata = structuredClone(basicMetadata);
+    const bookChapters = metadata.aggregates
+      .find((aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail')
+      ?.fields.find((field) => field.path === 'chapters');
+    const nestedFootnotes = bookChapters?.fields?.find((field) => field.path === 'footnotes');
+    const chapterFootnotes = metadata.aggregates
+      .find((aggregate) => aggregate.iri === 'https://example.org/aggregate/chapter-detail')
+      ?.fields.find((field) => field.path === 'footnotes');
+    if (!nestedFootnotes || !chapterFootnotes) {
+      throw new Error('Missing footnote fields in the test metadata.');
+    }
+    nestedFootnotes.propertyIri = 'https://example.org/property/footnotes';
+    chapterFootnotes.propertyIri = nestedFootnotes.propertyIri;
+
+    const graph = validGraph({
+      nodes: [
+        node('Book.Update', 'https://example.org/aggregate/book-detail', Operation.Update, {
+          associations: {
+            chapters: AssociationKind.Composition,
+            'chapters.footnotes': AssociationKind.Composition,
+          },
+        }),
+        node('Chapter.Update', 'https://example.org/aggregate/chapter-detail', Operation.Update),
+        node('Chapter.Delete', 'https://example.org/aggregate/chapter-detail', Operation.Delete, {
+          delete: { footnotes: DeletePolicy.Cascade },
+        }),
+      ],
+      edges: [],
+    });
+
+    const result = analyzeGraphSemantics(graph, metadata);
+
+    expect(result.valid).toBe(true);
+    const chapter = result.enrichedMetadata.aggregates.find(
+      (aggregate) => aggregate.iri === 'https://example.org/aggregate/chapter-detail'
+    );
+    expect(chapter?.fields.find((field) => field.path === 'footnotes')?.associationKind).toBe(
+      AssociationKind.Composition
+    );
+  });
+
   it('allows nested delete cascade through compositions declared on an update node', () => {
     const updateBook = node(
       'Book.Update',

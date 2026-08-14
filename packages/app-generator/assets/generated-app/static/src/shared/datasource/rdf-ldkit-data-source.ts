@@ -321,7 +321,7 @@ export function buildInverseDeleteQuery(
 
   const entityNode = toSparqlNamedNode(entityId, 'Entity IRI');
   return DELETE`?target ?predicate ${entityNode}`.WHERE`
-    VALUES ?predicate { ${predicates} } 
+    VALUES ?predicate { ${predicates} }
     ?target ?predicate ${entityNode}
   `.build();
 }

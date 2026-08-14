@@ -26,9 +26,7 @@ export type { GenerateAppInput, GenerateAppResult } from './generate-app.ts';
 export type {
   GeneratedAggregateDescriptor,
   GeneratedDatasourceDescriptor,
-  GeneratedDetailDescriptor,
   GeneratedFieldDescriptor,
-  GeneratedListDescriptor,
   GeneratedNavigationDescriptor,
   GeneratedOperationDescriptor,
   GeneratedRedirectDescriptor,

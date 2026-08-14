@@ -5,7 +5,6 @@ import type {
 } from '../generation-model/types.ts';
 import type { RenderedAggregate } from './rendered-aggregate.ts';
 
-import { AssociationKind } from '../graph/types.ts';
 import { toOperationClassName } from '../utils/naming.ts';
 import { toRenderedAggregate } from './rendered-aggregate.ts';
 
@@ -37,7 +36,7 @@ export function buildRenderContext(model: GenerationModel): GeneratedAppRenderCo
     if (!aggregate) {
       continue;
     }
-    for (const targetIri of compositionTargetIris(aggregate.fields)) {
+    for (const targetIri of referencedAggregateIris(aggregate.fields)) {
       if (!usedAggregateIris.has(targetIri)) {
         usedAggregateIris.add(targetIri);
         pending.push(targetIri);
@@ -45,8 +44,7 @@ export function buildRenderContext(model: GenerationModel): GeneratedAppRenderCo
     }
   }
 
-  // Composed aggregate targets need descriptors and schemas even when they have no operation of
-  // their own. Aggregation targets stay plain references and do not need generated modules.
+  // Referenced targets need descriptors even when they have no operation of their own.
   const aggregates = model.aggregates
     .filter((aggregate) => usedAggregateIris.has(aggregate.iri))
     .map(toRenderedAggregate);
@@ -75,12 +73,10 @@ export function buildRenderContext(model: GenerationModel): GeneratedAppRenderCo
   };
 }
 
-function compositionTargetIris(fields: GeneratedFieldDescriptor[]): string[] {
+function referencedAggregateIris(fields: GeneratedFieldDescriptor[]): string[] {
   return fields.flatMap((field) => [
-    ...(field.associationKind === AssociationKind.Composition && field.targetAggregateIri
-      ? [field.targetAggregateIri]
-      : []),
-    ...(field.fields ? compositionTargetIris(field.fields) : []),
+    ...(field.targetAggregateIri ? [field.targetAggregateIri] : []),
+    ...(field.fields ? referencedAggregateIris(field.fields) : []),
   ]);
 }
 

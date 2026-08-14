@@ -173,31 +173,6 @@ describe('buildGenerationModel', () => {
     });
   });
 
-  it('creates read descriptors from aggregate fields', () => {
-    const graph = graphFixture();
-    const model = buildGenerationModel(graph, preparedMetadataFor(graph));
-    const readList = model.operations.find((operation) => operation.id === 'Book.ReadList');
-    const readDetail = model.operations.find((operation) => operation.id === 'Book.ReadDetail');
-
-    expect(readList?.list?.columns).toEqual([
-      expect.objectContaining({
-        path: 'author',
-        kind: FieldKind.Association,
-        targetClassIri: 'https://example.org/class/author',
-      }),
-      expect.objectContaining({
-        path: 'title',
-        kind: FieldKind.Primitive,
-        datatype: 'string',
-      }),
-    ]);
-    expect(readDetail?.detail?.fields).toEqual([
-      expect.objectContaining({ path: 'author' }),
-      expect.objectContaining({ path: 'chapters' }),
-      expect.objectContaining({ path: 'title' }),
-    ]);
-  });
-
   it('strips diacritics from generated identifiers', () => {
     const graph = graphFixture();
     graph.nodes = [node('Cíl.ReadList', 'https://example.org/aggregate/cil', Operation.ReadList)];

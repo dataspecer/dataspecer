@@ -31,11 +31,19 @@ export function resolveAssociationChain(
   return chain.length > 0 ? chain : undefined;
 }
 
-/**
- * Identity of an association chain within a class. Aggregates of the same class refer to the
- * same semantic association through it, so kinds configured on different aggregates can be
- * compared.
- */
+/** Identifies the final association by its owning class, predicate, and direction. */
 export function chainIdentity(classIri: string, chain: AggregateFieldMetadata[]): string {
-  return [classIri, ...chain.map((field) => field.propertyIri ?? field.path)].join('|');
+  const field = chain.at(-1);
+  if (!field) {
+    throw new Error('Association chain is empty.');
+  }
+
+  const ownerClassIri = chain
+    .slice(0, -1)
+    .reduce((owner, parent) => parent.targetClassIri ?? owner, classIri);
+  return [
+    ownerClassIri,
+    field.isReverse ? 'reverse' : 'forward',
+    field.propertyIri ?? field.path,
+  ].join('|');
 }

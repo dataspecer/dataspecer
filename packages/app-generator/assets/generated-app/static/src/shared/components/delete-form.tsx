@@ -67,25 +67,30 @@ export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TM
     let active = true;
     setLoading(true);
     setIncomingReferenceCheck(null);
-    const referenceRequest: Promise<IncomingReferenceCheck> = dataSource
-      .listIncomingReferences(id)
-      .then((references): IncomingReferenceCheck => ({ status: 'loaded', references }))
-      .catch((caught: unknown): IncomingReferenceCheck => {
-        console.error(caught);
-        return { status: 'failed' };
-      });
-    Promise.all([dataSource.readDetail({ aggregate, id }), referenceRequest])
-      .then(([result, referenceCheck]) => {
+    dataSource
+      .readDetail({ aggregate, id })
+      .then((result) => {
         if (!active) {
           return;
         }
         if (result) {
           setItem(result);
           setIssues([]);
-          setIncomingReferenceCheck(referenceCheck);
+          void dataSource
+            .listIncomingReferences(id)
+            .then((references) => {
+              if (active) {
+                setIncomingReferenceCheck({ status: 'loaded', references });
+              }
+            })
+            .catch((caught: unknown) => {
+              console.error(caught);
+              if (active) {
+                setIncomingReferenceCheck({ status: 'failed' });
+              }
+            });
         } else {
           setItem(null);
-          setIncomingReferenceCheck(null);
           setIssues([{ code: ValidationIssueCode.NotFound, message: 'Entity not found.' }]);
         }
       })
@@ -93,7 +98,6 @@ export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TM
         console.error(caught);
         if (active) {
           setItem(null);
-          setIncomingReferenceCheck(null);
           setIssues([
             {
               code: ValidationIssueCode.Error,

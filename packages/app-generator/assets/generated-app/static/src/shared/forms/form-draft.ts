@@ -66,18 +66,26 @@ function createFieldValue(
 }
 
 /**
- * Loads a complete composition tree. Inline compositions are already expanded by the owning
- * LDKit schema, while a composition that points to another aggregate initially carries only its
- * IRI and needs a separate read.
+ * Loads a complete composition tree, or only the selected paths when provided. Inline
+ * compositions are already expanded by the owning LDKit schema, while a composition that points
+ * to another aggregate initially carries only its IRI and needs a separate read.
  */
 export async function hydrateCompositionTree(
   model: EntityRecord,
   target: EntityTarget,
   aggregateRegistry: AggregateDescriptorMap,
-  dataSource: DataSource
+  dataSource: DataSource,
+  paths?: readonly string[]
 ): Promise<EntityRecord> {
   const result = structuredClone(model);
-  await hydrateCompositionChildren(result, target, aggregateRegistry, dataSource);
+  await hydrateCompositionChildren(
+    result,
+    target,
+    aggregateRegistry,
+    dataSource,
+    paths ? new Set(paths) : null,
+    ''
+  );
   return result;
 }
 
@@ -85,11 +93,14 @@ async function hydrateCompositionChildren(
   entity: EntityRecord,
   target: EntityTarget,
   aggregateRegistry: AggregateDescriptorMap,
-  dataSource: DataSource
+  dataSource: DataSource,
+  paths: ReadonlySet<string> | null,
+  pathPrefix: string
 ): Promise<void> {
   await Promise.all(
     target.fields.map(async (field) => {
-      if (!isCompositionField(field)) {
+      const fieldPath = pathPrefix ? `${pathPrefix}.${field.path}` : field.path;
+      if (!isCompositionField(field) || (paths && !paths.has(fieldPath))) {
         return;
       }
       const childTarget = resolveCompositionTarget(target, field, aggregateRegistry);
@@ -109,7 +120,15 @@ async function hydrateCompositionChildren(
         const entries = value;
         entity[field.propertyName] = await Promise.all(
           entries.map((entry) =>
-            hydrateCompositionEntry(entry, field, childTarget, aggregateRegistry, dataSource)
+            hydrateCompositionEntry(
+              entry,
+              field,
+              childTarget,
+              aggregateRegistry,
+              dataSource,
+              paths,
+              fieldPath
+            )
           )
         );
       } else if (value !== null && value !== undefined) {
@@ -118,7 +137,9 @@ async function hydrateCompositionChildren(
           field,
           childTarget,
           aggregateRegistry,
-          dataSource
+          dataSource,
+          paths,
+          fieldPath
         );
       }
     })
@@ -130,7 +151,9 @@ async function hydrateCompositionEntry(
   field: FieldDescriptor,
   target: EntityTarget,
   aggregateRegistry: AggregateDescriptorMap,
-  dataSource: DataSource
+  dataSource: DataSource,
+  paths: ReadonlySet<string> | null,
+  pathPrefix: string
 ): Promise<unknown> {
   if (!isEntityRecord(value)) {
     throw new Error(`Composed ${field.label} must contain an entity.`);
@@ -152,7 +175,14 @@ async function hydrateCompositionEntry(
     entity = structuredClone(loaded) as EntityRecord;
   }
 
-  await hydrateCompositionChildren(entity, target, aggregateRegistry, dataSource);
+  await hydrateCompositionChildren(
+    entity,
+    target,
+    aggregateRegistry,
+    dataSource,
+    paths,
+    pathPrefix
+  );
   return entity;
 }
 

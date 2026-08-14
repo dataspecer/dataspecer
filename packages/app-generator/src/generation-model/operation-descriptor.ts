@@ -1,14 +1,8 @@
-import { sortBy } from 'es-toolkit';
-
 import type { ApplicationNode } from '../graph/types.ts';
 import { DeletePolicy, Operation } from '../graph/types.ts';
 import type {
   GeneratedAggregateDescriptor,
   GeneratedDeleteDescriptor,
-  GeneratedDetailDescriptor,
-  GeneratedFieldDescriptor,
-  GeneratedFormDescriptor,
-  GeneratedListDescriptor,
   GeneratedOperationDescriptor,
 } from './types.ts';
 
@@ -35,41 +29,11 @@ export function buildOperationDescriptor(
     },
   };
 
-  if (node.operation === Operation.ReadList) {
-    descriptor.list = buildListDescriptor(aggregate.fields);
-  }
-
-  if (node.operation === Operation.ReadDetail) {
-    descriptor.detail = buildDetailDescriptor(aggregate.fields);
-  }
-
-  if (node.operation === Operation.Create || node.operation === Operation.Update) {
-    descriptor.form = buildFormDescriptor(aggregate.fields);
-  }
-
   if (node.operation === Operation.Delete) {
     descriptor.delete = buildDeleteDescriptor(node);
   }
 
   return descriptor;
-}
-
-function buildListDescriptor(fields: GeneratedFieldDescriptor[]): GeneratedListDescriptor {
-  return {
-    columns: sortBy(fields, [(field) => field.path]),
-  };
-}
-
-function buildDetailDescriptor(fields: GeneratedFieldDescriptor[]): GeneratedDetailDescriptor {
-  return {
-    fields: sortBy(fields, [(field) => field.path]),
-  };
-}
-
-function buildFormDescriptor(fields: GeneratedFieldDescriptor[]): GeneratedFormDescriptor {
-  return {
-    fields: sortBy(fields, [(field) => field.path]),
-  };
 }
 
 function buildDeleteDescriptor(node: ApplicationNode): GeneratedDeleteDescriptor {

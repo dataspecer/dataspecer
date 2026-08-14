@@ -267,7 +267,7 @@ describe('composite mutation planning', () => {
     ]);
   });
 
-  it('accepts a declared cascade without a form kind and does not cascade aggregations', () => {
+  it('cascades compositions but not aggregations', () => {
     const payload: EntityRecord = {
       id: 'urn:company',
       partners: [{ id: 'urn:partner' }],
@@ -280,17 +280,8 @@ describe('composite mutation planning', () => {
     const aggregationPlan = buildCompositeDeletePlan(companyAggregate, aggregateRegistry, payload, [
       'partners',
     ]);
-    const deleteOnlyAggregate: AggregateDescriptor = {
-      ...companyAggregate,
-      fields: [{ ...departments, associationKind: undefined }],
-    };
-    const declaredPlan = buildCompositeDeletePlan(deleteOnlyAggregate, aggregateRegistry, payload, [
-      'departments',
-    ]);
-
     expect(compositionPlan.map((step) => step.id)).toEqual(['urn:department', 'urn:company']);
     expect(aggregationPlan.map((step) => step.id)).toEqual(['urn:company']);
-    expect(declaredPlan.map((step) => step.id)).toEqual(['urn:department', 'urn:company']);
   });
 
   it('stops cascade execution when a leaf delete fails', async () => {
@@ -347,6 +338,41 @@ describe('composite mutation planning', () => {
 
     expect(readIds).toEqual(['urn:department']);
     expect(deleted).toEqual(['urn:office', 'urn:department', 'urn:company']);
+  });
+
+  it('does not load composition branches that are not selected for deletion', async () => {
+    const archivedDepartments: FieldDescriptor = {
+      ...departments,
+      path: 'archivedDepartments',
+      propertyName: 'archivedDepartments',
+      label: 'Archived departments',
+    };
+    const aggregate: AggregateDescriptor = {
+      ...companyAggregate,
+      fields: [departments, archivedDepartments],
+    };
+    const readIds: string[] = [];
+    const dataSource = {
+      readDetail: ({ id }: { id: string }) => {
+        readIds.push(id);
+        return Promise.resolve({ id, name: 'Department', offices: [] });
+      },
+      delete: () => Promise.resolve(),
+    } as unknown as DataSource;
+
+    await deleteComposite(
+      dataSource,
+      aggregate,
+      aggregateRegistry,
+      {
+        id: 'urn:company',
+        departments: [{ id: 'urn:department:active' }],
+        archivedDepartments: [{ id: 'urn:department:archived' }],
+      },
+      ['departments']
+    );
+
+    expect(readIds).toEqual(['urn:department:active']);
   });
 });
 

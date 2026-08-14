@@ -41,9 +41,6 @@ export interface GeneratedOperationDescriptor {
   pageComponentName: string;
   pageTitle: string;
   navigation: GeneratedOperationNavigation;
-  list?: GeneratedListDescriptor;
-  detail?: GeneratedDetailDescriptor;
-  form?: GeneratedFormDescriptor;
   delete?: GeneratedDeleteDescriptor;
 }
 
@@ -92,18 +89,6 @@ export interface GeneratedAssociationNavigationActionDescriptor {
   fieldPath: string;
   targetPath: string;
   requiresEntityId: boolean;
-}
-
-export interface GeneratedListDescriptor {
-  columns: GeneratedFieldDescriptor[];
-}
-
-export interface GeneratedDetailDescriptor {
-  fields: GeneratedFieldDescriptor[];
-}
-
-export interface GeneratedFormDescriptor {
-  fields: GeneratedFieldDescriptor[];
 }
 
 export interface GeneratedDeleteDescriptor {

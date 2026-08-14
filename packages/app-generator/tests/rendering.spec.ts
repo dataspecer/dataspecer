@@ -69,7 +69,7 @@ describe('renderGeneratedApp', () => {
     expect(tree.get('src/shared/components/field-value.ts')).toContain('formatFieldValue');
   });
 
-  it('renders descriptors and schemas for composed aggregates without their own operation', () => {
+  it('renders descriptors and schemas for referenced aggregates without their own operation', () => {
     const companyIri = 'https://example.org/aggregate/company';
     const departmentIri = 'https://example.org/aggregate/department';
     const graph = graphFixture();
@@ -88,7 +88,7 @@ describe('renderGeneratedApp', () => {
                 path: 'departments',
                 label: 'Departments',
                 kind: FieldKind.Association,
-                associationKind: AssociationKind.Composition,
+                associationKind: AssociationKind.Aggregation,
                 targetAggregateIri: departmentIri,
                 targetClassIri: 'https://example.org/class/department',
                 many: true,
@@ -172,6 +172,9 @@ describe('renderGeneratedApp', () => {
     expect(tree.get('src/modules/book-list/model.ts')).toContain('export interface BookListModel');
     expect(tree.get('src/modules/book-list/book-read-list-operation.ts')).toContain(
       'extends DefaultReadListStrategy<BookListModel>'
+    );
+    expect(tree.get('src/modules/book-list/book-read-list-operation.ts')).toContain(
+      'async validateRequest('
     );
     expect(tree.get('src/shared/datasource/rdf-ldkit-data-source.ts')).toContain('createLens');
     expect(tree.get('src/shared/components/list-view.tsx')).toContain('<DataGrid');
@@ -392,7 +395,7 @@ describe('renderGeneratedApp', () => {
 
     const tree = renderGeneratedApp(model);
     expect(tree.get('src/shared/components/create-form.tsx')).toContain(
-      'hrefForAction(navigation.successRedirect, model.id)'
+      'hrefForAction(navigation.successRedirect, result.data.id ?? model.id)'
     );
     expect(tree.get('src/shared/components/update-form.tsx')).toContain(
       'hrefForAction(navigation.successRedirect, id)'
@@ -429,6 +432,7 @@ describe('renderGeneratedApp', () => {
     const deleteForm = tree.get('src/shared/components/delete-form.tsx');
     expect(deleteForm).toContain('payload: item');
     expect(deleteForm).toContain('.listIncomingReferences(id)');
+    expect(deleteForm).not.toContain('Promise.all([dataSource.readDetail');
     expect(deleteForm).toContain('<Alert severity="warning">');
     expect(deleteForm).toContain('Deleting it may leave broken references.');
     expect(deleteForm).toContain('You can still delete it.');
