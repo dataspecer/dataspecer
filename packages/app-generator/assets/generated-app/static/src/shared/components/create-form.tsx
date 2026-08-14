@@ -36,11 +36,20 @@ export function CreateForm<TModel extends EntityModel>(props: CreateFormProps<TM
     createEntityDraft(rootEntityTarget(aggregate), aggregateRegistry, instanceBaseIri)
   );
   const [issues, setIssues] = useState<ValidationIssue[]>([]);
+  const [validationActive, setValidationActive] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const generalErrors = issues.filter((issue) => !issue.path);
 
+  const handleChange = (next: EntityRecord) => {
+    setModel(next);
+    if (validationActive) {
+      setIssues(validateModel(next, rootEntityTarget(aggregate), aggregateRegistry));
+    }
+  };
+
   const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setValidationActive(true);
     const validation = validateModel(model, rootEntityTarget(aggregate), aggregateRegistry);
     if (validation.length > 0) {
       setIssues(validation);
@@ -87,7 +96,7 @@ export function CreateForm<TModel extends EntityModel>(props: CreateFormProps<TM
           instanceBaseIri={instanceBaseIri}
           issues={issues}
           rootIdentifierReadOnly={false}
-          onChange={setModel}
+          onChange={handleChange}
         />
 
         {generalErrors.length > 0 ? (

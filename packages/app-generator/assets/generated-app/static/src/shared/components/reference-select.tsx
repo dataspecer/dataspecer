@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { DataSource, ReferenceOption } from '../datasource/data-source.ts';
 import { maximumCount, minimumCount, referenceDisplayFields } from '../forms/entity-target.ts';
+import { isSafeAbsoluteIri } from '../forms/iri.ts';
 import type { AggregateDescriptorMap, FieldDescriptor } from '../types/aggregate.ts';
 
 interface ReferenceSelectProps {
@@ -12,6 +13,28 @@ interface ReferenceSelectProps {
   aggregateRegistry: AggregateDescriptorMap;
   controlId: string;
   onChange: (values: string[]) => void;
+}
+
+export function addManualReference(
+  values: readonly string[],
+  input: string,
+  multiple: boolean,
+  maximum: number | null
+): { values: string[]; error: string | null } {
+  const iri = input.trim();
+  if (!isSafeAbsoluteIri(iri)) {
+    return { values: [...values], error: 'Enter a valid absolute IRI.' };
+  }
+  if (values.includes(iri)) {
+    return { values: [...values], error: 'This reference is already selected.' };
+  }
+  if (multiple && maximum !== null && values.length >= maximum) {
+    return {
+      values: [...values],
+      error: `The maximum number of references is ${maximum}.`,
+    };
+  }
+  return { values: multiple ? [...values, iri] : [iri], error: null };
 }
 
 /**
@@ -30,6 +53,8 @@ export function ReferenceSelect(props: ReferenceSelectProps) {
   const [failed, setFailed] = useState(false);
   const [search, setSearch] = useState('');
   const [selection, setSelection] = useState<string[]>(values);
+  const [manualIri, setManualIri] = useState('');
+  const [manualError, setManualError] = useState<string | null>(null);
   const minimum = minimumCount(field);
   const maximum = maximumCount(field);
 
@@ -69,16 +94,26 @@ export function ReferenceSelect(props: ReferenceSelectProps) {
     () => new Map((options ?? []).map((option) => [option.id, option])),
     [options]
   );
+  const selectableOptions = useMemo(() => {
+    const listed = options ?? [];
+    const listedIds = new Set(listed.map((option) => option.id));
+    return [
+      ...selection
+        .filter((id) => !listedIds.has(id))
+        .map((id): ReferenceOption => ({ id, label: id })),
+      ...listed,
+    ];
+  }, [options, selection]);
   const visibleOptions = useMemo(() => {
     const query = search.trim().toLocaleLowerCase();
     return query
-      ? (options ?? []).filter(
+      ? selectableOptions.filter(
           (option) =>
             option.label.toLocaleLowerCase().includes(query) ||
             option.id.toLocaleLowerCase().includes(query)
         )
-      : (options ?? []);
-  }, [options, search]);
+      : selectableOptions;
+  }, [search, selectableOptions]);
 
   if (failed) {
     return (
@@ -97,9 +132,12 @@ export function ReferenceSelect(props: ReferenceSelectProps) {
   const open = () => {
     setSelection(values);
     setSearch('');
+    setManualIri('');
+    setManualError(null);
     dialog.current?.showModal();
   };
   const toggle = (id: string) => {
+    setManualError(null);
     setSelection((previous) =>
       multiple
         ? previous.includes(id)
@@ -109,6 +147,15 @@ export function ReferenceSelect(props: ReferenceSelectProps) {
             : previous
         : [id]
     );
+  };
+  const addManual = () => {
+    const result = addManualReference(selection, manualIri, multiple, maximum);
+    setManualError(result.error);
+    if (result.error === null) {
+      setSelection(result.values);
+      setManualIri('');
+      setSearch('');
+    }
   };
   const apply = () => {
     onChange(selection);
@@ -184,6 +231,31 @@ export function ReferenceSelect(props: ReferenceSelectProps) {
             ) : (
               <p>No matching references.</p>
             )}
+          </div>
+          <div className="manual-reference">
+            <label htmlFor={`${controlId}-manual`}>Enter an IRI manually</label>
+            <div className="manual-reference-input">
+              <input
+                id={`${controlId}-manual`}
+                type="text"
+                value={manualIri}
+                placeholder="https://example.org/resource"
+                onChange={(event) => {
+                  setManualIri(event.target.value);
+                  setManualError(null);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    addManual();
+                  }
+                }}
+              />
+              <button type="button" onClick={addManual}>
+                {multiple ? 'Add IRI' : 'Use IRI'}
+              </button>
+            </div>
+            {manualError ? <span className="form-error">{manualError}</span> : null}
           </div>
           <div className="reference-dialog-actions">
             <button type="button" onClick={() => dialog.current?.close()}>

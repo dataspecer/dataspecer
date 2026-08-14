@@ -13,6 +13,7 @@ import {
   resolveCompositionTarget,
   type EntityTarget,
 } from './entity-target.ts';
+import { isSafeAbsoluteIri } from './iri.ts';
 
 export type FieldControl = FormControl | 'reference' | 'composition' | 'unsupported';
 
@@ -92,6 +93,12 @@ function validateEntity(
       message: 'Identifier (IRI) is required.',
       path: idPath,
     });
+  } else if (!isSafeAbsoluteIri(model.id)) {
+    issues.push({
+      code: ValidationIssueCode.InvalidIri,
+      message: 'Identifier must be a valid absolute IRI.',
+      path: idPath,
+    });
   }
 
   for (const field of target.fields) {
@@ -131,6 +138,20 @@ function validateEntity(
       });
     }
 
+    if (
+      resolveControl(field) === 'reference' &&
+      presentValues.some((entry) => {
+        const id = referenceId(entry);
+        return id === null || !isSafeAbsoluteIri(id);
+      })
+    ) {
+      issues.push({
+        code: ValidationIssueCode.InvalidIri,
+        message: `${field.label} must contain ${field.many ? 'valid absolute IRIs' : 'a valid absolute IRI'}.`,
+        path: fieldPath,
+      });
+    }
+
     if (!isCompositionField(field)) {
       continue;
     }
@@ -163,6 +184,16 @@ function validateEntity(
       );
     });
   }
+}
+
+function referenceId(value: unknown): string | null {
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (isEntityRecord(value) && typeof value.id === 'string') {
+    return value.id;
+  }
+  return null;
 }
 
 function hasDuplicateValues(values: unknown[]): boolean {

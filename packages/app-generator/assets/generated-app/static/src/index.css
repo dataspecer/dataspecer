@@ -445,6 +445,22 @@ section h2 {
     flex-direction: column;
 }
 
+.manual-reference {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.manual-reference-input {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.manual-reference-input input {
+    min-width: 0;
+    flex: 1;
+}
+
 .reference-dialog-actions {
     justify-content: flex-end;
 }

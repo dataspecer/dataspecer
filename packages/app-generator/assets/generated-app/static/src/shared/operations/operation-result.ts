@@ -2,6 +2,7 @@ export enum ValidationIssueCode {
   // generic error
   Error = 'error',
   Required = 'required',
+  InvalidIri = 'invalid_iri',
   NotFound = 'not_found',
   MissingPayload = 'missing_payload',
   MissingOriginalPayload = 'missing_original_payload',

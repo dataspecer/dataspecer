@@ -16,6 +16,7 @@ import {
   validateModel,
 } from '../assets/generated-app/static/src/shared/forms/form-model.ts';
 import { ValidationIssueCode } from '../assets/generated-app/static/src/shared/operations/operation-result.ts';
+import { addManualReference } from '../assets/generated-app/static/src/shared/components/reference-select.tsx';
 import {
   fieldValues,
   type AggregateDescriptor,
@@ -230,6 +231,46 @@ describe('generated recursive form model', () => {
     );
   });
 
+  it('validates entity and reference IRIs recursively', () => {
+    const model: EntityRecord = {
+      id: '/relative-root',
+      scores: [1, 2],
+      active: false,
+      owner: { id: 'not an IRI' },
+      children: [
+        { id: 'urn:child:1', name: 'First' },
+        { id: '/relative-child', name: 'Second' },
+      ],
+    };
+
+    expect(validateModel(model, rootEntityTarget(rootAggregate), aggregateRegistry)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: ValidationIssueCode.InvalidIri, path: 'id' }),
+        expect.objectContaining({ code: ValidationIssueCode.InvalidIri, path: 'owner' }),
+        expect.objectContaining({ code: ValidationIssueCode.InvalidIri, path: 'children[1].id' }),
+      ])
+    );
+  });
+
+  it('accepts absolute entity and reference IRIs', () => {
+    const model: EntityRecord = {
+      id: 'https://example.org/root/1',
+      scores: [1, 2],
+      active: false,
+      owner: { id: 'urn:owner:1' },
+      children: [
+        { id: 'urn:child:1', name: 'First' },
+        { id: 'https://example.org/child/2', name: 'Second' },
+      ],
+    };
+
+    expect(
+      validateModel(model, rootEntityTarget(rootAggregate), aggregateRegistry).filter(
+        (issue) => issue.code === ValidationIssueCode.InvalidIri
+      )
+    ).toEqual([]);
+  });
+
   it('hydrates cross-aggregate composition references without changing loaded values', async () => {
     const loadedChild: EntityRecord = { id: 'urn:child:1', name: 'Loaded child' };
     const readIds: string[] = [];
@@ -257,5 +298,33 @@ describe('generated recursive form model', () => {
     expect(child).toMatchObject({ id: 'urn:child:1', name: 'Edited' });
     expect(loadedChild.name).toBe('Loaded child');
     expect((source.children as EntityRecord[])[0]).toEqual({ id: 'urn:child:1' });
+  });
+});
+
+describe('manual reference selection', () => {
+  it('adds an absolute IRI and trims surrounding whitespace', () => {
+    expect(addManualReference([], '  urn:person:1  ', true, null)).toEqual({
+      values: ['urn:person:1'],
+      error: null,
+    });
+  });
+
+  it('rejects malformed, duplicate, and over-limit references', () => {
+    expect(addManualReference([], '/relative', true, null).error).toBe(
+      'Enter a valid absolute IRI.'
+    );
+    expect(addManualReference(['urn:person:1'], 'urn:person:1', true, null).error).toBe(
+      'This reference is already selected.'
+    );
+    expect(addManualReference(['urn:person:1'], 'urn:person:2', true, 1).error).toBe(
+      'The maximum number of references is 1.'
+    );
+  });
+
+  it('replaces a single reference', () => {
+    expect(addManualReference(['urn:person:1'], 'urn:person:2', false, 1)).toEqual({
+      values: ['urn:person:2'],
+      error: null,
+    });
   });
 });

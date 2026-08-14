@@ -44,10 +44,12 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
   const [model, setModel] = useState<EntityRecord | null>(null);
   const [originalModel, setOriginalModel] = useState<EntityRecord | null>(null);
   const [issues, setIssues] = useState<ValidationIssue[]>([]);
+  const [validationActive, setValidationActive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    setValidationActive(false);
     if (!id) {
       setModel(null);
       setOriginalModel(null);
@@ -110,12 +112,20 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
 
   const generalErrors = issues.filter((issue) => !issue.path || !model);
 
+  const handleChange = (next: EntityRecord) => {
+    setModel(next);
+    if (validationActive) {
+      setIssues(validateModel(next, rootEntityTarget(aggregate), aggregateRegistry));
+    }
+  };
+
   const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!model || !originalModel) {
       return;
     }
 
+    setValidationActive(true);
     const validation = validateModel(model, rootEntityTarget(aggregate), aggregateRegistry);
     if (validation.length > 0) {
       setIssues(validation);
@@ -174,7 +184,7 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
             instanceBaseIri={instanceBaseIri}
             issues={issues}
             rootIdentifierReadOnly
-            onChange={setModel}
+            onChange={handleChange}
           />
         ) : null}
 

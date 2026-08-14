@@ -9,6 +9,7 @@ import {
   type FieldDescriptor,
   fieldValues,
 } from '../types/aggregate.ts';
+import { isSafeAbsoluteIri } from '../forms/iri.ts';
 import type {
   DataSource,
   DeleteArgs,
@@ -35,10 +36,6 @@ const FALLBACK_LABEL_PROPERTIES = [
   'http://www.w3.org/2000/01/rdf-schema#label',
 ];
 const dataFactory = new DataFactory();
-const absoluteIri = /^[a-z][a-z0-9+.-]*:/i;
-// SPARQL IRIREF does not allow these characters unescaped. Rejecting them also prevents a value
-// from closing `<...>` and injecting another update into a generated query.
-const forbiddenIriCharacters = /[\u0000-\u0020<>"{}|^`\\]/u;
 
 export type LdkitSchemaMap = Record<string, Schema>;
 
@@ -330,7 +327,7 @@ export function buildInverseDeleteQuery(
 }
 
 export function toSparqlNamedNode(value: string, label: string): RDF.NamedNode {
-  if (!absoluteIri.test(value) || forbiddenIriCharacters.test(value)) {
+  if (!isSafeAbsoluteIri(value)) {
     throw new Error(`${label} must be a safe absolute IRI.`);
   }
   return dataFactory.namedNode(value);
