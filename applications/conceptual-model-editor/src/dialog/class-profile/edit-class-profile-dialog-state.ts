@@ -55,11 +55,7 @@ export interface ClassProfileDialogState
 /**
  * Builds the controlled-vocabularies sub-state for the class-profile dialog.
  *
- * "inherited" is resolved by reading each direct profiled ancestor's own
- * controlledVocabularies from the aggregator - the dialog tracker does not
- * carry this field. Only one level of ancestry is resolved; ancestors that
- * are themselves profiles of something with controlled vocabularies are not
- * walked further yet.
+ * "inherited" is resolved by reading each direct profiled ancestor's aggregatedEntity
  *
  * availableVocabularies is mocked until controlled vocabularies are loaded
  * from the controlled vocabulary model.
@@ -73,12 +69,12 @@ function createClassProfileControlledVocabulariesState(
 
   const entities = graph.aggregatorView.getEntities();
   const inheritedAssignments = ancestorIdentifiers.flatMap(identifier => {
-    const rawEntity = entities[identifier]?.rawEntity;
-    if (rawEntity === null || rawEntity === undefined
-      || !isSemanticModelClassProfile(rawEntity)) {
+    const aggregatedEntity = entities[identifier]?.aggregatedEntity;
+    if (aggregatedEntity === null || aggregatedEntity === undefined
+      || !isSemanticModelClassProfile(aggregatedEntity)) {
       return [];
     }
-    return rawEntity.controlledVocabularies ?? [];
+    return aggregatedEntity.controlledVocabularies ?? [];
   });
   const inherited = toControlledVocabularyUsages(
     inheritedAssignments, availableVocabularies);
