@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import Alert from '@mui/material/Alert';
+import Link from '@mui/material/Link';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import { Link as RouterLink } from 'react-router-dom';
 import {
   DataGrid,
   type GridColDef,
@@ -105,16 +109,24 @@ export function ListView<TModel extends EntityModel>(props: ListViewProps<TModel
   }, [aggregate, aggregateRegistry, dataSource, paginationModel, sort, strategy]);
 
   return (
-    <section>
-      <h2>{title}</h2>
-      <ActionLinks actions={navigation.pageActions} />
+    <Stack spacing={2}>
+      <Stack
+        direction="row"
+        spacing={2}
+        sx={{ alignItems: 'center', justifyContent: 'space-between' }}
+      >
+        <Typography variant="h5" component="h2" noWrap>
+          {title}
+        </Typography>
+        <ActionLinks actions={navigation.pageActions} />
+      </Stack>
       {error !== null ? (
-        <p role="alert">{error}</p>
+        <Alert severity="error">{error}</Alert>
       ) : (
         <DataGrid
           aria-label={title}
           autoHeight
-          className="data-grid"
+          sx={{ bgcolor: 'background.paper' }}
           columns={columns}
           rows={items}
           rowCount={total}
@@ -135,7 +147,7 @@ export function ListView<TModel extends EntityModel>(props: ListViewProps<TModel
           localeText={{ noRowsLabel: 'No items found.' }}
         />
       )}
-    </section>
+    </Stack>
   );
 }
 
@@ -164,11 +176,16 @@ function buildColumns<TModel extends EntityModel>(
     columns.push({
       field: '__actions',
       headerName: 'Actions',
-      minWidth: 180,
+      minWidth: 140,
       sortable: false,
       disableColumnMenu: true,
       renderCell: (params) => (
-        <ActionLinks actions={rowActions} entityId={params.row.id} tabIndex={params.tabIndex} />
+        <ActionLinks
+          actions={rowActions}
+          entityId={params.row.id}
+          compact
+          tabIndex={params.tabIndex}
+        />
       ),
     });
   }
@@ -240,7 +257,7 @@ function LinkedFieldValue(props: LinkedFieldValueProps) {
   const label = formatFieldValue(props.field, props.value);
   const href = entityId ? hrefForAction(props.action, entityId) : undefined;
   return href ? (
-    <Link to={href} tabIndex={props.tabIndex}>
+    <Link component={RouterLink} to={href} tabIndex={props.tabIndex} underline="hover">
       {label || entityId}
     </Link>
   ) : (

@@ -1,5 +1,7 @@
 import { Operation } from '../graph/types.ts';
 import { FieldKind } from '../metadata/types.ts';
+import { sortBy } from 'es-toolkit';
+
 import type {
   GeneratedAggregateDescriptor,
   GeneratedAssociationNavigationActionDescriptor,
@@ -78,8 +80,8 @@ export function buildOperationNavigation(
   );
 
   return {
-    pageActions,
-    rowActions,
+    pageActions: byOperation(pageActions),
+    rowActions: byOperation(rowActions),
     associationActions,
     ...(successRedirect ? { successRedirect } : {}),
   };
@@ -126,9 +128,28 @@ function buildSuccessRedirect(
   return {
     id: `${sourceOperation.id}:success:${listOperation.id}`,
     label: 'Back to list',
+    operation: listOperation.operation,
+    targetTitle: listOperation.pageTitle,
     targetPath: listRoute.path,
     requiresEntityId: listRoute.requiresEntityId,
   };
+}
+
+const ACTION_ORDER: readonly Operation[] = [
+  Operation.ReadList,
+  Operation.ReadDetail,
+  Operation.Create,
+  Operation.Update,
+  Operation.Delete,
+];
+
+function byOperation(
+  actions: GeneratedNavigationActionDescriptor[]
+): GeneratedNavigationActionDescriptor[] {
+  return sortBy(actions, [
+    (action) => ACTION_ORDER.indexOf(action.operation),
+    (action) => action.id,
+  ]);
 }
 
 function buildNavigationAction(
@@ -139,6 +160,8 @@ function buildNavigationAction(
   return {
     id,
     label: operationActionLabel(targetOperation.operation),
+    operation: targetOperation.operation,
+    targetTitle: targetOperation.pageTitle,
     targetPath: targetRoute.path,
     requiresEntityId: targetRoute.requiresEntityId,
   };

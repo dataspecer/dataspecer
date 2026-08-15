@@ -1,9 +1,18 @@
 import { useState, type SubmitEvent } from 'react';
+import Alert from '@mui/material/Alert';
+import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import SaveIcon from '@mui/icons-material/Save';
 import { useNavigate } from 'react-router-dom';
 
 import type { DataSource } from '../datasource/data-source.ts';
 import { createEntityDraft } from '../forms/form-draft.ts';
 import { rootEntityTarget } from '../forms/entity-target.ts';
+import { useSnackbar } from '../feedback/snackbar.tsx';
+import { UnsavedChangesDialog, useUnsavedChanges } from '../forms/unsaved-changes.tsx';
 import { validateModel } from '../forms/form-model.ts';
 import { hrefForAction, type OperationNavigationDescriptor } from '../navigation/navigation.ts';
 import {
@@ -37,12 +46,24 @@ export function CreateForm<TModel extends EntityModel>(props: CreateFormProps<TM
     createEntityDraft(rootEntityTarget(aggregate), aggregateRegistry, instanceBaseIri)
   );
   const navigate = useNavigate();
+  const { notify } = useSnackbar();
+  const unsaved = useUnsavedChanges();
+  const leaveForm = () => {
+    // Cancel abandons the whole form, where going back one step would only leave a nested pane.
+    const href = hrefForAction(navigation.successRedirect);
+    if (href) {
+      void navigate(href);
+      return;
+    }
+    void navigate(-1);
+  };
   const [issues, setIssues] = useState<ValidationIssue[]>([]);
   const [validationActive, setValidationActive] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const generalErrors = issues.filter((issue) => !issue.path);
 
   const handleChange = (next: EntityRecord) => {
+    unsaved.markDirty();
     setModel(next);
     if (validationActive) {
       setIssues(validateModel(next, rootEntityTarget(aggregate), aggregateRegistry));
@@ -69,7 +90,9 @@ export function CreateForm<TModel extends EntityModel>(props: CreateFormProps<TM
         payload: model as TModel,
       });
       if (result.ok) {
-        navigate(hrefForAction(navigation.successRedirect, result.data.id ?? model.id) ?? '/');
+        notify(`${aggregate.name} created.`);
+        unsaved.markSaved();
+        void navigate(hrefForAction(navigation.successRedirect, result.data.id ?? model.id) ?? '/');
         return;
       }
       setIssues(result.issues);
@@ -87,37 +110,50 @@ export function CreateForm<TModel extends EntityModel>(props: CreateFormProps<TM
   };
 
   return (
-    <section>
-      <h2>{title}</h2>
-      <form className="entity-form" onSubmit={(event) => void handleSubmit(event)}>
-        <EntityFormEditor
-          aggregate={aggregate}
-          aggregateRegistry={aggregateRegistry}
-          model={model}
-          dataSource={dataSource}
-          instanceBaseIri={instanceBaseIri}
-          issues={issues}
-          rootIdentifierReadOnly={false}
-          onChange={handleChange}
-        />
+    <Stack
+      spacing={2}
+      component="form"
+      // the form validates itself, so the browser must not block the submit first and hide the
+      // problem summary this form shows
+      noValidate
+      onSubmit={(event) => void handleSubmit(event)}
+    >
+      <Typography variant="h5" component="h2">
+        {title}
+      </Typography>
+      <Card>
+        <CardContent>
+          <EntityFormEditor
+            aggregate={aggregate}
+            aggregateRegistry={aggregateRegistry}
+            model={model}
+            dataSource={dataSource}
+            instanceBaseIri={instanceBaseIri}
+            issues={issues}
+            rootIdentifierReadOnly={false}
+            onChange={handleChange}
+          />
+        </CardContent>
+      </Card>
 
-        {generalErrors.length > 0 ? (
-          <div role="alert" className="form-errors">
-            {generalErrors.map((issue, index) => (
-              <p key={index}>{issue.message}</p>
-            ))}
-          </div>
-        ) : null}
+      {generalErrors.length > 0 ? (
+        <Alert severity="error">
+          {generalErrors.map((issue, index) => (
+            <div key={index}>{issue.message}</div>
+          ))}
+        </Alert>
+      ) : null}
 
-        <div className="form-actions">
-          <button type="submit" disabled={submitting}>
-            {submitting ? 'Saving…' : 'Create'}
-          </button>
-          <button className="form-cancel" type="button" onClick={() => navigate(-1)}>
-            Cancel
-          </button>
-        </div>
-      </form>
-    </section>
+      <Stack direction="row" spacing={1}>
+        <Button type="submit" variant="contained" startIcon={<SaveIcon />} disabled={submitting}>
+          {submitting ? 'Saving…' : 'Create'}
+        </Button>
+        <Button type="button" onClick={leaveForm}>
+          Cancel
+        </Button>
+      </Stack>
+
+      <UnsavedChangesDialog blocker={unsaved.blocker} />
+    </Stack>
   );
 }

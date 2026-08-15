@@ -186,12 +186,9 @@ describe('renderGeneratedApp', () => {
     expect(tree.get('src/shared/components/list-view.tsx')).toContain('paginationMode="server"');
     expect(tree.get('src/shared/components/list-view.tsx')).toContain('sortingMode="server"');
     expect(tree.get('package.json')).toContain('"react-router-dom"');
-    expect(tree.get('src/shared/components/form-field.tsx')).toContain(
-      'htmlFor={field.many ? undefined : controlId}'
-    );
-    expect(tree.get('src/shared/components/form-field.tsx')).toContain(
-      'aria-labelledby={field.many ? labelId : undefined}'
-    );
+    // a single control carries its own label, a group of controls is labelled by its legend
+    expect(tree.get('src/shared/components/form-field.tsx')).toContain('label={field.label}');
+    expect(tree.get('src/shared/components/form-field.tsx')).toContain('aria-labelledby={labelId}');
     const readme = tree.get('README.md');
     expect(readme).toContain('Generated/User-Owned Boundaries');
     expect(readme).toMatch(/generated from Dataspecer aggregate\s+field metadata/);
@@ -346,7 +343,7 @@ describe('renderGeneratedApp', () => {
     expect(descriptor).toContain('"formControl": "date"');
     expect(descriptor).toContain('"formControl": "datetime"');
     expect(renderGeneratedApp(model).get('src/shared/components/form-field.tsx')).toContain(
-      "step={props.control === 'number' ? 'any' : undefined}"
+      "step: control === 'number' ? 'any' : undefined"
     );
   });
 
@@ -416,7 +413,9 @@ describe('renderGeneratedApp', () => {
     );
     for (const form of ['create-form.tsx', 'update-form.tsx', 'delete-form.tsx']) {
       const source = tree.get(`src/shared/components/${form}`);
-      expect(source).toContain('onClick={() => navigate(-1)}');
+      // Cancel abandons the form, rather than stepping back through its nested panes
+      expect(source).toContain('onClick={leaveForm}');
+      expect(source).toContain('hrefForAction(navigation.successRedirect');
       expect(source).not.toContain('href={navigation.successRedirect.targetPath}');
     }
   });

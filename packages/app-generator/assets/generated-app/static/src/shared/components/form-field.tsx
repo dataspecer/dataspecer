@@ -1,4 +1,19 @@
 import { useId } from 'react';
+import Button from '@mui/material/Button';
+import Checkbox from '@mui/material/Checkbox';
+import FormControl from '@mui/material/FormControl';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import FormHelperText from '@mui/material/FormHelperText';
+import FormLabel from '@mui/material/FormLabel';
+import IconButton from '@mui/material/IconButton';
+import Stack from '@mui/material/Stack';
+import TextField from '@mui/material/TextField';
+import Tooltip from '@mui/material/Tooltip';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { DateTime } from 'luxon';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 
 import type { DataSource } from '../datasource/data-source.ts';
 import {
@@ -29,20 +44,33 @@ export function FormField(props: FormFieldProps) {
   const control = resolveControl(field);
   const controlId = useId();
   const labelId = `${controlId}-label`;
+  const required = minimumCount(field) > 0;
+  const note = control === 'unsupported' ? 'This field type is read-only.' : undefined;
+
+  if (!field.many && control !== 'reference') {
+    return (
+      <PrimitiveControl
+        id={controlId}
+        label={field.label}
+        control={control}
+        value={value}
+        required={required}
+        readOnly={control === 'unsupported' || control === 'composition'}
+        error={error}
+        helperText={note}
+        onChange={onChange}
+      />
+    );
+  }
 
   return (
-    <div className="form-field">
-      <label id={labelId} className="form-label" htmlFor={field.many ? undefined : controlId}>
+    <FormControl error={error !== undefined} fullWidth>
+      <FormLabel id={labelId} required={required} sx={{ mb: 0.5 }}>
         {field.label}
-        {minimumCount(field) > 0 ? <span className="form-required"> *</span> : null}
-      </label>
-      <div
-        className="form-control"
-        role={field.many ? 'group' : undefined}
-        aria-labelledby={field.many ? labelId : undefined}
-      >
-        {field.many ? (
-          <ManyControl
+      </FormLabel>
+      <div role={field.many ? 'group' : undefined} aria-labelledby={labelId}>
+        {control === 'reference' ? (
+          <ReferenceControl
             field={field}
             value={value}
             dataSource={dataSource}
@@ -51,60 +79,35 @@ export function FormField(props: FormFieldProps) {
             onChange={onChange}
           />
         ) : (
-          <SingleControl
+          <RepeatingPrimitiveControl
             field={field}
-            value={value}
-            dataSource={dataSource}
-            aggregateRegistry={aggregateRegistry}
+            control={control}
+            values={fieldValues(value, field)}
             controlId={controlId}
             onChange={onChange}
           />
         )}
-        {field.many ? <span className="field-note">{cardinalityDescription(field)}.</span> : null}
-        {control === 'unsupported' ? (
-          <span className="field-note">This field type is read-only.</span>
-        ) : null}
-        {error ? <span className="form-error">{error}</span> : null}
       </div>
-    </div>
+      {field.many ? <FormHelperText>{cardinalityDescription(field)}.</FormHelperText> : null}
+      {note ? <FormHelperText>{note}</FormHelperText> : null}
+      {error ? <FormHelperText>{error}</FormHelperText> : null}
+    </FormControl>
   );
 }
 
-type ControlProps = Omit<FormFieldProps, 'error'> & { controlId: string };
-
-function SingleControl(props: ControlProps) {
-  const { field, value, dataSource, aggregateRegistry, controlId, onChange } = props;
-  const control = resolveControl(field);
-
-  if (control === 'unsupported' || control === 'composition') {
-    return <input id={controlId} type="text" disabled value={toInputValue('text', value)} />;
-  }
-
-  if (control === 'reference') {
-    const id = value && typeof value === 'object' ? (value as { id?: unknown }).id : undefined;
-    return (
-      <ReferenceSelect
-        field={field}
-        values={typeof id === 'string' && id !== '' ? [id] : []}
-        multiple={false}
-        dataSource={dataSource}
-        aggregateRegistry={aggregateRegistry}
-        controlId={controlId}
-        onChange={(ids) => onChange(ids[0] ? { id: ids[0] } : undefined)}
-      />
-    );
-  }
-
-  return <PrimitiveControl id={controlId} control={control} value={value} onChange={onChange} />;
+interface ReferenceControlProps {
+  field: FieldDescriptor;
+  value: unknown;
+  dataSource: DataSource;
+  aggregateRegistry: AggregateDescriptorMap;
+  controlId: string;
+  onChange: (value: unknown) => void;
 }
 
-function ManyControl(props: ControlProps) {
+function ReferenceControl(props: ReferenceControlProps) {
   const { field, value, dataSource, aggregateRegistry, controlId, onChange } = props;
-  const control = resolveControl(field);
-  const values = fieldValues(value, field);
-
-  if (control === 'reference') {
-    const ids = values.flatMap((entry) => {
+  if (field.many) {
+    const ids = fieldValues(value, field).flatMap((entry) => {
       const id = entry && typeof entry === 'object' ? (entry as { id?: unknown }).id : undefined;
       return typeof id === 'string' && id !== '' ? [id] : [];
     });
@@ -121,63 +124,98 @@ function ManyControl(props: ControlProps) {
     );
   }
 
-  if (control === 'unsupported' || control === 'composition') {
-    return <input id={controlId} type="text" disabled value="" />;
-  }
-
+  const id = value && typeof value === 'object' ? (value as { id?: unknown }).id : undefined;
   return (
-    <RepeatingPrimitiveControl
+    <ReferenceSelect
       field={field}
-      control={control}
-      values={values}
+      values={typeof id === 'string' && id !== '' ? [id] : []}
+      multiple={false}
+      dataSource={dataSource}
+      aggregateRegistry={aggregateRegistry}
       controlId={controlId}
-      onChange={onChange}
+      onChange={(ids) => onChange(ids[0] ? { id: ids[0] } : undefined)}
     />
   );
 }
 
+type PrimitiveKind = Exclude<FieldControl, 'reference'>;
+
 interface PrimitiveControlProps {
   id: string;
+  label?: string;
   ariaLabel?: string;
-  control: Exclude<FieldControl, 'reference' | 'composition' | 'unsupported'>;
+  control: PrimitiveKind;
   value: unknown;
+  required?: boolean;
+  readOnly?: boolean;
+  error?: string;
+  helperText?: string;
   onChange: (value: unknown) => void;
 }
 
 function PrimitiveControl(props: PrimitiveControlProps) {
-  if (props.control === 'checkbox') {
+  const { control, value, onChange } = props;
+  const shared = {
+    required: props.required,
+    error: props.error !== undefined,
+    helperText: props.error ?? props.helperText,
+  };
+
+  if (control === 'checkbox') {
     return (
-      <input
-        id={props.id}
-        aria-label={props.ariaLabel}
-        type="checkbox"
-        checked={Boolean(props.value)}
-        onChange={(event) => props.onChange(coerceValue(props.control, '', event.target.checked))}
+      <FormControl error={props.error !== undefined}>
+        <FormControlLabel
+          control={
+            <Checkbox
+              id={props.id}
+              checked={Boolean(value)}
+              onChange={(event) => onChange(coerceValue(control, '', event.target.checked))}
+            />
+          }
+          label={props.label ?? props.ariaLabel ?? ''}
+        />
+        {shared.helperText ? <FormHelperText>{shared.helperText}</FormHelperText> : null}
+      </FormControl>
+    );
+  }
+
+  if (control === 'date' || control === 'datetime') {
+    // The models hold native Date objects, the pickers work in Luxon values.
+    const current =
+      value instanceof Date && !Number.isNaN(value.getTime()) ? DateTime.fromJSDate(value) : null;
+    const Picker = control === 'date' ? DatePicker : DateTimePicker;
+    return (
+      <Picker
+        label={props.label}
+        value={current}
+        onChange={(next: DateTime | null) => onChange(next?.toJSDate() ?? undefined)}
+        slotProps={{
+          textField: { id: props.id, 'aria-label': props.ariaLabel, ...shared },
+        }}
       />
     );
   }
 
-  const inputType =
-    props.control === 'datetime'
-      ? 'datetime-local'
-      : props.control === 'integer'
-        ? 'number'
-        : props.control;
   return (
-    <input
+    <TextField
       id={props.id}
+      label={props.label}
       aria-label={props.ariaLabel}
-      type={inputType}
-      step={props.control === 'number' ? 'any' : undefined}
-      value={toInputValue(props.control, props.value)}
-      onChange={(event) => props.onChange(coerceValue(props.control, event.target.value, false))}
+      type={control === 'number' || control === 'integer' ? 'number' : 'text'}
+      slotProps={{
+        htmlInput: { step: control === 'number' ? 'any' : undefined, readOnly: props.readOnly },
+      }}
+      disabled={props.readOnly}
+      value={toInputValue(control, value)}
+      onChange={(event) => onChange(coerceValue(control, event.target.value, false))}
+      {...shared}
     />
   );
 }
 
 interface RepeatingPrimitiveControlProps {
   field: FieldDescriptor;
-  control: PrimitiveControlProps['control'];
+  control: PrimitiveKind;
   values: unknown[];
   controlId: string;
   onChange: (value: unknown[]) => void;
@@ -186,17 +224,11 @@ interface RepeatingPrimitiveControlProps {
 function RepeatingPrimitiveControl(props: RepeatingPrimitiveControlProps) {
   const minimum = minimumCount(props.field);
   const maximum = maximumCount(props.field);
-  const add = () => {
-    props.onChange([...props.values, props.control === 'checkbox' ? false : undefined]);
-  };
-  const remove = (index: number) => {
-    props.onChange(props.values.filter((_, candidate) => candidate !== index));
-  };
 
   return (
-    <div className="repeating-values">
+    <Stack spacing={1} sx={{ alignItems: 'flex-start' }}>
       {props.values.map((value, index) => (
-        <div className="repeating-value" key={index}>
+        <Stack key={index} direction="row" spacing={1} sx={{ alignItems: 'center', width: '100%' }}>
           <PrimitiveControl
             id={`${props.controlId}-${index}`}
             ariaLabel={`${props.field.label} ${index + 1}`}
@@ -208,22 +240,29 @@ function RepeatingPrimitiveControl(props: RepeatingPrimitiveControlProps) {
               props.onChange(values);
             }}
           />
-          <button
-            type="button"
-            disabled={props.values.length <= minimum}
-            onClick={() => remove(index)}
-          >
-            Remove
-          </button>
-        </div>
+          <Tooltip title={`Remove ${props.field.label} ${index + 1}`}>
+            <IconButton
+              color="error"
+              aria-label={`Remove ${props.field.label} ${index + 1}`}
+              disabled={props.values.length <= minimum}
+              onClick={() =>
+                props.onChange(props.values.filter((_, candidate) => candidate !== index))
+              }
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Stack>
       ))}
-      <button
-        type="button"
+      <Button
+        startIcon={<AddIcon />}
         disabled={maximum !== null && props.values.length >= maximum}
-        onClick={add}
+        onClick={() =>
+          props.onChange([...props.values, props.control === 'checkbox' ? false : undefined])
+        }
       >
         Add {props.field.label.toLocaleLowerCase()}
-      </button>
-    </div>
+      </Button>
+    </Stack>
   );
 }

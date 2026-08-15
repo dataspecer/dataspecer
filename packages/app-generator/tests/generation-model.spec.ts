@@ -109,6 +109,8 @@ describe('buildGenerationModel', () => {
     ).toEqual({
       id: 'create-list',
       label: 'List',
+      operation: 'ReadList',
+      targetTitle: expect.any(String),
       targetPath: '/book-read-list',
       requiresEntityId: false,
     });
@@ -118,6 +120,8 @@ describe('buildGenerationModel', () => {
     ).toEqual({
       id: 'update-detail',
       label: 'Detail',
+      operation: 'ReadDetail',
+      targetTitle: expect.any(String),
       targetPath: '/book-read-detail',
       requiresEntityId: true,
     });
@@ -127,6 +131,8 @@ describe('buildGenerationModel', () => {
     ).toEqual({
       id: 'delete-list',
       label: 'List',
+      operation: 'ReadList',
+      targetTitle: expect.any(String),
       targetPath: '/book-read-list',
       requiresEntityId: false,
     });
@@ -145,6 +151,8 @@ describe('buildGenerationModel', () => {
     expect(create?.navigation.successRedirect).toEqual({
       id: 'Book.Create:success:Book.ReadList',
       label: 'Back to list',
+      operation: 'ReadList',
+      targetTitle: expect.any(String),
       targetPath: '/book-read-list',
       requiresEntityId: false,
     });
@@ -168,6 +176,8 @@ describe('buildGenerationModel', () => {
     expect(create?.navigation.successRedirect).toEqual({
       id: 'create-detail',
       label: 'Detail',
+      operation: 'ReadDetail',
+      targetTitle: expect.any(String),
       targetPath: '/book-read-detail',
       requiresEntityId: true,
     });
@@ -283,27 +293,36 @@ describe('buildGenerationModel', () => {
       {
         id: 'list-create',
         label: 'Create',
+        operation: 'Create',
+        targetTitle: expect.any(String),
         targetPath: '/book-create',
         requiresEntityId: false,
       },
     ]);
+    // read, then write, destructive last, whatever order the graph edges happen to have
     expect(list?.navigation.rowActions).toEqual([
-      {
-        id: 'list-delete',
-        label: 'Delete',
-        targetPath: '/book-delete',
-        requiresEntityId: true,
-      },
       {
         id: 'list-detail',
         label: 'Detail',
+        operation: 'ReadDetail',
+        targetTitle: expect.any(String),
         targetPath: '/book-read-detail',
         requiresEntityId: true,
       },
       {
         id: 'list-update',
         label: 'Edit',
+        operation: 'Update',
+        targetTitle: expect.any(String),
         targetPath: '/book-update',
+        requiresEntityId: true,
+      },
+      {
+        id: 'list-delete',
+        label: 'Delete',
+        operation: 'Delete',
+        targetTitle: expect.any(String),
+        targetPath: '/book-delete',
         requiresEntityId: true,
       },
     ]);
@@ -319,21 +338,27 @@ describe('buildGenerationModel', () => {
 
     expect(detail?.navigation.pageActions).toEqual([
       {
-        id: 'detail-delete',
-        label: 'Delete',
-        targetPath: '/book-delete',
-        requiresEntityId: true,
-      },
-      {
         id: 'detail-list',
         label: 'List',
+        operation: 'ReadList',
+        targetTitle: expect.any(String),
         targetPath: '/book-nested-read-list',
         requiresEntityId: false,
       },
       {
         id: 'detail-update',
         label: 'Edit',
+        operation: 'Update',
+        targetTitle: expect.any(String),
         targetPath: '/book-update',
+        requiresEntityId: true,
+      },
+      {
+        id: 'detail-delete',
+        label: 'Delete',
+        operation: 'Delete',
+        targetTitle: expect.any(String),
+        targetPath: '/book-delete',
         requiresEntityId: true,
       },
     ]);

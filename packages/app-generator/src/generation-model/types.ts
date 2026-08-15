@@ -80,6 +80,8 @@ export interface GeneratedOperationNavigation {
 export interface GeneratedNavigationActionDescriptor {
   id: string;
   label: string;
+  operation: Operation;
+  targetTitle: string;
   targetPath: string;
   requiresEntityId: boolean;
 }

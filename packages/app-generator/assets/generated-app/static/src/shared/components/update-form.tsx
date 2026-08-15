@@ -1,9 +1,19 @@
 import { useEffect, useState, type SubmitEvent } from 'react';
+import Alert from '@mui/material/Alert';
+import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import Skeleton from '@mui/material/Skeleton';
+import SaveIcon from '@mui/icons-material/Save';
 import { useNavigate } from 'react-router-dom';
 
 import type { DataSource } from '../datasource/data-source.ts';
 import { hydrateCompositionTree } from '../forms/form-draft.ts';
 import { rootEntityTarget } from '../forms/entity-target.ts';
+import { useSnackbar } from '../feedback/snackbar.tsx';
+import { UnsavedChangesDialog, useUnsavedChanges } from '../forms/unsaved-changes.tsx';
 import { validateModel } from '../forms/form-model.ts';
 import { hrefForAction, type OperationNavigationDescriptor } from '../navigation/navigation.ts';
 import {
@@ -45,6 +55,17 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
   const [model, setModel] = useState<EntityRecord | null>(null);
   const [originalModel, setOriginalModel] = useState<EntityRecord | null>(null);
   const navigate = useNavigate();
+  const { notify } = useSnackbar();
+  const unsaved = useUnsavedChanges();
+  const leaveForm = () => {
+    // Cancel abandons the whole form, where going back one step would only leave a nested pane.
+    const href = hrefForAction(navigation.successRedirect, id);
+    if (href) {
+      void navigate(href);
+      return;
+    }
+    void navigate(-1);
+  };
   const [issues, setIssues] = useState<ValidationIssue[]>([]);
   const [validationActive, setValidationActive] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -115,6 +136,7 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
   const generalErrors = issues.filter((issue) => !issue.path || !model);
 
   const handleChange = (next: EntityRecord) => {
+    unsaved.markDirty();
     setModel(next);
     if (validationActive) {
       setIssues(validateModel(next, rootEntityTarget(aggregate), aggregateRegistry));
@@ -146,7 +168,9 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
         originalPayload: originalModel as TModel,
       });
       if (result.ok) {
-        navigate(hrefForAction(navigation.successRedirect, id) ?? '/');
+        notify(`${aggregate.name} saved.`);
+        unsaved.markSaved();
+        void navigate(hrefForAction(navigation.successRedirect, id) ?? '/');
         return;
       }
       setIssues(result.issues);
@@ -165,48 +189,68 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
 
   if (loading) {
     return (
-      <section>
-        <h2>{title}</h2>
-        <p>Loading…</p>
-      </section>
+      <Stack spacing={2}>
+        <Typography variant="h5" component="h2">
+          {title}
+        </Typography>
+        <Skeleton variant="rounded" height={240} />
+      </Stack>
     );
   }
 
   return (
-    <section>
-      <h2>{title}</h2>
-      <form className="entity-form" onSubmit={(event) => void handleSubmit(event)}>
-        {model ? (
-          <EntityFormEditor
-            aggregate={aggregate}
-            aggregateRegistry={aggregateRegistry}
-            model={model}
-            originalModel={originalModel ?? undefined}
-            dataSource={dataSource}
-            instanceBaseIri={instanceBaseIri}
-            issues={issues}
-            rootIdentifierReadOnly
-            onChange={handleChange}
-          />
-        ) : null}
+    <Stack
+      spacing={2}
+      component="form"
+      // the form validates itself, so the browser must not block the submit first and hide the
+      // problem summary this form shows
+      noValidate
+      onSubmit={(event) => void handleSubmit(event)}
+    >
+      <Typography variant="h5" component="h2">
+        {title}
+      </Typography>
+      {model ? (
+        <Card>
+          <CardContent>
+            <EntityFormEditor
+              aggregate={aggregate}
+              aggregateRegistry={aggregateRegistry}
+              model={model}
+              originalModel={originalModel ?? undefined}
+              dataSource={dataSource}
+              instanceBaseIri={instanceBaseIri}
+              issues={issues}
+              rootIdentifierReadOnly
+              onChange={handleChange}
+            />
+          </CardContent>
+        </Card>
+      ) : null}
 
-        {generalErrors.length > 0 ? (
-          <div role="alert" className="form-errors">
-            {generalErrors.map((issue, index) => (
-              <p key={index}>{issue.message}</p>
-            ))}
-          </div>
-        ) : null}
+      {generalErrors.length > 0 ? (
+        <Alert severity="error">
+          {generalErrors.map((issue, index) => (
+            <div key={index}>{issue.message}</div>
+          ))}
+        </Alert>
+      ) : null}
 
-        <div className="form-actions">
-          <button type="submit" disabled={submitting || !model || !originalModel}>
-            {submitting ? 'Saving…' : 'Save'}
-          </button>
-          <button className="form-cancel" type="button" onClick={() => navigate(-1)}>
-            Cancel
-          </button>
-        </div>
-      </form>
-    </section>
+      <Stack direction="row" spacing={1}>
+        <Button
+          type="submit"
+          variant="contained"
+          startIcon={<SaveIcon />}
+          disabled={submitting || !model || !originalModel}
+        >
+          {submitting ? 'Saving…' : 'Save'}
+        </Button>
+        <Button type="button" onClick={leaveForm}>
+          Cancel
+        </Button>
+      </Stack>
+
+      <UnsavedChangesDialog blocker={unsaved.blocker} />
+    </Stack>
   );
 }
