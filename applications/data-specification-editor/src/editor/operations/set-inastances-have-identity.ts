@@ -21,7 +21,7 @@ export class SetInstancesHaveIdentity implements ComplexOperation {
 
 
     const psmSetInstancesHaveIdentity = new DataPsmSetInstancesHaveIdentity();
-    psmSetInstancesHaveIdentity.dataPsmClass = this.forDataPsmClass;
+    psmSetInstancesHaveIdentity.entityId = this.forDataPsmClass;
     psmSetInstancesHaveIdentity.instancesHaveIdentity = this.instancesHaveIdentity;
     this.store.applyOperation(schema, psmSetInstancesHaveIdentity);
   }

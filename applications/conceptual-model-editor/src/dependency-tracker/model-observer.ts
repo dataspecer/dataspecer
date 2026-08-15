@@ -1,7 +1,7 @@
 import {
   ExternalSemanticModel,
   InMemorySemanticModel,
-} from "@/dataspecer/semantic-model";
+} from "../dataspecer/semantic-model";
 import { InMemoryEntityModel } from "@dataspecer/core-v2";
 import {
   Entity,

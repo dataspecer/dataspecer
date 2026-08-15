@@ -1,4 +1,4 @@
-import { ModelDsIdentifier } from "@/dataspecer/entity-model";
+import { ModelDsIdentifier } from "../dataspecer/entity-model";
 
 export interface CmeOperationArguments {
 

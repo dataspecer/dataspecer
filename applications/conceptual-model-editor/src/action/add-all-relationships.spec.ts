@@ -13,7 +13,7 @@ import {
 import { notificationMockup, TestedSemanticConnectionType } from "./test/actions-test-suite";
 import { ActionsTestSuite } from "./test/actions-test-suite";
 import { addAllRelationshipsForVisualDiagramNodeToVisualModelAction } from "./add-all-relationships";
-import { VisualModelDiagramNode } from "@/diagram";
+import { VisualModelDiagramNode } from "../diagram";
 
 test("Try to call the action when all edges are missing, " +
       "then call again, then remove one edge and then call again", () => {

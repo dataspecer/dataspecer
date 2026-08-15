@@ -7,13 +7,13 @@ import {
 import { getVisualDiagramNodeMappingsByRepresented, isVisualEdgeEnd } from "./utilities";
 import { ModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
-import { ClassesContextType } from "@/context/classes-context";
-import { findSourceModelOfEntity } from "@/service/model-service";
-import { VisualModelDiagramNode } from "@/diagram";
-import { createGetVisualEntitiesForRepresentedGlobalWrapper, VisualsForRepresentedWrapper } from "@/util/utils";
+import { ClassesContextType } from "../context/classes-context";
+import { findSourceModelOfEntity } from "../service/model-service";
+import { VisualModelDiagramNode } from "../diagram";
+import { createGetVisualEntitiesForRepresentedGlobalWrapper, VisualsForRepresentedWrapper } from "../util/utils";
 import { SemanticModelGeneralization, SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
 import { SemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { getSemanticConnectionEndConcepts } from "@/util/relationship-utils";
+import { getSemanticConnectionEndConcepts } from "../util/relationship-utils";
 
 /**
  * Adds all relatiions for the given {@link visualDiagramNode} to the given {@link visualModel}.

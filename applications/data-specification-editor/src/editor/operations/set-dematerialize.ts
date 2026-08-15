@@ -20,7 +20,7 @@ export class SetDematerialize implements ComplexOperation {
     const schema = this.store.getSchemaForResource(this.dataPsmAssociationEnd) as string;
 
     const operation = new DataPsmSetDematerialized();
-    operation.dataPsmAssociationEnd = this.dataPsmAssociationEnd;
+    operation.entityId = this.dataPsmAssociationEnd;
     operation.dataPsmIsDematerialized = this.dematerialize;
     this.store.applyOperation(schema, operation);
   }

@@ -1,65 +1,49 @@
 import type { PackageService } from "@dataspecer/core-v2/project";
-import { applyOperationToSemanticModel, semanticModelEntitiesToSerialization, serializationToSemanticModelEntities } from "@dataspecer/core-v2/semantic-model";
+import { applyOperationsToSemanticModel, serializationToSemanticModelEntities } from "@dataspecer/core-v2/semantic-model";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
-import type { Model, ModelIdentifier } from "@dataspecer/core/model";
-import type { Operation } from "@dataspecer/core/operation";
-import { BaseModelInModelStore, type ModelState } from "./base.ts";
-import type { ModelInDefaultFrontendModelStore } from "./implementation.ts";
+import type { ModelIdentifier } from "@dataspecer/core/model";
+import { type Operation } from "@dataspecer/core/operation";
+import type { ModelInModelStore, StateResult } from "./interface.ts";
+import { createStateResult } from "./state.ts";
 
 /**
  * This class implements support for semantic model for DefaultFrontendModelStore.
  */
-export class SemanticModelInModelStore extends BaseModelInModelStore implements Model, ModelInDefaultFrontendModelStore {
-  protected service: PackageService;
+export class SemanticModelInModelStore implements ModelInModelStore {
+  private readonly id: ModelIdentifier;
+  private readonly service: PackageService;
 
-  constructor(id: string, service: PackageService) {
-    super(id);
+  private state: EntityRecord = {};
+
+  constructor(id: ModelIdentifier, service: PackageService) {
+    this.id = id;
     this.service = service;
   }
 
-  protected async loadInternal(): Promise<ModelState> {
-    const data = await this.service.getResourceJsonData(this.id);
-    return this.deserializeModel(data);
+  setState(coreState: EntityRecord): StateResult {
+    const result = createStateResult(this.state, coreState);
+    this.state = coreState;
+    return result;
   }
 
-  private async deserializeModel(data: unknown): Promise<ModelState> {
+  applyOperationAndSetState(operations: Operation[]): StateResult {
+    const state = { ...this.state };
+    const { changes: diff } = applyOperationsToSemanticModel(state, operations);
+    this.state = state;
     return {
-      entities: serializationToSemanticModelEntities(data),
-      operations: [], // todo still no operations
+      coreState: state,
+      outputState: state,
+      diff,
     };
   }
 
-  /**
-   * A semantic model must always contain an entity of type
-   * {@link LOCAL_SEMANTIC_MODEL} representing the model itself (see
-   * {@link semanticModelEntitiesToSerialization}, which throws without it) -
-   * even when it otherwise has no entities.
-   */
-  override loadInitialStateInternal(): void {
-    this.initializeState({
-      entities: serializationToSemanticModelEntities({ modelId: this.id }),
-      operations: [],
-    });
+  subscribeForAsyncChanges(): () => void {
+    return () => {};
   }
 
-  protected async saveInternal(state: ModelState): Promise<void> {
-    const data = this.serializeModel(state);
-    await this.service.setResourceJsonData(this.id, data);
-  }
-
-  private serializeModel(state: ModelState): unknown {
-    return semanticModelEntitiesToSerialization(state.entities);
-  }
-
-  protected override applyOperation(operation: Operation, mutableState: EntityRecord): void {
-    const { changes } = applyOperationToSemanticModel(mutableState, [operation]);
-    for (const change of changes) {
-      if (change.next === null) {
-        delete mutableState[change.previous!.id];
-      } else {
-        mutableState[change.next.id] = change.next;
-      }
-    }
+  async getRemoteState(): Promise<EntityRecord> {
+    const data = await this.service.getResourceJsonData(this.id);
+    return serializationToSemanticModelEntities(data ?? { modelId: this.id });
   }
 }
 
@@ -68,6 +52,6 @@ export function createSemanticModel(
   context: {
     service: PackageService;
   },
-): Model & ModelInDefaultFrontendModelStore {
+): SemanticModelInModelStore {
   return new SemanticModelInModelStore(modelId, context.service);
 }

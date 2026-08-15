@@ -1,5 +1,5 @@
 import { isVisualProfileRelationship, WritableVisualModel } from "@dataspecer/visual-model";
-import { CmeReference, isCmeReferenceEqual } from "@/dataspecer/cme-model/model";
+import { CmeReference, isCmeReferenceEqual } from "../../../dataspecer/cme-model/model";
 
 /**
  * Propagate changes in the list of profiles to the visual model.

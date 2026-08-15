@@ -11,9 +11,19 @@ import mime from "mime";
  * @returns
  */
 export function useStaticSpaHandler(basePath: string) {
+  const baseDirectory = path.resolve(basePath);
+
   return (request: Request, response: Response, next: NextFunction) => {
     const splat = request.params.splat;
     const url = Array.isArray(splat) ? splat.join("/") : "";
+
+    // The requested path becomes a file path: refuse anything (e.g. ".."
+    // segments) that would escape the static files directory.
+    const requestedPath = path.resolve(baseDirectory, url);
+    if (requestedPath !== baseDirectory && !requestedPath.startsWith(baseDirectory + path.sep)) {
+      response.sendStatus(400);
+      return;
+    }
 
     // Helper function to send file with proper MIME type
     const sendFileWithMime = (filePath: string) => {
@@ -24,27 +34,9 @@ export function useStaticSpaHandler(basePath: string) {
       response.sendFile(filePath);
     };
 
-    // File as is
-    {
-      const filePath = path.join(basePath, url);
-      if (fs.existsSync(filePath) && fs.lstatSync(filePath).isFile()) {
-        sendFileWithMime(filePath);
-        return;
-      }
-    }
-
-    // File with .html extension
-    {
-      const filePath = path.join(basePath, `${url}.html`);
-      if (fs.existsSync(filePath) && fs.lstatSync(filePath).isFile()) {
-        sendFileWithMime(filePath);
-        return;
-      }
-    }
-
-    // Base index.html
-    {
-      const filePath = path.join(basePath, "index.html");
+    // File as is, file with .html extension, base index.html
+    const candidates = [requestedPath, `${requestedPath}.html`, path.join(baseDirectory, "index.html")];
+    for (const filePath of candidates) {
       if (fs.existsSync(filePath) && fs.lstatSync(filePath).isFile()) {
         sendFileWithMime(filePath);
         return;

@@ -3,6 +3,7 @@
   "$datetime": "{{val, datetime(dateStyle: long; timeStyle: short)}}",
   "add-imported": {
     "error": "An error occurred while importing some specifications",
+    "error-title": "Import failed",
     "file-description": "Use this dialog to drop a Dataspecer ZIP archive.",
     "file-warning": "The restored specification must not already exist. If it does, delete it first.",
     "import": "Import",
@@ -57,6 +58,8 @@
   },
   "format as json": "Format as json",
   "generate application": "Generate the application",
+  "history button": "History and change propagation",
+  "history button pending evolution": "History and change propagation (pending evolution)",
   "ID": "ID",
   "import": "Import",
   "import specification from url": "Profile dataspec from URL",
@@ -91,19 +94,17 @@
   },
   "open": "Open",
   "project-wizard": "New dataspec",
-  "reload-pim-wrapper": {
-    "confirm": "Are you sure you want to reload the contents of this external model?",
-    "description": "Reload contents of external model",
-    "error": "Reloading model failed. More information in the console.",
-    "success": "Model reloaded successfully."
-  },
-  "reload-imported": {
-    "reload": "Reload",
-    "success": "Specification was successfully reloaded.",
-    "title": "Reload imported specification",
+  "reload-resource": {
+    "error": "Reload failed.",
+    "error-title": "Reload failed",
+    "reload": "Reload and view changes",
+    "reload-apply": "Reload and apply changes immediately",
+    "success": "Reload was successful.",
+    "title": "Reload resource",
     "url": "URL",
-    "warning": "You are about to reload the specification {{name}} from the following URL. If the reload is successful, the specification will be completely overwritten.",
-    "warning-no-name": "You are about to reload the specification from the following URL. If the reload is successful, the specification will be completely overwritten."
+    "urls": "URLs (one per line)",
+    "warning": "You are about to reload {{name}} from the URL(s) below. If the reload is successful, its content will be completely overwritten.",
+    "warning-no-name": "You are about to reload this resource from the URL(s) below. If the reload is successful, its content will be completely overwritten."
   },
   "remove": "Remove",
   "resource-detail": {

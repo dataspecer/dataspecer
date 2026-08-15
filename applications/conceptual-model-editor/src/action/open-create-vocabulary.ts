@@ -14,7 +14,7 @@ import {
   createCzechSemanticVocabulary,
   createInMemorySemanticModel,
   createRdfsSemanticModel,
-} from "@/dataspecer/semantic-model/semantic-model-factory";
+} from "../dataspecer/semantic-model/semantic-model-factory";
 
 const LOG = createLogger(import.meta.url);
 

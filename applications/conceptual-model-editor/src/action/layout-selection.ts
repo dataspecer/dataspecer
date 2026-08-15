@@ -1,7 +1,7 @@
-import { ClassesContextType } from "@/context/classes-context";
-import { ModelGraphContextType } from "@/context/model-context";
-import { UseDiagramType } from "@/diagram/diagram-hook";
-import { UseNotificationServiceWriterType } from "@/notification/notification-service-context";
+import { ClassesContextType } from "../context/classes-context";
+import { ModelGraphContextType } from "../context/model-context";
+import { UseDiagramType } from "../diagram/diagram-hook";
+import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import {
   isVisualNode,
   isVisualProfileRelationship,

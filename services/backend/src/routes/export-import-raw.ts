@@ -1,7 +1,7 @@
 import express from "express";
 import { asyncHandler } from "../utils/async-handler.ts";
 import { PackageExporter } from "../export-import/export.ts";
-import { resourceModel } from "../main.ts";
+import { modelRepository } from "../main.ts";
 import z from "zod";
 import { PackageImporter } from "../export-import/import.ts";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
@@ -21,10 +21,10 @@ export const exportPackageResource = asyncHandler(async (request: express.Reques
 
   const query = querySchema.parse(request.query);
 
-  const exporter = new PackageExporter(resourceModel);
+  const exporter = new PackageExporter(modelRepository);
   const buffer = await exporter.doExport(query.iri);
 
-  const resource = await resourceModel.getResource(query.iri);
+  const resource = await modelRepository.getResource(query.iri);
   const filename = getName(resource?.userMetadata?.label, "package");
 
   const ascii = safeAsciiFileName(filename, "dataspecer-project") + "-backup.zip";
@@ -38,8 +38,8 @@ export const exportPackageResource = asyncHandler(async (request: express.Reques
 export const importPackageResource = asyncHandler(async (request: express.Request, response: express.Response) => {
   const file = request.file!.buffer;
 
-  const importer = new PackageImporter(resourceModel);
+  const importer = new PackageImporter(modelRepository);
   const imported = await importer.doImport(file);
 
-  response.send(await Promise.all(imported.map(iri => resourceModel.getPackage(iri))));
+  response.send(await Promise.all(imported.map(iri => modelRepository.getPackage(iri))));
 });

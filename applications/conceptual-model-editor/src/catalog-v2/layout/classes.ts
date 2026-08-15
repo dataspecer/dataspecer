@@ -14,7 +14,7 @@ import {
   filterByModel,
   NodeChildren,
 } from "./layout-utilities";
-import { CmeSemanticModelType } from "@/dataspecer/cme-model";
+import { CmeSemanticModelType } from "../../dataspecer/cme-model";
 import { ACTION_SEMANTIC_MODEL_CREATE_CLASS, ACTION_SEMANTIC_MODEL_EXPAND } from "../catalog-action";
 
 /**

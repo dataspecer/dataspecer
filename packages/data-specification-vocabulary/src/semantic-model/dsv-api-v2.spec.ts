@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 
-import { ApplicationProfile, DatatypePropertyProfile, RequirementLevel, ClassRole, ClassProfile } from "./dsv-model.ts";
+import { ApplicationProfile, RequirementLevel, ClassRole } from "./dsv-model.ts";
 import { createDefaultSemanticModelBuilder } from "@dataspecer/semantic-model";
 import { createDefaultProfileModelBuilder } from "@dataspecer/profile-model";
 import { createDataSpecificationVocabulary } from "./dsv-api-v2.ts";
@@ -109,6 +109,36 @@ describe("createDataSpecificationVocabulary", () => {
 
     expect(actual).toMatchObject(expected);
 
+  });
+
+  test("Does not duplicate a profile model that is already part of the dependencies.", () => {
+
+    const vocabulary = createDefaultSemanticModelBuilder({
+      baseIdentifier: "vocabualry2#",
+      baseIri: "http://example.com/vocabulary2#",
+    });
+
+    const person = vocabulary.class({
+      iri: "person",
+      name: { en: "Person" },
+    });
+
+    const profile = createDefaultProfileModelBuilder({
+      baseIdentifier: "profile2#",
+      baseIri: "http://example.com/profile2#",
+    });
+
+    profile.class({ iri: "person" }).reuseName(person);
+
+    const builtProfile = profile.build();
+
+    const actual = createDataSpecificationVocabulary({
+      semantics: [vocabulary.build()],
+      // The profile model is already listed as a dependency.
+      profiles: [builtProfile],
+    }, [builtProfile], { iri: "http://example.com/" });
+
+    expect(actual.classProfiles).toHaveLength(1);
   });
 
 });

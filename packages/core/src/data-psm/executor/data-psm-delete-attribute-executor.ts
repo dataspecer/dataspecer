@@ -14,6 +14,6 @@ export function executeDataPsmDeleteAttribute(
   return removeFromClass(
     reader,
     operation.dataPsmOwner,
-    operation.dataPsmAttribute
+    operation.entityId
   );
 }

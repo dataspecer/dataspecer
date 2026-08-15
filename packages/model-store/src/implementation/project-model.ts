@@ -1,204 +1,254 @@
-import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
 import type { PackageService } from "@dataspecer/core-v2/project";
-import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
-import type { Model, ModelIdentifier, ModelMetadata } from "@dataspecer/core/model";
+import { diffEntities, type EntityRecord } from "@dataspecer/core/entity-model";
+import type { ModelIdentifier, ModelMetadata } from "@dataspecer/core/model";
 import type { Operation } from "@dataspecer/core/operation";
-import { isCreateModelOperation, isRemoveModelOperation, loadProjectStructure, PROJECT_MODEL_MODEL_ENTITY, type PackageEntity, type ProjectModelEntity } from "@dataspecer/project-model";
+import {
+  applyOperationsToVirtualProjectModel,
+  isPackageEntity,
+  loadProjectStructure,
+  type CreateModelOperation,
+  type PackageEntity,
+  type ProjectModelEntity,
+} from "@dataspecer/core/project-model";
 import { deepEqual } from "@dataspecer/utilities";
-import { BaseModelInModelStore, type ModelState } from "./base.ts";
-import type { ModelInDefaultFrontendModelStore } from "./implementation.ts";
+import type { ModelInModelStore, StateResult } from "./interface.ts";
 
 /**
- * Represents the changes in the project model that need to be synchronized with
- * the backend.
+ * Drops entities that are not reachable from the root package, as the project
+ * structure is a tree. Modifies the given record.
  */
-export interface PendingStructuralChanges {
-  /**
-   * Models created locally that still need to be created on the backend.
-   */
-  creations: {
-    modelId: ModelIdentifier;
-    parentPackageId: ModelIdentifier;
-    modelType: string;
-  }[];
+function pruneUnreachableEntities(entities: EntityRecord<ProjectModelEntity>, rootId: ModelIdentifier): void {
+  const reachable = new Set<ModelIdentifier>();
+  const toVisit = [rootId];
+  while (toVisit.length > 0) {
+    const current = toVisit.pop()!;
+    if (reachable.has(current)) {
+      continue;
+    }
+    const entity = entities[current];
+    if (entity === undefined) {
+      continue;
+    }
+    reachable.add(current);
+    if (isPackageEntity(entity)) {
+      toVisit.push(...entity.subModels);
+    }
+  }
 
-  /**
-   * Models removed locally that still need to be removed on the backend.
-   */
-  deletions: ModelIdentifier[];
+  for (const id in entities) {
+    if (!reachable.has(id)) {
+      delete entities[id];
+    }
+  }
 }
 
 /**
  * Adapter for project model into model store.
  *
- * Provides entities that represent the project structure and can modify the project via operations.
+ * Provides entities that represent the project structure and can modify the
+ * project via operations. Metadata of the individual models (label and
+ * description) is read from their content by the model store and layered over
+ * the core state, hence it is part of the output state only.
  */
-export class ProjectModelInModelStore extends BaseModelInModelStore<ProjectModelEntity> implements Model, ModelInDefaultFrontendModelStore {
-  rootProjectId: ModelIdentifier;
-  protected service: PackageService;
+export class ProjectModelInModelStore implements ModelInModelStore {
+  private readonly service: PackageService;
+  private readonly rootProjectId: ModelIdentifier;
+
+  private coreState: EntityRecord<ProjectModelEntity> = {};
+  private outputState: EntityRecord<ProjectModelEntity> = {};
+
+  private metadata: Record<ModelIdentifier, ModelMetadata> = {};
+
+  private asyncListeners: ((stateResult: StateResult) => void)[] = [];
 
   /**
-   * Models created locally (via {@link CreateModelOperation}) that have not
-   * yet been created on the backend, keyed by model id.
+   * Reused projects whose structure is currently being loaded, so that they
+   * are not requested again before they appear in the state.
    */
-  private pendingCreations: Map<ModelIdentifier, { parentPackageId: ModelIdentifier; modelType: string }> = new Map();
+  private loadingProjects: Set<ModelIdentifier> = new Set();
 
-  /**
-   * Models removed locally (via {@link RemoveModelOperation}) that have not
-   * yet been removed on the backend.
-   */
-  private pendingDeletions: Set<ModelIdentifier> = new Set();
-
-  constructor(id: string, service: PackageService, rootProjectId: ModelIdentifier) {
-    super(id);
+  constructor(service: PackageService, rootProjectId: ModelIdentifier) {
     this.service = service;
     this.rootProjectId = rootProjectId;
   }
 
-  /**
-   * @internal function to append additional information to entities in the
-   * project model. It is used to set metadata about models (label and
-   * description) by reading the individual models and extracting the metadata
-   * from them.
-   */
-  setModelMetadata(modelId: ModelIdentifier, metadata: ModelMetadata): EntityChange[] {
-    const previous = this.getAllEntities()[modelId];
-    if (!previous) {
-      return [];
-    }
-    const next: ProjectModelEntity = { ...previous, label: metadata.label, description: metadata.description };
-    if (deepEqual(previous, next)) {
-      return [];
-    }
-    const changes = [{ previous, next } as EntityChange];
-    this.externalChange(changes);
-    return changes;
+  setState(coreState: EntityRecord): StateResult {
+    return this.setStateWithMetadata(coreState as EntityRecord<ProjectModelEntity>);
   }
 
-  /**
-   * Returns the model creations/removals that happened locally since the last
-   * call and have not yet been synchronized with the backend, clearing them in
-   * the process.
-   */
-  takePendingStructuralChanges(): PendingStructuralChanges {
-    const creations = [...this.pendingCreations].map(([modelId, { parentPackageId, modelType }]) => ({ modelId, parentPackageId, modelType }));
-    const deletions = [...this.pendingDeletions];
-    this.pendingCreations.clear();
-    this.pendingDeletions.clear();
-    return { creations, deletions };
+  applyOperationAndSetState(operations: Operation[]): StateResult {
+    const coreState = { ...this.coreState };
+    applyOperationsToVirtualProjectModel(coreState, operations);
+    return this.setStateWithMetadata(coreState);
   }
 
-  protected async loadInternal(): Promise<ModelState<ProjectModelEntity>> {
-    const entities = await loadProjectStructure(this.service, this.rootProjectId);
-    return {
-      operations: [],
-      entities: Object.fromEntries(entities.map((e) => [e.id, e])) as EntityRecord<ProjectModelEntity>,
+  subscribeForAsyncChanges(listener: (stateResult: StateResult) => void): () => void {
+    this.asyncListeners.push(listener);
+    return () => {
+      this.asyncListeners = this.asyncListeners.filter((registered) => registered !== listener);
     };
   }
 
-  protected saveInternal(_state: ModelState<ProjectModelEntity>): Promise<void> {
-    throw new Error("Method not implemented.");
+  async getRemoteState(): Promise<EntityRecord> {
+    const entities = await loadProjectStructure(this.service, this.rootProjectId);
+    const coreState: EntityRecord<ProjectModelEntity> = {};
+    for (const entity of entities) {
+      coreState[entity.id] = entity;
+    }
+    return coreState;
   }
 
-  protected override applyOperation(operation: Operation, mutableState: EntityRecord<ProjectModelEntity>): void {
-    if (isRemoveModelOperation(operation)) {
-      const existed = mutableState[operation.modelId] !== undefined;
+  /**
+   * @internal Brings the structure in line with the projects reused by the
+   * project's packages, as declared by their content, which the project model
+   * itself does not see: structures of newly reused projects are loaded and
+   * attached as sub-packages, no longer reused ones are dropped.
+   *
+   * @param reusedProjectIds Reused projects per package. Packages whose
+   * content is not known (yet) must be left out.
+   * @returns Promise of the load, or null when nothing changed.
+   */
+  synchronizeReusedProjects(reusedProjectIds: Record<ModelIdentifier, ModelIdentifier[]>): Promise<void> | null {
+    const toAdd: [packageId: ModelIdentifier, projectId: ModelIdentifier][] = [];
+    let removed = false;
 
-      const toDelete = [operation.modelId];
-      while (toDelete.length > 0) {
-        const current = toDelete.pop()!;
-        const currentEntity = mutableState[current];
-        if (!currentEntity) {
-          continue;
-        }
-        delete mutableState[current];
-
-        if (currentEntity.modelType === LOCAL_PACKAGE) {
-          const packageEntity = currentEntity as PackageEntity;
-          packageEntity.subModels.forEach((subModelId) => toDelete.push(subModelId));
-        }
+    const coreState = { ...this.coreState };
+    for (const [packageId, projectIds] of Object.entries(reusedProjectIds)) {
+      const packageEntity = coreState[packageId];
+      if (packageEntity === undefined || !isPackageEntity(packageEntity)) {
+        continue;
       }
 
-      // Remove the (now deleted) model from its parent package's subModels list.
-      for (const id in mutableState) {
-        const entity = mutableState[id];
-        if (entity.modelType !== LOCAL_PACKAGE) {
-          continue;
-        }
-        const packageEntity = entity as PackageEntity;
-        if (!packageEntity.subModels.includes(operation.modelId)) {
-          continue;
-        }
-        mutableState[id] = {
+      const noLongerReused = packageEntity.reusedProjects.filter((id) => !projectIds.includes(id));
+      if (noLongerReused.length > 0) {
+        const detached: PackageEntity = {
           ...packageEntity,
-          subModels: packageEntity.subModels.filter((subModelId) => subModelId !== operation.modelId),
-        } as PackageEntity;
-        break;
+          subModels: packageEntity.subModels.filter((id) => !noLongerReused.includes(id)),
+          reusedProjects: packageEntity.reusedProjects.filter((id) => !noLongerReused.includes(id)),
+        };
+        coreState[packageId] = detached;
+        removed = true;
       }
 
-      if (existed) {
-        if (!this.pendingCreations.delete(operation.modelId)) {
-          // The model was already created on the backend (it wasn't pending a
-          // local-only creation), so it must be removed there as well.
-          this.pendingDeletions.add(operation.modelId);
+      // A project that is already part of the structure keeps its place, so
+      // that every model has exactly one parent.
+      toAdd.push(
+        ...projectIds
+          .filter((id) => coreState[id] === undefined && !this.loadingProjects.has(id))
+          .map((id): [ModelIdentifier, ModelIdentifier] => [packageId, id]),
+      );
+    }
+
+    if (removed) {
+      pruneUnreachableEntities(coreState, this.rootProjectId);
+      this.notifyAsyncListeners(this.setStateWithMetadata(coreState));
+    }
+
+    if (toAdd.length === 0) {
+      return null;
+    }
+    return this.loadReusedProjects(toAdd);
+  }
+
+  private async loadReusedProjects(toAdd: [packageId: ModelIdentifier, projectId: ModelIdentifier][]): Promise<void> {
+    toAdd.forEach(([, projectId]) => this.loadingProjects.add(projectId));
+    let structures: ProjectModelEntity[][];
+    try {
+      structures = await Promise.all(toAdd.map(([, projectId]) => loadProjectStructure(this.service, projectId)));
+    } finally {
+      toAdd.forEach(([, projectId]) => this.loadingProjects.delete(projectId));
+    }
+
+    const coreState = { ...this.coreState };
+    for (const [index, [packageId, projectId]] of toAdd.entries()) {
+      const packageEntity = coreState[packageId];
+      // The structure may have changed while the project was being loaded.
+      if (packageEntity === undefined || !isPackageEntity(packageEntity) || coreState[projectId] !== undefined) {
+        continue;
+      }
+
+      const added = structures[index]!.filter((entity) => coreState[entity.id] === undefined);
+      const addedIds = new Set(added.map((entity) => entity.id));
+      for (const entity of added) {
+        if (isPackageEntity(entity)) {
+          // Anything already present keeps its place in the structure, so that
+          // every model still has exactly one parent.
+          const attached: PackageEntity = {
+            ...entity,
+            subModels: entity.subModels.filter((id) => addedIds.has(id)),
+            reusedProjects: entity.reusedProjects.filter((id) => addedIds.has(id)),
+          };
+          coreState[entity.id] = attached;
+        } else {
+          coreState[entity.id] = entity;
         }
       }
-      return;
+      if (coreState[projectId] === undefined) {
+        // The reused project does not exist (anymore).
+        continue;
+      }
+
+      const reusingPackage: PackageEntity = {
+        ...packageEntity,
+        subModels: [...packageEntity.subModels, projectId],
+        reusedProjects: [...packageEntity.reusedProjects, projectId],
+      };
+      coreState[packageId] = reusingPackage;
     }
 
-    if (isCreateModelOperation(operation)) {
-      // Skip if model already exists
-      if (mutableState[operation.modelId]) {
-        return;
-      }
-      // Skip if parent model does not exists as it was probably removed
-      // @todo Is this the correct logic?
-      if (!mutableState[operation.parentPackageId]) {
-        return;
-      }
-      let newEntity = {
-        id: operation.modelId,
-        type: [PROJECT_MODEL_MODEL_ENTITY],
-        label: {},
-        description: {},
-        modelType: operation.modelType,
-      } satisfies ProjectModelEntity;
+    this.notifyAsyncListeners(this.setStateWithMetadata(coreState));
+  }
 
-      if (operation.modelType === LOCAL_PACKAGE) {
-        const packageEntity: PackageEntity = {
-          ...newEntity,
-          modelType: LOCAL_PACKAGE,
-          subModels: [],
-        };
-        newEntity = packageEntity;
-      }
-
-      mutableState[operation.modelId] = newEntity;
-
-      // Now modify the parent package
-      mutableState[operation.parentPackageId] = {
-        ...mutableState[operation.parentPackageId],
-        subModels: [...(mutableState[operation.parentPackageId] as PackageEntity).subModels, operation.modelId],
-      } as PackageEntity;
-
-      this.pendingDeletions.delete(operation.modelId);
-      this.pendingCreations.set(operation.modelId, {
-        parentPackageId: operation.parentPackageId,
-        modelType: operation.modelType,
-      });
+  private notifyAsyncListeners(stateResult: StateResult): void {
+    if (stateResult.diff.length === 0) {
       return;
     }
+    for (const listener of this.asyncListeners) {
+      listener(stateResult);
+    }
+  }
 
-    throw new Error(`Unsupported operation type ${operation.type} for project model.`);
+  /**
+   * @internal Sets metadata of the given models as computed from their content
+   * by the model store.
+   */
+  setModelsMetadata(metadata: Record<ModelIdentifier, ModelMetadata>): StateResult {
+    let changed = false;
+    for (const modelId in metadata) {
+      if (deepEqual(this.metadata[modelId], metadata[modelId])) {
+        continue;
+      }
+      this.metadata[modelId] = metadata[modelId];
+      changed = true;
+    }
+
+    if (!changed) {
+      return { coreState: this.coreState, outputState: this.outputState, diff: [] };
+    }
+    return this.setStateWithMetadata(this.coreState);
+  }
+
+  private setStateWithMetadata(coreState: EntityRecord<ProjectModelEntity>): StateResult {
+    const outputState: EntityRecord<ProjectModelEntity> = {};
+    for (const id in coreState) {
+      const entity = coreState[id];
+      const metadata = this.metadata[id];
+      outputState[id] = metadata === undefined ? entity : { ...entity, label: metadata.label, description: metadata.description };
+    }
+
+    const diff = diffEntities(this.outputState, outputState);
+    this.coreState = coreState;
+    this.outputState = outputState;
+    return { coreState, outputState, diff };
   }
 }
 
 export function createProjectModel(
-  projectId: ModelIdentifier,
+  _modelId: ModelIdentifier,
   context: {
     service: PackageService;
     rootProjectId: ModelIdentifier;
   },
-): Model & ModelInDefaultFrontendModelStore {
-  return new ProjectModelInModelStore(projectId, context.service, context.rootProjectId);
+): ProjectModelInModelStore {
+  return new ProjectModelInModelStore(context.service, context.rootProjectId);
 }

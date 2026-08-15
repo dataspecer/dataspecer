@@ -25,6 +25,13 @@ interface BaseModelHierarchyEntity extends Entity {
   modelType: string;
 
   label: LanguageString;
+
+  /**
+   * Identifier of the project the model belongs to, as in the project model.
+   * It differs from the project being worked on for models that come from a
+   * project it reuses.
+   */
+  projectId: ModelIdentifier;
 }
 
 /**

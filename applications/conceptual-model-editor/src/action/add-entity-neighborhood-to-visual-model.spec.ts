@@ -7,7 +7,7 @@ import { isVisualNode, isVisualRelationship, VisualNode } from "@dataspecer/visu
 import { isSemanticModelClass, isSemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
 import { addEntityNeighborhoodToVisualModelAction } from "./add-entity-neighborhood-to-visual-model";
 import { ActionsTestSuite, notificationMockup, TestedSemanticConnectionType } from "./test/actions-test-suite";
-import { getDomainAndRangeConcepts } from "@/util/relationship-utils";
+import { getDomainAndRangeConcepts } from "../util/relationship-utils";
 
 test("Test class neighborhood- no relationships", async () => {
   const {

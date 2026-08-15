@@ -1,5 +1,7 @@
-import { CoreResourceReader } from "@dataspecer/core/core/core-reader";
+import { createStructureModel } from "@dataspecer/core/data-psm";
 import { DataSpecificationConfiguration, DataSpecificationConfigurator } from "@dataspecer/core/data-specification/configuration";
+import { type ProjectModelEntity } from "@dataspecer/core/project-model";
+import { useModelStoreEntity } from "@dataspecer/model-store/react";
 import { DefaultArtifactBuilder, GenerateReport } from "@dataspecer/specification/v1";
 import AddIcon from "@mui/icons-material/Add";
 import LoadingButton from "@mui/lab/LoadingButton";
@@ -10,9 +12,9 @@ import React, { memo, useCallback, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { DefaultConfigurationContext } from "../../../application";
+import { getConfiguration } from "../../../configuration/provided-configuration";
 import { LanguageStringText } from "../../../editor/components/helper/LanguageStringComponents";
 import { useDialog } from "../../../editor/dialog";
-import { getConfiguration } from "../../../configuration/provided-configuration";
 import { ZipStreamDictionary } from "../../../generators/zip-stream-dictionary";
 import { ConfigureArtifacts } from "../../artifacts/configuration/configure-artifacts";
 import { ConfigureButton } from "../../artifacts/configuration/configure-button";
@@ -26,9 +28,12 @@ import { GeneratingDialog } from "./generating-dialog";
 import { ProfileStructureDialog } from "./profile-structure";
 import { RedirectDialog } from "./redirect-dialog";
 import { ReuseDataSpecifications } from "./reuse-data-specifications";
-import { AllSpecificationsContext, ManagerModelStoreContext, PROJECT_MODEL_ID, SpecificationContext } from "./specification";
-import { createCreateModelOperation } from "@dataspecer/project-model";
-import { V1 } from "@dataspecer/core-v2/model/known-models";
+import { PROJECT_MODEL_ID, SpecificationContext, useModelStore } from "./specification";
+
+const ImportedSpecificationLabel: React.FC<{ modelId: string; fallback: string }> = ({ modelId, fallback }) => {
+  const entity = useModelStoreEntity<ProjectModelEntity>(PROJECT_MODEL_ID, modelId);
+  return <LanguageStringText from={entity?.label} fallback={fallback} />;
+};
 
 export const DocumentationSpecification = memo(() => {
   const { t } = useTranslation("ui");
@@ -38,7 +43,7 @@ export const DocumentationSpecification = memo(() => {
 
   const defaultConfiguration = useContext(DefaultConfigurationContext);
 
-  const modelStore = useContext(ManagerModelStoreContext);
+  const modelStore = useModelStore();
 
   const navigate = useNavigate();
 
@@ -46,14 +51,12 @@ export const DocumentationSpecification = memo(() => {
   const createDataStructure = useCallback(async () => {
     if (dataSpecificationIri) {
       setRedirecting(true);
-      const op = createCreateModelOperation(dataSpecificationIri, V1.PSM);
-      const transaction = modelStore.transaction([{
-        operation: op,
-        modelId: PROJECT_MODEL_ID,
-      }], {});
+
+      const {operations, modelId} = createStructureModel(dataSpecificationIri);
+      const transaction = modelStore.transaction(operations, {});
       await transaction.confirmation;
 
-      navigate(getEditorLink(dataSpecificationIri, op.modelId));
+      navigate(getEditorLink(dataSpecificationIri, modelId));
       setRedirecting(false);
     }
   }, [navigate, modelStore, dataSpecificationIri]);
@@ -83,7 +86,7 @@ export const DocumentationSpecification = memo(() => {
 
     setZipLoading("generating");
 
-    const generator = new DefaultArtifactBuilder(federatedStore as CoreResourceReader, dataSpecifications, defaultConfiguration, fetch, models);
+    const generator = new DefaultArtifactBuilder(federatedStore, dataSpecifications, defaultConfiguration, fetch, models);
     await generator.prepare(Object.keys(dataSpecifications), setGenerateState);
     const zip = new ZipStreamDictionary();
     await generator.build(zip);
@@ -94,14 +97,12 @@ export const DocumentationSpecification = memo(() => {
 
   const DeleteForm = useDialog(DeleteDataSchemaForm);
 
-  const allSpecifications = useContext(AllSpecificationsContext);
-
   return (
     <>
       <Box height="30px" />
       <Box display="flex" flexDirection="row" justifyContent="space-between">
         <Typography variant="h3" component="div" gutterBottom>
-          <LanguageStringText from={specification.userMetadata.label} fallback={dataSpecificationIri} />
+          <LanguageStringText from={specification.label} fallback={dataSpecificationIri} />
         </Typography>
         <div style={{ display: "flex", gap: "1rem" }}>
           <ConfigureButton />
@@ -158,7 +159,7 @@ export const DocumentationSpecification = memo(() => {
             {specification?.importsDataSpecificationIds.map((importedSpecificationId) => (
               <TableRow key={importedSpecificationId}>
                 <TableCell component="th" scope="row" sx={{ width: "25%", fontWeight: "bold" }}>
-                  <LanguageStringText from={allSpecifications[importedSpecificationId]?.userMetadata.label} fallback={importedSpecificationId} />
+                  <ImportedSpecificationLabel modelId={importedSpecificationId} fallback={importedSpecificationId} />
                 </TableCell>
                 <TableCell align="right">
                   <Box

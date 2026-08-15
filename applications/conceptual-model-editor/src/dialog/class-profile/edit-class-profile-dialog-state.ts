@@ -32,6 +32,7 @@ import {
   SelectControlledVocabulariesState,
 } from "../controlled-vocabularies";
 import { MOCK_AVAILABLE_VOCABULARIES } from "../controlled-vocabularies/mock-available-vocabularies";
+import { CmeClassProfileRole } from "../../dataspecer/cme-model/model";
 
 export interface ClassProfileDialogState
   extends BaseEntityProfileDialogState<EntityRepresentative> {

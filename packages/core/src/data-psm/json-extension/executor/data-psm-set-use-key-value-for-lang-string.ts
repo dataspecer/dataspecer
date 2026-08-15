@@ -10,7 +10,7 @@ export function executeDataPsmSetUseKeyValueForLangString(
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmSetUseKeyValueForLangString
 ): CoreExecutorResult {
-  const resource = reader.readResource(operation.dataPsmProperty) as DataPsmJsonPropertyExtension;
+  const resource = reader.readResource(operation.entityId) as DataPsmJsonPropertyExtension;
   if (resource == null || !DataPsmAttribute.is(resource)) {
     return DataPsmExecutorResultFactory.invalidType(
       resource,

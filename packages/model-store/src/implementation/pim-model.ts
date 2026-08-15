@@ -1,15 +1,18 @@
 import type { PackageService } from "@dataspecer/core-v2/project";
+import { applyOperationsToSemanticModel } from "@dataspecer/core-v2/semantic-model";
+import type { LanguageString } from "@dataspecer/core-v2/semantic-model/concepts";
+import { changesToSemanticModelOperations } from "@dataspecer/core-v2/semantic-model/operations";
 import { createRdfsModel } from "@dataspecer/core-v2/semantic-model/simplified";
-import { PimStoreWrapper, serializationToPimModelEntities } from "@dataspecer/core-v2/semantic-model/v1-adapters";
-import type { Entity, EntityRecord } from "@dataspecer/core/entity-model";
-import { diffEntities } from "@dataspecer/core/entity-model";
+import { serializationToPimModelEntities } from "@dataspecer/core-v2/semantic-model/v1-adapters";
+import { diffEntities, type Entity, type EntityRecord } from "@dataspecer/core/entity-model";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
-import type { Model, ModelIdentifier, ModelMetadata } from "@dataspecer/core/model";
-import type { Operation } from "@dataspecer/core/operation";
-import { BaseModelInModelStore, type ModelState } from "./base.ts";
-import type { ModelInDefaultFrontendModelStore } from "./implementation.ts";
+import type { ModelIdentifier, ModelMetadata } from "@dataspecer/core/model";
+import { type Operation } from "@dataspecer/core/operation";
+import type { WritableModelStore } from "../interfaces/writable.ts";
+import type { ModelInModelStore, StateResult } from "./interface.ts";
+import { createStateResult } from "./state.ts";
 
-export const ReloadModelOperationType = "http://dataspecer.com/core/operation/reload" as const;
+export const ReloadModelOperationType = "https://schemas.dataspecer.com/rdfs-model/operations/reload" as const;
 /**
  * Operation that triggers refetch of the model data from the backend. After the
  * reload, the model should update itself with the new data.
@@ -18,7 +21,7 @@ export interface ReloadModelOperation extends Operation {
   type: typeof ReloadModelOperationType;
 }
 
-export const SetModelUrlsOperationType = "http://dataspecer.com/core/operation/set-urls" as const;
+export const SetModelUrlsOperationType = "https://schemas.dataspecer.com/rdfs-model/operations/set-urls" as const;
 export interface SetModelUrl extends Operation {
   type: typeof SetModelUrlsOperationType;
 
@@ -27,8 +30,8 @@ export interface SetModelUrl extends Operation {
 
 export interface MainEntity extends Entity {
   type: ["mainEntity"];
-  alias?: string;
   urls?: string[];
+  label?: LanguageString;
 }
 
 export function getPimModelMetadata(entities: EntityRecord, modelId: ModelIdentifier): ModelMetadata | null {
@@ -37,120 +40,105 @@ export function getPimModelMetadata(entities: EntityRecord, modelId: ModelIdenti
     return null;
   }
   return {
-    label: mainEntity.alias ? { en: mainEntity.alias } : {},
+    label: mainEntity.label ?? {},
     description: {},
   };
 }
 
 /**
- * Okay, so there will be two operations. Add/release query and then
- * self-operation for permanently updating the model.
+ * Vocabulary imported by its URL. The entities are cached in the state and can
+ * be refetched from the URLs by an operation, which happens asynchronously.
  */
-export class PimModelInModelStore extends BaseModelInModelStore implements Model, ModelInDefaultFrontendModelStore {
-  protected service: PackageService;
-  protected httpFetch: HttpFetch;
+export class PimModelInModelStore implements ModelInModelStore {
+  private readonly id: ModelIdentifier;
+  private readonly service: PackageService;
+  private readonly httpFetch: HttpFetch;
 
-  /**
-   * Legacy model that holds the data and the state.
-   */
-  protected model: PimStoreWrapper | null = null;
+  /** Needs to be injected */
+  modelStore!: WritableModelStore;
 
-  constructor(id: string, service: PackageService, httpFetch: HttpFetch) {
-    super(id);
+  private state: EntityRecord = {};
+
+  private asyncListeners: ((stateResult: StateResult) => void)[] = [];
+
+  constructor(id: ModelIdentifier, service: PackageService, httpFetch: HttpFetch) {
+    this.id = id;
     this.service = service;
     this.httpFetch = httpFetch;
   }
 
-  protected applyOperation(operation: Operation, mutableState: EntityRecord): void {
-    if (operation.type === SetModelUrlsOperationType) {
-      mutableState[this.id] = {
-        ...mutableState[this.id],
-        urls: (operation as SetModelUrl).urls,
-      } as MainEntity;
-      void this.freshLoad(mutableState[this.id] as MainEntity);
-    } else if (operation.type === ReloadModelOperationType) {
-      void this.freshLoad(mutableState[this.id] as MainEntity);
-    } else {
-      throw new Error(`Unsupported operation type: ${operation.type}`);
-    }
+  setState(coreState: EntityRecord): StateResult {
+    const result = createStateResult(this.state, coreState);
+    this.state = coreState;
+    return result;
   }
 
-  private async freshLoad(mainEntity: MainEntity): Promise<void> {
-    // This loads the data again by using the old interface.
-
-    const model = await createRdfsModel(mainEntity.urls ?? [], this.httpFetch);
-
-    // Check if still relevant
-    if (mainEntity !== this.getAllEntities()[this.id]) {
-      return;
-    }
-
-    const oldModel = this.model!;
-    this.model = model;
-
-    const oldEntities = oldModel.getEntities();
-    const newEntities = model.getEntities();
-
-    const changes = diffEntities(oldEntities, newEntities);
-    this.externalChange(changes);
+  applyOperationAndSetState(operations: Operation[]): StateResult {
+    const coreState = { ...this.state };
+    this.applyModelOperations(coreState, operations);
+    return this.setState(coreState);
   }
 
-  protected async loadInternal(): Promise<ModelState> {
-    const data = (await this.service.getResourceJsonData(this.id)) as any;
-    const {adapter, entities} = serializationToPimModelEntities(data);
-    this.model = adapter;
-    return {
-      entities,
-      operations: [],
+  subscribeForAsyncChanges(listener: (stateResult: StateResult) => void): () => void {
+    this.asyncListeners.push(listener);
+    return () => {
+      this.asyncListeners = this.asyncListeners.filter((asyncListener) => asyncListener !== listener);
     };
+  }
+
+  async getRemoteState(): Promise<EntityRecord> {
+    const data = (await this.service.getResourceJsonData(this.id)) as object;
+    // A model whose blob was never written starts as a fresh empty model.
+    return serializationToPimModelEntities(data ?? { id: this.id, pimStore: { resources: {} } }).entities;
+  }
+
+  private applyModelOperations(entities: EntityRecord, operations: Operation[]): void {
+    for (const operation of operations) {
+      if (operation.type === SetModelUrlsOperationType) {
+        entities[this.id] = {
+          ...entities[this.id],
+          urls: (operation as SetModelUrl).urls,
+        } as MainEntity;
+        this.reload(entities[this.id] as MainEntity);
+      } else if (operation.type === ReloadModelOperationType) {
+        this.reload(entities[this.id] as MainEntity);
+      } else {
+        applyOperationsToSemanticModel(entities, [operation]);
+      }
+    }
   }
 
   /**
-   * Sets up an empty legacy model synchronously, without fetching anything
-   * from the backend. The model must always contain a {@link MainEntity}
-   * representing itself, analogous to {@link loadInternal}.
+   * Refetches the vocabulary from the urls of the main entity and reports the
+   * new state once the data is available.
    */
-  override loadInitialStateInternal(): void {
-    const adapter = new PimStoreWrapper({ resources: {} } as any, this.id, "model", []);
-    adapter.fetchFromPimStore();
-    this.model = adapter;
-
-    const mainEntity: MainEntity = {
-      id: this.id,
-      type: ["mainEntity"],
-      urls: [],
-    };
-
-    this.initializeState({
-      entities: {
-        ...adapter.getEntities(),
-        [this.id]: mainEntity,
-      },
-      operations: [],
-    });
-  }
-
-  protected async saveInternal(state: ModelState): Promise<void> {
-    // Instead of using the state to serialize model, we use this.model which is
-    // synchronized with the state.
-
-    if (!this.model) {
-      throw new Error("Model is not loaded");
+  private async reload(mainEntity: MainEntity | undefined): Promise<void> {
+    if (!mainEntity) {
+      return;
     }
 
-    const mainEntity = state.entities[this.id];
-    const mainEntityMetadata: Partial<typeof mainEntity> = {
-      ...mainEntity,
-    };
-    delete mainEntityMetadata.id;
-    delete mainEntityMetadata.type;
+    let model;
+    try {
+      model = await createRdfsModel(mainEntity.urls ?? [], this.httpFetch);
+    } catch (error) {
+      console.error(`Failed to reload model "${this.id}".`, error);
+      return;
+    }
 
-    let serialization = {
-      ...mainEntityMetadata,
-      ...this.model.serializeModel(),
-    };
+    if (this.state[this.id] !== mainEntity) {
+      // The model was changed in the meantime, the result is not relevant.
+      return;
+    }
 
-    await this.service.setResourceJsonData(this.id, serialization);
+    const newState = serializationToPimModelEntities(model.serializeModel()).entities;
+    const changes = diffEntities(this.state, newState);
+    const { operations } = changesToSemanticModelOperations(changes);
+
+    // Execute operation
+    this.modelStore.transaction(
+      operations.map((operation) => ({ operation, modelId: this.id })),
+      {},
+    );
   }
 }
 
@@ -160,6 +148,6 @@ export function createPimModel(
     service: PackageService;
     httpFetch: HttpFetch;
   },
-): Model & ModelInDefaultFrontendModelStore {
+): PimModelInModelStore {
   return new PimModelInModelStore(modelId, context.service, context.httpFetch);
 }

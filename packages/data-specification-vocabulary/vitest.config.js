@@ -4,5 +4,8 @@ export default defineConfig({
   test: {
     include: ["src/**/*.spec.[jt]s"],
     globals: true,
+    coverage: {
+      provider: "istanbul"
+    },
   },
 });
