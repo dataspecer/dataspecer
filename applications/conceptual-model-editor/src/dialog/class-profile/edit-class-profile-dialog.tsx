@@ -13,7 +13,11 @@ import { ClassProfileDialogState } from "./edit-class-profile-dialog-state";
 import { useClassProfileDialogController } from "./edit-class-profile-dialog-controller";
 import { InputText } from "../components/input-text";
 import { SelectBuildIn } from "../components/select-build-in";
-import { SelectControlledVocabulariesView } from "../controlled-vocabularies";
+import {
+  findDuplicateVocabularyItemIds,
+  hasControlledVocabularyConflict,
+  SelectControlledVocabulariesView,
+} from "../controlled-vocabularies";
 
 export const EditClassProfileDialog = (props: DialogProps<ClassProfileDialogState>) => {
   const controller = useClassProfileDialogController(props);
@@ -155,6 +159,12 @@ export const EditClassProfileDialog = (props: DialogProps<ClassProfileDialogStat
   );
 };
 
+function isClassProfileDialogStateValid(state: ClassProfileDialogState): boolean {
+  return isValid(state.iriValidation)
+    && !hasControlledVocabularyConflict(state.controlledVocabularies)
+    && findDuplicateVocabularyItemIds(state.controlledVocabularies).size === 0;
+}
+
 export const createNewClassProfileDialog = (
   state: ClassProfileDialogState,
   onConfirm: (state: ClassProfileDialogState) => void | null,
@@ -165,7 +175,7 @@ export const createNewClassProfileDialog = (
     state,
     confirmLabel: "dialog.class-profile.ok-create",
     cancelLabel: "dialog.class-profile.cancel",
-    validate: (state) => isValid(state.iriValidation),
+    validate: isClassProfileDialogStateValid,
     onConfirm,
     onClose: null,
   };
@@ -181,7 +191,7 @@ export const createEditClassProfileDialog = (
     state,
     confirmLabel: "dialog.class-profile.ok-edit",
     cancelLabel: "dialog.class-profile.cancel",
-    validate: (state) => isValid(state.iriValidation),
+    validate: isClassProfileDialogStateValid,
     onConfirm,
     onClose: null,
   };
