@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   DataGrid,
   type GridColDef,
@@ -9,6 +10,8 @@ import {
 import {
   DEFAULT_READ_LIST_SORT,
   isListFieldSortable,
+  type DataSource,
+  type ReadListResult,
   type ReadListSort,
 } from '../datasource/data-source.ts';
 import {
@@ -16,59 +19,117 @@ import {
   hrefForAction,
   type AssociationNavigationActionDescriptor,
   type NavigationActionDescriptor,
+  type OperationNavigationDescriptor,
 } from '../navigation/navigation.ts';
-import type { EntityModel, FieldDescriptor } from '../types/aggregate.ts';
+import { errorMessage } from '../operations/operation-result.ts';
+import { invokeOperation, type OperationStrategy } from '../operations/operation-strategy.ts';
+import { DEFAULT_PAGE_SIZE } from '../operations/read-list-strategy.ts';
+import type {
+  AggregateDescriptor,
+  AggregateDescriptorMap,
+  EntityModel,
+  FieldDescriptor,
+} from '../types/aggregate.ts';
 import { ActionLinks } from './action-links.tsx';
 import { formatFieldValue } from './field-value.ts';
 
 export interface ListViewProps<TModel extends EntityModel> {
   title: string;
-  fields: FieldDescriptor[];
-  items: TModel[];
-  total: number;
-  paginationModel: GridPaginationModel;
-  sort: ReadListSort;
-  loading: boolean;
-  error: string | null;
-  onPaginationModelChange: (model: GridPaginationModel) => void;
-  onSortChange: (sort: ReadListSort) => void;
-  pageActions?: readonly NavigationActionDescriptor[];
-  rowActions?: readonly NavigationActionDescriptor[];
-  associationActions?: readonly AssociationNavigationActionDescriptor[];
+  aggregate: AggregateDescriptor<TModel>;
+  aggregateRegistry: AggregateDescriptorMap;
+  strategy: OperationStrategy<TModel, ReadListResult<TModel>>;
+  dataSource: DataSource;
+  navigation: OperationNavigationDescriptor;
 }
 
 export function ListView<TModel extends EntityModel>(props: ListViewProps<TModel>) {
-  const pageActions = props.pageActions ?? [];
-  const rowActions = props.rowActions ?? [];
-  const associationActions = props.associationActions ?? [];
+  const { title, aggregate, aggregateRegistry, strategy, dataSource, navigation } = props;
+  const [items, setItems] = useState<TModel[]>([]);
+  const [total, setTotal] = useState(0);
+  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
+    page: 0,
+    pageSize: DEFAULT_PAGE_SIZE,
+  });
+  const [sort, setSort] = useState<ReadListSort>(DEFAULT_READ_LIST_SORT);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const columns = useMemo(
-    () => buildColumns<TModel>(props.fields, rowActions, associationActions),
-    [props.fields, rowActions, associationActions]
+    () =>
+      buildColumns<TModel>(aggregate.fields, navigation.rowActions, navigation.associationActions),
+    [aggregate.fields, navigation.rowActions, navigation.associationActions]
   );
-  const gridSortModel = useMemo(() => toGridSortModel(props.sort), [props.sort]);
+  const gridSortModel = useMemo(() => toGridSortModel(sort), [sort]);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError(null);
+    invokeOperation(strategy, {
+      aggregate,
+      aggregateRegistry,
+      datasource: dataSource,
+      params: {
+        // the data grid counts pages from zero, the operation from one
+        page: paginationModel.page + 1,
+        pageSize: paginationModel.pageSize,
+        sort,
+      },
+    })
+      .then((result) => {
+        if (!active) {
+          return;
+        }
+        if (result.ok) {
+          setItems(result.data.items);
+          setTotal(result.data.total);
+        } else {
+          setError(result.issues.map((issue) => issue.message).join(', '));
+        }
+      })
+      .catch((caught: unknown) => {
+        if (!active) {
+          return;
+        }
+        console.error(caught);
+        setError(errorMessage(caught));
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [aggregate, aggregateRegistry, dataSource, paginationModel, sort, strategy]);
 
   return (
     <section>
-      <h2>{props.title}</h2>
-      <ActionLinks actions={pageActions} />
-      {props.error ? (
-        <p role="alert">{props.error}</p>
+      <h2>{title}</h2>
+      <ActionLinks actions={navigation.pageActions} />
+      {error !== null ? (
+        <p role="alert">{error}</p>
       ) : (
         <DataGrid
-          aria-label={props.title}
+          aria-label={title}
           autoHeight
           className="data-grid"
           columns={columns}
-          rows={props.items}
-          rowCount={props.total}
-          loading={props.loading}
+          rows={items}
+          rowCount={total}
+          loading={loading}
           paginationMode="server"
-          paginationModel={props.paginationModel}
-          onPaginationModelChange={props.onPaginationModelChange}
+          paginationModel={paginationModel}
+          onPaginationModelChange={setPaginationModel}
           pageSizeOptions={[10, 20, 50]}
           sortingMode="server"
           sortModel={gridSortModel}
-          onSortModelChange={(model: GridSortModel) => props.onSortChange(fromGridSortModel(model))}
+          onSortModelChange={(model: GridSortModel) => {
+            setSort(fromGridSortModel(model));
+            // a different order makes the current page meaningless
+            setPaginationModel((current) => ({ ...current, page: 0 }));
+          }}
           disableColumnFilter
           rowSelection={false}
           localeText={{ noRowsLabel: 'No items found.' }}
@@ -179,9 +240,9 @@ function LinkedFieldValue(props: LinkedFieldValueProps) {
   const label = formatFieldValue(props.field, props.value);
   const href = entityId ? hrefForAction(props.action, entityId) : undefined;
   return href ? (
-    <a href={href} tabIndex={props.tabIndex}>
+    <Link to={href} tabIndex={props.tabIndex}>
       {label || entityId}
-    </a>
+    </Link>
   ) : (
     <>{label}</>
   );

@@ -160,13 +160,18 @@ describe('renderGeneratedApp', () => {
     expect(tree.get('src/routes.tsx')).toContain('BookReadListPage');
     expect(tree.get('src/routes.tsx')).toContain('path: "/book-read-detail"');
     expect(tree.get('src/routes.tsx')).toContain('requiresEntityId: true');
-    expect(tree.get('src/pages/BookReadListPage.tsx')).toContain('invokeOperation');
-    expect(tree.get('src/pages/BookReadListPage.tsx')).toContain('page: paginationModel.page + 1');
-    expect(tree.get('src/pages/BookReadListPage.tsx')).toContain(
+    expect(tree.get('src/pages/BookReadListPage.tsx')).toContain('<ListView');
+    expect(tree.get('src/pages/BookReadListPage.tsx')).toContain('strategy={operation.strategy}');
+    expect(tree.get('src/shared/components/list-view.tsx')).toContain('invokeOperation');
+    expect(tree.get('src/shared/components/list-view.tsx')).toContain(
+      'page: paginationModel.page + 1'
+    );
+    expect(tree.get('src/shared/components/list-view.tsx')).toContain(
       'pageSize: paginationModel.pageSize'
     );
-    expect(tree.get('src/pages/BookReadListPage.tsx')).toContain('sort,');
-    expect(tree.get('src/pages/BookReadListPage.tsx')).toContain('setTotal(result.data.total)');
+    expect(tree.get('src/shared/components/list-view.tsx')).toContain(
+      'setTotal(result.data.total)'
+    );
     expect(tree.get('src/pages/BookReadListPage.tsx')).not.toContain('PlaceholderOperationView');
     expect(tree.get('src/pages/BookReadListPage.tsx')).not.toContain('"fieldPath": "author"');
     expect(tree.get('src/modules/book-list/model.ts')).toContain('export interface BookListModel');
@@ -180,7 +185,7 @@ describe('renderGeneratedApp', () => {
     expect(tree.get('src/shared/components/list-view.tsx')).toContain('<DataGrid');
     expect(tree.get('src/shared/components/list-view.tsx')).toContain('paginationMode="server"');
     expect(tree.get('src/shared/components/list-view.tsx')).toContain('sortingMode="server"');
-    expect(tree.get('package.json')).toContain('"@mui/x-data-grid": "^9.6.0"');
+    expect(tree.get('package.json')).toContain('"react-router-dom"');
     expect(tree.get('src/shared/components/form-field.tsx')).toContain(
       'htmlFor={field.many ? undefined : controlId}'
     );
@@ -225,8 +230,11 @@ describe('renderGeneratedApp', () => {
     const detailPage = tree.get('src/pages/BookReadDetailPage.tsx');
     const registry = tree.get('src/generated/operation-registry.ts');
 
-    expect(listPage).toContain('pageActions={operation.navigation.pageActions}');
-    expect(listPage).toContain('rowActions={operation.navigation.rowActions}');
+    expect(listPage).toContain('navigation={operation.navigation}');
+    expect(tree.get('src/shared/components/list-view.tsx')).toContain(
+      'actions={navigation.pageActions}'
+    );
+    expect(tree.get('src/shared/components/list-view.tsx')).toContain('navigation.rowActions');
     expect(registry).toContain('export const operations = {');
     expect(registry).toContain('} satisfies Record<string, RegisteredOperation>;');
     expect(registry).toContain('navigation: {');
@@ -235,9 +243,12 @@ describe('renderGeneratedApp', () => {
     expect(registry).toContain('"targetPath": "/book-delete"');
     expect(registry).toContain('"fieldPath": "author"');
 
-    expect(detailPage).toContain('readRouteEntityId(window.location.search)');
-    expect(detailPage).toContain('setError("Missing required entity id.")');
-    expect(detailPage).toContain('pageActions={operation.navigation.pageActions}');
+    expect(detailPage).toContain('useEntityId()');
+    expect(detailPage).not.toContain('window.location');
+    expect(tree.get('src/shared/components/detail-view.tsx')).toContain(
+      "setError('Missing required entity id.')"
+    );
+    expect(detailPage).toContain('navigation={operation.navigation}');
     expect(registry).toContain('"targetPath": "/book-read-list"');
 
     expect(tree.get('src/shared/components/list-view.tsx')).toContain('rowActions');
@@ -405,7 +416,7 @@ describe('renderGeneratedApp', () => {
     );
     for (const form of ['create-form.tsx', 'update-form.tsx', 'delete-form.tsx']) {
       const source = tree.get(`src/shared/components/${form}`);
-      expect(source).toContain('onClick={() => window.history.back()}');
+      expect(source).toContain('onClick={() => navigate(-1)}');
       expect(source).not.toContain('href={navigation.successRedirect.targetPath}');
     }
   });

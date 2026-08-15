@@ -1,4 +1,5 @@
 import { useEffect, useId, useState, type SubmitEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Alert from '@mui/material/Alert';
 
 import {
@@ -47,6 +48,7 @@ export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TM
   } = props;
   const identifierId = useId();
   const [item, setItem] = useState<TModel | null>(null);
+  const navigate = useNavigate();
   const [issues, setIssues] = useState<ValidationIssue[]>([]);
   const [incomingReferenceCheck, setIncomingReferenceCheck] =
     useState<IncomingReferenceCheck | null>(null);
@@ -138,7 +140,7 @@ export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TM
         cascadePaths,
       });
       if (result.ok) {
-        window.location.href = hrefForAction(navigation.successRedirect, id) ?? '/';
+        navigate(hrefForAction(navigation.successRedirect, id) ?? '/');
         return;
       }
       setIssues(result.issues);
@@ -193,7 +195,7 @@ export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TM
           <button type="submit" disabled={submitting || !item}>
             {submitting ? 'Deleting…' : 'Delete'}
           </button>
-          <button className="form-cancel" type="button" onClick={() => window.history.back()}>
+          <button className="form-cancel" type="button" onClick={() => navigate(-1)}>
             Cancel
           </button>
         </div>

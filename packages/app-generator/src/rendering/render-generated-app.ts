@@ -16,6 +16,7 @@ export function renderGeneratedApp(model: GenerationModel): FileTree {
   addStaticGeneratedAppAssets(tree);
 
   const context = buildRenderContext(model);
+  tree.set('.gitignore', renderTemplate('gitignore.eta', context));
   tree.set('package.json', renderTemplate('package-json.eta', context));
   tree.set('tsconfig.json', renderTemplate('tsconfig-json.eta', context));
   tree.set('vite.config.ts', renderTemplate('vite-config-ts.eta', context));

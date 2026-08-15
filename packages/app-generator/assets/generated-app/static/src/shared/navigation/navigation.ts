@@ -20,8 +20,11 @@ export interface OperationNavigationDescriptor {
   successRedirect?: NavigationActionDescriptor;
 }
 
+/** Query parameter carrying the entity IRI of a route that needs one. */
+export const ENTITY_ID_PARAMETER = 'id';
+
 export function toEntityPath(routePath: string, id: string): string {
-  return `${routePath}?${new URLSearchParams({ id }).toString()}`;
+  return `${routePath}?${new URLSearchParams({ [ENTITY_ID_PARAMETER]: id }).toString()}`;
 }
 
 export function hrefForAction(
@@ -38,7 +41,7 @@ export function hrefForAction(
 }
 
 export function readRouteEntityId(search: string): string {
-  return new URLSearchParams(search).get('id') ?? '';
+  return new URLSearchParams(search).get(ENTITY_ID_PARAMETER) ?? '';
 }
 
 export function entityIdFromValue(value: unknown): string | undefined {

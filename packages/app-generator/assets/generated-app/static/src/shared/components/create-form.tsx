@@ -1,4 +1,5 @@
 import { useState, type SubmitEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import type { DataSource } from '../datasource/data-source.ts';
 import { createEntityDraft } from '../forms/form-draft.ts';
@@ -35,6 +36,7 @@ export function CreateForm<TModel extends EntityModel>(props: CreateFormProps<TM
   const [model, setModel] = useState<EntityRecord>(() =>
     createEntityDraft(rootEntityTarget(aggregate), aggregateRegistry, instanceBaseIri)
   );
+  const navigate = useNavigate();
   const [issues, setIssues] = useState<ValidationIssue[]>([]);
   const [validationActive, setValidationActive] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -67,8 +69,7 @@ export function CreateForm<TModel extends EntityModel>(props: CreateFormProps<TM
         payload: model as TModel,
       });
       if (result.ok) {
-        window.location.href =
-          hrefForAction(navigation.successRedirect, result.data.id ?? model.id) ?? '/';
+        navigate(hrefForAction(navigation.successRedirect, result.data.id ?? model.id) ?? '/');
         return;
       }
       setIssues(result.issues);
@@ -112,7 +113,7 @@ export function CreateForm<TModel extends EntityModel>(props: CreateFormProps<TM
           <button type="submit" disabled={submitting}>
             {submitting ? 'Saving…' : 'Create'}
           </button>
-          <button className="form-cancel" type="button" onClick={() => window.history.back()}>
+          <button className="form-cancel" type="button" onClick={() => navigate(-1)}>
             Cancel
           </button>
         </div>

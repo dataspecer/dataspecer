@@ -1,35 +1,104 @@
-import type { EntityModel, FieldDescriptor } from '../types/aggregate.ts';
-import { ActionLinks } from './action-links.tsx';
-import { formatPrimitiveValue } from './field-value.ts';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+
+import type { DataSource } from '../datasource/data-source.ts';
 import {
   entityIdFromValue,
   hrefForAction,
   type AssociationNavigationActionDescriptor,
-  type NavigationActionDescriptor,
+  type OperationNavigationDescriptor,
 } from '../navigation/navigation.ts';
+import { errorMessage } from '../operations/operation-result.ts';
+import { invokeOperation, type OperationStrategy } from '../operations/operation-strategy.ts';
+import type {
+  AggregateDescriptor,
+  AggregateDescriptorMap,
+  EntityModel,
+  FieldDescriptor,
+} from '../types/aggregate.ts';
+import { ActionLinks } from './action-links.tsx';
+import { formatPrimitiveValue } from './field-value.ts';
 
 // Nested sections deeper than this start collapsed so deep structures do not overwhelm the page.
 const OPEN_DEPTH = 2;
 
 export interface DetailViewProps<TModel extends EntityModel> {
   title: string;
-  fields: FieldDescriptor[];
-  item: TModel;
-  pageActions?: readonly NavigationActionDescriptor[];
-  associationActions?: readonly AssociationNavigationActionDescriptor[];
+  aggregate: AggregateDescriptor<TModel>;
+  aggregateRegistry: AggregateDescriptorMap;
+  strategy: OperationStrategy<TModel, TModel>;
+  dataSource: DataSource;
+  navigation: OperationNavigationDescriptor;
+  id: string;
 }
 
 export function DetailView<TModel extends EntityModel>(props: DetailViewProps<TModel>) {
+  const { title, aggregate, aggregateRegistry, strategy, dataSource, navigation, id } = props;
+  const [item, setItem] = useState<TModel | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!id) {
+      setItem(null);
+      setError('Missing required entity id.');
+      setLoading(false);
+      return;
+    }
+
+    let active = true;
+    setLoading(true);
+    setError(null);
+    invokeOperation(strategy, {
+      aggregate,
+      aggregateRegistry,
+      datasource: dataSource,
+      params: { id },
+    })
+      .then((result) => {
+        if (!active) {
+          return;
+        }
+        if (result.ok) {
+          setItem(result.data);
+        } else {
+          setError(result.issues.map((issue) => issue.message).join(', '));
+        }
+      })
+      .catch((caught: unknown) => {
+        if (!active) {
+          return;
+        }
+        console.error(caught);
+        setError(errorMessage(caught));
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [aggregate, aggregateRegistry, dataSource, id, strategy]);
+
   return (
     <section>
-      <h2>{props.title}</h2>
-      <ActionLinks actions={props.pageActions ?? []} entityId={props.item.id} />
-      <FieldList
-        fields={props.fields}
-        item={props.item as Record<string, unknown>}
-        associationActions={props.associationActions ?? []}
-        depth={0}
-      />
+      <h2>{title}</h2>
+      {loading ? <p>Loading…</p> : null}
+      {error !== null ? <p role="alert">{error}</p> : null}
+      {item !== null && error === null ? (
+        <>
+          <ActionLinks actions={navigation.pageActions} entityId={item.id} />
+          <FieldList
+            fields={aggregate.fields}
+            item={item as Record<string, unknown>}
+            associationActions={navigation.associationActions}
+            depth={0}
+          />
+        </>
+      ) : null}
     </section>
   );
 }
@@ -173,7 +242,7 @@ function LeafValue(props: LeafValueProps) {
     const entityId = entityIdFromValue(value);
     const href = entityId ? hrefForAction(action, entityId) : undefined;
     if (href) {
-      return <a href={href}>{text || entityId}</a>;
+      return <Link to={href}>{text || entityId}</Link>;
     }
   }
   return <>{text}</>;
@@ -188,9 +257,9 @@ function EntityLink(props: EntityLinkProps) {
   const entityId = entityIdFromValue(props.value);
   const href = entityId ? hrefForAction(props.action, entityId) : undefined;
   return href ? (
-    <a className="entity-link" href={href}>
+    <Link className="entity-link" to={href}>
       View
-    </a>
+    </Link>
   ) : null;
 }
 

@@ -1,145 +1,51 @@
-import { useEffect, useState } from "react";
-
-import { CreateForm } from "../shared/components/create-form.tsx";
-import { DeleteForm } from "../shared/components/delete-form.tsx";
-import { DetailView } from "../shared/components/detail-view.tsx";
-import { ListView } from "../shared/components/list-view.tsx";
-import { UpdateForm } from "../shared/components/update-form.tsx";
-import { readRouteEntityId } from "../shared/navigation/navigation.ts";
-import { errorMessage } from "../shared/operations/operation-result.ts";
-import { invokeOperation } from "../shared/operations/operation-strategy.ts";
 <% if (it.page.operation.operation === "ReadList") { -%>
-import { DEFAULT_READ_LIST_SORT } from "../shared/datasource/data-source.ts";
-import { DEFAULT_PAGE_SIZE } from "../shared/operations/read-list-strategy.ts";
+import { ListView } from "../shared/components/list-view.tsx";
+<% } else if (it.page.operation.operation === "ReadDetail") { -%>
+import { DetailView } from "../shared/components/detail-view.tsx";
+import { useEntityId } from "../shared/navigation/use-location.ts";
+<% } else if (it.page.operation.operation === "Create") { -%>
+import { CreateForm } from "../shared/components/create-form.tsx";
+<% } else if (it.page.operation.operation === "Update") { -%>
+import { UpdateForm } from "../shared/components/update-form.tsx";
+import { useEntityId } from "../shared/navigation/use-location.ts";
+<% } else if (it.page.operation.operation === "Delete") { -%>
+import { DeleteForm } from "../shared/components/delete-form.tsx";
+import { useEntityId } from "../shared/navigation/use-location.ts";
 <% } -%>
 import { aggregateRegistry, dataSource, operations } from "../generated/operation-registry.ts";
+<% if (it.page.operation.operation === "Create" || it.page.operation.operation === "Update") { -%>
 import { instanceBaseIri } from "../generated/app-config.ts";
-import type { <%= it.page.modelName %> } from "../modules/<%= it.page.moduleName %>/model.ts";
+<% } -%>
 
 const operation = operations[<%~ it.json(it.page.operation.id) %>];
 
-export function <%= it.page.componentName %>() {<% if (it.page.operation.operation === "ReadList") { %>
-  const [items, setItems] = useState<<%= it.page.modelName %>[]>([]);
-  const [total, setTotal] = useState(0);
-  const [paginationModel, setPaginationModel] = useState({
-    page: 0,
-    pageSize: DEFAULT_PAGE_SIZE,
-  });
-  const [sort, setSort] = useState(DEFAULT_READ_LIST_SORT);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    setLoading(true);
-    setError(null);
-    invokeOperation(operation.strategy, {
-      aggregate: operation.aggregate,
-      aggregateRegistry,
-      datasource: dataSource,
-      params: {
-        page: paginationModel.page + 1,
-        pageSize: paginationModel.pageSize,
-        sort,
-      },
-    })
-      .then((result) => {
-        if (!active) {
-          return;
-        }
-        if (result.ok) {
-          setItems(result.data.items);
-          setTotal(result.data.total);
-        } else {
-          setError(result.issues.map((issue) => issue.message).join(", "));
-        }
-      })
-      .catch((caught: unknown) => {
-        if (!active) {
-          return;
-        }
-        console.error(caught);
-        setError(errorMessage(caught));
-      })
-      .finally(() => {
-        if (active) {
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [paginationModel, sort]);
-
+export function <%= it.page.componentName %>() {
+<% if (it.page.operation.operation === "ReadList") { -%>
   return (
     <ListView
       title={operation.title}
-      fields={operation.aggregate.fields}
-      items={items}
-      total={total}
-      paginationModel={paginationModel}
-      sort={sort}
-      loading={loading}
-      error={error}
-      onPaginationModelChange={setPaginationModel}
-      onSortChange={(nextSort) => {
-        setSort(nextSort);
-        setPaginationModel((current) => ({ ...current, page: 0 }));
-      }}
-      pageActions={operation.navigation.pageActions}
-      rowActions={operation.navigation.rowActions}
-      associationActions={operation.navigation.associationActions}
+      aggregate={operation.aggregate}
+      aggregateRegistry={aggregateRegistry}
+      strategy={operation.strategy}
+      dataSource={dataSource}
+      navigation={operation.navigation}
     />
   );
-<% } else if (it.page.operation.operation === "ReadDetail") { %>
-  const id = readRouteEntityId(window.location.search);
-  const [item, setItem] = useState<<%= it.page.modelName %> | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!id) {
-      setItem(null);
-      setError("Missing required entity id.");
-      return;
-    }
-
-    invokeOperation(operation.strategy, {
-      aggregate: operation.aggregate,
-      aggregateRegistry,
-      datasource: dataSource,
-      params: { id },
-    })
-      .then((result) => {
-        if (result.ok) {
-          setItem(result.data);
-        } else {
-          setError(result.issues.map((issue) => issue.message).join(", "));
-        }
-      })
-      .catch((caught: unknown) => {
-        console.error(caught);
-        setError(errorMessage(caught));
-      });
-  }, [id]);
+<% } else if (it.page.operation.operation === "ReadDetail") { -%>
+  const id = useEntityId();
 
   return (
-    <>
-      {error ? <p role="alert">{error}</p> : null}
-      {item ? (
-        <DetailView
-          title={operation.title}
-          fields={operation.aggregate.fields}
-          item={item}
-          pageActions={operation.navigation.pageActions}
-          associationActions={operation.navigation.associationActions}
-        />
-      ) : (
-        error ? null : <p>No item loaded.</p>
-      )}
-    </>
+    <DetailView
+      title={operation.title}
+      aggregate={operation.aggregate}
+      aggregateRegistry={aggregateRegistry}
+      strategy={operation.strategy}
+      dataSource={dataSource}
+      navigation={operation.navigation}
+      id={id}
+    />
   );
-<% } else if (it.page.operation.operation === "Create") { %>
+<% } else if (it.page.operation.operation === "Create") { -%>
   return (
     <CreateForm
       title={operation.title}
@@ -151,8 +57,8 @@ export function <%= it.page.componentName %>() {<% if (it.page.operation.operati
       instanceBaseIri={instanceBaseIri}
     />
   );
-<% } else if (it.page.operation.operation === "Update") { %>
-  const id = readRouteEntityId(window.location.search);
+<% } else if (it.page.operation.operation === "Update") { -%>
+  const id = useEntityId();
 
   return (
     <UpdateForm
@@ -166,8 +72,8 @@ export function <%= it.page.componentName %>() {<% if (it.page.operation.operati
       id={id}
     />
   );
-<% } else if (it.page.operation.operation === "Delete") { %>
-  const id = readRouteEntityId(window.location.search);
+<% } else if (it.page.operation.operation === "Delete") { -%>
+  const id = useEntityId();
 
   return (
     <DeleteForm

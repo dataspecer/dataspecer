@@ -1,4 +1,5 @@
 import { useEffect, useState, type SubmitEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import type { DataSource } from '../datasource/data-source.ts';
 import { hydrateCompositionTree } from '../forms/form-draft.ts';
@@ -43,6 +44,7 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
   } = props;
   const [model, setModel] = useState<EntityRecord | null>(null);
   const [originalModel, setOriginalModel] = useState<EntityRecord | null>(null);
+  const navigate = useNavigate();
   const [issues, setIssues] = useState<ValidationIssue[]>([]);
   const [validationActive, setValidationActive] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -144,7 +146,7 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
         originalPayload: originalModel as TModel,
       });
       if (result.ok) {
-        window.location.href = hrefForAction(navigation.successRedirect, id) ?? '/';
+        navigate(hrefForAction(navigation.successRedirect, id) ?? '/');
         return;
       }
       setIssues(result.issues);
@@ -200,7 +202,7 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
           <button type="submit" disabled={submitting || !model || !originalModel}>
             {submitting ? 'Saving…' : 'Save'}
           </button>
-          <button className="form-cancel" type="button" onClick={() => window.history.back()}>
+          <button className="form-cancel" type="button" onClick={() => navigate(-1)}>
             Cancel
           </button>
         </div>

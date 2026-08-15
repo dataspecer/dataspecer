@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 import { hrefForAction, type NavigationActionDescriptor } from '../navigation/navigation.ts';
 
 interface ActionLinksProps {
@@ -17,9 +19,9 @@ export function ActionLinks(props: ActionLinksProps) {
       {props.actions.map((action) => {
         const href = hrefForAction(action, props.entityId);
         return href ? (
-          <a key={action.id} href={href} tabIndex={props.tabIndex}>
+          <Link key={action.id} to={href} tabIndex={props.tabIndex}>
             {action.label}
-          </a>
+          </Link>
         ) : null;
       })}
     </nav>
