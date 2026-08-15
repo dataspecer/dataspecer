@@ -258,10 +258,6 @@ function executeModifySemanticModelRelationshipProfile(
 // TODO: should we do validations here?
 // - only one CV with MUST on profile
 // - inherited qualifiers can be only changed to stricter
-// - check for duplicate assignments (same controlled vocabulary identifier
-//   assigned more than once on the same class profile) - decide later
-//   whether we want to allow this; currently allowed, since a class profile
-//   may want to assign the same vocabulary with different qualifiers
 function executeAddControlledVocabularyAssignment(
   entityReader: EntityReader,
   entityWriter: EntityWriter,
@@ -274,6 +270,15 @@ function executeAddControlledVocabularyAssignment(
     return { success: false, created: [] };
   }
   const existing = previous.controlledVocabularies ?? [];
+  // The same vocabulary can be assigned more than once with different
+  // qualifiers, but assigning the exact same (identifier, qualifier) pair
+  // again is redundant and rejected.
+  if (existing.some(a => a.identifier === assignment.identifier
+    && a.qualifier === assignment.qualifier)) {
+    console.error("This exact controlled vocabulary assignment already exists on this class profile, add controlled vocabulary assignment is ignored.",
+      { assignment });
+    return { success: false, created: [] };
+  }
   const updatedEntity: SemanticModelClassProfile = {
     ...previous,
     controlledVocabularies: [...existing, assignment],
