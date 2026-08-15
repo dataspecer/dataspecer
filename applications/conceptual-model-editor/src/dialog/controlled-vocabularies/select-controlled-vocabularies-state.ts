@@ -36,6 +36,7 @@ export function createSelectControlledVocabulariesState(
     const override = overrides.find(
       item => item.vocabularyId === usage.vocabulary.id);
     return {
+      id: crypto.randomUUID(),
       vocabulary: usage.vocabulary,
       qualifier: override?.qualifier ?? usage.qualifier,
       inherited: {
@@ -45,6 +46,7 @@ export function createSelectControlledVocabulariesState(
     };
   });
   const addedItems: VocabularyItemState[] = added.map(usage => ({
+    id: crypto.randomUUID(),
     vocabulary: usage.vocabulary,
     qualifier: usage.qualifier,
     inherited: null,

@@ -3,6 +3,13 @@ import { ControlledVocabulary } from "./controlled-vocabulary-model";
 
 export interface VocabularyItemState {
 
+  /**
+   * Stable per-instance identifier, independent of vocabulary.id - a class
+   * profile can assign the same vocabulary more than once with different
+   * qualifiers, so vocabulary.id alone can not address a specific item.
+   */
+  id: string;
+
   vocabulary: ControlledVocabulary;
 
   /**
@@ -33,5 +40,5 @@ export function createVocabularyItemState(
   qualifier: Qualifier,
   inherited: InheritedQualifierState | null,
 ): VocabularyItemState {
-  return { vocabulary, qualifier, inherited };
+  return { id: crypto.randomUUID(), vocabulary, qualifier, inherited };
 }

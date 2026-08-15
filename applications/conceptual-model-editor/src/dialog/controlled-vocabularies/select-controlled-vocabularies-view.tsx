@@ -31,9 +31,9 @@ export function SelectControlledVocabulariesView(
           <p className="text-sm text-gray-500">From profiled</p>
           {inheritedItems.map(item => (
             <VocabularyItemView
-              key={item.vocabulary.id}
+              key={item.id}
               state={item}
-              presenter={presenter.getItemPresenter(item.vocabulary.id)}
+              presenter={presenter.getItemPresenter(item.id)}
             />
           ))}
         </div>
@@ -44,10 +44,10 @@ export function SelectControlledVocabulariesView(
           <p className="text-sm text-gray-500">In this profile</p>
           {addedItems.map(item => (
             <VocabularyItemView
-              key={item.vocabulary.id}
+              key={item.id}
               state={item}
-              presenter={presenter.getItemPresenter(item.vocabulary.id)}
-              onRemove={() => presenter.onRemove(item.vocabulary.id)}
+              presenter={presenter.getItemPresenter(item.id)}
+              onRemove={() => presenter.onRemove(item.id)}
             />
           ))}
         </div>
