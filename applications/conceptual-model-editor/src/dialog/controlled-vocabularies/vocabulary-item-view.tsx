@@ -6,13 +6,18 @@ export function VocabularyItemView(props: {
   state: VocabularyItemState;
   presenter: VocabularyItemPresenter;
   onRemove?: () => void;
+  isDuplicate?: boolean;
 }) {
   const inherited = props.state.inherited;
   const qualifierDisabled = inherited !== null && !inherited.overrideEnabled;
   const effectiveQualifier = qualifierDisabled ? null : props.state.qualifier;
 
   return (
-    <div className="rounded border bg-white p-3">
+    <div
+      className={`rounded border p-3 ${
+        props.isDuplicate ? "border-red-400 bg-red-50" : "bg-white"
+      }`}
+    >
       <div className="flex items-start justify-between">
         <div className="flex items-baseline gap-2 min-w-0">
           <p className="font-semibold shrink-0">{props.state.vocabulary.name}</p>

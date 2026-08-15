@@ -69,3 +69,33 @@ export function hasControlledVocabularyConflict(
   const mustCount = qualifiers.filter(qualifier => qualifier === "MUST").length;
   return mustCount > 0 && qualifiers.length > 1;
 }
+
+/**
+ * Returns the ids of items whose vocabulary and current effective qualifier
+ * are not unique within the profile - i.e. the same vocabulary is assigned
+ * the exact same qualifier more than once. Checked across inherited and
+ * added items together, using each item's current effective qualifier
+ * (the inherited default when not overridden, the override value when it
+ * is). Assigning the same vocabulary with a different qualifier is not a
+ * duplicate.
+ */
+export function findDuplicateVocabularyItemIds(
+  state: SelectControlledVocabulariesState,
+): Set<string> {
+  const groups = new Map<string, VocabularyItemState[]>();
+  for (const item of state.items) {
+    const key = `${item.vocabulary.id}|${item.qualifier}`;
+    const group = groups.get(key) ?? [];
+    group.push(item);
+    groups.set(key, group);
+  }
+  const duplicateIds = new Set<string>();
+  for (const group of groups.values()) {
+    if (group.length > 1) {
+      for (const item of group) {
+        duplicateIds.add(item.id);
+      }
+    }
+  }
+  return duplicateIds;
+}

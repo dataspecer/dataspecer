@@ -7,6 +7,7 @@ import {
   createSelectControlledVocabulariesPresenter,
 } from "./select-controlled-vocabularies-presenter";
 import {
+  findDuplicateVocabularyItemIds,
   hasControlledVocabularyConflict,
   SelectControlledVocabulariesState,
 } from "./select-controlled-vocabularies-state";
@@ -21,6 +22,8 @@ export function SelectControlledVocabulariesView(
   );
   const state = props.state;
   const hasConflict = hasControlledVocabularyConflict(state);
+  const duplicateItemIds = findDuplicateVocabularyItemIds(state);
+  const hasDuplicates = duplicateItemIds.size > 0;
   const inheritedItems = state.items.filter(item => item.inherited !== null);
   const addedItems = state.items.filter(item => item.inherited === null);
 
@@ -34,6 +37,7 @@ export function SelectControlledVocabulariesView(
               key={item.id}
               state={item}
               presenter={presenter.getItemPresenter(item.id)}
+              isDuplicate={duplicateItemIds.has(item.id)}
             />
           ))}
         </div>
@@ -48,6 +52,7 @@ export function SelectControlledVocabulariesView(
               state={item}
               presenter={presenter.getItemPresenter(item.id)}
               onRemove={() => presenter.onRemove(item.id)}
+              isDuplicate={duplicateItemIds.has(item.id)}
             />
           ))}
         </div>
@@ -57,6 +62,14 @@ export function SelectControlledVocabulariesView(
         <p className="text-sm text-red-600">
           A profile cannot contain more than one controlled vocabulary when one
           has a MUST qualifier. Remove the others or change the MUST qualifier
+          to continue.
+        </p>
+      )}
+
+      {hasDuplicates && (
+        <p className="text-sm text-red-600">
+          The highlighted controlled vocabularies are assigned with the exact
+          same qualifier more than once. Remove or change one of each pair
           to continue.
         </p>
       )}
