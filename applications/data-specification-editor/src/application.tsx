@@ -1,6 +1,4 @@
-import { BackendPackageService } from "@dataspecer/core-v2/project";
 import { getDefaultConfiguration, mergeConfigurations } from "@dataspecer/core/configuration/utils";
-import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
 import { createTheme, CssBaseline, ThemeProvider } from "@mui/material";
 import { ThemeProvider as NextThemesProvider, useTheme as useNextTheme } from "next-themes";
 import { SnackbarProvider } from "notistack";
@@ -10,11 +8,6 @@ import { getDefaultConfigurators } from "./configurators";
 import EditorPage from "./editor/components/App";
 import ManagerPage from "./manager/app";
 import { Specification } from "./manager/routes/specification/specification";
-
-/**
- * @deprecated You should use the model store instead.
- */
-export const BackendConnectorContext = React.createContext(null as unknown as BackendPackageService);
 
 /**
  * Contains merged default configuration from the source code and the configuration from the backend.
@@ -34,8 +27,6 @@ const useDefaultConfiguration = () => {
 export const PACKAGE_ROOT = "http://dataspecer.com/packages/local-root";
 
 export const Application = () => {
-  const [backendConnector] = useState(new BackendPackageService(import.meta.env.VITE_BACKEND, httpFetch));
-
   const defaultConfiguration = useDefaultConfiguration();
 
   return (
@@ -43,14 +34,12 @@ export const Application = () => {
       <NextThemesProvider attribute="class" defaultTheme="system" enableSystem>
         <MuiThemeWrapper>
           <SnackbarProvider maxSnack={3}>
-            <BackendConnectorContext.Provider value={backendConnector}>
-              <DefaultConfigurationContext.Provider value={defaultConfiguration}>
-                <CssBaseline />
-                <BrowserRouter basename={(import.meta.env.VITE_BASE_PATH ?? "") + "/"}>
-                  <MainRouter />
-                </BrowserRouter>
-              </DefaultConfigurationContext.Provider>
-            </BackendConnectorContext.Provider>
+            <DefaultConfigurationContext.Provider value={defaultConfiguration}>
+              <CssBaseline />
+              <BrowserRouter basename={(import.meta.env.VITE_BASE_PATH ?? "") + "/"}>
+                <MainRouter />
+              </BrowserRouter>
+            </DefaultConfigurationContext.Provider>
           </SnackbarProvider>
         </MuiThemeWrapper>
       </NextThemesProvider>

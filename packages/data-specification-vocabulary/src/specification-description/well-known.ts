@@ -85,6 +85,11 @@ export const dsvMetadataWellKnown = {
      * URL to SHACL specification documentation.
      */
     shacl: "https://www.w3.org/TR/shacl/",
+
+    /**
+     * Linked Data Event Streams specification URL.
+     */
+    ldes: "https://w3id.org/ldes/specification",
   },
 
   /**

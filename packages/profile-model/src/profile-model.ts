@@ -1,4 +1,5 @@
 import {
+  isSemanticModelGeneralization,
   SemanticModelGeneralization,
 } from "@dataspecer/core-v2/semantic-model/concepts";
 import {
@@ -9,7 +10,6 @@ import {
   SemanticModelRelationshipProfile,
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { Entity } from "@dataspecer/entity-model";
-import { isSemanticModelGeneralizationProfile } from "./index.ts";
 import {
   CreatedEntityOperationResult,
   OperationResult
@@ -64,7 +64,7 @@ export type ProfileRelationshipEnd = SemanticModelRelationshipEndProfile;
 
 export type ProfileGeneralization = SemanticModelGeneralization;
 
-export const isProfileGeneralization = isSemanticModelGeneralizationProfile;
+export const isProfileGeneralization = isSemanticModelGeneralization;
 
 export type ProfileOperation = Operation;
 

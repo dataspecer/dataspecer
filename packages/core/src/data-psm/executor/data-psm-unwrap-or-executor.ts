@@ -14,7 +14,7 @@ export function executeDataPsmUnwrapOr(
     return DataPsmExecutorResultFactory.missingSchema();
   }
 
-  const or = reader.readResource(operation.dataPsmOr) as DataPsmOr;
+  const or = reader.readResource(operation.entityId) as DataPsmOr;
   if (or.dataPsmChoices.length === 0) {
     return CoreExecutorResult.createError("Data-psm or does not have any choice.");
   }
@@ -23,19 +23,19 @@ export function executeDataPsmUnwrapOr(
   }
   const replacementIri = or.dataPsmChoices[0];
 
-  const changed = replaceObjectInSchema(schema.iri, operation.dataPsmOr, replacementIri, reader);
+  const changed = replaceObjectInSchema(schema.iri, operation.entityId, replacementIri, reader);
 
   const changedSchema = changed.some(c => c.iri === schema.iri);
   if (changedSchema) {
-    changed.map(c => c.iri === schema.iri ? {...c, dataPsmParts: (c as DataPsmSchema).dataPsmParts.filter(p => p !== operation.dataPsmOr)} : c);
+    changed.map(c => c.iri === schema.iri ? {...c, dataPsmParts: (c as DataPsmSchema).dataPsmParts.filter(p => p !== operation.entityId)} : c);
   } else {
-    changed.push({...schema, dataPsmParts: schema.dataPsmParts.filter(p => p !== operation.dataPsmOr)} as DataPsmSchema);
+    changed.push({...schema, dataPsmParts: schema.dataPsmParts.filter(p => p !== operation.entityId)} as DataPsmSchema);
   }
 
   return CoreExecutorResult.createSuccess(
     [],
     changed,
-    [operation.dataPsmOr],
+    [operation.entityId],
     new DataPsmUnwrapOrResult()
   );
 }

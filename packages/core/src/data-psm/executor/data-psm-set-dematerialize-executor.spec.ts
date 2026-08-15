@@ -10,7 +10,7 @@ import { DataPsmAssociationEnd, DataPsmClassReference } from "../model/index.ts"
 
 test("Update data PSM association materialized.", async () => {
   const operation = new DataPsmSetDematerialized();
-  operation.dataPsmAssociationEnd = "http://association-end";
+  operation.entityId = "http://association-end";
   operation.dataPsmIsDematerialized = true;
 
   const before = {

@@ -1,10 +1,14 @@
-import { CoreOperation, CoreResource } from "../../core/index.ts";
+import { generateOperationId, type Operation } from "../../operation/index.ts";
 import * as PSM from "../data-psm-vocabulary.ts";
 
-export class DataPsmSetInstancesSpecifyTypes extends CoreOperation {
+export class DataPsmSetInstancesSpecifyTypes implements Operation {
   static readonly TYPE = PSM.SET_INSTANCES_SPECIFY_TYPES;
 
-  dataPsmClass: string | null = null;
+  id: string;
+
+  type: string;
+
+  entityId: string | null = null;
 
   /**
    * Require explicit instance typing. For example as @type property in JSON-LD.
@@ -13,11 +17,11 @@ export class DataPsmSetInstancesSpecifyTypes extends CoreOperation {
   instancesSpecifyTypes: "ALWAYS" | "NEVER" | "OPTIONAL" | undefined = undefined;
 
   constructor() {
-    super();
-    this.types.push(DataPsmSetInstancesSpecifyTypes.TYPE);
+    this.id = generateOperationId();
+    this.type = DataPsmSetInstancesSpecifyTypes.TYPE;
   }
 
-  static is(resource: CoreResource | null): resource is DataPsmSetInstancesSpecifyTypes {
-    return resource?.types.includes(DataPsmSetInstancesSpecifyTypes.TYPE);
+  static is(operation: Operation | null | undefined): operation is DataPsmSetInstancesSpecifyTypes {
+    return operation?.type === DataPsmSetInstancesSpecifyTypes.TYPE;
   }
 }

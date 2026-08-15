@@ -1,5 +1,5 @@
 import { CoreResource } from "../core-resource.ts";
-import { CoreOperationResult } from "../operation/index.ts";
+import { DataPsmOperationResult } from "../../data-psm/operation/data-psm-operation-result.ts";
 
 /**
  * Instance of this class must be returned by all operation executors.
@@ -37,9 +37,9 @@ export class CoreExecutorResult {
   /**
    * The fields of this value's type are filled in and the object is returned
    * to the user. This field can be used to return specialization
-   * (extending class) of {@link CoreOperationResult}.
+   * (extending class) of {@link DataPsmOperationResult}.
    */
-  readonly operationResult: CoreOperationResult | null;
+  readonly operationResult: DataPsmOperationResult | null;
 
   constructor(
     created: { [iri: string]: CoreResource },
@@ -47,7 +47,7 @@ export class CoreExecutorResult {
     deleted: string[],
     failed: boolean,
     message: string | null,
-    operationResult: CoreOperationResult | null
+    operationResult: DataPsmOperationResult | null
   ) {
     this.created = created;
     this.changed = changed;
@@ -65,7 +65,7 @@ export class CoreExecutorResult {
     created: CoreResource[],
     changed: CoreResource[],
     deleted: string[] = [],
-    operationResult: CoreOperationResult = null
+    operationResult: DataPsmOperationResult | null = null
   ): CoreExecutorResult {
     return new CoreExecutorResult(
       asResourceMap(created),
@@ -73,7 +73,7 @@ export class CoreExecutorResult {
       deleted,
       false,
       null,
-      operationResult ?? new CoreOperationResult()
+      operationResult ?? new DataPsmOperationResult()
     );
   }
 }
@@ -81,7 +81,7 @@ export class CoreExecutorResult {
 function asResourceMap(
   resources: CoreResource[]
 ): Record<string, CoreResource> {
-  const result = {};
-  resources.forEach((resource) => (result[resource.iri] = resource));
+  const result: Record<string, CoreResource> = {};
+  resources.forEach((resource) => (result[resource.iri!] = resource));
   return result;
 }

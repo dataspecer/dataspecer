@@ -1,6 +1,6 @@
-import { useActions } from "@/action/actions-react-binding";
-import { LanguageString } from "@/dataspecer/entity-model";
-import { DialogProps } from "@/dialog/dialog-api";
+import { useActions } from "../../../../action/actions-react-binding";
+import { LanguageString } from "../../../../dataspecer/entity-model";
+import { DialogProps } from "../../../../dialog/dialog-api";
 import { useMemo } from "react";
 
 export interface EditVisualDiagramNodeDialogState {

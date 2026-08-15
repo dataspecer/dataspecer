@@ -1,55 +1,52 @@
 import type { PackageService } from "@dataspecer/core-v2/project";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
-import type { Model, ModelIdentifier } from "@dataspecer/core/model";
+import type { ModelIdentifier } from "@dataspecer/core/model";
 import type { Operation } from "@dataspecer/core/operation";
-import { serializationToVisualModelEntities, visualModelEntitiesToSerialization } from "@dataspecer/visual-model";
+import { serializationToVisualModelEntities } from "@dataspecer/visual-model";
 import { applyOperationsToVisualModel } from "@dataspecer/visual-model/executor";
-import { BaseModelInModelStore, type ModelState } from "./base.ts";
-import type { ModelInDefaultFrontendModelStore } from "./implementation.ts";
+import type { ModelInModelStore, StateResult } from "./interface.ts";
+import { createStateResult } from "./state.ts";
 
 /**
  * Since there is a mismatch between the old visual model entity interface (with
  * `identifier`) and the new core entity interface (with `id`), this class can
  * handle both interfaces during the transition period.
  */
-export class VisualModelInModelStore extends BaseModelInModelStore implements Model, ModelInDefaultFrontendModelStore {
-  protected service: PackageService;
+export class VisualModelInModelStore implements ModelInModelStore {
+  private readonly id: ModelIdentifier;
+  private readonly service: PackageService;
 
-  constructor(id: string, service: PackageService) {
-    super(id);
+  private state: EntityRecord = {};
+
+  constructor(id: ModelIdentifier, service: PackageService) {
+    this.id = id;
     this.service = service;
   }
 
-  protected async loadInternal(): Promise<ModelState> {
-    const data = await this.service.getResourceJsonData(this.id);
-    return this.deserializeModel(data);
+  setState(coreState: EntityRecord): StateResult {
+    const result = createStateResult(this.state, coreState);
+    this.state = coreState;
+    return result;
   }
 
-  private async deserializeModel(data: unknown): Promise<ModelState> {
+  applyOperationAndSetState(operations: Operation[]): StateResult {
+    const state = { ...this.state };
+    const diff = applyOperationsToVisualModel(state, operations);
+    this.state = state;
     return {
-      entities: serializationToVisualModelEntities(data),
-      operations: [], // todo still no operations
+      coreState: state,
+      outputState: state,
+      diff,
     };
   }
 
-  protected async saveInternal(state: ModelState): Promise<void> {
-    const data = this.serializeModel(state);
-    await this.service.setResourceJsonData(this.id, data);
+  subscribeForAsyncChanges(): () => void {
+    return () => {};
   }
 
-  private serializeModel(state: ModelState): unknown {
-    return visualModelEntitiesToSerialization(state.entities);
-  }
-
-  protected override applyOperation(operation: Operation, mutableState: EntityRecord): void {
-    const changes = applyOperationsToVisualModel(mutableState, [operation]);
-    for (const change of changes) {
-      if (change.next === null) {
-        delete mutableState[change.previous!.id];
-      } else {
-        mutableState[change.next.id] = change.next;
-      }
-    }
+  async getRemoteState(): Promise<EntityRecord> {
+    const data = await this.service.getResourceJsonData(this.id);
+    return data ? serializationToVisualModelEntities(data) : {};
   }
 }
 
@@ -58,6 +55,6 @@ export function createVisualModelInModelStore(
   context: {
     service: PackageService;
   },
-): Model & ModelInDefaultFrontendModelStore {
+): VisualModelInModelStore {
   return new VisualModelInModelStore(modelId, context.service);
 }

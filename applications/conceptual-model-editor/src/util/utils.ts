@@ -5,7 +5,7 @@ import { getLocalizedStringFromLanguageString } from "./language-utils";
 import { getFallbackDisplayName, getNameLanguageString } from "./name-utils";
 import { Entity } from "@dataspecer/core-v2";
 import { VisualEntity, VisualModel } from "@dataspecer/visual-model";
-import { getVisualDiagramNodeMappingsByRepresented } from "@/action/utilities";
+import { getVisualDiagramNodeMappingsByRepresented } from "../action/utilities";
 
 export const shortenStringTo = (modelId: string | null, length: number = 20) => {
   if (!modelId) {

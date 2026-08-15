@@ -113,13 +113,13 @@ import { openEditAssociationDialogAction } from "./open-edit-association-dialog"
 import { isSemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { openEditAssociationProfileDialogAction } from "./open-edit-association-profile-dialog";
 import { changeVisualModelAction } from "./change-visual-model";
-import { QueryParamsContextType, useQueryParamsContext } from "@/context/query-params-context";
+import { QueryParamsContextType, useQueryParamsContext } from "../context/query-params-context";
 import { openCreateVisualModelDialogAction } from "./open-create-visual-model-dialog";
 import { openEditSemanticModelDialogAction } from "./open-edit-semantic-model-dialog";
-import { EntityDsIdentifier, ModelDsIdentifier } from "@/dataspecer/entity-model";
+import { EntityDsIdentifier, ModelDsIdentifier } from "../dataspecer/entity-model";
 import { openSearchExternalSemanticModelDialogAction } from "./open-search-external-semantic-model-dialog";
 import { openEditVisualModelDialogAction } from "./open-edit-visual-model-dialog";
-import { LayoutConfigurationContextType, useLayoutConfigurationContext } from "@/context/layout-configuration-context";
+import { LayoutConfigurationContextType, useLayoutConfigurationContext } from "../context/layout-configuration-context";
 import { openCreateClassDialogAndCreateGeneralizationAction } from "./open-create-class-dialog-with-generalization";
 import { openCreateClassDialogAndCreateAssociationAction } from "./open-create-class-dialog-with-association";
 import {

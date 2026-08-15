@@ -44,17 +44,16 @@ function aggregateSemanticModelClassProfile(
 
   // We try to get an entity to get the name from.
   // Since all entities share name we just try to read it directly.
-  // For the property we need to check if the value is a non-profile.
   const nameProfiled = getProfiled(profile.nameFromProfiled);
   const name = nameProfiled?.name ?? profile.name;
-  const nameProperty = isSemanticModelClass(nameProfiled)
-    ? (nameProfiled.nameProperty ?? null) : null;
+  // We inherit the property only for vocabulary entities and already aggregated entities.
+  const nameProperty = (nameProfiled as SemanticModelClass | AggregatedProfiledSemanticModelClass | null)?.nameProperty ?? null;
 
   // Description is similar to name in processing.
   const descriptionProfiled = getProfiled(profile.descriptionFromProfiled);
   const description = descriptionProfiled?.description ?? profile.description;
-  const descriptionProperty = isSemanticModelClass(descriptionProfiled)
-    ? (descriptionProfiled.descriptionProperty ?? null) : null;
+  // We inherit the property only for vocabulary entities and already aggregated entities.
+  const descriptionProperty = (descriptionProfiled  as SemanticModelClass | AggregatedProfiledSemanticModelClass | null)?.descriptionProperty ?? null;
 
   // Unlike name and description usage note does not exists on a class.
   // As a result we type check before reading it.
@@ -85,6 +84,7 @@ function aggregateSemanticModelClassProfile(
       continue;
     }
     // We go from the most specific types to the general one.
+    // todo Part of Dataspecer expects the aggregated profile to be of type class, so we cannot check only for class type here.
     if (isAggregatedProfiledSemanticModelClass(profiled)) {
       conceptIris.push(...profiled.conceptIris);
       conceptIdentifiers.push(...profiled.conceptIdentifiers);

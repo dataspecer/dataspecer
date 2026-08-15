@@ -1,7 +1,6 @@
-import type { Model, ModelIdentifier } from "@dataspecer/core/model";
 import type { EntityObservableModelStore } from "./observable.ts";
-import type { WritableModelStore } from "./writable.ts";
 import type { UndoRedoModelStore } from "./undo-redo.ts";
+import type { WritableModelStore } from "./writable.ts";
 
 /**
  * The purpose of the remote model store is to provide a unified interface for
@@ -10,23 +9,6 @@ import type { UndoRedoModelStore } from "./undo-redo.ts";
  * synchronization, etc.
  */
 export interface RemoteModelStore extends WritableModelStore, EntityObservableModelStore, SimpleSyncRemoteModelStore, UndoRedoModelStore {
-  /**
-   * Returns a materialized model for remote use.
-   *
-   * Since most models can be interpreted as entity models, this method is not
-   * required for most cases. Use this method only if you need to work with the
-   * model as a whole or with models that cannot be interpreted as entity
-   * models.
-   *
-   * If model does not exist or if id is nullish, null is returned.
-   *
-   * If the model gets deleted, the instance becomes invalid. Any behavior of
-   * such instance is undefined.
-   *
-   * Subsequent calls return the same model instance.
-   */
-  getModel(id: ModelIdentifier | null | undefined): Model | null;
-
   getConnectionStatus(): ConnectionStatus;
   subscribeToConnectionStatus(update: (status: ConnectionStatus) => void): () => void;
 

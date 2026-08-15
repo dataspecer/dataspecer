@@ -21,7 +21,7 @@ export class SetIsClosed implements ComplexOperation {
 
 
     const psmSetIsClosed = new DataPsmSetIsClosed();
-    psmSetIsClosed.dataPsmClass = this.forDataPsmClass;
+    psmSetIsClosed.entityId = this.forDataPsmClass;
     psmSetIsClosed.dataPsmIsClosed = this.isClosed;
     this.store.applyOperation(schema, psmSetIsClosed);
   }

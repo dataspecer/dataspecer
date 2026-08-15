@@ -21,11 +21,12 @@ describe("semanticModelToLightweightOwl", () => {
 
     builder.class({ iri: "http://example.com/base#absolute" });
 
-    const actual = semanticModelToLightweightOwl(
+    const { classes, properties } = semanticModelToLightweightOwl(
       [], [builder.build()], {
       baseIri: "http://example.com/owl#",
       idDefinedBy: "http://example.com/definition"
     });
+    const actual: OwlOntology = { classes, properties };
 
     const expected: OwlOntology = {
       classes: [{

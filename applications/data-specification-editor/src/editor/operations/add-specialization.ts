@@ -64,7 +64,7 @@ export class AddSpecialization implements ComplexOperation {
     // FOURTH: Add to OR
 
     const addToOr = new DataPsmSetChoice();
-    addToOr.dataPsmOr = wrapOr;
+    addToOr.entityId = wrapOr;
     addToOr.dataPsmChoice = createdPsmClass;
     this.store.applyOperation(dataPsmSchema, addToOr);
 

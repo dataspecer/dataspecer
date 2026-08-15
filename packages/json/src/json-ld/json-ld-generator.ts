@@ -1,10 +1,10 @@
-import { LocalEntityWrapped } from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
 import { assertFailed, assertNot } from "@dataspecer/core/core";
 import { DataSpecificationConfiguration, DataSpecificationConfigurator, DefaultDataSpecificationConfiguration } from "@dataspecer/core/data-specification/configuration";
 import { DataSpecification, DataSpecificationArtefact, DataSpecificationSchema } from "@dataspecer/core/data-specification/model";
 import { ArtefactGenerator, ArtefactGeneratorContext } from "@dataspecer/core/generator";
 import { StreamDictionary } from "@dataspecer/core/io/stream/stream-dictionary";
 import { structureModelAddDefaultValues, transformStructureModel } from "@dataspecer/core/structure-model/transformation";
+import { getAggregatedSemanticModel } from "../semantic-model.ts";
 import { JsonLdAdapter } from "./json-ld-adapter.ts";
 import { writeJsonLd } from "./json-ld-writer.ts";
 
@@ -62,9 +62,8 @@ export class JsonLdGenerator implements ArtefactGenerator {
     model = transformStructureModel(mergedConceptualModel, model, Object.values(context.specifications));
     model = structureModelAddDefaultValues(model, globalConfiguration);
 
-    // Semantic model from aggregator
-    // @ts-ignore
-    const semanticModel = specification.semanticModel.getAggregatedEntities() as Record<string, LocalEntityWrapped>;
+    // Semantic model from aggregators
+    const semanticModel = getAggregatedSemanticModel(specification);
 
     const adapter = new JsonLdAdapter(model, context, artefact, semanticModel);
     return adapter.generate();

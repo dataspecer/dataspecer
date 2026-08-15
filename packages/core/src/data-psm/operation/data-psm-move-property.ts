@@ -1,4 +1,4 @@
-import { CoreOperation, CoreResource } from "../../core/index.ts";
+import { generateOperationId, type Operation } from "../../operation/index.ts";
 import * as PSM from "../data-psm-vocabulary.ts";
 
 /**
@@ -8,8 +8,12 @@ import * as PSM from "../data-psm-vocabulary.ts";
  *
  * todo: Is PSM tree really a tree?
  */
-export class DataPsmMoveProperty extends CoreOperation {
+export class DataPsmMoveProperty implements Operation {
   static readonly TYPE = PSM.MOVE_PROPERTY;
+
+  id: string;
+
+  type: string;
 
   /**
    * The container we are moving the property from.
@@ -32,11 +36,11 @@ export class DataPsmMoveProperty extends CoreOperation {
   dataPsmMoveAfter: string | null = null;
 
   constructor() {
-    super();
-    this.types.push(DataPsmMoveProperty.TYPE);
+    this.id = generateOperationId();
+    this.type = DataPsmMoveProperty.TYPE;
   }
 
-  static is(resource: CoreResource | null): resource is DataPsmMoveProperty {
-    return resource?.types.includes(DataPsmMoveProperty.TYPE);
+  static is(operation: Operation | null | undefined): operation is DataPsmMoveProperty {
+    return operation?.type === DataPsmMoveProperty.TYPE;
   }
 }
