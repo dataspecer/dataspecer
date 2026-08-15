@@ -22,7 +22,6 @@ import {
   isSemanticModelClassProfile,
   SemanticModelClassProfile,
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { CmeClassProfileRole } from "@/dataspecer/cme-model/model";
 import { ModelGraphContextType } from "../../context/model-context";
 import {
   ControlledVocabulary,
