@@ -184,6 +184,28 @@ export async function generateDocumentation(
 
   const locallyDefinedSemanticEntityByTags = Object.groupBy(sortedSemanticModel, entity => (entity as SemanticModelClassProfile)?.tags?.[0] || "default");
 
+  // Reversed view of controlled vocabulary assignments: for each qualifier,
+  // one entry per (vocabulary, class profile) pair, for the "which class
+  // profiles require this vocabulary" summary section.
+  const controlledVocabularyUsagesByQualifier: Record<string, {
+    identifier: string;
+    override: boolean;
+    classProfile: SemanticModelClassProfile;
+  }[]> = {};
+  for (const entity of sortedSemanticModel) {
+    if (!isSemanticModelClassProfile(entity)) {
+      continue;
+    }
+    const aggregated = (entity as { aggregation?: SemanticModelClassProfile }).aggregation;
+    for (const assignment of aggregated?.controlledVocabularies ?? []) {
+      (controlledVocabularyUsagesByQualifier[assignment.qualifier] ??= []).push({
+        identifier: assignment.identifier,
+        override: assignment.override,
+        classProfile: entity,
+      });
+    }
+  }
+
   const handlebarsAdapter = createHandlebarsAdapter();
 
   const data = {
@@ -200,6 +222,8 @@ export async function generateDocumentation(
     },
 
     classProfilesByTags: Object.groupBy(sortedSemanticModel.filter(entity => isSemanticModelClassProfile(entity)), entity => (entity as SemanticModelClassProfile)?.tags?.[0] || "default"),
+
+    controlledVocabularyUsagesByQualifier,
 
     dsv: inputModel.dsv,
 

@@ -24,6 +24,7 @@ import { structureModelToRdf } from "@dataspecer/data-specification-vocabulary/s
 import type { ProjectModelEntity, PackageEntity } from "@dataspecer/core/project-model";
 import { canonicalizeIds, garbageCollect } from "@dataspecer/structure-model";
 import { ModelDescription, type StructureModelDescription } from "./model.ts";
+import { MOCK_CONTROLLED_VOCABULARIES } from "./documentation/mock-controlled-vocabularies.ts";
 import { DefaultShaclConfiguration, DefaultShaclFileKey, ShaclV2Configurator } from "./shacl-v2.ts";
 import {
   generateDsvApplicationProfile,
@@ -292,6 +293,19 @@ export async function generateSpecification(packageId: string, context: Generate
     }
   }
   await fillModels(packageId, true);
+
+  // Temporary mock controlled-vocabulary-model entities, until a project's
+  // real controlled-vocabulary-model is loaded and wired in here. See
+  // ./documentation/mock-controlled-vocabularies.ts for details. Delete this
+  // block once real loading lands.
+  modelDescriptions.push({
+    id: null,
+    isPrimary: false,
+    documentationUrl: null,
+    baseIri: null,
+    title: null,
+    entities: MOCK_CONTROLLED_VOCABULARIES as unknown as Record<string, SemanticModelEntity>,
+  });
 
   /**
    * Each specification has a **base URL** and a **base IRI**, both of which

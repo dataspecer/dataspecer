@@ -129,6 +129,40 @@ export const defaultConfiguration: DocumentationConfiguration = {
 
     {{> used-prefixes}}
 
+    {{#if (or controlledVocabularyUsagesByQualifier.MUST controlledVocabularyUsagesByQualifier.AT_LEAST_1 controlledVocabularyUsagesByQualifier.RECOMMENDED controlledVocabularyUsagesByQualifier.MAY)}}
+      <section>
+        <h2>{{#iflng "cs"}}Řízené slovníky{{lng}}Controlled vocabularies{{/iflng}}</h2>
+
+        {{#if controlledVocabularyUsagesByQualifier.MUST}}
+          <section>
+            <h3>{{#iflng "cs"}}Vlastnosti s řízenými slovníky, které MUSÍ být použity{{lng}}Properties with controlled vocabularies that MUST be used{{/iflng}}</h3>
+            {{> controlled-vocabulary-usage-table rows=controlledVocabularyUsagesByQualifier.MUST}}
+          </section>
+        {{/if}}
+
+        {{#if controlledVocabularyUsagesByQualifier.AT_LEAST_1}}
+          <section>
+            <h3>{{#iflng "cs"}}Vlastnosti s řízenými slovníky, ze kterých MUSÍ být použit alespoň jeden{{lng}}Properties with controlled vocabularies where AT LEAST ONE must be used{{/iflng}}</h3>
+            {{> controlled-vocabulary-usage-table rows=controlledVocabularyUsagesByQualifier.AT_LEAST_1}}
+          </section>
+        {{/if}}
+
+        {{#if controlledVocabularyUsagesByQualifier.RECOMMENDED}}
+          <section>
+            <h3>{{#iflng "cs"}}Vlastnosti s DOPORUČENÝMI řízenými slovníky{{lng}}Properties with RECOMMENDED controlled vocabularies{{/iflng}}</h3>
+            {{> controlled-vocabulary-usage-table rows=controlledVocabularyUsagesByQualifier.RECOMMENDED}}
+          </section>
+        {{/if}}
+
+        {{#if controlledVocabularyUsagesByQualifier.MAY}}
+          <section>
+            <h3>{{#iflng "cs"}}Vlastnosti s řízenými slovníky, které MOHOU být použity{{lng}}Properties with controlled vocabularies that MAY be used{{/iflng}}</h3>
+            {{> controlled-vocabulary-usage-table rows=controlledVocabularyUsagesByQualifier.MAY}}
+          </section>
+        {{/if}}
+      </section>
+    {{/if}}
+
     {{> attachments}}
   </body>
 </html>`,
@@ -314,6 +348,21 @@ export const defaultConfiguration: DocumentationConfiguration = {
       <td>{{translation}}{{#if otherLang}} (@{{otherLang}}){{/if}}</td>
     </tr>
     {{/translate}}
+    {{#if aggregation.controlledVocabularies}}
+    <tr>
+      <td>{{#iflng "cs"}}Řízené slovníky{{lng}}Controlled vocabularies{{/iflng}}</td>
+      <td>
+        <ul>
+          {{#each aggregation.controlledVocabularies}}
+            <li>
+              {{#semanticEntity identifier}}<a href="{{{distribution.accessUrl}}}">{{title}}</a>{{else}}{{.}}{{/semanticEntity}}
+              ({{qualifier}}{{#if override}}, {{#iflng "cs"}}přepsáno{{lng}}override{{/iflng}}{{/if}})
+            </li>
+          {{/each}}
+        </ul>
+      </td>
+    </tr>
+    {{/if}}
   </table>
 
   {{#if relationships}}
@@ -335,6 +384,25 @@ export const defaultConfiguration: DocumentationConfiguration = {
   {{/each}}
 
 </section>`,
+
+    "controlled-vocabulary-usage-table": `<table class="def">
+  <thead>
+    <tr>
+      <th>{{#iflng "cs"}}Řízený slovník{{lng}}Controlled vocabulary{{/iflng}}</th>
+      <th>{{#iflng "cs"}}Použito pro profil třídy{{lng}}Used for class profile{{/iflng}}</th>
+      <th>{{#iflng "cs"}}Přepsáno{{lng}}Override{{/iflng}}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{#each rows}}
+      <tr>
+        <td>{{#semanticEntity identifier}}<a href="{{{distribution.accessUrl}}}">{{title}}</a>{{else}}{{.}}{{/semanticEntity}}</td>
+        <td><a href="{{{href classProfile.id}}}">{{#translate classProfile.aggregation.name}}{{translation}}{{#if otherLang}} (@{{otherLang}}){{/if}}{{else}}<i>{{#iflng "cs"}}beze jména{{lng}}without assigned name{{/iflng}}</i>{{/translate}}</a></td>
+        <td>{{#if override}}{{#iflng "cs"}}ano{{lng}}yes{{/iflng}}{{/if}}</td>
+      </tr>
+    {{/each}}
+  </tbody>
+</table>`,
 
     "relationship-profile": `<section id="{{anchor}}">
   <h4>{{#translate aggregation.ends.1.name}}{{translation}}{{#if otherLang}} (@{{otherLang}}){{/if}}{{else}}<i>{{#iflng "cs"}}beze jména{{lng}}without assigned name{{/iflng}}</i>{{/translate}}</h4>
