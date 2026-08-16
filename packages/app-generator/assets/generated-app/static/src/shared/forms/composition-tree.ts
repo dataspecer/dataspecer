@@ -1,4 +1,5 @@
 import { formatFieldValue } from '../components/field-value.ts';
+import { entityPathForValidationPath, formatEntityPath, nearestPanePath } from './entity-path.ts';
 import type { ValidationIssue } from '../operations/operation-result.ts';
 import type { AggregateDescriptorMap, EntityRecord } from '../types/aggregate.ts';
 import {
@@ -167,13 +168,44 @@ export function entitySummary(
   return `${target.name} ${index + 1}`;
 }
 
+/** Problems at a validation path or below it. */
 export function countIssues(issues: readonly ValidationIssue[], path: string): number {
   if (path === '') {
     return issues.filter((issue) => issue.path !== undefined).length;
   }
   return issues.filter(
-    (issue) => issue.path === path || issue.path?.startsWith(`${path}.`) === true
+    (issue) =>
+      issue.path === path ||
+      issue.path?.startsWith(`${path}.`) === true ||
+      issue.path?.startsWith(`${path}[`) === true
   ).length;
+}
+
+/**
+ * How many problems each pane shows, counting every problem once, against the pane that owns it.
+ * A problem inside a child edited in place belongs to the pane that holds it, so the counts of the
+ * panes add up to the number of problems in the draft instead of repeating them at every depth.
+ * The root pane is the empty key.
+ */
+export function issuesByPane(
+  rootTarget: EntityTarget,
+  aggregateRegistry: AggregateDescriptorMap,
+  issues: readonly ValidationIssue[]
+): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const issue of issues) {
+    if (issue.path === undefined) {
+      continue;
+    }
+    const pane = nearestPanePath(
+      rootTarget,
+      aggregateRegistry,
+      entityPathForValidationPath(rootTarget, aggregateRegistry, issue.path)
+    );
+    const key = formatEntityPath(pane);
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return counts;
 }
 
 export function samePath(

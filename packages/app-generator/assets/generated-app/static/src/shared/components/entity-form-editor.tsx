@@ -8,7 +8,7 @@ import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import type { DataSource } from '../datasource/data-source.ts';
 import {
   collectEntityIds,
-  countIssues,
+  issuesByPane,
   joinValidationPath,
   navigablePanes,
   targetAtPath,
@@ -61,12 +61,10 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
   const validationPrefix = validationPathAt(rootTarget, selection, props.aggregateRegistry);
   const existingIds = collectEntityIds(props.originalModel, rootTarget, props.aggregateRegistry);
   const navigable = navigablePanes(props.model, rootTarget, props.aggregateRegistry, []);
-  // the badge belongs to the panes the button opens, so it counts their problems and not the ones
-  // already marked on this pane
-  const paneIssues = navigable.reduce(
-    (total, pane) => total + countIssues(props.issues, pane.validationPath),
-    0
-  );
+  // Every problem is counted once, against the pane that shows it. The badge is their total, so it
+  // says how much is wrong with the form, and the structure drawer says where.
+  const issueCounts = issuesByPane(rootTarget, props.aggregateRegistry, props.issues);
+  const totalIssues = [...issueCounts.values()].reduce((total, count) => total + count, 0);
 
   const updateSelected = (update: (entity: EntityRecord) => EntityRecord) => {
     props.onChange(updateEntityAtPath(props.model, selection, update));
@@ -85,15 +83,14 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
           rootTarget={rootTarget}
           path={selection}
           aggregateRegistry={props.aggregateRegistry}
-          issues={props.issues}
           onSelect={setPath}
         />
         {navigable.length > 0 ? (
-          <Badge badgeContent={paneIssues} color="error" overlap="circular">
+          <Badge badgeContent={totalIssues} color="error" overlap="circular">
             <Button
               startIcon={<AccountTreeIcon />}
               onClick={() => setStructureOpen(true)}
-              aria-label={`Structure, ${navigable.length} composed entities`}
+              aria-label={`Structure, ${navigable.length} composed entities, ${totalIssues} problems`}
             >
               Structure ({navigable.length})
             </Button>
@@ -173,7 +170,7 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
         open={structureOpen}
         panes={navigable}
         selection={selection}
-        issues={props.issues}
+        issueCounts={issueCounts}
         rootTarget={rootTarget}
         onClose={() => setStructureOpen(false)}
         onSelect={(path) => {

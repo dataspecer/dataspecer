@@ -64,7 +64,6 @@ export function CompositionSection(props: CompositionSectionProps) {
   const [pendingRemoval, setPendingRemoval] = useState<number | null>(null);
   const minimum = minimumCount(props.field);
   const maximum = maximumCount(props.field);
-  const issueCount = countIssues(props.issues, props.validationPath);
   const cardinality = props.field.many ? cardinalityDescription(props.field) : '';
 
   if (!props.target) {
@@ -129,13 +128,6 @@ export function CompositionSection(props: CompositionSectionProps) {
               {values.length} {values.length === 1 ? 'item' : 'items'}
               {cardinality ? ` · ${cardinality}` : ''}
             </Typography>
-            {issueCount > 0 ? (
-              <Chip
-                label={`${issueCount} ${issueCount === 1 ? 'issue' : 'issues'}`}
-                color="error"
-                sx={{ ml: 1 }}
-              />
-            ) : null}
           </Box>
           <Button
             startIcon={<AddIcon />}

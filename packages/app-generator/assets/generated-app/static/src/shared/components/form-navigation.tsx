@@ -7,18 +7,12 @@ import Link from '@mui/material/Link';
 import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
-import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
-import {
-  breadcrumbEntries,
-  countIssues,
-  samePath,
-  type NavigablePane,
-} from '../forms/composition-tree.ts';
+import { breadcrumbEntries, samePath, type NavigablePane } from '../forms/composition-tree.ts';
+import { formatEntityPath } from '../forms/entity-path.ts';
 import type { EntityTarget } from '../forms/entity-target.ts';
 import type { EntityPathSegment } from '../forms/form-draft.ts';
-import type { ValidationIssue } from '../operations/operation-result.ts';
 import type { AggregateDescriptorMap, EntityRecord } from '../types/aggregate.ts';
 
 interface FormBreadcrumbsProps {
@@ -26,7 +20,6 @@ interface FormBreadcrumbsProps {
   rootTarget: EntityTarget;
   path: EntityPathSegment[];
   aggregateRegistry: AggregateDescriptorMap;
-  issues: ValidationIssue[];
   onSelect: (path: EntityPathSegment[]) => void;
 }
 
@@ -40,18 +33,10 @@ export function FormBreadcrumbs(props: FormBreadcrumbsProps) {
 
   return (
     <Breadcrumbs sx={{ minWidth: 0 }}>
-      {entries.map((entry, index) => {
-        const last = index === entries.length - 1;
-        const issues = countIssues(props.issues, entry.validationPath);
-        const label = (
-          <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
-            <span>{entry.label}</span>
-            {!last && issues > 0 ? <Chip label={issues} color="error" /> : null}
-          </Stack>
-        );
-        return last ? (
-          <Typography key={index} variant="body2" color="text.primary" component="div">
-            {label}
+      {entries.map((entry, index) =>
+        index === entries.length - 1 ? (
+          <Typography key={index} variant="body2" color="text.primary">
+            {entry.label}
           </Typography>
         ) : (
           <Link
@@ -62,10 +47,10 @@ export function FormBreadcrumbs(props: FormBreadcrumbsProps) {
             underline="hover"
             onClick={() => props.onSelect(entry.path)}
           >
-            {label}
+            {entry.label}
           </Link>
-        );
-      })}
+        )
+      )}
     </Breadcrumbs>
   );
 }
@@ -74,7 +59,8 @@ interface StructureDrawerProps {
   open: boolean;
   panes: NavigablePane[];
   selection: EntityPathSegment[];
-  issues: ValidationIssue[];
+  /** Problems per pane, keyed by its entity path, with the root under the empty key. */
+  issueCounts: ReadonlyMap<string, number>;
   rootTarget: EntityTarget;
   onClose: () => void;
   onSelect: (path: EntityPathSegment[]) => void;
@@ -95,9 +81,10 @@ export function StructureDrawer(props: StructureDrawerProps) {
             onClick={() => props.onSelect([])}
           >
             <ListItemText primary={props.rootTarget.name} />
+            <IssueChip count={props.issueCounts.get('') ?? 0} />
           </ListItemButton>
           {props.panes.map((pane) => {
-            const issues = countIssues(props.issues, pane.validationPath);
+            const issues = props.issueCounts.get(formatEntityPath(pane.path)) ?? 0;
             return (
               <ListItemButton
                 key={pane.key}
@@ -106,7 +93,7 @@ export function StructureDrawer(props: StructureDrawerProps) {
                 onClick={() => props.onSelect(pane.path)}
               >
                 <ListItemText primary={pane.label} secondary={pane.fieldLabel} />
-                {issues > 0 ? <Chip label={issues} color="error" /> : null}
+                <IssueChip count={issues} />
               </ListItemButton>
             );
           })}
@@ -114,4 +101,11 @@ export function StructureDrawer(props: StructureDrawerProps) {
       </Box>
     </Drawer>
   );
+}
+
+function IssueChip(props: { count: number }) {
+  if (props.count === 0) {
+    return null;
+  }
+  return <Chip label={props.count} color="error" />;
 }
