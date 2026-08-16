@@ -11,7 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import type { DataSource } from '../datasource/data-source.ts';
 import { createEntityDraft } from '../forms/form-draft.ts';
 import { rootEntityTarget } from '../forms/entity-target.ts';
-import { useSnackbar } from '../feedback/snackbar.tsx';
+import { useSnackbar } from './snackbar.tsx';
 import { UnsavedChangesDialog, useUnsavedChanges } from '../forms/unsaved-changes.tsx';
 import { validateModel } from '../forms/form-model.ts';
 import { hrefForAction, type OperationNavigationDescriptor } from '../navigation/navigation.ts';
@@ -47,10 +47,11 @@ export function CreateForm<TModel extends EntityModel>(props: CreateFormProps<TM
   );
   const navigate = useNavigate();
   const { notify } = useSnackbar();
-  const unsaved = useUnsavedChanges();
+  const { markDirty, markSaved, blocker } = useUnsavedChanges();
   const leaveForm = () => {
     // Cancel abandons the whole form, where going back one step would only leave a nested pane.
-    const href = hrefForAction(navigation.successRedirect);
+    const href =
+      hrefForAction(navigation.successRedirect) ?? hrefForAction(navigation.cancelTarget);
     if (href) {
       void navigate(href);
       return;
@@ -63,7 +64,7 @@ export function CreateForm<TModel extends EntityModel>(props: CreateFormProps<TM
   const generalErrors = issues.filter((issue) => !issue.path);
 
   const handleChange = (next: EntityRecord) => {
-    unsaved.markDirty();
+    markDirty();
     setModel(next);
     if (validationActive) {
       setIssues(validateModel(next, rootEntityTarget(aggregate), aggregateRegistry));
@@ -91,7 +92,7 @@ export function CreateForm<TModel extends EntityModel>(props: CreateFormProps<TM
       });
       if (result.ok) {
         notify(`${aggregate.name} created.`);
-        unsaved.markSaved();
+        markSaved();
         void navigate(hrefForAction(navigation.successRedirect, result.data.id ?? model.id) ?? '/');
         return;
       }
@@ -144,7 +145,19 @@ export function CreateForm<TModel extends EntityModel>(props: CreateFormProps<TM
         </Alert>
       ) : null}
 
-      <Stack direction="row" spacing={1}>
+      <Stack
+        direction="row"
+        spacing={1}
+        sx={{
+          position: 'sticky',
+          bottom: 0,
+          py: 1.5,
+          bgcolor: 'background.default',
+          borderTop: 1,
+          borderColor: 'divider',
+          zIndex: 1,
+        }}
+      >
         <Button type="submit" variant="contained" startIcon={<SaveIcon />} disabled={submitting}>
           {submitting ? 'Saving…' : 'Create'}
         </Button>
@@ -153,7 +166,7 @@ export function CreateForm<TModel extends EntityModel>(props: CreateFormProps<TM
         </Button>
       </Stack>
 
-      <UnsavedChangesDialog blocker={unsaved.blocker} />
+      <UnsavedChangesDialog blocker={blocker} />
     </Stack>
   );
 }

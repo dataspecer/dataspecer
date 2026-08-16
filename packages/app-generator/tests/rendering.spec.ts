@@ -188,7 +188,9 @@ describe('renderGeneratedApp', () => {
     expect(tree.get('package.json')).toContain('"react-router-dom"');
     // a single control carries its own label, a group of controls is labelled by its legend
     expect(tree.get('src/shared/components/form-field.tsx')).toContain('label={field.label}');
-    expect(tree.get('src/shared/components/form-field.tsx')).toContain('aria-labelledby={labelId}');
+    expect(tree.get('src/shared/components/form-field.tsx')).toContain(
+      'htmlFor={field.many ? undefined : controlId}'
+    );
     const readme = tree.get('README.md');
     expect(readme).toContain('Generated/User-Owned Boundaries');
     expect(readme).toMatch(/generated from Dataspecer aggregate\s+field metadata/);
@@ -250,8 +252,10 @@ describe('renderGeneratedApp', () => {
 
     expect(tree.get('src/shared/components/list-view.tsx')).toContain('rowActions');
     expect(tree.get('src/shared/components/detail-view.tsx')).toContain('associationActions');
+    // the shell lives in the shared library, so App.tsx only names the application and its routes
     expect(tree.get('src/App.tsx')).not.toContain('example-id');
-    expect(tree.get('src/App.tsx')).toContain('Page not found');
+    expect(tree.get('src/App.tsx')).toContain('createAppRouter(routes,');
+    expect(tree.get('src/shared/app/app-shell.tsx')).toContain('Page not found');
     expect(tree.get('src/shared/operations/read-detail-strategy.ts')).toContain(
       'ctx.params.id as string'
     );
@@ -438,7 +442,8 @@ describe('renderGeneratedApp', () => {
     expect(registry).toContain('"chapters"');
     expect(registry).not.toContain('placeholder');
     expect(page).toContain('aggregateRegistry={aggregateRegistry}');
-    expect(page).toContain('cascadePaths={operation.delete?.cascadePaths ?? []}');
+    expect(page).toContain('const cascadePaths = operation.delete?.cascadePaths ?? [];');
+    expect(page).toContain('cascadePaths={cascadePaths}');
     const deleteForm = tree.get('src/shared/components/delete-form.tsx');
     expect(deleteForm).toContain('payload: item');
     expect(deleteForm).toContain('.listIncomingReferences(id)');

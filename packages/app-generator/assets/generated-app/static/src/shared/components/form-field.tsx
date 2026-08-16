@@ -46,6 +46,9 @@ export function FormField(props: FormFieldProps) {
   const labelId = `${controlId}-label`;
   const required = minimumCount(field) > 0;
   const note = control === 'unsupported' ? 'This field type is read-only.' : undefined;
+  const cardinality = field.many ? cardinalityDescription(field) : '';
+
+  const readOnly = control === 'unsupported' || control === 'composition';
 
   if (!field.many && control !== 'reference') {
     return (
@@ -55,7 +58,7 @@ export function FormField(props: FormFieldProps) {
         control={control}
         value={value}
         required={required}
-        readOnly={control === 'unsupported' || control === 'composition'}
+        readOnly={readOnly}
         error={error}
         helperText={note}
         onChange={onChange}
@@ -65,10 +68,15 @@ export function FormField(props: FormFieldProps) {
 
   return (
     <FormControl error={error !== undefined} fullWidth>
-      <FormLabel id={labelId} required={required} sx={{ mb: 0.5 }}>
+      <FormLabel
+        id={labelId}
+        htmlFor={field.many ? undefined : controlId}
+        required={required}
+        sx={{ mb: 0.5 }}
+      >
         {field.label}
       </FormLabel>
-      <div role={field.many ? 'group' : undefined} aria-labelledby={labelId}>
+      <div {...(field.many ? { role: 'group', 'aria-labelledby': labelId } : {})}>
         {control === 'reference' ? (
           <ReferenceControl
             field={field}
@@ -82,13 +90,14 @@ export function FormField(props: FormFieldProps) {
           <RepeatingPrimitiveControl
             field={field}
             control={control}
+            readOnly={readOnly}
             values={fieldValues(value, field)}
             controlId={controlId}
             onChange={onChange}
           />
         )}
       </div>
-      {field.many ? <FormHelperText>{cardinalityDescription(field)}.</FormHelperText> : null}
+      {cardinality ? <FormHelperText>{cardinality}.</FormHelperText> : null}
       {note ? <FormHelperText>{note}</FormHelperText> : null}
       {error ? <FormHelperText>{error}</FormHelperText> : null}
     </FormControl>
@@ -187,6 +196,7 @@ function PrimitiveControl(props: PrimitiveControlProps) {
     return (
       <Picker
         label={props.label}
+        ampm={false}
         value={current}
         onChange={(next: DateTime | null) => onChange(next?.toJSDate() ?? undefined)}
         slotProps={{
@@ -218,6 +228,7 @@ interface RepeatingPrimitiveControlProps {
   control: PrimitiveKind;
   values: unknown[];
   controlId: string;
+  readOnly: boolean;
   onChange: (value: unknown[]) => void;
 }
 
@@ -234,6 +245,7 @@ function RepeatingPrimitiveControl(props: RepeatingPrimitiveControlProps) {
             ariaLabel={`${props.field.label} ${index + 1}`}
             control={props.control}
             value={value}
+            readOnly={props.readOnly}
             onChange={(next) => {
               const values = [...props.values];
               values[index] = next;
@@ -244,7 +256,7 @@ function RepeatingPrimitiveControl(props: RepeatingPrimitiveControlProps) {
             <IconButton
               color="error"
               aria-label={`Remove ${props.field.label} ${index + 1}`}
-              disabled={props.values.length <= minimum}
+              disabled={props.readOnly || props.values.length <= minimum}
               onClick={() =>
                 props.onChange(props.values.filter((_, candidate) => candidate !== index))
               }
@@ -256,7 +268,7 @@ function RepeatingPrimitiveControl(props: RepeatingPrimitiveControlProps) {
       ))}
       <Button
         startIcon={<AddIcon />}
-        disabled={maximum !== null && props.values.length >= maximum}
+        disabled={props.readOnly || (maximum !== null && props.values.length >= maximum)}
         onClick={() =>
           props.onChange([...props.values, props.control === 'checkbox' ? false : undefined])
         }

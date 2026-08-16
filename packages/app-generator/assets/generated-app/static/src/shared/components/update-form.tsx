@@ -12,7 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import type { DataSource } from '../datasource/data-source.ts';
 import { hydrateCompositionTree } from '../forms/form-draft.ts';
 import { rootEntityTarget } from '../forms/entity-target.ts';
-import { useSnackbar } from '../feedback/snackbar.tsx';
+import { useSnackbar } from './snackbar.tsx';
 import { UnsavedChangesDialog, useUnsavedChanges } from '../forms/unsaved-changes.tsx';
 import { validateModel } from '../forms/form-model.ts';
 import { hrefForAction, type OperationNavigationDescriptor } from '../navigation/navigation.ts';
@@ -56,10 +56,11 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
   const [originalModel, setOriginalModel] = useState<EntityRecord | null>(null);
   const navigate = useNavigate();
   const { notify } = useSnackbar();
-  const unsaved = useUnsavedChanges();
+  const { markDirty, markSaved, blocker } = useUnsavedChanges();
   const leaveForm = () => {
     // Cancel abandons the whole form, where going back one step would only leave a nested pane.
-    const href = hrefForAction(navigation.successRedirect, id);
+    const href =
+      hrefForAction(navigation.successRedirect, id) ?? hrefForAction(navigation.cancelTarget);
     if (href) {
       void navigate(href);
       return;
@@ -107,6 +108,7 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
           setModel(hydrated);
           setOriginalModel(structuredClone(hydrated));
           setIssues([]);
+          markSaved();
         }
       } catch (caught: unknown) {
         console.error(caught);
@@ -131,12 +133,12 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
     return () => {
       active = false;
     };
-  }, [aggregate, aggregateRegistry, dataSource, id]);
+  }, [aggregate, aggregateRegistry, dataSource, id, markSaved]);
 
   const generalErrors = issues.filter((issue) => !issue.path || !model);
 
   const handleChange = (next: EntityRecord) => {
-    unsaved.markDirty();
+    markDirty();
     setModel(next);
     if (validationActive) {
       setIssues(validateModel(next, rootEntityTarget(aggregate), aggregateRegistry));
@@ -169,7 +171,7 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
       });
       if (result.ok) {
         notify(`${aggregate.name} saved.`);
-        unsaved.markSaved();
+        markSaved();
         void navigate(hrefForAction(navigation.successRedirect, id) ?? '/');
         return;
       }
@@ -236,7 +238,19 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
         </Alert>
       ) : null}
 
-      <Stack direction="row" spacing={1}>
+      <Stack
+        direction="row"
+        spacing={1}
+        sx={{
+          position: 'sticky',
+          bottom: 0,
+          py: 1.5,
+          bgcolor: 'background.default',
+          borderTop: 1,
+          borderColor: 'divider',
+          zIndex: 1,
+        }}
+      >
         <Button
           type="submit"
           variant="contained"
@@ -250,7 +264,7 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
         </Button>
       </Stack>
 
-      <UnsavedChangesDialog blocker={unsaved.blocker} />
+      <UnsavedChangesDialog blocker={blocker} />
     </Stack>
   );
 }

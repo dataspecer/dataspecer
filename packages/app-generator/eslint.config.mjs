@@ -3,6 +3,7 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 import { defineConfig } from 'eslint/config';
 import prettier from 'eslint-config-prettier';
+import reactHooks from 'eslint-plugin-react-hooks';
 
 export default defineConfig([
     {
@@ -55,7 +56,10 @@ export default defineConfig([
 
     {
         files: ['assets/generated-app/static/**/*.{ts,tsx}'],
-        extends: [tseslint.configs.recommendedTypeChecked],
+        extends: [
+            tseslint.configs.recommendedTypeChecked,
+            reactHooks.configs['recommended-latest'],
+        ],
         languageOptions: {
             globals: {
                 ...globals.browser,
@@ -75,6 +79,7 @@ export default defineConfig([
                     caughtErrorsIgnorePattern: '^_',
                 },
             ],
+            'react-hooks/exhaustive-deps': 'error',
         },
     },
 

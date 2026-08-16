@@ -24,6 +24,8 @@ export interface OperationNavigationDescriptor {
   rowActions: readonly NavigationActionDescriptor[];
   associationActions: readonly AssociationNavigationActionDescriptor[];
   successRedirect?: NavigationActionDescriptor;
+  /** Where a form goes when it is abandoned, used when the success redirect needs an id. */
+  cancelTarget?: NavigationActionDescriptor;
 }
 
 /** Query parameter carrying the entity IRI of a route that needs one. */
@@ -59,10 +61,6 @@ export function partitionPageActions(actions: readonly NavigationActionDescripto
 } {
   const list = actions.find((action) => action.operation === 'ReadList');
   return { list, rest: actions.filter((action) => action !== list) };
-}
-
-export function readRouteEntityId(search: string): string {
-  return new URLSearchParams(search).get(ENTITY_ID_PARAMETER) ?? '';
 }
 
 export function entityIdFromValue(value: unknown): string | undefined {

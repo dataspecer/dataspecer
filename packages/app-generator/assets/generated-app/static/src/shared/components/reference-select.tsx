@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
+import Autocomplete, {
+  createFilterOptions,
+  type AutocompleteChangeReason,
+} from '@mui/material/Autocomplete';
 import Chip from '@mui/material/Chip';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
@@ -112,10 +115,12 @@ export function ReferenceSelect(props: ReferenceSelectProps) {
     return [...values.filter((id) => !listed.has(id)), ...options.map((option) => option.id)];
   }, [options, values]);
 
-  // A value typed by hand is only accepted as a reference when it is a usable IRI.
-  const commit = (next: readonly string[]) => {
-    const added = next.filter((id) => !values.includes(id));
-    const typed = added.find((id) => !selectable.includes(id));
+  // only text the user typed is a candidate IRI, and it is accepted only when it is valid
+  const commit = (next: readonly string[], reason: AutocompleteChangeReason) => {
+    const typed =
+      reason === 'createOption'
+        ? next.find((id) => !values.includes(id) && !selectable.includes(id))
+        : undefined;
     if (typed !== undefined) {
       const result = addManualReference(values, typed, multiple, maximum);
       setManualError(result.error);
@@ -132,7 +137,6 @@ export function ReferenceSelect(props: ReferenceSelectProps) {
     <Autocomplete
       multiple={multiple}
       freeSolo
-      autoSelect
       handleHomeEndKeys
       loading={loading}
       options={selectable}
@@ -166,12 +170,12 @@ export function ReferenceSelect(props: ReferenceSelectProps) {
               ))
           : undefined
       }
-      onChange={(_event, next) => {
+      onChange={(_event, next, reason) => {
         if (next === null) {
-          commit([]);
+          commit([], reason);
           return;
         }
-        commit(typeof next === 'string' ? [next] : next);
+        commit(typeof next === 'string' ? [next] : next, reason);
       }}
       renderInput={(params) => (
         <TextField

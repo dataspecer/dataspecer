@@ -130,6 +130,14 @@ function validateEntity(
       });
     }
 
+    if (values.some((entry) => entry instanceof Date && Number.isNaN(entry.getTime()))) {
+      issues.push({
+        code: ValidationIssueCode.InvalidValue,
+        message: `${field.label} is not a complete date.`,
+        path: fieldPath,
+      });
+    }
+
     if (field.many && presentValues.length > 1 && hasDuplicateValues(presentValues)) {
       issues.push({
         code: ValidationIssueCode.Duplicate,

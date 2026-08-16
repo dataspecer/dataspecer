@@ -18,6 +18,9 @@ import { instanceBaseIri } from "../generated/app-config.ts";
 <% } -%>
 
 const operation = operations[<%~ it.json(it.page.operation.id) %>];
+<% if (it.page.operation.operation === "Delete") { -%>
+const cascadePaths = operation.delete?.cascadePaths ?? [];
+<% } -%>
 
 export function <%= it.page.componentName %>() {
 <% if (it.page.operation.operation === "ReadList") { -%>
@@ -83,7 +86,7 @@ export function <%= it.page.componentName %>() {
       strategy={operation.strategy}
       dataSource={dataSource}
       navigation={operation.navigation}
-      cascadePaths={operation.delete?.cascadePaths ?? []}
+      cascadePaths={cascadePaths}
       id={id}
     />
   );

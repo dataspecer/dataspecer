@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useBlocker, type Blocker, type BlockerFunction } from 'react-router-dom';
 
-import { ConfirmDialog } from '../feedback/confirm-dialog.tsx';
+import { ConfirmDialog } from '../components/confirm-dialog.tsx';
 
 export interface UnsavedChanges {
   /** Called when the user edits the form. */
@@ -37,15 +37,14 @@ export function useUnsavedChanges(): UnsavedChanges {
     )
   );
 
-  return {
-    markDirty: useCallback(() => {
-      dirty.current = true;
-    }, []),
-    markSaved: useCallback(() => {
-      dirty.current = false;
-    }, []),
-    blocker,
-  };
+  const markDirty = useCallback(() => {
+    dirty.current = true;
+  }, []);
+  const markSaved = useCallback(() => {
+    dirty.current = false;
+  }, []);
+
+  return { markDirty, markSaved, blocker };
 }
 
 export function UnsavedChangesDialog(props: { blocker: Blocker }) {

@@ -9,6 +9,7 @@ export enum ValidationIssueCode {
   MinCount = 'min_count',
   MaxCount = 'max_count',
   Duplicate = 'duplicate',
+  InvalidValue = 'invalid_value',
   MissingCompositionTarget = 'missing_composition_target',
   InvalidComposition = 'invalid_composition',
 }

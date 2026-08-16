@@ -1,10 +1,10 @@
 import type { FieldDescriptor } from '../types/aggregate.ts';
 
-const DATE_ONLY_DATATYPE = /#date$/;
 const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' });
 const dateTimeFormat = new Intl.DateTimeFormat(undefined, {
   dateStyle: 'medium',
   timeStyle: 'short',
+  hourCycle: 'h23',
 });
 
 /** Formats a date in the reader's locale. */
@@ -12,8 +12,7 @@ export function formatDate(value: Date, field?: FieldDescriptor): string {
   if (Number.isNaN(value.getTime())) {
     return '';
   }
-  const dateOnly = field?.datatype ? DATE_ONLY_DATATYPE.test(field.datatype) : false;
-  return dateOnly ? dateFormat.format(value) : dateTimeFormat.format(value);
+  return field?.formControl === 'date' ? dateFormat.format(value) : dateTimeFormat.format(value);
 }
 
 /**

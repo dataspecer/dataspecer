@@ -79,11 +79,22 @@ export function buildOperationNavigation(
     aggregateByIri
   );
 
+  const cancelTarget = isWriteOperation(sourceOperation.operation)
+    ? listAction(
+        `${sourceOperation.id}:cancel`,
+        sourceAggregate,
+        operationById,
+        routeByOperationId,
+        aggregateByIri
+      )
+    : undefined;
+
   return {
     pageActions: byOperation(pageActions),
     rowActions: byOperation(rowActions),
     associationActions,
     ...(successRedirect ? { successRedirect } : {}),
+    ...(cancelTarget ? { cancelTarget } : {}),
   };
 }
 
@@ -95,11 +106,7 @@ function buildSuccessRedirect(
   routeByOperationId: ReadonlyMap<string, GeneratedRouteDescriptor>,
   aggregateByIri: ReadonlyMap<string, GeneratedAggregateDescriptor>
 ): GeneratedNavigationActionDescriptor | undefined {
-  if (
-    sourceOperation.operation !== Operation.Create &&
-    sourceOperation.operation !== Operation.Update &&
-    sourceOperation.operation !== Operation.Delete
-  ) {
+  if (!isWriteOperation(sourceOperation.operation)) {
     return undefined;
   }
 
@@ -113,6 +120,22 @@ function buildSuccessRedirect(
   }
 
   // if not configured, fallback redirect to list
+  return listAction(
+    `${sourceOperation.id}:success`,
+    sourceAggregate,
+    operationById,
+    routeByOperationId,
+    aggregateByIri
+  );
+}
+
+function listAction(
+  idPrefix: string,
+  sourceAggregate: GeneratedAggregateDescriptor,
+  operationById: ReadonlyMap<string, GeneratedOperationDescriptor>,
+  routeByOperationId: ReadonlyMap<string, GeneratedRouteDescriptor>,
+  aggregateByIri: ReadonlyMap<string, GeneratedAggregateDescriptor>
+): GeneratedNavigationActionDescriptor | undefined {
   const listOperation = operationById
     .values()
     .find(
@@ -126,13 +149,21 @@ function buildSuccessRedirect(
   }
 
   return {
-    id: `${sourceOperation.id}:success:${listOperation.id}`,
+    id: `${idPrefix}:${listOperation.id}`,
     label: 'Back to list',
     operation: listOperation.operation,
     targetTitle: listOperation.pageTitle,
     targetPath: listRoute.path,
     requiresEntityId: listRoute.requiresEntityId,
   };
+}
+
+function isWriteOperation(operation: Operation): boolean {
+  return (
+    operation === Operation.Create ||
+    operation === Operation.Update ||
+    operation === Operation.Delete
+  );
 }
 
 const ACTION_ORDER: readonly Operation[] = [

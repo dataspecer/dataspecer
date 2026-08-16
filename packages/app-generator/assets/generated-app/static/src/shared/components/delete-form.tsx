@@ -16,7 +16,7 @@ import {
   type DataSource,
   type IncomingReference,
 } from '../datasource/data-source.ts';
-import { useSnackbar } from '../feedback/snackbar.tsx';
+import { useSnackbar } from './snackbar.tsx';
 import { hydrateCompositionTree } from '../forms/form-draft.ts';
 import { rootEntityTarget } from '../forms/entity-target.ts';
 import { buildCompositeDeletePlan } from '../operations/composite-mutation.ts';
@@ -66,7 +66,8 @@ export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TM
   const navigate = useNavigate();
   const { notify } = useSnackbar();
   const leaveForm = () => {
-    const href = hrefForAction(navigation.successRedirect, id);
+    const href =
+      hrefForAction(navigation.successRedirect, id) ?? hrefForAction(navigation.cancelTarget);
     if (href) {
       void navigate(href);
       return;
@@ -92,6 +93,7 @@ export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TM
 
     let active = true;
     setLoading(true);
+    setCascade(null);
     setIncomingReferenceCheck(null);
     dataSource
       .readDetail({ aggregate, id })
@@ -154,7 +156,7 @@ export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TM
     return () => {
       active = false;
     };
-  }, [aggregate, dataSource, id]);
+  }, [aggregate, aggregateRegistry, cascadePaths, dataSource, id]);
 
   const errorFor = (path: string) => issues.find((issue) => issue.path === path)?.message;
   const generalErrors = issues.filter((issue) => !issue.path);
@@ -253,7 +255,19 @@ export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TM
         </Alert>
       ) : null}
 
-      <Stack direction="row" spacing={1}>
+      <Stack
+        direction="row"
+        spacing={1}
+        sx={{
+          position: 'sticky',
+          bottom: 0,
+          py: 1.5,
+          bgcolor: 'background.default',
+          borderTop: 1,
+          borderColor: 'divider',
+          zIndex: 1,
+        }}
+      >
         <Button
           type="submit"
           variant="contained"
@@ -300,9 +314,9 @@ function IncomingReferenceWarning(props: { check: IncomingReferenceCheck | null 
   );
 }
 
-interface CascadePreview {
-  entities: { label: string; id: string }[];
-}
+type CascadePreview =
+  | { status: 'loaded'; entities: { label: string; id: string }[] }
+  | { status: 'failed' };
 
 /**
  * What the delete will take with it. The list comes from the same plan the delete executes, so it
@@ -325,28 +339,39 @@ async function previewCascade(
     );
     const steps = buildCompositeDeletePlan(aggregate, aggregateRegistry, hydrated, cascadePaths);
     return {
+      status: 'loaded',
       entities: steps
         .filter((step) => step.id !== item.id)
         .map((step) => ({ label: step.target.name, id: step.id })),
     };
   } catch (caught) {
     console.error(caught);
-    return { entities: [] };
+    // an absent warning would read as "nothing else is deleted", which is not what happened
+    return { status: 'failed' };
   }
 }
 
 function CascadeWarning(props: { preview: CascadePreview | null }) {
-  if (props.preview === null || props.preview.entities.length === 0) {
+  if (props.preview === null) {
     return null;
   }
+  if (props.preview.status === 'failed') {
+    return (
+      <Alert severity="warning">Composed entities may be deleted too. Cannot load details.</Alert>
+    );
+  }
+  if (props.preview.entities.length === 0) {
+    return null;
+  }
+  const entities = props.preview.entities;
   return (
     <Alert severity="warning">
       <AlertTitle>
-        {props.preview.entities.length} composed{' '}
-        {props.preview.entities.length === 1 ? 'entity is' : 'entities are'} deleted as well
+        {entities.length} composed {entities.length === 1 ? 'entity is' : 'entities are'} deleted as
+        well
       </AlertTitle>
       <Stack component="ul" sx={{ m: 0, pl: 2 }}>
-        {props.preview.entities.map((entity) => (
+        {entities.map((entity) => (
           <Typography key={entity.id} component="li" variant="body2">
             {entity.label} · <code>{entity.id}</code>
           </Typography>

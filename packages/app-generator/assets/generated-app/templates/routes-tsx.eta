@@ -1,16 +1,5 @@
-import type { ComponentType } from "react";
-import type { OperationKind } from "./shared/operations/operation-kind.ts";
+import type { RouteDescriptor } from "./shared/app/route-descriptor.ts";
 <%~ it.pages.map((page) => `import { ${page.componentName} } from "./pages/${page.fileName}";`).join("\n") %>
-
-export interface RouteDescriptor {
-  id: string;
-  nodeId: string;
-  path: string;
-  title: string;
-  operation: OperationKind;
-  requiresEntityId: boolean;
-  component: ComponentType;
-}
 
 export const routes: RouteDescriptor[] = [
 <% it.pages.forEach((page) => { -%>

@@ -15,9 +15,11 @@ const primitiveField: FieldDescriptor = {
   required: false,
 };
 
+// the datatype can be an OFN or an xsd IRI, so the control is what says a value has no time
 const dateField: FieldDescriptor = {
   ...primitiveField,
-  datatype: 'http://www.w3.org/2001/XMLSchema#date',
+  datatype: 'https://ofn.gov.cz/zdroj/základní-datové-typy/2020-07-01/datum',
+  formControl: 'date',
 };
 
 describe('formatFieldValue', () => {

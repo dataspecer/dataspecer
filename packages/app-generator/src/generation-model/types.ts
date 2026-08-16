@@ -75,6 +75,7 @@ export interface GeneratedOperationNavigation {
   rowActions: GeneratedNavigationActionDescriptor[];
   associationActions: GeneratedAssociationNavigationActionDescriptor[];
   successRedirect?: GeneratedNavigationActionDescriptor;
+  cancelTarget?: GeneratedNavigationActionDescriptor;
 }
 
 export interface GeneratedNavigationActionDescriptor {
