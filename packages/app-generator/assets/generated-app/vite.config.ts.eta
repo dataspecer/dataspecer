@@ -1,0 +1,14 @@
+import { fileURLToPath } from "node:url";
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    // "@" is src, which keeps an import independent of how deep the file that writes it sits.
+    // It has to be declared here as well as in tsconfig.json, which only types it.
+    alias: {
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
+    },
+  },
+});

@@ -1,22 +1,22 @@
 import { describe, expect, it } from 'vitest';
 
-import type { DataSource } from '../assets/generated-app/app/src/shared/datasource/data-source.ts';
+import type { DataSource } from '../assets/generated-app/src/shared/datasource/data-source.ts';
 import {
   buildCompositeCreatePlan,
   buildCompositeDeletePlan,
   buildCompositeUpdatePlan,
   createComposite,
   deleteComposite,
-} from '../assets/generated-app/app/src/shared/operations/composite-mutation.ts';
-import { DefaultDeleteStrategy } from '../assets/generated-app/app/src/shared/operations/delete-strategy.ts';
-import { ValidationIssueCode } from '../assets/generated-app/app/src/shared/operations/operation-result.ts';
-import { DefaultUpdateStrategy } from '../assets/generated-app/app/src/shared/operations/update-strategy.ts';
+} from '../assets/generated-app/src/shared/operations/composite-mutation.ts';
+import { DefaultDeleteStrategy } from '../assets/generated-app/src/shared/operations/delete-strategy.ts';
+import { ValidationIssueCode } from '../assets/generated-app/src/shared/operations/operation-result.ts';
+import { DefaultUpdateStrategy } from '../assets/generated-app/src/shared/operations/update-strategy.ts';
 import type {
   AggregateDescriptor,
   AggregateDescriptorMap,
   EntityRecord,
   FieldDescriptor,
-} from '../assets/generated-app/app/src/shared/types/aggregate.ts';
+} from '../assets/generated-app/src/shared/types/aggregate.ts';
 
 const officeName: FieldDescriptor = {
   path: 'label',

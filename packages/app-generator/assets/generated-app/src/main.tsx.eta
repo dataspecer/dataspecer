@@ -7,7 +7,7 @@ import { AdapterLuxon } from "@mui/x-date-pickers/AdapterLuxon";
 import { RouterProvider } from "react-router-dom";
 
 import { router } from "./App.tsx";
-import { SnackbarProvider } from "./shared/components/snackbar.tsx";
+import { SnackbarProvider } from "@/shared/components/snackbar.tsx";
 import { theme } from "./theme.ts";
 import "./index.css";
 

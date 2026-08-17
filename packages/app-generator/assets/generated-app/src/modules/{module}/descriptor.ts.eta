@@ -1,4 +1,4 @@
-import type { AggregateDescriptor } from "../../shared/types/aggregate.ts";
+import type { AggregateDescriptor } from "@/shared/types/aggregate.ts";
 import { createEmpty<%= it.aggregate.modelName %>, type <%= it.aggregate.modelName %> } from "./model.ts";
 
 export const <%= it.aggregate.descriptorName %>: AggregateDescriptor<<%= it.aggregate.modelName %>> = {

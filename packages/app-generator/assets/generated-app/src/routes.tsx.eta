@@ -1,4 +1,4 @@
-import type { RouteDescriptor } from "./shared/app/route-descriptor.ts";
+import type { RouteDescriptor } from "@/shared/app/route-descriptor.ts";
 
 // Each page is imported when its route is first visited, so one page does not carry the others.
 export const routes: RouteDescriptor[] = [
@@ -11,7 +11,7 @@ export const routes: RouteDescriptor[] = [
     operation: <%~ it.json(page.operation.operation) %>,
     requiresEntityId: <%~ it.json(it.model.routes.find((route) => route.operationId === page.operation.id)?.requiresEntityId) %>,
     lazy: () =>
-      import("./modules/<%= page.moduleName %>/<%= page.fileName %>").then((module) => ({
+      import("@/modules/<%= page.moduleName %>/<%= page.fileName %>").then((module) => ({
         Component: module.<%= page.componentName %>,
       })),
   },

@@ -1,4 +1,4 @@
-import { createAppRouter } from "./shared/app/app-shell.tsx";
+import { createAppRouter } from "@/shared/app/app-shell.tsx";
 import { routes } from "./routes.tsx";
 
 export const router = createAppRouter(routes, <%~ it.json(it.model.app.name) %>);

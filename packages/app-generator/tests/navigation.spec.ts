@@ -4,7 +4,7 @@ import {
   entityIdFromValue,
   hrefForAction,
   toEntityPath,
-} from '../assets/generated-app/app/src/shared/navigation/navigation.ts';
+} from '../assets/generated-app/src/shared/navigation/navigation.ts';
 
 describe('generated navigation helpers', () => {
   it('encodes entity IRIs into query parameters', () => {

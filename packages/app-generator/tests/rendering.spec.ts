@@ -160,7 +160,7 @@ describe('renderGeneratedApp', () => {
 
     // a route loads its page on demand rather than importing it up front
     expect(tree.get('src/routes.tsx')).toContain(
-      'import("./modules/book-list/book-read-list-page.tsx")'
+      'import("@/modules/book-list/book-read-list-page.tsx")'
     );
     expect(tree.get('src/routes.tsx')).toContain('Component: module.BookReadListPage');
     expect(tree.get('src/routes.tsx')).toContain('path: "/book-read-detail"');

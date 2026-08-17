@@ -6,16 +6,16 @@ import {
   type DataSource,
   type ReadListSort,
   type ReadListResult,
-} from '../assets/generated-app/app/src/shared/datasource/data-source.ts';
+} from '../assets/generated-app/src/shared/datasource/data-source.ts';
 import {
   DEFAULT_PAGE_SIZE,
   DefaultReadListStrategy,
-} from '../assets/generated-app/app/src/shared/operations/read-list-strategy.ts';
-import type { OperationContext } from '../assets/generated-app/app/src/shared/operations/operation-strategy.ts';
+} from '../assets/generated-app/src/shared/operations/read-list-strategy.ts';
+import type { OperationContext } from '../assets/generated-app/src/shared/operations/operation-strategy.ts';
 import type {
   AggregateDescriptor,
   EntityModel,
-} from '../assets/generated-app/app/src/shared/types/aggregate.ts';
+} from '../assets/generated-app/src/shared/types/aggregate.ts';
 
 interface TestModel extends EntityModel {
   title?: string;

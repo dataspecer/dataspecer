@@ -1,5 +1,5 @@
-import { RdfLdkitDataSource } from "../shared/datasource/rdf-ldkit-data-source.ts";
-<%~ it.aggregates.map((aggregate) => `import { ${aggregate.schemaName} } from "../modules/${aggregate.moduleName}/ldkit-schema.ts";`).join("\n") %>
+import { RdfLdkitDataSource } from "@/shared/datasource/rdf-ldkit-data-source.ts";
+<%~ it.aggregates.map((aggregate) => `import { ${aggregate.schemaName} } from "@/modules/${aggregate.moduleName}/ldkit-schema.ts";`).join("\n") %>
 
 export function createDataSource() {
   return new RdfLdkitDataSource(<%~ it.json(it.model.datasource.endpoint) %>, {

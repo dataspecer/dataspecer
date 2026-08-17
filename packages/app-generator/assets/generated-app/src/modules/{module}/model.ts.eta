@@ -1,4 +1,4 @@
-import type { EntityModel } from "../../shared/types/aggregate.ts";
+import type { EntityModel } from "@/shared/types/aggregate.ts";
 
 <% it.aggregate.nestedModels.forEach((model) => { -%>
 export interface <%= model.name %> extends EntityModel {
