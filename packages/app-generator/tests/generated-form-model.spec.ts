@@ -3,27 +3,27 @@ import { describe, expect, it } from 'vitest';
 import {
   createEntityDraft,
   hydrateCompositionTree,
-} from '../assets/generated-app/static/src/shared/forms/form-draft.ts';
-import type { DataSource } from '../assets/generated-app/static/src/shared/datasource/data-source.ts';
+} from '../assets/generated-app/app/src/shared/forms/form-draft.ts';
+import type { DataSource } from '../assets/generated-app/app/src/shared/datasource/data-source.ts';
 import {
   referenceDisplayFields,
   rootEntityTarget,
-} from '../assets/generated-app/static/src/shared/forms/entity-target.ts';
+} from '../assets/generated-app/app/src/shared/forms/entity-target.ts';
 import {
   coerceValue,
   resolveControl,
   toInputValue,
   validateModel,
-} from '../assets/generated-app/static/src/shared/forms/form-model.ts';
-import { ValidationIssueCode } from '../assets/generated-app/static/src/shared/operations/operation-result.ts';
-import { addManualReference } from '../assets/generated-app/static/src/shared/components/reference-select.tsx';
+} from '../assets/generated-app/app/src/shared/forms/form-model.ts';
+import { ValidationIssueCode } from '../assets/generated-app/app/src/shared/operations/operation-result.ts';
+import { addManualReference } from '../assets/generated-app/app/src/shared/components/reference-select.tsx';
 import {
   fieldValues,
   type AggregateDescriptor,
   type AggregateDescriptorMap,
   type EntityRecord,
   type FieldDescriptor,
-} from '../assets/generated-app/static/src/shared/types/aggregate.ts';
+} from '../assets/generated-app/app/src/shared/types/aggregate.ts';
 
 const nameField: FieldDescriptor = {
   path: 'name',

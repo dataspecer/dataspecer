@@ -28,6 +28,7 @@ describe('renderGeneratedApp', () => {
         'index.html',
         'package.json',
         'tsconfig.json',
+        'eslint.config.js',
         'vite.config.ts',
         'src/App.tsx',
         'src/data-source/create-data-source.ts',
@@ -37,9 +38,9 @@ describe('renderGeneratedApp', () => {
         'src/modules/book-list/descriptor.ts',
         'src/modules/book-list/book-read-list-operation.ts',
         'src/modules/book-detail/book-read-detail-operation.ts',
-        'src/pages/BookCreatePage.tsx',
-        'src/pages/BookReadDetailPage.tsx',
-        'src/pages/BookReadListPage.tsx',
+        'src/modules/book-form/book-create-page.tsx',
+        'src/modules/book-detail/book-read-detail-page.tsx',
+        'src/modules/book-list/book-read-list-page.tsx',
         'src/routes.tsx',
         'src/shared/datasource/data-source.ts',
         'src/shared/operations/operation-strategy.ts',
@@ -157,11 +158,17 @@ describe('renderGeneratedApp', () => {
     const model = buildGenerationModel(graphFixture(), basicMetadata);
     const tree = renderGeneratedApp(model);
 
-    expect(tree.get('src/routes.tsx')).toContain('BookReadListPage');
+    // a route loads its page on demand rather than importing it up front
+    expect(tree.get('src/routes.tsx')).toContain(
+      'import("./modules/book-list/book-read-list-page.tsx")'
+    );
+    expect(tree.get('src/routes.tsx')).toContain('Component: module.BookReadListPage');
     expect(tree.get('src/routes.tsx')).toContain('path: "/book-read-detail"');
     expect(tree.get('src/routes.tsx')).toContain('requiresEntityId: true');
-    expect(tree.get('src/pages/BookReadListPage.tsx')).toContain('<ListView');
-    expect(tree.get('src/pages/BookReadListPage.tsx')).toContain('strategy={operation.strategy}');
+    expect(tree.get('src/modules/book-list/book-read-list-page.tsx')).toContain('<ListView');
+    expect(tree.get('src/modules/book-list/book-read-list-page.tsx')).toContain(
+      'strategy={operation.strategy}'
+    );
     expect(tree.get('src/shared/components/list-view.tsx')).toContain('invokeOperation');
     expect(tree.get('src/shared/components/list-view.tsx')).toContain(
       'page: paginationModel.page + 1'
@@ -172,8 +179,12 @@ describe('renderGeneratedApp', () => {
     expect(tree.get('src/shared/components/list-view.tsx')).toContain(
       'setTotal(result.data.total)'
     );
-    expect(tree.get('src/pages/BookReadListPage.tsx')).not.toContain('PlaceholderOperationView');
-    expect(tree.get('src/pages/BookReadListPage.tsx')).not.toContain('"fieldPath": "author"');
+    expect(tree.get('src/modules/book-list/book-read-list-page.tsx')).not.toContain(
+      'PlaceholderOperationView'
+    );
+    expect(tree.get('src/modules/book-list/book-read-list-page.tsx')).not.toContain(
+      '"fieldPath": "author"'
+    );
     expect(tree.get('src/modules/book-list/model.ts')).toContain('export interface BookListModel');
     expect(tree.get('src/modules/book-list/book-read-list-operation.ts')).toContain(
       'extends DefaultReadListStrategy<BookListModel>'
@@ -225,8 +236,8 @@ describe('renderGeneratedApp', () => {
     ];
 
     const tree = renderGeneratedApp(buildGenerationModel(graph, basicMetadata));
-    const listPage = tree.get('src/pages/BookReadListPage.tsx');
-    const detailPage = tree.get('src/pages/BookReadDetailPage.tsx');
+    const listPage = tree.get('src/modules/book-list/book-read-list-page.tsx');
+    const detailPage = tree.get('src/modules/book-detail/book-read-detail-page.tsx');
     const registry = tree.get('src/generated/operation-registry.ts');
 
     expect(listPage).toContain('navigation={operation.navigation}');
@@ -435,7 +446,7 @@ describe('renderGeneratedApp', () => {
 
     const tree = renderGeneratedApp(buildGenerationModel(graph, basicMetadata));
     const registry = tree.get('src/generated/operation-registry.ts');
-    const page = tree.get('src/pages/BookDeletePage.tsx');
+    const page = tree.get('src/modules/book-detail/book-delete-page.tsx');
 
     expect(registry).toContain('delete: {');
     expect(registry).toContain('"cascadePaths": [');

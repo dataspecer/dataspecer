@@ -3,17 +3,17 @@ import { describe, expect, it } from 'vitest';
 import {
   countIssues,
   issuesByPane,
-} from '../assets/generated-app/static/src/shared/forms/composition-tree.ts';
-import { rootEntityTarget } from '../assets/generated-app/static/src/shared/forms/entity-target.ts';
+} from '../assets/generated-app/app/src/shared/forms/composition-tree.ts';
+import { rootEntityTarget } from '../assets/generated-app/app/src/shared/forms/entity-target.ts';
 import {
   ValidationIssueCode,
   type ValidationIssue,
-} from '../assets/generated-app/static/src/shared/operations/operation-result.ts';
+} from '../assets/generated-app/app/src/shared/operations/operation-result.ts';
 import type {
   AggregateDescriptor,
   AggregateDescriptorMap,
   FieldDescriptor,
-} from '../assets/generated-app/static/src/shared/types/aggregate.ts';
+} from '../assets/generated-app/app/src/shared/types/aggregate.ts';
 
 function primitive(path: string): FieldDescriptor {
   return {

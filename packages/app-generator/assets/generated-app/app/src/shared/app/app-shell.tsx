@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
+import CircularProgress from '@mui/material/CircularProgress';
 import Container from '@mui/material/Container';
 import Divider from '@mui/material/Divider';
 import Drawer from '@mui/material/Drawer';
@@ -36,6 +37,7 @@ export function createAppRouter(routes: readonly RouteDescriptor[], appName: str
     {
       path: '/',
       element: <AppLayout appName={appName} listRoutes={listRoutes} />,
+      HydrateFallback: PageLoading,
       children: [
         // the application has no page of its own, so its root opens the first list
         ...(listRoutes.length > 0
@@ -43,7 +45,7 @@ export function createAppRouter(routes: readonly RouteDescriptor[], appName: str
           : []),
         ...routes.map((route) => ({
           path: route.path,
-          element: <route.component />,
+          lazy: route.lazy,
         })),
         { path: '*', element: <NotFound /> },
       ],
@@ -118,6 +120,14 @@ function AppLayout(props: AppLayoutProps) {
           <Outlet />
         </Container>
       </Box>
+    </Box>
+  );
+}
+
+function PageLoading() {
+  return (
+    <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+      <CircularProgress />
     </Box>
   );
 }

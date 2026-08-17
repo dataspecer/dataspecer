@@ -9,11 +9,11 @@ import {
   RdfLdkitDataSource,
   toLdkitEntity,
   toSparqlNamedNode,
-} from '../assets/generated-app/static/src/shared/datasource/rdf-ldkit-data-source.ts';
+} from '../assets/generated-app/app/src/shared/datasource/rdf-ldkit-data-source.ts';
 import type {
   AggregateDescriptor,
   EntityModel,
-} from '../assets/generated-app/static/src/shared/types/aggregate.ts';
+} from '../assets/generated-app/app/src/shared/types/aggregate.ts';
 
 const listAggregate: AggregateDescriptor<EntityModel> = {
   iri: 'https://example.org/aggregate/book',

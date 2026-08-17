@@ -2,89 +2,75 @@ import type { GenerationModel } from '../generation-model/types.ts';
 import { FileTree } from './file-tree.ts';
 import { buildRenderContext } from './render-context.ts';
 import { Eta } from 'eta';
-import {
-  generatedAppStaticFiles,
-  generatedAppTemplates,
-} from '../generated/generated-app-assets.ts';
+import { generatedAppAssets } from '../generated/generated-app-assets.ts';
 
 const eta = new Eta({
   autoTrim: false,
 });
 
+const TEMPLATE_SUFFIX = '.eta';
+
+/**
+ * Templates rendered more than once, which the tree cannot place on its own. Their paths say where
+ * their output goes: `{module}` is one per data structure and `{route}` one per page.
+ */
+const MODULE_TEMPLATE = 'src/modules/{module}';
+const PER_AGGREGATE = ['model.ts', 'descriptor.ts', 'ldkit-schema.ts'].map(
+  (name) => `${MODULE_TEMPLATE}/${name}${TEMPLATE_SUFFIX}`
+);
+const PER_PAGE = ['{route}-operation.ts', '{route}-page.tsx'].map(
+  (name) => `${MODULE_TEMPLATE}/${name}${TEMPLATE_SUFFIX}`
+);
+const REPEATED_TEMPLATES = new Set([...PER_AGGREGATE, ...PER_PAGE]);
+
 export function renderGeneratedApp(model: GenerationModel): FileTree {
   const tree = new FileTree();
-  addStaticGeneratedAppAssets(tree);
-
   const context = buildRenderContext(model);
-  tree.set('.gitignore', renderTemplate('gitignore.eta', context));
-  tree.set('package.json', renderTemplate('package-json.eta', context));
-  tree.set('tsconfig.json', renderTemplate('tsconfig-json.eta', context));
-  tree.set('vite.config.ts', renderTemplate('vite-config-ts.eta', context));
-  tree.set('index.html', renderTemplate('index-html.eta', context));
-  tree.set('README.md', renderTemplate('readme.eta', context));
-  tree.set('src/main.tsx', renderTemplate('main-tsx.eta', context));
-  tree.set('src/App.tsx', renderTemplate('app-tsx.eta', context));
-  tree.set('src/routes.tsx', renderTemplate('routes-tsx.eta', context));
-  tree.set(
-    'src/data-source/create-data-source.ts',
-    renderTemplate('create-data-source-ts.eta', context)
-  );
-  tree.set('src/generated/app-config.ts', renderTemplate('app-config-ts.eta', context));
-  tree.set(
-    'src/generated/operation-registry.ts',
-    renderTemplate('operation-registry-ts.eta', context)
-  );
+
+  // The asset tree mirrors the generated application, so a file lands where it sits, and a
+  // template is the same path without its suffix.
+  for (const [assetPath, content] of Object.entries(generatedAppAssets)) {
+    if (REPEATED_TEMPLATES.has(assetPath)) {
+      continue;
+    }
+    if (assetPath.endsWith(TEMPLATE_SUFFIX)) {
+      tree.set(assetPath.slice(0, -TEMPLATE_SUFFIX.length), eta.renderString(content, context));
+    } else {
+      tree.set(assetPath, content);
+    }
+  }
 
   context.aggregates.forEach((aggregate) => {
-    tree.set(
-      `src/modules/${aggregate.moduleName}/model.ts`,
-      renderTemplate('aggregate-model-ts.eta', {
-        ...context,
-        aggregate,
-      })
-    );
-    tree.set(
-      `src/modules/${aggregate.moduleName}/descriptor.ts`,
-      renderTemplate('aggregate-descriptor-ts.eta', {
-        ...context,
-        aggregate,
-      })
-    );
-    tree.set(
-      `src/modules/${aggregate.moduleName}/ldkit-schema.ts`,
-      renderTemplate('aggregate-ldkit-schema-ts.eta', {
-        ...context,
-        aggregate,
-      })
-    );
+    PER_AGGREGATE.forEach((template) => {
+      tree.set(
+        outputPath(template, { module: aggregate.moduleName }),
+        renderTemplate(template, { ...context, aggregate })
+      );
+    });
   });
 
   context.pages.forEach((page) => {
-    tree.set(
-      `src/modules/${page.moduleName}/${page.operation.routeId}-operation.ts`,
-      renderTemplate('operation-override-ts.eta', {
-        ...context,
-        page,
-      })
-    );
-    tree.set(
-      `src/pages/${page.fileName}`,
-      renderTemplate('operation-page-tsx.eta', {
-        ...context,
-        page,
-      })
-    );
+    PER_PAGE.forEach((template) => {
+      tree.set(
+        outputPath(template, { module: page.moduleName, route: page.operation.routeId }),
+        renderTemplate(template, { ...context, page })
+      );
+    });
   });
 
   return tree;
 }
 
-function renderTemplate(templateName: keyof typeof generatedAppTemplates, data: object): string {
-  return eta.renderString(generatedAppTemplates[templateName], data);
+function outputPath(template: string, values: Record<string, string>): string {
+  return template
+    .slice(0, -TEMPLATE_SUFFIX.length)
+    .replace(/\{(\w+)\}/g, (match, name: string) => values[name] ?? match);
 }
 
-function addStaticGeneratedAppAssets(fileTree: FileTree): void {
-  for (const [filePath, content] of Object.entries(generatedAppStaticFiles)) {
-    fileTree.set(filePath, content);
+function renderTemplate(templatePath: string, data: object): string {
+  const template = generatedAppAssets[templatePath as keyof typeof generatedAppAssets];
+  if (template === undefined) {
+    throw new Error(`Missing generated application template "${templatePath}".`);
   }
+  return eta.renderString(template, data);
 }

@@ -1,0 +1,44 @@
+import js from "@eslint/js";
+import globals from "globals";
+import reactHooks from "eslint-plugin-react-hooks";
+import tseslint from "typescript-eslint";
+
+/*
+ * Type-aware linting for the application sources. The rules of hooks and effect dependencies are
+ * errors rather than warnings, because a wrong dependency list is a defect and not a style choice.
+ */
+export default tseslint.config(
+  { ignores: ["dist"] },
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    extends: [
+      js.configs.recommended,
+      ...tseslint.configs.recommendedTypeChecked,
+      reactHooks.configs["recommended-latest"],
+    ],
+    languageOptions: {
+      globals: globals.browser,
+      parserOptions: {
+        project: ["./tsconfig.json"],
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    rules: {
+      "react-hooks/exhaustive-deps": "error",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
+    },
+  },
+  {
+    // The operation stubs are async because an override is expected to await something. Their
+    // generated bodies have nothing to await yet, which is not an error.
+    files: ["src/modules/**/*-operation.ts"],
+    rules: { "@typescript-eslint/require-await": "off" },
+  },
+);

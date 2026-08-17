@@ -228,7 +228,7 @@ describe('generateApp', { timeout: 30_000 }, () => {
     expect(result.files['src/modules/123-books/model.ts']).toContain(
       'export interface _123BooksModel'
     );
-    expect(result.files['src/pages/_123BooksReadListPage.tsx']).toContain(
+    expect(result.files['src/modules/123-books/123-books-read-list-page.tsx']).toContain(
       'export function _123BooksReadListPage()'
     );
   });

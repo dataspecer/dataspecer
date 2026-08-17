@@ -55,8 +55,9 @@ export default defineConfig([
     },
 
     {
-        files: ['assets/generated-app/static/**/*.{ts,tsx}'],
+        files: ['assets/generated-app/app/**/*.{ts,tsx}'],
         extends: [
+            js.configs.recommended,
             tseslint.configs.recommendedTypeChecked,
             reactHooks.configs['recommended-latest'],
         ],

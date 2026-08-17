@@ -10,5 +10,6 @@ export interface RouteDescriptor {
   title: string;
   operation: OperationKind;
   requiresEntityId: boolean;
-  component: ComponentType;
+  /** Loads the page when its route is first visited, which keeps every page in its own chunk. */
+  lazy: () => Promise<{ Component: ComponentType }>;
 }

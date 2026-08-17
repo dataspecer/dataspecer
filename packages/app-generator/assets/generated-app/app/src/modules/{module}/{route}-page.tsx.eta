@@ -1,20 +1,20 @@
 <% if (it.page.operation.operation === "ReadList") { -%>
-import { ListView } from "../shared/components/list-view.tsx";
+import { ListView } from "../../shared/components/list-view.tsx";
 <% } else if (it.page.operation.operation === "ReadDetail") { -%>
-import { DetailView } from "../shared/components/detail-view.tsx";
-import { useEntityId } from "../shared/navigation/use-location.ts";
+import { DetailView } from "../../shared/components/detail-view.tsx";
+import { useEntityId } from "../../shared/navigation/use-location.ts";
 <% } else if (it.page.operation.operation === "Create") { -%>
-import { CreateForm } from "../shared/components/create-form.tsx";
+import { CreateForm } from "../../shared/components/create-form.tsx";
 <% } else if (it.page.operation.operation === "Update") { -%>
-import { UpdateForm } from "../shared/components/update-form.tsx";
-import { useEntityId } from "../shared/navigation/use-location.ts";
+import { UpdateForm } from "../../shared/components/update-form.tsx";
+import { useEntityId } from "../../shared/navigation/use-location.ts";
 <% } else if (it.page.operation.operation === "Delete") { -%>
-import { DeleteForm } from "../shared/components/delete-form.tsx";
-import { useEntityId } from "../shared/navigation/use-location.ts";
+import { DeleteForm } from "../../shared/components/delete-form.tsx";
+import { useEntityId } from "../../shared/navigation/use-location.ts";
 <% } -%>
-import { aggregateRegistry, dataSource, operations } from "../generated/operation-registry.ts";
+import { aggregateRegistry, dataSource, operations } from "../../generated/operation-registry.ts";
 <% if (it.page.operation.operation === "Create" || it.page.operation.operation === "Update") { -%>
-import { instanceBaseIri } from "../generated/app-config.ts";
+import { instanceBaseIri } from "../../generated/app-config.ts";
 <% } -%>
 
 const operation = operations[<%~ it.json(it.page.operation.id) %>];

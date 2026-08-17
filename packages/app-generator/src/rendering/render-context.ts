@@ -61,7 +61,7 @@ export function buildRenderContext(model: GenerationModel): GeneratedAppRenderCo
       }
 
       return {
-        fileName: `${operation.pageComponentName}.tsx`,
+        fileName: `${operation.routeId}-page.tsx`,
         componentName: operation.pageComponentName,
         moduleName: aggregate.moduleName,
         modelName: aggregate.modelName,
