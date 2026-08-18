@@ -386,6 +386,7 @@ export const english: Record<string, string | Function> = {
   //
   "create-class-profile-dialog.label": "Create a profile",
   "modify-class-profile-dialog.profile-of": "Profile of",
+  "modify-class-profile-dialog.controlled-vocabularies": "Controlled vocabularies",
   //
   "undefined": "Undefined",
   "change-in-profile": "Change in profile",
