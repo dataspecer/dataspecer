@@ -1,5 +1,5 @@
 import { ChangeEvent } from "react";
-import { t } from "../../../application";
+import { t } from "../../../../src/application";
 import { SelectPresenter } from "./select-presenter";
 import { SelectState } from "./select-state";
 
