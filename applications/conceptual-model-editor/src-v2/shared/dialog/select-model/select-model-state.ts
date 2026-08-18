@@ -1,6 +1,6 @@
 import { ModelIdentifier } from "@dataspecer/entity-model";
 import { HexColor } from "@dataspecer/visual-model";
-import { AdapterContext } from "../adapter-context";
+import { AdapterContext } from "../../../../src/dialog-v2/shared/adapter-context";
 
 export interface SelectModelState {
 
