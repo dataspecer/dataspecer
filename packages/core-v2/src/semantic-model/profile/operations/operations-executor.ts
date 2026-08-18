@@ -270,9 +270,13 @@ function executeAddControlledVocabularyAssignment(
     return { success: false, created: [] };
   }
   const existing = previous.controlledVocabularies ?? [];
-  if (existing.some(a => a.identifier === assignment.identifier)) {
-    console.error("controlledVocabularyIdentifier is already assigned to this class profile, add controlled vocabulary assignment is ignored.",
-      { controlledVocabularyIdentifier: assignment.identifier });
+  // The same vocabulary can be assigned more than once with different
+  // qualifiers, but assigning the exact same (identifier, qualifier) pair
+  // again is redundant and rejected.
+  if (existing.some(a => a.identifier === assignment.identifier
+    && a.qualifier === assignment.qualifier)) {
+    console.error("This exact controlled vocabulary assignment already exists on this class profile, add controlled vocabulary assignment is ignored.",
+      { assignment });
     return { success: false, created: [] };
   }
   const updatedEntity: SemanticModelClassProfile = {

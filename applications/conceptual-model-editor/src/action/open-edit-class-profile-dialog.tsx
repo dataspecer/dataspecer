@@ -22,6 +22,8 @@ import {
 import { createLogger } from "../application";
 import { InvalidState } from "../application/error";
 import { LabelResolver } from "../dependency-tracker";
+import { CmeReference } from "../dataspecer/cme-model/model";
+import { applyControlledVocabularySelection } from "./apply-controlled-vocabulary-selection";
 
 const LOG = createLogger(import.meta.url);
 
@@ -45,18 +47,23 @@ export function openEditClassProfileDialogAction(
 
   const initialState = createEditClassProfileDialogState(
     visualModel, options.language, model, rawEntity, graph.models, tracker,
-    labelResolver);
+    labelResolver, graph);
 
   const onConfirm = (state: ClassProfileDialogState) => {
+    const classProfile: CmeReference = { identifier: entity.id, model: model.getId() };
 
     cmeExecutor.updateClassProfile({
       identifier: entity.id,
       ...classProfileDialogStateToNewCmeClassProfile(state),
     });
     cmeExecutor.updateSpecialization(
-      { identifier: entity.id, model: model.getId() },
+      classProfile,
       state.model.identifier,
       initialState.specializations, state.specializations);
+
+    applyControlledVocabularySelection(
+      cmeExecutor, classProfile,
+      initialState.controlledVocabularies.items, state.controlledVocabularies.items);
 
     // We need to update visual model: profiles
     if (isWritableVisualModel(visualModel)) {
