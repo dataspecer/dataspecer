@@ -3,10 +3,6 @@ import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";
 import tseslint from "typescript-eslint";
 
-/*
- * Type-aware linting for the application sources. The rules of hooks and effect dependencies are
- * errors rather than warnings, because a wrong dependency list is a defect and not a style choice.
- */
 export default tseslint.config(
   { ignores: ["dist"] },
   {

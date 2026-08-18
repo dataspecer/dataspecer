@@ -9,7 +9,7 @@ import {
   RdfLdkitDataSource,
   toLdkitEntity,
   toSparqlNamedNode,
-} from '../assets/generated-app/src/shared/datasource/rdf-ldkit-data-source.ts';
+} from '../assets/generated-app/src/shared/data-source/rdf-ldkit-data-source.ts';
 import type {
   AggregateDescriptor,
   EntityModel,

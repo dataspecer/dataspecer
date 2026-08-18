@@ -8,7 +8,7 @@ const dateTimeFormat = new Intl.DateTimeFormat(undefined, {
 });
 
 /** Formats a date in the reader's locale. */
-export function formatDate(value: Date, field?: FieldDescriptor): string {
+function formatDate(value: Date, field?: FieldDescriptor): string {
   if (Number.isNaN(value.getTime())) {
     return '';
   }

@@ -31,8 +31,8 @@ describe('renderGeneratedApp', () => {
         'eslint.config.js',
         'vite.config.ts',
         'src/App.tsx',
-        'src/data-source/create-data-source.ts',
-        'src/generated/operation-registry.ts',
+        'src/config/aggregate-registry.ts',
+        'src/config/data-sources.ts',
         'src/main.tsx',
         'src/modules/book-list/model.ts',
         'src/modules/book-list/descriptor.ts',
@@ -42,7 +42,7 @@ describe('renderGeneratedApp', () => {
         'src/modules/book-detail/book-read-detail-page.tsx',
         'src/modules/book-list/book-read-list-page.tsx',
         'src/routes.tsx',
-        'src/shared/datasource/data-source.ts',
+        'src/shared/data-source/data-source.ts',
         'src/shared/operations/operation-strategy.ts',
         'src/shared/components/list-view.tsx',
       ])
@@ -67,7 +67,7 @@ describe('renderGeneratedApp', () => {
     expect(descriptor).toContain('"path": "chapters"');
     expect(descriptor).toContain('"path": "footnotes"');
     expect(descriptor).toContain('"propertyName": "footnotes"');
-    expect(tree.get('src/shared/components/field-value.ts')).toContain('formatFieldValue');
+    expect(tree.get('src/shared/forms/field-value.ts')).toContain('formatFieldValue');
   });
 
   it('renders descriptors and schemas for referenced aggregates without their own operation', () => {
@@ -115,10 +115,10 @@ describe('renderGeneratedApp', () => {
 
     expect(tree.paths()).toContain('src/modules/department/descriptor.ts');
     expect(tree.paths()).toContain('src/modules/department/ldkit-schema.ts');
-    expect(tree.get('src/generated/operation-registry.ts')).toContain(
+    expect(tree.get('src/config/aggregate-registry.ts')).toContain(
       '"https://example.org/aggregate/department": DepartmentAggregateDescriptor'
     );
-    expect(tree.get('src/data-source/create-data-source.ts')).toContain(
+    expect(tree.get('src/config/data-sources.ts')).toContain(
       '"https://example.org/aggregate/department": DepartmentLdkitSchema'
     );
   });
@@ -164,10 +164,9 @@ describe('renderGeneratedApp', () => {
     );
     expect(tree.get('src/routes.tsx')).toContain('Component: module.BookReadListPage');
     expect(tree.get('src/routes.tsx')).toContain('path: "/book-read-detail"');
-    expect(tree.get('src/routes.tsx')).toContain('requiresEntityId: true');
     expect(tree.get('src/modules/book-list/book-read-list-page.tsx')).toContain('<ListView');
     expect(tree.get('src/modules/book-list/book-read-list-page.tsx')).toContain(
-      'strategy={operation.strategy}'
+      'strategy={strategy}'
     );
     expect(tree.get('src/shared/components/list-view.tsx')).toContain('invokeOperation');
     expect(tree.get('src/shared/components/list-view.tsx')).toContain(
@@ -192,7 +191,7 @@ describe('renderGeneratedApp', () => {
     expect(tree.get('src/modules/book-list/book-read-list-operation.ts')).toContain(
       'async validateRequest('
     );
-    expect(tree.get('src/shared/datasource/rdf-ldkit-data-source.ts')).toContain('createLens');
+    expect(tree.get('src/shared/data-source/rdf-ldkit-data-source.ts')).toContain('createLens');
     expect(tree.get('src/shared/components/list-view.tsx')).toContain('<DataGrid');
     expect(tree.get('src/shared/components/list-view.tsx')).toContain('paginationMode="server"');
     expect(tree.get('src/shared/components/list-view.tsx')).toContain('sortingMode="server"');
@@ -238,28 +237,32 @@ describe('renderGeneratedApp', () => {
     const tree = renderGeneratedApp(buildGenerationModel(graph, basicMetadata));
     const listPage = tree.get('src/modules/book-list/book-read-list-page.tsx');
     const detailPage = tree.get('src/modules/book-detail/book-read-detail-page.tsx');
-    const registry = tree.get('src/generated/operation-registry.ts');
+    const registry = tree.get('src/config/aggregate-registry.ts');
 
-    expect(listPage).toContain('navigation={operation.navigation}');
+    expect(listPage).toContain('navigation={navigation}');
     expect(tree.get('src/shared/components/list-view.tsx')).toContain(
       'actions={navigation.pageActions}'
     );
     expect(tree.get('src/shared/components/list-view.tsx')).toContain('navigation.rowActions');
-    expect(registry).toContain('export const operations = {');
-    expect(registry).toContain('} satisfies Record<string, RegisteredOperation>;');
-    expect(registry).toContain('navigation: {');
-    expect(registry).toContain('"targetPath": "/book-create"');
-    expect(registry).toContain('"targetPath": "/book-update"');
-    expect(registry).toContain('"targetPath": "/book-delete"');
-    expect(registry).toContain('"fieldPath": "author"');
+    // the registry holds the two application-wide singletons, each page holds its own wiring
+    expect(tree.get('src/config/data-sources.ts')).toContain('export const rdfDataSource =');
+    expect(registry).toContain('} satisfies AggregateDescriptorMap;');
+    expect(registry).not.toContain('navigation');
+    expect(listPage).toContain('const strategy = new BookReadListOperation();');
+    // each page carries the actions of its own node
+    expect(listPage).toContain('"targetPath": "/book-create"');
+    expect(listPage).toContain('"targetPath": "/book-update"');
+    expect(listPage).toContain('"targetPath": "/book-delete"');
+    expect(detailPage).toContain('"fieldPath": "author"');
 
     expect(detailPage).toContain('useEntityId()');
     expect(detailPage).not.toContain('window.location');
     expect(tree.get('src/shared/components/detail-view.tsx')).toContain(
       "setError('Missing required entity id.')"
     );
-    expect(detailPage).toContain('navigation={operation.navigation}');
-    expect(registry).toContain('"targetPath": "/book-read-list"');
+    expect(detailPage).toContain('navigation={navigation}');
+    // the detail page carries its own way back to the list
+    expect(detailPage).toContain('"targetPath": "/book-read-list"');
 
     expect(tree.get('src/shared/components/list-view.tsx')).toContain('rowActions');
     expect(tree.get('src/shared/components/detail-view.tsx')).toContain('associationActions');
@@ -445,15 +448,13 @@ describe('renderGeneratedApp', () => {
     graph.edges = [];
 
     const tree = renderGeneratedApp(buildGenerationModel(graph, basicMetadata));
-    const registry = tree.get('src/generated/operation-registry.ts');
     const page = tree.get('src/modules/book-detail/book-delete-page.tsx');
 
-    expect(registry).toContain('delete: {');
-    expect(registry).toContain('"cascadePaths": [');
-    expect(registry).toContain('"chapters"');
-    expect(registry).not.toContain('placeholder');
+    expect(page).toContain('const cascadePaths: readonly string[] = [');
+    expect(page).toContain('"chapters"');
+    expect(page).not.toContain('placeholder');
     expect(page).toContain('aggregateRegistry={aggregateRegistry}');
-    expect(page).toContain('const cascadePaths = operation.delete?.cascadePaths ?? [];');
+
     expect(page).toContain('cascadePaths={cascadePaths}');
     const deleteForm = tree.get('src/shared/components/delete-form.tsx');
     expect(deleteForm).toContain('payload: item');
@@ -464,7 +465,7 @@ describe('renderGeneratedApp', () => {
     expect(deleteForm).toContain('You can still delete it.');
     expect(deleteForm).toContain('{reference.subject}');
     expect(deleteForm).toContain('{reference.predicate}');
-    expect(tree.get('src/shared/datasource/data-source.ts')).toContain(
+    expect(tree.get('src/shared/data-source/data-source.ts')).toContain(
       'listIncomingReferences(id: string): Promise<IncomingReference[]>'
     );
     expect(tree.get('README.md')).toContain('`listIncomingReferences(id)`');

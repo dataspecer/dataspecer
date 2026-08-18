@@ -1,4 +1,4 @@
-import type { DataSource } from '../datasource/data-source.ts';
+import type { DataSource } from '../data-source/data-source.ts';
 import { compositionEntities, hydrateCompositionTree } from '../forms/form-draft.ts';
 import { isEmptyValue, resolveControl } from '../forms/form-model.ts';
 import {

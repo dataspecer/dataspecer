@@ -4,7 +4,7 @@ import {
   createEntityDraft,
   hydrateCompositionTree,
 } from '../assets/generated-app/src/shared/forms/form-draft.ts';
-import type { DataSource } from '../assets/generated-app/src/shared/datasource/data-source.ts';
+import type { DataSource } from '../assets/generated-app/src/shared/data-source/data-source.ts';
 import {
   referenceDisplayFields,
   rootEntityTarget,

@@ -1,0 +1,11 @@
+import type { AggregateDescriptorMap } from "@/shared/types/aggregate.ts";
+<%~ it.aggregates.map((aggregate) => `import { ${aggregate.descriptorName} } from "@/modules/${aggregate.moduleName}/descriptor.ts";`).join("\n") %>
+
+/**
+ * Every data structure the application knows, keyed by aggregate IRI. Field metadata refers to
+ * other structures by that IRI, so forms and detail views resolve a composition or a reference
+ * target by looking it up here.
+ */
+export const aggregateRegistry = {
+<%~ it.aggregates.map((aggregate) => `  ${it.json(aggregate.iri)}: ${aggregate.descriptorName},`).join("\n") %>
+} satisfies AggregateDescriptorMap;

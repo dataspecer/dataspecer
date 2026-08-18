@@ -1,0 +1,2 @@
+// Base IRI that Create forms prefill when generating a new entity IRI.
+export const instanceBaseIri = <%~ it.json(it.instanceBaseIri) %>;

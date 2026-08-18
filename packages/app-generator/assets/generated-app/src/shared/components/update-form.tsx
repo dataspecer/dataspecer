@@ -9,7 +9,7 @@ import Skeleton from '@mui/material/Skeleton';
 import SaveIcon from '@mui/icons-material/Save';
 import { useNavigate } from 'react-router-dom';
 
-import { useDataSource } from '../datasource/data-source-context.tsx';
+import { useDataSource } from '../data-source/data-source-context.tsx';
 import { hydrateCompositionTree } from '../forms/form-draft.ts';
 import { rootEntityTarget } from '../forms/entity-target.ts';
 import { useSnackbar } from './snackbar.tsx';

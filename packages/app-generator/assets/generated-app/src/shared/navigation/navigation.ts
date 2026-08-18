@@ -34,7 +34,7 @@ export const ENTITY_ID_PARAMETER = 'id';
 /** Query parameter carrying which composed entity a form is editing. */
 export const ENTITY_PATH_PARAMETER = 'at';
 
-export function toEntityPath(routePath: string, id: string): string {
+function toEntityPath(routePath: string, id: string): string {
   return `${routePath}?${new URLSearchParams({ [ENTITY_ID_PARAMETER]: id }).toString()}`;
 }
 

@@ -1,4 +1,4 @@
-import { formatFieldValue } from '../components/field-value.ts';
+import { formatFieldValue } from './field-value.ts';
 import { entityPathForValidationPath, formatEntityPath, nearestPanePath } from './entity-path.ts';
 import type { ValidationIssue } from '../operations/operation-result.ts';
 import type { AggregateDescriptorMap, EntityRecord } from '../types/aggregate.ts';

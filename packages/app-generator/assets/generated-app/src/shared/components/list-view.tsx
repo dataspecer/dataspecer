@@ -16,8 +16,8 @@ import {
   isListFieldSortable,
   type ReadListResult,
   type ReadListSort,
-} from '../datasource/data-source.ts';
-import { useDataSource } from '../datasource/data-source-context.tsx';
+} from '../data-source/data-source.ts';
+import { useDataSource } from '../data-source/data-source-context.tsx';
 import {
   entityIdFromValue,
   hrefForAction,
@@ -35,7 +35,7 @@ import type {
   FieldDescriptor,
 } from '../types/aggregate.ts';
 import { ActionLinks } from './action-links.tsx';
-import { formatFieldValue } from './field-value.ts';
+import { formatFieldValue } from '../forms/field-value.ts';
 
 export interface ListViewProps<TModel extends EntityModel> {
   title: string;

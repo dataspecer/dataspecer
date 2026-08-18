@@ -6,7 +6,7 @@ import {
   type DataSource,
   type ReadListSort,
   type ReadListResult,
-} from '../assets/generated-app/src/shared/datasource/data-source.ts';
+} from '../assets/generated-app/src/shared/data-source/data-source.ts';
 import {
   DEFAULT_PAGE_SIZE,
   DefaultReadListStrategy,

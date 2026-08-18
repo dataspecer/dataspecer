@@ -19,7 +19,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Link as RouterLink } from 'react-router-dom';
 
-import { useDataSource } from '../datasource/data-source-context.tsx';
+import { useDataSource } from '../data-source/data-source-context.tsx';
 import {
   entityIdFromValue,
   hrefForAction,
@@ -36,7 +36,7 @@ import type {
   FieldDescriptor,
 } from '../types/aggregate.ts';
 import { ActionLinks } from './action-links.tsx';
-import { formatPrimitiveValue } from './field-value.ts';
+import { formatPrimitiveValue } from '../forms/field-value.ts';
 
 // Nested sections deeper than this start collapsed so deep structures do not overwhelm the page.
 const OPEN_DEPTH = 2;

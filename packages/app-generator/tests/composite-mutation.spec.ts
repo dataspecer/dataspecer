@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { DataSource } from '../assets/generated-app/src/shared/datasource/data-source.ts';
+import type { DataSource } from '../assets/generated-app/src/shared/data-source/data-source.ts';
 import {
   buildCompositeCreatePlan,
   buildCompositeDeletePlan,

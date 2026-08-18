@@ -3,7 +3,7 @@ import {
   DEFAULT_READ_LIST_SORT,
   type ReadListResult,
   type ReadListSort,
-} from '../datasource/data-source.ts';
+} from '../data-source/data-source.ts';
 import type { OperationContext, OperationStrategy } from './operation-strategy.ts';
 import type { OperationResult } from './operation-result.ts';
 

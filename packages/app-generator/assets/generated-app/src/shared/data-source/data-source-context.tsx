@@ -3,10 +3,8 @@ import { createContext, useContext, type ReactNode } from 'react';
 import type { DataSource } from './data-source.ts';
 
 const DataSourceContext = createContext<DataSource | null>(null);
-
 /**
- * Supplies the data source the components below read and write through. The application provides
- * one in `main.tsx`, and nesting another provider gives a part of the tree a different source.
+ * Supplies the data source the components.
  */
 export function DataSourceProvider(props: { value: DataSource; children: ReactNode }) {
   return (

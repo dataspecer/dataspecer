@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   formatFieldValue,
   formatPrimitiveValue,
-} from '../assets/generated-app/src/shared/components/field-value.ts';
+} from '../assets/generated-app/src/shared/forms/field-value.ts';
 import type { FieldDescriptor } from '../assets/generated-app/src/shared/types/aggregate.ts';
 
 const primitiveField: FieldDescriptor = {

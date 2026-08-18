@@ -3,16 +3,15 @@ import { describe, expect, it } from 'vitest';
 import {
   entityIdFromValue,
   hrefForAction,
-  toEntityPath,
 } from '../assets/generated-app/src/shared/navigation/navigation.ts';
 
 describe('generated navigation helpers', () => {
   it('encodes entity IRIs into query parameters', () => {
-    const iri = 'https://example.org/data/book/1#part';
+    const action = { id: 'detail', label: 'Detail', targetPath: '/book-detail' };
 
-    expect(toEntityPath('/book-detail', iri)).toBe(
-      '/book-detail?id=https%3A%2F%2Fexample.org%2Fdata%2Fbook%2F1%23part'
-    );
+    expect(
+      hrefForAction({ ...action, requiresEntityId: true }, 'https://example.org/data/book/1#part')
+    ).toBe('/book-detail?id=https%3A%2F%2Fexample.org%2Fdata%2Fbook%2F1%23part');
   });
 
   it('builds action hrefs only when required ids are available', () => {

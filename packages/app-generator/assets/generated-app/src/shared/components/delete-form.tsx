@@ -15,8 +15,8 @@ import {
   INCOMING_REFERENCE_LIMIT,
   type DataSource,
   type IncomingReference,
-} from '../datasource/data-source.ts';
-import { useDataSource } from '../datasource/data-source-context.tsx';
+} from '../data-source/data-source.ts';
+import { useDataSource } from '../data-source/data-source-context.tsx';
 import { useSnackbar } from './snackbar.tsx';
 import { hydrateCompositionTree } from '../forms/form-draft.ts';
 import { rootEntityTarget } from '../forms/entity-target.ts';
@@ -34,7 +34,7 @@ import type {
   EntityModel,
   EntityRecord,
 } from '../types/aggregate.ts';
-import { formatFieldValue } from './field-value.ts';
+import { formatFieldValue } from '../forms/field-value.ts';
 
 interface DeleteFormProps<TModel extends EntityModel> {
   title: string;

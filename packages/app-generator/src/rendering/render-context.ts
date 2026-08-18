@@ -1,3 +1,4 @@
+import { Operation } from '../graph/types.ts';
 import type {
   GeneratedFieldDescriptor,
   GeneratedOperationDescriptor,
@@ -22,8 +23,30 @@ export interface RenderedPage {
   componentName: string;
   moduleName: string;
   modelName: string;
+  descriptorName: string;
   operationClassName: string;
+  strategyBaseName: string;
+  strategyModuleName: string;
+  resultTypeName: string;
   operation: GeneratedOperationDescriptor;
+}
+
+const STRATEGY: Record<Operation, { className: string; moduleName: string }> = {
+  [Operation.ReadList]: { className: 'DefaultReadListStrategy', moduleName: 'read-list-strategy' },
+  [Operation.ReadDetail]: {
+    className: 'DefaultReadDetailStrategy',
+    moduleName: 'read-detail-strategy',
+  },
+  [Operation.Create]: { className: 'DefaultCreateStrategy', moduleName: 'create-strategy' },
+  [Operation.Update]: { className: 'DefaultUpdateStrategy', moduleName: 'update-strategy' },
+  [Operation.Delete]: { className: 'DefaultDeleteStrategy', moduleName: 'delete-strategy' },
+};
+
+function resultTypeName(operation: Operation, modelName: string): string {
+  if (operation === Operation.ReadList) {
+    return `ReadListResult<${modelName}>`;
+  }
+  return operation === Operation.Delete ? 'void' : modelName;
 }
 
 export function buildRenderContext(model: GenerationModel): GeneratedAppRenderContext {
@@ -65,7 +88,11 @@ export function buildRenderContext(model: GenerationModel): GeneratedAppRenderCo
         componentName: operation.pageComponentName,
         moduleName: aggregate.moduleName,
         modelName: aggregate.modelName,
+        descriptorName: aggregate.descriptorName,
         operationClassName: toOperationClassName(operation.nodeId),
+        strategyBaseName: STRATEGY[operation.operation].className,
+        strategyModuleName: STRATEGY[operation.operation].moduleName,
+        resultTypeName: resultTypeName(operation.operation, aggregate.modelName),
         operation,
       };
     }),

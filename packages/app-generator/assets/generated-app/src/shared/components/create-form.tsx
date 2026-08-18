@@ -8,7 +8,7 @@ import Typography from '@mui/material/Typography';
 import SaveIcon from '@mui/icons-material/Save';
 import { useNavigate } from 'react-router-dom';
 
-import { useDataSource } from '../datasource/data-source-context.tsx';
+import { useDataSource } from '../data-source/data-source-context.tsx';
 import { createEntityDraft } from '../forms/form-draft.ts';
 import { rootEntityTarget } from '../forms/entity-target.ts';
 import { useSnackbar } from './snackbar.tsx';

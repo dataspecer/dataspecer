@@ -12,25 +12,34 @@ import { useEntityId } from "@/shared/navigation/use-location.ts";
 import { DeleteForm } from "@/shared/components/delete-form.tsx";
 import { useEntityId } from "@/shared/navigation/use-location.ts";
 <% } -%>
-import { aggregateRegistry, operations } from "@/generated/operation-registry.ts";
+import type { OperationNavigationDescriptor } from "@/shared/navigation/navigation.ts";
+import { aggregateRegistry } from "@/config/aggregate-registry.ts";
 <% if (it.page.operation.operation === "Create" || it.page.operation.operation === "Update") { -%>
-import { instanceBaseIri } from "@/generated/app-config.ts";
+import { instanceBaseIri } from "@/config/app-config.ts";
 <% } -%>
+import { <%= it.page.descriptorName %> } from "./descriptor.ts";
+import { <%= it.page.operationClassName %> } from "./<%= it.page.operation.routeId %>-operation.ts";
 
-const operation = operations[<%~ it.json(it.page.operation.id) %>];
+const title = <%~ it.json(it.page.operation.pageTitle) %>;
+
+const navigation: OperationNavigationDescriptor = <%~ it.json(it.page.operation.navigation) %>;
+
+const strategy = new <%= it.page.operationClassName %>();
 <% if (it.page.operation.operation === "Delete") { -%>
-const cascadePaths = operation.delete?.cascadePaths ?? [];
+
+// Composed entities the delete takes with it.
+const cascadePaths: readonly string[] = <%~ it.json(it.page.operation.delete?.cascadePaths ?? []) %>;
 <% } -%>
 
 export function <%= it.page.componentName %>() {
 <% if (it.page.operation.operation === "ReadList") { -%>
   return (
     <ListView
-      title={operation.title}
-      aggregate={operation.aggregate}
+      title={title}
+      aggregate={<%= it.page.descriptorName %>}
       aggregateRegistry={aggregateRegistry}
-      strategy={operation.strategy}
-      navigation={operation.navigation}
+      strategy={strategy}
+      navigation={navigation}
     />
   );
 <% } else if (it.page.operation.operation === "ReadDetail") { -%>
@@ -38,22 +47,22 @@ export function <%= it.page.componentName %>() {
 
   return (
     <DetailView
-      title={operation.title}
-      aggregate={operation.aggregate}
+      title={title}
+      aggregate={<%= it.page.descriptorName %>}
       aggregateRegistry={aggregateRegistry}
-      strategy={operation.strategy}
-      navigation={operation.navigation}
+      strategy={strategy}
+      navigation={navigation}
       id={id}
     />
   );
 <% } else if (it.page.operation.operation === "Create") { -%>
   return (
     <CreateForm
-      title={operation.title}
-      aggregate={operation.aggregate}
+      title={title}
+      aggregate={<%= it.page.descriptorName %>}
       aggregateRegistry={aggregateRegistry}
-      strategy={operation.strategy}
-      navigation={operation.navigation}
+      strategy={strategy}
+      navigation={navigation}
       instanceBaseIri={instanceBaseIri}
     />
   );
@@ -62,11 +71,11 @@ export function <%= it.page.componentName %>() {
 
   return (
     <UpdateForm
-      title={operation.title}
-      aggregate={operation.aggregate}
+      title={title}
+      aggregate={<%= it.page.descriptorName %>}
       aggregateRegistry={aggregateRegistry}
-      strategy={operation.strategy}
-      navigation={operation.navigation}
+      strategy={strategy}
+      navigation={navigation}
       instanceBaseIri={instanceBaseIri}
       id={id}
     />
@@ -76,11 +85,11 @@ export function <%= it.page.componentName %>() {
 
   return (
     <DeleteForm
-      title={operation.title}
-      aggregate={operation.aggregate}
+      title={title}
+      aggregate={<%= it.page.descriptorName %>}
       aggregateRegistry={aggregateRegistry}
-      strategy={operation.strategy}
-      navigation={operation.navigation}
+      strategy={strategy}
+      navigation={navigation}
       cascadePaths={cascadePaths}
       id={id}
     />

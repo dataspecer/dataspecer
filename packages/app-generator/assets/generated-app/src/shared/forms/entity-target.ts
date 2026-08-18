@@ -43,7 +43,7 @@ export function resolveCompositionTarget(
   return resolveAssociationTarget(owner, field, aggregateRegistry);
 }
 
-export function resolveAssociationTarget(
+function resolveAssociationTarget(
   owner: EntityTarget,
   field: FieldDescriptor,
   aggregateRegistry: AggregateDescriptorMap

@@ -7,8 +7,8 @@ import Chip from '@mui/material/Chip';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
-import type { ReferenceOption } from '../datasource/data-source.ts';
-import { useDataSource } from '../datasource/data-source-context.tsx';
+import type { ReferenceOption } from '../data-source/data-source.ts';
+import { useDataSource } from '../data-source/data-source-context.tsx';
 import { maximumCount, minimumCount, referenceDisplayFields } from '../forms/entity-target.ts';
 import { isSafeAbsoluteIri } from '../forms/iri.ts';
 import type { AggregateDescriptorMap, FieldDescriptor } from '../types/aggregate.ts';

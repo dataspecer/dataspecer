@@ -20,7 +20,7 @@ const ICONS: Record<OperationKind, typeof AddIcon> = {
   Delete: DeleteIcon,
 };
 
-export function actionIcon(operation: OperationKind) {
+function actionIcon(operation: OperationKind) {
   const Icon = ICONS[operation];
   return <Icon fontSize="small" />;
 }
