@@ -1,5 +1,5 @@
 import type { Qualifier } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { createSelectPresenter, SelectPresenter } from "../../dialog-v2/shared";
+import { createSelectPresenter, SelectPresenter } from "../../../src-v2/shared/dialog/select";
 import { AddVocabularyState } from "./add-vocabulary-state";
 
 export function createAddVocabularyPresenter(

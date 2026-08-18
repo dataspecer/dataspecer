@@ -1,5 +1,5 @@
 import type { Qualifier } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { SelectState } from "../../dialog-v2/shared";
+import { SelectState } from "../../../src-v2/shared/dialog/select";
 import { ControlledVocabulary } from "./controlled-vocabulary-model";
 
 
