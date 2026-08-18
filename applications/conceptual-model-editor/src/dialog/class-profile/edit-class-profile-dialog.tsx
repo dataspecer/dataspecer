@@ -13,6 +13,11 @@ import { ClassProfileDialogState } from "./edit-class-profile-dialog-state";
 import { useClassProfileDialogController } from "./edit-class-profile-dialog-controller";
 import { InputText } from "../components/input-text";
 import { SelectBuildIn } from "../components/select-build-in";
+import {
+  findDuplicateVocabularyItemIds,
+  hasControlledVocabularyConflict,
+  SelectControlledVocabulariesView,
+} from "../controlled-vocabularies";
 
 export const EditClassProfileDialog = (props: DialogProps<ClassProfileDialogState>) => {
   const controller = useClassProfileDialogController(props);
@@ -140,10 +145,25 @@ export const EditClassProfileDialog = (props: DialogProps<ClassProfileDialogStat
             onChange={controller.setRole}
           />
         </DialogDetailRow>
+        <DialogDetailRow detailKey={t("modify-class-profile-dialog.controlled-vocabularies")}>
+          <SelectControlledVocabulariesView
+            state={state.controlledVocabularies}
+            setState={next => props.changeState(prev => ({
+              ...prev,
+              controlledVocabularies: next(prev.controlledVocabularies),
+            }))}
+          />
+        </DialogDetailRow>
       </div>
     </>
   );
 };
+
+function isClassProfileDialogStateValid(state: ClassProfileDialogState): boolean {
+  return isValid(state.iriValidation)
+    && !hasControlledVocabularyConflict(state.controlledVocabularies)
+    && findDuplicateVocabularyItemIds(state.controlledVocabularies).size === 0;
+}
 
 export const createNewClassProfileDialog = (
   state: ClassProfileDialogState,
@@ -155,7 +175,7 @@ export const createNewClassProfileDialog = (
     state,
     confirmLabel: "dialog.class-profile.ok-create",
     cancelLabel: "dialog.class-profile.cancel",
-    validate: (state) => isValid(state.iriValidation),
+    validate: isClassProfileDialogStateValid,
     onConfirm,
     onClose: null,
   };
@@ -171,7 +191,7 @@ export const createEditClassProfileDialog = (
     state,
     confirmLabel: "dialog.class-profile.ok-edit",
     cancelLabel: "dialog.class-profile.cancel",
-    validate: (state) => isValid(state.iriValidation),
+    validate: isClassProfileDialogStateValid,
     onConfirm,
     onClose: null,
   };
