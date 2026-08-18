@@ -19,7 +19,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Link as RouterLink } from 'react-router-dom';
 
-import type { DataSource } from '../datasource/data-source.ts';
+import { useDataSource } from '../datasource/data-source-context.tsx';
 import {
   entityIdFromValue,
   hrefForAction,
@@ -46,14 +46,14 @@ export interface DetailViewProps<TModel extends EntityModel> {
   aggregate: AggregateDescriptor<TModel>;
   aggregateRegistry: AggregateDescriptorMap;
   strategy: OperationStrategy<TModel, TModel>;
-  dataSource: DataSource;
   navigation: OperationNavigationDescriptor;
   id: string;
 }
 
 /** Reads one entity through its operation and shows its fields. */
 export function DetailView<TModel extends EntityModel>(props: DetailViewProps<TModel>) {
-  const { title, aggregate, aggregateRegistry, strategy, dataSource, navigation, id } = props;
+  const dataSource = useDataSource();
+  const { title, aggregate, aggregateRegistry, strategy, navigation, id } = props;
   const [item, setItem] = useState<TModel | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

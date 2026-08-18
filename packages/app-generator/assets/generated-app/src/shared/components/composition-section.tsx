@@ -17,7 +17,6 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
-import type { DataSource } from '../datasource/data-source.ts';
 import { countIssues, entitySummary, joinValidationPath } from '../forms/composition-tree.ts';
 import {
   cardinalityDescription,
@@ -41,7 +40,6 @@ export interface CompositionSectionProps {
   target: EntityTarget | null;
   value: unknown;
   parentPath: EntityPathSegment[];
-  dataSource: DataSource;
   aggregateRegistry: AggregateDescriptorMap;
   instanceBaseIri: string;
   issues: ValidationIssue[];
@@ -187,7 +185,6 @@ export function CompositionSection(props: CompositionSectionProps) {
                       <InlineEntityFields
                         target={target}
                         entity={child}
-                        dataSource={props.dataSource}
                         aggregateRegistry={props.aggregateRegistry}
                         issues={props.issues}
                         validationPrefix={childValidationPath}
@@ -279,7 +276,6 @@ export function CompositionSection(props: CompositionSectionProps) {
 interface InlineEntityFieldsProps {
   target: EntityTarget;
   entity: EntityRecord;
-  dataSource: DataSource;
   aggregateRegistry: AggregateDescriptorMap;
   issues: ValidationIssue[];
   validationPrefix: string;
@@ -298,7 +294,6 @@ function InlineEntityFields(props: InlineEntityFieldsProps) {
           field={field}
           value={props.entity[field.propertyName]}
           error={errorAt(joinValidationPath(props.validationPrefix, field.path))}
-          dataSource={props.dataSource}
           aggregateRegistry={props.aggregateRegistry}
           onChange={(value) => props.onChange({ ...props.entity, [field.propertyName]: value })}
         />

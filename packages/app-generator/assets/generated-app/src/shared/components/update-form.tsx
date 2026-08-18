@@ -9,7 +9,7 @@ import Skeleton from '@mui/material/Skeleton';
 import SaveIcon from '@mui/icons-material/Save';
 import { useNavigate } from 'react-router-dom';
 
-import type { DataSource } from '../datasource/data-source.ts';
+import { useDataSource } from '../datasource/data-source-context.tsx';
 import { hydrateCompositionTree } from '../forms/form-draft.ts';
 import { rootEntityTarget } from '../forms/entity-target.ts';
 import { useSnackbar } from './snackbar.tsx';
@@ -35,23 +35,14 @@ interface UpdateFormProps<TModel extends EntityModel> {
   aggregate: AggregateDescriptor<TModel>;
   aggregateRegistry: AggregateDescriptorMap;
   strategy: OperationStrategy<TModel>;
-  dataSource: DataSource;
   navigation: OperationNavigationDescriptor;
   instanceBaseIri: string;
   id: string;
 }
 
 export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TModel>) {
-  const {
-    title,
-    aggregate,
-    aggregateRegistry,
-    strategy,
-    dataSource,
-    navigation,
-    instanceBaseIri,
-    id,
-  } = props;
+  const dataSource = useDataSource();
+  const { title, aggregate, aggregateRegistry, strategy, navigation, instanceBaseIri, id } = props;
   const [model, setModel] = useState<EntityRecord | null>(null);
   const [originalModel, setOriginalModel] = useState<EntityRecord | null>(null);
   const navigate = useNavigate();
@@ -220,7 +211,6 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
               aggregateRegistry={aggregateRegistry}
               model={model}
               originalModel={originalModel ?? undefined}
-              dataSource={dataSource}
               instanceBaseIri={instanceBaseIri}
               issues={issues}
               rootIdentifierReadOnly

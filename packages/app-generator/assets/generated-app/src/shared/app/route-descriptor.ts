@@ -4,8 +4,8 @@ import type { OperationKind } from '../operations/operation-kind.ts';
 
 /** One page of the application, as `routes.tsx` generates it from the application graph. */
 export interface RouteDescriptor {
+  /** Route id, derived from the id of the graph node this page was generated from. */
   id: string;
-  nodeId: string;
   path: string;
   title: string;
   operation: OperationKind;

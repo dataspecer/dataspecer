@@ -14,10 +14,10 @@ import {
 import {
   DEFAULT_READ_LIST_SORT,
   isListFieldSortable,
-  type DataSource,
   type ReadListResult,
   type ReadListSort,
 } from '../datasource/data-source.ts';
+import { useDataSource } from '../datasource/data-source-context.tsx';
 import {
   entityIdFromValue,
   hrefForAction,
@@ -42,12 +42,12 @@ export interface ListViewProps<TModel extends EntityModel> {
   aggregate: AggregateDescriptor<TModel>;
   aggregateRegistry: AggregateDescriptorMap;
   strategy: OperationStrategy<TModel, ReadListResult<TModel>>;
-  dataSource: DataSource;
   navigation: OperationNavigationDescriptor;
 }
 
 export function ListView<TModel extends EntityModel>(props: ListViewProps<TModel>) {
-  const { title, aggregate, aggregateRegistry, strategy, dataSource, navigation } = props;
+  const dataSource = useDataSource();
+  const { title, aggregate, aggregateRegistry, strategy, navigation } = props;
   const [items, setItems] = useState<TModel[]>([]);
   const [total, setTotal] = useState(0);
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({

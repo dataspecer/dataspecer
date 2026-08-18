@@ -8,7 +8,7 @@ import Typography from '@mui/material/Typography';
 import SaveIcon from '@mui/icons-material/Save';
 import { useNavigate } from 'react-router-dom';
 
-import type { DataSource } from '../datasource/data-source.ts';
+import { useDataSource } from '../datasource/data-source-context.tsx';
 import { createEntityDraft } from '../forms/form-draft.ts';
 import { rootEntityTarget } from '../forms/entity-target.ts';
 import { useSnackbar } from './snackbar.tsx';
@@ -34,14 +34,13 @@ interface CreateFormProps<TModel extends EntityModel> {
   aggregate: AggregateDescriptor<TModel>;
   aggregateRegistry: AggregateDescriptorMap;
   strategy: OperationStrategy<TModel, TModel>;
-  dataSource: DataSource;
   navigation: OperationNavigationDescriptor;
   instanceBaseIri: string;
 }
 
 export function CreateForm<TModel extends EntityModel>(props: CreateFormProps<TModel>) {
-  const { title, aggregate, aggregateRegistry, strategy, dataSource, navigation, instanceBaseIri } =
-    props;
+  const dataSource = useDataSource();
+  const { title, aggregate, aggregateRegistry, strategy, navigation, instanceBaseIri } = props;
   const [model, setModel] = useState<EntityRecord>(() =>
     createEntityDraft(rootEntityTarget(aggregate), aggregateRegistry, instanceBaseIri)
   );
@@ -128,7 +127,6 @@ export function CreateForm<TModel extends EntityModel>(props: CreateFormProps<TM
             aggregate={aggregate}
             aggregateRegistry={aggregateRegistry}
             model={model}
-            dataSource={dataSource}
             instanceBaseIri={instanceBaseIri}
             issues={issues}
             rootIdentifierReadOnly={false}

@@ -7,7 +7,8 @@ import Chip from '@mui/material/Chip';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
-import type { DataSource, ReferenceOption } from '../datasource/data-source.ts';
+import type { ReferenceOption } from '../datasource/data-source.ts';
+import { useDataSource } from '../datasource/data-source-context.tsx';
 import { maximumCount, minimumCount, referenceDisplayFields } from '../forms/entity-target.ts';
 import { isSafeAbsoluteIri } from '../forms/iri.ts';
 import type { AggregateDescriptorMap, FieldDescriptor } from '../types/aggregate.ts';
@@ -16,7 +17,6 @@ interface ReferenceSelectProps {
   field: FieldDescriptor;
   values: string[];
   multiple: boolean;
-  dataSource: DataSource;
   aggregateRegistry: AggregateDescriptorMap;
   controlId: string;
   onChange: (values: string[]) => void;
@@ -48,7 +48,8 @@ export function addManualReference(
  * Picks references by searching the instances of the target class.
  */
 export function ReferenceSelect(props: ReferenceSelectProps) {
-  const { field, values, multiple, dataSource, aggregateRegistry, controlId, onChange } = props;
+  const dataSource = useDataSource();
+  const { field, values, multiple, aggregateRegistry, controlId, onChange } = props;
   const classIri = field.targetClassIri;
   const displayFields = useMemo(
     () => referenceDisplayFields(field, aggregateRegistry),

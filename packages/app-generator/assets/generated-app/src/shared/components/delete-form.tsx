@@ -16,6 +16,7 @@ import {
   type DataSource,
   type IncomingReference,
 } from '../datasource/data-source.ts';
+import { useDataSource } from '../datasource/data-source-context.tsx';
 import { useSnackbar } from './snackbar.tsx';
 import { hydrateCompositionTree } from '../forms/form-draft.ts';
 import { rootEntityTarget } from '../forms/entity-target.ts';
@@ -40,7 +41,6 @@ interface DeleteFormProps<TModel extends EntityModel> {
   aggregate: AggregateDescriptor<TModel>;
   aggregateRegistry: AggregateDescriptorMap;
   strategy: OperationStrategy<TModel, void>;
-  dataSource: DataSource;
   navigation: OperationNavigationDescriptor;
   cascadePaths: readonly string[];
   id: string;
@@ -51,16 +51,8 @@ type IncomingReferenceCheck =
   | { status: 'failed' };
 
 export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TModel>) {
-  const {
-    title,
-    aggregate,
-    aggregateRegistry,
-    strategy,
-    dataSource,
-    navigation,
-    cascadePaths,
-    id,
-  } = props;
+  const dataSource = useDataSource();
+  const { title, aggregate, aggregateRegistry, strategy, navigation, cascadePaths, id } = props;
   const [item, setItem] = useState<TModel | null>(null);
   const [cascade, setCascade] = useState<CascadePreview | null>(null);
   const navigate = useNavigate();

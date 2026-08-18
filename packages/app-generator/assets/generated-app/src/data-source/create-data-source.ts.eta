@@ -1,8 +1,13 @@
 import { RdfLdkitDataSource } from "@/shared/datasource/rdf-ldkit-data-source.ts";
 <%~ it.aggregates.map((aggregate) => `import { ${aggregate.schemaName} } from "@/modules/${aggregate.moduleName}/ldkit-schema.ts";`).join("\n") %>
 
+/**
+ * Builds the data source the whole application reads and writes through. Replace the
+ * implementation here to run the application against something other than a SPARQL endpoint.
+ */
 export function createDataSource() {
   return new RdfLdkitDataSource(<%~ it.json(it.model.datasource.endpoint) %>, {
+    // key - aggregate IRI, value - schema
 <%~ it.aggregates.map((aggregate) => `    ${it.json(aggregate.iri)}: ${aggregate.schemaName},`).join("\n") %>
   });
 }

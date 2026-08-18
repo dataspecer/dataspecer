@@ -7,6 +7,8 @@ import { AdapterLuxon } from "@mui/x-date-pickers/AdapterLuxon";
 import { RouterProvider } from "react-router-dom";
 
 import { router } from "./App.tsx";
+import { dataSource } from "@/generated/operation-registry.ts";
+import { DataSourceProvider } from "@/shared/datasource/data-source-context.tsx";
 import { SnackbarProvider } from "@/shared/components/snackbar.tsx";
 import { theme } from "./theme.ts";
 import "./index.css";
@@ -16,9 +18,11 @@ createRoot(document.getElementById("root")!).render(
     <ThemeProvider theme={theme} defaultMode="system">
       <CssBaseline />
       <LocalizationProvider dateAdapter={AdapterLuxon} adapterLocale={navigator.language}>
-        <SnackbarProvider>
-          <RouterProvider router={router} />
-        </SnackbarProvider>
+        <DataSourceProvider value={dataSource}>
+          <SnackbarProvider>
+            <RouterProvider router={router} />
+          </SnackbarProvider>
+        </DataSourceProvider>
       </LocalizationProvider>
     </ThemeProvider>
   </React.StrictMode>,

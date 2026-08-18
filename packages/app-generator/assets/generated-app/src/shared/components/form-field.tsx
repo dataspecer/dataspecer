@@ -15,7 +15,6 @@ import { DateTime } from 'luxon';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 
-import type { DataSource } from '../datasource/data-source.ts';
 import {
   fieldValues,
   type AggregateDescriptorMap,
@@ -34,13 +33,12 @@ interface FormFieldProps {
   field: FieldDescriptor;
   value: unknown;
   error?: string;
-  dataSource: DataSource;
   aggregateRegistry: AggregateDescriptorMap;
   onChange: (value: unknown) => void;
 }
 
 export function FormField(props: FormFieldProps) {
-  const { field, value, error, dataSource, aggregateRegistry, onChange } = props;
+  const { field, value, error, aggregateRegistry, onChange } = props;
   const control = resolveControl(field);
   const controlId = useId();
   const labelId = `${controlId}-label`;
@@ -81,7 +79,6 @@ export function FormField(props: FormFieldProps) {
           <ReferenceControl
             field={field}
             value={value}
-            dataSource={dataSource}
             aggregateRegistry={aggregateRegistry}
             controlId={controlId}
             onChange={onChange}
@@ -107,14 +104,13 @@ export function FormField(props: FormFieldProps) {
 interface ReferenceControlProps {
   field: FieldDescriptor;
   value: unknown;
-  dataSource: DataSource;
   aggregateRegistry: AggregateDescriptorMap;
   controlId: string;
   onChange: (value: unknown) => void;
 }
 
 function ReferenceControl(props: ReferenceControlProps) {
-  const { field, value, dataSource, aggregateRegistry, controlId, onChange } = props;
+  const { field, value, aggregateRegistry, controlId, onChange } = props;
   if (field.many) {
     const ids = fieldValues(value, field).flatMap((entry) => {
       const id = entry && typeof entry === 'object' ? (entry as { id?: unknown }).id : undefined;
@@ -125,7 +121,6 @@ function ReferenceControl(props: ReferenceControlProps) {
         field={field}
         values={ids}
         multiple
-        dataSource={dataSource}
         aggregateRegistry={aggregateRegistry}
         controlId={controlId}
         onChange={(next) => onChange(next.map((id) => ({ id })))}
@@ -139,7 +134,6 @@ function ReferenceControl(props: ReferenceControlProps) {
       field={field}
       values={typeof id === 'string' && id !== '' ? [id] : []}
       multiple={false}
-      dataSource={dataSource}
       aggregateRegistry={aggregateRegistry}
       controlId={controlId}
       onChange={(ids) => onChange(ids[0] ? { id: ids[0] } : undefined)}

@@ -6,15 +6,19 @@ import type { OperationNavigationDescriptor } from "@/shared/navigation/navigati
 <%~ it.aggregates.map((aggregate) => `import { ${aggregate.descriptorName} } from "@/modules/${aggregate.moduleName}/descriptor.ts";`).join("\n") %>
 <%~ it.pages.map((page) => `import { ${page.operationClassName} } from "@/modules/${page.moduleName}/${page.operation.routeId}-operation.ts";`).join("\n") %>
 
+/** The data source every page reads and writes through, provided to the tree by main.tsx. */
 export const dataSource = createDataSource();
 
+/**
+ * Every data structure the application knows, keyed by aggregate IRI.
+ */
 export const aggregateRegistry = {
 <%~ it.aggregates.map((aggregate) => `  ${it.json(aggregate.iri)}: ${aggregate.descriptorName},`).join("\n") %>
 } satisfies AggregateDescriptorMap;
 
 export interface RegisteredOperation<TModel extends EntityModel = EntityModel> {
+  /** Id of the graph node this operation was generated from, which is also its key here. */
   id: string;
-  nodeId: string;
   operation: OperationKind;
   title: string;
   aggregate: AggregateDescriptor<TModel>;
@@ -23,11 +27,13 @@ export interface RegisteredOperation<TModel extends EntityModel = EntityModel> {
   strategy: OperationStrategy<TModel>;
 }
 
+/**
+ * Every page operation, keyed by the id of the graph node it was generated from.
+ */
 export const operations = {
 <% it.pages.forEach((page) => { -%>
   <%~ it.json(page.operation.id) %>: {
     id: <%~ it.json(page.operation.id) %>,
-    nodeId: <%~ it.json(page.operation.nodeId) %>,
     operation: <%~ it.json(page.operation.operation) %>,
     title: <%~ it.json(page.operation.pageTitle) %>,
     aggregate: <%= it.aggregates.find((aggregate) => aggregate.moduleName === page.moduleName).descriptorName %>,

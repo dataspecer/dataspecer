@@ -5,7 +5,6 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 
-import type { DataSource } from '../datasource/data-source.ts';
 import {
   collectEntityIds,
   issuesByPane,
@@ -37,7 +36,6 @@ interface EntityFormEditorProps {
   aggregateRegistry: AggregateDescriptorMap;
   model: EntityRecord;
   originalModel?: EntityRecord;
-  dataSource: DataSource;
   instanceBaseIri: string;
   issues: ValidationIssue[];
   rootIdentifierReadOnly: boolean;
@@ -122,7 +120,6 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
             field={field}
             value={entity[field.propertyName]}
             error={errorAt(joinValidationPath(validationPrefix, field.path))}
-            dataSource={props.dataSource}
             aggregateRegistry={props.aggregateRegistry}
             onChange={(value) =>
               updateSelected((current) => ({ ...current, [field.propertyName]: value }))
@@ -140,7 +137,6 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
             target={childTarget}
             value={entity[field.propertyName]}
             parentPath={selection}
-            dataSource={props.dataSource}
             aggregateRegistry={props.aggregateRegistry}
             instanceBaseIri={props.instanceBaseIri}
             issues={props.issues}
