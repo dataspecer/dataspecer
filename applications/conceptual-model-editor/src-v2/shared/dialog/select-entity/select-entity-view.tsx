@@ -1,5 +1,4 @@
 import { ChangeEvent } from "react";
-import { t } from "../../../../src/application";
 import { SelectEntityPresenter } from "./select-entity-presenter";
 import { SelectEntityState } from "./select-entity-state";
 

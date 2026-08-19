@@ -1,5 +1,5 @@
 import { ChangeEvent } from "react";
-import { t } from "../../../../src/application";
+import { useLabelSelector } from "../../../infrastructure/i18n";
 import { SelectPresenter } from "./select-presenter";
 import { SelectState } from "./select-state";
 
@@ -17,6 +17,7 @@ export function Select(props: {
    */
   disabled?: boolean,
 }) {
+  const labelSelector = useLabelSelector();
   const value = props.state.value?.id ?? NOT_SELECTED;
 
   const onChange = (event: ChangeEvent<HTMLSelectElement>) => {
@@ -36,7 +37,7 @@ export function Select(props: {
         : null}
       {props.state.items.map(item => (
         <option key={item.id} value={item.id}>
-          {t(item.label)}
+          {labelSelector.t(item.label)}
         </option>
       ))}
     </select>
