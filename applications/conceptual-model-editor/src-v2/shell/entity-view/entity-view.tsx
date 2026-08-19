@@ -1,53 +1,15 @@
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { ArrowLeft, ChevronLeft, ChevronRight, MousePointerClick } from "lucide-react";
 
 import { useApplicationState } from "../../core/application/application-react";
-import { CmeProviderEvent } from "../../core/cme-provider/cme-provider";
-import { useCmeProviders } from "../../core/cme-provider";
 import { SelectionApi } from "../../core/application/application-selection-api";
 import { SelectedEntity } from "../../core/application/application-state";
-import { isCmeVocabularyStateEvent } from "../../features/vocabulary-model/cme-vocabulary-provider";
-import {
-  CmeVocabularyClass,
-  CmeVocabularyGeneralization,
-  CmeVocabularyRelation,
-} from "../../features/vocabulary-model/cme-vocabulary-model";
 import { entityViewPreviewRegistry } from "../../core/entity-view";
 
-export function EntityView(props: {
-
-}) {
-
-  // TODO We should not use the feature directly here!
-  const [state, setState] = useState<{
-
-    classes: CmeVocabularyClass[];
-
-    relationships: CmeVocabularyRelation[];
-
-    generalizations: CmeVocabularyGeneralization[];
-
-  }>({
-    classes: [],
-    relationships: [],
-    generalizations: [],
-  });
+export function EntityView() {
 
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const application = useApplicationState();
-
-  const updateState = useCallback((event: CmeProviderEvent) => {
-    if (isCmeVocabularyStateEvent(event)) {
-      setState(previous => ({
-        ...previous,
-        classes: event.classes,
-        relationships: event.relationships,
-        generalizations: event.generalizations,
-      }));
-    }
-  }, [setState]);
-
-  useCmeProviders(updateState);
 
   // Check if something is selected.
   const selection = application.state.selection;
