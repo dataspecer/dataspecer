@@ -27,7 +27,12 @@ export function SnackbarProvider(props: { children: ReactNode }) {
       <Snackbar
         open={notification !== null}
         autoHideDuration={4000}
-        onClose={() => setNotification(null)}
+        // a click anywhere else is not an acknowledgement, only the timer and the close button are
+        onClose={(_event, reason) => {
+          if (reason !== 'clickaway') {
+            setNotification(null);
+          }
+        }}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
         {notification ? (

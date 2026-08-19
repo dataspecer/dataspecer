@@ -69,6 +69,7 @@ export function DetailView<TModel extends EntityModel>(props: DetailViewProps<TM
     let active = true;
     setLoading(true);
     setError(null);
+    setItem(null);
     invokeOperation(strategy, {
       aggregate,
       aggregateRegistry,

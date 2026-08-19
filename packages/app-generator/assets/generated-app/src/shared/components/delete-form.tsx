@@ -150,6 +150,8 @@ export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TM
     };
   }, [aggregate, aggregateRegistry, cascadePaths, dataSource, id]);
 
+  const checking =
+    item !== null && (incomingReferenceCheck === null || (cascadePaths.length > 0 && !cascade));
   const errorFor = (path: string) => issues.find((issue) => issue.path === path)?.message;
   const generalErrors = issues.filter((issue) => !issue.path);
 
@@ -265,13 +267,18 @@ export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TM
           variant="contained"
           color="error"
           startIcon={<DeleteIcon />}
-          disabled={submitting || !item}
+          disabled={submitting || !item || checking}
         >
           {submitting ? 'Deleting…' : 'Delete'}
         </Button>
         <Button type="button" onClick={leaveForm}>
           Cancel
         </Button>
+        {checking ? (
+          <Typography variant="body2" color="text.secondary" sx={{ alignSelf: 'center' }}>
+            Checking what else this affects…
+          </Typography>
+        ) : null}
       </Stack>
     </Stack>
   );

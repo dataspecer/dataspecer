@@ -221,6 +221,7 @@ export class RdfLdkitDataSource implements DataSource {
   private context(): QueryContext {
     return {
       sources: [this.endpoint],
+      fetch: throwOnFailedRequest,
     };
   }
 }
@@ -431,3 +432,19 @@ export function toLdkitEntity(value: unknown, mode: 'create' | 'update'): unknow
   // An object that keeps no properties (for example an unset reference) is dropped entirely.
   return Object.keys(result).length > 0 ? result : undefined;
 }
+
+/**
+ * LDKit checks the response of a query but not of an update, so an endpoint that rejects a write
+ * would resolve as a success and the application would report data as saved that never was. Every
+ * request the engine makes goes through here instead.
+ */
+const throwOnFailedRequest: typeof fetch = async (input, init) => {
+  const response = await fetch(input, init);
+  if (!response.ok) {
+    await response.body?.cancel();
+    throw new Error(
+      `The endpoint rejected the request: ${response.status} ${response.statusText}.`
+    );
+  }
+  return response;
+};

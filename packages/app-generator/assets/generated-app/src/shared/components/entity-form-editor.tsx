@@ -1,4 +1,4 @@
-import { useId, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import Badge from '@mui/material/Badge';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
@@ -51,17 +51,27 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
   const identifierId = useId();
   const [structureOpen, setStructureOpen] = useState(false);
 
-  const rootTarget = rootEntityTarget(props.aggregate);
+  const rootTarget = useMemo(() => rootEntityTarget(props.aggregate), [props.aggregate]);
+  const existingIds = useMemo(
+    () => collectEntityIds(props.originalModel, rootTarget, props.aggregateRegistry),
+    [props.originalModel, rootTarget, props.aggregateRegistry]
+  );
+  const navigable = useMemo(
+    () => navigablePanes(props.model, rootTarget, props.aggregateRegistry, []),
+    [props.model, rootTarget, props.aggregateRegistry]
+  );
+  // Every problem is counted once, against the pane that shows it. The badge is their total, so it
+  // says how much is wrong with the form, and the structure drawer says where.
+  const issueCounts = useMemo(
+    () => issuesByPane(rootTarget, props.aggregateRegistry, props.issues),
+    [rootTarget, props.aggregateRegistry, props.issues]
+  );
+
   // a path from the address bar can point at a child that no longer exists
   const selection = resolveEntityPath(props.model, requestedPath);
   const target = targetAtPath(rootTarget, selection, props.aggregateRegistry);
   const entity = entityAtPath(props.model, selection);
   const validationPrefix = validationPathAt(rootTarget, selection, props.aggregateRegistry);
-  const existingIds = collectEntityIds(props.originalModel, rootTarget, props.aggregateRegistry);
-  const navigable = navigablePanes(props.model, rootTarget, props.aggregateRegistry, []);
-  // Every problem is counted once, against the pane that shows it. The badge is their total, so it
-  // says how much is wrong with the form, and the structure drawer says where.
-  const issueCounts = issuesByPane(rootTarget, props.aggregateRegistry, props.issues);
   const totalIssues = [...issueCounts.values()].reduce((total, count) => total + count, 0);
 
   const updateSelected = (update: (entity: EntityRecord) => EntityRecord) => {

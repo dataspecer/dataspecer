@@ -24,6 +24,7 @@ describe('renderGeneratedApp', () => {
     expect(first).toEqual(second);
     expect(Object.keys(first)).toEqual(
       expect.arrayContaining([
+        'AGENTS.md',
         'README.md',
         'index.html',
         'package.json',
@@ -201,9 +202,12 @@ describe('renderGeneratedApp', () => {
     expect(tree.get('src/shared/components/form-field.tsx')).toContain(
       'htmlFor={field.many ? undefined : controlId}'
     );
+    // the two documents a developer opens first
     const readme = tree.get('README.md');
-    expect(readme).toContain('Generated/User-Owned Boundaries');
-    expect(readme).toMatch(/generated from Dataspecer aggregate\s+field metadata/);
+    expect(readme).toContain('## Getting started');
+    expect(readme).toContain('src/config/data-sources.ts');
+    expect(readme).toContain('overwrites every file');
+    expect(tree.get('AGENTS.md')).toContain('Extension points');
   });
 
   it('renders graph transitions as page, row, and association navigation actions', () => {
@@ -468,7 +472,7 @@ describe('renderGeneratedApp', () => {
     expect(tree.get('src/shared/data-source/data-source.ts')).toContain(
       'listIncomingReferences(id: string): Promise<IncomingReference[]>'
     );
-    expect(tree.get('README.md')).toContain('`listIncomingReferences(id)`');
+    expect(tree.get('README.md')).toContain('resources elsewhere that still point at this one');
   });
 });
 
