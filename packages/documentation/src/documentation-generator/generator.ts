@@ -3,7 +3,7 @@ import { isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRel
 import { Entity, InMemoryEntityModel } from "@dataspecer/core-v2/entity-model";
 import { SemanticModelAggregator } from "@dataspecer/core-v2/semantic-model/aggregator";
 import { LanguageString, SemanticModelClass, SemanticModelEntity, SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
-import { isSemanticModelClassProfile, isSemanticModelRelationshipProfile, SemanticModelClassProfile, SemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
+import { ControlledVocabularyAssignment, isSemanticModelClassProfile, isSemanticModelRelationshipProfile, SemanticModelClassProfile, SemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { getTranslation } from "@dataspecer/core-v2/utils/language";
 import { createHandlebarsAdapter, HandlebarsAdapter } from "@dataspecer/handlebars-adapter";
 import { StructureModel } from '@dataspecer/core/structure-model/model/structure-model';
@@ -176,6 +176,16 @@ export async function generateDocumentation(
           if (concept) {
             concept.backwardsRelationships = concept.backwardsRelationships || [];
             concept.backwardsRelationships.push(entity);
+
+            // Properties do not carry their own controlled vocabulary
+            // assignments. Instead, a property derives one from its range:
+            // if the range is a class profile that itself has controlled
+            // vocabularies (including ones merged in from its own profiling
+            // chain), the property inherits that same, already-resolved list.
+            const rangeControlledVocabularies = (concept as SemanticModelClassProfile & {aggregation?: SemanticModelClassProfile}).aggregation?.controlledVocabularies;
+            if (rangeControlledVocabularies?.length) {
+              (entity as RelationshipLike & {derivedControlledVocabularies?: ControlledVocabularyAssignment[]}).derivedControlledVocabularies = rangeControlledVocabularies;
+            }
           }
         }
       }
@@ -184,24 +194,24 @@ export async function generateDocumentation(
 
   const locallyDefinedSemanticEntityByTags = Object.groupBy(sortedSemanticModel, entity => (entity as SemanticModelClassProfile)?.tags?.[0] || "default");
 
-  // Reversed view of controlled vocabulary assignments: for each qualifier,
-  // one entry per (vocabulary, class profile) pair, for the "which class
-  // profiles require this vocabulary" summary section.
+  // Reversed view of derived controlled vocabulary usages: for each
+  // qualifier, one entry per (vocabulary, property) pair, for the "which
+  // properties require this vocabulary" summary section.
   const controlledVocabularyUsagesByQualifier: Record<string, {
     identifier: string;
     override: boolean;
-    classProfile: SemanticModelClassProfile;
+    property: RelationshipLike;
   }[]> = {};
   for (const entity of sortedSemanticModel) {
-    if (!isSemanticModelClassProfile(entity)) {
+    if (!(isSemanticModelRelationship(entity) || isSemanticModelRelationshipProfile(entity))) {
       continue;
     }
-    const aggregated = (entity as { aggregation?: SemanticModelClassProfile }).aggregation;
-    for (const assignment of aggregated?.controlledVocabularies ?? []) {
+    const assignments = (entity as RelationshipLike & {derivedControlledVocabularies?: ControlledVocabularyAssignment[]}).derivedControlledVocabularies;
+    for (const assignment of assignments ?? []) {
       (controlledVocabularyUsagesByQualifier[assignment.qualifier] ??= []).push({
         identifier: assignment.identifier,
         override: assignment.override,
-        classProfile: entity,
+        property: entity,
       });
     }
   }
