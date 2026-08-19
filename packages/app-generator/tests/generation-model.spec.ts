@@ -362,16 +362,18 @@ describe('buildGenerationModel', () => {
         requiresEntityId: true,
       },
     ]);
+    // association actions follow the fields of the aggregate, which are in the order the data
+    // structure declares them, and BookDetail declares chapters before author
     expect(detail?.navigation.associationActions).toEqual([
       {
-        id: 'detail-author-detail:author',
-        fieldPath: 'author',
+        id: 'detail-author-detail:chapters.editor',
+        fieldPath: 'chapters.editor',
         targetPath: '/author-read-detail',
         requiresEntityId: true,
       },
       {
-        id: 'detail-author-detail:chapters.editor',
-        fieldPath: 'chapters.editor',
+        id: 'detail-author-detail:author',
+        fieldPath: 'author',
         targetPath: '/author-read-detail',
         requiresEntityId: true,
       },

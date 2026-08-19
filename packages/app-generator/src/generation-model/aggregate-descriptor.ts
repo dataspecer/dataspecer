@@ -1,5 +1,3 @@
-import { sortBy } from 'es-toolkit';
-
 import type { AggregateFieldMetadata, AggregateMetadata } from '../metadata/types.ts';
 import type { GeneratedAggregateDescriptor, GeneratedFieldDescriptor } from './types.ts';
 
@@ -13,7 +11,7 @@ export function buildAggregateDescriptor(
     name: aggregate.name,
     safeName: toAggregateTypeName(aggregate.name),
     classIri: aggregate.classIri,
-    fields: sortBy(aggregate.fields, [(field) => field.path]).map(buildFieldDescriptor),
+    fields: aggregate.fields.map(buildFieldDescriptor),
   };
 }
 
@@ -32,8 +30,6 @@ function buildFieldDescriptor(field: AggregateFieldMetadata): GeneratedFieldDesc
     ...(field.targetClassIri ? { targetClassIri: field.targetClassIri } : {}),
     ...(field.associationKind ? { associationKind: field.associationKind } : {}),
     ...(field.isReverse ? { isReverse: true } : {}),
-    ...(field.fields
-      ? { fields: sortBy(field.fields, [(child) => child.path]).map(buildFieldDescriptor) }
-      : {}),
+    ...(field.fields ? { fields: field.fields.map(buildFieldDescriptor) } : {}),
   };
 }
