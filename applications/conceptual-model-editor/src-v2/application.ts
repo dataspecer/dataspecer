@@ -3,7 +3,13 @@
 // purely to trigger their registration into the core registries.
 import { catalogItemRegistry } from "./core/catalog";
 import { cmeProvidersRegistry } from "./core/cme-provider";
-import { createCmePackageProvider } from "./features/package-model";
+import { headerRegionRegistry } from "./core/header";
+import {
+  createCmePackageProvider,
+} from "./features/package-model";
+import {
+  PackageHeaderRegion,
+} from "./features/package-model/package-header-region";
 import {
   createCmeVocabularyProvider,
   createVocabularyCatalogItemSource,
@@ -12,6 +18,11 @@ import {
 cmeProvidersRegistry.register({
   id: "cme-package-provider",
   create: createCmePackageProvider,
+});
+
+headerRegionRegistry.register({
+  id: "cme-package-header-region",
+  component: PackageHeaderRegion,
 });
 
 cmeProvidersRegistry.register({

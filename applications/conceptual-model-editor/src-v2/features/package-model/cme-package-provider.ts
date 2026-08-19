@@ -25,13 +25,13 @@ export interface CmePackageProvider extends CmeProvider {
 
   onEntitiesDidChange(event: EntitiesChangeEvent): void;
 
-  subscribe(subscriber: (value: CmePackageEvent) => void): () => void;
+  subscribe(subscriber: (value: CmePackageStateEvent) => void): () => void;
 
 }
 
 const CME_PACKAGE_STATE_TYPE = "cme-package-provider-state";
 
-export interface CmePackageEvent {
+export interface CmePackageStateEvent {
 
   type: typeof CME_PACKAGE_STATE_TYPE;
 
@@ -65,9 +65,9 @@ export interface CmeModelMetadata {
 
 }
 
-export function isCmePackageEvent(
+export function isCmePackageStateEvent(
   value: { type: string },
-): value is CmePackageEvent {
+): value is CmePackageStateEvent {
   return value.type === CME_PACKAGE_STATE_TYPE;
 }
 
@@ -83,7 +83,7 @@ const PROJECT_MODEL_IDENTIFIER = "_project_model";
 
 class DefaultCmePackageProvider implements CmePackageProvider {
 
-  private state: CmePackageEvent = {
+  private state: CmePackageStateEvent = {
     type: CME_PACKAGE_STATE_TYPE,
     package: {
       id: "",
@@ -98,7 +98,7 @@ class DefaultCmePackageProvider implements CmePackageProvider {
 
   private readonly logger: Logger;
 
-  private readonly subscribers = new SubscriptionManager<CmePackageEvent>();
+  private readonly subscribers = new SubscriptionManager<CmePackageStateEvent>();
 
   constructor(logger: Logger) {
     this.logger = logger;
@@ -114,6 +114,7 @@ class DefaultCmePackageProvider implements CmePackageProvider {
     // Notify listeners about a new state.
     this.state = update.state();
     this.state = this.updateLabelsFromVisualModel_WORKAROUND_(event);
+    console.log(this.state);
     this.subscribers.notifyAll(this.state);
   }
 
@@ -155,15 +156,15 @@ class DefaultCmePackageProvider implements CmePackageProvider {
     return hasChanged ? { ...this.state, visualModels } : this.state;
   }
 
-  subscribe(subscriber: (value: CmePackageEvent) => void): () => void {
+  subscribe(subscriber: (value: CmePackageStateEvent) => void): () => void {
     return this.subscribers.subscribe(subscriber);
   }
 
 }
 
-class CmePackageUpdate implements StateUpdate<CmePackageEvent> {
+class CmePackageUpdate implements StateUpdate<CmePackageStateEvent> {
 
-  readonly previous: CmePackageEvent;
+  readonly previous: CmePackageStateEvent;
 
   package: CmeModelMetadata;
 
@@ -171,7 +172,7 @@ class CmePackageUpdate implements StateUpdate<CmePackageEvent> {
 
   readonly visual: UpdateArray<CmeModelMetadata>;
 
-  constructor(state: CmePackageEvent) {
+  constructor(state: CmePackageStateEvent) {
     this.previous = state;
     this.package = state.package;
     this.semantic = new UpdateArray(state.semanticModels);
@@ -241,8 +242,8 @@ class CmePackageUpdate implements StateUpdate<CmePackageEvent> {
     }
   }
 
-  state(): CmePackageEvent {
-    const next: CmePackageEvent = {
+  state(): CmePackageStateEvent {
+    const next: CmePackageStateEvent = {
       ...this.previous,
       package: this.package,
       semanticModels: this.semantic.state(),

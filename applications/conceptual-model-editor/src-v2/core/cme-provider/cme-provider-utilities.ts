@@ -134,17 +134,23 @@ function updateArrayItemsByIdTo<
   }
   // Update existing
   for (const value of changed) {
-    const index = items.findIndex(item => item.id === item.id);
+    const index = result.findIndex(item => item.id === value.id);
     if (index === -1) {
       // This is sort of a fallback it should not be needed.
-      items.push(value);
+      result.push(value);
     } else {
-      items[index] = value;
+      result[index] = value;
     }
   }
-  // Add new items.
-  if (created.length > 0) {
-    result = [...result, ...created];
+  // Add new items, unless already present, in which case treat it as
+  // an update instead so the same id is never added twice.
+  for (const value of created) {
+    const index = result.findIndex(item => item.id === value.id);
+    if (index === -1) {
+      result.push(value);
+    } else {
+      result[index] = value;
+    }
   }
   return result;
 }

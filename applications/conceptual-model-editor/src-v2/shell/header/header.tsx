@@ -1,8 +1,8 @@
-import { useCallback, useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import {
-  Save, LogOut, ChevronDown, Plus, Pencil, Trash2, Check, Settings2,
-  FileDown, Sun, Moon, MoonStar, Monitor, Languages,
+  Save, LogOut, Check, Settings2,
+  FileDown, Sun, Moon, MoonStar, Monitor, Languages, ChevronDown,
 } from "lucide-react";
 import { Button } from "@user-interface/ui/button";
 import { Separator } from "@user-interface/ui/separator";
@@ -10,20 +10,11 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@user-interface/ui/dropdown-menu";
-import { cn } from "@user-interface/lib/utils";
 import { useTheme } from "@user-interface/theme-provider";
-import {
-  createEmptyHeaderState,
-  updateHeaderStateWithCmePackage,
-} from "./header-state";
-import { CmePackageEvent } from "../../features/package-model";
 import { useLabelSelector } from "../../infrastructure/i18n";
 import { createHeaderPresenter } from "./header-presenter";
 import { useCmeCommandExecutor } from "../../core/cme-command";
-import { useGuarderCmeProviders } from "../../core/cme-provider";
-import {
-  isCmePackageEvent
-} from "../../features/package-model/cme-package-provider";
+import { headerRegionRegistry } from "../../core/header";
 
 export function Header(props: {
   activeVisualModel: string | null,
@@ -33,18 +24,6 @@ export function Header(props: {
   const commandExecutor = useCmeCommandExecutor();
 
   const { theme, setTheme } = useTheme();
-
-  const [state, setState] = useState(createEmptyHeaderState);
-
-  const updateState = useCallback((value: CmePackageEvent) =>
-    setState(previous => updateHeaderStateWithCmePackage(
-      previous, value)),
-    [setState]);
-
-  useGuarderCmeProviders(isCmePackageEvent, updateState);
-
-  const visualModel = state.visualModels
-    .find(item => item.id === props.activeVisualModel) ?? null;
 
   const presenter = useMemo(
     () => createHeaderPresenter(commandExecutor),
@@ -65,82 +44,13 @@ export function Header(props: {
 
       <Separator orientation="vertical" />
 
-      {/* Package info */}
-      <div className="flex min-w-0 items-baseline gap-1.5 pl-1">
-        <span className="shrink-0 text-muted-foreground">Package</span>
-        <span className="truncate font-medium text-foreground">
-          {labelSelector.langString(state.packageLabel)}
-        </span>
-      </div>
-
-      {/* View selector */}
-      <div className="flex shrink-0 items-center gap-1">
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={<Button variant="ghost" size="sm" className="gap-1.5 px-2" />}
-          >
-            <span className="text-muted-foreground">View</span>
-            <span className="font-medium">
-              {visualModel === null ? "---" :
-                labelSelector.langString(visualModel.label)}
-            </span>
-            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56">
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>Visual models</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {state.visualModels.map((item) => (
-                <div
-                  key={item.id}
-                  role="button"
-                  onClick={() => presenter.onSetActiveVisualModel(item.id)}
-                  className={cn(
-                    "group flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent",
-                    item.id === props.activeVisualModel && "bg-accent/60"
-                  )}
-                >
-                  <Check
-                    className={cn(
-                      "h-3.5 w-3.5 shrink-0 text-violet-600",
-                      item.id !== props.activeVisualModel && "opacity-0"
-                    )}
-                  />
-                  {labelSelector.langString(item.label)}
-                  <div className="flex-1" />
-                  <div className="flex shrink-0 items-center gap-0.5">
-                    <button
-                      onClick={() => presenter.onEditVisualModel(item.id)}
-                      className="rounded-sm p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-                      aria-label={`Rename ${labelSelector.langString(item.label)}`}
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={() => presenter.onDeleteVisualModel(item.id)}
-                      className="rounded-sm p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                      aria-label={`Remove ${labelSelector.langString(item.label)}`}
-                      disabled={state.visualModels.length <= 1}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={presenter.onCreateVisualModel}
-          aria-label="Add view"
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
-      </div>
+      {/* Feature-contributed header regions */}
+      {headerRegionRegistry.list().map(contribution => (
+        <contribution.component
+          key={contribution.id}
+          activeVisualModel={props.activeVisualModel}
+        />
+      ))}
 
       <Separator orientation="vertical" />
 
