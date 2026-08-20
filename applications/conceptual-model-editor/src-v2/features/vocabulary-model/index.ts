@@ -1,6 +1,6 @@
 export {
   createCmeVocabularyProvider,
-  isCmeVocabularyStateEvent as isCmeVocabularyEvent,
+  isCmeVocabularyStateEvent,
   type CmeVocabularyStateEvent,
 } from "./cme-vocabulary-provider";
 export {

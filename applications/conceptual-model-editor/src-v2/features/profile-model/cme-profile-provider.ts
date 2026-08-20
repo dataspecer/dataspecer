@@ -1,34 +1,39 @@
 import {
-  isSemanticModelClassProfile,
-  isSemanticModelGeneralizationProfile, isSemanticModelRelationshipProfile, SemanticModelClassProfile,
+  isAggregatedProfiledSemanticModelEntity,
+} from "@dataspecer/core-v2/semantic-model/profile/aggregator";
+import {
+  isSemanticModelClassProfile, isSemanticModelGeneralizationProfile,
+  isSemanticModelRelationshipProfile, SemanticModelClassProfile,
   SemanticModelGeneralizationProfile, SemanticModelRelationshipProfile,
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { Logger } from "./logger";
 import { Entity, EntityIdentifier } from "@dataspecer/core/entity-model";
 import { ModelIdentifier } from "@dataspecer/core/model";
-import { SubscriptionManager } from "./subscription-manager";
+import { Logger } from "../../infrastructure/logger";
+import { SubscriptionManager } from "../../shared/subscription-manager";
 import {
-  EventToStateUpdate, selectStable, StateUpdate, UpdateArray,
-} from "./provider-utilities";
-import { EntitiesChangeEvent } from "./dataspecer-package-api";
-import { isAggregatedProfiledSemanticModelEntity } from "@dataspecer/core-v2/semantic-model/profile/aggregator";
-
+  CmeProvider, EventToStateUpdate, selectStable, StateUpdate, UpdateArray,
+} from "../../core/cme-provider";
+import { EntitiesChangeEvent } from "../../infrastructure/dataspecer";
 
 export function createCmeProfileProvider(
-  logger: Logger,
+  { logger }: { logger: Logger },
 ): CmeProfileProvider {
   return new DefaultCmeProfileProvider(logger);
 }
 
-export interface CmeProfileProvider {
+export interface CmeProfileProvider extends CmeProvider {
 
   onEntitiesDidChange(event: EntitiesChangeEvent): void;
 
-  subscribe(subscriber: (value: CmeProfile) => void): () => void;
+  subscribe(subscriber: (value: CmeProfileEvent) => void): () => void;
 
 }
 
-export interface CmeProfile {
+const CME_PROFILE_STATE_TYPE = "cme-profile-provider-state";
+
+export interface CmeProfileEvent {
+
+  type: typeof CME_PROFILE_STATE_TYPE;
 
   classes: SemanticModelClassProfile[];
 
@@ -40,9 +45,16 @@ export interface CmeProfile {
 
 }
 
-class DefaultCmeProfileProvider {
+export function isCmeProfileEvent(
+  value: { type: string },
+): value is CmeProfileEvent {
+  return value.type === CME_PROFILE_STATE_TYPE;
+}
 
-  state: CmeProfile = {
+class DefaultCmeProfileProvider implements CmeProfileProvider {
+
+  private state: CmeProfileEvent = {
+    type: CME_PROFILE_STATE_TYPE,
     classes: [],
     relationship: [],
     generalizations: [],
@@ -51,15 +63,15 @@ class DefaultCmeProfileProvider {
 
   private readonly logger: Logger;
 
+  private readonly subscribers = new SubscriptionManager<CmeProfileEvent>();
+
   constructor(logger: Logger) {
     this.logger = logger;
   }
 
-  private readonly subscribers = new SubscriptionManager<CmeProfile>();
-
   onEntitiesDidChange(event: EntitiesChangeEvent) {
-    const update = new EventToStateUpdate(new CmeSemanticProfileUpdate(this.state));
-    update.onEntitiesDidChange(event);
+    const update = new CmeSemanticProfileUpdate(this.state);
+    (new EventToStateUpdate(update)).onEntitiesDidChange(event);
     // Update state.
     const next = update.state();
     if (next === this.state) {
@@ -70,15 +82,15 @@ class DefaultCmeProfileProvider {
     this.subscribers.notifyAll(this.state);
   }
 
-  subscribe(subscriber: (value: CmeProfile) => void): () => void {
+  subscribe(subscriber: (value: CmeProfileEvent) => void): () => void {
     return this.subscribers.subscribe(subscriber);
   }
 
 }
 
-class CmeSemanticProfileUpdate implements StateUpdate<CmeProfile> {
+class CmeSemanticProfileUpdate implements StateUpdate<CmeProfileEvent> {
 
-  readonly previous: CmeProfile;
+  readonly previous: CmeProfileEvent;
 
   readonly classes: UpdateArray<SemanticModelClassProfile>;
 
@@ -90,11 +102,11 @@ class CmeSemanticProfileUpdate implements StateUpdate<CmeProfile> {
 
   readonly removedEntities: EntityIdentifier[];
 
-  constructor(state: CmeProfile) {
+  constructor(state: CmeProfileEvent) {
     this.previous = state;
-    this.classes = new UpdateArray(state.classes, item => item);
-    this.relationship = new UpdateArray(state.relationship, item => item);
-    this.generalizations = new UpdateArray(state.generalizations, item => item);
+    this.classes = new UpdateArray(state.classes);
+    this.relationship = new UpdateArray(state.relationship);
+    this.generalizations = new UpdateArray(state.generalizations);
     this.entityToModel = {};
     this.removedEntities = [];
   }
@@ -118,7 +130,7 @@ class CmeSemanticProfileUpdate implements StateUpdate<CmeProfile> {
     }
   }
 
-  onUpdateEntity(_: ModelIdentifier, previous: Entity, next: Entity): void {
+  onUpdateEntity(_: ModelIdentifier, _previous: Entity, next: Entity): void {
     // We ignore aggregates.
     if (isAggregatedProfiledSemanticModelEntity(next)) {
       return;
@@ -140,18 +152,18 @@ class CmeSemanticProfileUpdate implements StateUpdate<CmeProfile> {
       return;
     }
     if (isSemanticModelClassProfile(previous)) {
-      this.classes.onRemoveEntity(previous);
+      this.classes.onRemoveEntityById(previous.id);
     }
     if (isSemanticModelRelationshipProfile(previous)) {
-      this.relationship.onRemoveEntity(previous);
+      this.relationship.onRemoveEntityById(previous.id);
     }
     if (isSemanticModelGeneralizationProfile(previous)) {
-      this.generalizations.onRemoveEntity(previous);
+      this.generalizations.onRemoveEntityById(previous.id);
     }
     this.removedEntities.push(previous.id);
   }
 
-  state(): CmeProfile {
+  state(): CmeProfileEvent {
     let entityToModel = this.previous.entityToModel;
     if (Object.values(this.entityToModel).length > 0) {
       entityToModel = {
@@ -163,7 +175,8 @@ class CmeSemanticProfileUpdate implements StateUpdate<CmeProfile> {
       entityToModel = { ...entityToModel };
       this.removedEntities.forEach(id => delete entityToModel[id]);
     }
-    const next: CmeProfile = {
+    const next: CmeProfileEvent = {
+      ...this.previous,
       classes: this.classes.state(),
       relationship: this.relationship.state(),
       generalizations: this.generalizations.state(),

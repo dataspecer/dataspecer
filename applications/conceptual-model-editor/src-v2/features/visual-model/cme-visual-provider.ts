@@ -1,5 +1,4 @@
 import { ModelIdentifier } from "@dataspecer/core/model";
-import { Logger } from "./logger";
 import {
   isModelVisualInformation,
   isVisualDiagramNode,
@@ -11,31 +10,42 @@ import {
   VisualDiagramNode, VisualGroup, VisualModelData, VisualNode,
   VisualProfileRelationship, VisualRelationship, VisualView,
 } from "@dataspecer/visual-model";
-import { SubscriptionManager } from "./subscription-manager";
+import { Logger } from "../../infrastructure/logger";
+import { SubscriptionManager } from "../../shared/subscription-manager";
 import {
-  EventToStateUpdate, selectStable, StateUpdate, UpdateArray,
-} from "./provider-utilities";
+  CmeProvider, EventToStateUpdate, selectStable, StateUpdate, UpdateArray,
+} from "../../core/cme-provider";
 import { Entity, EntityIdentifier } from "@dataspecer/core/entity-model";
-import { EntitiesChangeEvent } from "./dataspecer-package-api";
+import { EntitiesChangeEvent } from "../../infrastructure/dataspecer";
 
 export function createCmeVisualProvider(
-  logger: Logger,
+  { logger }: { logger: Logger },
 ): CmeVisualProvider {
   return new DefaultCmeVisualProvider(logger);
 }
 
-export interface CmeVisualProvider {
+export interface CmeVisualProvider extends CmeProvider {
 
   onEntitiesDidChange(event: EntitiesChangeEvent): void;
 
-  subscribe(subscriber: (value: CmeVisual) => void): () => void;
+  subscribe(subscriber: (value: CmeVisualEvent) => void): () => void;
 
 }
 
-export interface CmeVisual {
+const CME_VISUAL_STATE_TYPE = "cme-visual-provider-state";
+
+export interface CmeVisualEvent {
+
+  type: typeof CME_VISUAL_STATE_TYPE;
 
   models: { [model: ModelIdentifier]: CmeVisualModel };
 
+}
+
+export function isCmeVisualEvent(
+  value: { type: string },
+): value is CmeVisualEvent {
+  return value.type === CME_VISUAL_STATE_TYPE;
 }
 
 export interface CmeVisualModel {
@@ -82,21 +92,21 @@ function createEmptyCmeVisualModel(): CmeVisualModel {
   };
 }
 
-class DefaultCmeVisualProvider {
+class DefaultCmeVisualProvider implements CmeVisualProvider {
 
-  state: CmeVisual = { models: {} };
+  private state: CmeVisualEvent = { type: CME_VISUAL_STATE_TYPE, models: {} };
 
   private readonly logger: Logger;
 
-  private readonly subscribers = new SubscriptionManager<CmeVisual>();
+  private readonly subscribers = new SubscriptionManager<CmeVisualEvent>();
 
   constructor(logger: Logger) {
     this.logger = logger;
   }
 
   onEntitiesDidChange(event: EntitiesChangeEvent) {
-    const update = new EventToStateUpdate(new CmeVisualUpdate(this.state));
-    update.onEntitiesDidChange(event);
+    const update = new CmeVisualUpdate(this.state);
+    (new EventToStateUpdate(update)).onEntitiesDidChange(event);
     // Update state.
     const next = update.state();
     if (next === this.state) {
@@ -107,7 +117,7 @@ class DefaultCmeVisualProvider {
     this.subscribers.notifyAll(this.state);
   }
 
-  subscribe(subscriber: (value: CmeVisual) => void): () => void {
+  subscribe(subscriber: (value: CmeVisualEvent) => void): () => void {
     return this.subscribers.subscribe(subscriber);
   }
 
@@ -140,13 +150,13 @@ class CmeVisualModelUpdate {
 
   constructor(previous: CmeVisualModel) {
     this.previous = previous;
-    this.diagrams = new UpdateArray(previous.diagrams, item => item);
-    this.groups = new UpdateArray(previous.groups, item => item);
-    this.models = new UpdateArray(previous.models, item => item);
-    this.nodes = new UpdateArray(previous.nodes, item => item);
-    this.profileEdge = new UpdateArray(previous.profileEdge, item => item);
-    this.relationshipEdge = new UpdateArray(previous.relationshipEdge, item => item);
-    this.views = new UpdateArray(previous.views, item => item);
+    this.diagrams = new UpdateArray(previous.diagrams);
+    this.groups = new UpdateArray(previous.groups);
+    this.models = new UpdateArray(previous.models);
+    this.nodes = new UpdateArray(previous.nodes);
+    this.profileEdge = new UpdateArray(previous.profileEdge);
+    this.relationshipEdge = new UpdateArray(previous.relationshipEdge);
+    this.views = new UpdateArray(previous.views);
   }
 
   onCreateEntity(next: Entity): void {
@@ -193,25 +203,25 @@ class CmeVisualModelUpdate {
 
   onRemoveEntity(previous: Entity): void {
     if (isVisualDiagramNode(previous)) {
-      this.diagrams.onRemoveEntity(previous);
+      this.diagrams.onRemoveEntityById(previous.id);
     } else if (isVisualGroup(previous)) {
-      this.groups.onRemoveEntity(previous);
+      this.groups.onRemoveEntityById(previous.id);
     } else if (isModelVisualInformation(previous)) {
-      this.models.onRemoveEntity(previous);
+      this.models.onRemoveEntityById(previous.id);
     } else if (isVisualNode(previous)) {
-      this.nodes.onRemoveEntity(previous);
+      this.nodes.onRemoveEntityById(previous.id);
       this.removedVisualIds.push(previous.id);
       this.representedEntitiesDirty = true;
     } else if (isVisualProfileRelationship(previous)) {
-      this.profileEdge.onRemoveEntity(previous);
+      this.profileEdge.onRemoveEntityById(previous.id);
       this.removedVisualIds.push(previous.id);
       this.representedEntitiesDirty = true;
     } else if (isVisualRelationship(previous)) {
-      this.relationshipEdge.onRemoveEntity(previous);
+      this.relationshipEdge.onRemoveEntityById(previous.id);
       this.removedVisualIds.push(previous.id);
       this.representedEntitiesDirty = true;
     } else if (isVisualView(previous)) {
-      this.views.onRemoveEntity(previous);
+      this.views.onRemoveEntityById(previous.id);
     }
   }
 
@@ -263,15 +273,15 @@ class CmeVisualModelUpdate {
 
 }
 
-class CmeVisualUpdate implements StateUpdate<CmeVisual> {
+class CmeVisualUpdate implements StateUpdate<CmeVisualEvent> {
 
-  readonly previous: CmeVisual;
+  readonly previous: CmeVisualEvent;
 
   private readonly modelUpdates = new Map<ModelIdentifier, CmeVisualModelUpdate>();
 
   private readonly removedModels: ModelIdentifier[] = [];
 
-  constructor(state: CmeVisual) {
+  constructor(state: CmeVisualEvent) {
     this.previous = state;
   }
 
@@ -297,7 +307,7 @@ class CmeVisualUpdate implements StateUpdate<CmeVisual> {
     this.getOrCreateModelUpdate(model).onRemoveEntity(previous);
   }
 
-  state(): CmeVisual {
+  state(): CmeVisualEvent {
     if (this.modelUpdates.size === 0 && this.removedModels.length === 0) {
       return this.previous;
     }
@@ -308,7 +318,7 @@ class CmeVisualUpdate implements StateUpdate<CmeVisual> {
     for (const model of this.removedModels) {
       delete models[model];
     }
-    const next: CmeVisual = { models };
+    const next: CmeVisualEvent = { ...this.previous, models };
     return selectStable(this.previous, next);
   }
 

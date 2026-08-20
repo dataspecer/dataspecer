@@ -14,6 +14,11 @@ import {
   createCmeVocabularyProvider,
   createVocabularyCatalogItemSource,
 } from "./features/vocabulary-model";
+import {
+  createCmeProfileProvider,
+  createCmeProfileAggregateProvider,
+} from "./features/profile-model";
+import { createCmeVisualProvider } from "./features/visual-model";
 
 cmeProvidersRegistry.register({
   id: "cme-package-provider",
@@ -33,4 +38,19 @@ cmeProvidersRegistry.register({
 catalogItemRegistry.register({
   id: "vocabulary-catalog-item-source",
   createCatalogItemSource: createVocabularyCatalogItemSource,
+});
+
+cmeProvidersRegistry.register({
+  id: "cme-profile-provider",
+  create: createCmeProfileProvider,
+});
+
+cmeProvidersRegistry.register({
+  id: "cme-profile-aggregate-provider",
+  create: createCmeProfileAggregateProvider,
+});
+
+cmeProvidersRegistry.register({
+  id: "cme-visual-provider",
+  create: createCmeVisualProvider,
 });
