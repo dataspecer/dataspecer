@@ -22,7 +22,7 @@ export default defineConfig([{
     eslint.configs.recommended,
     // Error: typescript-eslint does not support TS 7.0.
     // tseslint.configs.recommended,
-    reactHooks.configs["recommended-latest"],
+    reactHooks.configs.flat["recommended-latest"],
     reactRefresh.configs.recommended,
     reactRefresh.configs.vite,
     // reactCompiler.configs.recommended,
