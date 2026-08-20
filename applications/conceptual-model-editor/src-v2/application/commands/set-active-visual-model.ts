@@ -36,5 +36,5 @@ function setActiveVisualModelExecutor(
   context: CmeCommandContext,
   args: Arguments,
 ) {
-  context.setActiveVisualModel(args.visualModel);
+  context.application.setActiveVisualModel(args.visualModel);
 }

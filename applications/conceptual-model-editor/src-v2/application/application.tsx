@@ -19,7 +19,9 @@ import { WithCmeProviders } from "../core/cme-provider";
 import { Header } from "../shell/header/header";
 import { ThemeProvider } from "@user-interface/theme-provider";
 
-import { WithCmeCommandExecutor } from "../core/cme-command";
+import {
+  CmeApplicationEnvironment, WithCmeCommandExecutor,
+} from "../core/cme-command";
 
 import "./application.css";
 import { Catalog } from "../shell/catalog/catalog";
@@ -33,6 +35,9 @@ export function Application() {
   const infrastructure = useMemo(createInfrastructure, []);
 
   const [query, setQuery] = useUrlQuery();
+
+  const application = useMemo(
+    () => createCmeApplicationEnvironment(setQuery), []);
 
   // Without a package there is nothing to do!
   if (query.packageId === null) {
@@ -51,8 +56,8 @@ export function Application() {
   return (
     <WithCmeApplicationProviders
       infrastructure={infrastructure}
+      application={application}
       dataspecer={dataspecer}
-      setQuery={setQuery}
     >
       <ThemeProvider>
         <div className="h-svh flex flex-col">
@@ -94,6 +99,14 @@ interface Infrastructure {
 
 }
 
+function createCmeApplicationEnvironment(
+  setQuery: (value: Partial<UrlQuery>) => void,
+): CmeApplicationEnvironment {
+  return {
+    setActiveVisualModel: (visualModel) => setQuery({ viewId: visualModel })
+  }
+}
+
 function MissingPackageIdentifier() {
   return (
     <div className="h-full w-full flex flex-wrap content-center justify-center">
@@ -110,11 +123,11 @@ function MissingPackageIdentifier() {
  */
 function WithCmeApplicationProviders(props: {
   infrastructure: Infrastructure,
+  application: CmeApplicationEnvironment,
   dataspecer: CmeDataspecerPackageApi,
-  setQuery: (value: Partial<UrlQuery>) => void,
   children: React.ReactNode,
 }) {
-  const { infrastructure, dataspecer, setQuery, children } = props;
+  const { infrastructure, dataspecer, application, children } = props;
   return (
     <WithLogger value={infrastructure.logger}>
       <WithLabelSelector value={infrastructure.labelSelector}>
@@ -125,7 +138,7 @@ function WithCmeApplicationProviders(props: {
           <WithCmeCommandExecutor
             logger={infrastructure.logger}
             dataspecer={dataspecer}
-            setQuery={setQuery}
+            application={application}
           >
             <WithApplicationState>
               {children}

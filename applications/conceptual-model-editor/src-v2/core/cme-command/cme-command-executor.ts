@@ -19,8 +19,19 @@ export interface CmeCommandExecutor {
  */
 export interface CmeCommandContext extends CmeCommandExecutor {
 
-  setActiveVisualModel(visualModel: ModelIdentifier): void;
+  application: CmeApplicationEnvironment;
 
   dataspecer: CmeDataspecerPackageApi;
+
+}
+
+/**
+ * Shell-owned commands with requiring top level application access.
+ * This is not a dump for arbitrary UI actions (dialogs, toasts, ...);
+ * those should have their own provider and registry.
+ */
+export interface CmeApplicationEnvironment {
+
+  setActiveVisualModel(visualModel: ModelIdentifier): void;
 
 }

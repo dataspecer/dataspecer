@@ -3,8 +3,9 @@ import React, { useContext, useMemo } from "react";
 import { Logger } from "../../infrastructure/logger";
 import { cmeCommandRegistry } from "./cme-command-registry";
 import { CmeDataspecerPackageApi } from "../../infrastructure/dataspecer";
-import { UrlQuery } from "../../application/url-query";
-import { CmeCommandContext, CmeCommandExecutor } from "./cme-command-executor";
+import {
+  CmeCommandContext, CmeApplicationEnvironment, CmeCommandExecutor,
+} from "./cme-command-executor";
 
 export function useCmeCommandExecutor(): CmeCommandExecutor {
   return useContext(CmeCommandExecutorContext);
@@ -13,20 +14,20 @@ export function useCmeCommandExecutor(): CmeCommandExecutor {
 export function WithCmeCommandExecutor(props: {
   dataspecer: CmeDataspecerPackageApi,
   logger: Logger,
-  setQuery: (value: Partial<UrlQuery>) => void,
+  application: CmeApplicationEnvironment,
   children: React.ReactNode,
 }) {
-  const { dataspecer, logger, setQuery } = props;
+  const { dataspecer, logger, application } = props;
 
   // Create instance.
 
   const executor = useMemo<CmeCommandExecutor>(() => {
-    const context = createCmeCommandContext(dataspecer, logger, setQuery);
+    const context = createCmeCommandContext(dataspecer, logger, application);
     // Executor is just a single function.
     return {
       execute: (command) => context.execute(command),
     };
-  }, [dataspecer, logger, setQuery]);
+  }, [dataspecer, logger, application]);
 
   // Render with context.
 
@@ -39,7 +40,7 @@ export function WithCmeCommandExecutor(props: {
 function createCmeCommandContext(
   dataspecer: CmeDataspecerPackageApi,
   logger: Logger,
-  setQuery: (value: Partial<UrlQuery>) => void,
+  application: CmeApplicationEnvironment,
 ): CmeCommandContext {
 
   const context: CmeCommandContext = {
@@ -47,9 +48,7 @@ function createCmeCommandContext(
       // This is just a placeholder we replace this method later.
       return null as any;
     },
-    setActiveVisualModel(visualModel) {
-      setQuery({ viewId: visualModel });
-    },
+    application: application,
     dataspecer,
   };
 
