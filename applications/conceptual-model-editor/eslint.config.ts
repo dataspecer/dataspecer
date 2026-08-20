@@ -89,26 +89,81 @@ export default defineConfig([{
     boundaries.configs.recommended,
   ],
   settings: {
+    // `**` (not `*`) is required: these types must match nested files, not
+    // just direct children (micromatch `*` does not cross `/`).
     "boundaries/elements": [
-      { type: "core", pattern: "src-v2/core/*" },
-      { type: "features", pattern: "src-v2/features/*" },
-      { type: "infrastructure", pattern: "src-v2/infrastructure/*" },
-      { type: "modes", pattern: "src-v2/modes/*" },
-      { type: "shared", pattern: "src-v2/shared/*" },
-      { type: "shell", pattern: "src-v2/shell/*" },
+      { type: "application", pattern: "src-v2/application/**" },
+      { type: "core", pattern: "src-v2/core/**" },
+      { type: "features", pattern: "src-v2/features/**" },
+      { type: "infrastructure", pattern: "src-v2/infrastructure/**" },
+      { type: "modes", pattern: "src-v2/modes/**" },
+      { type: "shared", pattern: "src-v2/shared/**" },
+      { type: "shell", pattern: "src-v2/shell/**" },
     ],
     "boundaries/files": [
       { pattern: "**/*.spec.js", category: "test" },
-      { pattern: "**/*.css", category: "style" }
+      { pattern: "**/*.css", category: "style" },
+      // Standalone composition-root file (not a folder, so it can't be a
+      // `boundaries/elements` entry) — same allowances as `application`.
+      { pattern: "src-v2/application.ts", category: "composition-root" },
     ],
+  },
+  rules: {
+    // NOTE: this was previously (incorrectly) placed under `settings`, where
+    // eslint-plugin-boundaries never reads rule options from, so this policy
+    // was silently never enforced. Rule options belong under `rules`.
     "boundaries/dependencies": [2, {
       default: "disallow",
-      policies: [{
-      //   from: { element: { type: "component" } },
-      //   allow: { to: { element: { type: "helper" } } }
-      // }, {
-        disallow: { to: { file: { categories: "test" } } }
-      }],
+      policies: [
+        {
+          // Utilities: no outward src-v2 dependency but on each other.
+          from: { element: { type: "infrastructure" } },
+          allow: { to: { element: { type: "infrastructure" } } },
+        },
+        {
+          from: { element: { type: ["core", "modes"] } },
+          allow: { to: { element: { type: ["core", "modes", "infrastructure", "shared"] } } },
+        },
+        {
+          // NOTE: "features" is one coarse type covering every feature
+          // folder, so this does not yet stop one feature importing
+          // another directly (would need per-feature captured elements).
+          // Nothing currently does this; worth tightening in a follow-up.
+          from: { element: { type: "features" } },
+          allow: { to: { element: { type: ["features", "core", "infrastructure", "shared"] } } },
+        },
+        {
+          // Shell is a pure host: it may reach utilities but never a
+          // feature directly — only the composition root may do that.
+          from: { element: { type: "shell" } },
+          allow: { to: { element: { type: ["shell", "core", "infrastructure", "shared", "modes"] } } },
+        },
+        {
+          // The composition root: the only place allowed to import a
+          // feature module directly, to register it into core registries.
+          from: { element: { type: "application" } },
+          allow: {
+            to: {
+              element: {
+                type: ["application", "core", "features", "infrastructure", "shared", "modes"],
+              },
+            },
+          },
+        },
+        {
+          from: { file: { category: "composition-root" } },
+          allow: {
+            to: {
+              element: {
+                type: ["application", "core", "features", "infrastructure", "shared", "modes"],
+              },
+            },
+          },
+        },
+        {
+          disallow: { to: { file: { categories: "test" } } }
+        },
+      ],
     }],
   },
 }]);
