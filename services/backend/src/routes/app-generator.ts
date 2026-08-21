@@ -1,7 +1,7 @@
 import z from "zod";
 import express from "express";
 import JSZip from "jszip";
-import { resourceModel } from "../main.ts";
+import { modelRepository } from "../main.ts";
 import { asyncHandler } from "../utils/async-handler.ts";
 import { DataspecerSpecificationMetadataProvider, generateApp } from "@dataspecer/app-generator";
 import { getSpecification } from "../utils/data-specification.ts";
@@ -26,10 +26,17 @@ export const generateApplicationByModelId = asyncHandler(
     });
     const query = querySchema.parse(request.query);
 
-    const modelStore = await resourceModel.getOrCreateResourceModelStore(
-      query.iri,
-    );
-    const data: any = await modelStore.getJson();
+    const resource = await modelRepository.getResource(query.iri);
+    if (resource === null) {
+      response.sendStatus(404);
+      return;
+    }
+
+    const data: unknown = await modelRepository.getResourceStoreJson(query.iri);
+    if (data === null) {
+      response.sendStatus(404);
+      return;
+    }
     // If provided, the generated application is saved to a local directory in addition to returning it in the response
     const outputDirectory = process.env.APP_GENERATOR_OUTPUT_DIR;
     const result = await generateApp({

@@ -325,11 +325,13 @@ describe('mapDataspecerSpecificationToMetadata', () => {
     }
 
     Object.assign(bookClass, {
-      iri: 'book',
+      iri: 'https://example.org/profile#Book',
+      profiling: ['https://example.org/profiled#Book'],
       conceptIris: ['https://example.org/class/book'],
     });
     Object.assign(titleRelationship.ends[1], {
-      iri: 'title',
+      iri: 'https://example.org/profile#Book.title-attribute',
+      profiling: ['https://example.org/profiled#Book.title-attribute'],
       conceptIris: ['https://example.org/property/book-title'],
     });
 
@@ -342,6 +344,143 @@ describe('mapDataspecerSpecificationToMetadata', () => {
     expect(book?.fields.find((field) => field.path === 'title')?.propertyIri).toBe(
       'https://example.org/property/book-title'
     );
+  });
+
+  it('recognizes aggregated profile type markers when profiling arrays are absent', () => {
+    const fixture = dataspecerFixture();
+    const bookClass = fixture.aggregatedSemanticModel.find((entity) => entity.id === 'class-book');
+    const titleRelationship = fixture.aggregatedSemanticModel.find(
+      (entity) => entity.id === 'relationship-title'
+    ) as SemanticModelRelationship | undefined;
+
+    if (!bookClass || !titleRelationship) {
+      throw new Error('Fixture setup failed.');
+    }
+
+    Object.assign(bookClass, {
+      type: ['class', 'class-profile', 'aggregate'],
+      iri: 'https://example.org/profile#Book',
+      conceptIris: ['https://example.org/class/book'],
+    });
+    Object.assign(titleRelationship, {
+      type: ['relationship', 'relationship-profile', 'aggregate'],
+    });
+    Object.assign(titleRelationship.ends[1], {
+      iri: 'https://example.org/profile#Book.title-attribute',
+      conceptIris: ['https://example.org/property/book-title'],
+    });
+
+    const metadata = mapDataspecerSpecificationToMetadata(specificationIri, fixture);
+    const book = metadata.aggregates.find(
+      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail'
+    );
+
+    expect(book?.classIri).toBe('https://example.org/class/book');
+    expect(book?.fields.find((field) => field.path === 'title')?.propertyIri).toBe(
+      'https://example.org/property/book-title'
+    );
+  });
+
+  it('does not fall back to local IRIs for profile type markers without canonical IRIs', () => {
+    const fixture = dataspecerFixture();
+    const bookClass = fixture.aggregatedSemanticModel.find((entity) => entity.id === 'class-book');
+    const titleRelationship = fixture.aggregatedSemanticModel.find(
+      (entity) => entity.id === 'relationship-title'
+    ) as SemanticModelRelationship | undefined;
+
+    if (!bookClass || !titleRelationship) {
+      throw new Error('Fixture setup failed.');
+    }
+
+    Object.assign(bookClass, {
+      type: ['class', 'class-profile', 'aggregate'],
+      iri: 'https://example.org/profile#Book',
+      conceptIris: [],
+    });
+    Object.assign(titleRelationship, {
+      type: ['relationship', 'relationship-profile', 'aggregate'],
+    });
+    Object.assign(titleRelationship.ends[1], {
+      iri: 'https://example.org/profile#Book.title-attribute',
+      conceptIris: [],
+    });
+
+    try {
+      mapDataspecerSpecificationToMetadata(specificationIri, fixture);
+      expect.unreachable('Expected mapping to fail on unresolved profile IRIs.');
+    } catch (error) {
+      expect(error).toBeInstanceOf(DataspecerMetadataMappingError);
+      const issues = (error as DataspecerMetadataMappingError).issues;
+      expect(issues).toContainEqual(
+        expect.objectContaining({ code: DataspecerMetadataMappingIssueCode.MissingClassIri })
+      );
+      expect(issues).toContainEqual(
+        expect.objectContaining({ code: DataspecerMetadataMappingIssueCode.MissingFieldIri })
+      );
+    }
+  });
+
+  it.each([
+    ['missing', []],
+    ['ambiguous', ['https://example.org/property/first', 'https://example.org/property/second']],
+    ['partly invalid', ['https://example.org/property/first', 'relative-property']],
+  ])('rejects a used profile whose canonical relationship IRI is %s', (_case, conceptIris) => {
+    const fixture = dataspecerFixture();
+    const titleRelationship = fixture.aggregatedSemanticModel.find(
+      (entity) => entity.id === 'relationship-title'
+    ) as SemanticModelRelationship | undefined;
+
+    if (!titleRelationship) {
+      throw new Error('Fixture setup failed.');
+    }
+
+    Object.assign(titleRelationship.ends[1], {
+      iri: 'https://example.org/profile#Book.title-attribute',
+      profiling: ['https://example.org/profiled#Book.title-attribute'],
+      conceptIris,
+    });
+
+    try {
+      mapDataspecerSpecificationToMetadata(specificationIri, fixture);
+      expect.unreachable('Expected mapping to fail on an unresolved profile IRI.');
+    } catch (error) {
+      expect(error).toBeInstanceOf(DataspecerMetadataMappingError);
+      expect((error as DataspecerMetadataMappingError).issues).toContainEqual(
+        expect.objectContaining({
+          code: DataspecerMetadataMappingIssueCode.MissingFieldIri,
+        })
+      );
+    }
+  });
+
+  it.each([
+    ['missing', []],
+    ['ambiguous', ['https://example.org/class/first', 'https://example.org/class/second']],
+  ])('rejects a used profile whose canonical class IRI is %s', (_case, conceptIris) => {
+    const fixture = dataspecerFixture();
+    const bookClass = fixture.aggregatedSemanticModel.find((entity) => entity.id === 'class-book');
+
+    if (!bookClass) {
+      throw new Error('Fixture setup failed.');
+    }
+
+    Object.assign(bookClass, {
+      iri: 'https://example.org/profile#Book',
+      profiling: ['https://example.org/profiled#Book'],
+      conceptIris,
+    });
+
+    try {
+      mapDataspecerSpecificationToMetadata(specificationIri, fixture);
+      expect.unreachable('Expected mapping to fail on an unresolved profile IRI.');
+    } catch (error) {
+      expect(error).toBeInstanceOf(DataspecerMetadataMappingError);
+      expect((error as DataspecerMetadataMappingError).issues).toContainEqual(
+        expect.objectContaining({
+          code: DataspecerMetadataMappingIssueCode.MissingClassIri,
+        })
+      );
+    }
   });
 });
 

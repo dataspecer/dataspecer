@@ -13,12 +13,14 @@ import {
   type SemanticModelRelationship,
   type SemanticModelRelationshipEnd,
 } from '@dataspecer/core-v2/semantic-model/concepts';
+import {
+  isSemanticModelClassProfile,
+  isSemanticModelRelationshipProfile,
+} from '@dataspecer/core-v2/semantic-model/profile/concepts';
 
 import type { Entity } from '@dataspecer/core-v2/entity-model';
 
 import type {
-  AggregatedSemanticModelClass,
-  AggregatedSemanticModelRelationshipEnd,
   SpecificationSourceLoader,
   SpecificationSource,
   StructureModelResource,
@@ -46,6 +48,7 @@ export enum DataspecerMetadataMappingIssueCode {
   MissingClassIri = 'MISSING_CLASS_IRI',
   MissingFieldResource = 'MISSING_FIELD_RESOURCE',
   MissingFieldInterpretation = 'MISSING_FIELD_INTERPRETATION',
+  MissingFieldIri = 'MISSING_FIELD_IRI',
   MissingAssociationTarget = 'MISSING_ASSOCIATION_TARGET',
   MissingTargetAggregate = 'MISSING_TARGET_AGGREGATE',
   UnsupportedFieldResource = 'UNSUPPORTED_FIELD_RESOURCE',
@@ -66,15 +69,16 @@ export class DataspecerMetadataMappingError extends Error {
 
 type Cardinality = [number, number | null];
 
+interface ProfileIriMetadata {
+  conceptIris?: string[];
+  profiling?: string[];
+}
+
 interface MappingContext {
-  semanticEntities: SemanticEntityIndex;
+  semanticEntities: Map<string, Entity>;
   resourcesByIri: Map<string, StructureModelResource>;
   schemaIriByRootClassIri: Map<string, string>;
   issues: DataspecerMetadataMappingIssue[];
-}
-
-interface SemanticEntityIndex {
-  byKey: Map<string, Entity>;
 }
 
 export class DataspecerSpecificationMetadataProvider implements DataspecerMetadataProvider {
@@ -140,7 +144,7 @@ function buildMappingContext(specification: SpecificationSource): MappingContext
   };
 }
 
-function buildSemanticEntityIndex(entities: Entity[]): SemanticEntityIndex {
+function buildSemanticEntityIndex(entities: Entity[]): Map<string, Entity> {
   const byKey = new Map<string, Entity>();
 
   for (const entity of entities) {
@@ -149,7 +153,7 @@ function buildSemanticEntityIndex(entities: Entity[]): SemanticEntityIndex {
     }
   }
 
-  return { byKey };
+  return byKey;
 }
 
 function mapStructureModel(
@@ -288,6 +292,14 @@ function mapAttributeField(
     });
   }
 
+  if (relationship && !propertyIri) {
+    addIssue(context, {
+      code: DataspecerMetadataMappingIssueCode.MissingFieldIri,
+      message: `Attribute "${attribute.iri ?? fieldPath}" semantic relationship is missing a canonical vocabulary IRI.`,
+      path,
+    });
+  }
+
   return {
     path: fieldPath,
     label: fieldLabelFrom(attribute, relationship, valueEnd, fieldPath),
@@ -323,6 +335,14 @@ function mapAssociationField(
     });
   }
 
+  if (relationship && !propertyIri) {
+    addIssue(context, {
+      code: DataspecerMetadataMappingIssueCode.MissingFieldIri,
+      message: `Association "${association.iri ?? fieldPath}" semantic relationship is missing a canonical vocabulary IRI.`,
+      path,
+    });
+  }
+
   if (!targetResource || !isAssociationTargetResource(targetResource)) {
     addIssue(context, {
       code: DataspecerMetadataMappingIssueCode.MissingAssociationTarget,
@@ -334,6 +354,14 @@ function mapAssociationField(
 
   const targetClassIri = targetClassIriFrom(targetResource, targetEnd, context);
   const target = resolveAssociationTarget(association, targetResource, fieldPath, context, visited);
+
+  if (!targetClassIri) {
+    addIssue(context, {
+      code: DataspecerMetadataMappingIssueCode.MissingClassIri,
+      message: `Association "${association.iri ?? fieldPath}" target semantic class is missing a canonical vocabulary IRI.`,
+      path,
+    });
+  }
 
   return {
     path: fieldPath,
@@ -433,7 +461,7 @@ function getSemanticClass(
   key: string | null | undefined,
   context: MappingContext
 ): SemanticModelClass | undefined {
-  const entity = key ? context.semanticEntities.byKey.get(key) : undefined;
+  const entity = key ? context.semanticEntities.get(key) : undefined;
   return entity && isSemanticModelClass(entity) ? entity : undefined;
 }
 
@@ -441,7 +469,7 @@ function getSemanticRelationship(
   key: string | null | undefined,
   context: MappingContext
 ): SemanticModelRelationship | undefined {
-  const entity = key ? context.semanticEntities.byKey.get(key) : undefined;
+  const entity = key ? context.semanticEntities.get(key) : undefined;
   return entity && isSemanticModelRelationship(entity) ? entity : undefined;
 }
 
@@ -503,16 +531,17 @@ function entityKeys(entity: Entity): string[] {
     keys.push(entity.iri);
   }
   if (isSemanticModelClass(entity)) {
-    keys.push(...((entity as AggregatedSemanticModelClass).conceptIris ?? []));
+    keys.push(...((entity as ProfileIriMetadata).conceptIris ?? []));
   }
   return keys.filter(isString);
 }
 
 function publicClassIri(entity: SemanticModelClass): string | undefined {
-  const dataspecerClass = entity as AggregatedSemanticModelClass;
-  return (
-    publicAbsoluteIri(entity.iri) ?? dataspecerClass.conceptIris?.find(isAbsoluteIri) ?? entity.id
-  );
+  const profile = entity as ProfileIriMetadata;
+  if (isSemanticModelClassProfile(entity) || profile.profiling?.length) {
+    return singleAbsoluteIri(profile.conceptIris);
+  }
+  return publicAbsoluteIri(entity.iri) ?? publicAbsoluteIri(entity.id);
 }
 
 function relationshipPropertyIri(
@@ -521,14 +550,26 @@ function relationshipPropertyIri(
   if (!relationship) {
     return undefined;
   }
+  const relationshipIsProfile = isSemanticModelRelationshipProfile(relationship);
   return [relationship.ends[1], relationship.ends[0], ...relationship.ends.slice(2)]
-    .map((end) => (end ? publicRelationshipEndIri(end) : undefined))
+    .map((end) => (end ? publicRelationshipEndIri(end, relationshipIsProfile) : undefined))
     .find(isString);
 }
 
-function publicRelationshipEndIri(end: SemanticModelRelationshipEnd): string | undefined {
-  const dataspecerEnd = end as AggregatedSemanticModelRelationshipEnd;
-  return publicAbsoluteIri(end.iri) ?? dataspecerEnd.conceptIris?.find(isAbsoluteIri);
+function publicRelationshipEndIri(
+  end: SemanticModelRelationshipEnd,
+  relationshipIsProfile: boolean
+): string | undefined {
+  const profile = end as ProfileIriMetadata;
+  if (relationshipIsProfile || profile.profiling?.length) {
+    return singleAbsoluteIri(profile.conceptIris);
+  }
+  return publicAbsoluteIri(end.iri);
+}
+
+function singleAbsoluteIri(values: string[] | undefined): string | undefined {
+  const candidates = [...new Set(values ?? [])];
+  return candidates.length === 1 && isAbsoluteIri(candidates[0]) ? candidates[0] : undefined;
 }
 
 function publicAbsoluteIri(value: string | null | undefined): string | undefined {

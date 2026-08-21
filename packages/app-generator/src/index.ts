@@ -47,10 +47,6 @@ export type { SemanticAnalysisResult } from './validation/analyze-semantics.ts';
 export type { Violation, ValidationResult } from './validation/types.ts';
 export type { DataspecerMetadataMappingIssue } from './metadata/dataspecer-specification-metadata-provider.ts';
 export type {
-  AggregatedSemanticModel,
-  AggregatedSemanticModelClass,
-  AggregatedSemanticModelRelationship,
-  AggregatedSemanticModelRelationshipEnd,
   SpecificationSourceLoader,
   SpecificationSource,
   StructureModelResource,

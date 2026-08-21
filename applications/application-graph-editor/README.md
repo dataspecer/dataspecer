@@ -13,7 +13,7 @@ npm install
 npm run dev
 ```
 
-The dev server runs on port 5177.
+The dev server runs on port 5178.
 
 Dependency pins: `zustand` stays on v4 because `@xyflow/react` depends on it and the editor
 store and `zundo` must share that copy. `zod-validation-error` v4 satisfies a subpath that

@@ -53,11 +53,14 @@ export async function getSpecification(projectId: string): Promise<{
   const unwrappedEntities = Object.values(aggregatedWrappedEntities).map((entity) => entity.aggregatedEntity);
   const aggregatedSemanticModel = unwrappedEntities as AggregatedSemanticModel;
 
-  // Now process structure models
-  const structureModels = Object.values(specification.structureModels).map((structureModel) => {
-    const resources = structureModel.listResources();
-    return resources.map((resourceId) => structureModel.readResource(resourceId));
-  }) as DataPsmResource[][];
+  const dataStructureIds = new Set(
+    Object.values(specification.dataSpecifications).flatMap(
+      (dataSpecification) => dataSpecification.dataStructures.map((dataStructure) => dataStructure.id),
+    ),
+  );
+  const structureModels = [...dataStructureIds]
+    .map((id) => Object.values(allModels[id] ?? {}) as unknown as DataPsmResource[])
+    .filter((resources) => resources.length > 0);
 
   return {
     aggregatedSemanticModel,
