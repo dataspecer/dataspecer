@@ -8,19 +8,23 @@
     "prebuild": "node -e \"fs.rmSync('lib', { recursive: true, force: true })\"",
     "dev": "tsc --watch",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "coverage": "vitest run --coverage"
   },
   "exports": {
     "./semantic-model": "./lib/semantic-model/index.js",
     "./generator-configuration": "./lib/generator-configuration/index.js",
     "./specification-description": "./lib/specification-description/index.js",
-    "./structure-model": "./lib/structure-model/index.js"
+    "./structure-model": "./lib/structure-model/index.js",
+    "./ldes": "./lib/ldes/index.js"
   },
   "dependencies": {
     "@dataspecer/core": "*",
     "@dataspecer/core-v2": "*",
+    "@dataspecer/lightweight-owl": "*",
     "@dataspecer/profile-model": "*",
     "@dataspecer/semantic-model": "*",
+    "@dataspecer/utilities": "*",
     "@rdfjs/types": "^2.0.1",
     "jsonld": "^8.3.3",
     "n3": "^1.25.1"
@@ -28,6 +32,7 @@
   "devDependencies": {
     "@types/jsonld": "^1.5.15",
     "@types/n3": "~1.24.2",
+    "@vitest/coverage-istanbul": "^4.1.10",
     "typescript": "^7.0.2",
     "vitest": "^4.1.7"
   }

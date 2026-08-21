@@ -1,10 +1,13 @@
-import type { Entity, EntityRecord } from "@dataspecer/core/entity-model";
+import { type Entity, type EntityRecord } from "@dataspecer/core/entity-model";
 import { type VisualEntity } from "./concepts/visual-entity.ts";
 
 /**
  * Takes serialization (JSON parsed data) and converts it to visual model entities.
  */
 export function serializationToVisualModelEntities(data: unknown): Record<string, Entity> {
+  if (!data) {
+    return {};
+  }
   const entities = (data as any).entities;
   // We need to fix entities when deserializing.
   const entityList = (Object.values(entities) as VisualEntity[]).map(fixVisualEntity);
@@ -40,7 +43,7 @@ export function visualModelEntitiesToSerialization(entities: EntityRecord): unkn
     identifier: "todo",
     version: 2,
     type: "http://dataspecer.com/resources/local/visual-model",
-    entities: Object.fromEntries(entityList.map(entity => [entity.id, entity])),
+    entities: entityList,
   };
 }
 

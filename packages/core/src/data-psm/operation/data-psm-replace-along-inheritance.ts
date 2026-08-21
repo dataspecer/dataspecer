@@ -1,4 +1,4 @@
-import { CoreOperation, CoreResource } from "../../core/index.ts";
+import { generateOperationId, type Operation } from "../../operation/index.ts";
 import * as PSM from "../data-psm-vocabulary.ts";
 
 /**
@@ -7,20 +7,23 @@ import * as PSM from "../data-psm-vocabulary.ts";
  *
  * Operation does not remove the original class.
  */
-export class DataPsmReplaceAlongInheritance extends CoreOperation {
+export class DataPsmReplaceAlongInheritance implements Operation {
   static readonly TYPE = PSM.REPLACE_ALONG_INHERITANCE;
+
+  id: string;
+
+  type: string;
 
   dataPsmOriginalClass: string | null = null;
 
   dataPsmReplacingClass: string | null = null;
 
   constructor() {
-    super();
-    this.types.push(DataPsmReplaceAlongInheritance.TYPE);
+    this.id = generateOperationId();
+    this.type = DataPsmReplaceAlongInheritance.TYPE;
   }
 
-  static is(resource: CoreResource | null):
-    resource is DataPsmReplaceAlongInheritance {
-    return resource?.types.includes(DataPsmReplaceAlongInheritance.TYPE);
+  static is(operation: Operation | null | undefined): operation is DataPsmReplaceAlongInheritance {
+    return operation?.type === DataPsmReplaceAlongInheritance.TYPE;
   }
 }

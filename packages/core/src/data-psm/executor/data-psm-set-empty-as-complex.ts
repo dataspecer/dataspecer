@@ -13,10 +13,10 @@ export function executeDataPsmSetEmptyAsComplex(
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmSetEmptyAsComplex
 ): CoreExecutorResult {
-  const resource = reader.readResource(operation.dataPsmClass);
+  const resource = reader.readResource(operation.entityId);
   if (resource == null) {
     return CoreExecutorResult.createError(
-      `Missing data-psm resource '${operation.dataPsmClass}'.`
+      `Missing data-psm resource '${operation.entityId}'.`
     );
   }
 

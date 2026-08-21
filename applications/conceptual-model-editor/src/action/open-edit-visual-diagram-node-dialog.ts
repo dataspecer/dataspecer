@@ -12,7 +12,7 @@ import { VisualModelDiagramNode } from "../diagram";
 import {
   createEditVisualDiagramNodeDialog,
   createEditVisualDiagramNodeDialogState,
-} from "@/dialog/visual-model/visual-diagram-node/edit-visual-diagram-node/create-edit-visual-diagram-node-dialog";
+} from "../dialog/visual-model/visual-diagram-node/edit-visual-diagram-node/create-edit-visual-diagram-node-dialog";
 import {
   EditVisualDiagramNodeDialogState,
 } from "../dialog/visual-model/visual-diagram-node/edit-visual-diagram-node/edit-visual-diagram-node-dialog-controller";

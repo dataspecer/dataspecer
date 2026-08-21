@@ -10,10 +10,10 @@ import {
 import type { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { collectDirectVisualEntitiesToRemove } from "./remove-from-visual-model-by-visual";
 import { removeVisualEntitiesFromVisualModelAction } from "./remove-visual-entities-from-visual-model";
-import { ModelGraphContextType } from "@/context/model-context";
+import { ModelGraphContextType } from "../context/model-context";
 import { getVisualDiagramNodeMappingsByRepresented } from "./utilities";
-import { ClassesContextType } from "@/context/classes-context";
-import { getDomainAndRangeConcepts } from "@/util/relationship-utils";
+import { ClassesContextType } from "../context/classes-context";
+import { getDomainAndRangeConcepts } from "../util/relationship-utils";
 
 /**
  * Remove entity and related entities from visual model.

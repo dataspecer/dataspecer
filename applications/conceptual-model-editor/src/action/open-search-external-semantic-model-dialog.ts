@@ -1,5 +1,5 @@
 import { DialogApiContextType } from "../dialog/dialog-service";
-import { ModelGraphContextType } from "@/context/model-context";
+import { ModelGraphContextType } from "../context/model-context";
 import {
   createSearchExternalSemanticDialog,
   createSearchExternalSemanticModelState,

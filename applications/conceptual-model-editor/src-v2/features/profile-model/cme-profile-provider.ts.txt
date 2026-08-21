@@ -1,0 +1,175 @@
+import {
+  isSemanticModelClassProfile,
+  isSemanticModelGeneralizationProfile, isSemanticModelRelationshipProfile, SemanticModelClassProfile,
+  SemanticModelGeneralizationProfile, SemanticModelRelationshipProfile,
+} from "@dataspecer/core-v2/semantic-model/profile/concepts";
+import { Logger } from "./logger";
+import { Entity, EntityIdentifier } from "@dataspecer/core/entity-model";
+import { ModelIdentifier } from "@dataspecer/core/model";
+import { SubscriptionManager } from "./subscription-manager";
+import {
+  EventToStateUpdate, selectStable, StateUpdate, UpdateArray,
+} from "./provider-utilities";
+import { EntitiesChangeEvent } from "./dataspecer-package-api";
+import { isAggregatedProfiledSemanticModelEntity } from "@dataspecer/core-v2/semantic-model/profile/aggregator";
+
+
+export function createCmeProfileProvider(
+  logger: Logger,
+): CmeProfileProvider {
+  return new DefaultCmeProfileProvider(logger);
+}
+
+export interface CmeProfileProvider {
+
+  onEntitiesDidChange(event: EntitiesChangeEvent): void;
+
+  subscribe(subscriber: (value: CmeProfile) => void): () => void;
+
+}
+
+export interface CmeProfile {
+
+  classes: SemanticModelClassProfile[];
+
+  relationship: SemanticModelRelationshipProfile[];
+
+  generalizations: SemanticModelGeneralizationProfile[];
+
+  entityToModel: { [entity: EntityIdentifier]: ModelIdentifier };
+
+}
+
+class DefaultCmeProfileProvider {
+
+  state: CmeProfile = {
+    classes: [],
+    relationship: [],
+    generalizations: [],
+    entityToModel: {},
+  };
+
+  private readonly logger: Logger;
+
+  constructor(logger: Logger) {
+    this.logger = logger;
+  }
+
+  private readonly subscribers = new SubscriptionManager<CmeProfile>();
+
+  onEntitiesDidChange(event: EntitiesChangeEvent) {
+    const update = new EventToStateUpdate(new CmeSemanticProfileUpdate(this.state));
+    update.onEntitiesDidChange(event);
+    // Update state.
+    const next = update.state();
+    if (next === this.state) {
+      return;
+    }
+    this.state = next;
+    // Notify listeners about a new state.
+    this.subscribers.notifyAll(this.state);
+  }
+
+  subscribe(subscriber: (value: CmeProfile) => void): () => void {
+    return this.subscribers.subscribe(subscriber);
+  }
+
+}
+
+class CmeSemanticProfileUpdate implements StateUpdate<CmeProfile> {
+
+  readonly previous: CmeProfile;
+
+  readonly classes: UpdateArray<SemanticModelClassProfile>;
+
+  readonly relationship: UpdateArray<SemanticModelRelationshipProfile>;
+
+  readonly generalizations: UpdateArray<SemanticModelGeneralizationProfile>;
+
+  readonly entityToModel: { [entity: EntityIdentifier]: ModelIdentifier };
+
+  readonly removedEntities: EntityIdentifier[];
+
+  constructor(state: CmeProfile) {
+    this.previous = state;
+    this.classes = new UpdateArray(state.classes, item => item);
+    this.relationship = new UpdateArray(state.relationship, item => item);
+    this.generalizations = new UpdateArray(state.generalizations, item => item);
+    this.entityToModel = {};
+    this.removedEntities = [];
+  }
+
+  onCreateEntity(model: ModelIdentifier, next: Entity): void {
+    // We ignore aggregates.
+    if (isAggregatedProfiledSemanticModelEntity(next)) {
+      return;
+    }
+    if (isSemanticModelClassProfile(next)) {
+      this.classes.onCreateEntity(next);
+      this.entityToModel[next.id] = model;
+    }
+    if (isSemanticModelRelationshipProfile(next)) {
+      this.relationship.onCreateEntity(next);
+      this.entityToModel[next.id] = model;
+    }
+    if (isSemanticModelGeneralizationProfile(next)) {
+      this.generalizations.onCreateEntity(next);
+      this.entityToModel[next.id] = model;
+    }
+  }
+
+  onUpdateEntity(_: ModelIdentifier, previous: Entity, next: Entity): void {
+    // We ignore aggregates.
+    if (isAggregatedProfiledSemanticModelEntity(next)) {
+      return;
+    }
+    if (isSemanticModelClassProfile(next)) {
+      this.classes.onUpdateEntity(next);
+    }
+    if (isSemanticModelRelationshipProfile(next)) {
+      this.relationship.onUpdateEntity(next);
+    }
+    if (isSemanticModelGeneralizationProfile(next)) {
+      this.generalizations.onUpdateEntity(next);
+    }
+  }
+
+  onRemoveEntity(_: ModelIdentifier, previous: Entity): void {
+    // We ignore aggregates.
+    if (isAggregatedProfiledSemanticModelEntity(previous)) {
+      return;
+    }
+    if (isSemanticModelClassProfile(previous)) {
+      this.classes.onRemoveEntity(previous);
+    }
+    if (isSemanticModelRelationshipProfile(previous)) {
+      this.relationship.onRemoveEntity(previous);
+    }
+    if (isSemanticModelGeneralizationProfile(previous)) {
+      this.generalizations.onRemoveEntity(previous);
+    }
+    this.removedEntities.push(previous.id);
+  }
+
+  state(): CmeProfile {
+    let entityToModel = this.previous.entityToModel;
+    if (Object.values(this.entityToModel).length > 0) {
+      entityToModel = {
+        ...entityToModel,
+        ...this.entityToModel,
+      };
+    }
+    if (this.removedEntities.length > 0) {
+      entityToModel = { ...entityToModel };
+      this.removedEntities.forEach(id => delete entityToModel[id]);
+    }
+    const next: CmeProfile = {
+      classes: this.classes.state(),
+      relationship: this.relationship.state(),
+      generalizations: this.generalizations.state(),
+      entityToModel,
+    };
+    return selectStable(this.previous, next);
+  }
+
+}

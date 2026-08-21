@@ -3,6 +3,7 @@
   "$datetime": "{{val, datetime(dateStyle: long; timeStyle: short)}}",
   "add-imported": {
     "error": "Při importu některých specifikací nastala chyba",
+    "error-title": "Import selhal",
     "file-description": "V tomto dialogu můžete obnovit specifikaci ze záložního ZIP souboru.",
     "file-warning": "Obnovovaná specifikace nesmí v Dataspeceru existovat. Pokud existuje, nejprve ji smažte.",
     "import": "Importovat",
@@ -58,6 +59,8 @@
   "edit application graph": "Upravit aplikační graf",
   "format as json": "Formátovat jako JSON",
   "generate application": "Vygenerovat aplikaci",
+  "history button": "Historie a propagace změn",
+  "history button pending evolution": "Historie a propagace změn (čeká na vyřízení)",
   "ID": "ID",
   "import": "Import",
   "import specification from url": "Profilovat specifikaci z URL",
@@ -92,19 +95,17 @@
   },
   "open": "Otevřít",
   "project-wizard": "Nová specifikace",
-  "reload-pim-wrapper": {
-    "confirm": "Opravdu chcete znovu načíst obsah tohoto externího modelu?",
-    "description": "Znovu načíst obsah externího modelu",
-    "error": "Znovunačtení modelu selhalo. Více informací je v konzoli.",
-    "success": "Model byl úspěšně znovu načten."
-  },
-  "reload-imported": {
-    "reload": "Aktualizovat",
-    "success": "Specifikace byla úspěšně aktualizována.",
-    "title": "Aktualizovat importovanou specifikaci",
+  "reload-resource": {
+    "error": "Aktualizace selhala.",
+    "error-title": "Aktualizace selhala",
+    "reload": "Aktualizovat a zobrazit změny",
+    "reload-apply": "Aktualizovat a aplikovat změny okamžitě",
+    "success": "Aktualizace proběhla úspěšně.",
+    "title": "Aktualizovat zdroj",
     "url": "URL",
-    "warning": "Chystáte se aktualizovat specifikaci {{name}} z následující URL. Pokud načtení proběhne úspěšně, specifikace bude kompletně přepsána.",
-    "warning-no-name": "Chystáte se aktualizovat specifikaci z následující URL. Pokud načtení proběhne úspěšně, specifikace bude kompletně přepsána."
+    "urls": "URL adresy (jedna na řádek)",
+    "warning": "Chystáte se aktualizovat {{name}} z níže uvedené URL adresy (adres). Pokud aktualizace proběhne úspěšně, obsah bude kompletně přepsán.",
+    "warning-no-name": "Chystáte se aktualizovat tento zdroj z níže uvedené URL adresy (adres). Pokud aktualizace proběhne úspěšně, obsah bude kompletně přepsán."
   },
   "remove": "Odstranit",
   "resource-detail": {

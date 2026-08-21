@@ -1,11 +1,11 @@
-import { DialogProps } from "@/dialog/dialog-api";
+import { DialogProps } from "../../../../dialog/dialog-api";
 import {
   EditVisualDiagramNodeDialogState,
   useEditVisualDiagramNodeDialogController
 } from "./edit-visual-diagram-node-dialog-controller";
-import { t } from "@/application";
-import { DialogDetailRow } from "@/components/dialog/dialog-detail-row";
-import { InputLanguageString } from "@/dialog/components/input-language-string";
+import { t } from "../../../../application";
+import { DialogDetailRow } from "../../../../components/dialog/dialog-detail-row";
+import { InputLanguageString } from "../../../../dialog/components/input-language-string";
 
 export const EditVisualDiagramNodeDialog = (props: DialogProps<EditVisualDiagramNodeDialogState>) => {
   const controller = useEditVisualDiagramNodeDialogController(props);

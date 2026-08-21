@@ -20,7 +20,7 @@ export class XmlSetSchemaNamespace implements ComplexOperation {
 
     execute(): void {
         const operation = new DataPsmSetNamespaceXmlExtension();
-        operation.dataPsmSchema = this.forDataPsmSchemaIri;
+        operation.entityId = this.forDataPsmSchemaIri;
         operation.namespace = this.namespace;
         operation.namespacePrefix = this.namespacePrefix;
         this.store.applyOperation(this.forDataPsmSchemaIri, operation);

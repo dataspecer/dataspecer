@@ -4,7 +4,7 @@ import { generateOperationId, type Operation } from "./operation.ts";
 /**
  * @see {@link RemoveEntityOperation}
  */
-export const RemoveEntityOperationType = "http://dataspecer.com/core/operation/remove-entity" as const;
+export const RemoveEntityOperationType = "https://schemas.dataspecer.com/core/operations/delete-entity" as const;
 
 /**
  * Operation that ensures that an entity is removed from the model. If the
@@ -30,10 +30,14 @@ export function createRemoveEntityOperation(entityId: EntityIdentifier): RemoveE
   };
 }
 
+export function isRemoveEntityOperation(operation: Operation): operation is RemoveEntityOperation {
+  return operation.type === RemoveEntityOperationType;
+}
+
 /**
  * @see {@link SetEntityOperation}
  */
-export const SetEntityOperationType = "http://dataspecer.com/core/operation/set-entity" as const;
+export const SetEntityOperationType = "https://schemas.dataspecer.com/core/operations/set-entity" as const;
 
 /**
  * Operation that ensures that an entity is set in the model with the given
@@ -67,7 +71,7 @@ export function isSetEntityOperation(operation: Operation): operation is SetEnti
 /**
  * @see {@link UpdateEntityOperation}
  */
-export const UpdateEntityOperationType = "http://dataspecer.com/core/operation/update-entity" as const;
+export const UpdateEntityOperationType = "https://schemas.dataspecer.com/core/operations/update-entity" as const;
 
 /**
  * Operation that ensures that an entity is updated in the model with the given
@@ -80,29 +84,37 @@ export const UpdateEntityOperationType = "http://dataspecer.com/core/operation/u
 export interface UpdateEntityOperation extends Operation {
   type: typeof UpdateEntityOperationType;
 
-  update: Partial<Entity> & Pick<Entity, "id">;
+  /**
+   * Entity to be updated by its identifier.
+   */
+  entityId: EntityIdentifier;
+
+  /**
+   * Properties to be merged into the entity. Identifier and type of an entity
+   * are immutable, use {@link SetEntityOperation} to replace the entity as a
+   * whole instead.
+   */
+  update: Partial<Omit<Entity, "id" | "type">>;
 }
 
-export function createUpdateEntityOperation(update: Partial<Entity> & Pick<Entity, "id">): UpdateEntityOperation {
+export function createUpdateEntityOperation(entityId: EntityIdentifier, update: Partial<Omit<Entity, "id" | "type">>): UpdateEntityOperation {
+  if (!(typeof entityId === "string" && entityId.length > 0)) {
+    throw new Error("Invalid entity identifier.");
+  }
+
   if (!(
     typeof update === "object" &&
     update !== null &&
-    "id" in update &&
-    typeof update.id === "string" &&
-    update.id.length > 0 &&
-    (
-      "type" in update ? (
-        Array.isArray(update.type) &&
-        update.type.every((t) => typeof t === "string")
-      ) : true
-    )
+    !("id" in update) &&
+    !("type" in update)
   )) {
-    throw new Error("Invalid update entity.");
+    throw new Error("Invalid entity update.");
   }
 
   return {
     id: generateOperationId(),
     type: UpdateEntityOperationType,
+    entityId,
     update,
   };
 }

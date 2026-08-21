@@ -32,13 +32,14 @@ import {
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import {
   createNewAssociationProfileDialogState,
-} from "@/dialog/association-profile/edit-association-profile-dialog-state";
-import { Language } from "@/configuration";
+} from "../dialog/association-profile/edit-association-profile-dialog-state";
+import { Language } from "../configuration";
 import {
   associationProfileDialogStateToNewCmeRelationshipProfileWithOverriddenEnds,
-} from "@/dialog/association-profile/edit-association-profile-dialog-state-adapter";
+} from "../dialog/association-profile/edit-association-profile-dialog-state-adapter";
 import { DialogSemanticTracker } from "../dialog-v2/dialog-semantic-tracker";
 import { LabelResolver } from "../dependency-tracker";
+import { applyControlledVocabularySelection } from "./apply-controlled-vocabulary-selection";
 
 /**
  * Creates default profiles of given {@link semanticClassesToProfile} and {@link semanticRelationshipsToProfile}.
@@ -142,7 +143,7 @@ async function createDefaultClassProfile(
 
   const profileClassState = createNewProfileClassDialogState(
     visualModel, language, [classOrClassProfileToBeProfiled.id], tracker,
-    labelResolver);
+    labelResolver, graph);
   const createdClassProfile = createClassProfile(profileClassState, cmeExecutor);
   if (shouldBeAddedToVisualModel) {
     if (isWritableVisualModel(visualModel)) {
@@ -165,7 +166,11 @@ function createClassProfile(
   state: ClassProfileDialogState,
   cmeExecutor: CmeModelOperationExecutor
 ) {
-  return cmeExecutor.createClassProfile(classProfileDialogStateToNewCmeClassProfile(state));
+  const result = cmeExecutor.createClassProfile(
+    classProfileDialogStateToNewCmeClassProfile(state));
+  applyControlledVocabularySelection(
+    cmeExecutor, result, [], state.controlledVocabularies.items);
+  return result;
 }
 
 function createDefaultRelationshipProfiles(

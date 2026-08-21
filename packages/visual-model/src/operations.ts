@@ -12,7 +12,7 @@ import { ModelIdentifier } from "@dataspecer/core/model";
 /**
  * @see {@link AddVisualNodeOperation}
  */
-export const AddVisualNodeOperationType = "http://dataspecer.com/visual-model/operation/add-visual-node" as const;
+export const AddVisualNodeOperationType = "https://schemas.dataspecer.com/visual-model/operations/create-visual-node" as const;
 
 /**
  * Operation that creates a new visual node in the visual model.
@@ -43,7 +43,7 @@ export function isAddVisualNodeOperation(operation: Operation): operation is Add
 /**
  * @see {@link AddVisualDiagramNodeOperation}
  */
-export const AddVisualDiagramNodeOperationType = "http://dataspecer.com/visual-model/operation/add-visual-diagram-node" as const;
+export const AddVisualDiagramNodeOperationType = "https://schemas.dataspecer.com/visual-model/operations/create-visual-diagram-node" as const;
 
 /**
  * Operation that creates a new visual diagram node in the visual model.
@@ -74,7 +74,7 @@ export function isAddVisualDiagramNodeOperation(operation: Operation): operation
 /**
  * @see {@link AddVisualRelationshipOperation}
  */
-export const AddVisualRelationshipOperationType = "http://dataspecer.com/visual-model/operation/add-visual-relationship" as const;
+export const AddVisualRelationshipOperationType = "https://schemas.dataspecer.com/visual-model/operations/create-visual-relationship" as const;
 
 /**
  * Operation that creates a new visual relationship (edge) in the visual model.
@@ -105,7 +105,7 @@ export function isAddVisualRelationshipOperation(operation: Operation): operatio
 /**
  * @see {@link AddVisualProfileRelationshipOperation}
  */
-export const AddVisualProfileRelationshipOperationType = "http://dataspecer.com/visual-model/operation/add-visual-profile-relationship" as const;
+export const AddVisualProfileRelationshipOperationType = "https://schemas.dataspecer.com/visual-model/operations/create-visual-profile-relationship" as const;
 
 /**
  * Operation that creates a new visual profile relationship in the visual model.
@@ -136,7 +136,7 @@ export function isAddVisualProfileRelationshipOperation(operation: Operation): o
 /**
  * @see {@link AddVisualGroupOperation}
  */
-export const AddVisualGroupOperationType = "http://dataspecer.com/visual-model/operation/add-visual-group" as const;
+export const AddVisualGroupOperationType = "https://schemas.dataspecer.com/visual-model/operations/create-visual-group" as const;
 
 /**
  * Operation that creates a new visual group in the visual model.
@@ -167,7 +167,7 @@ export function isAddVisualGroupOperation(operation: Operation): operation is Ad
 /**
  * @see {@link UpdateVisualEntityOperation}
  */
-export const UpdateVisualEntityOperationType = "http://dataspecer.com/visual-model/operation/update-visual-entity" as const;
+export const UpdateVisualEntityOperationType = "https://schemas.dataspecer.com/visual-model/operations/update-visual-entity" as const;
 
 /**
  * Operation that updates properties of an existing visual entity.
@@ -205,7 +205,7 @@ export function isUpdateVisualEntityOperation(operation: Operation): operation i
 /**
  * @see {@link DeleteVisualEntityOperation}
  */
-export const DeleteVisualEntityOperationType = "http://dataspecer.com/visual-model/operation/delete-visual-entity" as const;
+export const DeleteVisualEntityOperationType = "https://schemas.dataspecer.com/visual-model/operations/delete-visual-entity" as const;
 
 /**
  * Operation that removes a visual entity from the visual model.
@@ -236,7 +236,7 @@ export function isDeleteVisualEntityOperation(operation: Operation): operation i
 /**
  * @see {@link SetModelColorOperation}
  */
-export const SetModelColorOperationType = "http://dataspecer.com/visual-model/operation/set-model-color" as const;
+export const SetModelColorOperationType = "https://schemas.dataspecer.com/visual-model/operations/set-model-color" as const;
 
 /**
  * Operation that sets the visual color for a model in the visual model.
@@ -273,7 +273,7 @@ export function isSetModelColorOperation(operation: Operation): operation is Set
 /**
  * @see {@link DeleteModelColorOperation}
  */
-export const DeleteModelColorOperationType = "http://dataspecer.com/visual-model/operation/delete-model-color" as const;
+export const DeleteModelColorOperationType = "https://schemas.dataspecer.com/visual-model/operations/delete-model-color" as const;
 
 /**
  * Operation that removes the color assignment for a model.
@@ -304,7 +304,7 @@ export function isDeleteModelColorOperation(operation: Operation): operation is 
 /**
  * @see {@link SetLabelOperation}
  */
-export const SetLabelOperationType = "http://dataspecer.com/visual-model/operation/set-label" as const;
+export const SetLabelOperationType = "https://schemas.dataspecer.com/visual-model/operations/set-label" as const;
 
 /**
  * Operation that sets the label of the visual model.
@@ -312,6 +312,8 @@ export const SetLabelOperationType = "http://dataspecer.com/visual-model/operati
  * The label can be a multilingual string with language-specific values.
  */
 export interface SetLabelOperation extends Operation {
+  type: typeof SetLabelOperationType;
+
   /**
    * The label(s) for the visual model, which can be multilingual.
    * Use null to remove the label.
@@ -334,7 +336,7 @@ export function isSetLabelOperation(operation: Operation): operation is SetLabel
 /**
  * @see {@link SetViewOperation}
  */
-export const SetViewOperationType = "http://dataspecer.com/visual-model/operation/set-view" as const;
+export const SetViewOperationType = "https://schemas.dataspecer.com/visual-model/operations/set-view" as const;
 
 /**
  * Operation that sets or updates the visual view/viewport configuration.

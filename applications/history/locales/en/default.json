@@ -1,0 +1,263 @@
+{
+  "--lang-name": "English",
+  "app-name": "history",
+  "breadcrumbs": {
+    "home": "Specifications",
+    "no-specification": "No specification selected"
+  },
+  "nav": {
+    "evolution": "Evolution",
+    "history": "History"
+  },
+  "model-type": {
+    "project": "Project",
+    "specification": "Specification",
+    "vocabulary": "Vocabulary",
+    "profile": "Application profile",
+    "visual-model": "Visual model",
+    "imported-vocabulary": "Imported vocabulary",
+    "queryable-vocabulary": "Queried vocabulary (SGOV)",
+    "api-specification": "API specification",
+    "application-graph": "Application graph",
+    "structure-model": "Structure model",
+    "generator-configuration": "Generator configuration",
+    "model": "Model"
+  },
+  "history": {
+    "title": "History",
+    "description": "The full history of the project as transactions of operations, newest first. Undo any transaction or mark one with a version, like a git tag - versions separate the history into the chunks published in the specification.",
+    "empty": "The project has no recorded history yet.",
+    "no-project": "No project selected. Open this page with a packageIri query parameter.",
+    "project-model": "Project structure",
+    "unnamed": "unnamed",
+    "session-changes_one": "{{count}} change",
+    "session-changes_other": "{{count}} changes",
+    "badge": {
+      "project-structure": "Changes the project structure",
+      "undone": "Undone"
+    },
+    "op": {
+      "undo": "Reverted the changes of transaction {{transactionId}}",
+      "version": "Marked transaction {{transactionId}} as version {{version}}",
+      "create-project": "Project \"{{name}}\" created",
+      "create-model": "Added {{type}} \"{{name}}\" to the project",
+      "remove-model": "Removed {{type}} \"{{name}}\" from the project",
+      "create-class": "Created class <name />",
+      "modify-class": "Changed class <name />",
+      "delete-class": "Deleted class <name />",
+      "create-relationship": "Created relationship <name /> (<domain /> → <range />)",
+      "modify-relationship": "Changed relationship <name />",
+      "delete-relationship": "Deleted relationship <name /> (<domain /> → <range />)",
+      "create-generalization": "<child /> now specializes <parent />",
+      "create-generalization-plain": "Created a generalization",
+      "modify-generalization": "Changed a generalization",
+      "delete-generalization": "<child /> no longer specializes <parent />",
+      "delete-entity": "Deleted <name />",
+      "create-class-profile": "Created a profile of class <name />",
+      "modify-class-profile": "Changed class profile <name />",
+      "delete-class-profile": "Deleted class profile <name />",
+      "create-relationship-profile": "Created a profile of relationship <name />",
+      "modify-relationship-profile": "Changed relationship profile <name />",
+      "delete-relationship-profile": "Deleted relationship profile <name />",
+      "assign-controlled-vocabulary": "Assigned a controlled vocabulary to <name />",
+      "remove-controlled-vocabulary": "Removed a controlled vocabulary from <name />",
+      "modify-controlled-vocabulary": "Changed a controlled vocabulary assignment of <name />",
+      "add-visual-node": "Added <name /> to the canvas",
+      "add-visual-diagram-node": "Added diagram \"{{name}}\" to the canvas",
+      "add-visual-relationship": "Added relationship <name /> to the canvas",
+      "add-visual-profile-relationship": "Added a profile link to the canvas",
+      "add-visual-group": "Grouped elements on the canvas",
+      "move-node": "Moved <name /> from {{from}} to {{to}}",
+      "move-node-to": "Moved <name /> to {{to}}",
+      "reroute-edge": "Adjusted the line of <name />",
+      "change-node-content": "Changed the displayed attributes of <name />",
+      "update-visual-entity": "Changed <name /> on the canvas",
+      "remove-visual-node": "Removed <name /> from the canvas",
+      "remove-visual-relationship": "Removed relationship <name /> from the canvas",
+      "remove-visual-entity": "Removed an element from the canvas",
+      "set-model-color": "Changed the color of \"{{name}}\"",
+      "remove-model-color": "Removed the color of \"{{name}}\"",
+      "rename-view": "Renamed the view to \"{{name}}\"",
+      "set-view": "Changed the initial viewport",
+      "reload-model": "Reloaded the vocabulary from its source",
+      "set-model-urls": "Changed the source of the vocabulary",
+      "add-query": "Loaded additional entities",
+      "remove-query": "Removed loaded entities",
+      "psm-create-schema": "Created the schema",
+      "psm-create": "Added {{what}} to the structure",
+      "psm-delete": "Removed {{what}} from the structure",
+      "psm-move-property": "Moved a property in the structure",
+      "psm-set-order": "Reordered properties in the structure",
+      "psm-set-human-label": "Renamed an element to \"{{name}}\"",
+      "psm-set-technical-label": "Changed a technical name to \"{{value}}\"",
+      "psm-replace-along-inheritance": "Replaced a class along its inheritance",
+      "psm-wrap-with-or": "Wrapped an element with a choice",
+      "psm-unwrap-or": "Unwrapped a choice",
+      "psm-set": "Changed {{what}} in the structure",
+      "set-entity": "Replaced <name />",
+      "update-entity": "Updated <name />",
+      "update-entity-svg": "Updated the diagram",
+      "remove-entity": "Removed <name />"
+    },
+    "psm-part": {
+      "class": "a class",
+      "attribute": "an attribute",
+      "association": "an association",
+      "choice": "a choice",
+      "container": "a container",
+      "include": "an include",
+      "class-reference": "a class reference",
+      "external-root": "an external root"
+    },
+    "field": {
+      "name": "name",
+      "label": "name",
+      "description": "definition",
+      "iri": "IRI",
+      "ends": "ends",
+      "cardinality": "cardinality",
+      "usageNote": "usage note",
+      "externalDocumentationUrl": "documentation URL",
+      "profiling": "profiled entities",
+      "position": "position",
+      "content": "displayed attributes",
+      "waypoints": "line",
+      "color": "color",
+      "subModels": "contained models",
+      "concept": "class",
+      "dataType": "data type",
+      "nameFromProfiled": "inherited name",
+      "descriptionFromProfiled": "inherited definition",
+      "usageNoteFromProfiled": "inherited usage note",
+      "urls": "source URLs",
+      "visualModels": "assigned diagrams"
+    },
+    "action": {
+      "undo": "Undo",
+      "undo-description": "Cancel this transaction as if its operations never happened. Later changes stay in place.",
+      "tag": "Mark version",
+      "tag-title": "Mark this transaction with a version",
+      "tag-placeholder": "e.g. 1.1",
+      "tag-confirm": "Mark"
+    }
+  },
+  "mode-toggle": {
+    "title": "Toggle theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "evolution": {
+    "title": "Evolution",
+    "review-title": "Evolution of <name />",
+    "back-to-overview": "Back to overview",
+    "description": "This specification is dependent on another which has been modified. Please assess how the dependent models should respond to these changes.",
+    "empty": "There are no pending changes.",
+    "no-project": "No project selected. Open this page with a packageIri query parameter.",
+    "error": {
+      "load": "Failed to load the pending evolution. Please try refreshing the page.",
+      "apply": "Applying the changes failed. Please try again."
+    },
+    "overview": {
+      "description": "Pending updates of vocabularies and specifications whose changes affect other models. Open an update and review how the dependent models should react.",
+      "empty": "There is no pending evolution.",
+      "change": {
+        "created": "Created",
+        "modified": "Modified",
+        "deleted": "Deleted"
+      },
+      "kind": {
+        "classes_one": "{{count}} class",
+        "classes_other": "{{count}} classes",
+        "relationships_one": "{{count}} relationship",
+        "relationships_other": "{{count}} relationships",
+        "generalizations_one": "{{count}} generalization",
+        "generalizations_other": "{{count}} generalizations",
+        "other_one": "{{count}} other entity",
+        "other_other": "{{count}} other entities"
+      },
+      "no-net-changes": "The pending operations cancel each other out.",
+      "status": {
+        "not-in-specification": "Changes not yet visible in the specification"
+      },
+      "affects": "Affects:",
+      "no-targets": "No dependent model reacts to this change — the update can be accepted as is.",
+      "review": "Review",
+      "action": {
+        "skip": "Skip evolution",
+        "skip-description": "Accept the upstream changes as they are, without any reaction in the dependent models.",
+        "cancel": "Cancel evolution",
+        "cancel-description": "Discard the pending changes and keep all models as they are."
+      },
+      "edge": {
+        "semantic-to-profile": "vocabulary → profile",
+        "profile-to-profile": "profile → profile"
+      }
+    },
+    "summary": "{{operations}} upstream operations to apply, {{proposed}} proposed operations to decide",
+    "all-done": "Everything applied",
+    "back-to-manager": "Back to manager",
+    "apply-all": "Accept update & apply selected ({{count}})",
+    "apply-selected": "Apply selected ({{count}})",
+    "no-profile-impact": "The upstream changes do not affect the application profile. Accepting the update will only apply the vocabulary changes.",
+    "upstream-changes": "Upstream changes",
+    "requires-new-profiles": "Requires class profiles that are proposed above — unchecking them deselects this item.",
+    "cascade-warning": "Deleting also removes {{relationships}} dependent relationship profile(s) and {{generalizations}} generalization(s).",
+    "manual-todo": "I resolved this manually in the conceptual model editor.",
+    "retyped-upstream": "the class at this end changed upstream",
+    "section": {
+      "new-classes": "New classes",
+      "new-relationships": "New relationships",
+      "new-generalizations": "New generalizations",
+      "deletions": "Deletions",
+      "modifications": "Modifications"
+    },
+    "item": {
+      "create-class": "New class <name />",
+      "create-class-hint": "Create a class profile for it",
+      "create-relationship": "New relationship <name />",
+      "create-generalization": "New generalization",
+      "specializes": "<child /> specializes <parent />",
+      "profile-of": "Profile of <name />",
+      "deleted-class-profile": "Class <name /> was deleted upstream",
+      "deleted-relationship-profile": "Relationship <name /> was deleted upstream",
+      "deleted-generalization": "Generalization <name /> was deleted upstream",
+      "affected-profile": "Affected profile: <name />"
+    },
+    "end-role": {
+      "domain": "domain",
+      "range": "range"
+    },
+    "field": {
+      "name": "Name",
+      "description": "Definition",
+      "usageNote": "Usage note",
+      "cardinality": "Cardinality",
+      "concept": "Class",
+      "externalDocumentationUrl": "Documentation URL"
+    },
+    "profile-state": {
+      "inherits": "The profile inherits this value — the new value flows in automatically.",
+      "override-matches-new": "The profile overrides this value with <value />, which now matches the new upstream value.",
+      "override-differs": "Conflict: the profile overrides this value with <value />.",
+      "not-inheritable": "The profile has its own value <value />."
+    },
+    "choice": {
+      "inherit": "Keep inheriting",
+      "freeze-old": "Keep old value in profile",
+      "adopt-new": "Adopt new value",
+      "keep-own": "Keep changed value",
+      "drop-override": "Drop override (inherit)",
+      "keep-override": "Keep override",
+      "delete": "Delete profile",
+      "detach": "Keep profile (detach)",
+      "keep": "Keep",
+      "retarget": "Retarget to <name />",
+      "manual": "Resolve manually"
+    },
+    "status": {
+      "applied": "Applied",
+      "manual": "Manual"
+    }
+  }
+}

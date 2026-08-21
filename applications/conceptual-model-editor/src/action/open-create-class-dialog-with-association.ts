@@ -17,7 +17,7 @@ import {
 } from "../dialog/association/edit-association-dialog-state-adapter";
 import { CmeReference } from "../dataspecer/cme-model/model";
 import { addSemanticRelationshipToVisualModelAction } from "./add-relationship-to-visual-model";
-import { LabelResolver } from "@/dependency-tracker";
+import { LabelResolver } from "../dependency-tracker";
 
 /**
  * Opens dialog which on confirm creates class,

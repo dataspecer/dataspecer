@@ -60,7 +60,7 @@ export class DeleteInheritanceOrSpecialization implements ComplexOperation {
     // Delete the choices
     for (const choiceToDelete of choicesToDelete) {
       const dataPsmUnsetChoice = new DataPsmUnsetChoice();
-      dataPsmUnsetChoice.dataPsmOr = this.ownerOrIri;
+      dataPsmUnsetChoice.entityId = this.ownerOrIri;
       dataPsmUnsetChoice.dataPsmChoice = choiceToDelete;
       this.store.applyOperation(schema, dataPsmUnsetChoice);
     }
@@ -69,7 +69,7 @@ export class DeleteInheritanceOrSpecialization implements ComplexOperation {
 
     if (choicesToDelete.length + 1 === or.dataPsmChoices.length) {
       const unwrap = new DataPsmUnwrapOr();
-      unwrap.dataPsmOr = or.iri;
+      unwrap.entityId = or.iri;
       this.store.applyOperation(schema, unwrap);
     }
   }

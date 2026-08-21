@@ -1,9 +1,9 @@
 import { WritableVisualModel } from "@dataspecer/visual-model";
 import { getViewportCenterForClassPlacement, doesAddingVisualModelCauseSelfReference } from "./utilities";
-import { UseDiagramType } from "@/diagram/diagram-hook";
-import { addVisualDiagramNode } from "@/dataspecer/visual-model/operation/add-visual-diagram-node";
-import { ModelGraphContextType } from "@/context/model-context";
-import { UseNotificationServiceWriterType } from "@/notification/notification-service-context";
+import { UseDiagramType } from "../diagram/diagram-hook";
+import { addVisualDiagramNode } from "../dataspecer/visual-model/operation/add-visual-diagram-node";
+import { ModelGraphContextType } from "../context/model-context";
+import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 
 /**
  * Creates new visual diagram node, which is referencing existing visual model {@link existingModel}.

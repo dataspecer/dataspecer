@@ -1,4 +1,4 @@
-import { CmePrimitiveType } from "@/dataspecer/cme-model";
+import { CmePrimitiveType } from "../../../dataspecer/cme-model";
 import { UI_PRIMITIVE_TYPE_TYPE, UiPrimitiveType, UiSemanticModel } from "../model";
 import { SelectLabel } from "./adapter-context";
 

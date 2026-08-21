@@ -1,4 +1,6 @@
-import { AlignmentHorizontalPosition, AlignmentVerticalPosition } from "@/action/align-nodes";
+import {
+  AlignmentHorizontalPosition, AlignmentVerticalPosition,
+} from "../action/align-nodes";
 import {
   type Node,
   type Edge,
