@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { DataFactory } from 'ldkit/rdf';
 
 import {
   buildIncomingReferencesQuery,
@@ -8,6 +9,7 @@ import {
   buildReferenceOptionsQuery,
   RdfLdkitDataSource,
   toLdkitEntity,
+  toSafeNamedNodeValue,
   toSparqlNamedNode,
 } from '../assets/generated-app/src/shared/data-source/rdf-ldkit-data-source.ts';
 import type {
@@ -57,6 +59,40 @@ const inverseField: AggregateDescriptor<EntityModel>['fields'][number] = {
   many: true,
   required: false,
 };
+
+describe('generated RDF runtime IRI boundaries', () => {
+  it('rejects unsafe operation identifiers before resolving a schema or querying the endpoint', async () => {
+    const dataSource = new RdfLdkitDataSource('https://example.org/sparql', {});
+    const unsafeId = 'https://example.org/> } ; DROP ALL; #';
+
+    await expect(dataSource.readDetail({ aggregate: listAggregate, id: unsafeId })).rejects.toThrow(
+      'Entity IRI must be a safe absolute IRI.'
+    );
+    await expect(
+      dataSource.update({ aggregate: listAggregate, id: unsafeId, payload: {} })
+    ).rejects.toThrow('Entity IRI must be a safe absolute IRI.');
+    await expect(dataSource.delete({ aggregate: listAggregate, id: unsafeId })).rejects.toThrow(
+      'Entity IRI must be a safe absolute IRI.'
+    );
+  });
+
+  it('accepts only safe named-node values returned by a list query', () => {
+    const factory = new DataFactory();
+
+    expect(
+      toSafeNamedNodeValue(factory.namedNode('https://example.org/book/1'), 'List result IRI')
+    ).toBe('https://example.org/book/1');
+    expect(() => toSafeNamedNodeValue(factory.blankNode('book-1'), 'List result IRI')).toThrow(
+      'List result IRI must be a safe absolute named-node IRI.'
+    );
+    expect(() =>
+      toSafeNamedNodeValue(
+        factory.namedNode('https://example.org/> } ; DROP ALL; #'),
+        'List result IRI'
+      )
+    ).toThrow('List result IRI must be a safe absolute IRI.');
+  });
+});
 
 describe('generated RDF inverse relation queries', () => {
   it('writes and deletes inverse triples in the reversed direction', () => {
@@ -319,6 +355,24 @@ describe('generated RDF list queries', () => {
 });
 
 describe('generated RDF mutation payloads', () => {
+  it('rejects unsafe ids recursively before passing a payload to LDKit', () => {
+    expect(() =>
+      toLdkitEntity(
+        {
+          id: 'https://example.org/book/1',
+          chapter: {
+            id: 'https://example.org/> } ; DROP ALL; #',
+          },
+        },
+        'update'
+      )
+    ).toThrow('Payload id must be a safe absolute IRI.');
+
+    expect(() => toLdkitEntity({ id: 42 }, 'create')).toThrow(
+      'Payload id must be a safe absolute IRI.'
+    );
+  });
+
   it('keeps values that tell Lens.update to clear a property', () => {
     expect(
       toLdkitEntity(

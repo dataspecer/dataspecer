@@ -60,7 +60,9 @@ export class RdfLdkitDataSource implements DataSource {
       lens.count(),
       new QueryEngine().queryBindings(iriQuery, this.context()).then(readBindings),
     ]);
-    const iris = iriBindings.map((binding) => binding.get('iri')!.value);
+    const iris = iriBindings.map((binding) =>
+      toSafeNamedNodeValue(binding.get('iri'), 'List result IRI')
+    );
     if (iris.length === 0) {
       return { items: [], total };
     }
@@ -80,6 +82,7 @@ export class RdfLdkitDataSource implements DataSource {
   async readDetail<TModel extends EntityModel>(
     args: ReadDetailArgs<TModel>
   ): Promise<TModel | null> {
+    requireSafeAbsoluteIri(args.id, 'Entity IRI');
     const lens = this.resolveTarget(args.aggregate).lens;
     const result = await lens.findByIri(args.id);
     return result ? toModel<TModel>(result) : null;
@@ -102,6 +105,7 @@ export class RdfLdkitDataSource implements DataSource {
   }
 
   async update<TModel extends EntityModel>(args: IdentifiedMutationArgs<TModel>): Promise<TModel> {
+    requireSafeAbsoluteIri(args.id, 'Entity IRI');
     const payload = { ...args.payload, id: args.id };
     const payloadRecord = payload as unknown as Record<string, unknown>;
     const { fields, lens } = this.resolveTarget(args.aggregate, args.fieldPath);
@@ -131,6 +135,7 @@ export class RdfLdkitDataSource implements DataSource {
   }
 
   async delete<TModel extends EntityModel>(args: DeleteArgs<TModel>): Promise<void> {
+    requireSafeAbsoluteIri(args.id, 'Entity IRI');
     const { fields, lens } = this.resolveTarget(args.aggregate, args.fieldPath);
     const inverseDeleteQuery = buildInverseDeleteQuery(inverseWritableFields(fields), args.id);
     await this.executeUpdate(inverseDeleteQuery);
@@ -328,10 +333,15 @@ export function buildInverseDeleteQuery(
 }
 
 export function toSparqlNamedNode(value: string, label: string): RDF.NamedNode {
-  if (!isSafeAbsoluteIri(value)) {
-    throw new Error(`${label} must be a safe absolute IRI.`);
+  return dataFactory.namedNode(requireSafeAbsoluteIri(value, label));
+}
+
+/** Returns a store-provided named-node IRI only when it is safe to pass back into LDKit. */
+export function toSafeNamedNodeValue(term: RDF.Term | undefined, label: string): string {
+  if (term?.termType !== 'NamedNode') {
+    throw new Error(`${label} must be a safe absolute named-node IRI.`);
   }
-  return dataFactory.namedNode(value);
+  return requireSafeAbsoluteIri(term.value, label);
 }
 
 function inverseWritableFields(fields: readonly FieldDescriptor[]): FieldDescriptor[] {
@@ -420,7 +430,7 @@ export function toLdkitEntity(value: unknown, mode: 'create' | 'update'): unknow
   for (const [key, nested] of Object.entries(source)) {
     if (key === 'id') {
       if (nested !== '') {
-        result.$id = nested;
+        result.$id = requireSafeAbsoluteIri(nested, 'Payload id');
       }
       continue;
     }
@@ -431,6 +441,13 @@ export function toLdkitEntity(value: unknown, mode: 'create' | 'update'): unknow
   }
   // An object that keeps no properties (for example an unset reference) is dropped entirely.
   return Object.keys(result).length > 0 ? result : undefined;
+}
+
+function requireSafeAbsoluteIri(value: unknown, label: string): string {
+  if (typeof value !== 'string' || !isSafeAbsoluteIri(value)) {
+    throw new Error(`${label} must be a safe absolute IRI.`);
+  }
+  return value;
 }
 
 /**
