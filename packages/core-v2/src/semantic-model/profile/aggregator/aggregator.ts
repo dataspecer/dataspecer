@@ -4,6 +4,7 @@ import {
   SemanticModelRelationship,
 } from "../../concepts/index.ts";
 import {
+  ControlledVocabularyAssignment,
   isSemanticModelClassProfile,
   isSemanticModelGeneralizationProfile,
   isSemanticModelRelationshipProfile,
@@ -46,7 +47,8 @@ export interface SemanticProfileAggregator {
     dependencies: (
       SemanticModelClass |
       SemanticModelClassProfile |
-      AggregatedProfiledSemanticModelClass
+      AggregatedProfiledSemanticModelClass |
+      ControlledVocabularyAssignment
     )[],
   ): AggregatedProfiledSemanticModelClass;
 
@@ -88,7 +90,8 @@ class DefaultProfileEntityAggregator implements SemanticProfileAggregator {
     aggregatedProfiled: (
       SemanticModelClass |
       SemanticModelClassProfile |
-      AggregatedProfiledSemanticModelClass
+      AggregatedProfiledSemanticModelClass |
+      ControlledVocabularyAssignment
     )[],
   ): AggregatedProfiledSemanticModelClass {
     return SemanticClassProfileAggregator
