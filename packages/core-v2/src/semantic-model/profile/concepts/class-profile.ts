@@ -15,21 +15,13 @@ export interface SemanticModelClassProfile extends
   tags: string[];
 
   /**
+   * Ids of this class profile's own ControlledVocabularyAssignment
+   * entities. Does not include inherited assignments - see the
+   * aggregator for the resolved, deduped, own-wins-over-inherited view.
+   *
    * The "undefined" type is workaround for a missing migration.
    */
-  controlledVocabularies: ControlledVocabularyAssignment[] | undefined;
-
-}
-
-export type Qualifier = "MUST" | "AT_LEAST_1" | "RECOMMENDED" | "MAY";
-
-export type ControlledVocabularyAssignment = {
-
-  identifier: EntityIdentifier;
-
-  qualifier: Qualifier;
-
-  override: boolean;
+  controlledVocabularies: EntityIdentifier[] | undefined;
 
 }
 
