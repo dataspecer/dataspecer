@@ -1,6 +1,7 @@
 import type {
   GeneratedAggregateDescriptor,
   GeneratedFieldDescriptor,
+  GeneratedSpecializationDescriptor,
 } from '../generation-model/types.ts';
 
 import { FieldKind } from '../metadata/types.ts';
@@ -58,6 +59,7 @@ interface DescriptorField {
   formControl?: FormControl;
   targetAggregateIri?: string;
   targetClassIri?: string;
+  specializations?: GeneratedSpecializationDescriptor[];
   associationKind?: string;
   isReverse?: boolean;
   fields?: DescriptorField[];
@@ -139,6 +141,9 @@ function toDescriptorField(field: RenderedField): DescriptorField {
     ...(field.formControl ? { formControl: field.formControl } : {}),
     ...(field.targetAggregateIri ? { targetAggregateIri: field.targetAggregateIri } : {}),
     ...(field.targetClassIri ? { targetClassIri: field.targetClassIri } : {}),
+    ...(field.specializations
+      ? { specializations: field.specializations.map((specialization) => ({ ...specialization })) }
+      : {}),
     ...(field.associationKind ? { associationKind: field.associationKind } : {}),
     ...(field.isReverse ? { isReverse: true } : {}),
     ...(field.fields ? { fields: field.fields.map(toDescriptorField) } : {}),

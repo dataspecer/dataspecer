@@ -98,6 +98,18 @@ export interface GeneratedDeleteDescriptor {
   cascadePaths: string[];
 }
 
+/** A selectable concrete shape for a specialized association. */
+export interface GeneratedSpecializationDescriptor {
+  /** Stable specialization identifier. Distinguishes choices sharing an RDF class. */
+  specializationIri: string;
+  /** Label shown in the specialization selector. */
+  label: string;
+  /** RDF class associated with this specialization. */
+  classIri: string;
+  /** Fields available when this specialization is selected. */
+  fieldPaths: string[];
+}
+
 export interface GeneratedFieldDescriptor {
   path: string;
   label: string;
@@ -110,6 +122,8 @@ export interface GeneratedFieldDescriptor {
   maxCount?: number | null;
   targetAggregateIri?: string;
   targetClassIri?: string;
+  /** Specializations available for this association. */
+  specializations?: GeneratedSpecializationDescriptor[];
   associationKind?: AssociationKind;
   /** True for a reverse (inverse) relation, traversed backwards when read. */
   isReverse?: boolean;

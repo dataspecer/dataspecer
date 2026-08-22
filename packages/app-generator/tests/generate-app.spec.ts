@@ -95,7 +95,8 @@ describe('generateApp', { timeout: 30_000 }, () => {
             new DataspecerMetadataMappingError([
               {
                 code: DataspecerMetadataMappingIssueCode.MissingRootClass,
-                message: 'Structure model "example" does not have a resolvable root class.',
+                message:
+                  'Data structure "example" does not have a root class that can be resolved.',
                 path: 'structureModels[0]',
               },
             ])
@@ -107,7 +108,7 @@ describe('generateApp', { timeout: 30_000 }, () => {
     expect(result.violations).toEqual([
       expect.objectContaining({
         code: ViolationCode.MetadataResolutionFailed,
-        message: 'Structure model "example" does not have a resolvable root class.',
+        message: 'Data structure "example" does not have a root class that can be resolved.',
         path: 'structureModels[0]',
       }),
     ]);

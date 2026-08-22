@@ -2,6 +2,18 @@ export type FieldKind = 'primitive' | 'association';
 
 export type AssociationKind = 'composition' | 'aggregation';
 
+/** A selectable concrete shape for a specialized association. */
+export interface SpecializationDescriptor {
+  /** Stable specialization identifier. Distinguishes choices sharing an RDF class. */
+  specializationIri: string;
+  /** Label shown in the specialization selector. */
+  label: string;
+  /** RDF class associated with this specialization. */
+  classIri: string;
+  /** Fields available when this specialization is selected. */
+  fieldPaths: string[];
+}
+
 /** The HTML form control a primitive field maps to in generated forms. */
 export type FormControl = 'text' | 'integer' | 'number' | 'date' | 'datetime' | 'checkbox';
 
@@ -31,6 +43,8 @@ export interface FieldDescriptor {
   targetAggregateIri?: string;
   /** IRI of the class the association points to. */
   targetClassIri?: string;
+  /** Specializations available for this association. */
+  specializations?: SpecializationDescriptor[];
   associationKind?: AssociationKind;
   /**
    * True for a reverse (inverse) relation. Read backwards, and on create written as a reversed

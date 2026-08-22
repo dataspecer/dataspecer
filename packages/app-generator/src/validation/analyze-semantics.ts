@@ -10,6 +10,7 @@ import { validateDeleteCascade } from './rules/delete-cascade.ts';
 import { validateRedirectClasses } from './rules/redirect-classes.ts';
 import { validateTransitionClasses } from './rules/transition-classes.ts';
 import { validateGeneratedFieldNames } from './rules/generated-field-names.ts';
+import { validateNamedNodeIdentityOverrides } from './rules/named-node-identity.ts';
 
 export interface SemanticAnalysisResult extends ValidationResult {
   enrichedMetadata: SpecificationMetadata;
@@ -36,6 +37,7 @@ export function analyzeGraphSemantics(
   const violations: Violation[] = [...structure.violations, ...enrichment.violations];
   violations.push(...validateAggregateNames(context));
   violations.push(...validateGeneratedFieldNames(context));
+  violations.push(...validateNamedNodeIdentityOverrides(context));
   violations.push(...validateAggregateReferences(context));
   violations.push(...validateRedirectClasses(context));
   violations.push(...validateTransitionClasses(context));

@@ -5,6 +5,23 @@ export enum FieldKind {
   Association = 'association',
 }
 
+/** Whether class instances must, may, or must not have an IRI. */
+export type InstanceIdentityPolicy = 'ALWAYS' | 'OPTIONAL' | 'NEVER';
+
+/** One supported direct class choice under a specialization (Or) association. */
+export interface SpecializationMetadata {
+  /** IRI of the Data PSM class choice. This distinguishes choices sharing an RDF class. */
+  specializationIri: string;
+  /** Display label used by the specialization selector. */
+  label: string;
+  /** Concrete RDF class written for newly created instances. */
+  classIri: string;
+  /** Fields applicable to this specialization, including fields shared by every choice. */
+  fieldPaths: string[];
+  /** Identity requirement declared by this specialization's structure class. */
+  identityPolicy: InstanceIdentityPolicy;
+}
+
 export interface AggregateFieldMetadata {
   path: string;
   label: string;
@@ -20,6 +37,10 @@ export interface AggregateFieldMetadata {
   targetAggregateIri?: string;
   /** IRI of the class the association points to. */
   targetClassIri?: string;
+  /** Identity policy of a direct class target. Specialization choices carry their own policies. */
+  targetIdentityPolicy?: InstanceIdentityPolicy;
+  /** Concrete class choices when this association targets a specialization (Or). */
+  specializations?: SpecializationMetadata[];
   associationKind?: AssociationKind;
   /**
    * True for a reverse (inverse) relation, where the predicate is traversed backwards. The

@@ -30,5 +30,7 @@ export { FieldKind } from './metadata/types.ts';
 export type {
   AggregateFieldMetadata,
   AggregateMetadata,
+  InstanceIdentityPolicy,
+  SpecializationMetadata,
   SpecificationMetadata,
 } from './metadata/types.ts';

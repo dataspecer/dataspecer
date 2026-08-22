@@ -28,6 +28,13 @@ function buildFieldDescriptor(field: AggregateFieldMetadata): GeneratedFieldDesc
     ...(field.maxCount !== undefined ? { maxCount: field.maxCount } : {}),
     ...(field.targetAggregateIri ? { targetAggregateIri: field.targetAggregateIri } : {}),
     ...(field.targetClassIri ? { targetClassIri: field.targetClassIri } : {}),
+    ...(field.specializations
+      ? {
+          specializations: field.specializations.map(
+            ({ identityPolicy: _identityPolicy, ...specialization }) => specialization
+          ),
+        }
+      : {}),
     ...(field.associationKind ? { associationKind: field.associationKind } : {}),
     ...(field.isReverse ? { isReverse: true } : {}),
     ...(field.fields ? { fields: field.fields.map(buildFieldDescriptor) } : {}),

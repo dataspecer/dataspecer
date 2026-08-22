@@ -4,6 +4,8 @@ import type { SemanticValidationContext } from '../semantic-validation-context.t
 import { semanticViolation, type Violation } from '../types.ts';
 import { ViolationCode } from '../violation-codes.ts';
 
+const reservedPropertyNames = new Set(['id', '__specializationIri', '__rdfTypes']);
+
 /**
  * Metadata paths become TypeScript property and nested model names. Collisions must be rejected
  * before rendering because object keys and LDKit schema entries would otherwise overwrite each
@@ -32,6 +34,15 @@ function validateFields(
   for (const field of fields) {
     const fieldPath = pathPrefix ? `${pathPrefix}.${field.path}` : field.path;
     const propertyName = toPropertyName(field.path);
+    if (reservedPropertyNames.has(propertyName)) {
+      violations.push(
+        semanticViolation(
+          ViolationCode.SemanticDuplicateGeneratedFieldName,
+          `Field "${fieldPath}" in aggregate "${aggregate.name}" produces reserved property name "${propertyName}". Rename the field in Dataspecer.`,
+          '/dataSpecificationIri'
+        )
+      );
+    }
     const firstPath = firstPathByPropertyName.get(propertyName);
     if (firstPath !== undefined) {
       violations.push(

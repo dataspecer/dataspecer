@@ -71,6 +71,38 @@ describe('renderGeneratedApp', () => {
     expect(tree.get('src/shared/forms/field-value.ts')).toContain('formatFieldValue');
   });
 
+  it('renders Or specialization membership without validation-only identity policy', () => {
+    const metadata = structuredClone(basicMetadata);
+    const chapters = metadata.aggregates
+      .find((aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail')
+      ?.fields.find((field) => field.path === 'chapters');
+    if (!chapters) {
+      throw new Error('Missing chapters field in test metadata.');
+    }
+    chapters.specializations = [
+      {
+        specializationIri: 'https://example.org/psm/chapter-a',
+        label: 'Chapter A',
+        classIri: 'https://example.org/class/chapter-a',
+        fieldPaths: ['name', 'footnotes'],
+        identityPolicy: 'ALWAYS',
+      },
+      {
+        specializationIri: 'https://example.org/psm/chapter-b',
+        label: 'Chapter B',
+        classIri: 'https://example.org/class/chapter-b',
+        fieldPaths: ['name', 'editor'],
+        identityPolicy: 'OPTIONAL',
+      },
+    ];
+
+    const tree = renderGeneratedApp(buildGenerationModel(graphFixture(), metadata));
+    const descriptor = tree.get('src/modules/book-detail/descriptor.ts');
+
+    expect(descriptor).toContain('"specializationIri": "https://example.org/psm/chapter-a"');
+    expect(descriptor).not.toContain('"identityPolicy"');
+  });
+
   it('renders descriptors and schemas for referenced aggregates without their own operation', () => {
     const companyIri = 'https://example.org/aggregate/company';
     const departmentIri = 'https://example.org/aggregate/department';

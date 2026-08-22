@@ -27,6 +27,7 @@ export type {
   GeneratedAggregateDescriptor,
   GeneratedDatasourceDescriptor,
   GeneratedFieldDescriptor,
+  GeneratedSpecializationDescriptor,
   GeneratedNavigationDescriptor,
   GeneratedOperationDescriptor,
   GeneratedRedirectDescriptor,
@@ -55,6 +56,8 @@ export type {
   AggregateFieldMetadata,
   AggregateMetadata,
   DataspecerMetadataProvider,
+  InstanceIdentityPolicy,
+  SpecializationMetadata,
   SpecificationMetadata,
 } from './metadata/types.ts';
 export { FieldKind } from './metadata/types.ts';

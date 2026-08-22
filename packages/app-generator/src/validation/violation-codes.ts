@@ -35,5 +35,6 @@ export enum ViolationCode {
   SemanticDeletePathNotAssociation = 'SEMANTIC_DELETE_PATH_NOT_ASSOCIATION',
   SemanticDuplicateEdge = 'SEMANTIC_DUPLICATE_EDGE',
   SemanticInvalidAssociationKind = 'SEMANTIC_INVALID_ASSOCIATION_KIND',
+  SemanticNamedNodeIdentityOverride = 'SEMANTIC_NAMED_NODE_IDENTITY_OVERRIDE',
   SemanticTransitionRequiresAssociation = 'SEMANTIC_TRANSITION_REQUIRES_ASSOCIATION',
 }

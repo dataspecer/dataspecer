@@ -606,6 +606,108 @@ describe('analyzeGraphSemantics', () => {
     );
   });
 
+  it('rejects fields that collide with generated runtime properties', () => {
+    const graph = validGraph();
+    const metadata = structuredClone(basicMetadata);
+    const book = metadata.aggregates.find(
+      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail'
+    );
+    if (!book) {
+      throw new Error('Missing book aggregate in test metadata.');
+    }
+    book.fields.push(
+      { path: 'id', label: 'Id', kind: FieldKind.Primitive },
+      {
+        path: '__specializationIri',
+        label: 'Specialization',
+        kind: FieldKind.Primitive,
+      },
+      { path: '__rdfTypes', label: 'Types', kind: FieldKind.Primitive }
+    );
+
+    const result = analyzeGraphSemantics(graph, metadata);
+    const reservedNameViolations = result.violations.filter(
+      (violation) =>
+        violation.code === ViolationCode.SemanticDuplicateGeneratedFieldName &&
+        violation.message.includes('reserved property name')
+    );
+
+    expect(result.valid).toBe(false);
+    expect(reservedNameViolations).toHaveLength(3);
+  });
+
+  it('warns once per writable NEVER composition, including specialization targets', () => {
+    const metadata = structuredClone(basicMetadata);
+    const book = metadata.aggregates.find(
+      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail'
+    );
+    const chapters = book?.fields.find((field) => field.path === 'chapters');
+    if (!book || !chapters) {
+      throw new Error('Missing book composition in test metadata.');
+    }
+    chapters.targetIdentityPolicy = 'NEVER';
+    book.fields.push({
+      path: 'contacts',
+      label: 'Contacts',
+      kind: FieldKind.Association,
+      targetClassIri: 'https://example.org/class/contact',
+      fields: [],
+      specializations: [
+        {
+          specializationIri: 'https://example.org/psm/organization',
+          label: 'Organization',
+          classIri: 'https://example.org/class/organization',
+          fieldPaths: [],
+          identityPolicy: 'NEVER',
+        },
+        {
+          specializationIri: 'https://example.org/psm/individual',
+          label: 'Individual',
+          classIri: 'https://example.org/class/individual',
+          fieldPaths: [],
+          identityPolicy: 'NEVER',
+        },
+      ],
+    });
+    const graph = validGraph({
+      nodes: [
+        node('Book.Create', book.iri, Operation.Create, {
+          associations: {
+            chapters: AssociationKind.Composition,
+            contacts: AssociationKind.Composition,
+          },
+        }),
+        node('Book.Update', book.iri, Operation.Update, {
+          associations: {
+            chapters: AssociationKind.Composition,
+            contacts: AssociationKind.Composition,
+          },
+        }),
+      ],
+      edges: [],
+    });
+
+    const result = analyzeGraphSemantics(graph, metadata);
+    const identityWarnings = result.violations.filter(
+      (violation) => violation.code === ViolationCode.SemanticNamedNodeIdentityOverride
+    );
+
+    expect(result.valid).toBe(true);
+    expect(identityWarnings).toHaveLength(2);
+    expect(identityWarnings.map((warning) => warning.message)).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('Composition "chapters"'),
+        expect.stringContaining('Composition "contacts"'),
+      ])
+    );
+    expect(identityWarnings.map((warning) => warning.message).join(' ')).toContain(
+      'Affected specializations: "Organization", "Individual".'
+    );
+    expect(identityWarnings.map((warning) => warning.message).join(' ')).not.toMatch(
+      /prototype|instancesHaveIdentity/
+    );
+  });
+
   it('rejects field-name collisions in composition targets without operation nodes', () => {
     const parentIri = 'urn:aggregate:parent';
     const childIri = 'urn:aggregate:child';
