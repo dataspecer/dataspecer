@@ -69,7 +69,15 @@ export interface EntityModel {
   id?: string;
 }
 
-export type EntityRecord = EntityModel & Record<string, unknown>;
+/** State carried by editable records but excluded from generated domain models and RDF writes. */
+export interface EntityRuntimeState {
+  /** Identifies the selected specialization, including choices that share an RDF class. */
+  __specializationIri?: string;
+  /** RDF types retained as evidence when resolving the specialization of a loaded entity. */
+  __rdfTypes?: string[];
+}
+
+export type EntityRecord = EntityModel & EntityRuntimeState & Record<string, unknown>;
 
 export function fieldValues(value: unknown, field: FieldDescriptor): unknown[] {
   if (value === null || value === undefined) {

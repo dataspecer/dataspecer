@@ -1,17 +1,22 @@
 import { describe, expect, it, vi } from 'vitest';
+import { ldkit } from 'ldkit/namespaces';
 import { DataFactory } from 'ldkit/rdf';
 
+import {
+  normalizeLdkitEntity,
+  requireNamedCompositionIris,
+  toLdkitEntity,
+} from '../assets/generated-app/src/shared/data-source/ldkit-entity-mapping.ts';
+import { RdfLdkitDataSource } from '../assets/generated-app/src/shared/data-source/rdf-ldkit-data-source.ts';
 import {
   buildIncomingReferencesQuery,
   buildInverseDeleteQuery,
   buildInverseInsertQuads,
   buildPageIriQuery,
   buildReferenceOptionsQuery,
-  RdfLdkitDataSource,
-  toLdkitEntity,
   toSafeNamedNodeValue,
   toSparqlNamedNode,
-} from '../assets/generated-app/src/shared/data-source/rdf-ldkit-data-source.ts';
+} from '../assets/generated-app/src/shared/data-source/rdf-request-builders.ts';
 import type {
   AggregateDescriptor,
   EntityModel,
@@ -58,6 +63,27 @@ const inverseField: AggregateDescriptor<EntityModel>['fields'][number] = {
   isReverse: true,
   many: true,
   required: false,
+};
+
+const scalarReference: AggregateDescriptor<EntityModel>['fields'][number] = {
+  path: 'publisher',
+  propertyName: 'publisher',
+  label: 'Publisher',
+  kind: 'association',
+  propertyIri: 'https://example.org/publisher',
+  targetClassIri: 'https://example.org/class/publisher',
+  associationKind: 'aggregation',
+  many: false,
+  required: false,
+};
+
+const repeatedReference: AggregateDescriptor<EntityModel>['fields'][number] = {
+  ...scalarReference,
+  path: 'related',
+  propertyName: 'related',
+  label: 'Related',
+  propertyIri: 'https://example.org/related',
+  many: true,
 };
 
 describe('generated RDF runtime IRI boundaries', () => {
@@ -404,5 +430,279 @@ describe('generated RDF mutation payloads', () => {
     ).toEqual({
       $id: 'https://example.org/book/1',
     });
+  });
+
+  it('converts public reference objects to scalar and repeated LDKit IRI values', () => {
+    expect(
+      toLdkitEntity(
+        {
+          id: 'https://example.org/book/1',
+          publisher: { id: 'https://example.org/publisher/1' },
+          related: [{ id: 'https://example.org/book/2' }, { id: 'https://example.org/book/3' }],
+          __specializationIri: 'https://example.org/psm/book',
+          __rdfTypes: ['https://example.org/class/book'],
+        },
+        'update',
+        [scalarReference, repeatedReference]
+      )
+    ).toEqual({
+      $id: 'https://example.org/book/1',
+      publisher: 'https://example.org/publisher/1',
+      related: ['https://example.org/book/2', 'https://example.org/book/3'],
+    });
+  });
+
+  it('keeps pointer clear operations on update', () => {
+    expect(
+      toLdkitEntity(
+        {
+          id: 'https://example.org/book/1',
+          publisher: null,
+          related: [],
+        },
+        'update',
+        [scalarReference, repeatedReference]
+      )
+    ).toEqual({
+      $id: 'https://example.org/book/1',
+      publisher: null,
+      related: [],
+    });
+  });
+});
+
+describe('generated RDF read normalization', () => {
+  const childName: AggregateDescriptor<EntityModel>['fields'][number] = {
+    path: 'name',
+    propertyName: 'name',
+    label: 'Name',
+    kind: 'primitive',
+    propertyIri: 'https://example.org/name',
+    many: false,
+    required: false,
+  };
+  const children: AggregateDescriptor<EntityModel>['fields'][number] = {
+    path: 'children',
+    propertyName: 'children',
+    label: 'Children',
+    kind: 'association',
+    propertyIri: 'https://example.org/child',
+    targetClassIri: 'https://example.org/class/child',
+    associationKind: 'composition',
+    fields: [childName, scalarReference],
+    many: true,
+    required: false,
+  };
+
+  it('normalizes IRI pointers while keeping inline compositions expanded', () => {
+    expect(
+      normalizeLdkitEntity(
+        {
+          $id: 'https://example.org/book/1',
+          publisher: 'https://example.org/publisher/1',
+          related: ['https://example.org/book/2'],
+          children: [
+            {
+              $id: 'https://example.org/child/1',
+              name: 'First',
+              publisher: 'https://example.org/publisher/2',
+            },
+          ],
+        },
+        [scalarReference, repeatedReference, children]
+      )
+    ).toEqual({
+      id: 'https://example.org/book/1',
+      publisher: { id: 'https://example.org/publisher/1' },
+      related: [{ id: 'https://example.org/book/2' }],
+      children: [
+        {
+          id: 'https://example.org/child/1',
+          name: 'First',
+          publisher: { id: 'https://example.org/publisher/2' },
+        },
+      ],
+    });
+  });
+
+  it('rejects a composed blank-node identity after normalization', () => {
+    expect(() =>
+      requireNamedCompositionIris(
+        {
+          id: 'https://example.org/book/1',
+          children: [{ id: 'blank1', name: 'Anonymous' }],
+        },
+        [children]
+      )
+    ).toThrow('Blank-node compositions are not editable');
+  });
+});
+
+describe('generated RDF write schema selection', () => {
+  it('deletes all subject triples without requiring a target write schema', async () => {
+    const requests: string[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation(async (_input, init: RequestInit) => {
+        requests.push(String(init.body));
+        return new Response('', { status: 200 });
+      })
+    );
+    const dataSource = new RdfLdkitDataSource('https://example.org/sparql', {});
+
+    try {
+      await dataSource.delete({
+        aggregate: listAggregate,
+        id: 'https://example.org/book/1',
+      });
+
+      expect(requests).toHaveLength(1);
+      expect(requests[0]).toContain('?s ?p ?o');
+      expect(requests[0]).toContain('VALUES ?s { <https://example.org/book/1> }');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('updates and clears scalar and repeated IRI pointers through LDKit', async () => {
+    const requests: string[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation(async (_input, init: RequestInit) => {
+        requests.push(String(init.body));
+        return new Response('', { status: 200 });
+      })
+    );
+
+    const aggregate: AggregateDescriptor<EntityModel> = {
+      ...listAggregate,
+      fields: [scalarReference, repeatedReference],
+    };
+    const rootSchema = {
+      '@type': aggregate.classIri,
+      publisher: {
+        '@id': scalarReference.propertyIri as string,
+        '@type': ldkit.IRI,
+        '@optional': true as const,
+      },
+      related: {
+        '@id': repeatedReference.propertyIri as string,
+        '@type': ldkit.IRI,
+        '@array': true as const,
+        '@optional': true as const,
+      },
+    };
+    const dataSource = new RdfLdkitDataSource('https://example.org/sparql', {
+      [aggregate.iri]: {
+        detail: rootSchema,
+        list: rootSchema,
+        writes: { '[]': rootSchema },
+        specializationWrites: {},
+      },
+    });
+
+    try {
+      await dataSource.update({
+        aggregate,
+        id: 'https://example.org/book/1',
+        payload: {
+          publisher: { id: 'https://example.org/publisher/1' },
+          related: [{ id: 'https://example.org/book/2' }],
+        } as EntityModel,
+      });
+      await dataSource.update({
+        aggregate,
+        id: 'https://example.org/book/1',
+        payload: { publisher: null, related: [] } as EntityModel,
+      });
+
+      expect(requests.join('\n')).toContain('<https://example.org/publisher/1>');
+      expect(requests.join('\n')).toContain('<https://example.org/book/2>');
+      expect(requests).toHaveLength(2);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('uses the selected specialization schema and stamps its concrete RDF class', async () => {
+    const requests: string[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation(async (_input, init: RequestInit) => {
+        requests.push(String(init.body));
+        return new Response('', { status: 200 });
+      })
+    );
+
+    const nameField: AggregateDescriptor<EntityModel>['fields'][number] = {
+      path: 'name',
+      propertyName: 'name',
+      label: 'Name',
+      kind: 'primitive',
+      propertyIri: 'https://example.org/name',
+      many: false,
+      required: false,
+    };
+    const contacts: AggregateDescriptor<EntityModel>['fields'][number] = {
+      path: 'contacts',
+      propertyName: 'contacts',
+      label: 'Contacts',
+      kind: 'association',
+      propertyIri: 'https://example.org/contact',
+      targetClassIri: 'https://example.org/class/contact',
+      associationKind: 'composition',
+      fields: [nameField],
+      specializations: [
+        {
+          specializationIri: 'https://example.org/psm/organization',
+          label: 'Organization',
+          classIri: 'https://example.org/class/organization',
+          fieldPaths: ['name'],
+        },
+      ],
+      many: true,
+      required: false,
+    };
+    const aggregate: AggregateDescriptor<EntityModel> = {
+      ...listAggregate,
+      fields: [contacts],
+    };
+    const organizationSchema = {
+      '@type': 'https://example.org/class/organization',
+      name: { '@id': 'https://example.org/name', '@optional': true as const },
+    };
+    const dataSource = new RdfLdkitDataSource('https://example.org/sparql', {
+      [aggregate.iri]: {
+        detail: { '@type': aggregate.classIri },
+        list: { '@type': aggregate.classIri },
+        writes: { '[]': { '@type': aggregate.classIri } },
+        specializationWrites: {
+          '["contacts"]': {
+            'https://example.org/psm/organization': organizationSchema,
+          },
+        },
+      },
+    });
+
+    try {
+      await dataSource.create({
+        aggregate,
+        fieldPath: ['contacts'],
+        specializationIri: 'https://example.org/psm/organization',
+        payload: { id: 'https://example.org/contact/1', name: 'Example' } as EntityModel,
+      });
+
+      expect(requests.join('\n')).toContain('<https://example.org/class/organization>');
+      expect(requests.join('\n')).not.toContain('<https://example.org/class/contact>');
+      await expect(
+        dataSource.create({
+          aggregate,
+          fieldPath: ['contacts'],
+          payload: { id: 'https://example.org/contact/2' },
+        })
+      ).rejects.toThrow('requires a specialization');
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

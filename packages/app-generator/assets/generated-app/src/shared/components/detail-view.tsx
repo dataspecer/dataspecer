@@ -37,6 +37,7 @@ import type {
 } from '../types/aggregate.ts';
 import { ActionLinks } from './action-links.tsx';
 import { formatPrimitiveValue } from '../forms/field-value.ts';
+import { isCompositionField } from '../forms/entity-target.ts';
 
 // Nested sections deeper than this start collapsed so deep structures do not overwhelm the page.
 const OPEN_DEPTH = 2;
@@ -201,7 +202,7 @@ function Field(props: FieldProps) {
   const action = props.associationActions.find(
     (candidate) => candidate.fieldPath === props.fieldPath
   );
-  const isNested = field.kind === 'association' && Boolean(field.fields?.length);
+  const isNested = isCompositionField(field) && Boolean(field.fields?.length);
 
   if (isNested && hasEntityValue(value)) {
     return (

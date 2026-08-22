@@ -1,6 +1,7 @@
 import { hasErrors, type Violation, type ValidationResult } from './types.ts';
 import type { ApplicationGraph } from '../graph/types.ts';
 import type { SpecificationMetadata } from '../metadata/types.ts';
+import { collectReachableAggregateIris } from '../generation-model/aggregate-reachability.ts';
 import { enrichMetadata } from './enrich-metadata.ts';
 import { validateGraphStructure } from './validate-structure.ts';
 import { validateAggregateNames } from './rules/aggregate-names.ts';
@@ -26,10 +27,17 @@ export function analyzeGraphSemantics(
 ): SemanticAnalysisResult {
   const structure = validateGraphStructure(graph);
   const enrichment = enrichMetadata(graph, metadata);
+  const allAggregates = new Map(
+    enrichment.metadata.aggregates.map((aggregate) => [aggregate.iri, aggregate])
+  );
+  const reachableAggregateIris = collectReachableAggregateIris(
+    graph.nodes.map((node) => node.aggregateIri),
+    allAggregates.values()
+  );
   const context = {
     graph,
     aggregates: new Map(
-      enrichment.metadata.aggregates.map((aggregate) => [aggregate.iri, aggregate])
+      [...allAggregates].filter(([aggregateIri]) => reachableAggregateIris.has(aggregateIri))
     ),
     nodes: new Map(graph.nodes.map((node) => [node.id, node])),
   };

@@ -1,5 +1,6 @@
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { execFile } from 'node:child_process';
+import { access, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { dirname, join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 
 import { afterEach, describe, expect, it } from 'vitest';
@@ -8,12 +9,14 @@ import { ViolationCode } from '../src/validation/violation-codes.ts';
 import { ViolationSeverity } from '../src/validation/types.ts';
 import { generateApp } from '../src/generate-app.ts';
 import {
+  AssociationKind,
   type ApplicationGraph,
   type ApplicationNode,
   DatasourceType,
   EdgeType,
   Operation,
 } from '../src/graph/types.ts';
+import { FieldKind } from '../src/metadata/types.ts';
 import {
   DataspecerMetadataMappingError,
   DataspecerMetadataMappingIssueCode,
@@ -253,6 +256,149 @@ describe('generateApp', { timeout: 30_000 }, () => {
     );
   });
 
+  it('typechecks a generated application outside the repository source tree', async () => {
+    const outputDirectory = await createTempDirectory();
+    const aggregateIri = 'https://example.org/aggregate/link';
+    const homepage = {
+      path: 'homepage',
+      label: 'Homepage',
+      kind: FieldKind.Association,
+      propertyIri: 'https://example.org/p/homepage',
+      targetClassIri: 'https://example.org/class/page',
+      many: false,
+    };
+    const email = {
+      path: 'email',
+      label: 'Email',
+      kind: FieldKind.Association,
+      propertyIri: 'https://example.org/p/email',
+      targetClassIri: 'https://example.org/class/mailbox',
+      many: true,
+    };
+    const result = await generateApp({
+      graph: graphFixture({
+        nodes: [
+          {
+            id: 'Link.Create',
+            aggregateIri,
+            operation: Operation.Create,
+            config: {
+              associations: {
+                target: AssociationKind.Aggregation,
+                related: AssociationKind.Aggregation,
+                contacts: AssociationKind.Composition,
+                'contacts.homepage': AssociationKind.Aggregation,
+                'contacts.email': AssociationKind.Aggregation,
+              },
+            },
+          },
+          {
+            id: 'Link.Update',
+            aggregateIri,
+            operation: Operation.Update,
+            config: {
+              associations: {
+                target: AssociationKind.Aggregation,
+                related: AssociationKind.Aggregation,
+                contacts: AssociationKind.Composition,
+                'contacts.homepage': AssociationKind.Aggregation,
+                'contacts.email': AssociationKind.Aggregation,
+              },
+            },
+          },
+          node('Link.ReadDetail', aggregateIri, Operation.ReadDetail),
+        ],
+        edges: [],
+      }),
+      metadataProvider: new FakeDataspecerMetadataProvider({
+        [specificationIri]: {
+          dataSpecificationIri: specificationIri,
+          aggregates: [
+            {
+              iri: aggregateIri,
+              name: 'Link',
+              classIri: 'https://example.org/class/link',
+              fields: [
+                {
+                  path: 'target',
+                  label: 'Target',
+                  kind: FieldKind.Association,
+                  propertyIri: 'https://example.org/p/target',
+                  targetClassIri: 'https://example.org/class/target',
+                  many: false,
+                },
+                {
+                  path: 'related',
+                  label: 'Related',
+                  kind: FieldKind.Association,
+                  propertyIri: 'https://example.org/p/related',
+                  targetClassIri: 'https://example.org/class/target',
+                  many: true,
+                },
+                {
+                  path: 'contacts',
+                  label: 'Contacts',
+                  kind: FieldKind.Association,
+                  propertyIri: 'https://example.org/p/contact',
+                  targetClassIri: 'https://example.org/class/contact',
+                  many: true,
+                  fields: [homepage, email],
+                  specializations: [
+                    {
+                      specializationIri: 'https://example.org/psm/organization',
+                      label: 'Organization',
+                      classIri: 'https://example.org/class/organization',
+                      fieldPaths: ['homepage'],
+                      identityPolicy: 'ALWAYS',
+                    },
+                    {
+                      specializationIri: 'https://example.org/psm/person',
+                      label: 'Person',
+                      classIri: 'https://example.org/class/person',
+                      fieldPaths: ['email'],
+                      identityPolicy: 'ALWAYS',
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      }),
+      outputDirectory,
+    });
+    expect(result.success).toBe(true);
+    const schema = await readFile(
+      join(outputDirectory, 'src/modules/link/ldkit-schema.ts'),
+      'utf8'
+    );
+    expect(schema).toContain('import { ldkit } from "ldkit/namespaces";');
+    expect(schema).not.toContain('xsd');
+    expect(schema).toContain('specializationWrites:');
+
+    await linkGeneratedDependencies(outputDirectory);
+    const repositoryNodeModules = resolve(process.cwd(), 'node_modules');
+    await new Promise<void>((resolvePromise, reject) => {
+      execFile(
+        process.execPath,
+        [
+          join(repositoryNodeModules, 'typescript/bin/tsc'),
+          '--noEmit',
+          '-p',
+          join(outputDirectory, 'tsconfig.json'),
+        ],
+        { cwd: outputDirectory },
+        (error, stdout, stderr) => {
+          if (error) {
+            reject(new Error(`${error.message}\n${stdout}${stderr}`));
+          } else {
+            resolvePromise();
+          }
+        }
+      );
+    });
+  });
+
   it('prevents accidental overwrite unless explicitly allowed', async () => {
     const outputDirectory = await createTempDirectory();
     await writeFile(join(outputDirectory, 'existing.txt'), 'keep me', 'utf8');
@@ -327,4 +473,33 @@ async function createTempDirectory(): Promise<string> {
   const directory = await mkdtemp(join(tmpdir(), 'app-generator-'));
   tempDirectories.push(directory);
   return directory;
+}
+
+async function linkGeneratedDependencies(outputDirectory: string): Promise<void> {
+  const packageJson = JSON.parse(await readFile(join(outputDirectory, 'package.json'), 'utf8')) as {
+    dependencies: Record<string, string>;
+    devDependencies: Record<string, string>;
+  };
+  const dependencies = Object.keys({
+    ...packageJson.dependencies,
+    ...packageJson.devDependencies,
+  });
+
+  for (const dependency of dependencies) {
+    const localDependency = resolve(process.cwd(), 'node_modules', dependency);
+    const rootDependency = resolve(process.cwd(), '../../node_modules', dependency);
+    const source = (await pathExists(localDependency)) ? localDependency : rootDependency;
+    const target = join(outputDirectory, 'node_modules', dependency);
+    await mkdir(dirname(target), { recursive: true });
+    await symlink(source, target, 'dir');
+  }
+}
+
+async function pathExists(path: string): Promise<boolean> {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
 }

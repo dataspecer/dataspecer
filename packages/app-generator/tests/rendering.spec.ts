@@ -54,7 +54,17 @@ describe('renderGeneratedApp', () => {
   });
 
   it('renders nested association fields in models and descriptors', () => {
-    const model = buildGenerationModel(graphFixture(), basicMetadata);
+    const metadata = structuredClone(basicMetadata);
+    const chapters = metadata.aggregates
+      .find((aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail')
+      ?.fields.find((field) => field.path === 'chapters');
+    const footnotes = chapters?.fields?.find((field) => field.path === 'footnotes');
+    if (!chapters || !footnotes) {
+      throw new Error('Missing nested composition fixture fields.');
+    }
+    chapters.associationKind = AssociationKind.Composition;
+    footnotes.associationKind = AssociationKind.Composition;
+    const model = buildGenerationModel(graphFixture(), metadata);
     const tree = renderGeneratedApp(model);
 
     const modelSource = tree.get('src/modules/book-detail/model.ts');
@@ -79,6 +89,8 @@ describe('renderGeneratedApp', () => {
     if (!chapters) {
       throw new Error('Missing chapters field in test metadata.');
     }
+    chapters.associationKind = AssociationKind.Composition;
+    chapters.propertyIri = 'https://example.org/p/chapters';
     chapters.specializations = [
       {
         specializationIri: 'https://example.org/psm/chapter-a',
@@ -98,9 +110,13 @@ describe('renderGeneratedApp', () => {
 
     const tree = renderGeneratedApp(buildGenerationModel(graphFixture(), metadata));
     const descriptor = tree.get('src/modules/book-detail/descriptor.ts');
+    const schema = tree.get('src/modules/book-detail/ldkit-schema.ts');
 
     expect(descriptor).toContain('"specializationIri": "https://example.org/psm/chapter-a"');
     expect(descriptor).not.toContain('"identityPolicy"');
+    expect(schema).toContain('"specializationWrites"');
+    expect(schema).toContain('"@type": "https://example.org/class/chapter-a"');
+    expect(schema).toContain('"@type": "https://example.org/class/chapter-b"');
   });
 
   it('renders descriptors and schemas for referenced aggregates without their own operation', () => {
@@ -152,7 +168,7 @@ describe('renderGeneratedApp', () => {
       '"https://example.org/aggregate/department": DepartmentAggregateDescriptor'
     );
     expect(tree.get('src/config/data-sources.ts')).toContain(
-      '"https://example.org/aggregate/department": DepartmentLdkitSchema'
+      '"https://example.org/aggregate/department": DepartmentLdkitSchemas'
     );
   });
 
@@ -338,6 +354,7 @@ describe('renderGeneratedApp', () => {
               kind: FieldKind.Association,
               propertyIri: 'https://example.org/p/contact',
               targetClassIri: 'https://example.org/class/contact',
+              associationKind: AssociationKind.Composition,
               many: true,
               fields: [
                 {
@@ -355,15 +372,59 @@ describe('renderGeneratedApp', () => {
     });
     const schema = renderGeneratedApp(model).get('src/modules/place/ldkit-schema.ts');
 
-    expect(schema).toContain('export const PlaceLdkitSchema: Schema');
+    expect(schema).toContain('export const PlaceLdkitSchemas: LdkitSchemaBundle');
     expect(schema).toContain('"@type": "https://example.org/class/place"');
     // Datatypes are emitted as xsd namespace references so the schema matches LDKit's Schema type.
-    expect(schema).toContain('import { xsd } from "ldkit/namespaces";');
+    expect(schema).toContain('import { ldkit, xsd } from "ldkit/namespaces";');
     expect(schema).toContain('"@type": xsd.string');
-    // contacts is an embedded association, so it expands under a nested schema keyed by its class.
+    // Detail reads expand the composition without filtering the nested entity by RDF type.
+    const detailSchema = schema.slice(schema.indexOf('"detail"'), schema.indexOf('"list"'));
     expect(schema).toContain('"@schema"');
-    expect(schema).toContain('"@type": "https://example.org/class/contact"');
+    expect(detailSchema).not.toContain('"@type": "https://example.org/class/contact"');
     expect(schema).toContain('"@array": true');
+  });
+
+  it('imports only the LDKit namespace for an association-only schema', () => {
+    const graph = graphFixture();
+    graph.nodes = [
+      node('Link.ReadDetail', 'https://example.org/aggregate/link', Operation.ReadDetail),
+    ];
+    graph.edges = [];
+    const model = buildGenerationModel(graph, {
+      dataSpecificationIri: specificationIri,
+      aggregates: [
+        {
+          iri: 'https://example.org/aggregate/link',
+          name: 'Link',
+          classIri: 'https://example.org/class/link',
+          fields: [
+            {
+              path: 'target',
+              label: 'Target',
+              kind: FieldKind.Association,
+              associationKind: AssociationKind.Aggregation,
+              propertyIri: 'https://example.org/p/target',
+              targetClassIri: 'https://example.org/class/target',
+              many: false,
+            },
+            {
+              path: 'related',
+              label: 'Related',
+              kind: FieldKind.Association,
+              associationKind: AssociationKind.Aggregation,
+              propertyIri: 'https://example.org/p/related',
+              targetClassIri: 'https://example.org/class/target',
+              many: true,
+            },
+          ],
+        },
+      ],
+    });
+    const schema = renderGeneratedApp(model).get('src/modules/link/ldkit-schema.ts');
+
+    expect(schema).toContain('import { ldkit } from "ldkit/namespaces";');
+    expect(schema).not.toContain('xsd');
+    expect(schema).toContain('"@type": ldkit.IRI');
   });
 
   it('emits a form control for each editable primitive datatype', () => {

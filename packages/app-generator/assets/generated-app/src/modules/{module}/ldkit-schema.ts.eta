@@ -1,6 +1,7 @@
-import type { Schema } from "ldkit";
-import { xsd } from "ldkit/namespaces";
+import type { LdkitSchemaBundle } from "@/shared/data-source/rdf-ldkit-data-source.ts";
+<% if (it.aggregate.ldkitSchemaNamespaces.length > 0) { -%>
+import { <%~ it.aggregate.ldkitSchemaNamespaces.join(", ") %> } from "ldkit/namespaces";
+<% } -%>
 
-// LDKit schema derived from the aggregate field metadata. Property keys match the generated
-// model, so the read result maps directly onto it.
-export const <%= it.aggregate.schemaName %>: Schema = <%~ it.aggregate.ldkitSchemaSource %>;
+// The datasource selects the read or write shape required by the operation and entity target.
+export const <%= it.aggregate.schemaName %>: LdkitSchemaBundle = <%~ it.aggregate.ldkitSchemaSource %>;

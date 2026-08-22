@@ -1,15 +1,14 @@
 import type { Lens, QueryContext, Schema } from 'ldkit';
 import { createLens, QueryEngine } from 'ldkit';
-import { DataFactory, type RDF } from 'ldkit/rdf';
-import { DELETE, OPTIONAL, SELECT } from 'ldkit/sparql';
+import type { RDF } from 'ldkit/rdf';
 
 import {
   type AggregateDescriptor,
   type EntityModel,
+  type EntityRecord,
   type FieldDescriptor,
-  fieldValues,
 } from '../types/aggregate.ts';
-import { isSafeAbsoluteIri } from '../forms/iri.ts';
+import { requireSafeAbsoluteIri } from '../forms/iri.ts';
 import type {
   DataSource,
   DeleteArgs,
@@ -19,25 +18,40 @@ import type {
   ReadDetailArgs,
   ReadListArgs,
   ReadListResult,
-  ReadListSort,
   ReferenceListArgs,
   ReferenceOption,
 } from './data-source.ts';
+import { DataSourceKind } from './data-source.ts';
 import {
-  DataSourceKind,
-  DEFAULT_READ_LIST_SORT,
-  INCOMING_REFERENCE_LIMIT,
-  isListFieldSortable,
-} from './data-source.ts';
+  normalizeLdkitEntity,
+  requireNamedCompositionIris,
+  toLdkitEntity,
+} from './ldkit-entity-mapping.ts';
+import {
+  buildIncomingReferencesQuery,
+  buildInverseDeleteQuery,
+  buildInverseInsertQuads,
+  buildPageIriQuery,
+  buildReferenceOptionsQuery,
+  referenceDisplayProperties,
+  toSafeNamedNodeValue,
+} from './rdf-request-builders.ts';
 
-const FALLBACK_LABEL_PROPERTIES = [
-  'http://purl.org/dc/terms/title',
-  'http://www.w3.org/2004/02/skos/core#prefLabel',
-  'http://www.w3.org/2000/01/rdf-schema#label',
-];
-const dataFactory = new DataFactory();
+/**
+ * LDKit uses schemas for both querying and encoding. Lists omit compositions to keep paging
+ * bounded, details expand inline compositions without filtering child types, and writes use
+ * target-specific types and IRI links so each entity is saved separately.
+ */
+export interface LdkitSchemaBundle {
+  detail: Schema;
+  list: Schema;
+  /** Keys are JSON-encoded inline field paths. The aggregate root uses `[]`. */
+  writes: Record<string, Schema>;
+  /** Keys are field paths, then specialization IRIs. */
+  specializationWrites: Record<string, Record<string, Schema>>;
+}
 
-export type LdkitSchemaMap = Record<string, Schema>;
+export type LdkitSchemaMap = Record<string, LdkitSchemaBundle>;
 
 /**
  * Reads data from a SPARQL endpoint through LDKit lenses. Schemas are keyed by aggregate IRI.
@@ -53,7 +67,8 @@ export class RdfLdkitDataSource implements DataSource {
   async readList<TModel extends EntityModel>(
     args: ReadListArgs<TModel>
   ): Promise<ReadListResult<TModel>> {
-    const lens = this.resolveTarget(args.aggregate).lens;
+    const schemas = this.requireSchemas(args.aggregate);
+    const lens = createLens(schemas.list, this.context());
     const skip = (args.page - 1) * args.pageSize;
     const iriQuery = buildPageIriQuery(args.aggregate, args.pageSize, skip, args.sort);
     const [total, iriBindings] = await Promise.all([
@@ -67,7 +82,9 @@ export class RdfLdkitDataSource implements DataSource {
       return { items: [], total };
     }
 
-    const items = (await lens.findByIris(iris)).map((entity) => toModel<TModel>(entity));
+    const items = (await lens.findByIris(iris)).map(
+      (entity) => normalizeLdkitEntity(entity, args.aggregate.fields) as TModel
+    );
     const itemById = new Map(items.map((item) => [item.id, item]));
     return {
       // findByIris does not preserve the order of the requested IRIs
@@ -83,20 +100,31 @@ export class RdfLdkitDataSource implements DataSource {
     args: ReadDetailArgs<TModel>
   ): Promise<TModel | null> {
     requireSafeAbsoluteIri(args.id, 'Entity IRI');
-    const lens = this.resolveTarget(args.aggregate).lens;
+    const lens = createLens(this.requireSchemas(args.aggregate).detail, this.context());
     const result = await lens.findByIri(args.id);
-    return result ? toModel<TModel>(result) : null;
+    if (!result) {
+      return null;
+    }
+    const model = normalizeLdkitEntity(result, args.aggregate.fields) as TModel;
+    requireNamedCompositionIris(model as EntityRecord, args.aggregate.fields);
+    return model;
   }
 
   async create<TModel extends EntityModel>(args: MutationArgs<TModel>): Promise<TModel> {
     // LDKit's insert ignores @inverse and would write an inverse relation forward, so inverse
     // fields are kept out of the lens payload and their reversed triples are written separately.
-    const { fields, lens } = this.resolveTarget(args.aggregate, args.fieldPath);
+    const { fields, lens } = this.resolveWriteTarget(
+      args.aggregate,
+      args.fieldPath,
+      args.specializationIri
+    );
     const inverseFields = inverseWritableFields(fields);
     const forwardPayload = omitFields(args.payload, inverseFields);
     const inverseQuads = buildInverseInsertQuads(inverseFields, args.payload);
 
-    const entity = toLdkitEntity(forwardPayload, 'create') as Parameters<typeof lens.insert>[0];
+    const entity = toLdkitEntity(forwardPayload, 'create', fields) as Parameters<
+      typeof lens.insert
+    >[0];
     await lens.insert(entity);
     if (inverseQuads.length > 0) {
       await lens.insertData(...inverseQuads);
@@ -108,7 +136,11 @@ export class RdfLdkitDataSource implements DataSource {
     requireSafeAbsoluteIri(args.id, 'Entity IRI');
     const payload = { ...args.payload, id: args.id };
     const payloadRecord = payload as unknown as Record<string, unknown>;
-    const { fields, lens } = this.resolveTarget(args.aggregate, args.fieldPath);
+    const { fields, lens } = this.resolveWriteTarget(
+      args.aggregate,
+      args.fieldPath,
+      args.specializationIri
+    );
     const inverseFields = inverseWritableFields(fields).filter((field) =>
       Object.hasOwn(payloadRecord, field.propertyName)
     );
@@ -116,7 +148,7 @@ export class RdfLdkitDataSource implements DataSource {
     const inverseDeleteQuery = buildInverseDeleteQuery(inverseFields, args.id);
     const inverseQuads = buildInverseInsertQuads(inverseFields, payload);
 
-    const entity = toLdkitEntity(forwardPayload, 'update');
+    const entity = toLdkitEntity(forwardPayload, 'update', fields);
     if (entity && typeof entity === 'object' && Object.keys(entity).some((key) => key !== '$id')) {
       await lens.update(entity as Parameters<typeof lens.update>[0]);
     }
@@ -136,10 +168,11 @@ export class RdfLdkitDataSource implements DataSource {
 
   async delete<TModel extends EntityModel>(args: DeleteArgs<TModel>): Promise<void> {
     requireSafeAbsoluteIri(args.id, 'Entity IRI');
-    const { fields, lens } = this.resolveTarget(args.aggregate, args.fieldPath);
+    const { fields } = this.resolveEntityTarget(args.aggregate, args.fieldPath);
     const inverseDeleteQuery = buildInverseDeleteQuery(inverseWritableFields(fields), args.id);
     await this.executeUpdate(inverseDeleteQuery);
-    await lens.delete(args.id);
+    // LDKit's delete operation removes all subject triples and does not inspect the schema.
+    await createLens({ '@type': args.aggregate.classIri }, this.context()).delete(args.id);
   }
 
   async listIncomingReferences(id: string): Promise<IncomingReference[]> {
@@ -188,39 +221,82 @@ export class RdfLdkitDataSource implements DataSource {
     });
   }
 
-  private resolveTarget<TModel extends EntityModel>(
+  private requireSchemas<TModel extends EntityModel>(
+    aggregate: AggregateDescriptor<TModel>
+  ): LdkitSchemaBundle {
+    const schemas = this.schemas[aggregate.iri];
+    if (!schemas) {
+      throw new Error(`Missing LDKit schemas for aggregate "${aggregate.name}".`);
+    }
+    return schemas;
+  }
+
+  private resolveEntityTarget<TModel extends EntityModel>(
     aggregate: AggregateDescriptor<TModel>,
     fieldPath: readonly string[] = []
-  ): { fields: FieldDescriptor[]; lens: Lens<Schema> } {
-    const rootSchema = this.schemas[aggregate.iri];
-    if (!rootSchema) {
-      throw new Error(`Missing LDKit schema for aggregate "${aggregate.name}".`);
-    }
+  ): { fields: FieldDescriptor[]; key: string; targetField?: FieldDescriptor } {
     let fields = aggregate.fields;
-    let schema = rootSchema;
+    let targetField: FieldDescriptor | undefined;
     const traversed: string[] = [];
 
     for (const segment of fieldPath) {
       traversed.push(segment);
       const field = fields.find((candidate) => candidate.path === segment);
-      const property = field ? schema[field.propertyName] : undefined;
-      const nestedSchema =
-        property && typeof property === 'object' && '@schema' in property
-          ? property['@schema']
-          : undefined;
-      if (!field?.fields || !nestedSchema || typeof nestedSchema !== 'object') {
-        throw new Error(
-          `Missing LDKit schema for inline entity "${aggregate.name}.${traversed.join('.')}".`
-        );
+      if (!field?.fields || field.targetAggregateIri) {
+        throw new Error(`Missing inline entity target "${aggregate.name}.${traversed.join('.')}".`);
       }
+      targetField = field;
       fields = field.fields;
-      schema = nestedSchema;
     }
 
     return {
       fields,
-      lens: createLens(schema, this.context()),
+      key: JSON.stringify(fieldPath),
+      ...(targetField ? { targetField } : {}),
     };
+  }
+
+  private resolveWriteTarget<TModel extends EntityModel>(
+    aggregate: AggregateDescriptor<TModel>,
+    fieldPath: readonly string[] = [],
+    specializationIri?: string
+  ): { fields: FieldDescriptor[]; lens: Lens<Schema> } {
+    const schemas = this.requireSchemas(aggregate);
+    const target = this.resolveEntityTarget(aggregate, fieldPath);
+    const specializedSchemas = schemas.specializationWrites[target.key];
+
+    if (specializedSchemas) {
+      if (!specializationIri) {
+        throw new Error(
+          `Write target "${aggregate.name}.${fieldPath.join('.')}" requires a specialization.`
+        );
+      }
+      const schema = specializedSchemas[specializationIri];
+      const specialization = target.targetField?.specializations?.find(
+        (candidate) => candidate.specializationIri === specializationIri
+      );
+      if (!schema || !specialization) {
+        throw new Error(
+          `Unknown specialization "${specializationIri}" for "${aggregate.name}.${fieldPath.join('.')}".`
+        );
+      }
+      const fieldPaths = new Set(specialization.fieldPaths);
+      return {
+        fields: target.fields.filter((field) => fieldPaths.has(field.path)),
+        lens: createLens(schema, this.context()),
+      };
+    }
+
+    if (specializationIri) {
+      throw new Error(
+        `Write target "${aggregate.name}.${fieldPath.join('.')}" has no specializations.`
+      );
+    }
+    const schema = schemas.writes[target.key];
+    if (!schema) {
+      throw new Error(`Missing LDKit write schema for "${aggregate.name}.${fieldPath.join('.')}".`);
+    }
+    return { fields: target.fields, lens: createLens(schema, this.context()) };
   }
 
   private context(): QueryContext {
@@ -229,119 +305,6 @@ export class RdfLdkitDataSource implements DataSource {
       fetch: throwOnFailedRequest,
     };
   }
-}
-
-export function buildPageIriQuery(
-  aggregate: Pick<AggregateDescriptor, 'name' | 'classIri' | 'fields'>,
-  take: number,
-  skip: number,
-  sort: ReadListSort = DEFAULT_READ_LIST_SORT
-): string {
-  const classNode = toSparqlNamedNode(aggregate.classIri, 'Aggregate class IRI');
-  if (sort.kind === 'iri') {
-    const order = sort.direction === 'asc' ? 'ASC(STR(?iri))' : 'DESC(STR(?iri))';
-    return SELECT.DISTINCT`?iri`.WHERE`?iri a ${classNode} .`.ORDER_BY`${order}`
-      .LIMIT(take)
-      .OFFSET(skip)
-      .build();
-  }
-
-  const field = aggregate.fields.find((candidate) => candidate.path === sort.fieldPath);
-  if (!field || !isListFieldSortable(field)) {
-    throw new Error(`Field "${aggregate.name}.${sort.fieldPath}" cannot be used for list sorting.`);
-  }
-
-  const propertyNode = toSparqlNamedNode(field.propertyIri, 'Sort property IRI');
-  const valueOrder = sort.direction === 'asc' ? 'ASC(?sortValue)' : 'DESC(?sortValue)';
-  return SELECT`?iri (MIN(?value) AS ?sortValue)`
-    .WHERE`?iri a ${classNode} . OPTIONAL { ?iri ${propertyNode} ?value . }`.GROUP_BY`?iri`
-    .ORDER_BY`ASC(!BOUND(?sortValue)) ${valueOrder} ASC(STR(?iri))`
-    .LIMIT(take)
-    .OFFSET(skip)
-    .build();
-}
-
-export function buildIncomingReferencesQuery(entityId: string): string {
-  const entityNode = toSparqlNamedNode(entityId, 'Entity IRI');
-  return SELECT.DISTINCT`?subject ?predicate`.WHERE`?subject ?predicate ${entityNode} .`
-    .ORDER_BY`STR(?subject) STR(?predicate)`
-    .LIMIT(INCOMING_REFERENCE_LIMIT)
-    .build();
-}
-
-export function buildReferenceOptionsQuery(args: ReferenceListArgs): string {
-  const classNode = toSparqlNamedNode(args.classIri, 'Reference target class IRI');
-  const displayProperties = referenceDisplayProperties(args);
-  const valueVariables = displayProperties.map((_, index) => `?value${index}`);
-  const pageQuery = SELECT.DISTINCT`?iri`.WHERE`?iri a ${classNode} .`.ORDER_BY`STR(?iri)`.LIMIT(
-    200
-  );
-  const optionalPatterns = displayProperties.map((propertyIri, index) => {
-    const predicate = toSparqlNamedNode(propertyIri, 'Reference display property IRI');
-    return OPTIONAL`?iri ${predicate} ${valueVariables[index]} .`;
-  });
-
-  return SELECT`?iri ${valueVariables.join(' ')}`.WHERE`{ ${pageQuery} } ${optionalPatterns}`
-    .ORDER_BY`STR(?iri)`.build();
-}
-
-function referenceDisplayProperties(args: ReferenceListArgs): readonly string[] {
-  return args.displayProperties.length > 0 ? args.displayProperties : FALLBACK_LABEL_PROPERTIES;
-}
-
-/**
- * Builds the reversed triples LDKit cannot write through an `@inverse` schema property.
- */
-export function buildInverseInsertQuads<TModel extends EntityModel>(
-  fields: readonly FieldDescriptor[],
-  payload: TModel
-): RDF.Quad[] {
-  if (fields.length === 0) {
-    return [];
-  }
-
-  const entityNode = toSparqlNamedNode(payload.id as string, 'Entity IRI');
-  const record = payload as Record<string, unknown>;
-  return fields.flatMap((field) => {
-    const predicate = toSparqlNamedNode(field.propertyIri as string, 'Inverse predicate IRI');
-    return referenceIds(record[field.propertyName], field).map((targetId) =>
-      dataFactory.quad(
-        toSparqlNamedNode(targetId, 'Inverse relation target IRI'),
-        predicate,
-        entityNode
-      )
-    );
-  });
-}
-
-export function buildInverseDeleteQuery(
-  fields: readonly FieldDescriptor[],
-  entityId: string
-): string | null {
-  const predicates = fields.map((field) =>
-    toSparqlNamedNode(field.propertyIri as string, 'Inverse predicate IRI')
-  );
-  if (predicates.length === 0) {
-    return null;
-  }
-
-  const entityNode = toSparqlNamedNode(entityId, 'Entity IRI');
-  return DELETE`?target ?predicate ${entityNode}`.WHERE`
-    VALUES ?predicate { ${predicates} }
-    ?target ?predicate ${entityNode}
-  `.build();
-}
-
-export function toSparqlNamedNode(value: string, label: string): RDF.NamedNode {
-  return dataFactory.namedNode(requireSafeAbsoluteIri(value, label));
-}
-
-/** Returns a store-provided named-node IRI only when it is safe to pass back into LDKit. */
-export function toSafeNamedNodeValue(term: RDF.Term | undefined, label: string): string {
-  if (term?.termType !== 'NamedNode') {
-    throw new Error(`${label} must be a safe absolute named-node IRI.`);
-  }
-  return requireSafeAbsoluteIri(term.value, label);
 }
 
 function inverseWritableFields(fields: readonly FieldDescriptor[]): FieldDescriptor[] {
@@ -359,15 +322,6 @@ function omitFields<TModel extends EntityModel>(
   return result;
 }
 
-// Extracts target IRIs from entity IRI objects (or bare IRI strings when no target class was
-// available). Empty ids are skipped so an unset reference contributes no triple.
-function referenceIds(value: unknown, field: FieldDescriptor): string[] {
-  return fieldValues(value, field).flatMap((entry) => {
-    const id = typeof entry === 'string' ? entry : (entry as { id: string }).id;
-    return id === '' ? [] : [id];
-  });
-}
-
 // LDKit's QueryEngine buffers the SPARQL JSON response before returning its result stream.
 function readBindings(stream: RDF.ResultStream<RDF.Bindings>): RDF.Bindings[] {
   const bindings: RDF.Bindings[] = [];
@@ -375,79 +329,6 @@ function readBindings(stream: RDF.ResultStream<RDF.Bindings>): RDF.Bindings[] {
     bindings.push(binding);
   }
   return bindings;
-}
-
-// LDKit exposes the entity IRI as $id, at the root and in nested entities. The generated models
-// use id, so the rename is applied recursively. Dates and other non-plain values pass through.
-function toModel<TModel extends EntityModel>(entity: unknown): TModel {
-  return normalizeIds(entity) as TModel;
-}
-
-function normalizeIds(value: unknown): unknown {
-  if (Array.isArray(value)) {
-    return value.map(normalizeIds);
-  }
-  if (value === null || typeof value !== 'object' || value instanceof Date) {
-    return value;
-  }
-  const source = value as Record<string, unknown>;
-  const result: Record<string, unknown> = {};
-  for (const [key, nested] of Object.entries(source)) {
-    if (key === '$id') {
-      continue;
-    }
-    result[key] = normalizeIds(nested);
-  }
-  if (typeof source.$id === 'string') {
-    result.id = source.$id;
-  }
-  return result;
-}
-
-// Converts generated model ids to LDKit's $id form. Update keeps null and empty arrays because
-// Lens.update uses them to clear supplied properties.
-export function toLdkitEntity(value: unknown, mode: 'create' | 'update'): unknown {
-  if (Array.isArray(value)) {
-    const entries = value
-      .map((entry) => toLdkitEntity(entry, mode))
-      .filter((entry) => entry !== undefined);
-    return mode === 'update' || entries.length > 0 ? entries : undefined;
-  }
-  if (value === undefined) {
-    return undefined;
-  }
-  if (value === null) {
-    return mode === 'update' ? null : undefined;
-  }
-  if (value === '') {
-    return undefined;
-  }
-  if (typeof value !== 'object' || value instanceof Date) {
-    return value;
-  }
-  const source = value as Record<string, unknown>;
-  const result: Record<string, unknown> = {};
-  for (const [key, nested] of Object.entries(source)) {
-    if (key === 'id') {
-      if (nested !== '') {
-        result.$id = requireSafeAbsoluteIri(nested, 'Payload id');
-      }
-      continue;
-    }
-    const converted = toLdkitEntity(nested, mode);
-    if (converted !== undefined) {
-      result[key] = converted;
-    }
-  }
-  // An object that keeps no properties (for example an unset reference) is dropped entirely.
-  return Object.keys(result).length > 0 ? result : undefined;
-}
-
-function requireSafeAbsoluteIri(value: unknown, label: string): string {
-  if (typeof value !== 'string' || !isSafeAbsoluteIri(value)) {
-    throw new Error(`${label} must be a safe absolute IRI.`);
-  }
-  return value;
 }
 
 /**

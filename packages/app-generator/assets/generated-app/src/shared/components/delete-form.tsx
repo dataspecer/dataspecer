@@ -20,7 +20,7 @@ import { useDataSource } from '../data-source/data-source-context.tsx';
 import { useSnackbar } from './snackbar.tsx';
 import { hydrateCompositionTree } from '../forms/form-draft.ts';
 import { rootEntityTarget } from '../forms/entity-target.ts';
-import { buildCompositeDeletePlan } from '../operations/composite-mutation.ts';
+import { buildCompositeDeletePlan } from '../operations/composite-mutation-plan.ts';
 import { hrefForAction, type OperationNavigationDescriptor } from '../navigation/navigation.ts';
 import {
   errorMessage,

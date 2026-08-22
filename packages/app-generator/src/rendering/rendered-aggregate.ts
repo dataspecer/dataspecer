@@ -4,11 +4,16 @@ import type {
   GeneratedSpecializationDescriptor,
 } from '../generation-model/types.ts';
 
+import { hasNestedModel } from '../generation-model/field-shape.ts';
 import { FieldKind } from '../metadata/types.ts';
 import { toModuleName, toNestedModelTypeName, toPropertyName } from '../utils/naming.ts';
 import { datatypeMapping, type FormControl } from './datatypes.ts';
-import { hasNestedSchema } from './field-shape.ts';
-import { buildLdkitSchema, toLdkitSchemaSource } from './ldkit-schema.ts';
+import {
+  buildLdkitSchemaBundle,
+  ldkitSchemaNamespaces,
+  toLdkitSchemaSource,
+  type LdkitSchemaNamespace,
+} from './ldkit-schema.ts';
 
 export interface RenderedAggregate extends GeneratedAggregateDescriptor {
   moduleName: string;
@@ -23,10 +28,12 @@ export interface RenderedAggregate extends GeneratedAggregateDescriptor {
    */
   descriptorFields: DescriptorField[];
   /**
-   * The LDKit schema rendered as TypeScript source. Datatype types are emitted as `xsd.*`
-   * namespace references rather than plain IRIs, which is what LDKit's `Schema` type requires.
+   * The LDKit schema bundle rendered as TypeScript source. Datatype types use namespace
+   * expressions rather than plain IRIs, which is what LDKit's `Schema` type requires.
    */
   ldkitSchemaSource: string;
+  /** Namespace imports referenced by `ldkitSchemaSource`. */
+  ldkitSchemaNamespaces: LdkitSchemaNamespace[];
 }
 
 export interface RenderedField extends GeneratedFieldDescriptor {
@@ -68,17 +75,19 @@ interface DescriptorField {
 export function toRenderedAggregate(aggregate: GeneratedAggregateDescriptor): RenderedAggregate {
   const modelName = `${aggregate.safeName}Model`;
   const fields = aggregate.fields.map((field) => toRenderedField(field, aggregate.safeName));
-  const schema = buildLdkitSchema(aggregate.classIri, fields);
+  const schema = buildLdkitSchemaBundle(aggregate.classIri, fields);
+  const ldkitSchemaSource = toLdkitSchemaSource(schema);
   return {
     ...aggregate,
     moduleName: toModuleName(aggregate.name),
     descriptorName: `${aggregate.safeName}AggregateDescriptor`,
     modelName,
-    schemaName: `${aggregate.safeName}LdkitSchema`,
+    schemaName: `${aggregate.safeName}LdkitSchemas`,
     fields,
     nestedModels: collectNestedModels(fields),
     descriptorFields: fields.map(toDescriptorField),
-    ldkitSchemaSource: toLdkitSchemaSource(schema),
+    ldkitSchemaSource,
+    ldkitSchemaNamespaces: ldkitSchemaNamespaces(ldkitSchemaSource),
   };
 }
 
@@ -92,7 +101,7 @@ function toRenderedField(
     toRenderedField(child, aggregateTypeName, fieldPath)
   );
   const propertyName = toPropertyName(field.path);
-  const nestedModelName = hasNestedSchema(field)
+  const nestedModelName = hasNestedModel(field)
     ? toNestedModelTypeName(aggregateTypeName, fieldPath)
     : undefined;
   const modelType = toModelType(field, children, nestedModelName);
@@ -110,12 +119,15 @@ function toRenderedField(
 }
 
 function collectNestedModels(fields: RenderedField[]): RenderedNestedModel[] {
-  return fields.flatMap((field) => [
-    ...(field.fields ? collectNestedModels(field.fields) : []),
-    ...(field.nestedModelName && field.fields
-      ? [{ name: field.nestedModelName, fields: field.fields }]
-      : []),
-  ]);
+  return fields.flatMap((field) => {
+    if (!field.nestedModelName || !field.fields) {
+      return [];
+    }
+    return [
+      ...collectNestedModels(field.fields),
+      { name: field.nestedModelName, fields: field.fields },
+    ];
+  });
 }
 
 /**
@@ -157,13 +169,11 @@ function toModelType(
 ): string {
   if (field.kind === FieldKind.Association) {
     let baseType: string;
-    if (hasNestedSchema(field) && children) {
+    if (hasNestedModel(field) && children) {
       baseType = nestedModelName as string;
-    } else if (field.targetClassIri) {
-      // A reference expands under @schema, so it reads back as an entity IRI object.
-      baseType = '{ id: string }';
     } else {
-      baseType = 'string';
+      // Pointer properties are strings inside LDKit and { id } references in the public model.
+      baseType = '{ id: string }';
     }
     return field.many ? `${baseType}[]` : baseType;
   }

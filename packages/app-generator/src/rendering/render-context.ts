@@ -1,11 +1,8 @@
 import { Operation } from '../graph/types.ts';
-import type {
-  GeneratedFieldDescriptor,
-  GeneratedOperationDescriptor,
-  GenerationModel,
-} from '../generation-model/types.ts';
+import type { GeneratedOperationDescriptor, GenerationModel } from '../generation-model/types.ts';
 import type { RenderedAggregate } from './rendered-aggregate.ts';
 
+import { collectReachableAggregateIris } from '../generation-model/aggregate-reachability.ts';
 import { toOperationClassName } from '../utils/naming.ts';
 import { toRenderedAggregate } from './rendered-aggregate.ts';
 
@@ -50,22 +47,10 @@ function resultTypeName(operation: Operation, modelName: string): string {
 }
 
 export function buildRenderContext(model: GenerationModel): GeneratedAppRenderContext {
-  const usedAggregateIris = new Set(model.operations.map((operation) => operation.aggregateIri));
-  const aggregateByIri = new Map(model.aggregates.map((aggregate) => [aggregate.iri, aggregate]));
-  const pending = [...usedAggregateIris];
-  while (pending.length > 0) {
-    const aggregateIri = pending.pop() as string;
-    const aggregate = aggregateByIri.get(aggregateIri);
-    if (!aggregate) {
-      continue;
-    }
-    for (const targetIri of referencedAggregateIris(aggregate.fields)) {
-      if (!usedAggregateIris.has(targetIri)) {
-        usedAggregateIris.add(targetIri);
-        pending.push(targetIri);
-      }
-    }
-  }
+  const usedAggregateIris = collectReachableAggregateIris(
+    model.operations.map((operation) => operation.aggregateIri),
+    model.aggregates
+  );
 
   // Referenced targets need descriptors even when they have no operation of their own.
   const aggregates = model.aggregates
@@ -98,13 +83,6 @@ export function buildRenderContext(model: GenerationModel): GeneratedAppRenderCo
     }),
     json: (value) => JSON.stringify(value, null, 2),
   };
-}
-
-function referencedAggregateIris(fields: GeneratedFieldDescriptor[]): string[] {
-  return fields.flatMap((field) => [
-    ...(field.targetAggregateIri ? [field.targetAggregateIri] : []),
-    ...(field.fields ? referencedAggregateIris(field.fields) : []),
-  ]);
 }
 
 // Base IRI for generating new entity IRIs in Create forms. A data specification IRI that is a real

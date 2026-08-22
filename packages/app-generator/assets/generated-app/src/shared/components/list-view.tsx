@@ -36,6 +36,7 @@ import type {
 } from '../types/aggregate.ts';
 import { ActionLinks } from './action-links.tsx';
 import { formatFieldValue } from '../forms/field-value.ts';
+import { isCompositionField } from '../forms/entity-target.ts';
 
 export interface ListViewProps<TModel extends EntityModel> {
   title: string;
@@ -156,21 +157,23 @@ function buildColumns<TModel extends EntityModel>(
   rowActions: readonly NavigationActionDescriptor[],
   associationActions: readonly AssociationNavigationActionDescriptor[]
 ): GridColDef<TModel>[] {
-  const columns: GridColDef<TModel>[] = fields.map((field) => ({
-    field: field.path,
-    headerName: field.label,
-    flex: 1,
-    minWidth: 160,
-    sortable: isListFieldSortable(field),
-    renderCell: (params) => (
-      <FieldCell
-        field={field}
-        value={params.row[field.propertyName as keyof TModel]}
-        action={associationActions.find((action) => action.fieldPath === field.path)}
-        tabIndex={params.tabIndex}
-      />
-    ),
-  }));
+  const columns: GridColDef<TModel>[] = fields
+    .filter((field) => !isCompositionField(field))
+    .map((field) => ({
+      field: field.path,
+      headerName: field.label,
+      flex: 1,
+      minWidth: 160,
+      sortable: isListFieldSortable(field),
+      renderCell: (params) => (
+        <FieldCell
+          field={field}
+          value={params.row[field.propertyName as keyof TModel]}
+          action={associationActions.find((action) => action.fieldPath === field.path)}
+          tabIndex={params.tabIndex}
+        />
+      ),
+    }));
 
   if (rowActions.length > 0) {
     columns.push({

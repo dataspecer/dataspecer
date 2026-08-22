@@ -2,12 +2,14 @@ import { describe, expect, it } from 'vitest';
 
 import type { DataSource } from '../assets/generated-app/src/shared/data-source/data-source.ts';
 import {
-  buildCompositeCreatePlan,
-  buildCompositeDeletePlan,
-  buildCompositeUpdatePlan,
   createComposite,
   deleteComposite,
 } from '../assets/generated-app/src/shared/operations/composite-mutation.ts';
+import {
+  buildCompositeCreatePlan,
+  buildCompositeDeletePlan,
+  buildCompositeUpdatePlan,
+} from '../assets/generated-app/src/shared/operations/composite-mutation-plan.ts';
 import { DefaultDeleteStrategy } from '../assets/generated-app/src/shared/operations/delete-strategy.ts';
 import { ValidationIssueCode } from '../assets/generated-app/src/shared/operations/operation-result.ts';
 import { DefaultUpdateStrategy } from '../assets/generated-app/src/shared/operations/update-strategy.ts';
@@ -141,6 +143,40 @@ describe('composite mutation planning', () => {
     expect(plan[1].payload?.offices).toEqual([{ id: 'urn:office' }]);
     expect(plan[2].payload?.departments).toEqual([{ id: 'urn:department' }]);
     expect(plan[2].payload?.partners).toEqual([{ id: 'urn:partner' }]);
+  });
+
+  it('carries a child specialization to datasource mutation steps', () => {
+    const specializedDepartments: FieldDescriptor = {
+      ...inlineDepartments,
+      specializations: [
+        {
+          specializationIri: 'urn:psm:research',
+          label: 'Research',
+          classIri: 'urn:class:research-department',
+          fieldPaths: ['name', 'offices'],
+        },
+      ],
+    };
+    const aggregate: AggregateDescriptor = {
+      ...companyAggregate,
+      fields: [specializedDepartments],
+    };
+
+    const plan = buildCompositeCreatePlan(aggregate, aggregateRegistry, {
+      id: 'urn:company',
+      departments: [
+        {
+          id: 'urn:department',
+          __specializationIri: 'urn:psm:research',
+          name: 'Research',
+          offices: [],
+        },
+      ],
+    });
+
+    expect(plan.find((step) => step.id === 'urn:department')?.specializationIri).toBe(
+      'urn:psm:research'
+    );
   });
 
   it('updates children before their parent and deletes removed subtrees after unlinking', () => {

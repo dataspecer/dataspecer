@@ -42,6 +42,8 @@ export interface MutationArgs<TModel extends EntityModel> {
   aggregate: AggregateDescriptor<TModel>;
   /** Path to an inline composition target within the aggregate. Empty means the aggregate root. */
   fieldPath?: readonly string[];
+  /** Selects the concrete write schema when the entity target has specializations. */
+  specializationIri?: string;
   payload: TModel;
 }
 

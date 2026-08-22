@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest';
+import { ldkit } from 'ldkit/namespaces';
 
+import { AssociationKind } from '../src/graph/types.ts';
 import { FieldKind } from '../src/metadata/types.ts';
 import type { GeneratedAggregateDescriptor } from '../src/generation-model/types.ts';
 import { datatypeMapping } from '../src/rendering/datatypes.ts';
-import { buildLdkitSchema } from '../src/rendering/ldkit-schema.ts';
+import {
+  buildLdkitSchemaBundle,
+  RDF_TYPES_PROPERTY,
+  toLdkitSchemaSource,
+} from '../src/rendering/ldkit-schema.ts';
 import { toRenderedAggregate } from '../src/rendering/rendered-aggregate.ts';
 
 const XSD = 'http://www.w3.org/2001/XMLSchema#';
@@ -24,7 +30,7 @@ function renderedAggregate(fields: Fields) {
 
 function schemaFor(fields: Fields) {
   const aggregate = renderedAggregate(fields);
-  return buildLdkitSchema(aggregate.classIri, aggregate.fields) as Record<string, any>;
+  return buildLdkitSchemaBundle(aggregate.classIri, aggregate.fields).detail as Record<string, any>;
 }
 
 describe('LDKit schema generation', () => {
@@ -94,7 +100,10 @@ describe('LDKit schema generation', () => {
         required: true,
       },
     ]);
-    const schema = buildLdkitSchema(aggregate.classIri, aggregate.fields) as Record<string, any>;
+    const schema = buildLdkitSchemaBundle(aggregate.classIri, aggregate.fields).detail as Record<
+      string,
+      any
+    >;
     const note = aggregate.fields.find((field) => field.path === 'note');
 
     expect(schema.note).toEqual({
@@ -128,6 +137,7 @@ describe('LDKit schema generation', () => {
         kind: FieldKind.Association,
         propertyIri: 'https://example.org/p/chapters',
         targetClassIri: 'https://example.org/class/chapter',
+        associationKind: AssociationKind.Composition,
         many: true,
         required: false,
         fields: [
@@ -147,7 +157,6 @@ describe('LDKit schema generation', () => {
     expect(schema.chapters['@array']).toBe(true);
     expect(schema.chapters['@optional']).toBe(true);
     expect(schema.chapters['@schema']).toEqual({
-      '@type': 'https://example.org/class/chapter',
       name: {
         '@id': 'https://example.org/p/name',
         '@type': `${XSD}string`,
@@ -156,7 +165,7 @@ describe('LDKit schema generation', () => {
     });
   });
 
-  it('expands a reference under @schema so it reads and writes as an IRI', () => {
+  it('represents a reference as an IRI pointer without type-stamping its target', () => {
     const schema = schemaFor([
       {
         path: 'author',
@@ -169,11 +178,9 @@ describe('LDKit schema generation', () => {
         required: true,
       },
     ]);
-    // A reference carries a @schema with only the target @type, so LDKit treats the value as a
-    // resource IRI rather than a string literal on both read and write.
     expect(schema.author).toEqual({
       '@id': 'https://example.org/p/author',
-      '@schema': { '@type': 'https://example.org/class/author' },
+      '@type': ldkit.IRI,
       '@optional': true,
     });
   });
@@ -191,13 +198,10 @@ describe('LDKit schema generation', () => {
         required: false,
       },
     ]);
-    // @inverse flips the read direction; the @schema keeps the value a resource IRI. The write
-    // path cannot use @inverse (LDKit ignores it on insert), so the datasource reverses the
-    // triple itself.
     expect(schema.graph).toEqual({
       '@id': 'https://example.org/p/nodes',
       '@inverse': true,
-      '@schema': { '@type': 'https://example.org/class/graph' },
+      '@type': ldkit.IRI,
       '@optional': true,
     });
   });
@@ -226,11 +230,18 @@ describe('LDKit schema generation', () => {
       },
     ];
     const aggregate = renderedAggregate(fields);
-    const schema = buildLdkitSchema(aggregate.classIri, aggregate.fields) as Record<string, any>;
+    const schema = buildLdkitSchemaBundle(aggregate.classIri, aggregate.fields).detail as Record<
+      string,
+      any
+    >;
     const orphan = aggregate.fields.find((field) => field.path === 'orphan');
 
-    expect(schema.orphan).toEqual({ '@id': 'https://example.org/p/orphan', '@optional': true });
-    expect(orphan?.modelType).toBe('string');
+    expect(schema.orphan).toEqual({
+      '@id': 'https://example.org/p/orphan',
+      '@type': ldkit.IRI,
+      '@optional': true,
+    });
+    expect(orphan?.modelType).toBe('{ id: string }');
   });
 
   it('marks reverse relations as inverse', () => {
@@ -261,6 +272,122 @@ describe('LDKit schema generation', () => {
       },
     ]);
     expect(schema.ghost).toBeUndefined();
+  });
+
+  it('separates list, detail, and specialization write shapes', () => {
+    const aggregate = renderedAggregate([
+      {
+        path: 'title',
+        label: 'Title',
+        kind: FieldKind.Primitive,
+        propertyIri: 'https://example.org/p/title',
+        datatype: `${XSD}string`,
+        many: false,
+        required: true,
+      },
+      {
+        path: 'contacts',
+        label: 'Contacts',
+        kind: FieldKind.Association,
+        associationKind: AssociationKind.Composition,
+        propertyIri: 'https://example.org/p/contact',
+        targetClassIri: 'https://example.org/class/contact',
+        many: true,
+        required: false,
+        fields: [
+          {
+            path: 'name',
+            label: 'Name',
+            kind: FieldKind.Primitive,
+            propertyIri: 'https://example.org/p/name',
+            datatype: `${XSD}string`,
+            many: false,
+            required: true,
+          },
+          {
+            path: 'email',
+            label: 'Email',
+            kind: FieldKind.Primitive,
+            propertyIri: 'https://example.org/p/email',
+            datatype: `${XSD}string`,
+            many: false,
+            required: false,
+          },
+        ],
+        specializations: [
+          {
+            specializationIri: 'https://example.org/psm/organization',
+            label: 'Organization',
+            classIri: 'https://example.org/class/organization',
+            fieldPaths: ['name', 'email'],
+          },
+          {
+            specializationIri: 'https://example.org/psm/person',
+            label: 'Person',
+            classIri: 'https://example.org/class/person',
+            fieldPaths: ['name'],
+          },
+        ],
+      },
+    ]);
+
+    const bundle = buildLdkitSchemaBundle(aggregate.classIri, aggregate.fields) as Record<
+      string,
+      any
+    >;
+    const detailContact = bundle.detail.contacts['@schema'];
+
+    expect(detailContact['@type']).toBeUndefined();
+    expect(detailContact[RDF_TYPES_PROPERTY]).toEqual({
+      '@id': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+      '@type': ldkit.IRI,
+      '@array': true,
+      '@optional': true,
+    });
+    expect(bundle.list.contacts).toBeUndefined();
+    expect(bundle.writes['[]'].contacts['@type']).toBe(ldkit.IRI);
+    expect(bundle.writes['["contacts"]']).toBeUndefined();
+    expect(
+      bundle.specializationWrites['["contacts"]']['https://example.org/psm/organization']
+    ).toMatchObject({
+      '@type': 'https://example.org/class/organization',
+      name: { '@id': 'https://example.org/p/name' },
+      email: { '@id': 'https://example.org/p/email' },
+    });
+    expect(
+      bundle.specializationWrites['["contacts"]']['https://example.org/psm/person'].email
+    ).toBeUndefined();
+  });
+
+  it('emits LDKit and XSD namespace datatype expressions', () => {
+    const aggregate = renderedAggregate([
+      {
+        path: 'title',
+        label: 'Title',
+        kind: FieldKind.Primitive,
+        propertyIri: 'https://example.org/p/title',
+        datatype: `${XSD}string`,
+        many: false,
+        required: true,
+      },
+      {
+        path: 'author',
+        label: 'Author',
+        kind: FieldKind.Association,
+        associationKind: AssociationKind.Aggregation,
+        propertyIri: 'https://example.org/p/author',
+        targetClassIri: 'https://example.org/class/author',
+        many: false,
+        required: false,
+      },
+    ]);
+    const source = toLdkitSchemaSource(
+      buildLdkitSchemaBundle(aggregate.classIri, aggregate.fields)
+    );
+
+    expect(source).toContain('"@type": xsd.string');
+    expect(source).toContain('"@type": ldkit.IRI');
+    expect(source).not.toContain('"https://ldkit.io/ontology/IRI"');
   });
 
   it('aligns model types with the datatypes LDKit returns', () => {

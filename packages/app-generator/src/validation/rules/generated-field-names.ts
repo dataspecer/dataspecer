@@ -1,3 +1,4 @@
+import { hasNestedModel } from '../../generation-model/field-shape.ts';
 import type { AggregateFieldMetadata, AggregateMetadata } from '../../metadata/types.ts';
 import { toAggregateTypeName, toNestedModelTypeName, toPropertyName } from '../../utils/naming.ts';
 import type { SemanticValidationContext } from '../semantic-validation-context.ts';
@@ -52,7 +53,7 @@ function validateFields(
       firstPathByPropertyName.set(propertyName, fieldPath);
     }
 
-    if (field.fields?.length && field.targetClassIri) {
+    if (hasNestedModel(field)) {
       const nestedModelName = toNestedModelTypeName(toAggregateTypeName(aggregate.name), fieldPath);
       const firstNestedPath = nestedModelPaths.get(nestedModelName);
       if (firstNestedPath !== undefined) {
@@ -67,10 +68,7 @@ function validateFields(
       } else {
         nestedModelPaths.set(nestedModelName, fieldPath);
       }
-    }
-
-    if (field.fields) {
-      validateFields(aggregate, field.fields, fieldPath, nestedModelPaths, violations);
+      validateFields(aggregate, field.fields ?? [], fieldPath, nestedModelPaths, violations);
     }
   }
 }

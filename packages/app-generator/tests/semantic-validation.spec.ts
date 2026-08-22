@@ -536,7 +536,10 @@ describe('analyzeGraphSemantics', () => {
 
   it('rejects aggregates whose names produce the same module name', () => {
     const graph = validGraph({
-      nodes: [node('Book.ReadList', 'https://example.org/aggregate/book-a', Operation.ReadList)],
+      nodes: [
+        node('Book.ReadList', 'https://example.org/aggregate/book-a', Operation.ReadList),
+        node('Book.ReadDetail', 'https://example.org/aggregate/book-b', Operation.ReadDetail),
+      ],
       edges: [],
     });
     const metadata = {
@@ -563,6 +566,21 @@ describe('analyzeGraphSemantics', () => {
     expect(result.violations).toContainEqual(
       expect.objectContaining({ code: ViolationCode.SemanticDuplicateAggregateName })
     );
+  });
+
+  it('ignores generated-name problems in aggregates the application does not use', () => {
+    const metadata = structuredClone(basicMetadata);
+    metadata.aggregates.push({
+      iri: 'https://example.org/aggregate/unused',
+      name: 'BookList',
+      classIri: 'https://example.org/class/unused',
+      fields: [{ path: 'id', label: 'Id', kind: FieldKind.Primitive }],
+    });
+
+    const result = analyzeGraphSemantics(validGraph(), metadata);
+
+    expect(result.valid).toBe(true);
+    expect(result.violations).toEqual([]);
   });
 
   it('rejects field paths that collide after TypeScript name normalization', () => {
@@ -634,6 +652,79 @@ describe('analyzeGraphSemantics', () => {
 
     expect(result.valid).toBe(false);
     expect(reservedNameViolations).toHaveLength(3);
+  });
+
+  it('does not validate display-only fields inside an aggregation as model properties', () => {
+    const aggregateIri = 'urn:aggregate:aggregation-label';
+    const graph = validGraph({
+      nodes: [node('Label.ReadDetail', aggregateIri, Operation.ReadDetail)],
+      edges: [],
+    });
+    const metadata = {
+      dataSpecificationIri: specificationIri,
+      aggregates: [
+        {
+          iri: aggregateIri,
+          name: 'AggregationLabel',
+          classIri: 'urn:class:label',
+          fields: [
+            {
+              path: 'target',
+              label: 'Target',
+              kind: FieldKind.Association,
+              targetClassIri: 'urn:class:target',
+              fields: [{ path: 'id', label: 'Id', kind: FieldKind.Primitive }],
+            },
+          ],
+        },
+      ],
+    };
+
+    const result = analyzeGraphSemantics(graph, metadata);
+
+    expect(result.valid).toBe(true);
+    expect(result.violations).toEqual([]);
+  });
+
+  it('still rejects reserved fields inside an inline composition model', () => {
+    const aggregateIri = 'urn:aggregate:composition-child';
+    const graph = validGraph({
+      nodes: [
+        node('Parent.Create', aggregateIri, Operation.Create, {
+          associations: { child: AssociationKind.Composition },
+        }),
+      ],
+      edges: [],
+    });
+    const metadata = {
+      dataSpecificationIri: specificationIri,
+      aggregates: [
+        {
+          iri: aggregateIri,
+          name: 'CompositionChild',
+          classIri: 'urn:class:parent',
+          fields: [
+            {
+              path: 'child',
+              label: 'Child',
+              kind: FieldKind.Association,
+              targetClassIri: 'urn:class:child',
+              fields: [{ path: 'id', label: 'Id', kind: FieldKind.Primitive }],
+            },
+          ],
+        },
+      ],
+    };
+
+    const result = analyzeGraphSemantics(graph, metadata);
+
+    expect(result.valid).toBe(false);
+    expect(result.violations).toContainEqual(
+      expect.objectContaining({
+        code: ViolationCode.SemanticDuplicateGeneratedFieldName,
+        message: expect.stringContaining('Field "child.id"'),
+      })
+    );
   });
 
   it('warns once per writable NEVER composition, including specialization targets', () => {
