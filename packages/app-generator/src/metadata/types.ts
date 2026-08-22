@@ -25,6 +25,8 @@ export interface SpecializationMetadata {
 export interface AggregateFieldMetadata {
   path: string;
   label: string;
+  /** Description shown alongside the generated field label. */
+  description?: string;
   kind: FieldKind;
   /** IRI of the RDF predicate the field reads and writes. */
   propertyIri?: string;

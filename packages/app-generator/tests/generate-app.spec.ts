@@ -320,6 +320,30 @@ describe('generateApp', { timeout: 30_000 }, () => {
               classIri: 'https://example.org/class/link',
               fields: [
                 {
+                  path: 'title',
+                  label: 'Title',
+                  kind: FieldKind.Primitive,
+                  propertyIri: 'https://example.org/p/title',
+                  datatype: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString',
+                  many: false,
+                },
+                {
+                  path: 'keywords',
+                  label: 'Keywords',
+                  kind: FieldKind.Primitive,
+                  propertyIri: 'https://example.org/p/keyword',
+                  datatype: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString',
+                  many: true,
+                },
+                {
+                  path: 'encoded',
+                  label: 'Encoded',
+                  kind: FieldKind.Primitive,
+                  propertyIri: 'https://example.org/p/encoded',
+                  datatype: 'http://www.w3.org/2001/XMLSchema#base64Binary',
+                  many: false,
+                },
+                {
                   path: 'target',
                   label: 'Target',
                   kind: FieldKind.Association,
@@ -372,8 +396,8 @@ describe('generateApp', { timeout: 30_000 }, () => {
       join(outputDirectory, 'src/modules/link/ldkit-schema.ts'),
       'utf8'
     );
-    expect(schema).toContain('import { ldkit } from "ldkit/namespaces";');
-    expect(schema).not.toContain('xsd');
+    expect(schema).toContain('import { ldkit, xsd } from "ldkit/namespaces";');
+    expect(schema).toContain('xsd.base64Binary');
     expect(schema).toContain('specializationWrites:');
 
     await linkGeneratedDependencies(outputDirectory);

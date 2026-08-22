@@ -45,6 +45,7 @@ see everything one page does.
 | To change | Edit |
 | --- | --- |
 | Data source | `src/config/data-sources.ts` |
+| Languages initially shown in multilingual fields | `src/config/app-config.ts` |
 | Colors, spacing, theming | `src/theme.ts` |
 | What a page does before or after read/write | `src/modules/<name>/<route>-operation.ts` |
 | Page title, actions or redirect | its `<route>-page.tsx` |
@@ -74,6 +75,9 @@ is offered for top-level single-valued fields, not for repeating or nested ones.
 Forms are built from the field metadata in `descriptor.ts`. Entities composed into the edited one
 are edited in place when they are simple, and open as their own pane when they compose something
 themselves. The pane is in the address bar, so back and forward walk the nesting.
+
+Multilingual fields keep all loaded language tags, including untagged text. The language selector
+starts with the tags in `src/config/app-config.ts`.
 
 Writes go from the leaves to the root. If one fails, its ancestors are not written, and the writes
 that already succeeded are not rolled back. Removing a stored child from a form deletes it once the

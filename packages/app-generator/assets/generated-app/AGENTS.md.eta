@@ -46,6 +46,9 @@ forbids, which is stricter than a URI needs to be, because the default data sour
 Dates are `Date` objects in the models and Luxon values in the pickers. The conversion is in
 `form-field.tsx`.
 
+Multilingual fields use `Record<string, string[]>`. The empty key represents untagged text, and the
+configured language choices are in `src/config/app-config.ts`.
+
 ## Field metadata
 
 `src/modules/<name>/descriptor.ts` is what the forms, the lists and the detail views read. A field

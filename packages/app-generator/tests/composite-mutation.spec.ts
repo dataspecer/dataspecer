@@ -259,6 +259,50 @@ describe('composite mutation planning', () => {
     expect(plan[0].payload).not.toHaveProperty('labels');
   });
 
+  it('keeps multilingual maps intact instead of treating repeated text as an array', () => {
+    const aggregate: AggregateDescriptor = {
+      iri: 'urn:aggregate:localized',
+      name: 'Localized',
+      classIri: 'urn:class:localized',
+      fields: [
+        {
+          path: 'labels',
+          propertyName: 'labels',
+          label: 'Labels',
+          kind: 'primitive',
+          formControl: 'multilingual',
+          many: true,
+          required: false,
+        },
+      ],
+      createEmpty: () => ({}),
+    };
+    const registry = { [aggregate.iri]: aggregate };
+
+    const update = buildCompositeUpdatePlan(
+      aggregate,
+      registry,
+      { id: 'urn:localized', labels: { cs: ['Název'], en: ['Name'] } },
+      { id: 'urn:localized', labels: { cs: ['Starý název'] } }
+    );
+    const clear = buildCompositeUpdatePlan(
+      aggregate,
+      registry,
+      { id: 'urn:localized', labels: {} },
+      { id: 'urn:localized', labels: { cs: ['Starý název'] } }
+    );
+    const untouched = buildCompositeUpdatePlan(
+      aggregate,
+      registry,
+      { id: 'urn:localized' },
+      { id: 'urn:localized', labels: { cs: ['Starý název'] } }
+    );
+
+    expect(update[0].payload?.labels).toEqual({ cs: ['Název'], en: ['Name'] });
+    expect(clear[0].payload?.labels).toBeNull();
+    expect(untouched[0].payload).not.toHaveProperty('labels');
+  });
+
   it('rejects malformed repeating references instead of clearing them', () => {
     expect(() =>
       buildCompositeUpdatePlan(

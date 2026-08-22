@@ -37,6 +37,7 @@ interface UpdateFormProps<TModel extends EntityModel> {
   strategy: OperationStrategy<TModel>;
   navigation: OperationNavigationDescriptor;
   instanceBaseIri: string;
+  languages: readonly string[];
   id: string;
 }
 
@@ -212,6 +213,7 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
               model={model}
               originalModel={originalModel ?? undefined}
               instanceBaseIri={instanceBaseIri}
+              languages={props.languages}
               issues={issues}
               rootIdentifierReadOnly
               onChange={handleChange}

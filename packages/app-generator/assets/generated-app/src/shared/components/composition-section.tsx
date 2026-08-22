@@ -33,6 +33,7 @@ import {
 import type { ValidationIssue } from '../operations/operation-result.ts';
 import type { AggregateDescriptorMap, EntityRecord, FieldDescriptor } from '../types/aggregate.ts';
 import { ConfirmDialog } from './confirm-dialog.tsx';
+import { FieldLabel } from './field-label.tsx';
 import { FormField } from './form-field.tsx';
 
 export interface CompositionSectionProps {
@@ -42,6 +43,7 @@ export interface CompositionSectionProps {
   parentPath: EntityPathSegment[];
   aggregateRegistry: AggregateDescriptorMap;
   instanceBaseIri: string;
+  language: string;
   issues: ValidationIssue[];
   validationPath: string;
   error?: string;
@@ -115,7 +117,7 @@ export function CompositionSection(props: CompositionSectionProps) {
         >
           <Box>
             <Typography variant="subtitle2">
-              {props.field.label}
+              <FieldLabel field={props.field} />
               {minimum > 0 ? ' *' : ''}
             </Typography>
             <Typography variant="caption" color="text.secondary">
@@ -182,6 +184,7 @@ export function CompositionSection(props: CompositionSectionProps) {
                         target={target}
                         entity={child}
                         aggregateRegistry={props.aggregateRegistry}
+                        language={props.language}
                         issues={props.issues}
                         validationPrefix={childValidationPath}
                         onChange={(next) => props.onChangeChild(index, next)}
@@ -273,6 +276,7 @@ interface InlineEntityFieldsProps {
   target: EntityTarget;
   entity: EntityRecord;
   aggregateRegistry: AggregateDescriptorMap;
+  language: string;
   issues: ValidationIssue[];
   validationPrefix: string;
   onChange: (entity: EntityRecord) => void;
@@ -289,6 +293,7 @@ function InlineEntityFields(props: InlineEntityFieldsProps) {
           key={field.path}
           field={field}
           value={props.entity[field.propertyName]}
+          language={props.language}
           error={errorAt(joinValidationPath(props.validationPrefix, field.path))}
           aggregateRegistry={props.aggregateRegistry}
           onChange={(value) => props.onChange({ ...props.entity, [field.propertyName]: value })}

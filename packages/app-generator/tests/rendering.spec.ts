@@ -246,7 +246,9 @@ describe('renderGeneratedApp', () => {
     expect(tree.get('src/shared/components/list-view.tsx')).toContain('sortingMode="server"');
     expect(tree.get('package.json')).toContain('"react-router-dom"');
     // a single control carries its own label, a group of controls is labelled by its legend
-    expect(tree.get('src/shared/components/form-field.tsx')).toContain('label={field.label}');
+    expect(tree.get('src/shared/components/form-field.tsx')).toContain(
+      'label={<FieldLabel field={field} />}'
+    );
     expect(tree.get('src/shared/components/form-field.tsx')).toContain(
       'htmlFor={field.many ? undefined : controlId}'
     );
@@ -459,6 +461,71 @@ describe('renderGeneratedApp', () => {
     expect(descriptor).toContain('"formControl": "datetime"');
     expect(renderGeneratedApp(model).get('src/shared/components/form-field.tsx')).toContain(
       "step: control === 'number' ? 'any' : undefined"
+    );
+  });
+
+  it('renders multilingual models, configuration, and form wiring', () => {
+    const aggregateIri = 'https://example.org/aggregate/localized';
+    const graph = graphFixture();
+    graph.nodes = [node('Localized.Create', aggregateIri, Operation.Create)];
+    graph.edges = [];
+    const tree = renderGeneratedApp(
+      buildGenerationModel(graph, {
+        dataSpecificationIri: specificationIri,
+        aggregates: [
+          {
+            iri: aggregateIri,
+            name: 'Localized',
+            classIri: 'https://example.org/class/localized',
+            fields: [
+              {
+                ...primitive('title', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString'),
+                description: 'Title in the languages used by the dataset.',
+              },
+              {
+                ...primitive('keywords', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString'),
+                many: true,
+              },
+            ],
+          },
+        ],
+      })
+    );
+    const model = tree.get('src/modules/localized/model.ts');
+    const descriptor = tree.get('src/modules/localized/descriptor.ts');
+    const page = tree.get('src/modules/localized/localized-create-page.tsx');
+
+    expect(model).toContain('MultilingualValue');
+    expect(model).toContain('title?: MultilingualValue | null');
+    expect(model).toContain('keywords?: MultilingualValue | null');
+    expect(model).toContain('keywords: {}');
+    expect(descriptor).toContain('"formControl": "multilingual"');
+    expect(descriptor).toContain('"description": "Title in the languages used by the dataset."');
+    expect(tree.get('src/config/app-config.ts')).toContain("languages = ['cs', 'en']");
+    expect(tree.get('src/config/app-config.ts')).toContain(
+      'stored languages are added automatically'
+    );
+    expect(page).toContain('languages={languages}');
+    expect(tree.get('src/shared/components/form-field.tsx')).toContain(
+      "control === 'multilingual'"
+    );
+    expect(tree.get('src/shared/components/field-label.tsx')).toContain(
+      'Tooltip title={field.description}'
+    );
+    expect(tree.get('src/shared/components/field-label.tsx')).toContain('event.stopPropagation()');
+    expect(tree.get('src/shared/components/multilingual-field.tsx')).toContain('Has values:');
+    expect(tree.get('src/shared/components/entity-form-editor.tsx')).toContain(
+      'label="Value language"'
+    );
+    expect(tree.get('src/shared/components/entity-form-editor.tsx')).toContain(
+      'Switching languages keeps values entered in other languages.'
+    );
+    expect(tree.get('src/shared/components/entity-form-editor.tsx')).toContain(
+      "scrollIntoView({ behavior: 'smooth', block: 'start' })"
+    );
+    expect(tree.get('src/shared/components/entity-form-editor.tsx')).toContain('theme.spacing(8)');
+    expect(tree.get('src/shared/components/detail-view.tsx')).toContain(
+      'Object.entries(compactMultilingualValue(value))'
     );
   });
 

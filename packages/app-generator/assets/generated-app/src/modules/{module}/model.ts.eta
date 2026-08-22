@@ -1,4 +1,8 @@
+<% if (it.aggregate.usesMultilingualValues) { -%>
+import type { EntityModel, MultilingualValue } from "@/shared/types/aggregate.ts";
+<% } else { -%>
 import type { EntityModel } from "@/shared/types/aggregate.ts";
+<% } -%>
 
 <% it.aggregate.nestedModels.forEach((model) => { -%>
 export interface <%= model.name %> extends EntityModel {
@@ -16,8 +20,11 @@ export interface <%= it.aggregate.modelName %> extends EntityModel {
 
 export function createEmpty<%= it.aggregate.modelName %>(): Partial<<%= it.aggregate.modelName %>> {
   return {
-<% it.aggregate.fields.filter((field) => field.many).forEach((field) => { -%>
+<% it.aggregate.fields.filter((field) => field.many && field.formControl !== "multilingual").forEach((field) => { -%>
     <%= field.propertyName %>: [],
+<% }) -%>
+<% it.aggregate.fields.filter((field) => field.formControl === "multilingual").forEach((field) => { -%>
+    <%= field.propertyName %>: {},
 <% }) -%>
   };
 }

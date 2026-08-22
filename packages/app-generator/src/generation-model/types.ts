@@ -113,6 +113,8 @@ export interface GeneratedSpecializationDescriptor {
 export interface GeneratedFieldDescriptor {
   path: string;
   label: string;
+  /** Description shown alongside the generated field label. */
+  description?: string;
   kind: FieldKind;
   propertyIri?: string;
   datatype?: string;

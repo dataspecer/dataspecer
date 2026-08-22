@@ -360,6 +360,7 @@ function mapAttributeField(
   const fieldPath = fieldPathFrom(attribute, relationship);
   const cardinality = attribute.dataPsmCardinality ?? valueEnd?.cardinality;
   const propertyIri = relationshipPropertyIri(relationship);
+  const description = fieldDescriptionFrom(attribute, relationship, valueEnd);
 
   if (!attribute.dataPsmInterpretation || !relationship) {
     addIssue(context, {
@@ -384,6 +385,7 @@ function mapAttributeField(
   return {
     path: fieldPath,
     label: fieldLabelFrom(attribute, relationship, valueEnd, fieldPath),
+    ...(description ? { description } : {}),
     kind: FieldKind.Primitive,
     ...(propertyIri ? { propertyIri } : {}),
     ...((attribute.dataPsmDatatype ?? valueEnd?.concept)
@@ -408,6 +410,7 @@ function mapAssociationField(
   const fieldPath = fieldPathFrom(association, relationship);
   const cardinality = association.dataPsmCardinality ?? targetEnd?.cardinality;
   const propertyIri = relationshipPropertyIri(relationship);
+  const description = fieldDescriptionFrom(association, relationship, targetEnd);
 
   if (!association.dataPsmInterpretation || !relationship) {
     addIssue(context, {
@@ -462,6 +465,7 @@ function mapAssociationField(
   return {
     path: fieldPath,
     label: fieldLabelFrom(association, relationship, targetEnd, fieldPath),
+    ...(description ? { description } : {}),
     kind: FieldKind.Association,
     ...(propertyIri ? { propertyIri } : {}),
     ...(target.targetAggregateIri ? { targetAggregateIri: target.targetAggregateIri } : {}),
@@ -836,6 +840,18 @@ function fieldLabelFrom(
   );
 }
 
+function fieldDescriptionFrom(
+  resource: DataPsmAttribute | DataPsmAssociationEnd,
+  relationship: SemanticModelRelationship | undefined,
+  end: SemanticModelRelationshipEnd | undefined
+): string | undefined {
+  return (
+    labelFrom(resource.dataPsmHumanDescription) ??
+    labelFrom(end?.description) ??
+    labelFrom(relationship?.description)
+  );
+}
+
 function cardinalityFlags(cardinality: Cardinality | null | undefined): {
   many: boolean;
   required: boolean;
@@ -924,7 +940,9 @@ function labelFrom(value: LanguageString | string | null | undefined): string | 
   if (typeof value === 'string') {
     return value.length > 0 ? value : undefined;
   }
-  return value.en ?? value.cs ?? Object.values(value).find((candidate) => candidate.length > 0);
+  return [value.en, value.cs, ...Object.values(value)].find(
+    (candidate): candidate is string => typeof candidate === 'string' && candidate.length > 0
+  );
 }
 
 function localName(iri: string): string {

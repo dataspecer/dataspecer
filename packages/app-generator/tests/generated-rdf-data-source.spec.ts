@@ -21,6 +21,7 @@ import type {
   AggregateDescriptor,
   EntityModel,
 } from '../assets/generated-app/src/shared/types/aggregate.ts';
+import { normalizeMultilingualValue } from '../assets/generated-app/src/shared/forms/multilingual-value.ts';
 
 const listAggregate: AggregateDescriptor<EntityModel> = {
   iri: 'https://example.org/aggregate/book',
@@ -83,6 +84,26 @@ const repeatedReference: AggregateDescriptor<EntityModel>['fields'][number] = {
   propertyName: 'related',
   label: 'Related',
   propertyIri: 'https://example.org/related',
+  many: true,
+};
+
+const scalarMultilingual: AggregateDescriptor<EntityModel>['fields'][number] = {
+  path: 'title',
+  propertyName: 'title',
+  label: 'Title',
+  kind: 'primitive',
+  propertyIri: 'https://example.org/title',
+  formControl: 'multilingual',
+  many: false,
+  required: false,
+};
+
+const repeatedMultilingual: AggregateDescriptor<EntityModel>['fields'][number] = {
+  ...scalarMultilingual,
+  path: 'keywords',
+  propertyName: 'keywords',
+  label: 'Keywords',
+  propertyIri: 'https://example.org/keyword',
   many: true,
 };
 
@@ -378,6 +399,16 @@ describe('generated RDF list queries', () => {
       })
     ).toThrow('cannot be used for list sorting');
   });
+
+  it('rejects ordering by multilingual fields even when the field is scalar', () => {
+    expect(() =>
+      buildPageIriQuery({ ...listAggregate, fields: [scalarMultilingual] }, 20, 0, {
+        kind: 'field',
+        fieldPath: 'title',
+        direction: 'asc',
+      })
+    ).toThrow('cannot be used for list sorting');
+  });
 });
 
 describe('generated RDF mutation payloads', () => {
@@ -469,6 +500,33 @@ describe('generated RDF mutation payloads', () => {
       related: [],
     });
   });
+
+  it('serializes multilingual maps without conflating absent and cleared properties', () => {
+    expect(
+      toLdkitEntity(
+        {
+          id: 'https://example.org/book/1',
+          title: { cs: ['Název'], en: ['Title'] },
+          keywords: { cs: ['jedna', 'dvě'], '': ['untagged'], de: ['unconfigured'] },
+        },
+        'update',
+        [scalarMultilingual, repeatedMultilingual]
+      )
+    ).toEqual({
+      $id: 'https://example.org/book/1',
+      title: { cs: ['Název'], en: ['Title'] },
+      keywords: { cs: ['jedna', 'dvě'], '': ['untagged'], de: ['unconfigured'] },
+    });
+    expect(
+      toLdkitEntity({ id: 'https://example.org/book/1', title: {} }, 'update', [scalarMultilingual])
+    ).toEqual({ $id: 'https://example.org/book/1', title: null });
+    expect(
+      toLdkitEntity({ id: 'https://example.org/book/1' }, 'update', [scalarMultilingual])
+    ).toEqual({ $id: 'https://example.org/book/1' });
+    expect(
+      toLdkitEntity({ id: 'https://example.org/book/1', title: {} }, 'create', [scalarMultilingual])
+    ).toEqual({ $id: 'https://example.org/book/1' });
+  });
 });
 
 describe('generated RDF read normalization', () => {
@@ -523,6 +581,77 @@ describe('generated RDF read normalization', () => {
         },
       ],
     });
+  });
+
+  it('normalizes scalar and repeated multilingual reads without losing languages', () => {
+    expect(
+      normalizeLdkitEntity(
+        {
+          $id: 'https://example.org/book/1',
+          title: { cs: 'Název', en: ['Title'] },
+          keywords: { cs: ['jedna', 'dvě'], '': ['untagged'], de: ['unconfigured'] },
+        },
+        [scalarMultilingual, repeatedMultilingual]
+      )
+    ).toEqual({
+      id: 'https://example.org/book/1',
+      title: { cs: ['Název'], en: ['Title'] },
+      keywords: { cs: ['jedna', 'dvě'], '': ['untagged'], de: ['unconfigured'] },
+    });
+  });
+
+  it('normalizes an optional multilingual property omitted by LDKit', async () => {
+    const entityIri = 'https://example.org/book/1';
+    const classIri = 'https://example.org/class/book';
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response(
+            `<${entityIri}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ldkit.io/ontology/Resource> .\n` +
+              `<${entityIri}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <${classIri}> .`,
+            { status: 200, headers: { 'content-type': 'application/n-triples' } }
+          )
+        )
+    );
+    const aggregate: AggregateDescriptor<EntityModel> = {
+      ...listAggregate,
+      classIri,
+      fields: [scalarMultilingual],
+    };
+    const detailSchema = {
+      '@type': classIri,
+      title: {
+        '@id': scalarMultilingual.propertyIri as string,
+        '@multilang': true as const,
+        '@array': true as const,
+        '@optional': true as const,
+      },
+    };
+    const dataSource = new RdfLdkitDataSource('https://example.org/sparql', {
+      [aggregate.iri]: {
+        detail: detailSchema,
+        list: detailSchema,
+        writes: { '[]': { '@type': classIri } },
+        specializationWrites: {},
+      },
+    });
+
+    try {
+      await expect(dataSource.readDetail({ aggregate, id: entityIri })).resolves.toEqual({
+        id: entityIri,
+        title: {},
+      });
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('does not accept a populated array as a multilingual language map', () => {
+    expect(() => normalizeMultilingualValue(['invalid'])).toThrow(
+      'must contain values grouped by language'
+    );
   });
 
   it('rejects a composed blank-node identity after normalization', () => {
@@ -618,6 +747,69 @@ describe('generated RDF write schema selection', () => {
 
       expect(requests.join('\n')).toContain('<https://example.org/publisher/1>');
       expect(requests.join('\n')).toContain('<https://example.org/book/2>');
+      expect(requests).toHaveLength(2);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('writes Czech, English, repeated, and untagged multilingual literals through LDKit', async () => {
+    const requests: string[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation(async (_input, init: RequestInit) => {
+        requests.push(String(init.body));
+        return new Response('', { status: 200 });
+      })
+    );
+
+    const aggregate: AggregateDescriptor<EntityModel> = {
+      ...listAggregate,
+      fields: [scalarMultilingual, repeatedMultilingual],
+    };
+    const writeSchema = {
+      '@type': aggregate.classIri,
+      title: {
+        '@id': scalarMultilingual.propertyIri as string,
+        '@multilang': true as const,
+        '@optional': true as const,
+      },
+      keywords: {
+        '@id': repeatedMultilingual.propertyIri as string,
+        '@multilang': true as const,
+        '@optional': true as const,
+      },
+    };
+    const dataSource = new RdfLdkitDataSource('https://example.org/sparql', {
+      [aggregate.iri]: {
+        detail: writeSchema,
+        list: writeSchema,
+        writes: { '[]': writeSchema },
+        specializationWrites: {},
+      },
+    });
+
+    try {
+      await dataSource.create({
+        aggregate,
+        payload: {
+          id: 'https://example.org/book/1',
+          title: { cs: ['Název'], en: ['Title'] },
+          keywords: { cs: ['jedna', 'dvě'], '': ['untagged'] },
+        } as EntityModel,
+      });
+      await dataSource.update({
+        aggregate,
+        id: 'https://example.org/book/1',
+        payload: { title: {} } as EntityModel,
+      });
+
+      const query = requests.join('\n');
+      expect(query).toContain('"Název"@cs');
+      expect(query).toContain('"Title"@en');
+      expect(query).toContain('"jedna"@cs');
+      expect(query).toContain('"dvě"@cs');
+      expect(query).toContain('"untagged"');
       expect(requests).toHaveLength(2);
     } finally {
       vi.unstubAllGlobals();

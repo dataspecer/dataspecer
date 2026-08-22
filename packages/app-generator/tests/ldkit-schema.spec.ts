@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { OFN } from '@dataspecer/core/well-known';
 import { ldkit } from 'ldkit/namespaces';
 
 import { AssociationKind } from '../src/graph/types.ts';
@@ -88,7 +89,7 @@ describe('LDKit schema generation', () => {
     expect(schema.tags['@array']).toBe(true);
   });
 
-  it('does not generate special handling or a form control for language-tagged values', () => {
+  it('uses array reads and scalar writes for multilingual values', () => {
     const aggregate = renderedAggregate([
       {
         path: 'note',
@@ -99,19 +100,43 @@ describe('LDKit schema generation', () => {
         many: false,
         required: true,
       },
+      {
+        path: 'keywords',
+        label: 'Keywords',
+        kind: FieldKind.Primitive,
+        propertyIri: 'https://example.org/p/keyword',
+        datatype: RDF_LANG_STRING,
+        many: true,
+        required: false,
+      },
     ]);
-    const schema = buildLdkitSchemaBundle(aggregate.classIri, aggregate.fields).detail as Record<
+    const bundle = buildLdkitSchemaBundle(aggregate.classIri, aggregate.fields) as Record<
       string,
       any
     >;
     const note = aggregate.fields.find((field) => field.path === 'note');
+    const keywords = aggregate.fields.find((field) => field.path === 'keywords');
 
-    expect(schema.note).toEqual({
+    expect(bundle.detail.note).toEqual({
       '@id': 'https://example.org/p/note',
+      '@array': true,
+      '@multilang': true,
       '@optional': true,
     });
-    expect(note?.modelType).toBe('unknown');
-    expect(note?.formControl).toBeUndefined();
+    expect(bundle.detail.keywords).toMatchObject({ '@array': true, '@multilang': true });
+    expect(bundle.writes['[]'].note).toEqual({
+      '@id': 'https://example.org/p/note',
+      '@multilang': true,
+      '@optional': true,
+    });
+    expect(bundle.writes['[]'].keywords).toEqual({
+      '@id': 'https://example.org/p/keyword',
+      '@multilang': true,
+      '@optional': true,
+    });
+    expect(note?.modelType).toBe('MultilingualValue');
+    expect(keywords?.modelType).toBe('MultilingualValue');
+    expect(note?.formControl).toBe('multilingual');
   });
 
   it('leaves unrecognized datatypes as plain strings without a type', () => {
@@ -416,7 +441,7 @@ describe('LDKit schema generation', () => {
     const note = fields.find((field) => field.path === 'note');
 
     expect(created?.modelType).toBe('Date');
-    expect(note?.modelType).toBe('unknown');
+    expect(note?.modelType).toBe('MultilingualValue');
   });
 
   it('uses separate controls for integer and fractional numbers', () => {
@@ -425,5 +450,36 @@ describe('LDKit schema generation', () => {
     expect(datatypeMapping(`${XSD}decimal`).formControl).toBe('number');
     expect(datatypeMapping(`${XSD}float`).formControl).toBe('number');
     expect(datatypeMapping(`${XSD}double`).formControl).toBe('number');
+  });
+
+  it('maps OFN Text and rdf:langString to the multilingual control', () => {
+    expect(datatypeMapping(OFN.text)).toMatchObject({
+      tsType: 'MultilingualValue',
+      formControl: 'multilingual',
+      multilingual: true,
+    });
+    expect(datatypeMapping(OFN.rdfLangString)).toMatchObject({
+      tsType: 'MultilingualValue',
+      formControl: 'multilingual',
+      multilingual: true,
+    });
+  });
+
+  it('emits namespace expressions for xsd datatypes containing digits', () => {
+    const aggregate = renderedAggregate([
+      {
+        path: 'encoded',
+        label: 'Encoded',
+        kind: FieldKind.Primitive,
+        propertyIri: 'https://example.org/p/encoded',
+        datatype: `${XSD}base64Binary`,
+        many: false,
+        required: false,
+      },
+    ]);
+
+    expect(
+      toLdkitSchemaSource(buildLdkitSchemaBundle(aggregate.classIri, aggregate.fields))
+    ).toContain('"@type": xsd.base64Binary');
   });
 });

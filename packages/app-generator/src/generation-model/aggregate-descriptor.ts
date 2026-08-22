@@ -19,6 +19,7 @@ function buildFieldDescriptor(field: AggregateFieldMetadata): GeneratedFieldDesc
   return {
     path: field.path,
     label: field.label,
+    ...(field.description ? { description: field.description } : {}),
     kind: field.kind,
     ...(field.propertyIri ? { propertyIri: field.propertyIri } : {}),
     ...(field.datatype ? { datatype: field.datatype } : {}),

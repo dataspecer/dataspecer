@@ -1,2 +1,5 @@
 // Base IRI that Create forms prefill when generating a new entity IRI.
 export const instanceBaseIri = <%~ it.json(it.instanceBaseIri) %>;
+
+// languages offered for new multilingual values, stored languages are added automatically
+export const languages = ['cs', 'en'] as const;

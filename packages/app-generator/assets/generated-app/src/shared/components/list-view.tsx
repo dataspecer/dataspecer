@@ -35,8 +35,10 @@ import type {
   FieldDescriptor,
 } from '../types/aggregate.ts';
 import { ActionLinks } from './action-links.tsx';
+import { FieldLabel } from './field-label.tsx';
 import { formatFieldValue } from '../forms/field-value.ts';
 import { isCompositionField } from '../forms/entity-target.ts';
+import { displayLanguagePreferences } from '../forms/multilingual-value.ts';
 
 export interface ListViewProps<TModel extends EntityModel> {
   title: string;
@@ -44,6 +46,7 @@ export interface ListViewProps<TModel extends EntityModel> {
   aggregateRegistry: AggregateDescriptorMap;
   strategy: OperationStrategy<TModel, ReadListResult<TModel>>;
   navigation: OperationNavigationDescriptor;
+  languages: readonly string[];
 }
 
 export function ListView<TModel extends EntityModel>(props: ListViewProps<TModel>) {
@@ -58,10 +61,19 @@ export function ListView<TModel extends EntityModel>(props: ListViewProps<TModel
   const [sort, setSort] = useState<ReadListSort>(DEFAULT_READ_LIST_SORT);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const preferredLanguages = useMemo(
+    () => displayLanguagePreferences(props.languages),
+    [props.languages]
+  );
   const columns = useMemo(
     () =>
-      buildColumns<TModel>(aggregate.fields, navigation.rowActions, navigation.associationActions),
-    [aggregate.fields, navigation.rowActions, navigation.associationActions]
+      buildColumns<TModel>(
+        aggregate.fields,
+        navigation.rowActions,
+        navigation.associationActions,
+        preferredLanguages
+      ),
+    [aggregate.fields, navigation.rowActions, navigation.associationActions, preferredLanguages]
   );
   const gridSortModel = useMemo(() => toGridSortModel(sort), [sort]);
 
@@ -155,13 +167,15 @@ export function ListView<TModel extends EntityModel>(props: ListViewProps<TModel
 function buildColumns<TModel extends EntityModel>(
   fields: FieldDescriptor[],
   rowActions: readonly NavigationActionDescriptor[],
-  associationActions: readonly AssociationNavigationActionDescriptor[]
+  associationActions: readonly AssociationNavigationActionDescriptor[],
+  languages: readonly string[]
 ): GridColDef<TModel>[] {
   const columns: GridColDef<TModel>[] = fields
     .filter((field) => !isCompositionField(field))
     .map((field) => ({
       field: field.path,
       headerName: field.label,
+      renderHeader: () => <FieldLabel field={field} />,
       flex: 1,
       minWidth: 160,
       sortable: isListFieldSortable(field),
@@ -170,6 +184,7 @@ function buildColumns<TModel extends EntityModel>(
           field={field}
           value={params.row[field.propertyName as keyof TModel]}
           action={associationActions.find((action) => action.fieldPath === field.path)}
+          languages={languages}
           tabIndex={params.tabIndex}
         />
       ),
@@ -212,11 +227,12 @@ interface FieldCellProps {
   value: unknown;
   action?: AssociationNavigationActionDescriptor;
   tabIndex: number;
+  languages: readonly string[];
 }
 
 function FieldCell(props: FieldCellProps) {
   if (!props.action) {
-    return <>{formatFieldValue(props.field, props.value)}</>;
+    return <>{formatFieldValue(props.field, props.value, props.languages)}</>;
   }
 
   const action = props.action;
@@ -231,6 +247,7 @@ function FieldCell(props: FieldCellProps) {
               value={entry}
               action={action}
               tabIndex={props.tabIndex}
+              languages={props.languages}
             />
           </span>
         ))}
@@ -244,6 +261,7 @@ function FieldCell(props: FieldCellProps) {
       value={props.value}
       action={action}
       tabIndex={props.tabIndex}
+      languages={props.languages}
     />
   );
 }
@@ -253,11 +271,12 @@ interface LinkedFieldValueProps {
   value: unknown;
   action: AssociationNavigationActionDescriptor;
   tabIndex: number;
+  languages: readonly string[];
 }
 
 function LinkedFieldValue(props: LinkedFieldValueProps) {
   const entityId = entityIdFromValue(props.value);
-  const label = formatFieldValue(props.field, props.value);
+  const label = formatFieldValue(props.field, props.value, props.languages);
   const href = entityId ? hrefForAction(props.action, entityId) : undefined;
   return href ? (
     <Link component={RouterLink} to={href} tabIndex={props.tabIndex} underline="hover">

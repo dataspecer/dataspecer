@@ -14,6 +14,12 @@ import {
   type EntityTarget,
 } from './entity-target.ts';
 import { isSafeAbsoluteIri } from './iri.ts';
+import {
+  hasDuplicateMultilingualValues,
+  isMultilingualField,
+  multilingualLanguagesOverLimit,
+  nonEmptyMultilingualValues,
+} from './multilingual-value.ts';
 
 export type FieldControl = FormControl | 'reference' | 'composition' | 'unsupported';
 
@@ -107,6 +113,10 @@ function validateEntity(
     }
     const fieldPath = joinPath(pathPrefix, field.path);
     const value = model[field.propertyName];
+    if (isMultilingualField(field)) {
+      validateMultilingualField(field, value, fieldPath, issues);
+      continue;
+    }
     const values = fieldValues(value, field);
     const presentValues = values.filter((entry) => !isEmptyValue(entry));
     const minCount = minimumCount(field);
@@ -190,6 +200,42 @@ function validateEntity(
         field.many ? `${fieldPath}[${index}]` : fieldPath,
         issues
       );
+    });
+  }
+}
+
+function validateMultilingualField(
+  field: FieldDescriptor,
+  value: unknown,
+  fieldPath: string,
+  issues: ValidationIssue[]
+): void {
+  const presentValues = nonEmptyMultilingualValues(value);
+  if (minimumCount(field) > 0 && presentValues.length === 0) {
+    issues.push({
+      code: ValidationIssueCode.MinCount,
+      message: `${field.label} is required in at least one language.`,
+      path: fieldPath,
+    });
+  }
+
+  const maximum = field.many ? maximumCount(field) : 1;
+  if (maximum !== null && multilingualLanguagesOverLimit(value, maximum).length > 0) {
+    issues.push({
+      code: ValidationIssueCode.MaxCount,
+      message:
+        maximum === 1
+          ? `${field.label} allows at most one value per language.`
+          : `${field.label} allows at most ${maximum} values per language.`,
+      path: fieldPath,
+    });
+  }
+
+  if (field.many && hasDuplicateMultilingualValues(value)) {
+    issues.push({
+      code: ValidationIssueCode.Duplicate,
+      message: `${field.label} contains duplicate values in one language.`,
+      path: fieldPath,
     });
   }
 }

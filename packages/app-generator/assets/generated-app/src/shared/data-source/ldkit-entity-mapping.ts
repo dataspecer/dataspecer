@@ -2,6 +2,13 @@ import type { FieldDescriptor } from '../types/aggregate.ts';
 import { fieldValues, isEntityRecord, type EntityRecord } from '../types/aggregate.ts';
 import { isCompositionField } from '../forms/entity-target.ts';
 import { isSafeAbsoluteIri, requireSafeAbsoluteIri } from '../forms/iri.ts';
+import {
+  compactMultilingualValue,
+  isMultilingualField,
+  normalizeMultilingualValue,
+} from '../forms/multilingual-value.ts';
+
+type LdkitMutationMode = 'create' | 'update';
 
 /** Converts an LDKit entity to the model shape used by generated forms. */
 export function normalizeLdkitEntity(value: unknown, fields: readonly FieldDescriptor[]): unknown {
@@ -24,7 +31,12 @@ function normalizeEntity(value: unknown, fields: readonly FieldDescriptor[]): un
       continue;
     }
     const field = fieldByProperty.get(key);
-    if (field?.kind === 'association') {
+    if (field && isMultilingualField(field)) {
+      result[key] =
+        nested === null || nested === undefined
+          ? nested
+          : normalizeMultilingualValue(nested, field.label);
+    } else if (field?.kind === 'association') {
       result[key] = readsInlineComposition(field)
         ? normalizeEntity(nested, field.fields ?? [])
         : normalizeReference(nested, field);
@@ -111,7 +123,7 @@ function readsInlineComposition(field: FieldDescriptor): boolean {
 /** Converts model ids to LDKit $id values. Updates keep null and [] because they clear properties. */
 export function toLdkitEntity(
   value: unknown,
-  mode: 'create' | 'update',
+  mode: LdkitMutationMode,
   fields: readonly FieldDescriptor[] = []
 ): unknown {
   if (Array.isArray(value)) {
@@ -147,10 +159,7 @@ export function toLdkitEntity(
       continue;
     }
     const field = fieldByProperty.get(key);
-    const converted =
-      field?.kind === 'association'
-        ? toLdkitReference(nested, field, mode)
-        : toLdkitEntity(nested, mode);
+    const converted = field ? toLdkitFieldValue(nested, field, mode) : toLdkitEntity(nested, mode);
     if (converted !== undefined) {
       result[key] = converted;
     }
@@ -159,10 +168,38 @@ export function toLdkitEntity(
   return Object.keys(result).length > 0 ? result : undefined;
 }
 
+function toLdkitFieldValue(
+  value: unknown,
+  field: FieldDescriptor,
+  mode: LdkitMutationMode
+): unknown {
+  if (isMultilingualField(field)) {
+    return toLdkitMultilingual(value, field, mode);
+  }
+  return field.kind === 'association'
+    ? toLdkitReference(value, field, mode)
+    : toLdkitEntity(value, mode);
+}
+
+function toLdkitMultilingual(
+  value: unknown,
+  field: FieldDescriptor,
+  mode: LdkitMutationMode
+): unknown {
+  if (value === null) {
+    return mode === 'update' ? null : undefined;
+  }
+  const multilingual = compactMultilingualValue(value, field.label);
+  if (Object.keys(multilingual).length === 0) {
+    return mode === 'update' ? null : undefined;
+  }
+  return multilingual;
+}
+
 function toLdkitReference(
   value: unknown,
   field: FieldDescriptor,
-  mode: 'create' | 'update'
+  mode: LdkitMutationMode
 ): unknown {
   if (value === null) {
     return mode === 'update' ? null : undefined;

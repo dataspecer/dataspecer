@@ -36,6 +36,7 @@ interface CreateFormProps<TModel extends EntityModel> {
   strategy: OperationStrategy<TModel, TModel>;
   navigation: OperationNavigationDescriptor;
   instanceBaseIri: string;
+  languages: readonly string[];
 }
 
 export function CreateForm<TModel extends EntityModel>(props: CreateFormProps<TModel>) {
@@ -128,6 +129,7 @@ export function CreateForm<TModel extends EntityModel>(props: CreateFormProps<TM
             aggregateRegistry={aggregateRegistry}
             model={model}
             instanceBaseIri={instanceBaseIri}
+            languages={props.languages}
             issues={issues}
             rootIdentifierReadOnly={false}
             onChange={handleChange}

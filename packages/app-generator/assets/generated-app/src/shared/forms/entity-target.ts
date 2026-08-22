@@ -122,13 +122,15 @@ export function cardinalityDescription(field: FieldDescriptor): string {
   const minimum = minimumCount(field);
   const maximum = maximumCount(field);
   if (maximum === null) {
-    return minimum === 0 ? '' : `At least ${minimum} ${minimum === 1 ? 'value' : 'values'}`;
+    return minimum === 0
+      ? ''
+      : `Requires at least ${minimum} ${minimum === 1 ? 'value' : 'values'}`;
   }
   if (minimum === maximum) {
-    return `Exactly ${minimum} ${minimum === 1 ? 'value' : 'values'}`;
+    return `Requires exactly ${minimum} ${minimum === 1 ? 'value' : 'values'}`;
   }
   if (minimum === 0) {
-    return `Up to ${maximum} ${maximum === 1 ? 'value' : 'values'}`;
+    return `Allows up to ${maximum} ${maximum === 1 ? 'value' : 'values'}`;
   }
-  return `${minimum}–${maximum} values`;
+  return `Requires ${minimum}–${maximum} values`;
 }

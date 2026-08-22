@@ -15,7 +15,14 @@ type LdkitDatatype = keyof SupportedDataTypes;
  */
 
 /** The HTML form control a primitive datatype maps to in generated forms. */
-export type FormControl = 'text' | 'integer' | 'number' | 'date' | 'datetime' | 'checkbox';
+export type FormControl =
+  | 'text'
+  | 'integer'
+  | 'number'
+  | 'date'
+  | 'datetime'
+  | 'checkbox'
+  | 'multilingual';
 
 export interface DatatypeMapping {
   /**
@@ -27,6 +34,8 @@ export interface DatatypeMapping {
   tsType: string;
   /** The form control the datatype maps to. Undefined when the datatype has no direct control. */
   formControl?: FormControl;
+  /** Whether LDKit should encode the value as a map of language tags to literals. */
+  multilingual?: boolean;
 }
 
 function literal(
@@ -37,7 +46,11 @@ function literal(
   return { ldkitType, tsType, formControl };
 }
 
-const UNSUPPORTED_LANGUAGE: DatatypeMapping = { tsType: 'unknown' };
+const MULTILINGUAL: DatatypeMapping = {
+  tsType: 'MultilingualValue',
+  formControl: 'multilingual',
+  multilingual: true,
+};
 
 // The xsd groups mirror how LDKit maps datatypes to native values, so the model type is correct.
 const INTEGER_TYPES = [
@@ -98,8 +111,8 @@ TABLE.set(OFN.integer, literal(xsd.integer, 'number', 'integer'));
 TABLE.set(OFN.decimal, literal(xsd.decimal, 'number', 'number'));
 TABLE.set(OFN.url, literal(xsd.anyURI, 'string', 'text'));
 TABLE.set(OFN.string, literal(xsd.string, 'string', 'text'));
-TABLE.set(OFN.text, UNSUPPORTED_LANGUAGE);
-TABLE.set(OFN.rdfLangString, UNSUPPORTED_LANGUAGE);
+TABLE.set(OFN.text, MULTILINGUAL);
+TABLE.set(OFN.rdfLangString, MULTILINGUAL);
 
 // Unrecognized and generic literal datatypes such as rdfs:Literal read as plain strings.
 const FALLBACK: DatatypeMapping = { tsType: 'string', formControl: 'text' };

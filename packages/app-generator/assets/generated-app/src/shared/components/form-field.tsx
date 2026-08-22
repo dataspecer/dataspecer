@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { useId, type ReactNode } from 'react';
 import Button from '@mui/material/Button';
 import Checkbox from '@mui/material/Checkbox';
 import FormControl from '@mui/material/FormControl';
@@ -9,6 +9,7 @@ import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
+import Typography from '@mui/material/Typography';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { DateTime } from 'luxon';
@@ -28,10 +29,13 @@ import {
 } from '../forms/form-model.ts';
 import { cardinalityDescription, maximumCount, minimumCount } from '../forms/entity-target.ts';
 import { ReferenceSelect } from './reference-select.tsx';
+import { MultilingualField } from './multilingual-field.tsx';
+import { FieldLabel } from './field-label.tsx';
 
 interface FormFieldProps {
   field: FieldDescriptor;
   value: unknown;
+  language: string;
   error?: string;
   aggregateRegistry: AggregateDescriptorMap;
   onChange: (value: unknown) => void;
@@ -48,11 +52,24 @@ export function FormField(props: FormFieldProps) {
 
   const readOnly = control === 'unsupported' || control === 'composition';
 
+  if (control === 'multilingual') {
+    return (
+      <MultilingualField
+        field={field}
+        value={value}
+        language={props.language}
+        error={error}
+        onChange={onChange}
+      />
+    );
+  }
+
   if (!field.many && control !== 'reference') {
     return (
       <PrimitiveControl
         id={controlId}
-        label={field.label}
+        label={<FieldLabel field={field} />}
+        ariaLabel={field.label}
         control={control}
         value={value}
         required={required}
@@ -72,7 +89,7 @@ export function FormField(props: FormFieldProps) {
         required={required}
         sx={{ mb: 0.5 }}
       >
-        {field.label}
+        <FieldLabel field={field} />
       </FormLabel>
       <div {...(field.many ? { role: 'group', 'aria-labelledby': labelId } : {})}>
         {control === 'reference' ? (
@@ -94,7 +111,11 @@ export function FormField(props: FormFieldProps) {
           />
         )}
       </div>
-      {cardinality ? <FormHelperText>{cardinality}.</FormHelperText> : null}
+      {cardinality ? (
+        <Typography variant="caption" color="text.secondary">
+          {cardinality}.
+        </Typography>
+      ) : null}
       {note ? <FormHelperText>{note}</FormHelperText> : null}
       {error ? <FormHelperText>{error}</FormHelperText> : null}
     </FormControl>
@@ -145,7 +166,7 @@ type PrimitiveKind = Exclude<FieldControl, 'reference'>;
 
 interface PrimitiveControlProps {
   id: string;
-  label?: string;
+  label?: ReactNode;
   ariaLabel?: string;
   control: PrimitiveKind;
   value: unknown;

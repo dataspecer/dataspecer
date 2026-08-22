@@ -63,7 +63,7 @@ function buildReadSchema(
 }
 
 function buildReadProperty(field: RenderedField): Property {
-  const property = baseProperty(field);
+  const property = baseProperty(field, 'read');
   if (field.kind === FieldKind.Association) {
     if (hasInlineCompositionSchema(field)) {
       const nestedSchema = buildReadSchema(undefined, field.fields ?? [], true);
@@ -92,7 +92,7 @@ function buildWriteSchema(classIri: string, fields: RenderedField[]): Schema {
     if (!field.propertyIri) {
       continue;
     }
-    const property = baseProperty(field);
+    const property = baseProperty(field, 'write');
     if (field.kind === FieldKind.Association) {
       // composite mutations write children separately and put only their IRIs in the parent
       property['@type'] = ldkit.IRI;
@@ -138,7 +138,7 @@ function collectNestedWriteSchemas(
   }
 }
 
-function baseProperty(field: RenderedField): Property {
+function baseProperty(field: RenderedField, mode: 'read' | 'write'): Property {
   // keep properties optional so incomplete RDF stays visible and updates can omit fields (form validation enforces
   // cardinality on save)
   const property: Property = {
@@ -148,7 +148,8 @@ function baseProperty(field: RenderedField): Property {
   if (field.isReverse) {
     property['@inverse'] = true;
   }
-  if (field.many) {
+  const multilingual = datatypeMapping(field.datatype).multilingual === true;
+  if ((mode === 'read' && multilingual) || (field.many && !multilingual)) {
     property['@array'] = true;
   }
   return property;
@@ -156,7 +157,9 @@ function baseProperty(field: RenderedField): Property {
 
 function setPrimitiveType(property: Property, field: RenderedField): void {
   const mapping = datatypeMapping(field.datatype);
-  if (mapping.ldkitType) {
+  if (mapping.multilingual) {
+    property['@multilang'] = true;
+  } else if (mapping.ldkitType) {
     property['@type'] = mapping.ldkitType;
   }
 }
@@ -180,7 +183,7 @@ function entityTargetKey(fieldPath: readonly string[]): string {
   return JSON.stringify(fieldPath);
 }
 
-const XSD_TYPE_IRI = /"http:\/\/www\.w3\.org\/2001\/XMLSchema#([A-Za-z]+)"/g;
+const XSD_TYPE_IRI = /"http:\/\/www\.w3\.org\/2001\/XMLSchema#([A-Za-z][A-Za-z0-9]*)"/g;
 const LDKIT_IRI_TYPE = /"https:\/\/ldkit\.io\/ontology\/IRI"/g;
 
 /**

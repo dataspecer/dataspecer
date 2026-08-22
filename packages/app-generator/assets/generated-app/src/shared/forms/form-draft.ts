@@ -13,6 +13,7 @@ import {
   minimumCount,
   resolveCompositionTarget,
 } from './entity-target.ts';
+import { isMultilingualField, normalizeMultilingualValue } from './multilingual-value.ts';
 
 export interface EntityPathSegment {
   propertyName: string;
@@ -30,6 +31,10 @@ export function createEntityDraft(
     id: generateIri(instanceBaseIri),
   };
   for (const field of target.fields) {
+    if (isMultilingualField(field)) {
+      entity[field.propertyName] = normalizeMultilingualValue(entity[field.propertyName]);
+      continue;
+    }
     const count = minimumCount(field);
     if (field.many) {
       const values = isCompositionField(field)

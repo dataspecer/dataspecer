@@ -1,6 +1,7 @@
-import { useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import Badge from '@mui/material/Badge';
 import Button from '@mui/material/Button';
+import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
@@ -13,19 +14,25 @@ import {
   targetAtPath,
   validationPathAt,
 } from '../forms/composition-tree.ts';
-import { resolveEntityPath } from '../forms/entity-path.ts';
+import { formatEntityPath, resolveEntityPath } from '../forms/entity-path.ts';
 import {
   isCompositionField,
   resolveCompositionTarget,
   rootEntityTarget,
 } from '../forms/entity-target.ts';
 import { compositionEntities, entityAtPath, updateEntityAtPath } from '../forms/form-draft.ts';
+import {
+  isMultilingualField,
+  languageLabel,
+  multilingualLanguageTags,
+} from '../forms/multilingual-value.ts';
 import { useEntityPath } from '../navigation/use-location.ts';
 import type { ValidationIssue } from '../operations/operation-result.ts';
 import type {
   AggregateDescriptor,
   AggregateDescriptorMap,
   EntityRecord,
+  FieldDescriptor,
 } from '../types/aggregate.ts';
 import { CompositionSection } from './composition-section.tsx';
 import { FormBreadcrumbs, StructureDrawer } from './form-navigation.tsx';
@@ -37,6 +44,7 @@ interface EntityFormEditorProps {
   model: EntityRecord;
   originalModel?: EntityRecord;
   instanceBaseIri: string;
+  languages: readonly string[];
   issues: ValidationIssue[];
   rootIdentifierReadOnly: boolean;
   onChange: (model: EntityRecord) => void;
@@ -46,7 +54,10 @@ interface EntityFormEditorProps {
 export function EntityFormEditor(props: EntityFormEditorProps) {
   const [requestedPath, setPath] = useEntityPath();
   const identifierId = useId();
+  const paneTopRef = useRef<HTMLDivElement>(null);
+  const previousSelectionKey = useRef<string | null>(null);
   const [structureOpen, setStructureOpen] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState(props.languages[0] ?? '');
 
   const rootTarget = useMemo(() => rootEntityTarget(props.aggregate), [props.aggregate]);
   const existingIds = useMemo(
@@ -65,10 +76,22 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
 
   // a path from the address bar can point at a child that no longer exists
   const selection = resolveEntityPath(props.model, requestedPath);
+  const selectionKey = formatEntityPath(selection);
   const target = targetAtPath(rootTarget, selection, props.aggregateRegistry);
   const entity = entityAtPath(props.model, selection);
   const validationPrefix = validationPathAt(rootTarget, selection, props.aggregateRegistry);
   const totalIssues = [...issueCounts.values()].reduce((total, count) => total + count, 0);
+  const hasMultilingualFields = target.fields.some(containsMultilingualField);
+  const storedLanguages = collectMultilingualLanguages(entity, target.fields).sort();
+  const languageOptions = [...new Set([...props.languages, ...storedLanguages, selectedLanguage])];
+
+  useEffect(() => {
+    const previousKey = previousSelectionKey.current;
+    previousSelectionKey.current = selectionKey;
+    if (previousKey !== null && previousKey !== selectionKey) {
+      paneTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [selectionKey]);
 
   const updateSelected = (update: (entity: EntityRecord) => EntityRecord) => {
     props.onChange(updateEntityAtPath(props.model, selection, update));
@@ -76,7 +99,7 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
   const errorAt = (path: string) => props.issues.find((issue) => issue.path === path)?.message;
 
   return (
-    <Stack spacing={2}>
+    <Stack ref={paneTopRef} spacing={2} sx={{ scrollMarginTop: (theme) => theme.spacing(8) }}>
       <Stack
         direction="row"
         spacing={1}
@@ -102,6 +125,26 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
         ) : null}
       </Stack>
 
+      {hasMultilingualFields ? (
+        <TextField
+          select
+          label="Value language"
+          value={selectedLanguage}
+          onChange={(event) => setSelectedLanguage(event.target.value)}
+          helperText={
+            'Multilingual fields below show values in this language. ' +
+            'Switching languages keeps values entered in other languages.'
+          }
+          sx={{ maxWidth: 240 }}
+        >
+          {languageOptions.map((language) => (
+            <MenuItem key={language || '__untagged'} value={language}>
+              {languageLabel(language)}
+            </MenuItem>
+          ))}
+        </TextField>
+      ) : null}
+
       <TextField
         id={identifierId}
         label="Identifier (IRI)"
@@ -125,6 +168,7 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
             key={field.path}
             field={field}
             value={entity[field.propertyName]}
+            language={selectedLanguage}
             error={errorAt(joinValidationPath(validationPrefix, field.path))}
             aggregateRegistry={props.aggregateRegistry}
             onChange={(value) =>
@@ -145,6 +189,7 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
             parentPath={selection}
             aggregateRegistry={props.aggregateRegistry}
             instanceBaseIri={props.instanceBaseIri}
+            language={selectedLanguage}
             issues={props.issues}
             validationPath={fieldPath}
             error={errorAt(fieldPath)}
@@ -182,4 +227,37 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
       />
     </Stack>
   );
+}
+
+function containsMultilingualField(field: FieldDescriptor): boolean {
+  return (
+    isMultilingualField(field) ||
+    (isCompositionField(field) && Boolean(field.fields?.some(containsMultilingualField)))
+  );
+}
+
+function collectMultilingualLanguages(
+  entity: Record<string, unknown>,
+  fields: readonly FieldDescriptor[]
+): string[] {
+  const languages = new Set<string>();
+  for (const field of fields) {
+    const value = entity[field.propertyName];
+    if (isMultilingualField(field)) {
+      multilingualLanguageTags(value).forEach((language) => languages.add(language));
+      continue;
+    }
+    if (!isCompositionField(field) || !field.fields) {
+      continue;
+    }
+    const entries = Array.isArray(value) ? value : [value];
+    for (const entry of entries) {
+      if (entry !== null && typeof entry === 'object') {
+        collectMultilingualLanguages(entry as Record<string, unknown>, field.fields).forEach(
+          (language) => languages.add(language)
+        );
+      }
+    }
+  }
+  return [...languages];
 }

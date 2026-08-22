@@ -15,12 +15,24 @@ export interface SpecializationDescriptor {
 }
 
 /** The HTML form control a primitive field maps to in generated forms. */
-export type FormControl = 'text' | 'integer' | 'number' | 'date' | 'datetime' | 'checkbox';
+export type FormControl =
+  | 'text'
+  | 'integer'
+  | 'number'
+  | 'date'
+  | 'datetime'
+  | 'checkbox'
+  | 'multilingual';
+
+/** Language tags map to every literal stored in that language. The empty tag is untagged text. */
+export type MultilingualValue = Record<string, string[]>;
 
 export interface FieldDescriptor {
   path: string;
   propertyName: string;
   label: string;
+  /** Description shown in the field label tooltip. */
+  description?: string;
   kind: FieldKind;
   /** IRI of the RDF predicate the field reads and writes. */
   propertyIri?: string;

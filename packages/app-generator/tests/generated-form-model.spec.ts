@@ -96,6 +96,37 @@ const activeField: FieldDescriptor = {
   maxCount: 1,
 };
 
+const localizedTitle: FieldDescriptor = {
+  path: 'title',
+  propertyName: 'title',
+  label: 'Title',
+  kind: 'primitive',
+  formControl: 'multilingual',
+  many: false,
+  required: true,
+  minCount: 1,
+  maxCount: 1,
+};
+
+const localizedKeywords: FieldDescriptor = {
+  ...localizedTitle,
+  path: 'keywords',
+  propertyName: 'keywords',
+  label: 'Keywords',
+  many: true,
+  required: false,
+  minCount: 0,
+  maxCount: null,
+};
+
+const localizedAggregate: AggregateDescriptor<EntityRecord> = {
+  iri: 'https://example.org/aggregate/localized',
+  name: 'Localized',
+  classIri: 'https://example.org/class/localized',
+  fields: [localizedTitle, localizedKeywords],
+  createEmpty: () => ({}),
+};
+
 const ownerField: FieldDescriptor = {
   path: 'owner',
   propertyName: 'owner',
@@ -126,6 +157,44 @@ describe('generated recursive form model', () => {
   it('renders multiplicity independently from the field control', () => {
     expect(resolveControl(tagsField)).toBe('text');
     expect(resolveControl(childrenField)).toBe('composition');
+  });
+
+  it('keeps scalar and repeated multilingual drafts as language maps', () => {
+    const draft = createEntityDraft(
+      rootEntityTarget(localizedAggregate),
+      { [localizedAggregate.iri]: localizedAggregate },
+      'urn:test'
+    );
+
+    expect(resolveControl(localizedTitle)).toBe('multilingual');
+    expect(draft.title).toEqual({});
+    expect(draft.keywords).toEqual({});
+    expect(() => fieldValues({ cs: ['one', 'two'] }, localizedKeywords)).toThrow(
+      'Keywords must contain a list of values.'
+    );
+  });
+
+  it('validates multilingual presence, per-language scalar limits, and duplicates', () => {
+    const registry = { [localizedAggregate.iri]: localizedAggregate };
+    const validate = (model: EntityRecord) =>
+      validateModel(model, rootEntityTarget(localizedAggregate), registry);
+
+    expect(validate({ id: 'urn:localized', title: {} })).toContainEqual(
+      expect.objectContaining({ code: ValidationIssueCode.MinCount, path: 'title' })
+    );
+    expect(validate({ id: 'urn:localized', title: { cs: ['A', 'B'] } })).toContainEqual(
+      expect.objectContaining({ code: ValidationIssueCode.MaxCount, path: 'title' })
+    );
+    expect(
+      validate({
+        id: 'urn:localized',
+        title: { cs: ['Název'], en: ['Title'] },
+        keywords: { cs: ['stejné', 'stejné'] },
+      })
+    ).toContainEqual(
+      expect.objectContaining({ code: ValidationIssueCode.Duplicate, path: 'keywords' })
+    );
+    expect(validate({ id: 'urn:localized', title: { cs: ['Název'], en: ['Title'] } })).toEqual([]);
   });
 
   it('uses exposed primitive fields to label references', () => {

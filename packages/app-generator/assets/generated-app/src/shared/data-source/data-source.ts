@@ -89,6 +89,10 @@ export function isListFieldSortable(
   field: FieldDescriptor
 ): field is FieldDescriptor & { propertyIri: string } {
   return (
-    field.kind === 'primitive' && !field.many && !field.isReverse && Boolean(field.propertyIri)
+    field.kind === 'primitive' &&
+    field.formControl !== 'multilingual' &&
+    !field.many &&
+    !field.isReverse &&
+    Boolean(field.propertyIri)
   );
 }

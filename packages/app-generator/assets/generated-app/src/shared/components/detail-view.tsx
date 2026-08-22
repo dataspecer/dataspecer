@@ -38,6 +38,13 @@ import type {
 import { ActionLinks } from './action-links.tsx';
 import { formatPrimitiveValue } from '../forms/field-value.ts';
 import { isCompositionField } from '../forms/entity-target.ts';
+import {
+  compactMultilingualValue,
+  displayLanguagePreferences,
+  isMultilingualField,
+  languageLabel,
+} from '../forms/multilingual-value.ts';
+import { FieldLabel } from './field-label.tsx';
 
 // Nested sections deeper than this start collapsed so deep structures do not overwhelm the page.
 const OPEN_DEPTH = 2;
@@ -49,6 +56,7 @@ export interface DetailViewProps<TModel extends EntityModel> {
   strategy: OperationStrategy<TModel, TModel>;
   navigation: OperationNavigationDescriptor;
   id: string;
+  languages: readonly string[];
 }
 
 /** Reads one entity through its operation and shows its fields. */
@@ -58,6 +66,7 @@ export function DetailView<TModel extends EntityModel>(props: DetailViewProps<TM
   const [item, setItem] = useState<TModel | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const preferredLanguages = displayLanguagePreferences(props.languages);
 
   useEffect(() => {
     if (!id) {
@@ -148,6 +157,7 @@ export function DetailView<TModel extends EntityModel>(props: DetailViewProps<TM
               fields={aggregate.fields}
               item={item as Record<string, unknown>}
               associationActions={navigation.associationActions}
+              languages={preferredLanguages}
               depth={0}
             />
           </CardContent>
@@ -162,6 +172,7 @@ interface FieldListProps {
   item: Record<string, unknown>;
   associationActions: readonly AssociationNavigationActionDescriptor[];
   depth: number;
+  languages: readonly string[];
   pathPrefix?: string;
 }
 
@@ -177,6 +188,7 @@ function FieldList(props: FieldListProps) {
             fieldPath={fieldPath}
             value={props.item[field.propertyName]}
             associationActions={props.associationActions}
+            languages={props.languages}
             depth={props.depth}
           />
         );
@@ -191,6 +203,7 @@ interface FieldProps {
   value: unknown;
   associationActions: readonly AssociationNavigationActionDescriptor[];
   depth: number;
+  languages: readonly string[];
 }
 
 /**
@@ -213,7 +226,9 @@ function Field(props: FieldProps) {
         sx={{ bgcolor: 'transparent', '&::before': { display: 'none' } }}
       >
         <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ px: 0, minHeight: 40 }}>
-          <Typography variant="subtitle2">{field.label}</Typography>
+          <Typography variant="subtitle2">
+            <FieldLabel field={field} />
+          </Typography>
         </AccordionSummary>
         <AccordionDetails sx={{ px: 0, pt: 0, pb: 1 }}>
           <NestedEntities
@@ -221,6 +236,7 @@ function Field(props: FieldProps) {
             fieldPath={props.fieldPath}
             value={value}
             associationActions={props.associationActions}
+            languages={props.languages}
             depth={props.depth + 1}
             action={action}
           />
@@ -236,10 +252,10 @@ function Field(props: FieldProps) {
       sx={{ py: 1, alignItems: { sm: 'baseline' } }}
     >
       <Typography variant="body2" color="text.secondary" sx={{ minWidth: 200, flexShrink: 0 }}>
-        {field.label}
+        <FieldLabel field={field} />
       </Typography>
       <Box sx={{ minWidth: 0, flexGrow: 1 }}>
-        <LeafValue field={field} value={value} action={action} />
+        <LeafValue field={field} value={value} action={action} languages={props.languages} />
       </Box>
     </Stack>
   );
@@ -252,6 +268,7 @@ interface NestedEntitiesProps {
   associationActions: readonly AssociationNavigationActionDescriptor[];
   depth: number;
   action?: AssociationNavigationActionDescriptor;
+  languages: readonly string[];
 }
 
 function NestedEntities(props: NestedEntitiesProps) {
@@ -268,6 +285,7 @@ function NestedEntities(props: NestedEntitiesProps) {
           fields={props.fields}
           item={entity as Record<string, unknown>}
           associationActions={props.associationActions}
+          languages={props.languages}
           depth={props.depth}
           pathPrefix={props.fieldPath}
         />
@@ -304,6 +322,7 @@ interface LeafValueProps {
   field: FieldDescriptor;
   value: unknown;
   action?: AssociationNavigationActionDescriptor;
+  languages: readonly string[];
 }
 
 function LeafValue(props: LeafValueProps) {
@@ -321,7 +340,42 @@ function LeafValue(props: LeafValueProps) {
     return (
       <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap' }}>
         {(value as unknown[]).map((entry, index) => (
-          <LeafValue key={index} field={field} value={entry} action={action} />
+          <LeafValue
+            key={index}
+            field={field}
+            value={entry}
+            action={action}
+            languages={props.languages}
+          />
+        ))}
+      </Stack>
+    );
+  }
+
+  if (isMultilingualField(field)) {
+    const entries = Object.entries(compactMultilingualValue(value)).sort(([left], [right]) =>
+      left.localeCompare(right)
+    );
+    if (entries.length === 0) {
+      return (
+        <Typography variant="body2" color="text.disabled">
+          —
+        </Typography>
+      );
+    }
+    return (
+      <Stack spacing={0.25}>
+        {entries.map(([language, values]) => (
+          <Typography
+            key={language || '__untagged'}
+            variant="body2"
+            sx={{ wordBreak: 'break-word' }}
+          >
+            <Box component="span" sx={{ fontWeight: 600 }}>
+              {languageLabel(language)}:
+            </Box>{' '}
+            {values.join(', ')}
+          </Typography>
         ))}
       </Stack>
     );
@@ -331,7 +385,7 @@ function LeafValue(props: LeafValueProps) {
     return <Chip label={value ? 'Yes' : 'No'} color={value ? 'success' : 'default'} />;
   }
 
-  const text = formatPrimitiveValue(value, field);
+  const text = formatPrimitiveValue(value, field, props.languages);
   const entityId = action ? entityIdFromValue(value) : undefined;
   const href = entityId ? hrefForAction(action, entityId) : undefined;
   if (href) {

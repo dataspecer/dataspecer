@@ -15,7 +15,9 @@ import { useEntityId } from "@/shared/navigation/use-location.ts";
 import type { OperationNavigationDescriptor } from "@/shared/navigation/navigation.ts";
 import { aggregateRegistry } from "@/config/aggregate-registry.ts";
 <% if (it.page.operation.operation === "Create" || it.page.operation.operation === "Update") { -%>
-import { instanceBaseIri } from "@/config/app-config.ts";
+import { instanceBaseIri, languages } from "@/config/app-config.ts";
+<% } else if (it.page.operation.operation === "ReadList" || it.page.operation.operation === "ReadDetail") { -%>
+import { languages } from "@/config/app-config.ts";
 <% } -%>
 import { <%= it.page.descriptorName %> } from "./descriptor.ts";
 import { <%= it.page.operationClassName %> } from "./<%= it.page.operation.routeId %>-operation.ts";
@@ -40,6 +42,7 @@ export function <%= it.page.componentName %>() {
       aggregateRegistry={aggregateRegistry}
       strategy={strategy}
       navigation={navigation}
+      languages={languages}
     />
   );
 <% } else if (it.page.operation.operation === "ReadDetail") { -%>
@@ -53,6 +56,7 @@ export function <%= it.page.componentName %>() {
       strategy={strategy}
       navigation={navigation}
       id={id}
+      languages={languages}
     />
   );
 <% } else if (it.page.operation.operation === "Create") { -%>
@@ -64,6 +68,7 @@ export function <%= it.page.componentName %>() {
       strategy={strategy}
       navigation={navigation}
       instanceBaseIri={instanceBaseIri}
+      languages={languages}
     />
   );
 <% } else if (it.page.operation.operation === "Update") { -%>
@@ -78,6 +83,7 @@ export function <%= it.page.componentName %>() {
       navigation={navigation}
       instanceBaseIri={instanceBaseIri}
       id={id}
+      languages={languages}
     />
   );
 <% } else if (it.page.operation.operation === "Delete") { -%>

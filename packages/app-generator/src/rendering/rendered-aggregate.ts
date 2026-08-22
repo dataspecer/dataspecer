@@ -34,6 +34,8 @@ export interface RenderedAggregate extends GeneratedAggregateDescriptor {
   ldkitSchemaSource: string;
   /** Namespace imports referenced by `ldkitSchemaSource`. */
   ldkitSchemaNamespaces: LdkitSchemaNamespace[];
+  /** Whether the generated model needs the shared multilingual value type. */
+  usesMultilingualValues: boolean;
 }
 
 export interface RenderedField extends GeneratedFieldDescriptor {
@@ -56,6 +58,7 @@ interface DescriptorField {
   path: string;
   propertyName: string;
   label: string;
+  description?: string;
   kind: string;
   many: boolean;
   required: boolean;
@@ -88,6 +91,7 @@ export function toRenderedAggregate(aggregate: GeneratedAggregateDescriptor): Re
     descriptorFields: fields.map(toDescriptorField),
     ldkitSchemaSource,
     ldkitSchemaNamespaces: ldkitSchemaNamespaces(ldkitSchemaSource),
+    usesMultilingualValues: fields.some(usesMultilingualValue),
   };
 }
 
@@ -143,6 +147,7 @@ function toDescriptorField(field: RenderedField): DescriptorField {
     path: field.path,
     propertyName: field.propertyName,
     label: field.label,
+    ...(field.description ? { description: field.description } : {}),
     kind: field.kind,
     many: field.many,
     required: field.required,
@@ -179,5 +184,9 @@ function toModelType(
   }
 
   const mapping = datatypeMapping(field.datatype);
-  return field.many ? `${mapping.tsType}[]` : mapping.tsType;
+  return field.many && !mapping.multilingual ? `${mapping.tsType}[]` : mapping.tsType;
+}
+
+function usesMultilingualValue(field: RenderedField): boolean {
+  return field.formControl === 'multilingual' || Boolean(field.fields?.some(usesMultilingualValue));
 }

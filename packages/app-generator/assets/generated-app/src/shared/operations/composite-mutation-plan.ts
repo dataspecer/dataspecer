@@ -6,6 +6,7 @@ import {
   rootEntityTarget,
   type EntityTarget,
 } from '../forms/entity-target.ts';
+import { compactMultilingualValue, isMultilingualField } from '../forms/multilingual-value.ts';
 import {
   fieldValues,
   isEntityRecord,
@@ -235,7 +236,24 @@ function serializeEntity(
     if (resolveControl(field) === 'unsupported') {
       continue;
     }
+    const multilingual = isMultilingualField(field);
+    if (multilingual && !Object.hasOwn(entity, field.propertyName)) {
+      // an absent multilingual property is untouched, a present empty map clears it
+      continue;
+    }
     const fieldValue = entity[field.propertyName];
+    if (multilingual) {
+      const value = compactMultilingualValue(fieldValue);
+      if (Object.keys(value).length === 0) {
+        if (mode === 'update') {
+          payload[field.propertyName] = null;
+        }
+      } else {
+        payload[field.propertyName] = value;
+      }
+      continue;
+    }
+
     const value = isCompositionField(field)
       ? compositionReferences(fieldValue, field)
       : field.kind === 'association'

@@ -504,6 +504,34 @@ describe('mapDataspecerSpecificationToMetadata', () => {
     });
   });
 
+  it('prefers a nonempty structure description and otherwise uses the semantic description', () => {
+    const fixture = dataspecerFixture();
+    const titleAttribute = fixture.structureModels[0].find(
+      (resource) => resource.iri === 'https://example.org/psm/title'
+    ) as DataPsmAttribute;
+    titleAttribute.dataPsmHumanDescription = { en: '', cs: 'Popis ze struktury.' };
+    const chaptersAssociation = fixture.structureModels[0].find(
+      (resource) => resource.iri === 'https://example.org/psm/chapters'
+    ) as DataPsmAssociationEnd;
+    chaptersAssociation.dataPsmHumanDescription = {};
+    const chaptersRelationship = fixture.aggregatedSemanticModel.find(
+      (entity) => entity.id === 'relationship-chapters'
+    ) as SemanticModelRelationship;
+    chaptersRelationship.ends[1].description = { en: 'Description from the semantic model.' };
+
+    const metadata = mapDataspecerSpecificationToMetadata(specificationIri, fixture);
+    const fields = metadata.aggregates.find(
+      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail'
+    )?.fields;
+
+    expect(fields?.find((field) => field.path === 'title')?.description).toBe(
+      'Popis ze struktury.'
+    );
+    expect(fields?.find((field) => field.path === 'chapters')?.description).toBe(
+      'Description from the semantic model.'
+    );
+  });
+
   it('carries the identity policy of a direct association target', () => {
     const fixture = dataspecerFixture();
     const chapterClass = fixture.structureModels[1].find(

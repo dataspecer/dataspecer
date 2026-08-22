@@ -22,6 +22,11 @@ const dateField: FieldDescriptor = {
   formControl: 'date',
 };
 
+const multilingualField: FieldDescriptor = {
+  ...primitiveField,
+  formControl: 'multilingual',
+};
+
 describe('formatFieldValue', () => {
   it('formats Date values for the reader, not as machine timestamps', () => {
     const value = new Date('2024-05-01T09:30:00.000Z');
@@ -45,5 +50,13 @@ describe('formatFieldValue', () => {
 
   it('renders an invalid date as empty', () => {
     expect(formatPrimitiveValue(new Date('nonsense'))).toBe('');
+  });
+
+  it('selects a preferred multilingual value and falls back deterministically', () => {
+    const value = { de: ['Name', 'Alternative'], cs: ['Název'], '': ['Untagged'] };
+
+    expect(formatFieldValue(multilingualField, value, ['cs'])).toBe('Název');
+    expect(formatFieldValue(multilingualField, value, ['de-DE'])).toBe('Name, Alternative');
+    expect(formatFieldValue(multilingualField, value, ['fr'])).toBe('Untagged');
   });
 });
