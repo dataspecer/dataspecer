@@ -119,7 +119,7 @@ function buildSuccessRedirect(
     return buildNavigationAction(configured.id, targetOperation, targetRoute);
   }
 
-  // if not configured, fallback redirect to list
+  // without an explicit redirect, return to any list that presents the same RDF class
   return listAction(
     `${sourceOperation.id}:success`,
     sourceAggregate,
@@ -205,6 +205,7 @@ function associationActionsFor(
   recursive: boolean,
   pathPrefix = ''
 ): GeneratedAssociationNavigationActionDescriptor[] {
+  // detail reads contain inline compositions, while list rows contain only root fields
   return fields.flatMap((field) => {
     const fieldPath = pathPrefix ? `${pathPrefix}.${field.path}` : field.path;
     const nested =

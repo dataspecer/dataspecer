@@ -7,10 +7,7 @@ import {
 } from './entity-target.ts';
 import type { EntityPathSegment } from './form-draft.ts';
 
-/**
- * Which composed entity a form is editing, written into the address bar so the browser's history
- * moves through the nesting.
- */
+/** Serializes a composed-entity path for the URL. */
 export function formatEntityPath(path: readonly EntityPathSegment[]): string {
   return path
     .map((segment) =>

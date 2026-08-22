@@ -51,13 +51,10 @@ export interface CompositionSectionProps {
   onChangeChild: (index: number, child: EntityRecord) => void;
 }
 
-/**
- * One composition. Children that compose nothing of their own are edited in place, so adding a
- * simple child does not move the user to another pane.
- */
+/** Edits one composition. Children without nested compositions stay on the current pane. */
 export function CompositionSection(props: CompositionSectionProps) {
   const values = compositionEntities(props.value, props.field);
-  // the child that was just added is the one the user wants to fill in
+  // keep a newly added inline child open so it can be filled immediately
   const [expanded, setExpanded] = useState<string | null>(null);
   const [pendingRemoval, setPendingRemoval] = useState<number | null>(null);
   const minimum = minimumCount(props.field);
@@ -98,8 +95,7 @@ export function CompositionSection(props: CompositionSectionProps) {
     );
   };
 
-  // Removing a child that is already stored deletes it when the form is saved, which is worth
-  // confirming. A child that only exists in this draft is removed without asking.
+  // confirm removal only for stored children because saving deletes them from the endpoint
   const remove = (index: number) => {
     const id = values[index].id;
     if (typeof id === 'string' && props.existingIds.has(id)) {
@@ -282,7 +278,7 @@ interface InlineEntityFieldsProps {
   onChange: (entity: EntityRecord) => void;
 }
 
-/** The fields of a composed entity that itself composes nothing, edited without leaving the pane. */
+/** Edits a composed child without leaving the current pane. */
 function InlineEntityFields(props: InlineEntityFieldsProps) {
   const errorAt = (path: string) => props.issues.find((issue) => issue.path === path)?.message;
 
@@ -302,7 +298,7 @@ function InlineEntityFields(props: InlineEntityFieldsProps) {
   );
 }
 
-/** Identity of a child row, which survives its neighbours being removed. */
+/** Returns a child row key that survives removal of neighbouring rows. */
 function childKey(child: EntityRecord, index: number): string {
   return typeof child.id === 'string' && child.id !== '' ? child.id : `index:${index}`;
 }

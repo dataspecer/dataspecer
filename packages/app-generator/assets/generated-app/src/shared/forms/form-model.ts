@@ -22,7 +22,7 @@ export function resolveControl(field: FieldDescriptor): FieldControl {
     if (isCompositionField(field)) {
       return 'composition';
     }
-    // Aggregations remain references even when their structure exposes fields for display.
+    // aggregations stay references even when their structure exposes display fields
     return field.targetClassIri ? 'reference' : 'unsupported';
   }
   return field.formControl ?? 'unsupported';
@@ -55,7 +55,7 @@ export function toInputValue(control: FieldControl, value: unknown): string {
       return '';
     }
     if (control === 'datetime') {
-      // datetime-local displays wall-clock time, while toISOString uses UTC.
+      // datetime-local displays wall-clock time, while toISOString uses UTC
       const localTime = new Date(value.getTime() - value.getTimezoneOffset() * 60_000);
       return localTime.toISOString().slice(0, 16);
     }
@@ -205,6 +205,7 @@ function referenceId(value: unknown): string | null {
 }
 
 function hasDuplicateValues(values: unknown[]): boolean {
+  // only scalar values and entity references have a stable identity suitable for comparison
   const identities = values.map(valueIdentity).filter((value) => value !== null);
   return new Set(identities).size !== identities.length;
 }

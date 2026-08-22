@@ -59,14 +59,14 @@ interface StructureDrawerProps {
   open: boolean;
   panes: NavigablePane[];
   selection: EntityPathSegment[];
-  /** Problems per pane, keyed by its entity path, with the root under the empty key. */
+  /** Issue counts keyed by pane path. The root uses an empty key. */
   issueCounts: ReadonlyMap<string, number>;
   rootTarget: EntityTarget;
   onClose: () => void;
   onSelect: (path: EntityPathSegment[]) => void;
 }
 
-/** The whole composition as a list. */
+/** Lists the root and nested composition panes. */
 export function StructureDrawer(props: StructureDrawerProps) {
   return (
     <Drawer anchor="right" open={props.open} onClose={props.onClose}>

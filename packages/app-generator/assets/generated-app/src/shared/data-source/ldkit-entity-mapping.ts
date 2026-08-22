@@ -3,7 +3,7 @@ import { fieldValues, isEntityRecord, type EntityRecord } from '../types/aggrega
 import { isCompositionField } from '../forms/entity-target.ts';
 import { isSafeAbsoluteIri, requireSafeAbsoluteIri } from '../forms/iri.ts';
 
-/** Converts LDKit's entity representation to the model shape used by generated forms. */
+/** Converts an LDKit entity to the model shape used by generated forms. */
 export function normalizeLdkitEntity(value: unknown, fields: readonly FieldDescriptor[]): unknown {
   return normalizeEntity(value, fields);
 }
@@ -71,7 +71,7 @@ function normalizeUnknown(value: unknown): unknown {
   return result;
 }
 
-/** Rejects composed blank nodes and other child identities that this application cannot edit. */
+/** Rejects composed blank nodes and other child identities that the application cannot edit. */
 export function requireNamedCompositionIris(
   model: EntityRecord,
   fields: readonly FieldDescriptor[],
@@ -108,10 +108,7 @@ function readsInlineComposition(field: FieldDescriptor): boolean {
   );
 }
 
-/**
- * Converts generated model ids to LDKit's $id form. Update keeps null and empty arrays because
- * Lens.update uses them to clear supplied properties.
- */
+/** Converts model ids to LDKit $id values. Updates keep null and [] because they clear properties. */
 export function toLdkitEntity(
   value: unknown,
   mode: 'create' | 'update',
@@ -146,6 +143,7 @@ export function toLdkitEntity(
       continue;
     }
     if (key === '__specializationIri' || key === '__rdfTypes') {
+      // runtime specialization state selects schemas but must never become RDF data
       continue;
     }
     const field = fieldByProperty.get(key);
@@ -157,7 +155,7 @@ export function toLdkitEntity(
       result[key] = converted;
     }
   }
-  // An object that keeps no properties (for example an unset reference) is dropped entirely.
+  // drop objects with no remaining properties, for example an unset reference
   return Object.keys(result).length > 0 ? result : undefined;
 }
 

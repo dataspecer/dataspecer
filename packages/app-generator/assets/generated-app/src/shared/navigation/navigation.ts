@@ -8,9 +8,9 @@ export interface RoutableActionDescriptor {
 export interface NavigationActionDescriptor extends RoutableActionDescriptor {
   id: string;
   label: string;
-  /** Operation the action leads to, which decides its icon and emphasis. */
+  /** Target operation used to select the action's icon and emphasis. */
   operation: OperationKind;
-  /** Title of the page the action leads to, for naming the destination in navigation. */
+  /** Title used to name the destination. */
   targetTitle: string;
 }
 
@@ -24,14 +24,14 @@ export interface OperationNavigationDescriptor {
   rowActions: readonly NavigationActionDescriptor[];
   associationActions: readonly AssociationNavigationActionDescriptor[];
   successRedirect?: NavigationActionDescriptor;
-  /** Where a form goes when it is abandoned, used when the success redirect needs an id. */
+  /** Destination used when a form is cancelled. */
   cancelTarget?: NavigationActionDescriptor;
 }
 
-/** Query parameter carrying the entity IRI of a route that needs one. */
+/** Query parameter containing the current entity IRI. */
 export const ENTITY_ID_PARAMETER = 'id';
 
-/** Query parameter carrying which composed entity a form is editing. */
+/** Query parameter containing the selected composed-entity path. */
 export const ENTITY_PATH_PARAMETER = 'at';
 
 function toEntityPath(routePath: string, id: string): string {
@@ -51,10 +51,7 @@ export function hrefForAction(
   return entityId ? toEntityPath(action.targetPath, entityId) : undefined;
 }
 
-/**
- * Splits the page actions into the one that goes back to the list, which belongs in the
- * breadcrumbs, and the rest, which belong in the action cluster.
- */
+/** Separates the list action used in breadcrumbs from the remaining page actions. */
 export function partitionPageActions(actions: readonly NavigationActionDescriptor[]): {
   list?: NavigationActionDescriptor;
   rest: NavigationActionDescriptor[];

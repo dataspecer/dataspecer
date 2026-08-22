@@ -1,6 +1,6 @@
 import type { RouteDescriptor } from "@/shared/app/route-descriptor.ts";
 
-// Each page is imported when its route is first visited, so one page does not carry the others.
+// lazy route imports keep pages out of the initial bundle
 export const routes: RouteDescriptor[] = [
 <% it.pages.forEach((page) => { -%>
   {

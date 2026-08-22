@@ -23,12 +23,9 @@ import type { RouteDescriptor } from './route-descriptor.ts';
 
 const NAVIGATION_WIDTH = 260;
 
-/**
- * The chrome around every page: a bar, a navigation drawer and the routes. Edit this file to change
- * how the application is laid out, and `routes.tsx` to change which pages exist.
- */
+/** Creates the application router and shared page layout. */
 export function createAppRouter(routes: readonly RouteDescriptor[], appName: string) {
-  // Lists are the entry points of the application, named for a reader rather than by route id.
+  // list pages are application entry points, sort them by their displayed title
   const listRoutes = routes
     .filter((route) => route.operation === 'ReadList')
     .sort((left, right) => left.title.localeCompare(right.title));
@@ -39,7 +36,7 @@ export function createAppRouter(routes: readonly RouteDescriptor[], appName: str
       element: <AppLayout appName={appName} listRoutes={listRoutes} />,
       HydrateFallback: PageLoading,
       children: [
-        // the application has no page of its own, so its root opens the first list
+        // open the first list at the application root
         ...(listRoutes.length > 0
           ? [{ index: true, element: <Navigate to={listRoutes[0].path} replace /> }]
           : []),
@@ -63,8 +60,7 @@ function AppLayout(props: AppLayoutProps) {
   const permanentNavigation = useMediaQuery(theme.breakpoints.up('md'));
   const [navigationOpen, setNavigationOpen] = useState(false);
 
-  // A drawer opened on a narrow window would otherwise still be open, over the page, when the
-  // window is narrowed again after being widened.
+  // close the temporary drawer when navigation switches to the permanent desktop layout
   useEffect(() => {
     if (permanentNavigation) {
       setNavigationOpen(false);
@@ -188,7 +184,7 @@ function Navigation(props: NavigationProps) {
 
 function ColorModeToggle() {
   const { mode, systemMode, setMode } = useColorScheme();
-  // mode is undefined until the scheme is resolved on the client
+  // mode is undefined until the client resolves the color scheme
   const resolved = mode === 'system' ? systemMode : mode;
   if (!resolved) {
     return null;

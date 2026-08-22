@@ -45,17 +45,15 @@ import {
 export interface LdkitSchemaBundle {
   detail: Schema;
   list: Schema;
-  /** Keys are JSON-encoded inline field paths. The aggregate root uses `[]`. */
+  /** Write schemas keyed by JSON-encoded inline field paths. The aggregate root uses `[]`. */
   writes: Record<string, Schema>;
-  /** Keys are field paths, then specialization IRIs. */
+  /** Field paths followed by specialization IRIs. */
   specializationWrites: Record<string, Record<string, Schema>>;
 }
 
 export type LdkitSchemaMap = Record<string, LdkitSchemaBundle>;
 
-/**
- * Reads data from a SPARQL endpoint through LDKit lenses. Schemas are keyed by aggregate IRI.
- */
+/** Reads and writes a SPARQL endpoint through LDKit lenses. */
 export class RdfLdkitDataSource implements DataSource {
   readonly kind: DataSourceKind = DataSourceKind.Rdf;
 
@@ -71,6 +69,8 @@ export class RdfLdkitDataSource implements DataSource {
     const lens = createLens(schemas.list, this.context());
     const skip = (args.page - 1) * args.pageSize;
     const iriQuery = buildPageIriQuery(args.aggregate, args.pageSize, skip, args.sort);
+    // page distinct entity IRIs before loading fields, otherwise one entity can produce multiple
+    // SPARQL rows and consume several LIMIT/OFFSET slots
     const [total, iriBindings] = await Promise.all([
       lens.count(),
       new QueryEngine().queryBindings(iriQuery, this.context()).then(readBindings),
@@ -141,6 +141,7 @@ export class RdfLdkitDataSource implements DataSource {
       args.fieldPath,
       args.specializationIri
     );
+    // replace only inverse fields present in the payload, absent fields keep their stored values
     const inverseFields = inverseWritableFields(fields).filter((field) =>
       Object.hasOwn(payloadRecord, field.propertyName)
     );
@@ -171,7 +172,7 @@ export class RdfLdkitDataSource implements DataSource {
     const { fields } = this.resolveEntityTarget(args.aggregate, args.fieldPath);
     const inverseDeleteQuery = buildInverseDeleteQuery(inverseWritableFields(fields), args.id);
     await this.executeUpdate(inverseDeleteQuery);
-    // LDKit's delete operation removes all subject triples and does not inspect the schema.
+    // delete through LDKit removes every subject triple without inspecting the schema
     await createLens({ '@type': args.aggregate.classIri }, this.context()).delete(args.id);
   }
 
@@ -191,8 +192,7 @@ export class RdfLdkitDataSource implements DataSource {
     const query = buildReferenceOptionsQuery(args);
     const displayProperties = referenceDisplayProperties(args);
 
-    // This SELECT is not tied to a schema, so it runs directly on the query engine with the same
-    // endpoint context as the lenses.
+    // this query is not tied to a schema, run it directly with the same endpoint context
     const stream = await new QueryEngine().queryBindings(query, this.context());
     const bindings = readBindings(stream);
 
@@ -212,6 +212,7 @@ export class RdfLdkitDataSource implements DataSource {
     }
     return [...valuesByIri].map(([id, values]) => {
       const sortedValues = values.map((fieldValues) => [...fieldValues].sort());
+      // explicit display fields are combined, fallback predicates use the first one with a value
       const labelValues =
         args.displayProperties.length > 0
           ? sortedValues.flat()

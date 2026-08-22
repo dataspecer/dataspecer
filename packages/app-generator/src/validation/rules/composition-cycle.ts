@@ -77,6 +77,7 @@ function collectCompositionTargets(fields: AggregateFieldMetadata[], into: strin
 }
 
 function canonicalCycleKey(cycle: string[]): string {
+  // the same cycle can be reached from any member, rotating it to the smallest IRI reports it once
   const minIndex = cycle.indexOf([...cycle].sort()[0]);
   return [...cycle.slice(minIndex), ...cycle.slice(0, minIndex)].join('|');
 }

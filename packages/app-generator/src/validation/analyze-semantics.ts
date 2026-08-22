@@ -30,6 +30,7 @@ export function analyzeGraphSemantics(
   const allAggregates = new Map(
     enrichment.metadata.aggregates.map((aggregate) => [aggregate.iri, aggregate])
   );
+  // validate only aggregates that rendering emits, unused structures must not block generation
   const reachableAggregateIris = collectReachableAggregateIris(
     graph.nodes.map((node) => node.aggregateIri),
     allAggregates.values()

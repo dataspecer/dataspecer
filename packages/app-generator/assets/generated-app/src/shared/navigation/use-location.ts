@@ -5,18 +5,13 @@ import { formatEntityPath, parseEntityPath } from '../forms/entity-path.ts';
 import type { EntityPathSegment } from '../forms/form-draft.ts';
 import { ENTITY_ID_PARAMETER, ENTITY_PATH_PARAMETER } from './navigation.ts';
 
-/**
- * The entity IRI the current route points at, empty when the route carries none.
- */
+/** Returns the entity IRI from the current route, or an empty string when absent. */
 export function useEntityId(): string {
   const [searchParams] = useSearchParams();
   return searchParams.get(ENTITY_ID_PARAMETER) ?? '';
 }
 
-/**
- * The composed entity the form is editing, and a way to move to another one. Keeping it in the
- * address bar makes back and forward walk the nesting, and makes a deep form linkable.
- */
+/** Stores the selected composed-entity path in the URL, making it linkable and part of browser history. */
 export function useEntityPath(): [
   EntityPathSegment[],
   (path: readonly EntityPathSegment[]) => void,

@@ -27,7 +27,7 @@ const navigation: OperationNavigationDescriptor = <%~ it.json(it.page.operation.
 const strategy = new <%= it.page.operationClassName %>();
 <% if (it.page.operation.operation === "Delete") { -%>
 
-// Composed entities the delete takes with it.
+// composition paths included in cascade deletion
 const cascadePaths: readonly string[] = <%~ it.json(it.page.operation.delete?.cascadePaths ?? []) %>;
 <% } -%>
 

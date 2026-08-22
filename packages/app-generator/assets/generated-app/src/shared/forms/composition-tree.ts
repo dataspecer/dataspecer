@@ -9,10 +9,7 @@ import {
 } from './entity-target.ts';
 import { compositionEntities, type EntityPathSegment } from './form-draft.ts';
 
-/**
- * Walking the tree of composed entities behind a form.
- */
-
+/** Describes a composed entity that opens in its own form pane. */
 export interface NavigablePane {
   key: string;
   path: EntityPathSegment[];
@@ -21,7 +18,7 @@ export interface NavigablePane {
   validationPath: string;
 }
 
-/** Every composed entity that opens as its own pane, in the order the form shows them. */
+/** Returns composed entities that open in their own pane, in display order. */
 export function navigablePanes(
   entity: EntityRecord,
   target: EntityTarget,
@@ -32,7 +29,7 @@ export function navigablePanes(
   return target.fields.filter(isCompositionField).flatMap((field) => {
     const childTarget = resolveCompositionTarget(target, field, aggregateRegistry);
     if (!childTarget || !childTarget.fields.some(isCompositionField)) {
-      // children that compose nothing are edited in place, so they are not panes
+      // children that compose nothing are edited in place, so they don't need their own pane
       return [];
     }
     return compositionEntities(entity[field.propertyName], field).flatMap((child, index) => {
@@ -148,9 +145,7 @@ export function breadcrumbEntries(
   return entries;
 }
 
-/**
- * Names a composed entity by its first filled primitive.
- */
+/** Names a composed entity using its first non-empty primitive field. */
 export function entitySummary(
   target: EntityTarget,
   entity: EntityRecord | undefined,
@@ -168,7 +163,7 @@ export function entitySummary(
   return `${target.name} ${index + 1}`;
 }
 
-/** Problems at a validation path or below it. */
+/** Counts issues at or below a validation path. */
 export function countIssues(issues: readonly ValidationIssue[], path: string): number {
   if (path === '') {
     return issues.filter((issue) => issue.path !== undefined).length;
@@ -181,12 +176,7 @@ export function countIssues(issues: readonly ValidationIssue[], path: string): n
   ).length;
 }
 
-/**
- * How many problems each pane shows, counting every problem once, against the pane that owns it.
- * A problem inside a child edited in place belongs to the pane that holds it, so the counts of the
- * panes add up to the number of problems in the draft instead of repeating them at every depth.
- * The root pane is the empty key.
- */
+/** Counts each issue under the pane that displays it. The root pane uses an empty key. */
 export function issuesByPane(
   rootTarget: EntityTarget,
   aggregateRegistry: AggregateDescriptorMap,
@@ -221,7 +211,7 @@ export function samePath(
   );
 }
 
-/** The identifiers already stored, so the form can tell an edit from a new child. */
+/** Returns stored identifiers used to distinguish edited children from new ones. */
 export function collectEntityIds(
   entity: EntityRecord | undefined,
   target: EntityTarget,

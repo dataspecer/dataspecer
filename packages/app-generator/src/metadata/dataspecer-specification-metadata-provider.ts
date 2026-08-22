@@ -861,6 +861,7 @@ function isAssociationTargetResource(
 }
 
 function entityKeys(entity: Entity): string[] {
+  // index technical, declared and canonical IRIs so every reference resolves to the same entity
   const keys: (string | null | undefined)[] = [entity.id];
   if (isSemanticModelClass(entity) || isSemanticModelRelationship(entity)) {
     keys.push(entity.iri);

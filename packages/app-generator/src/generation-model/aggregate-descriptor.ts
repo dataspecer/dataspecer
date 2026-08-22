@@ -30,6 +30,7 @@ function buildFieldDescriptor(field: AggregateFieldMetadata): GeneratedFieldDesc
     ...(field.targetClassIri ? { targetClassIri: field.targetClassIri } : {}),
     ...(field.specializations
       ? {
+          // identity policy is needed while validating the specification, not by generated apps
           specializations: field.specializations.map(
             ({ identityPolicy: _identityPolicy, ...specialization }) => specialization
           ),

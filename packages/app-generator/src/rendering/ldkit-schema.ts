@@ -68,6 +68,7 @@ function buildReadProperty(field: RenderedField): Property {
     if (hasInlineCompositionSchema(field)) {
       const nestedSchema = buildReadSchema(undefined, field.fields ?? [], true);
       if (field.specializations?.length) {
+        // because LDKit returns only declared properties, expose rdf:type for specialization selection
         nestedSchema[RDF_TYPES_PROPERTY] = {
           '@id': RDF_TYPE,
           '@type': ldkit.IRI,
@@ -93,7 +94,7 @@ function buildWriteSchema(classIri: string, fields: RenderedField[]): Schema {
     }
     const property = baseProperty(field);
     if (field.kind === FieldKind.Association) {
-      // Composite mutations write children separately and put only their IRIs in the parent.
+      // composite mutations write children separately and put only their IRIs in the parent
       property['@type'] = ldkit.IRI;
     } else {
       setPrimitiveType(property, field);
@@ -138,6 +139,8 @@ function collectNestedWriteSchemas(
 }
 
 function baseProperty(field: RenderedField): Property {
+  // keep properties optional so incomplete RDF stays visible and updates can omit fields (form validation enforces
+  // cardinality on save)
   const property: Property = {
     '@id': field.propertyIri as string,
     '@optional': true,
@@ -180,14 +183,17 @@ function entityTargetKey(fieldPath: readonly string[]): string {
 const XSD_TYPE_IRI = /"http:\/\/www\.w3\.org\/2001\/XMLSchema#([A-Za-z]+)"/g;
 const LDKIT_IRI_TYPE = /"https:\/\/ldkit\.io\/ontology\/IRI"/g;
 
-/** Renders namespace datatypes as TypeScript expressions instead of plain IRI strings. */
+/**
+ * JSON serialization turns LDKit namespace members into full IRI strings, but LDKit's Schema type
+ * accepts the namespace members. Restoring those expressions keeps emitted schemas assignable.
+ */
 export function toLdkitSchemaSource(schema: GeneratedLdkitSchemaBundle): string {
   return JSON.stringify(schema, null, 2)
     .replace(XSD_TYPE_IRI, 'xsd.$1')
     .replace(LDKIT_IRI_TYPE, 'ldkit.IRI');
 }
 
-/** Returns only the namespace imports referenced by emitted schema source. */
+/** Returns the namespace imports referenced by emitted schema source. */
 export function ldkitSchemaNamespaces(source: string): LdkitSchemaNamespace[] {
   return [
     ...(source.includes('ldkit.') ? (['ldkit'] as const) : []),

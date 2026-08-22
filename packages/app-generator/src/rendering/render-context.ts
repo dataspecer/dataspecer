@@ -10,7 +10,7 @@ export interface GeneratedAppRenderContext {
   model: GenerationModel;
   aggregates: RenderedAggregate[];
   pages: RenderedPage[];
-  /** Base IRI Create forms prefill when generating a new entity IRI. Empty when none derivable. */
+  /** Base IRI prefilled by create forms, empty when unavailable. */
   instanceBaseIri: string;
   json: (value: unknown) => string;
 }
@@ -52,7 +52,7 @@ export function buildRenderContext(model: GenerationModel): GeneratedAppRenderCo
     model.aggregates
   );
 
-  // Referenced targets need descriptors even when they have no operation of their own.
+  // referenced targets need descriptors even when they have no operation of their own
   const aggregates = model.aggregates
     .filter((aggregate) => usedAggregateIris.has(aggregate.iri))
     .map(toRenderedAggregate);
@@ -85,9 +85,7 @@ export function buildRenderContext(model: GenerationModel): GeneratedAppRenderCo
   };
 }
 
-// Base IRI for generating new entity IRIs in Create forms. A data specification IRI that is a real
-// absolute IRI is reused as the base, with any trailing separators trimmed. Anything else, such
-// as a bare identifier, yields an empty base and the form falls back to a urn:uuid IRI.
+// reuse an absolute specification IRI as the create-form base, otherwise forms generate urn:uuid IRIs
 function toInstanceBaseIri(dataSpecificationIri: string): string {
   const isAbsoluteIri = /^[a-z][a-z0-9+.-]*:/i.test(dataSpecificationIri);
   return isAbsoluteIri ? dataSpecificationIri.replace(/[#/]+$/, '') : '';

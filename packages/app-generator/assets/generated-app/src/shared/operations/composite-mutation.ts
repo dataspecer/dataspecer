@@ -64,6 +64,8 @@ async function executePlan(
   dataSource: DataSource,
   steps: readonly CompositeMutationStep[]
 ): Promise<void> {
+  // The steps have a dependency order, so they cannot run concurrently. Endpoint writes completed
+  // before a failure cannot be rolled back.
   for (const step of steps) {
     if (step.kind === 'delete') {
       await dataSource.delete({

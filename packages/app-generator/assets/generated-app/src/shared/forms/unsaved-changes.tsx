@@ -4,17 +4,14 @@ import { useBlocker, type Blocker, type BlockerFunction } from 'react-router-dom
 import { ConfirmDialog } from '../components/confirm-dialog.tsx';
 
 export interface UnsavedChanges {
-  /** Called when the user edits the form. */
+  /** Marks the form as changed. */
   markDirty: () => void;
-  /** Called before leaving on purpose, so the redirect after a save is not questioned. */
+  /** Allows navigation after save or cancel without showing a warning. */
   markSaved: () => void;
   blocker: Blocker;
 }
 
-/**
- * Guards a form against losing edits, both when the tab closes and when the application navigates
- * away.
- */
+/** Warns before closing or navigating away from a changed form. */
 export function useUnsavedChanges(): UnsavedChanges {
   const dirty = useRef(false);
 
@@ -28,7 +25,7 @@ export function useUnsavedChanges(): UnsavedChanges {
     return () => window.removeEventListener('beforeunload', warn);
   }, []);
 
-  // Moving between the panes of one form only changes the query, and is not leaving the form.
+  // changing panes only changes the query, it does not leave the form
   const blocker = useBlocker(
     useCallback<BlockerFunction>(
       ({ currentLocation, nextLocation }) =>

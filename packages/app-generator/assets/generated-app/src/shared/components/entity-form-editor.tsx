@@ -42,10 +42,7 @@ interface EntityFormEditorProps {
   onChange: (model: EntityRecord) => void;
 }
 
-/**
- * Edits one entity and the entities composed into it. Children that compose nothing themselves are
- * edited in place, while deeper ones open as their own pane, which the address bar remembers.
- */
+/** Edits a root entity and its children. Nested compositions open in URL-addressable panes. */
 export function EntityFormEditor(props: EntityFormEditorProps) {
   const [requestedPath, setPath] = useEntityPath();
   const identifierId = useId();
@@ -60,8 +57,7 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
     () => navigablePanes(props.model, rootTarget, props.aggregateRegistry, []),
     [props.model, rootTarget, props.aggregateRegistry]
   );
-  // Every problem is counted once, against the pane that shows it. The badge is their total, so it
-  // says how much is wrong with the form, and the structure drawer says where.
+  // assign each issue to one pane so nested issues are not counted more than once
   const issueCounts = useMemo(
     () => issuesByPane(rootTarget, props.aggregateRegistry, props.issues),
     [rootTarget, props.aggregateRegistry, props.issues]

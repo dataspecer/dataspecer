@@ -62,6 +62,7 @@ export function buildGenerationModel(
       dataSpecificationIri: graph.dataSpecificationIri,
     },
     datasource: {
+      // graph validation guarantees exactly one RDF datasource before this model is built
       id: graph.datasources[0].id,
       type: DatasourceType.Rdf,
       endpoint: graph.datasources[0].endpoint,

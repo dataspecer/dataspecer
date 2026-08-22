@@ -23,6 +23,7 @@ export interface CompositeMutationStep {
   id: string;
 }
 
+/** Plans child creates before the parent writes links to them. */
 export function buildCompositeCreatePlan(
   aggregate: AggregateDescriptor,
   aggregateRegistry: AggregateDescriptorMap,
@@ -49,6 +50,8 @@ export function buildCompositeUpdatePlan(
     upserts,
     removals
   );
+  // Upserts create children before updating their parent links. Removed children are deleted only
+  // after their edited parent has stopped referencing them.
   return [...upserts, ...removals];
 }
 
@@ -58,6 +61,7 @@ export function buildCompositeDeletePlan(
   payload: EntityRecord,
   cascadePaths: readonly string[]
 ): CompositeMutationStep[] {
+  // only configured cascade paths are followed, with every descendant placed before its owner
   const steps: CompositeMutationStep[] = [];
   collectCascadeDeleteSteps(
     payload,

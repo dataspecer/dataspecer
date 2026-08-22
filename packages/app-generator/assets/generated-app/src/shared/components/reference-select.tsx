@@ -44,9 +44,7 @@ export function addManualReference(
   return { values: multiple ? [...values, iri] : [iri], error: null };
 }
 
-/**
- * Picks references by searching the instances of the target class.
- */
+/** Selects references from instances of the target class. */
 export function ReferenceSelect(props: ReferenceSelectProps) {
   const dataSource = useDataSource();
   const { field, values, multiple, aggregateRegistry, controlId, onChange } = props;
@@ -116,7 +114,8 @@ export function ReferenceSelect(props: ReferenceSelectProps) {
     return [...values.filter((id) => !listed.has(id)), ...options.map((option) => option.id)];
   }, [options, values]);
 
-  // only text the user typed is a candidate IRI, and it is accepted only when it is valid
+  // only free text can introduce a value outside the listed options, so validate it before
+  // adding it
   const commit = (next: readonly string[], reason: AutocompleteChangeReason) => {
     const typed =
       reason === 'createOption'

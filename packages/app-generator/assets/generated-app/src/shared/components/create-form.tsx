@@ -48,7 +48,7 @@ export function CreateForm<TModel extends EntityModel>(props: CreateFormProps<TM
   const { notify } = useSnackbar();
   const { markDirty, markSaved, blocker } = useUnsavedChanges();
   const leaveForm = () => {
-    // Cancel abandons the whole form, where going back one step would only leave a nested pane.
+    // cancel leaves the whole form, browser back may only leave a nested pane
     const href =
       hrefForAction(navigation.successRedirect) ?? hrefForAction(navigation.cancelTarget);
     if (href) {

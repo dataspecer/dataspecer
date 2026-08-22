@@ -317,10 +317,7 @@ type CascadePreview =
   | { status: 'loaded'; entities: { label: string; id: string }[] }
   | { status: 'failed' };
 
-/**
- * What the delete will take with it. The list comes from the same plan the delete executes, so it
- * cannot describe something else.
- */
+/** Builds the cascade preview from the same mutation plan used by delete. */
 async function previewCascade(
   item: EntityRecord,
   aggregate: AggregateDescriptor,
@@ -345,7 +342,7 @@ async function previewCascade(
     };
   } catch (caught) {
     console.error(caught);
-    // an absent warning would read as "nothing else is deleted", which is not what happened
+    // keep preview failures visible, otherwise the UI would imply that nothing will cascade
     return { status: 'failed' };
   }
 }

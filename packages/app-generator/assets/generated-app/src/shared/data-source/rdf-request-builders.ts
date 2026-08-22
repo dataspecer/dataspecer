@@ -45,6 +45,7 @@ export function buildPageIriQuery(
 
   const propertyNode = toSparqlNamedNode(field.propertyIri, 'Sort property IRI');
   const valueOrder = sort.direction === 'asc' ? 'ASC(?sortValue)' : 'DESC(?sortValue)';
+  // grouping keeps one row per entity, MIN provides a stable sort value for malformed multi-values
   return SELECT`?iri (MIN(?value) AS ?sortValue)`
     .WHERE`?iri a ${classNode} . OPTIONAL { ?iri ${propertyNode} ?value . }`.GROUP_BY`?iri`
     .ORDER_BY`ASC(!BOUND(?sortValue)) ${valueOrder} ASC(STR(?iri))`
@@ -65,6 +66,7 @@ export function buildReferenceOptionsQuery(args: ReferenceListArgs): string {
   const classNode = toSparqlNamedNode(args.classIri, 'Reference target class IRI');
   const displayProperties = referenceDisplayProperties(args);
   const valueVariables = displayProperties.map((_, index) => `?value${index}`);
+  // limit the entities before joining labels so multiple label values do not consume the limit
   const pageQuery = SELECT.DISTINCT`?iri`.WHERE`?iri a ${classNode} .`.ORDER_BY`STR(?iri)`.LIMIT(
     200
   );
@@ -81,7 +83,7 @@ export function referenceDisplayProperties(args: ReferenceListArgs): readonly st
   return args.displayProperties.length > 0 ? args.displayProperties : FALLBACK_LABEL_PROPERTIES;
 }
 
-/** Builds the reversed triples LDKit cannot write through an `@inverse` schema property. */
+/** Builds reversed triples that LDKit cannot write through an @inverse schema property. */
 export function buildInverseInsertQuads<TModel extends EntityModel>(
   fields: readonly FieldDescriptor[],
   payload: TModel
@@ -126,7 +128,10 @@ export function toSparqlNamedNode(value: string, label: string): RDF.NamedNode {
   return dataFactory.namedNode(requireSafeAbsoluteIri(value, label));
 }
 
-/** Returns a store-provided named-node IRI only when it is safe to pass back into LDKit. */
+/**
+ * Validates the RDF term kind as well as its text. A literal can contain an IRI-shaped string but
+ * still cannot be used where LDKit expects a named node.
+ */
 export function toSafeNamedNodeValue(term: RDF.Term | undefined, label: string): string {
   if (term?.termType !== 'NamedNode') {
     throw new Error(`${label} must be a safe absolute named-node IRI.`);

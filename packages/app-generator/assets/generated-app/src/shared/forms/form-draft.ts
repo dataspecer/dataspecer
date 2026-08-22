@@ -25,6 +25,7 @@ export function createEntityDraft(
   instanceBaseIri: string
 ): EntityRecord {
   const entity: EntityRecord = {
+    // createEmpty describes the aggregate root, inline targets initialize from their own fields
     ...(target.fieldPath.length === 0 ? target.aggregate.createEmpty() : {}),
     id: generateIri(instanceBaseIri),
   };

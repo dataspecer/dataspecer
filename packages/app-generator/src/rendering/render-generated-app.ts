@@ -10,10 +10,7 @@ const eta = new Eta({
 
 const TEMPLATE_SUFFIX = '.eta';
 
-/**
- * Templates rendered more than once, which the tree cannot place on its own. Their paths say where
- * their output goes: `{module}` is one per data structure and `{route}` one per page.
- */
+// these templates produce one file per aggregate or route, so they are rendered separately
 const MODULE_TEMPLATE = 'src/modules/{module}';
 const PER_AGGREGATE = ['model.ts', 'descriptor.ts', 'ldkit-schema.ts'].map(
   (name) => `${MODULE_TEMPLATE}/${name}${TEMPLATE_SUFFIX}`
@@ -27,8 +24,7 @@ export function renderGeneratedApp(model: GenerationModel): FileTree {
   const tree = new FileTree();
   const context = buildRenderContext(model);
 
-  // The asset tree mirrors the generated application, so a file lands where it sits, and a
-  // template is the same path without its suffix.
+  // copy ordinary assets to the same path, render .eta files without the suffix
   for (const [assetPath, content] of Object.entries(generatedAppAssets)) {
     if (REPEATED_TEMPLATES.has(assetPath)) {
       continue;

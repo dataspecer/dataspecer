@@ -49,7 +49,7 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
   const { notify } = useSnackbar();
   const { markDirty, markSaved, blocker } = useUnsavedChanges();
   const leaveForm = () => {
-    // Cancel abandons the whole form, where going back one step would only leave a nested pane.
+    // cancel leaves the whole form, browser back may only leave a nested pane
     const href =
       hrefForAction(navigation.successRedirect, id) ?? hrefForAction(navigation.cancelTarget);
     if (href) {

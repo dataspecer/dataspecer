@@ -3,5 +3,5 @@ import type { LdkitSchemaBundle } from "@/shared/data-source/rdf-ldkit-data-sour
 import { <%~ it.aggregate.ldkitSchemaNamespaces.join(", ") %> } from "ldkit/namespaces";
 <% } -%>
 
-// The datasource selects the read or write shape required by the operation and entity target.
+// the datasource selects the read or write shape required by the operation and entity target
 export const <%= it.aggregate.schemaName %>: LdkitSchemaBundle = <%~ it.aggregate.ldkitSchemaSource %>;
