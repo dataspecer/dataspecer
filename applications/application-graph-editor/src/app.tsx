@@ -8,6 +8,7 @@ import { StatusBar } from "./components/status-bar.tsx";
 import { autoLayout } from "./diagram/auto-layout.ts";
 import { Canvas } from "./diagram/canvas.tsx";
 import { useAutosave } from "./hooks/use-autosave.ts";
+import { useSaveShortcut } from "./hooks/use-save-shortcut.ts";
 import { useUnloadWarning } from "./hooks/use-unload-warning.ts";
 import { useValidationSync } from "./hooks/use-validation.ts";
 import { useUndoRedoShortcuts } from "./hooks/use-undo-redo-shortcuts.ts";
@@ -94,6 +95,7 @@ async function initialLayout(graph: ApplicationGraph): Promise<NodePositions> {
 
 function Editor({ graph }: { graph: ApplicationGraph }) {
   const flushAutosave = useAutosave();
+  useSaveShortcut(flushAutosave);
   useUndoRedoShortcuts();
   useValidationSync();
   useUnloadWarning();

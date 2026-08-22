@@ -34,6 +34,7 @@ export function JsonPanel({ graph }: { graph: ApplicationGraph }) {
   const draft = editing?.text ?? json;
   const [error, setError] = useState<string | null>(null);
   const editorRef = useRef<{ editor: monaco.editor.IStandaloneCodeEditor; monaco: Monaco }>(null);
+  const applyRef = useRef<() => void>(() => {});
   // the editor mounts asynchronously, the marker effect has to run again once it is there
   const [editorMounted, setEditorMounted] = useState(false);
 
@@ -91,6 +92,10 @@ export function JsonPanel({ graph }: { graph: ApplicationGraph }) {
   const onMount: OnMount = (editor, instance) => {
     editorRef.current = { editor, monaco: instance };
     setEditorMounted(true);
+    // Ctrl+S applies the draft
+    editor.addCommand(instance.KeyMod.CtrlCmd | instance.KeyCode.KeyS, () => {
+      applyRef.current();
+    });
     // The cursor highlights its element on the canvas, and a click also brings it into view.
     // Keyboard moves only highlight, so typing does not pan the canvas.
     editor.onDidChangeCursorPosition((event) => {
@@ -121,6 +126,7 @@ export function JsonPanel({ graph }: { graph: ApplicationGraph }) {
         setError(caught instanceof Error ? caught.message : String(caught));
       });
   };
+  applyRef.current = apply;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">

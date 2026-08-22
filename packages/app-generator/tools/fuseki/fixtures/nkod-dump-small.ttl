@@ -1,0 +1,747 @@
+# NKOD sample data for the NKOD demo specification, flattened into the default graph.
+# Source: dump-small.trig (one named graph per dataset in the original). Generated apps query
+# the default graph, so the graph structure is intentionally dropped here.
+<https://data.gov.cz/zdroj/datové-sady/00282651/1015286509> a <http://www.w3.org/ns/dcat#Dataset> , <https://data.gov.cz/slovník/nkod/typ-datové-sady-dle-zdroje/Formulář> ;
+	<http://purl.org/dc/terms/title> "Úřední deska města Šlapanice"@cs , "Official bulletin board"@en ;
+	<http://purl.org/dc/terms/description> "Tato datová sada obsahuje data z úředních desek dle Otevřené formální normy Úřední desky (https://ofn.gov.cz/úřední-desky/2021-07-20/)."@cs , "This dataset contains information from official bulletin boards according to the formal open standard."@en ;
+	<http://www.w3.org/ns/dcat#distribution> <https://data.gov.cz/zdroj/datové-sady/00282651/1015286509/distribuce/24c59c1643e9d43baf9d32093f8f9464> ;
+	<http://purl.org/dc/terms/accrualPeriodicity> <http://publications.europa.eu/resource/authority/frequency/DAILY> ;
+	<http://www.w3.org/ns/dcat#keyword> "úřední deska"@cs , "bulletin board"@en ;
+	<http://purl.org/dc/terms/spatial> <http://publications.europa.eu/resource/authority/country/CZE> , <https://linked.cuzk.cz/resource/ruian/stat/1> ;
+	<http://xmlns.com/foaf/0.1/page> <https://ofn.gov.cz/úřední-desky/2021-07-20/> ;
+	<http://purl.org/dc/terms/conformsTo> <https://ofn.gov.cz/úřední-desky/2021-07-20/> , <https://ofn.gov.cz/úřední-desky/> ;
+	<http://purl.org/dc/terms/accessRights> <http://publications.europa.eu/resource/authority/access-right/PUBLIC> ;
+	<http://data.europa.eu/r5r/applicableLegislation> <http://data.europa.eu/eli/dir/2019/1024/oj> ;
+	<http://www.w3.org/ns/adms#identifier> <https://data.gov.cz/zdroj/datové-sady/00282651/1015286509/identifikátorNKOD> ;
+	<http://www.w3.org/ns/dcat#theme> <http://eurovoc.europa.eu/492> , <http://publications.europa.eu/resource/authority/data-theme/GOVE> ;
+	<http://purl.org/dc/terms/publisher> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/00282651> .
+<https://data.gov.cz/zdroj/datové-sady/00282651/1015286509/distribuce/24c59c1643e9d43baf9d32093f8f9464> a <http://www.w3.org/ns/dcat#Distribution> ;
+	<http://www.w3.org/ns/dcat#downloadURL> <https://portal.slapanice.cz/wab/eud/ODExportData.action> ;
+	<http://www.w3.org/ns/dcat#accessURL> <https://portal.slapanice.cz/wab/eud/ODExportData.action> ;
+	<http://purl.org/dc/terms/format> <http://publications.europa.eu/resource/authority/file-type/JSON_LD> ;
+	<http://www.w3.org/ns/dcat#mediaType> <http://www.iana.org/assignments/media-types/application/ld+json> ;
+	<http://purl.org/dc/terms/conformsTo> <https://ofn.gov.cz/úřední-desky/2021-07-20/schémata/úřední-deska.json> ;
+	<http://purl.org/dc/terms/license> <https://data.gov.cz/zdroj/datové-sady/00282651/1015286509/distribuce/24c59c1643e9d43baf9d32093f8f9464/podmínky-užití> ;
+	<https://data.gov.cz/slovník/podmínky-užití/specifikace> <https://data.gov.cz/zdroj/datové-sady/00282651/1015286509/distribuce/24c59c1643e9d43baf9d32093f8f9464/podmínky-užití> .
+<https://data.gov.cz/zdroj/datové-sady/00282651/1015286509/distribuce/24c59c1643e9d43baf9d32093f8f9464/podmínky-užití> a <https://data.gov.cz/slovník/podmínky-užití/Specifikace> ;
+	<https://data.gov.cz/slovník/podmínky-užití/autorské-dílo> <https://data.gov.cz/podmínky-užití/neobsahuje-autorská-díla/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-jako-autorské-dílo> <https://data.gov.cz/podmínky-užití/není-autorskoprávně-chráněnou-databází/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-chráněná-zvláštními-právy> <https://data.gov.cz/podmínky-užití/není-chráněna-zvláštním-právem-pořizovatele-databáze/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/osobní-údaje> <https://data.gov.cz/podmínky-užití/obsahuje-osobní-údaje/> ;
+	<http://www.w3.org/2004/02/skos/core#narrowMatch> <http://publications.europa.eu/resource/authority/licence/CC0> .
+<https://data.gov.cz/zdroj/katalog/NKOD> <http://www.w3.org/ns/dcat#dataset> <https://data.gov.cz/zdroj/datové-sady/00282651/1015286509> ;
+	<http://www.w3.org/ns/dcat#record> <https://data.gov.cz/zdroj/datové-sady/00282651/1015286509/záznam> .
+<https://data.gov.cz/zdroj/datové-sady/00282651/1015286509/záznam> a <http://www.w3.org/ns/dcat#CatalogRecord> ;
+	<http://xmlns.com/foaf/0.1/primaryTopic> <https://data.gov.cz/zdroj/datové-sady/00282651/1015286509> ;
+	<http://purl.org/dc/terms/language> <http://publications.europa.eu/resource/authority/language/CES> , <http://publications.europa.eu/resource/authority/language/ENG> ;
+	<http://purl.org/dc/terms/conformsTo> <https://semiceu.github.io/DCAT-AP/releases/3.0.0> .
+<https://data.gov.cz/zdroj/datové-sady/00282651/1015286509/identifikátorNKOD> a <http://www.w3.org/ns/adms#Identifier> ;
+	<http://www.w3.org/2004/02/skos/core#notation> "https://data.gov.cz/zdroj/datové-sady/00282651/1015286509"^^<http://www.w3.org/2001/XMLSchema#anyURI> ;
+	<http://purl.org/dc/terms/creator> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/17651921> .
+<https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/00282651> a <http://xmlns.com/foaf/0.1/Agent> ;
+	<http://xmlns.com/foaf/0.1/name> "Město Šlapanice"@cs .
+<https://data.gov.cz/zdroj/datové-sady/00261360/3746378> a <http://www.w3.org/ns/dcat#Dataset> , <https://data.gov.cz/slovník/nkod/typ-datové-sady-dle-zdroje/Formulář> ;
+	<http://purl.org/dc/terms/title> "Sportoviště"@cs ;
+	<http://purl.org/dc/terms/description> "Seznam sportovišť, hal, hřišť, koupališť, bazénů, otevírací hodiny, vstupné a poplatky."@cs ;
+	<http://www.w3.org/ns/dcat#distribution> <https://data.gov.cz/zdroj/datové-sady/00261360/3746378/distribuce/b4af75bc7d47f8e4a10d4addf871a62a> ;
+	<http://purl.org/dc/terms/accrualPeriodicity> <http://publications.europa.eu/resource/authority/frequency/ANNUAL> ;
+	<http://www.w3.org/ns/dcat#keyword> "sport;hřiště;koupaliště;sportoviště"@cs ;
+	<http://purl.org/dc/terms/spatial> <https://linked.cuzk.cz/resource/ruian/obec/562521> ;
+	<http://purl.org/dc/terms/identifier> "https://data.gov.cz/zdroj/datové-sady/zj8av6p/3746378"^^<http://www.w3.org/2001/XMLSchema#anyURI> ;
+	<http://purl.org/dc/terms/accessRights> <http://publications.europa.eu/resource/authority/access-right/PUBLIC> ;
+	<http://data.europa.eu/r5r/applicableLegislation> <http://data.europa.eu/eli/dir/2019/1024/oj> ;
+	<http://www.w3.org/ns/adms#identifier> <https://data.gov.cz/zdroj/datové-sady/00261360/3746378/identifikátorNKOD> , <https://data.gov.cz/zdroj/datové-sady/00261360/3746378/identifikátorLKOD> ;
+	<http://www.w3.org/ns/dcat#theme> <http://eurovoc.europa.eu/4245> , <http://eurovoc.europa.eu/5766> ;
+	<http://www.w3.org/ns/dcat#contactPoint> <https://data.gov.cz/zdroj/datové-sady/00261360/3746378/kontaktní-bod> ;
+	<http://purl.org/dc/terms/publisher> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/00261360> .
+<https://data.gov.cz/zdroj/datové-sady/00261360/3746378/distribuce/b4af75bc7d47f8e4a10d4addf871a62a> a <http://www.w3.org/ns/dcat#Distribution> ;
+	<http://www.w3.org/ns/dcat#downloadURL> <https://data.gov.cz/soubor/nkod/sportoviste.csv> ;
+	<http://www.w3.org/ns/dcat#accessURL> <https://data.gov.cz/soubor/nkod/sportoviste.csv> ;
+	<http://purl.org/dc/terms/format> <http://publications.europa.eu/resource/authority/file-type/CSV> ;
+	<http://www.w3.org/ns/dcat#mediaType> <http://www.iana.org/assignments/media-types/text/csv> ;
+	<http://purl.org/dc/terms/conformsTo> <http://petrtichy.eu/opendata/schema/sportoviste-datove-schema-csv.json> ;
+	<http://purl.org/dc/terms/title> "CSV"@cs ;
+	<http://purl.org/dc/terms/license> <https://data.gov.cz/zdroj/datové-sady/00261360/3746378/distribuce/b4af75bc7d47f8e4a10d4addf871a62a/podmínky-užití> ;
+	<https://data.gov.cz/slovník/podmínky-užití/specifikace> <https://data.gov.cz/zdroj/datové-sady/00261360/3746378/distribuce/b4af75bc7d47f8e4a10d4addf871a62a/podmínky-užití> .
+<https://data.gov.cz/zdroj/datové-sady/00261360/3746378/distribuce/b4af75bc7d47f8e4a10d4addf871a62a/podmínky-užití> a <https://data.gov.cz/slovník/podmínky-užití/Specifikace> ;
+	<https://data.gov.cz/slovník/podmínky-užití/autorské-dílo> <https://data.gov.cz/podmínky-užití/neobsahuje-autorská-díla/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-jako-autorské-dílo> <https://data.gov.cz/podmínky-užití/není-autorskoprávně-chráněnou-databází/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-chráněná-zvláštními-právy> <https://data.gov.cz/podmínky-užití/není-chráněna-zvláštním-právem-pořizovatele-databáze/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/osobní-údaje> <https://data.gov.cz/podmínky-užití/neobsahuje-osobní-údaje/> ;
+	<http://www.w3.org/2004/02/skos/core#narrowMatch> <http://publications.europa.eu/resource/authority/licence/CC0> .
+<https://data.gov.cz/zdroj/katalog/NKOD> <http://www.w3.org/ns/dcat#dataset> <https://data.gov.cz/zdroj/datové-sady/00261360/3746378> ;
+	<http://www.w3.org/ns/dcat#record> <https://data.gov.cz/zdroj/datové-sady/00261360/3746378/záznam> .
+<https://data.gov.cz/zdroj/datové-sady/00261360/3746378/záznam> a <http://www.w3.org/ns/dcat#CatalogRecord> ;
+	<http://xmlns.com/foaf/0.1/primaryTopic> <https://data.gov.cz/zdroj/datové-sady/00261360/3746378> ;
+	<http://purl.org/dc/terms/language> <http://publications.europa.eu/resource/authority/language/CES> , <http://publications.europa.eu/resource/authority/language/ENG> ;
+	<http://purl.org/dc/terms/conformsTo> <https://semiceu.github.io/DCAT-AP/releases/3.0.0> .
+<https://data.gov.cz/zdroj/datové-sady/00261360/3746378/identifikátorNKOD> a <http://www.w3.org/ns/adms#Identifier> ;
+	<http://www.w3.org/2004/02/skos/core#notation> "https://data.gov.cz/zdroj/datové-sady/00261360/3746378"^^<http://www.w3.org/2001/XMLSchema#anyURI> ;
+	<http://purl.org/dc/terms/creator> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/17651921> .
+<https://data.gov.cz/zdroj/datové-sady/00261360/3746378/identifikátorLKOD> a <http://www.w3.org/ns/adms#Identifier> ;
+	<http://www.w3.org/2004/02/skos/core#notation> "https://data.gov.cz/zdroj/datové-sady/zj8av6p/3746378"^^<http://www.w3.org/2001/XMLSchema#anyURI> ;
+	<http://purl.org/dc/terms/creator> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/00261360> .
+<http://eurovoc.europa.eu/4245> <http://www.w3.org/2004/02/skos/core#inScheme> <http://eurovoc.europa.eu/> .
+<http://eurovoc.europa.eu/5766> <http://www.w3.org/2004/02/skos/core#inScheme> <http://eurovoc.europa.eu/> .
+<https://data.gov.cz/zdroj/datové-sady/00261360/3746378/kontaktní-bod> a <http://www.w3.org/2006/vcard/ns#Individual> , <http://www.w3.org/2006/vcard/ns#Kind> ;
+	<http://www.w3.org/2006/vcard/ns#fn> "Renata Fajáková" ;
+	<http://www.w3.org/2006/vcard/ns#hasEmail> <mailto:starosta@huntirov.cz> .
+<https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/00261360> a <http://xmlns.com/foaf/0.1/Agent> ;
+	<http://xmlns.com/foaf/0.1/name> "Obec Huntířov"@cs .
+<https://data.gov.cz/zdroj/datové-sady/00007064/98442> a <http://www.w3.org/ns/dcat#Dataset> , <https://data.gov.cz/slovník/nkod/typ-datové-sady-dle-zdroje/Formulář> ;
+	<http://purl.org/dc/terms/title> "Dopravní informace"@cs ;
+	<http://purl.org/dc/terms/description> "Aktuální dopravní informace"@cs ;
+	<http://www.w3.org/ns/dcat#distribution> <https://data.gov.cz/zdroj/datové-sady/00007064/98442/distribuce/b72bf3285e37d434ce4a3316d5d6a597> , <https://data.gov.cz/zdroj/datové-sady/00007064/98442/distribuce/29efab54ec09ac7472368f096424f110> ;
+	<http://purl.org/dc/terms/accrualPeriodicity> <http://publications.europa.eu/resource/authority/frequency/UPDATE_CONT> ;
+	<http://www.w3.org/ns/dcat#keyword> "Dopravní situace"@cs ;
+	<http://purl.org/dc/terms/spatial> <https://linked.cuzk.cz/resource/ruian/stat/1> ;
+	<http://purl.org/dc/terms/identifier> "https://data.gov.cz/zdroj/datové-sady/6bnaawp/98442"^^<http://www.w3.org/2001/XMLSchema#anyURI> ;
+	<http://purl.org/dc/terms/accessRights> <http://publications.europa.eu/resource/authority/access-right/PUBLIC> ;
+	<http://data.europa.eu/r5r/applicableLegislation> <http://data.europa.eu/eli/dir/2019/1024/oj> ;
+	<http://www.w3.org/ns/adms#identifier> <https://data.gov.cz/zdroj/datové-sady/00007064/98442/identifikátorNKOD> , <https://data.gov.cz/zdroj/datové-sady/00007064/98442/identifikátorLKOD> ;
+	<http://www.w3.org/ns/dcat#theme> <http://eurovoc.europa.eu/3098> , <http://eurovoc.europa.eu/730> ;
+	<http://www.w3.org/ns/dcat#contactPoint> <https://data.gov.cz/zdroj/datové-sady/00007064/98442/kontaktní-bod> ;
+	<http://purl.org/dc/terms/publisher> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/00007064> .
+<https://data.gov.cz/zdroj/datové-sady/00007064/98442/distribuce/b72bf3285e37d434ce4a3316d5d6a597> a <http://www.w3.org/ns/dcat#Distribution> ;
+	<http://www.w3.org/ns/dcat#downloadURL> <http://aplikace.policie.cz/dopravni-informace/GetFile.aspx> ;
+	<http://www.w3.org/ns/dcat#accessURL> <http://aplikace.policie.cz/dopravni-informace/> ;
+	<http://purl.org/dc/terms/format> <http://publications.europa.eu/resource/authority/file-type/XML> ;
+	<http://www.w3.org/ns/dcat#mediaType> <http://www.iana.org/assignments/media-types/text/xml> ;
+	<http://purl.org/dc/terms/license> <https://data.gov.cz/zdroj/datové-sady/00007064/98442/distribuce/b72bf3285e37d434ce4a3316d5d6a597/podmínky-užití> ;
+	<https://data.gov.cz/slovník/podmínky-užití/specifikace> <https://data.gov.cz/zdroj/datové-sady/00007064/98442/distribuce/b72bf3285e37d434ce4a3316d5d6a597/podmínky-užití> .
+<https://data.gov.cz/zdroj/datové-sady/00007064/98442/distribuce/b72bf3285e37d434ce4a3316d5d6a597/podmínky-užití> a <https://data.gov.cz/slovník/podmínky-užití/Specifikace> ;
+	<https://data.gov.cz/slovník/podmínky-užití/autorské-dílo> <https://data.gov.cz/podmínky-užití/neobsahuje-autorská-díla/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-jako-autorské-dílo> <https://data.gov.cz/podmínky-užití/není-autorskoprávně-chráněnou-databází/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-chráněná-zvláštními-právy> <https://data.gov.cz/podmínky-užití/není-chráněna-zvláštním-právem-pořizovatele-databáze/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/osobní-údaje> <https://data.gov.cz/podmínky-užití/neobsahuje-osobní-údaje/> ;
+	<http://www.w3.org/2004/02/skos/core#narrowMatch> <http://publications.europa.eu/resource/authority/licence/CC0> .
+<https://data.gov.cz/zdroj/datové-sady/00007064/98442/distribuce/29efab54ec09ac7472368f096424f110> a <http://www.w3.org/ns/dcat#Distribution> ;
+	<http://www.w3.org/ns/dcat#downloadURL> <http://aplikace.policie.cz/dopravni-informace/GetFile.aspx> ;
+	<http://www.w3.org/ns/dcat#accessURL> <http://aplikace.policie.cz/dopravni-informace/GetFile.aspx> ;
+	<http://purl.org/dc/terms/format> <http://publications.europa.eu/resource/authority/file-type/XML> ;
+	<http://www.w3.org/ns/dcat#mediaType> <http://www.iana.org/assignments/media-types/text/xml> ;
+	<http://purl.org/dc/terms/license> <https://data.gov.cz/zdroj/datové-sady/00007064/98442/distribuce/29efab54ec09ac7472368f096424f110/podmínky-užití> ;
+	<https://data.gov.cz/slovník/podmínky-užití/specifikace> <https://data.gov.cz/zdroj/datové-sady/00007064/98442/distribuce/29efab54ec09ac7472368f096424f110/podmínky-užití> .
+<https://data.gov.cz/zdroj/datové-sady/00007064/98442/distribuce/29efab54ec09ac7472368f096424f110/podmínky-užití> a <https://data.gov.cz/slovník/podmínky-užití/Specifikace> ;
+	<https://data.gov.cz/slovník/podmínky-užití/autorské-dílo> <https://data.gov.cz/podmínky-užití/neobsahuje-autorská-díla/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-jako-autorské-dílo> <https://data.gov.cz/podmínky-užití/není-autorskoprávně-chráněnou-databází/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-chráněná-zvláštními-právy> <https://data.gov.cz/podmínky-užití/není-chráněna-zvláštním-právem-pořizovatele-databáze/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/osobní-údaje> <https://data.gov.cz/podmínky-užití/neobsahuje-osobní-údaje/> ;
+	<http://www.w3.org/2004/02/skos/core#narrowMatch> <http://publications.europa.eu/resource/authority/licence/CC0> .
+<https://data.gov.cz/zdroj/katalog/NKOD> <http://www.w3.org/ns/dcat#dataset> <https://data.gov.cz/zdroj/datové-sady/00007064/98442> ;
+	<http://www.w3.org/ns/dcat#record> <https://data.gov.cz/zdroj/datové-sady/00007064/98442/záznam> .
+<https://data.gov.cz/zdroj/datové-sady/00007064/98442/záznam> a <http://www.w3.org/ns/dcat#CatalogRecord> ;
+	<http://xmlns.com/foaf/0.1/primaryTopic> <https://data.gov.cz/zdroj/datové-sady/00007064/98442> ;
+	<http://purl.org/dc/terms/language> <http://publications.europa.eu/resource/authority/language/CES> , <http://publications.europa.eu/resource/authority/language/ENG> ;
+	<http://purl.org/dc/terms/conformsTo> <https://semiceu.github.io/DCAT-AP/releases/3.0.0> .
+<https://data.gov.cz/zdroj/datové-sady/00007064/98442/identifikátorNKOD> a <http://www.w3.org/ns/adms#Identifier> ;
+	<http://www.w3.org/2004/02/skos/core#notation> "https://data.gov.cz/zdroj/datové-sady/00007064/98442"^^<http://www.w3.org/2001/XMLSchema#anyURI> ;
+	<http://purl.org/dc/terms/creator> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/17651921> .
+<https://data.gov.cz/zdroj/datové-sady/00007064/98442/identifikátorLKOD> a <http://www.w3.org/ns/adms#Identifier> ;
+	<http://www.w3.org/2004/02/skos/core#notation> "https://data.gov.cz/zdroj/datové-sady/6bnaawp/98442"^^<http://www.w3.org/2001/XMLSchema#anyURI> ;
+	<http://purl.org/dc/terms/creator> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/00007064> .
+<http://eurovoc.europa.eu/3098> <http://www.w3.org/2004/02/skos/core#inScheme> <http://eurovoc.europa.eu/> .
+<http://eurovoc.europa.eu/730> <http://www.w3.org/2004/02/skos/core#inScheme> <http://eurovoc.europa.eu/> .
+<https://data.gov.cz/zdroj/datové-sady/00007064/98442/kontaktní-bod> a <http://www.w3.org/2006/vcard/ns#Individual> , <http://www.w3.org/2006/vcard/ns#Kind> ;
+	<http://www.w3.org/2006/vcard/ns#fn> "Marek Hauzr" ;
+	<http://www.w3.org/2006/vcard/ns#hasEmail> <mailto:oha@mvcr.cz> .
+<https://data.gov.cz/zdroj/datové-sady/01312774/1012455745> a <http://www.w3.org/ns/dcat#Dataset> , <https://data.gov.cz/slovník/nkod/typ-datové-sady-dle-zdroje/Formulář> ;
+	<http://purl.org/dc/terms/title> "Meliorační stavby (linie) - Moravskoslezský kraj"@cs ;
+	<http://purl.org/dc/terms/description> "Zákresy průběhu linií melioračních staveb (odvodnění, závlahy, protierozní opatření)"@cs ;
+	<http://www.w3.org/ns/dcat#distribution> <https://data.gov.cz/zdroj/datové-sady/01312774/1012455745/distribuce/216265a0796e5d69a5a60a54fd3e4434> ;
+	<http://purl.org/dc/terms/accrualPeriodicity> <http://publications.europa.eu/resource/authority/frequency/QUARTERLY> ;
+	<http://www.w3.org/ns/dcat#keyword> "vodohospodářské meliorační odvodnění závlahy protierozní"@cs ;
+	<http://purl.org/dc/terms/spatial> <https://linked.cuzk.cz/resource/ruian/vusc/132> ;
+	<http://purl.org/dc/terms/accessRights> <http://publications.europa.eu/resource/authority/access-right/PUBLIC> ;
+	<http://data.europa.eu/r5r/applicableLegislation> <http://data.europa.eu/eli/dir/2019/1024/oj> ;
+	<http://www.w3.org/ns/adms#identifier> <https://data.gov.cz/zdroj/datové-sady/01312774/1012455745/identifikátorNKOD> ;
+	<http://www.w3.org/ns/dcat#theme> <http://publications.europa.eu/resource/authority/data-theme/AGRI> ;
+	<http://purl.org/dc/terms/publisher> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/01312774> .
+<https://data.gov.cz/zdroj/datové-sady/01312774/1012455745/distribuce/216265a0796e5d69a5a60a54fd3e4434> a <http://www.w3.org/ns/dcat#Distribution> ;
+	<http://www.w3.org/ns/dcat#downloadURL> <https://geoportal.spucr.cz/api/open-data/data/gis?format=shp&administrativniJednotka=132&typAdministrativniJednotky=2&datovaSada=2> ;
+	<http://www.w3.org/ns/dcat#accessURL> <https://geoportal.spucr.cz/api/open-data/data/gis?format=shp&administrativniJednotka=132&typAdministrativniJednotky=2&datovaSada=2> ;
+	<http://purl.org/dc/terms/format> <http://publications.europa.eu/resource/authority/file-type/SHP> ;
+	<http://www.w3.org/ns/dcat#mediaType> <http://www.iana.org/assignments/media-types/application/vnd.shp> ;
+	<http://www.w3.org/ns/dcat#compressFormat> <http://www.iana.org/assignments/media-types/application/zip> ;
+	<http://purl.org/dc/terms/license> <https://data.gov.cz/zdroj/datové-sady/01312774/1012455745/distribuce/216265a0796e5d69a5a60a54fd3e4434/podmínky-užití> ;
+	<https://data.gov.cz/slovník/podmínky-užití/specifikace> <https://data.gov.cz/zdroj/datové-sady/01312774/1012455745/distribuce/216265a0796e5d69a5a60a54fd3e4434/podmínky-užití> .
+<https://data.gov.cz/zdroj/datové-sady/01312774/1012455745/distribuce/216265a0796e5d69a5a60a54fd3e4434/podmínky-užití> a <https://data.gov.cz/slovník/podmínky-užití/Specifikace> ;
+	<https://data.gov.cz/slovník/podmínky-užití/autorské-dílo> <https://data.gov.cz/podmínky-užití/neobsahuje-autorská-díla/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-jako-autorské-dílo> <https://data.gov.cz/podmínky-užití/není-autorskoprávně-chráněnou-databází/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-chráněná-zvláštními-právy> <https://data.gov.cz/podmínky-užití/není-chráněna-zvláštním-právem-pořizovatele-databáze/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/osobní-údaje> <https://data.gov.cz/podmínky-užití/neobsahuje-osobní-údaje/> ;
+	<http://www.w3.org/2004/02/skos/core#narrowMatch> <http://publications.europa.eu/resource/authority/licence/CC0> .
+<https://data.gov.cz/zdroj/katalog/NKOD> <http://www.w3.org/ns/dcat#dataset> <https://data.gov.cz/zdroj/datové-sady/01312774/1012455745> ;
+	<http://www.w3.org/ns/dcat#record> <https://data.gov.cz/zdroj/datové-sady/01312774/1012455745/záznam> .
+<https://data.gov.cz/zdroj/datové-sady/01312774/1012455745/záznam> a <http://www.w3.org/ns/dcat#CatalogRecord> ;
+	<http://xmlns.com/foaf/0.1/primaryTopic> <https://data.gov.cz/zdroj/datové-sady/01312774/1012455745> ;
+	<http://purl.org/dc/terms/language> <http://publications.europa.eu/resource/authority/language/CES> , <http://publications.europa.eu/resource/authority/language/ENG> ;
+	<http://purl.org/dc/terms/conformsTo> <https://semiceu.github.io/DCAT-AP/releases/3.0.0> .
+<https://data.gov.cz/zdroj/datové-sady/01312774/1012455745/identifikátorNKOD> a <http://www.w3.org/ns/adms#Identifier> ;
+	<http://www.w3.org/2004/02/skos/core#notation> "https://data.gov.cz/zdroj/datové-sady/01312774/1012455745"^^<http://www.w3.org/2001/XMLSchema#anyURI> ;
+	<http://purl.org/dc/terms/creator> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/17651921> .
+<https://data.gov.cz/zdroj/datové-sady/65349423/1001003817> a <http://www.w3.org/ns/dcat#Dataset> , <https://data.gov.cz/slovník/nkod/typ-datové-sady-dle-zdroje/Formulář> ;
+	<http://purl.org/dc/terms/title> "Úřední deska Úřadu pro ochranu hospodářské soutěže"@cs ;
+	<http://purl.org/dc/terms/description> "Datová sada obsahuje záznamy z úřední desky Úřadu pro ochranu hospodářské soutěže"@cs ;
+	<http://www.w3.org/ns/dcat#distribution> <https://data.gov.cz/zdroj/datové-sady/65349423/1001003817/distribuce/5c7e84544835820be3a55e26e4bfa9c2> ;
+	<http://purl.org/dc/terms/accrualPeriodicity> <http://publications.europa.eu/resource/authority/frequency/IRREG> ;
+	<http://www.w3.org/ns/dcat#keyword> "úřední deska"@cs , "ÚOHS"@cs , "Úřad pro ochranu hospodářské soutěže"@cs ;
+	<http://purl.org/dc/terms/spatial> <https://linked.cuzk.cz/resource/ruian/stat/1> ;
+	<http://purl.org/dc/terms/conformsTo> <https://ofn.gov.cz/úřední-desky/2021-07-20/> ;
+	<http://purl.org/dc/terms/accessRights> <http://publications.europa.eu/resource/authority/access-right/PUBLIC> ;
+	<http://data.europa.eu/r5r/applicableLegislation> <http://data.europa.eu/eli/dir/2019/1024/oj> ;
+	<http://www.w3.org/ns/adms#identifier> <https://data.gov.cz/zdroj/datové-sady/65349423/1001003817/identifikátorNKOD> ;
+	<http://www.w3.org/ns/dcat#theme> <http://publications.europa.eu/resource/authority/data-theme/GOVE> , <http://publications.europa.eu/resource/authority/data-theme/ECON> ;
+	<http://www.w3.org/ns/dcat#contactPoint> <https://data.gov.cz/zdroj/datové-sady/65349423/1001003817/kontaktní-bod> ;
+	<http://purl.org/dc/terms/publisher> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/65349423> .
+<https://data.gov.cz/zdroj/datové-sady/65349423/1001003817/distribuce/5c7e84544835820be3a55e26e4bfa9c2> a <http://www.w3.org/ns/dcat#Distribution> ;
+	<http://www.w3.org/ns/dcat#downloadURL> <https://www.uohs.cz/opendata/uredni-deska.jsonld> ;
+	<http://www.w3.org/ns/dcat#accessURL> <https://www.uohs.cz/opendata/uredni-deska.jsonld> ;
+	<http://purl.org/dc/terms/format> <http://publications.europa.eu/resource/authority/file-type/JSON_LD> ;
+	<http://www.w3.org/ns/dcat#mediaType> <http://www.iana.org/assignments/media-types/application/ld+json> ;
+	<http://purl.org/dc/terms/license> <https://data.gov.cz/zdroj/datové-sady/65349423/1001003817/distribuce/5c7e84544835820be3a55e26e4bfa9c2/podmínky-užití> ;
+	<https://data.gov.cz/slovník/podmínky-užití/specifikace> <https://data.gov.cz/zdroj/datové-sady/65349423/1001003817/distribuce/5c7e84544835820be3a55e26e4bfa9c2/podmínky-užití> .
+<https://data.gov.cz/zdroj/datové-sady/65349423/1001003817/distribuce/5c7e84544835820be3a55e26e4bfa9c2/podmínky-užití> a <https://data.gov.cz/slovník/podmínky-užití/Specifikace> ;
+	<https://data.gov.cz/slovník/podmínky-užití/autorské-dílo> <https://data.gov.cz/podmínky-užití/neobsahuje-autorská-díla/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-jako-autorské-dílo> <https://data.gov.cz/podmínky-užití/není-autorskoprávně-chráněnou-databází/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-chráněná-zvláštními-právy> <https://data.gov.cz/podmínky-užití/není-chráněna-zvláštním-právem-pořizovatele-databáze/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/osobní-údaje> <https://data.gov.cz/podmínky-užití/neobsahuje-osobní-údaje/> ;
+	<http://www.w3.org/2004/02/skos/core#narrowMatch> <http://publications.europa.eu/resource/authority/licence/CC0> .
+<https://data.gov.cz/zdroj/katalog/NKOD> <http://www.w3.org/ns/dcat#dataset> <https://data.gov.cz/zdroj/datové-sady/65349423/1001003817> ;
+	<http://www.w3.org/ns/dcat#record> <https://data.gov.cz/zdroj/datové-sady/65349423/1001003817/záznam> .
+<https://data.gov.cz/zdroj/datové-sady/65349423/1001003817/záznam> a <http://www.w3.org/ns/dcat#CatalogRecord> ;
+	<http://xmlns.com/foaf/0.1/primaryTopic> <https://data.gov.cz/zdroj/datové-sady/65349423/1001003817> ;
+	<http://purl.org/dc/terms/language> <http://publications.europa.eu/resource/authority/language/CES> , <http://publications.europa.eu/resource/authority/language/ENG> ;
+	<http://purl.org/dc/terms/conformsTo> <https://semiceu.github.io/DCAT-AP/releases/3.0.0> .
+<https://data.gov.cz/zdroj/datové-sady/65349423/1001003817/identifikátorNKOD> a <http://www.w3.org/ns/adms#Identifier> ;
+	<http://www.w3.org/2004/02/skos/core#notation> "https://data.gov.cz/zdroj/datové-sady/65349423/1001003817"^^<http://www.w3.org/2001/XMLSchema#anyURI> ;
+	<http://purl.org/dc/terms/creator> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/17651921> .
+<https://data.gov.cz/zdroj/datové-sady/65349423/1001003817/kontaktní-bod> a <http://www.w3.org/2006/vcard/ns#Organization> ;
+	<http://www.w3.org/2006/vcard/ns#fn> "Martin Švanda"@cs ;
+	<http://www.w3.org/2006/vcard/ns#hasEmail> <mailto:martin.svanda@uohs.cz> .
+<https://data.gov.cz/zdroj/datové-sady/49370227/945150645> a <http://www.w3.org/ns/dcat#Dataset> , <https://data.gov.cz/slovník/nkod/typ-datové-sady-dle-zdroje/Formulář> ;
+	<http://purl.org/dc/terms/title> "Nákupy ochranných a zdravotnických prostředků od 1.1.2020 do 31.8.2020 - kvalita"@cs ;
+	<http://purl.org/dc/terms/description> "Data získaná v rámci kontrolní akce NKÚ č. 20/32. Datová sada obsahuje informace o výsledcích testování vzorků objednávek. Platnost dat k 30.9.2020."@cs ;
+	<http://www.w3.org/ns/dcat#distribution> <https://data.gov.cz/zdroj/datové-sady/49370227/945150645/distribuce/601915ffab05b6bfc09b2a4b393d7e09> ;
+	<http://purl.org/dc/terms/accrualPeriodicity> <http://publications.europa.eu/resource/authority/frequency/NEVER> ;
+	<http://www.w3.org/ns/dcat#keyword> "protective equipment"@en , "testování"@cs , "covid-19"@cs , "kontrola NKÚ"@cs , "ochranné prostředky"@cs , "zdravotnické prostředky"@cs , "kvalita"@cs , "covid-19"@en ;
+	<http://purl.org/dc/terms/spatial> <https://linked.cuzk.cz/resource/ruian/stat/1> ;
+	<http://purl.org/dc/terms/accessRights> <http://publications.europa.eu/resource/authority/access-right/PUBLIC> ;
+	<http://data.europa.eu/r5r/applicableLegislation> <http://data.europa.eu/eli/dir/2019/1024/oj> ;
+	<http://www.w3.org/ns/adms#identifier> <https://data.gov.cz/zdroj/datové-sady/49370227/945150645/identifikátorNKOD> ;
+	<http://www.w3.org/ns/dcat#theme> <http://publications.europa.eu/resource/authority/data-theme/HEAL> ;
+	<http://purl.org/dc/terms/temporal> <https://data.gov.cz/zdroj/datové-sady/49370227/945150645/časové-pokrytí> ;
+	<http://purl.org/dc/terms/publisher> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/49370227> .
+<https://data.gov.cz/zdroj/datové-sady/49370227/945150645/distribuce/601915ffab05b6bfc09b2a4b393d7e09> a <http://www.w3.org/ns/dcat#Distribution> ;
+	<http://www.w3.org/ns/dcat#downloadURL> <https://data.nku.cz/download/vystupy-z-kontrol/ka-20-32/Kvalita.csv> ;
+	<http://www.w3.org/ns/dcat#accessURL> <https://data.nku.cz/download/vystupy-z-kontrol/ka-20-32/Kvalita.csv> ;
+	<http://purl.org/dc/terms/format> <http://publications.europa.eu/resource/authority/file-type/CSV> ;
+	<http://www.w3.org/ns/dcat#mediaType> <http://www.iana.org/assignments/media-types/text/csv> ;
+	<http://purl.org/dc/terms/conformsTo> <https://data.nku.cz/download/vystupy-z-kontrol/ka-20-32/Kvalita_schema.csv> ;
+	<http://purl.org/dc/terms/license> <https://data.gov.cz/zdroj/datové-sady/49370227/945150645/distribuce/601915ffab05b6bfc09b2a4b393d7e09/podmínky-užití> ;
+	<https://data.gov.cz/slovník/podmínky-užití/specifikace> <https://data.gov.cz/zdroj/datové-sady/49370227/945150645/distribuce/601915ffab05b6bfc09b2a4b393d7e09/podmínky-užití> .
+<https://data.gov.cz/zdroj/datové-sady/49370227/945150645/distribuce/601915ffab05b6bfc09b2a4b393d7e09/podmínky-užití> a <https://data.gov.cz/slovník/podmínky-užití/Specifikace> ;
+	<https://data.gov.cz/slovník/podmínky-užití/autorské-dílo> <https://data.gov.cz/podmínky-užití/neobsahuje-autorská-díla/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-jako-autorské-dílo> <https://data.gov.cz/podmínky-užití/není-autorskoprávně-chráněnou-databází/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-chráněná-zvláštními-právy> <https://data.gov.cz/podmínky-užití/není-chráněna-zvláštním-právem-pořizovatele-databáze/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/osobní-údaje> <https://data.gov.cz/podmínky-užití/neobsahuje-osobní-údaje/> ;
+	<http://www.w3.org/2004/02/skos/core#narrowMatch> <http://publications.europa.eu/resource/authority/licence/CC0> .
+<https://data.gov.cz/zdroj/katalog/NKOD> <http://www.w3.org/ns/dcat#dataset> <https://data.gov.cz/zdroj/datové-sady/49370227/945150645> ;
+	<http://www.w3.org/ns/dcat#record> <https://data.gov.cz/zdroj/datové-sady/49370227/945150645/záznam> .
+<https://data.gov.cz/zdroj/datové-sady/49370227/945150645/záznam> a <http://www.w3.org/ns/dcat#CatalogRecord> ;
+	<http://xmlns.com/foaf/0.1/primaryTopic> <https://data.gov.cz/zdroj/datové-sady/49370227/945150645> ;
+	<http://purl.org/dc/terms/language> <http://publications.europa.eu/resource/authority/language/CES> , <http://publications.europa.eu/resource/authority/language/ENG> ;
+	<http://purl.org/dc/terms/conformsTo> <https://semiceu.github.io/DCAT-AP/releases/3.0.0> .
+<https://data.gov.cz/zdroj/datové-sady/49370227/945150645/identifikátorNKOD> a <http://www.w3.org/ns/adms#Identifier> ;
+	<http://www.w3.org/2004/02/skos/core#notation> "https://data.gov.cz/zdroj/datové-sady/49370227/945150645"^^<http://www.w3.org/2001/XMLSchema#anyURI> ;
+	<http://purl.org/dc/terms/creator> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/17651921> .
+<http://publications.europa.eu/resource/authority/data-theme/HEAL> <http://www.w3.org/2004/02/skos/core#inScheme> <http://publications.europa.eu/resource/authority/data-theme> .
+<https://data.gov.cz/zdroj/datové-sady/49370227/945150645/časové-pokrytí> a <http://purl.org/dc/terms/PeriodOfTime> ;
+	<http://www.w3.org/ns/dcat#startDate> "2020-01-01"^^<http://www.w3.org/2001/XMLSchema#date> ;
+	<http://www.w3.org/ns/dcat#endDate> "2020-08-31"^^<http://www.w3.org/2001/XMLSchema#date> .
+<https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/49370227> a <http://xmlns.com/foaf/0.1/Agent> ;
+	<http://xmlns.com/foaf/0.1/name> "Nejvyšší kontrolní úřad"@cs .
+<https://data.gov.cz/zdroj/datové-sady/01312774/1012455781> a <http://www.w3.org/ns/dcat#Dataset> , <https://data.gov.cz/slovník/nkod/typ-datové-sady-dle-zdroje/Formulář> ;
+	<http://purl.org/dc/terms/title> "Meliorační stavby (linie) - Středočeský kraj"@cs ;
+	<http://purl.org/dc/terms/description> "Zákresy průběhu linií melioračních staveb (odvodnění, závlahy, protierozní opatření)"@cs ;
+	<http://www.w3.org/ns/dcat#distribution> <https://data.gov.cz/zdroj/datové-sady/01312774/1012455781/distribuce/e3074fc7f66a467490926ee18905e8f7> ;
+	<http://purl.org/dc/terms/accrualPeriodicity> <http://publications.europa.eu/resource/authority/frequency/QUARTERLY> ;
+	<http://www.w3.org/ns/dcat#keyword> "vodohospodářské meliorační odvodnění závlahy protierozní"@cs ;
+	<http://purl.org/dc/terms/spatial> <https://linked.cuzk.cz/resource/ruian/vusc/27> ;
+	<http://purl.org/dc/terms/accessRights> <http://publications.europa.eu/resource/authority/access-right/PUBLIC> ;
+	<http://data.europa.eu/r5r/applicableLegislation> <http://data.europa.eu/eli/dir/2019/1024/oj> ;
+	<http://www.w3.org/ns/adms#identifier> <https://data.gov.cz/zdroj/datové-sady/01312774/1012455781/identifikátorNKOD> ;
+	<http://www.w3.org/ns/dcat#theme> <http://publications.europa.eu/resource/authority/data-theme/AGRI> ;
+	<http://purl.org/dc/terms/publisher> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/01312774> .
+<https://data.gov.cz/zdroj/datové-sady/01312774/1012455781/distribuce/e3074fc7f66a467490926ee18905e8f7> a <http://www.w3.org/ns/dcat#Distribution> ;
+	<http://www.w3.org/ns/dcat#downloadURL> <https://geoportal.spucr.cz/api/open-data/data/gis?format=shp&administrativniJednotka=27&typAdministrativniJednotky=2&datovaSada=2> ;
+	<http://www.w3.org/ns/dcat#accessURL> <https://geoportal.spucr.cz/api/open-data/data/gis?format=shp&administrativniJednotka=27&typAdministrativniJednotky=2&datovaSada=2> ;
+	<http://purl.org/dc/terms/format> <http://publications.europa.eu/resource/authority/file-type/SHP> ;
+	<http://www.w3.org/ns/dcat#mediaType> <http://www.iana.org/assignments/media-types/application/vnd.shp> ;
+	<http://www.w3.org/ns/dcat#compressFormat> <http://www.iana.org/assignments/media-types/application/zip> ;
+	<http://purl.org/dc/terms/license> <https://data.gov.cz/zdroj/datové-sady/01312774/1012455781/distribuce/e3074fc7f66a467490926ee18905e8f7/podmínky-užití> ;
+	<https://data.gov.cz/slovník/podmínky-užití/specifikace> <https://data.gov.cz/zdroj/datové-sady/01312774/1012455781/distribuce/e3074fc7f66a467490926ee18905e8f7/podmínky-užití> .
+<https://data.gov.cz/zdroj/datové-sady/01312774/1012455781/distribuce/e3074fc7f66a467490926ee18905e8f7/podmínky-užití> a <https://data.gov.cz/slovník/podmínky-užití/Specifikace> ;
+	<https://data.gov.cz/slovník/podmínky-užití/autorské-dílo> <https://data.gov.cz/podmínky-užití/neobsahuje-autorská-díla/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-jako-autorské-dílo> <https://data.gov.cz/podmínky-užití/není-autorskoprávně-chráněnou-databází/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-chráněná-zvláštními-právy> <https://data.gov.cz/podmínky-užití/není-chráněna-zvláštním-právem-pořizovatele-databáze/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/osobní-údaje> <https://data.gov.cz/podmínky-užití/neobsahuje-osobní-údaje/> ;
+	<http://www.w3.org/2004/02/skos/core#narrowMatch> <http://publications.europa.eu/resource/authority/licence/CC0> .
+<https://data.gov.cz/zdroj/katalog/NKOD> <http://www.w3.org/ns/dcat#dataset> <https://data.gov.cz/zdroj/datové-sady/01312774/1012455781> ;
+	<http://www.w3.org/ns/dcat#record> <https://data.gov.cz/zdroj/datové-sady/01312774/1012455781/záznam> .
+<https://data.gov.cz/zdroj/datové-sady/01312774/1012455781/záznam> a <http://www.w3.org/ns/dcat#CatalogRecord> ;
+	<http://xmlns.com/foaf/0.1/primaryTopic> <https://data.gov.cz/zdroj/datové-sady/01312774/1012455781> ;
+	<http://purl.org/dc/terms/language> <http://publications.europa.eu/resource/authority/language/CES> , <http://publications.europa.eu/resource/authority/language/ENG> ;
+	<http://purl.org/dc/terms/conformsTo> <https://semiceu.github.io/DCAT-AP/releases/3.0.0> .
+<https://data.gov.cz/zdroj/datové-sady/01312774/1012455781/identifikátorNKOD> a <http://www.w3.org/ns/adms#Identifier> ;
+	<http://www.w3.org/2004/02/skos/core#notation> "https://data.gov.cz/zdroj/datové-sady/01312774/1012455781"^^<http://www.w3.org/2001/XMLSchema#anyURI> ;
+	<http://purl.org/dc/terms/creator> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/17651921> .
+<http://publications.europa.eu/resource/authority/data-theme/AGRI> <http://www.w3.org/2004/02/skos/core#inScheme> <http://publications.europa.eu/resource/authority/data-theme> .
+<https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/01312774> a <http://xmlns.com/foaf/0.1/Agent> ;
+	<http://xmlns.com/foaf/0.1/name> "Státní pozemkový úřad"@cs .
+<https://data.gov.cz/zdroj/datové-sady/66003008/1329605966> a <http://www.w3.org/ns/dcat#Dataset> , <https://data.gov.cz/slovník/nkod/typ-datové-sady-dle-zdroje/Formulář> ;
+	<http://purl.org/dc/terms/title> "Faktury CSPSD 2023"@cs ;
+	<http://purl.org/dc/terms/description> "Uhrazené faktury organizace Centrum služeb pro silniční dopravu (resort dopravy) v roce 2023"@cs ;
+	<http://www.w3.org/ns/dcat#distribution> <https://data.gov.cz/zdroj/datové-sady/66003008/1329605966/distribuce/dedbef7cea1e0a38070193fd1728b5a9> ;
+	<http://purl.org/dc/terms/accrualPeriodicity> <http://publications.europa.eu/resource/authority/frequency/MONTHLY> ;
+	<http://www.w3.org/ns/dcat#keyword> "faktura"@cs ;
+	<http://purl.org/dc/terms/spatial> <https://linked.cuzk.cz/resource/ruian/stat/1> ;
+	<http://purl.org/dc/terms/accessRights> <http://publications.europa.eu/resource/authority/access-right/PUBLIC> ;
+	<http://data.europa.eu/r5r/applicableLegislation> <http://data.europa.eu/eli/dir/2019/1024/oj> ;
+	<http://www.w3.org/ns/adms#identifier> <https://data.gov.cz/zdroj/datové-sady/66003008/1329605966/identifikátorNKOD> ;
+	<http://www.w3.org/ns/dcat#theme> <http://publications.europa.eu/resource/authority/data-theme/ECON> , <http://publications.europa.eu/resource/authority/data-theme/TRAN> ;
+	<http://purl.org/dc/terms/publisher> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/66003008> .
+<https://data.gov.cz/zdroj/datové-sady/66003008/1329605966/distribuce/dedbef7cea1e0a38070193fd1728b5a9> a <http://www.w3.org/ns/dcat#Distribution> ;
+	<http://www.w3.org/ns/dcat#downloadURL> <https://www.mdcr.cz/MDCR/media/otevrenadata/faktury/2023/faktury_cspsd_2023.csv> ;
+	<http://www.w3.org/ns/dcat#accessURL> <https://www.mdcr.cz/MDCR/media/otevrenadata/faktury/2023/faktury_cspsd_2023.csv> ;
+	<http://purl.org/dc/terms/format> <http://publications.europa.eu/resource/authority/file-type/CSV> ;
+	<http://www.w3.org/ns/dcat#mediaType> <http://www.iana.org/assignments/media-types/text/csv> ;
+	<http://purl.org/dc/terms/license> <https://data.gov.cz/zdroj/datové-sady/66003008/1329605966/distribuce/dedbef7cea1e0a38070193fd1728b5a9/podmínky-užití> ;
+	<https://data.gov.cz/slovník/podmínky-užití/specifikace> <https://data.gov.cz/zdroj/datové-sady/66003008/1329605966/distribuce/dedbef7cea1e0a38070193fd1728b5a9/podmínky-užití> .
+<https://data.gov.cz/zdroj/datové-sady/66003008/1329605966/distribuce/dedbef7cea1e0a38070193fd1728b5a9/podmínky-užití> a <https://data.gov.cz/slovník/podmínky-užití/Specifikace> ;
+	<https://data.gov.cz/slovník/podmínky-užití/autorské-dílo> <https://data.gov.cz/podmínky-užití/neobsahuje-autorská-díla/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-jako-autorské-dílo> <https://data.gov.cz/podmínky-užití/není-autorskoprávně-chráněnou-databází/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-chráněná-zvláštními-právy> <https://data.gov.cz/podmínky-užití/není-chráněna-zvláštním-právem-pořizovatele-databáze/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/osobní-údaje> <https://data.gov.cz/podmínky-užití/neobsahuje-osobní-údaje/> ;
+	<http://www.w3.org/2004/02/skos/core#narrowMatch> <http://publications.europa.eu/resource/authority/licence/CC0> .
+<https://data.gov.cz/zdroj/katalog/NKOD> <http://www.w3.org/ns/dcat#dataset> <https://data.gov.cz/zdroj/datové-sady/66003008/1329605966> ;
+	<http://www.w3.org/ns/dcat#record> <https://data.gov.cz/zdroj/datové-sady/66003008/1329605966/záznam> .
+<https://data.gov.cz/zdroj/datové-sady/66003008/1329605966/záznam> a <http://www.w3.org/ns/dcat#CatalogRecord> ;
+	<http://xmlns.com/foaf/0.1/primaryTopic> <https://data.gov.cz/zdroj/datové-sady/66003008/1329605966> ;
+	<http://purl.org/dc/terms/language> <http://publications.europa.eu/resource/authority/language/CES> , <http://publications.europa.eu/resource/authority/language/ENG> ;
+	<http://purl.org/dc/terms/conformsTo> <https://semiceu.github.io/DCAT-AP/releases/3.0.0> .
+<https://data.gov.cz/zdroj/datové-sady/66003008/1329605966/identifikátorNKOD> a <http://www.w3.org/ns/adms#Identifier> ;
+	<http://www.w3.org/2004/02/skos/core#notation> "https://data.gov.cz/zdroj/datové-sady/66003008/1329605966"^^<http://www.w3.org/2001/XMLSchema#anyURI> ;
+	<http://purl.org/dc/terms/creator> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/17651921> .
+<https://data.gov.cz/zdroj/datové-sady/65349423/1414887430> a <http://www.w3.org/ns/dcat#Dataset> , <https://data.gov.cz/slovník/nkod/typ-datové-sady-dle-zdroje/Formulář> ;
+	<http://purl.org/dc/terms/title> "Číselník instance"@cs ;
+	<http://purl.org/dc/terms/description> "Číselník, ve kterém je definována instance"@cs ;
+	<http://www.w3.org/ns/dcat#distribution> <https://data.gov.cz/zdroj/datové-sady/65349423/1414887430/distribuce/72c462f1d683c5f54d917b0223825773> ;
+	<http://purl.org/dc/terms/accrualPeriodicity> <http://publications.europa.eu/resource/authority/frequency/MONTHLY> ;
+	<http://www.w3.org/ns/dcat#keyword> "ÚOHS"@cs , "rozhodnutí"@cs , "instance"@cs ;
+	<http://purl.org/dc/terms/spatial> <http://publications.europa.eu/resource/authority/country/CZE> ;
+	<http://purl.org/dc/terms/accessRights> <http://publications.europa.eu/resource/authority/access-right/PUBLIC> ;
+	<http://data.europa.eu/r5r/applicableLegislation> <http://data.europa.eu/eli/dir/2019/1024/oj> , <https://www.e-sbirka.cz/eli/cz/sb/1999/106/2024-01-01/dokument/norma/cast_1/par_5a/odst_1> ;
+	<http://www.w3.org/ns/adms#identifier> <https://data.gov.cz/zdroj/datové-sady/65349423/1414887430/identifikátorNKOD> ;
+	<http://www.w3.org/ns/dcat#theme> <http://publications.europa.eu/resource/authority/data-theme/GOVE> , <http://publications.europa.eu/resource/authority/data-theme/ECON> ;
+	<http://www.w3.org/ns/dcat#contactPoint> <https://data.gov.cz/zdroj/datové-sady/65349423/1414887430/kontaktní-bod> ;
+	<http://purl.org/dc/terms/publisher> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/65349423> .
+<https://data.gov.cz/zdroj/datové-sady/65349423/1414887430/distribuce/72c462f1d683c5f54d917b0223825773> a <http://www.w3.org/ns/dcat#Distribution> ;
+	<http://www.w3.org/ns/dcat#downloadURL> <https://uohs.gov.cz/opendata/ciselniky/instance.jsonld> ;
+	<http://www.w3.org/ns/dcat#accessURL> <https://uohs.gov.cz/opendata/ciselniky/instance.jsonld> ;
+	<http://purl.org/dc/terms/format> <http://publications.europa.eu/resource/authority/file-type/JSON_LD> ;
+	<http://www.w3.org/ns/dcat#mediaType> <http://www.iana.org/assignments/media-types/application/ld+json> ;
+	<http://purl.org/dc/terms/license> <https://data.gov.cz/zdroj/datové-sady/65349423/1414887430/distribuce/72c462f1d683c5f54d917b0223825773/podmínky-užití> ;
+	<https://data.gov.cz/slovník/podmínky-užití/specifikace> <https://data.gov.cz/zdroj/datové-sady/65349423/1414887430/distribuce/72c462f1d683c5f54d917b0223825773/podmínky-užití> .
+<https://data.gov.cz/zdroj/datové-sady/65349423/1414887430/distribuce/72c462f1d683c5f54d917b0223825773/podmínky-užití> a <https://data.gov.cz/slovník/podmínky-užití/Specifikace> ;
+	<https://data.gov.cz/slovník/podmínky-užití/autorské-dílo> <https://data.gov.cz/podmínky-užití/neobsahuje-autorská-díla/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-jako-autorské-dílo> <https://data.gov.cz/podmínky-užití/není-autorskoprávně-chráněnou-databází/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-chráněná-zvláštními-právy> <https://data.gov.cz/podmínky-užití/není-chráněna-zvláštním-právem-pořizovatele-databáze/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/osobní-údaje> <https://data.gov.cz/podmínky-užití/obsahuje-osobní-údaje/> ;
+	<http://www.w3.org/2004/02/skos/core#narrowMatch> <http://publications.europa.eu/resource/authority/licence/CC0> .
+<https://data.gov.cz/zdroj/katalog/NKOD> <http://www.w3.org/ns/dcat#dataset> <https://data.gov.cz/zdroj/datové-sady/65349423/1414887430> ;
+	<http://www.w3.org/ns/dcat#record> <https://data.gov.cz/zdroj/datové-sady/65349423/1414887430/záznam> .
+<https://data.gov.cz/zdroj/datové-sady/65349423/1414887430/záznam> a <http://www.w3.org/ns/dcat#CatalogRecord> ;
+	<http://xmlns.com/foaf/0.1/primaryTopic> <https://data.gov.cz/zdroj/datové-sady/65349423/1414887430> ;
+	<http://purl.org/dc/terms/language> <http://publications.europa.eu/resource/authority/language/CES> , <http://publications.europa.eu/resource/authority/language/ENG> ;
+	<http://purl.org/dc/terms/conformsTo> <https://semiceu.github.io/DCAT-AP/releases/3.0.0> .
+<https://data.gov.cz/zdroj/datové-sady/65349423/1414887430/identifikátorNKOD> a <http://www.w3.org/ns/adms#Identifier> ;
+	<http://www.w3.org/2004/02/skos/core#notation> "https://data.gov.cz/zdroj/datové-sady/65349423/1414887430"^^<http://www.w3.org/2001/XMLSchema#anyURI> ;
+	<http://purl.org/dc/terms/creator> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/17651921> .
+<https://data.gov.cz/zdroj/datové-sady/65349423/1414887430/kontaktní-bod> a <http://www.w3.org/2006/vcard/ns#Organization> ;
+	<http://www.w3.org/2006/vcard/ns#fn> "Martin Švanda/Tiskové oddělení ÚOHS"@cs ;
+	<http://www.w3.org/2006/vcard/ns#hasEmail> <mailto:martin.svanda@uohs.gov.cz> .
+<https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/65349423> a <http://xmlns.com/foaf/0.1/Agent> ;
+	<http://xmlns.com/foaf/0.1/name> "Úřad pro ochranu hospodářské soutěže"@cs .
+<https://data.gov.cz/zdroj/datové-sady/45769851/980434520> a <http://www.w3.org/ns/dcat#Dataset> , <https://data.gov.cz/slovník/nkod/typ-datové-sady-dle-zdroje/Formulář> ;
+	<http://purl.org/dc/terms/title> "Rozvojová spolupráce - malé lokální projekty 2017"@cs ;
+	<http://purl.org/dc/terms/description> "Malé lokální projekty 2017"@cs ;
+	<http://www.w3.org/ns/dcat#distribution> <https://data.gov.cz/zdroj/datové-sady/45769851/980434520/distribuce/0e5af14fb7482c5bbc466ca8b133d2df> ;
+	<http://purl.org/dc/terms/accrualPeriodicity> <http://publications.europa.eu/resource/authority/frequency/NEVER> ;
+	<http://www.w3.org/ns/dcat#keyword> "rozvojová spolupráce"@cs ;
+	<http://purl.org/dc/terms/spatial> <https://linked.cuzk.cz/resource/ruian/stat/1> ;
+	<http://purl.org/dc/terms/accessRights> <http://publications.europa.eu/resource/authority/access-right/PUBLIC> ;
+	<http://data.europa.eu/r5r/applicableLegislation> <http://data.europa.eu/eli/dir/2019/1024/oj> ;
+	<http://www.w3.org/ns/adms#identifier> <https://data.gov.cz/zdroj/datové-sady/45769851/980434520/identifikátorNKOD> ;
+	<http://www.w3.org/ns/dcat#theme> <http://publications.europa.eu/resource/authority/data-theme/INTR> ;
+	<http://purl.org/dc/terms/temporal> <https://data.gov.cz/zdroj/datové-sady/45769851/980434520/časové-pokrytí> ;
+	<http://purl.org/dc/terms/publisher> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/45769851> .
+<https://data.gov.cz/zdroj/datové-sady/45769851/980434520/distribuce/0e5af14fb7482c5bbc466ca8b133d2df> a <http://www.w3.org/ns/dcat#Distribution> ;
+	<http://www.w3.org/ns/dcat#downloadURL> <https://www.mzv.cz/file/4526863/MLP_2017.csv> ;
+	<http://www.w3.org/ns/dcat#accessURL> <https://www.mzv.cz/file/4526863/MLP_2017.csv> ;
+	<http://purl.org/dc/terms/format> <http://publications.europa.eu/resource/authority/file-type/CSV> ;
+	<http://www.w3.org/ns/dcat#mediaType> <http://www.iana.org/assignments/media-types/text/csv> ;
+	<http://purl.org/dc/terms/license> <https://data.gov.cz/zdroj/datové-sady/45769851/980434520/distribuce/0e5af14fb7482c5bbc466ca8b133d2df/podmínky-užití> ;
+	<https://data.gov.cz/slovník/podmínky-užití/specifikace> <https://data.gov.cz/zdroj/datové-sady/45769851/980434520/distribuce/0e5af14fb7482c5bbc466ca8b133d2df/podmínky-užití> .
+<https://data.gov.cz/zdroj/datové-sady/45769851/980434520/distribuce/0e5af14fb7482c5bbc466ca8b133d2df/podmínky-užití> a <https://data.gov.cz/slovník/podmínky-užití/Specifikace> ;
+	<https://data.gov.cz/slovník/podmínky-užití/autorské-dílo> <https://data.gov.cz/podmínky-užití/neobsahuje-autorská-díla/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-jako-autorské-dílo> <https://data.gov.cz/podmínky-užití/není-autorskoprávně-chráněnou-databází/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-chráněná-zvláštními-právy> <https://data.gov.cz/podmínky-užití/není-chráněna-zvláštním-právem-pořizovatele-databáze/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/osobní-údaje> <https://data.gov.cz/podmínky-užití/neobsahuje-osobní-údaje/> ;
+	<http://www.w3.org/2004/02/skos/core#narrowMatch> <http://publications.europa.eu/resource/authority/licence/CC0> .
+<https://data.gov.cz/zdroj/katalog/NKOD> <http://www.w3.org/ns/dcat#dataset> <https://data.gov.cz/zdroj/datové-sady/45769851/980434520> ;
+	<http://www.w3.org/ns/dcat#record> <https://data.gov.cz/zdroj/datové-sady/45769851/980434520/záznam> .
+<https://data.gov.cz/zdroj/datové-sady/45769851/980434520/záznam> a <http://www.w3.org/ns/dcat#CatalogRecord> ;
+	<http://xmlns.com/foaf/0.1/primaryTopic> <https://data.gov.cz/zdroj/datové-sady/45769851/980434520> ;
+	<http://purl.org/dc/terms/language> <http://publications.europa.eu/resource/authority/language/CES> , <http://publications.europa.eu/resource/authority/language/ENG> ;
+	<http://purl.org/dc/terms/conformsTo> <https://semiceu.github.io/DCAT-AP/releases/3.0.0> .
+<https://data.gov.cz/zdroj/datové-sady/45769851/980434520/identifikátorNKOD> a <http://www.w3.org/ns/adms#Identifier> ;
+	<http://www.w3.org/2004/02/skos/core#notation> "https://data.gov.cz/zdroj/datové-sady/45769851/980434520"^^<http://www.w3.org/2001/XMLSchema#anyURI> ;
+	<http://purl.org/dc/terms/creator> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/17651921> .
+<http://publications.europa.eu/resource/authority/data-theme/INTR> <http://www.w3.org/2004/02/skos/core#inScheme> <http://publications.europa.eu/resource/authority/data-theme> .
+<https://data.gov.cz/zdroj/datové-sady/45769851/980434520/časové-pokrytí> a <http://purl.org/dc/terms/PeriodOfTime> ;
+	<http://www.w3.org/ns/dcat#startDate> "2017-01-01"^^<http://www.w3.org/2001/XMLSchema#date> ;
+	<http://www.w3.org/ns/dcat#endDate> "2017-12-31"^^<http://www.w3.org/2001/XMLSchema#date> .
+<https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/45769851> a <http://xmlns.com/foaf/0.1/Agent> ;
+	<http://xmlns.com/foaf/0.1/name> "Ministerstvo zahraničních věcí"@cs .
+<https://data.gov.cz/zdroj/datové-sady/00248789/994985846> a <http://www.w3.org/ns/dcat#Dataset> , <https://data.gov.cz/slovník/nkod/typ-datové-sady-dle-zdroje/Formulář> ;
+	<http://purl.org/dc/terms/title> "Úřední deska Pacov"@cs , "Official bulletin board Pacov"@en ;
+	<http://purl.org/dc/terms/description> "Tato datová sada obsahuje data z úředních desek dle Otevřené formální normy Úřední desky (https://ofn.gov.cz/úřední-desky/2021-07-20/)."@cs , "This dataset contains information from official bulletin boards according to the formal open standard."@en ;
+	<http://www.w3.org/ns/dcat#distribution> <https://data.gov.cz/zdroj/datové-sady/00248789/994985846/distribuce/f3b80fc5bf579ea2cabeedcd9e99efd7> ;
+	<http://purl.org/dc/terms/accrualPeriodicity> <http://publications.europa.eu/resource/authority/frequency/DAILY> ;
+	<http://www.w3.org/ns/dcat#keyword> "úřední deska"@cs , "bulletin board"@en ;
+	<http://purl.org/dc/terms/spatial> <http://publications.europa.eu/resource/authority/country/CZE> , <https://linked.cuzk.cz/resource/ruian/stat/1> , <https://linked.cuzk.cz/resource/ruian/obec/548511> ;
+	<http://xmlns.com/foaf/0.1/page> <https://ofn.gov.cz/úřední-desky/2021-07-20/> ;
+	<http://purl.org/dc/terms/conformsTo> <https://ofn.gov.cz/úřední-desky/2021-07-20/> , <https://ofn.gov.cz/úřední-desky/> ;
+	<http://purl.org/dc/terms/accessRights> <http://publications.europa.eu/resource/authority/access-right/PUBLIC> ;
+	<http://data.europa.eu/r5r/applicableLegislation> <http://data.europa.eu/eli/dir/2019/1024/oj> ;
+	<http://www.w3.org/ns/adms#identifier> <https://data.gov.cz/zdroj/datové-sady/00248789/994985846/identifikátorNKOD> ;
+	<http://www.w3.org/ns/dcat#theme> <http://eurovoc.europa.eu/492> , <http://publications.europa.eu/resource/authority/data-theme/GOVE> ;
+	<http://purl.org/dc/terms/publisher> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/00248789> .
+<https://data.gov.cz/zdroj/datové-sady/00248789/994985846/distribuce/f3b80fc5bf579ea2cabeedcd9e99efd7> a <http://www.w3.org/ns/dcat#Distribution> ;
+	<http://www.w3.org/ns/dcat#downloadURL> <https://www.mestopacov.cz/opendata-uredni-deska> ;
+	<http://www.w3.org/ns/dcat#accessURL> <https://www.mestopacov.cz/opendata-uredni-deska> ;
+	<http://purl.org/dc/terms/format> <http://publications.europa.eu/resource/authority/file-type/JSON_LD> ;
+	<http://www.w3.org/ns/dcat#mediaType> <http://www.iana.org/assignments/media-types/application/ld+json> ;
+	<http://purl.org/dc/terms/conformsTo> <https://ofn.gov.cz/úřední-desky/2021-07-20/schémata/úřední-deska.json> ;
+	<http://purl.org/dc/terms/license> <https://data.gov.cz/zdroj/datové-sady/00248789/994985846/distribuce/f3b80fc5bf579ea2cabeedcd9e99efd7/podmínky-užití> ;
+	<https://data.gov.cz/slovník/podmínky-užití/specifikace> <https://data.gov.cz/zdroj/datové-sady/00248789/994985846/distribuce/f3b80fc5bf579ea2cabeedcd9e99efd7/podmínky-užití> .
+<https://data.gov.cz/zdroj/datové-sady/00248789/994985846/distribuce/f3b80fc5bf579ea2cabeedcd9e99efd7/podmínky-užití> a <https://data.gov.cz/slovník/podmínky-užití/Specifikace> ;
+	<https://data.gov.cz/slovník/podmínky-užití/autorské-dílo> <https://data.gov.cz/podmínky-užití/neobsahuje-autorská-díla/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-jako-autorské-dílo> <https://data.gov.cz/podmínky-užití/není-autorskoprávně-chráněnou-databází/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-chráněná-zvláštními-právy> <https://data.gov.cz/podmínky-užití/není-chráněna-zvláštním-právem-pořizovatele-databáze/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/osobní-údaje> <https://data.gov.cz/podmínky-užití/obsahuje-osobní-údaje/> ;
+	<http://www.w3.org/2004/02/skos/core#narrowMatch> <http://publications.europa.eu/resource/authority/licence/CC0> .
+<https://data.gov.cz/zdroj/katalog/NKOD> <http://www.w3.org/ns/dcat#dataset> <https://data.gov.cz/zdroj/datové-sady/00248789/994985846> ;
+	<http://www.w3.org/ns/dcat#record> <https://data.gov.cz/zdroj/datové-sady/00248789/994985846/záznam> .
+<https://data.gov.cz/zdroj/datové-sady/00248789/994985846/záznam> a <http://www.w3.org/ns/dcat#CatalogRecord> ;
+	<http://xmlns.com/foaf/0.1/primaryTopic> <https://data.gov.cz/zdroj/datové-sady/00248789/994985846> ;
+	<http://purl.org/dc/terms/language> <http://publications.europa.eu/resource/authority/language/CES> , <http://publications.europa.eu/resource/authority/language/ENG> ;
+	<http://purl.org/dc/terms/conformsTo> <https://semiceu.github.io/DCAT-AP/releases/3.0.0> .
+<https://data.gov.cz/zdroj/datové-sady/00248789/994985846/identifikátorNKOD> a <http://www.w3.org/ns/adms#Identifier> ;
+	<http://www.w3.org/2004/02/skos/core#notation> "https://data.gov.cz/zdroj/datové-sady/00248789/994985846"^^<http://www.w3.org/2001/XMLSchema#anyURI> ;
+	<http://purl.org/dc/terms/creator> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/17651921> .
+<https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/00248789> a <http://xmlns.com/foaf/0.1/Agent> ;
+	<http://xmlns.com/foaf/0.1/name> "Město Pacov"@cs .
+<https://data.gov.cz/zdroj/datové-sady/00261602/1238593285> a <http://www.w3.org/ns/dcat#Dataset> , <https://data.gov.cz/slovník/nkod/typ-datové-sady-dle-zdroje/Formulář> ;
+	<http://purl.org/dc/terms/title> "Úřední deska Města Rubrurk"@cs , "Official bulletin board of Rumburk "@en ;
+	<http://purl.org/dc/terms/description> "Tato datová sada obsahuje data z úřední desky města Rumburk dle otevřené formální normy Úřední desky (https://ofn.gov.cz/úřední-desky/2021-07-20/)"@cs , "Dataset contains information from official bulletin board of the town Rumburk according to the formal open standard"@en ;
+	<http://www.w3.org/ns/dcat#distribution> <https://data.gov.cz/zdroj/datové-sady/00261602/1238593285/distribuce/181041c7ac2d8393a84f0f22fe8c0045> ;
+	<http://purl.org/dc/terms/accrualPeriodicity> <http://publications.europa.eu/resource/authority/frequency/DAILY> ;
+	<http://www.w3.org/ns/dcat#keyword> "úřední deska"@cs , "bulletin board"@en , "Rumburk"@cs ;
+	<http://purl.org/dc/terms/spatial> <http://publications.europa.eu/resource/authority/country/CZE> , <https://linked.cuzk.cz/resource/ruian/stat/1> ;
+	<http://xmlns.com/foaf/0.1/page> <https://ofn.gov.cz/úřední-desky/2021-07-20/> ;
+	<http://purl.org/dc/terms/conformsTo> <https://ofn.gov.cz/úřední-desky/2021-07-20/> , <https://ofn.gov.cz/úřední-desky/> ;
+	<http://purl.org/dc/terms/accessRights> <http://publications.europa.eu/resource/authority/access-right/PUBLIC> ;
+	<http://data.europa.eu/r5r/applicableLegislation> <http://data.europa.eu/eli/dir/2019/1024/oj> ;
+	<http://www.w3.org/ns/adms#identifier> <https://data.gov.cz/zdroj/datové-sady/00261602/1238593285/identifikátorNKOD> ;
+	<http://www.w3.org/ns/dcat#theme> <http://eurovoc.europa.eu/492> , <http://publications.europa.eu/resource/authority/data-theme/GOVE> ;
+	<http://www.w3.org/ns/dcat#contactPoint> <https://data.gov.cz/zdroj/datové-sady/00261602/1238593285/kontaktní-bod> ;
+	<http://purl.org/dc/terms/publisher> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/00261602> .
+<https://data.gov.cz/zdroj/datové-sady/00261602/1238593285/distribuce/181041c7ac2d8393a84f0f22fe8c0045> a <http://www.w3.org/ns/dcat#Distribution> ;
+	<http://www.w3.org/ns/dcat#downloadURL> <https://eportal.rumburk.cz/wab/eud/ODExportData.action> ;
+	<http://www.w3.org/ns/dcat#accessURL> <https://eportal.rumburk.cz/wab/eud/ODExportData.action> ;
+	<http://purl.org/dc/terms/format> <http://publications.europa.eu/resource/authority/file-type/JSON_LD> ;
+	<http://www.w3.org/ns/dcat#mediaType> <http://www.iana.org/assignments/media-types/application/ld+json> ;
+	<http://purl.org/dc/terms/conformsTo> <https://ofn.gov.cz/úřední-desky/2021-07-20/schémata/úřední-deska.json> ;
+	<http://purl.org/dc/terms/license> <https://data.gov.cz/zdroj/datové-sady/00261602/1238593285/distribuce/181041c7ac2d8393a84f0f22fe8c0045/podmínky-užití> ;
+	<https://data.gov.cz/slovník/podmínky-užití/specifikace> <https://data.gov.cz/zdroj/datové-sady/00261602/1238593285/distribuce/181041c7ac2d8393a84f0f22fe8c0045/podmínky-užití> .
+<https://data.gov.cz/zdroj/datové-sady/00261602/1238593285/distribuce/181041c7ac2d8393a84f0f22fe8c0045/podmínky-užití> a <https://data.gov.cz/slovník/podmínky-užití/Specifikace> ;
+	<https://data.gov.cz/slovník/podmínky-užití/autorské-dílo> <https://data.gov.cz/podmínky-užití/neobsahuje-autorská-díla/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-jako-autorské-dílo> <https://data.gov.cz/podmínky-užití/není-autorskoprávně-chráněnou-databází/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-chráněná-zvláštními-právy> <https://data.gov.cz/podmínky-užití/není-chráněna-zvláštním-právem-pořizovatele-databáze/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/osobní-údaje> <https://data.gov.cz/podmínky-užití/neobsahuje-osobní-údaje/> ;
+	<http://www.w3.org/2004/02/skos/core#narrowMatch> <http://publications.europa.eu/resource/authority/licence/CC0> .
+<https://data.gov.cz/zdroj/katalog/NKOD> <http://www.w3.org/ns/dcat#dataset> <https://data.gov.cz/zdroj/datové-sady/00261602/1238593285> ;
+	<http://www.w3.org/ns/dcat#record> <https://data.gov.cz/zdroj/datové-sady/00261602/1238593285/záznam> .
+<https://data.gov.cz/zdroj/datové-sady/00261602/1238593285/záznam> a <http://www.w3.org/ns/dcat#CatalogRecord> ;
+	<http://xmlns.com/foaf/0.1/primaryTopic> <https://data.gov.cz/zdroj/datové-sady/00261602/1238593285> ;
+	<http://purl.org/dc/terms/language> <http://publications.europa.eu/resource/authority/language/CES> , <http://publications.europa.eu/resource/authority/language/ENG> ;
+	<http://purl.org/dc/terms/conformsTo> <https://semiceu.github.io/DCAT-AP/releases/3.0.0> .
+<https://data.gov.cz/zdroj/datové-sady/00261602/1238593285/identifikátorNKOD> a <http://www.w3.org/ns/adms#Identifier> ;
+	<http://www.w3.org/2004/02/skos/core#notation> "https://data.gov.cz/zdroj/datové-sady/00261602/1238593285"^^<http://www.w3.org/2001/XMLSchema#anyURI> ;
+	<http://purl.org/dc/terms/creator> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/17651921> .
+<https://data.gov.cz/zdroj/datové-sady/00261602/1238593285/kontaktní-bod> a <http://www.w3.org/2006/vcard/ns#Organization> ;
+	<http://www.w3.org/2006/vcard/ns#fn> "Matěj Kočí"@cs ;
+	<http://www.w3.org/2006/vcard/ns#hasEmail> <mailto:matej.koci@rumburk.cz> .
+<https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/00261602> a <http://xmlns.com/foaf/0.1/Agent> ;
+	<http://xmlns.com/foaf/0.1/name> "Město Rumburk"@cs .
+<https://data.gov.cz/zdroj/datové-sady/00007064/1296384958> a <http://www.w3.org/ns/dcat#Dataset> , <https://data.gov.cz/slovník/nkod/typ-datové-sady-dle-zdroje/Formulář> ;
+	<http://purl.org/dc/terms/title> "e-Sbírka: Datová sada: Číselník typ fragmentu"@cs , "e-Sbirka: Data set: Code list type of fragment"@en ;
+	<http://purl.org/dc/terms/description> "Číselník typů fragmentů v projektu.\nNový režim odděleného spuštění e-Sbírky do ostrého provozu a současného dokončování e-Legislativy, jejího ověřovacího provozu a postupného uvádění do praxe, předpokládá úpravy systému e-Sbírka a e-Legislativa, a tudíž i nová nasazování datové báze v období od 1. 1. 2024 do 15. 1. 2027. Důsledkem těchto úprav je mj. i to, že do 15. 1. 2027 se mohou měnit identifikátory jednotlivých fragmentů tvořících strukturovaná znění aktů e-Sbírky a může dojít k dílčím úpravám struktury dat. Produkční napojení externích služeb využívajících Otevřená data (Open Data) tak doporučujeme realizovat až po 15. 1. 2027."@cs ;
+	<http://www.w3.org/ns/dcat#distribution> <https://data.gov.cz/zdroj/datové-sady/00007064/1296384958/distribuce/6e6f38efb607ab78dc1b6756c44a62d9> , <https://data.gov.cz/zdroj/datové-sady/00007064/1296384958/distribuce/bce68e6b57dd7b586bd7d45cbd042bd1> , <https://data.gov.cz/zdroj/datové-sady/00007064/1296384958/distribuce/0d98139febfd84aab78416ffbde5d2bb> ;
+	<http://purl.org/dc/terms/accrualPeriodicity> <http://publications.europa.eu/resource/authority/frequency/DAILY> ;
+	<http://www.w3.org/ns/dcat#keyword> "právní předpisy"@cs , "e-Sbírka"@cs , "Sbírka zákonů a mezinárodních smluv"@cs , "legal regulations"@en , "Collection of Laws and International Treaties"@en , "e-Sbirka"@en ;
+	<http://purl.org/dc/terms/spatial> <https://linked.cuzk.cz/resource/ruian/stat/1> ;
+	<http://purl.org/dc/terms/identifier> "https://data.gov.cz/zdroj/datové-sady/00007064/1296384958"^^<http://www.w3.org/2001/XMLSchema#anyURI> ;
+	<http://purl.org/dc/terms/accessRights> <http://publications.europa.eu/resource/authority/access-right/PUBLIC> ;
+	<http://data.europa.eu/r5r/applicableLegislation> <http://data.europa.eu/eli/dir/2019/1024/oj> ;
+	<http://www.w3.org/ns/adms#identifier> <https://data.gov.cz/zdroj/datové-sady/00007064/1296384958/identifikátorNKOD> , <https://data.gov.cz/zdroj/datové-sady/00007064/1296384958/identifikátorLKOD> ;
+	<http://www.w3.org/ns/dcat#theme> <http://publications.europa.eu/resource/authority/data-theme/JUST> ;
+	<http://purl.org/dc/terms/publisher> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/00007064> .
+<https://data.gov.cz/zdroj/datové-sady/00007064/1296384958/distribuce/6e6f38efb607ab78dc1b6756c44a62d9> a <http://www.w3.org/ns/dcat#Distribution> ;
+	<http://www.w3.org/ns/dcat#accessURL> <https://opendata.eselpoint.gov.cz/sparql> ;
+	<http://purl.org/dc/terms/title> "sparql"@cs , "sparql"@en ;
+	<http://purl.org/dc/terms/license> <https://data.gov.cz/zdroj/datové-sady/00007064/1296384958/distribuce/6e6f38efb607ab78dc1b6756c44a62d9/podmínky-užití> ;
+	<https://data.gov.cz/slovník/podmínky-užití/specifikace> <https://data.gov.cz/zdroj/datové-sady/00007064/1296384958/distribuce/6e6f38efb607ab78dc1b6756c44a62d9/podmínky-užití> ;
+	<http://www.w3.org/ns/dcat#accessService> <https://data.gov.cz/zdroj/datové-sady/00007064/1296384958/distribuce/6e6f38efb607ab78dc1b6756c44a62d9/datová-služba/b89a0498f30ed3fdf34f4ce378e31a7b> .
+<https://data.gov.cz/zdroj/datové-sady/00007064/1296384958/distribuce/6e6f38efb607ab78dc1b6756c44a62d9/podmínky-užití> a <https://data.gov.cz/slovník/podmínky-užití/Specifikace> ;
+	<https://data.gov.cz/slovník/podmínky-užití/autorské-dílo> <https://data.gov.cz/podmínky-užití/neobsahuje-autorská-díla/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-jako-autorské-dílo> <https://data.gov.cz/podmínky-užití/není-autorskoprávně-chráněnou-databází/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-chráněná-zvláštními-právy> <https://data.gov.cz/podmínky-užití/není-chráněna-zvláštním-právem-pořizovatele-databáze/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/osobní-údaje> <https://data.gov.cz/podmínky-užití/neobsahuje-osobní-údaje/> ;
+	<http://www.w3.org/2004/02/skos/core#narrowMatch> <http://publications.europa.eu/resource/authority/licence/CC0> .
+<https://data.gov.cz/zdroj/datové-sady/00007064/1296384958/distribuce/6e6f38efb607ab78dc1b6756c44a62d9/datová-služba/b89a0498f30ed3fdf34f4ce378e31a7b> a <http://www.w3.org/ns/dcat#DataService> ;
+	<http://purl.org/dc/terms/title> "sparql"@cs , "sparql"@en ;
+	<http://www.w3.org/ns/dcat#endpointURL> <https://opendata.eselpoint.gov.cz/sparql> ;
+	<http://www.w3.org/ns/dcat#endpointDescription> <https://opendata.eselpoint.gov.cz/sparql> ;
+	<http://www.w3.org/ns/dcat#servesDataset> <https://data.gov.cz/zdroj/datové-sady/00007064/1296384958> ;
+	<http://www.w3.org/ns/adms#identifier> <https://data.gov.cz/zdroj/datové-sady/00007064/1296384958/distribuce/6e6f38efb607ab78dc1b6756c44a62d9/datová-služba/b89a0498f30ed3fdf34f4ce378e31a7b/identifikátorNKOD> .
+<https://data.gov.cz/zdroj/datové-sady/00007064/1296384958/distribuce/6e6f38efb607ab78dc1b6756c44a62d9/datová-služba/b89a0498f30ed3fdf34f4ce378e31a7b/identifikátorNKOD> <http://www.w3.org/2004/02/skos/core#notation> "https://data.gov.cz/zdroj/datové-sady/00007064/1296384958/distribuce/6e6f38efb607ab78dc1b6756c44a62d9/datová-služba/b89a0498f30ed3fdf34f4ce378e31a7b"^^<http://www.w3.org/2001/XMLSchema#anyURI> ;
+	<http://purl.org/dc/terms/creator> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/17651921> .
+<https://data.gov.cz/zdroj/datové-sady/00007064/1296384958/distribuce/bce68e6b57dd7b586bd7d45cbd042bd1> a <http://www.w3.org/ns/dcat#Distribution> ;
+	<http://www.w3.org/ns/dcat#downloadURL> <https://opendata.eselpoint.gov.cz/datove-sady-esbirka/013CiselnikTypFragmentu.jsonld.gz> ;
+	<http://www.w3.org/ns/dcat#accessURL> <https://opendata.eselpoint.gov.cz/datove-sady-esbirka/013CiselnikTypFragmentu.jsonld.gz> ;
+	<http://purl.org/dc/terms/format> <http://publications.europa.eu/resource/authority/file-type/JSON_LD> ;
+	<http://www.w3.org/ns/dcat#mediaType> <http://www.iana.org/assignments/media-types/application/ld+json> ;
+	<http://www.w3.org/ns/dcat#compressFormat> <http://www.iana.org/assignments/media-types/application/gzip> ;
+	<http://www.w3.org/ns/dcat#packageFormat> <http://www.iana.org/assignments/media-types/application/gzip> ;
+	<http://purl.org/dc/terms/title> "JSON-LD"@cs , "JSON-LD"@en ;
+	<http://purl.org/dc/terms/license> <https://data.gov.cz/zdroj/datové-sady/00007064/1296384958/distribuce/bce68e6b57dd7b586bd7d45cbd042bd1/podmínky-užití> ;
+	<https://data.gov.cz/slovník/podmínky-užití/specifikace> <https://data.gov.cz/zdroj/datové-sady/00007064/1296384958/distribuce/bce68e6b57dd7b586bd7d45cbd042bd1/podmínky-užití> .
+<https://data.gov.cz/zdroj/datové-sady/00007064/1296384958/distribuce/bce68e6b57dd7b586bd7d45cbd042bd1/podmínky-užití> a <https://data.gov.cz/slovník/podmínky-užití/Specifikace> ;
+	<https://data.gov.cz/slovník/podmínky-užití/autorské-dílo> <https://data.gov.cz/podmínky-užití/neobsahuje-autorská-díla/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-jako-autorské-dílo> <https://data.gov.cz/podmínky-užití/není-autorskoprávně-chráněnou-databází/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-chráněná-zvláštními-právy> <https://data.gov.cz/podmínky-užití/není-chráněna-zvláštním-právem-pořizovatele-databáze/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/osobní-údaje> <https://data.gov.cz/podmínky-užití/neobsahuje-osobní-údaje/> ;
+	<http://www.w3.org/2004/02/skos/core#narrowMatch> <http://publications.europa.eu/resource/authority/licence/CC0> .
+<https://data.gov.cz/zdroj/datové-sady/00007064/1296384958/distribuce/0d98139febfd84aab78416ffbde5d2bb> a <http://www.w3.org/ns/dcat#Distribution> ;
+	<http://www.w3.org/ns/dcat#downloadURL> <https://opendata.eselpoint.gov.cz/datove-sady-esbirka/013CiselnikTypFragmentu.json.gz> ;
+	<http://www.w3.org/ns/dcat#accessURL> <https://opendata.eselpoint.gov.cz/datove-sady-esbirka/013CiselnikTypFragmentu.json.gz> ;
+	<http://purl.org/dc/terms/format> <http://publications.europa.eu/resource/authority/file-type/JSON> ;
+	<http://www.w3.org/ns/dcat#mediaType> <http://www.iana.org/assignments/media-types/application/json> ;
+	<http://www.w3.org/ns/dcat#compressFormat> <http://www.iana.org/assignments/media-types/application/gzip> ;
+	<http://www.w3.org/ns/dcat#packageFormat> <http://www.iana.org/assignments/media-types/application/gzip> ;
+	<http://purl.org/dc/terms/title> "JSON"@cs , "JSON"@en ;
+	<http://purl.org/dc/terms/license> <https://data.gov.cz/zdroj/datové-sady/00007064/1296384958/distribuce/0d98139febfd84aab78416ffbde5d2bb/podmínky-užití> ;
+	<https://data.gov.cz/slovník/podmínky-užití/specifikace> <https://data.gov.cz/zdroj/datové-sady/00007064/1296384958/distribuce/0d98139febfd84aab78416ffbde5d2bb/podmínky-užití> .
+<https://data.gov.cz/zdroj/datové-sady/00007064/1296384958/distribuce/0d98139febfd84aab78416ffbde5d2bb/podmínky-užití> a <https://data.gov.cz/slovník/podmínky-užití/Specifikace> ;
+	<https://data.gov.cz/slovník/podmínky-užití/autorské-dílo> <https://data.gov.cz/podmínky-užití/neobsahuje-autorská-díla/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-jako-autorské-dílo> <https://data.gov.cz/podmínky-užití/není-autorskoprávně-chráněnou-databází/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-chráněná-zvláštními-právy> <https://data.gov.cz/podmínky-užití/není-chráněna-zvláštním-právem-pořizovatele-databáze/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/osobní-údaje> <https://data.gov.cz/podmínky-užití/neobsahuje-osobní-údaje/> ;
+	<http://www.w3.org/2004/02/skos/core#narrowMatch> <http://publications.europa.eu/resource/authority/licence/CC0> .
+<https://data.gov.cz/zdroj/katalog/NKOD> <http://www.w3.org/ns/dcat#dataset> <https://data.gov.cz/zdroj/datové-sady/00007064/1296384958> ;
+	<http://www.w3.org/ns/dcat#record> <https://data.gov.cz/zdroj/datové-sady/00007064/1296384958/záznam> .
+<https://data.gov.cz/zdroj/datové-sady/00007064/1296384958/záznam> a <http://www.w3.org/ns/dcat#CatalogRecord> ;
+	<http://xmlns.com/foaf/0.1/primaryTopic> <https://data.gov.cz/zdroj/datové-sady/00007064/1296384958> ;
+	<http://purl.org/dc/terms/language> <http://publications.europa.eu/resource/authority/language/CES> , <http://publications.europa.eu/resource/authority/language/ENG> ;
+	<http://purl.org/dc/terms/conformsTo> <https://semiceu.github.io/DCAT-AP/releases/3.0.0> .
+<https://data.gov.cz/zdroj/datové-sady/00007064/1296384958/identifikátorNKOD> a <http://www.w3.org/ns/adms#Identifier> ;
+	<http://www.w3.org/2004/02/skos/core#notation> "https://data.gov.cz/zdroj/datové-sady/00007064/1296384958"^^<http://www.w3.org/2001/XMLSchema#anyURI> ;
+	<http://purl.org/dc/terms/creator> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/17651921> .
+<https://data.gov.cz/zdroj/datové-sady/00007064/1296384958/identifikátorLKOD> a <http://www.w3.org/ns/adms#Identifier> ;
+	<http://www.w3.org/2004/02/skos/core#notation> "https://data.gov.cz/zdroj/datové-sady/00007064/1296384958"^^<http://www.w3.org/2001/XMLSchema#anyURI> ;
+	<http://purl.org/dc/terms/creator> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/00007064> .
+<http://publications.europa.eu/resource/authority/data-theme/JUST> <http://www.w3.org/2004/02/skos/core#inScheme> <http://publications.europa.eu/resource/authority/data-theme> .
+<https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/00007064> a <http://xmlns.com/foaf/0.1/Agent> ;
+	<http://xmlns.com/foaf/0.1/name> "Ministerstvo vnitra"@cs .
+<https://data.gov.cz/zdroj/datové-sady/66003008/1334732631> a <http://www.w3.org/ns/dcat#Dataset> , <https://data.gov.cz/slovník/nkod/typ-datové-sady-dle-zdroje/Formulář> ;
+	<http://purl.org/dc/terms/title> "Smlouvy CSPSD 2021"@cs ;
+	<http://purl.org/dc/terms/description> "Uzavřené smlouvy organizace Centrum služeb pro silniční dopravu (resort dopravy) v roce 2021"@cs ;
+	<http://www.w3.org/ns/dcat#distribution> <https://data.gov.cz/zdroj/datové-sady/66003008/1334732631/distribuce/1d7628877b879cf2d63b8ff7988f280e> ;
+	<http://purl.org/dc/terms/accrualPeriodicity> <http://publications.europa.eu/resource/authority/frequency/MONTHLY> ;
+	<http://www.w3.org/ns/dcat#keyword> "smlouva"@cs ;
+	<http://purl.org/dc/terms/spatial> <https://linked.cuzk.cz/resource/ruian/stat/1> ;
+	<http://purl.org/dc/terms/accessRights> <http://publications.europa.eu/resource/authority/access-right/PUBLIC> ;
+	<http://data.europa.eu/r5r/applicableLegislation> <http://data.europa.eu/eli/dir/2019/1024/oj> ;
+	<http://www.w3.org/ns/adms#identifier> <https://data.gov.cz/zdroj/datové-sady/66003008/1334732631/identifikátorNKOD> ;
+	<http://www.w3.org/ns/dcat#theme> <http://publications.europa.eu/resource/authority/data-theme/ECON> , <http://publications.europa.eu/resource/authority/data-theme/TRAN> ;
+	<http://purl.org/dc/terms/publisher> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/66003008> .
+<https://data.gov.cz/zdroj/datové-sady/66003008/1334732631/distribuce/1d7628877b879cf2d63b8ff7988f280e> a <http://www.w3.org/ns/dcat#Distribution> ;
+	<http://www.w3.org/ns/dcat#downloadURL> <https://www.mdcr.cz/MDCR/media/otevrenadata/smlouvy/2021/smlouvy_cspsd_2021.csv> ;
+	<http://www.w3.org/ns/dcat#accessURL> <https://www.mdcr.cz/MDCR/media/otevrenadata/smlouvy/2021/smlouvy_cspsd_2021.csv> ;
+	<http://purl.org/dc/terms/format> <http://publications.europa.eu/resource/authority/file-type/CSV> ;
+	<http://www.w3.org/ns/dcat#mediaType> <http://www.iana.org/assignments/media-types/text/csv> ;
+	<http://purl.org/dc/terms/license> <https://data.gov.cz/zdroj/datové-sady/66003008/1334732631/distribuce/1d7628877b879cf2d63b8ff7988f280e/podmínky-užití> ;
+	<https://data.gov.cz/slovník/podmínky-užití/specifikace> <https://data.gov.cz/zdroj/datové-sady/66003008/1334732631/distribuce/1d7628877b879cf2d63b8ff7988f280e/podmínky-užití> .
+<https://data.gov.cz/zdroj/datové-sady/66003008/1334732631/distribuce/1d7628877b879cf2d63b8ff7988f280e/podmínky-užití> a <https://data.gov.cz/slovník/podmínky-užití/Specifikace> ;
+	<https://data.gov.cz/slovník/podmínky-užití/autorské-dílo> <https://data.gov.cz/podmínky-užití/neobsahuje-autorská-díla/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-jako-autorské-dílo> <https://data.gov.cz/podmínky-užití/není-autorskoprávně-chráněnou-databází/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-chráněná-zvláštními-právy> <https://data.gov.cz/podmínky-užití/není-chráněna-zvláštním-právem-pořizovatele-databáze/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/osobní-údaje> <https://data.gov.cz/podmínky-užití/neobsahuje-osobní-údaje/> ;
+	<http://www.w3.org/2004/02/skos/core#narrowMatch> <http://publications.europa.eu/resource/authority/licence/CC0> .
+<https://data.gov.cz/zdroj/katalog/NKOD> <http://www.w3.org/ns/dcat#dataset> <https://data.gov.cz/zdroj/datové-sady/66003008/1334732631> ;
+	<http://www.w3.org/ns/dcat#record> <https://data.gov.cz/zdroj/datové-sady/66003008/1334732631/záznam> .
+<https://data.gov.cz/zdroj/datové-sady/66003008/1334732631/záznam> a <http://www.w3.org/ns/dcat#CatalogRecord> ;
+	<http://xmlns.com/foaf/0.1/primaryTopic> <https://data.gov.cz/zdroj/datové-sady/66003008/1334732631> ;
+	<http://purl.org/dc/terms/language> <http://publications.europa.eu/resource/authority/language/CES> , <http://publications.europa.eu/resource/authority/language/ENG> ;
+	<http://purl.org/dc/terms/conformsTo> <https://semiceu.github.io/DCAT-AP/releases/3.0.0> .
+<https://data.gov.cz/zdroj/datové-sady/66003008/1334732631/identifikátorNKOD> a <http://www.w3.org/ns/adms#Identifier> ;
+	<http://www.w3.org/2004/02/skos/core#notation> "https://data.gov.cz/zdroj/datové-sady/66003008/1334732631"^^<http://www.w3.org/2001/XMLSchema#anyURI> ;
+	<http://purl.org/dc/terms/creator> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/17651921> .
+<http://publications.europa.eu/resource/authority/data-theme/TRAN> <http://www.w3.org/2004/02/skos/core#inScheme> <http://publications.europa.eu/resource/authority/data-theme> .
+<https://data.gov.cz/zdroj/datové-sady/66003008/225010061> a <http://www.w3.org/ns/dcat#Dataset> , <https://data.gov.cz/slovník/nkod/typ-datové-sady-dle-zdroje/Formulář> ;
+	<http://purl.org/dc/terms/title> "Smlouvy SŽDC 2017"@cs ;
+	<http://purl.org/dc/terms/description> "Uzavřené smlouvy organizace Správa železniční a dopravní cesty (resort dopravy) v roce 2017"@cs ;
+	<http://www.w3.org/ns/dcat#distribution> <https://data.gov.cz/zdroj/datové-sady/66003008/225010061/distribuce/3c7d4a68fc6dacd7366112860b0222e0> ;
+	<http://purl.org/dc/terms/accrualPeriodicity> <http://publications.europa.eu/resource/authority/frequency/MONTHLY> ;
+	<http://www.w3.org/ns/dcat#keyword> "smlouva"@cs ;
+	<http://purl.org/dc/terms/spatial> <https://linked.cuzk.cz/resource/ruian/stat/1> ;
+	<http://purl.org/dc/terms/identifier> "https://data.gov.cz/zdroj/datové-sady/n75aau3/225010061"^^<http://www.w3.org/2001/XMLSchema#anyURI> ;
+	<http://purl.org/dc/terms/accessRights> <http://publications.europa.eu/resource/authority/access-right/PUBLIC> ;
+	<http://data.europa.eu/r5r/applicableLegislation> <http://data.europa.eu/eli/dir/2019/1024/oj> ;
+	<http://www.w3.org/ns/adms#identifier> <https://data.gov.cz/zdroj/datové-sady/66003008/225010061/identifikátorNKOD> , <https://data.gov.cz/zdroj/datové-sady/66003008/225010061/identifikátorLKOD> ;
+	<http://purl.org/dc/terms/temporal> <https://data.gov.cz/zdroj/datové-sady/66003008/225010061/časové-pokrytí> ;
+	<http://purl.org/dc/terms/publisher> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/66003008> .
+<https://data.gov.cz/zdroj/datové-sady/66003008/225010061/distribuce/3c7d4a68fc6dacd7366112860b0222e0> a <http://www.w3.org/ns/dcat#Distribution> ;
+	<http://www.w3.org/ns/dcat#downloadURL> <http://www.mdcr.cz/MDCR/media/otevrenadata/smlouvy/2017/smlouvy_szdc_2017.csv> ;
+	<http://www.w3.org/ns/dcat#accessURL> <http://www.mdcr.cz/MDCR/media/otevrenadata/smlouvy/2017/smlouvy_szdc_2017.csv> ;
+	<http://purl.org/dc/terms/format> <http://publications.europa.eu/resource/authority/file-type/CSV> ;
+	<http://www.w3.org/ns/dcat#mediaType> <http://www.iana.org/assignments/media-types/text/csv> ;
+	<http://purl.org/dc/terms/license> <https://data.gov.cz/zdroj/datové-sady/66003008/225010061/distribuce/3c7d4a68fc6dacd7366112860b0222e0/podmínky-užití> ;
+	<https://data.gov.cz/slovník/podmínky-užití/specifikace> <https://data.gov.cz/zdroj/datové-sady/66003008/225010061/distribuce/3c7d4a68fc6dacd7366112860b0222e0/podmínky-užití> .
+<https://data.gov.cz/zdroj/datové-sady/66003008/225010061/distribuce/3c7d4a68fc6dacd7366112860b0222e0/podmínky-užití> a <https://data.gov.cz/slovník/podmínky-užití/Specifikace> ;
+	<https://data.gov.cz/slovník/podmínky-užití/autorské-dílo> <https://data.gov.cz/podmínky-užití/neobsahuje-autorská-díla/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-jako-autorské-dílo> <https://data.gov.cz/podmínky-užití/není-autorskoprávně-chráněnou-databází/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-chráněná-zvláštními-právy> <https://data.gov.cz/podmínky-užití/není-chráněna-zvláštním-právem-pořizovatele-databáze/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/osobní-údaje> <https://data.gov.cz/podmínky-užití/neobsahuje-osobní-údaje/> ;
+	<http://www.w3.org/2004/02/skos/core#narrowMatch> <http://publications.europa.eu/resource/authority/licence/CC0> .
+<https://data.gov.cz/zdroj/katalog/NKOD> <http://www.w3.org/ns/dcat#dataset> <https://data.gov.cz/zdroj/datové-sady/66003008/225010061> ;
+	<http://www.w3.org/ns/dcat#record> <https://data.gov.cz/zdroj/datové-sady/66003008/225010061/záznam> .
+<https://data.gov.cz/zdroj/datové-sady/66003008/225010061/záznam> a <http://www.w3.org/ns/dcat#CatalogRecord> ;
+	<http://xmlns.com/foaf/0.1/primaryTopic> <https://data.gov.cz/zdroj/datové-sady/66003008/225010061> ;
+	<http://purl.org/dc/terms/language> <http://publications.europa.eu/resource/authority/language/CES> , <http://publications.europa.eu/resource/authority/language/ENG> ;
+	<http://purl.org/dc/terms/conformsTo> <https://semiceu.github.io/DCAT-AP/releases/3.0.0> .
+<https://data.gov.cz/zdroj/datové-sady/66003008/225010061/identifikátorNKOD> a <http://www.w3.org/ns/adms#Identifier> ;
+	<http://www.w3.org/2004/02/skos/core#notation> "https://data.gov.cz/zdroj/datové-sady/66003008/225010061"^^<http://www.w3.org/2001/XMLSchema#anyURI> ;
+	<http://purl.org/dc/terms/creator> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/17651921> .
+<https://data.gov.cz/zdroj/datové-sady/66003008/225010061/identifikátorLKOD> a <http://www.w3.org/ns/adms#Identifier> ;
+	<http://www.w3.org/2004/02/skos/core#notation> "https://data.gov.cz/zdroj/datové-sady/n75aau3/225010061"^^<http://www.w3.org/2001/XMLSchema#anyURI> ;
+	<http://purl.org/dc/terms/creator> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/66003008> .
+<https://data.gov.cz/zdroj/datové-sady/66003008/225010061/časové-pokrytí> a <http://purl.org/dc/terms/PeriodOfTime> ;
+	<http://www.w3.org/ns/dcat#startDate> "2017-01-01"^^<http://www.w3.org/2001/XMLSchema#date> ;
+	<http://www.w3.org/ns/dcat#endDate> "2017-12-31"^^<http://www.w3.org/2001/XMLSchema#date> .
+<https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/66003008> a <http://xmlns.com/foaf/0.1/Agent> ;
+	<http://xmlns.com/foaf/0.1/name> "Ministerstvo dopravy"@cs .
+<https://data.gov.cz/zdroj/datové-sady/00283347/1087802854> a <http://www.w3.org/ns/dcat#Dataset> , <https://data.gov.cz/slovník/nkod/typ-datové-sady-dle-zdroje/Formulář> ;
+	<http://purl.org/dc/terms/title> "Město Mikulov - Úřední deska"@cs , "Město Mikulov - Official bulletin board"@en ;
+	<http://purl.org/dc/terms/description> "Tato datová sada obsahuje data z úředních desek dle Otevřené formální normy Úřední desky (https://ofn.gov.cz/úřední-desky/2021-07-20/)."@cs , "This dataset contains information from official bulletin boards according to the formal open standard."@en ;
+	<http://www.w3.org/ns/dcat#distribution> <https://data.gov.cz/zdroj/datové-sady/00283347/1087802854/distribuce/182730f484f8b60c21342e239a7b4f32> ;
+	<http://purl.org/dc/terms/accrualPeriodicity> <http://publications.europa.eu/resource/authority/frequency/DAILY> ;
+	<http://www.w3.org/ns/dcat#keyword> "úřední deska"@cs , "bulletin board"@en ;
+	<http://purl.org/dc/terms/spatial> <http://publications.europa.eu/resource/authority/country/CZE> , <https://linked.cuzk.cz/resource/ruian/stat/1> ;
+	<http://xmlns.com/foaf/0.1/page> <https://ofn.gov.cz/úřední-desky/2021-07-20/> ;
+	<http://purl.org/dc/terms/conformsTo> <https://ofn.gov.cz/úřední-desky/2021-07-20/> , <https://ofn.gov.cz/úřední-desky/> ;
+	<http://purl.org/dc/terms/accessRights> <http://publications.europa.eu/resource/authority/access-right/PUBLIC> ;
+	<http://data.europa.eu/r5r/applicableLegislation> <http://data.europa.eu/eli/dir/2019/1024/oj> ;
+	<http://www.w3.org/ns/adms#identifier> <https://data.gov.cz/zdroj/datové-sady/00283347/1087802854/identifikátorNKOD> ;
+	<http://www.w3.org/ns/dcat#theme> <http://eurovoc.europa.eu/492> , <http://publications.europa.eu/resource/authority/data-theme/GOVE> ;
+	<http://purl.org/dc/terms/publisher> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/00283347> .
+<https://data.gov.cz/zdroj/datové-sady/00283347/1087802854/distribuce/182730f484f8b60c21342e239a7b4f32> a <http://www.w3.org/ns/dcat#Distribution> ;
+	<http://www.w3.org/ns/dcat#downloadURL> <https://ginis.mikulov.cz/OpenData/ODTURD02.json> ;
+	<http://www.w3.org/ns/dcat#accessURL> <https://ginis.mikulov.cz/OpenData/ODTURD02.json> ;
+	<http://purl.org/dc/terms/format> <http://publications.europa.eu/resource/authority/file-type/JSON_LD> ;
+	<http://www.w3.org/ns/dcat#mediaType> <http://www.iana.org/assignments/media-types/application/ld+json> ;
+	<http://purl.org/dc/terms/conformsTo> <https://ofn.gov.cz/úřední-desky/2021-07-20/schémata/úřední-deska.json> ;
+	<http://purl.org/dc/terms/license> <https://data.gov.cz/zdroj/datové-sady/00283347/1087802854/distribuce/182730f484f8b60c21342e239a7b4f32/podmínky-užití> ;
+	<https://data.gov.cz/slovník/podmínky-užití/specifikace> <https://data.gov.cz/zdroj/datové-sady/00283347/1087802854/distribuce/182730f484f8b60c21342e239a7b4f32/podmínky-užití> .
+<https://data.gov.cz/zdroj/datové-sady/00283347/1087802854/distribuce/182730f484f8b60c21342e239a7b4f32/podmínky-užití> a <https://data.gov.cz/slovník/podmínky-užití/Specifikace> ;
+	<https://data.gov.cz/slovník/podmínky-užití/autorské-dílo> <https://data.gov.cz/podmínky-užití/neobsahuje-autorská-díla/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-jako-autorské-dílo> <https://data.gov.cz/podmínky-užití/není-autorskoprávně-chráněnou-databází/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-chráněná-zvláštními-právy> <https://data.gov.cz/podmínky-užití/není-chráněna-zvláštním-právem-pořizovatele-databáze/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/osobní-údaje> <https://data.gov.cz/podmínky-užití/neobsahuje-osobní-údaje/> ;
+	<http://www.w3.org/2004/02/skos/core#narrowMatch> <http://publications.europa.eu/resource/authority/licence/CC0> .
+<https://data.gov.cz/zdroj/katalog/NKOD> <http://www.w3.org/ns/dcat#dataset> <https://data.gov.cz/zdroj/datové-sady/00283347/1087802854> ;
+	<http://www.w3.org/ns/dcat#record> <https://data.gov.cz/zdroj/datové-sady/00283347/1087802854/záznam> .
+<https://data.gov.cz/zdroj/datové-sady/00283347/1087802854/záznam> a <http://www.w3.org/ns/dcat#CatalogRecord> ;
+	<http://xmlns.com/foaf/0.1/primaryTopic> <https://data.gov.cz/zdroj/datové-sady/00283347/1087802854> ;
+	<http://purl.org/dc/terms/language> <http://publications.europa.eu/resource/authority/language/CES> , <http://publications.europa.eu/resource/authority/language/ENG> ;
+	<http://purl.org/dc/terms/conformsTo> <https://semiceu.github.io/DCAT-AP/releases/3.0.0> .
+<https://data.gov.cz/zdroj/datové-sady/00283347/1087802854/identifikátorNKOD> a <http://www.w3.org/ns/adms#Identifier> ;
+	<http://www.w3.org/2004/02/skos/core#notation> "https://data.gov.cz/zdroj/datové-sady/00283347/1087802854"^^<http://www.w3.org/2001/XMLSchema#anyURI> ;
+	<http://purl.org/dc/terms/creator> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/17651921> .
+<http://eurovoc.europa.eu/492> <http://www.w3.org/2004/02/skos/core#inScheme> <http://eurovoc.europa.eu/> .
+<https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/00283347> a <http://xmlns.com/foaf/0.1/Agent> ;
+	<http://xmlns.com/foaf/0.1/name> "Město Mikulov"@cs .
+<https://data.gov.cz/zdroj/datové-sady/70856788/1255343206> a <http://www.w3.org/ns/dcat#Dataset> , <https://data.gov.cz/slovník/nkod/typ-datové-sady-dle-zdroje/Formulář> ;
+	<http://purl.org/dc/terms/title> "Přehled faktur SFPI za rok 2023"@cs ;
+	<http://purl.org/dc/terms/description> "Přehled již uhrazených faktur Státního fondu podpory investic za rok 2023"@cs ;
+	<http://www.w3.org/ns/dcat#distribution> <https://data.gov.cz/zdroj/datové-sady/70856788/1255343206/distribuce/5dd6c4f5d902833cb8dcc3dc5120f1e8> ;
+	<http://purl.org/dc/terms/accrualPeriodicity> <http://publications.europa.eu/resource/authority/frequency/MONTHLY> ;
+	<http://www.w3.org/ns/dcat#keyword> "Státní fond podpory investic"@cs , "SFPI"@cs , "sfpi"@cs , "Přehled faktur"@cs ;
+	<http://purl.org/dc/terms/spatial> <https://linked.cuzk.cz/resource/ruian/stat/1> ;
+	<http://purl.org/dc/terms/identifier> "https://data.gov.cz/zdroj/datové-sady/70856788/1255343206"^^<http://www.w3.org/2001/XMLSchema#anyURI> ;
+	<http://purl.org/dc/terms/accessRights> <http://publications.europa.eu/resource/authority/access-right/PUBLIC> ;
+	<http://data.europa.eu/r5r/applicableLegislation> <http://data.europa.eu/eli/dir/2019/1024/oj> ;
+	<http://www.w3.org/ns/adms#identifier> <https://data.gov.cz/zdroj/datové-sady/70856788/1255343206/identifikátorNKOD> , <https://data.gov.cz/zdroj/datové-sady/70856788/1255343206/identifikátorLKOD> ;
+	<http://www.w3.org/ns/dcat#theme> <http://publications.europa.eu/resource/authority/data-theme/GOVE> , <http://publications.europa.eu/resource/authority/data-theme/ECON> , <http://publications.europa.eu/resource/authority/data-theme/REGI> ;
+	<http://purl.org/dc/terms/temporal> <https://data.gov.cz/zdroj/datové-sady/70856788/1255343206/časové-pokrytí> ;
+	<http://www.w3.org/ns/dcat#contactPoint> <https://data.gov.cz/zdroj/datové-sady/70856788/1255343206/kontaktní-bod> ;
+	<http://purl.org/dc/terms/publisher> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/70856788> .
+<https://data.gov.cz/zdroj/datové-sady/70856788/1255343206/distribuce/5dd6c4f5d902833cb8dcc3dc5120f1e8> a <http://www.w3.org/ns/dcat#Distribution> ;
+	<http://www.w3.org/ns/dcat#downloadURL> <https://sfpi.cz/open/Faktury_2023.csv> ;
+	<http://www.w3.org/ns/dcat#accessURL> <https://sfpi.cz/open/Faktury_2023.csv> ;
+	<http://purl.org/dc/terms/format> <http://publications.europa.eu/resource/authority/file-type/CSV> ;
+	<http://www.w3.org/ns/dcat#mediaType> <http://www.iana.org/assignments/media-types/text/csv> ;
+	<http://purl.org/dc/terms/license> <https://data.gov.cz/zdroj/datové-sady/70856788/1255343206/distribuce/5dd6c4f5d902833cb8dcc3dc5120f1e8/podmínky-užití> ;
+	<https://data.gov.cz/slovník/podmínky-užití/specifikace> <https://data.gov.cz/zdroj/datové-sady/70856788/1255343206/distribuce/5dd6c4f5d902833cb8dcc3dc5120f1e8/podmínky-užití> .
+<https://data.gov.cz/zdroj/datové-sady/70856788/1255343206/distribuce/5dd6c4f5d902833cb8dcc3dc5120f1e8/podmínky-užití> a <https://data.gov.cz/slovník/podmínky-užití/Specifikace> ;
+	<https://data.gov.cz/slovník/podmínky-užití/autorské-dílo> <https://data.gov.cz/podmínky-užití/neobsahuje-autorská-díla/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-jako-autorské-dílo> <https://data.gov.cz/podmínky-užití/není-autorskoprávně-chráněnou-databází/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/databáze-chráněná-zvláštními-právy> <https://data.gov.cz/podmínky-užití/není-chráněna-zvláštním-právem-pořizovatele-databáze/> ;
+	<https://data.gov.cz/slovník/podmínky-užití/osobní-údaje> <https://data.gov.cz/podmínky-užití/neobsahuje-osobní-údaje/> ;
+	<http://www.w3.org/2004/02/skos/core#narrowMatch> <http://publications.europa.eu/resource/authority/licence/CC0> .
+<https://data.gov.cz/zdroj/katalog/NKOD> <http://www.w3.org/ns/dcat#dataset> <https://data.gov.cz/zdroj/datové-sady/70856788/1255343206> ;
+	<http://www.w3.org/ns/dcat#record> <https://data.gov.cz/zdroj/datové-sady/70856788/1255343206/záznam> .
+<https://data.gov.cz/zdroj/datové-sady/70856788/1255343206/záznam> a <http://www.w3.org/ns/dcat#CatalogRecord> ;
+	<http://xmlns.com/foaf/0.1/primaryTopic> <https://data.gov.cz/zdroj/datové-sady/70856788/1255343206> ;
+	<http://purl.org/dc/terms/language> <http://publications.europa.eu/resource/authority/language/CES> , <http://publications.europa.eu/resource/authority/language/ENG> ;
+	<http://purl.org/dc/terms/conformsTo> <https://semiceu.github.io/DCAT-AP/releases/3.0.0> .
+<https://data.gov.cz/zdroj/datové-sady/70856788/1255343206/identifikátorNKOD> a <http://www.w3.org/ns/adms#Identifier> ;
+	<http://www.w3.org/2004/02/skos/core#notation> "https://data.gov.cz/zdroj/datové-sady/70856788/1255343206"^^<http://www.w3.org/2001/XMLSchema#anyURI> ;
+	<http://purl.org/dc/terms/creator> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/17651921> .
+<https://data.gov.cz/zdroj/datové-sady/70856788/1255343206/identifikátorLKOD> a <http://www.w3.org/ns/adms#Identifier> ;
+	<http://www.w3.org/2004/02/skos/core#notation> "https://data.gov.cz/zdroj/datové-sady/70856788/1255343206"^^<http://www.w3.org/2001/XMLSchema#anyURI> ;
+	<http://purl.org/dc/terms/creator> <https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/70856788> .
+<http://publications.europa.eu/resource/authority/data-theme/GOVE> <http://www.w3.org/2004/02/skos/core#inScheme> <http://publications.europa.eu/resource/authority/data-theme> .
+<http://publications.europa.eu/resource/authority/data-theme/ECON> <http://www.w3.org/2004/02/skos/core#inScheme> <http://publications.europa.eu/resource/authority/data-theme> .
+<http://publications.europa.eu/resource/authority/data-theme/REGI> <http://www.w3.org/2004/02/skos/core#inScheme> <http://publications.europa.eu/resource/authority/data-theme> .
+<https://data.gov.cz/zdroj/datové-sady/70856788/1255343206/časové-pokrytí> a <http://purl.org/dc/terms/PeriodOfTime> ;
+	<http://www.w3.org/ns/dcat#startDate> "2023-01-01"^^<http://www.w3.org/2001/XMLSchema#date> ;
+	<http://www.w3.org/ns/dcat#endDate> "2023-12-31"^^<http://www.w3.org/2001/XMLSchema#date> .
+<https://data.gov.cz/zdroj/datové-sady/70856788/1255343206/kontaktní-bod> a <http://www.w3.org/2006/vcard/ns#Organization> ;
+	<http://www.w3.org/2006/vcard/ns#fn> "Mgr. Marie Lukáčová"@cs ;
+	<http://www.w3.org/2006/vcard/ns#hasEmail> <mailto:lukacova.marie@sfpi.cz> .
+<https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/70856788> a <http://xmlns.com/foaf/0.1/Agent> ;
+	<http://xmlns.com/foaf/0.1/name> "Státní fond podpory investic"@cs .
