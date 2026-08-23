@@ -1,11 +1,12 @@
 import { hasNestedModel } from '../../generation-model/field-shape.ts';
+import { RESERVED_ENTITY_PROPERTY_NAMES } from '../../generation-model/types.ts';
 import type { AggregateFieldMetadata, AggregateMetadata } from '../../metadata/types.ts';
 import { toAggregateTypeName, toNestedModelTypeName, toPropertyName } from '../../utils/naming.ts';
 import type { SemanticValidationContext } from '../semantic-validation-context.ts';
 import { semanticViolation, type Violation } from '../types.ts';
 import { ViolationCode } from '../violation-codes.ts';
 
-const reservedPropertyNames = new Set(['id', '__specializationIri', '__rdfTypes']);
+const reservedPropertyNames = new Set(RESERVED_ENTITY_PROPERTY_NAMES);
 
 /**
  * Metadata paths become TypeScript property and nested model names. Collisions must be rejected

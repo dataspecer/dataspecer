@@ -29,6 +29,7 @@ export enum ViolationCode {
   SemanticUnknownEdgeTarget = 'SEMANTIC_UNKNOWN_EDGE_TARGET',
   SemanticUnsupportedDatasourceCount = 'SEMANTIC_UNSUPPORTED_DATASOURCE_COUNT',
   SemanticUnsupportedDatasourceType = 'SEMANTIC_UNSUPPORTED_DATASOURCE_TYPE',
+  SemanticUnrecoverableSpecialization = 'SEMANTIC_UNRECOVERABLE_SPECIALIZATION',
 
   // Warnings
   SemanticAssociationConfigNotAllowed = 'SEMANTIC_ASSOCIATION_CONFIG_NOT_ALLOWED',

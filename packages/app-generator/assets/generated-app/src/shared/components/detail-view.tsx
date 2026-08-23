@@ -32,8 +32,10 @@ import { invokeOperation, type OperationStrategy } from '../operations/operation
 import type {
   AggregateDescriptor,
   AggregateDescriptorMap,
+  EntityRecord,
   EntityModel,
   FieldDescriptor,
+  SpecializationDescriptor,
 } from '../types/aggregate.ts';
 import { ActionLinks } from './action-links.tsx';
 import { formatPrimitiveValue } from '../forms/field-value.ts';
@@ -45,6 +47,7 @@ import {
   languageLabel,
 } from '../forms/multilingual-value.ts';
 import { FieldLabel } from './field-label.tsx';
+import { effectiveFields } from '../forms/specialization.ts';
 
 // Nested sections deeper than this start collapsed so deep structures do not overwhelm the page.
 const OPEN_DEPTH = 2;
@@ -233,6 +236,7 @@ function Field(props: FieldProps) {
         <AccordionDetails sx={{ px: 0, pt: 0, pb: 1 }}>
           <NestedEntities
             fields={field.fields ?? []}
+            specializations={field.specializations}
             fieldPath={props.fieldPath}
             value={value}
             associationActions={props.associationActions}
@@ -263,6 +267,7 @@ function Field(props: FieldProps) {
 
 interface NestedEntitiesProps {
   fields: FieldDescriptor[];
+  specializations?: SpecializationDescriptor[];
   fieldPath: string;
   value: unknown;
   associationActions: readonly AssociationNavigationActionDescriptor[];
@@ -273,6 +278,7 @@ interface NestedEntitiesProps {
 
 function NestedEntities(props: NestedEntitiesProps) {
   const entities: unknown[] = Array.isArray(props.value) ? props.value : [props.value];
+  const shape = { fields: props.fields, specializations: props.specializations };
   // Only the first level of nesting is framed. Deeper levels would stack a card inside a card
   // inside an accordion, so they are set off by an indent rule instead.
   const framed = props.depth <= 1;
@@ -282,7 +288,7 @@ function NestedEntities(props: NestedEntitiesProps) {
       {props.action ? <EntityLink value={entity} action={props.action} /> : null}
       {entity !== null && typeof entity === 'object' ? (
         <FieldList
-          fields={props.fields}
+          fields={effectiveFields(shape, entity as EntityRecord)}
           item={entity as Record<string, unknown>}
           associationActions={props.associationActions}
           languages={props.languages}

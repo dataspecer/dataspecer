@@ -8,6 +8,7 @@ import {
   type EntityTarget,
 } from './entity-target.ts';
 import { compositionEntities, type EntityPathSegment } from './form-draft.ts';
+import { effectiveFields } from './specialization.ts';
 
 /** Describes a composed entity that opens in its own form pane. */
 export interface NavigablePane {
@@ -26,62 +27,80 @@ export function navigablePanes(
   path: EntityPathSegment[],
   validationPrefix = ''
 ): NavigablePane[] {
-  return target.fields.filter(isCompositionField).flatMap((field) => {
-    const childTarget = resolveCompositionTarget(target, field, aggregateRegistry);
-    if (!childTarget || !childTarget.fields.some(isCompositionField)) {
-      // children that compose nothing are edited in place, so they don't need their own pane
-      return [];
-    }
-    return compositionEntities(entity[field.propertyName], field).flatMap((child, index) => {
-      const childPath = [
-        ...path,
-        { propertyName: field.propertyName, ...(field.many ? { index } : {}) },
-      ];
-      const childValidationPath = field.many
-        ? `${joinValidationPath(validationPrefix, field.path)}[${index}]`
-        : joinValidationPath(validationPrefix, field.path);
-      return [
-        {
-          key: childValidationPath,
-          path: childPath,
-          label: entitySummary(childTarget, child, index),
-          fieldLabel: field.label,
-          validationPath: childValidationPath,
-        },
-        ...navigablePanes(child, childTarget, aggregateRegistry, childPath, childValidationPath),
-      ];
+  return effectiveFields(target, entity)
+    .filter(isCompositionField)
+    .flatMap((field) => {
+      const childTarget = resolveCompositionTarget(target, field, aggregateRegistry);
+      if (!childTarget) {
+        return [];
+      }
+      return compositionEntities(entity[field.propertyName], field).flatMap((child, index) => {
+        if (
+          !childTarget.specializations?.length &&
+          !effectiveFields(childTarget, child).some(isCompositionField)
+        ) {
+          // children that compose nothing are edited in place, so they don't need their own pane
+          return [];
+        }
+        const childPath = [
+          ...path,
+          { propertyName: field.propertyName, ...(field.many ? { index } : {}) },
+        ];
+        const childValidationPath = field.many
+          ? `${joinValidationPath(validationPrefix, field.path)}[${index}]`
+          : joinValidationPath(validationPrefix, field.path);
+        return [
+          {
+            key: childValidationPath,
+            path: childPath,
+            label: entitySummary(childTarget, child, index),
+            fieldLabel: field.label,
+            validationPath: childValidationPath,
+          },
+          ...navigablePanes(child, childTarget, aggregateRegistry, childPath, childValidationPath),
+        ];
+      });
     });
-  });
 }
 
 export function targetAtPath(
   rootTarget: EntityTarget,
+  root: EntityRecord,
   path: readonly EntityPathSegment[],
   aggregateRegistry: AggregateDescriptorMap
 ): EntityTarget {
   let target = rootTarget;
+  let entity = root;
   for (const segment of path) {
-    const field = target.fields.find(
+    const field = effectiveFields(target, entity).find(
       (candidate) => candidate.propertyName === segment.propertyName
     );
     const child = field && resolveCompositionTarget(target, field, aggregateRegistry);
     if (!child) {
       return target;
     }
+    const values = compositionEntities(entity[field.propertyName], field);
+    const next = values[segment.index ?? 0];
+    if (!next) {
+      return target;
+    }
     target = child;
+    entity = next;
   }
   return target;
 }
 
 export function validationPathAt(
   rootTarget: EntityTarget,
+  root: EntityRecord,
   path: readonly EntityPathSegment[],
   aggregateRegistry: AggregateDescriptorMap
 ): string {
   let target = rootTarget;
+  let entity = root;
   let validationPath = '';
   for (const segment of path) {
-    const field = target.fields.find(
+    const field = effectiveFields(target, entity).find(
       (candidate) => candidate.propertyName === segment.propertyName
     );
     const child = field && resolveCompositionTarget(target, field, aggregateRegistry);
@@ -92,7 +111,13 @@ export function validationPathAt(
     if (segment.index !== undefined) {
       validationPath = `${validationPath}[${segment.index}]`;
     }
+    const values = compositionEntities(entity[field.propertyName], field);
+    const next = values[segment.index ?? 0];
+    if (!next) {
+      return validationPath;
+    }
     target = child;
+    entity = next;
   }
   return validationPath;
 }
@@ -116,7 +141,7 @@ export function breadcrumbEntries(
   const traversed: EntityPathSegment[] = [];
 
   for (const segment of path) {
-    const field = target.fields.find(
+    const field = effectiveFields(target, entity).find(
       (candidate) => candidate.propertyName === segment.propertyName
     );
     const child = field && resolveCompositionTarget(target, field, aggregateRegistry);
@@ -151,7 +176,7 @@ export function entitySummary(
   entity: EntityRecord | undefined,
   index: number
 ): string {
-  for (const field of target.fields) {
+  for (const field of entity ? effectiveFields(target, entity) : target.fields) {
     if (field.kind !== 'primitive' || !entity) {
       continue;
     }
@@ -224,7 +249,7 @@ export function collectEntityIds(
   if (typeof entity.id === 'string' && entity.id !== '') {
     ids.add(entity.id);
   }
-  for (const field of target.fields.filter(isCompositionField)) {
+  for (const field of effectiveFields(target, entity).filter(isCompositionField)) {
     const childTarget = resolveCompositionTarget(target, field, aggregateRegistry);
     if (!childTarget) {
       continue;

@@ -1,6 +1,14 @@
 import type { AssociationKind, DatasourceType, Operation } from '../graph/types.ts';
 import { type FieldKind } from '../metadata/types.ts';
 
+export const SPECIALIZATION_IRI_PROPERTY = '__specializationIri';
+export const RDF_TYPES_PROPERTY = '__rdfTypes';
+export const RESERVED_ENTITY_PROPERTY_NAMES: readonly string[] = [
+  'id',
+  SPECIALIZATION_IRI_PROPERTY,
+  RDF_TYPES_PROPERTY,
+];
+
 export interface GenerationModel {
   app: GeneratedAppDescriptor;
   datasource: GeneratedDatasourceDescriptor;

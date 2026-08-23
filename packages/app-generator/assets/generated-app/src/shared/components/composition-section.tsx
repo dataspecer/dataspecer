@@ -32,6 +32,7 @@ import {
 } from '../forms/form-draft.ts';
 import type { ValidationIssue } from '../operations/operation-result.ts';
 import type { AggregateDescriptorMap, EntityRecord, FieldDescriptor } from '../types/aggregate.ts';
+import { effectiveFields } from '../forms/specialization.ts';
 import { ConfirmDialog } from './confirm-dialog.tsx';
 import { FieldLabel } from './field-label.tsx';
 import { FormField } from './form-field.tsx';
@@ -69,7 +70,9 @@ export function CompositionSection(props: CompositionSectionProps) {
     );
   }
   const target = props.target;
-  const editsInline = !target.fields.some(isCompositionField);
+  // specialized children open in their own pane, the same editor can then show their selector and
+  // any composition fields introduced by the selected branch
+  const editsInline = !target.specializations?.length && !target.fields.some(isCompositionField);
 
   const add = () => {
     const child = createEntityDraft(target, props.aggregateRegistry, props.instanceBaseIri);
@@ -283,10 +286,11 @@ interface InlineEntityFieldsProps {
 /** Edits a composed child without leaving the current pane. */
 function InlineEntityFields(props: InlineEntityFieldsProps) {
   const errorAt = (path: string) => props.issues.find((issue) => issue.path === path)?.message;
+  const fields = effectiveFields(props.target, props.entity);
 
   return (
     <>
-      {props.target.fields.map((field) => (
+      {fields.map((field) => (
         <FormField
           key={field.path}
           field={field}

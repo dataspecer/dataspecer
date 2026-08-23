@@ -13,6 +13,7 @@ import { validateTransitionClasses } from './rules/transition-classes.ts';
 import { validateGeneratedFieldNames } from './rules/generated-field-names.ts';
 import { validateNamedNodeIdentityOverrides } from './rules/named-node-identity.ts';
 import { coalesceRdfPropertyAliases } from './coalesce-rdf-property-aliases.ts';
+import { validateSpecializationRecoverability } from './rules/specialization-recoverability.ts';
 
 export interface SemanticAnalysisResult extends ValidationResult {
   enrichedMetadata: SpecificationMetadata;
@@ -55,6 +56,7 @@ export function analyzeGraphSemantics(
   ];
   violations.push(...validateAggregateNames(context));
   violations.push(...validateGeneratedFieldNames(context));
+  violations.push(...validateSpecializationRecoverability(context));
   violations.push(...validateNamedNodeIdentityOverrides(context));
   violations.push(...validateAggregateReferences(context));
   violations.push(...validateRedirectClasses(context));

@@ -2,6 +2,9 @@ export type FieldKind = 'primitive' | 'association';
 
 export type AssociationKind = 'composition' | 'aggregation';
 
+export const SPECIALIZATION_IRI_PROPERTY = '__specializationIri';
+export const RDF_TYPES_PROPERTY = '__rdfTypes';
+
 /** A selectable concrete shape for a specialized association. */
 export interface SpecializationDescriptor {
   /** Stable specialization identifier. Distinguishes choices sharing an RDF class. */
@@ -84,9 +87,9 @@ export interface EntityModel {
 /** State carried by editable records but excluded from generated domain models and RDF writes. */
 export interface EntityRuntimeState {
   /** Identifies the selected specialization, including choices that share an RDF class. */
-  __specializationIri?: string;
+  [SPECIALIZATION_IRI_PROPERTY]?: string;
   /** RDF types retained as evidence when resolving the specialization of a loaded entity. */
-  __rdfTypes?: string[];
+  [RDF_TYPES_PROPERTY]?: string[];
 }
 
 export type EntityRecord = EntityModel & EntityRuntimeState & Record<string, unknown>;

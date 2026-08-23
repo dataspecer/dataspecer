@@ -8,6 +8,11 @@ import {
 } from '../forms/entity-target.ts';
 import { compactMultilingualValue, isMultilingualField } from '../forms/multilingual-value.ts';
 import {
+  effectiveFields,
+  hasSelectedBranchEvidence,
+  selectedSpecialization,
+} from '../forms/specialization.ts';
+import {
   fieldValues,
   isEntityRecord,
   type AggregateDescriptor,
@@ -81,6 +86,7 @@ function collectCreateSteps(
   aggregateRegistry: AggregateDescriptorMap,
   steps: CompositeMutationStep[]
 ): void {
+  const specializationIri = requireMutationSpecialization(entity, target);
   visitCompositionChildren(entity, target, aggregateRegistry, (child, childTarget) => {
     collectCreateSteps(child, childTarget, aggregateRegistry, steps);
   });
@@ -88,7 +94,7 @@ function collectCreateSteps(
     kind: 'create',
     target,
     payload: serializeEntity(entity, target, 'create'),
-    specializationIri: entity.__specializationIri,
+    ...(specializationIri ? { specializationIri } : {}),
     id: requireEntityId(entity, target.name),
   });
 }
@@ -101,7 +107,8 @@ function collectUpdateSteps(
   upserts: CompositeMutationStep[],
   removals: CompositeMutationStep[]
 ): void {
-  for (const field of target.fields) {
+  const specializationIri = requireMutationSpecialization(entity, target, original);
+  for (const field of effectiveFields(target, entity)) {
     if (!isCompositionField(field)) {
       continue;
     }
@@ -143,7 +150,7 @@ function collectUpdateSteps(
     kind,
     target,
     payload: serializeEntity(entity, target, kind),
-    specializationIri: entity.__specializationIri,
+    ...(specializationIri ? { specializationIri } : {}),
     id: requireEntityId(entity, target.name),
   });
 }
@@ -154,6 +161,7 @@ function collectDeleteSteps(
   aggregateRegistry: AggregateDescriptorMap,
   removals: CompositeMutationStep[]
 ): void {
+  requireMutationSpecialization(entity, target, entity, 'remove');
   visitCompositionChildren(entity, target, aggregateRegistry, (child, childTarget) => {
     collectDeleteSteps(child, childTarget, aggregateRegistry, removals);
   });
@@ -171,7 +179,8 @@ function collectCascadeDeleteSteps(
   pathPrefix: string,
   removals: CompositeMutationStep[]
 ): void {
-  for (const field of target.fields) {
+  requireMutationSpecialization(entity, target, entity, 'remove');
+  for (const field of effectiveFields(target, entity)) {
     const fieldPath = pathPrefix ? `${pathPrefix}.${field.path}` : field.path;
     if (!cascadePaths.has(fieldPath) || !isCompositionField(field)) {
       continue;
@@ -203,7 +212,7 @@ function visitCompositionChildren(
   aggregateRegistry: AggregateDescriptorMap,
   visit: (entity: EntityRecord, target: EntityTarget) => void
 ): void {
-  for (const field of target.fields) {
+  for (const field of effectiveFields(target, entity)) {
     if (!isCompositionField(field)) {
       continue;
     }
@@ -232,7 +241,7 @@ function serializeEntity(
   mode: 'create' | 'update'
 ): EntityRecord {
   const payload: EntityRecord = { id: requireEntityId(entity, target.name) };
-  for (const field of target.fields) {
+  for (const field of effectiveFields(target, entity)) {
     if (resolveControl(field) === 'unsupported') {
       continue;
     }
@@ -271,6 +280,56 @@ function serializeEntity(
     }
   }
   return payload;
+}
+
+function requireMutationSpecialization(
+  entity: EntityRecord,
+  target: EntityTarget,
+  original?: EntityRecord,
+  operation: 'save' | 'remove' = 'save'
+): string | undefined {
+  if (!target.specializations?.length) {
+    return undefined;
+  }
+  const action = operation === 'save' ? 'saved' : 'removed';
+  const selected = selectedSpecialization(target, entity);
+  if (!selected) {
+    if (original) {
+      throw new Error(
+        `The stored specialization of "${target.name}" cannot be identified, ` +
+          `so it cannot be ${action}.`
+      );
+    }
+    throw new Error(`Select one specialization for "${target.name}" before saving.`);
+  }
+  if (!hasSelectedBranchEvidence(target, entity, selected)) {
+    if (operation === 'remove') {
+      throw new Error(
+        `The stored specialization of "${target.name}" has no identifying branch value, ` +
+          'so it cannot be removed.'
+      );
+    }
+    throw new Error(
+      `Enter a value in at least one field unique to "${selected.label}" before saving.`
+    );
+  }
+  if (!original) {
+    return selected.specializationIri;
+  }
+
+  const loaded = selectedSpecialization(target, original);
+  if (!loaded) {
+    throw new Error(
+      `The stored specialization of "${target.name}" cannot be identified, ` +
+        `so it cannot be ${action}.`
+    );
+  }
+  if (loaded.specializationIri !== selected.specializationIri) {
+    throw new Error(
+      `The specialization of "${target.name}" cannot be changed after the entity has been saved.`
+    );
+  }
+  return loaded.specializationIri;
 }
 
 function compositionReferences(value: unknown, field: FieldDescriptor): unknown {

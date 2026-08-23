@@ -1,5 +1,12 @@
-import type { FieldDescriptor } from '../types/aggregate.ts';
-import { fieldValues, isEntityRecord, type EntityRecord } from '../types/aggregate.ts';
+import {
+  fieldValues,
+  isEntityRecord,
+  RDF_TYPES_PROPERTY,
+  SPECIALIZATION_IRI_PROPERTY,
+  type EntityRecord,
+  type FieldDescriptor,
+  type SpecializationDescriptor,
+} from '../types/aggregate.ts';
 import { isCompositionField } from '../forms/entity-target.ts';
 import { isSafeAbsoluteIri, requireSafeAbsoluteIri } from '../forms/iri.ts';
 import {
@@ -7,6 +14,7 @@ import {
   isMultilingualField,
   normalizeMultilingualValue,
 } from '../forms/multilingual-value.ts';
+import { effectiveFields, resolveLoadedSpecialization } from '../forms/specialization.ts';
 
 type LdkitMutationMode = 'create' | 'update';
 
@@ -15,9 +23,13 @@ export function normalizeLdkitEntity(value: unknown, fields: readonly FieldDescr
   return normalizeEntity(value, fields);
 }
 
-function normalizeEntity(value: unknown, fields: readonly FieldDescriptor[]): unknown {
+function normalizeEntity(
+  value: unknown,
+  fields: readonly FieldDescriptor[],
+  specializations?: readonly SpecializationDescriptor[]
+): unknown {
   if (Array.isArray(value)) {
-    return value.map((entry) => normalizeEntity(entry, fields));
+    return value.map((entry) => normalizeEntity(entry, fields, specializations));
   }
   if (value === null || typeof value !== 'object' || value instanceof Date) {
     return value;
@@ -38,7 +50,7 @@ function normalizeEntity(value: unknown, fields: readonly FieldDescriptor[]): un
           : normalizeMultilingualValue(nested, field.label);
     } else if (field?.kind === 'association') {
       result[key] = readsInlineComposition(field)
-        ? normalizeEntity(nested, field.fields ?? [])
+        ? normalizeEntity(nested, field.fields ?? [], field.specializations)
         : normalizeReference(nested, field);
     } else {
       result[key] = normalizeUnknown(nested);
@@ -47,7 +59,11 @@ function normalizeEntity(value: unknown, fields: readonly FieldDescriptor[]): un
   if (typeof source.$id === 'string') {
     result.id = source.$id;
   }
-  return result;
+  if (!specializations?.length) {
+    return result;
+  }
+  const shape = { fields, specializations };
+  return resolveLoadedSpecialization(shape, result as EntityRecord);
 }
 
 function normalizeReference(value: unknown, field: FieldDescriptor): unknown {
@@ -96,6 +112,9 @@ export function requireNamedCompositionIris(
     }
     const fieldPath = pathPrefix ? `${pathPrefix}.${field.path}` : field.path;
     const values = fieldValues(record[field.propertyName], field);
+    const childShape = readsInlineComposition(field)
+      ? { fields: field.fields ?? [], specializations: field.specializations }
+      : undefined;
     values.forEach((value, index) => {
       const valuePath = field.many ? `${fieldPath}[${index}]` : fieldPath;
       if (!isEntityRecord(value) || typeof value.id !== 'string' || !isSafeAbsoluteIri(value.id)) {
@@ -104,8 +123,8 @@ export function requireNamedCompositionIris(
             'Blank-node compositions are not editable by this generated application.'
         );
       }
-      if (readsInlineComposition(field)) {
-        requireNamedCompositionIris(value, field.fields ?? [], valuePath);
+      if (childShape) {
+        requireNamedCompositionIris(value, effectiveFields(childShape, value), valuePath);
       }
     });
   }
@@ -154,7 +173,7 @@ export function toLdkitEntity(
       }
       continue;
     }
-    if (key === '__specializationIri' || key === '__rdfTypes') {
+    if (key === SPECIALIZATION_IRI_PROPERTY || key === RDF_TYPES_PROPERTY) {
       // runtime specialization state selects schemas but must never become RDF data
       continue;
     }

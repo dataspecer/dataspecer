@@ -14,6 +14,7 @@ import {
   resolveCompositionTarget,
 } from './entity-target.ts';
 import { isMultilingualField, normalizeMultilingualValue } from './multilingual-value.ts';
+import { effectiveFields, selectedSpecialization } from './specialization.ts';
 
 export interface EntityPathSegment {
   propertyName: string;
@@ -23,14 +24,19 @@ export interface EntityPathSegment {
 export function createEntityDraft(
   target: EntityTarget,
   aggregateRegistry: AggregateDescriptorMap,
-  instanceBaseIri: string
+  instanceBaseIri: string,
+  specializationIri?: string
 ): EntityRecord {
   const entity: EntityRecord = {
     // createEmpty describes the aggregate root, inline targets initialize from their own fields
     ...(target.fieldPath.length === 0 ? target.aggregate.createEmpty() : {}),
     id: generateIri(instanceBaseIri),
+    ...(specializationIri ? { __specializationIri: specializationIri } : {}),
   };
-  for (const field of target.fields) {
+  if (specializationIri && !selectedSpecialization(target, entity)) {
+    throw new Error(`Unknown specialization "${specializationIri}" for "${target.name}".`);
+  }
+  for (const field of effectiveFields(target, entity)) {
     if (isMultilingualField(field)) {
       entity[field.propertyName] = normalizeMultilingualValue(entity[field.propertyName]);
       continue;
@@ -56,6 +62,24 @@ export function createEntityDraft(
     }
   }
   return entity;
+}
+
+/** Selects a specialization and keeps only values that belong to the new choice. */
+export function selectEntitySpecialization(
+  entity: EntityRecord,
+  target: EntityTarget,
+  aggregateRegistry: AggregateDescriptorMap,
+  instanceBaseIri: string,
+  specializationIri: string
+): EntityRecord {
+  const selected = createEntityDraft(target, aggregateRegistry, instanceBaseIri, specializationIri);
+  selected.id = entity.id;
+  for (const field of effectiveFields(target, selected)) {
+    if (Object.hasOwn(entity, field.propertyName)) {
+      selected[field.propertyName] = entity[field.propertyName];
+    }
+  }
+  return selected;
 }
 
 function createFieldValue(
@@ -103,8 +127,9 @@ async function hydrateCompositionChildren(
   paths: ReadonlySet<string> | null,
   pathPrefix: string
 ): Promise<void> {
+  const fields = effectiveFields(target, entity);
   await Promise.all(
-    target.fields.map(async (field) => {
+    fields.map(async (field) => {
       const fieldPath = pathPrefix ? `${pathPrefix}.${field.path}` : field.path;
       if (!isCompositionField(field) || (paths && !paths.has(fieldPath))) {
         return;

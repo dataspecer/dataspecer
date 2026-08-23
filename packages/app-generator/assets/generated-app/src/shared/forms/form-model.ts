@@ -1,7 +1,10 @@
 import {
   fieldValues,
   isEntityRecord,
+  RDF_TYPES_PROPERTY,
+  SPECIALIZATION_IRI_PROPERTY,
   type AggregateDescriptorMap,
+  type EntityRecord,
   type FieldDescriptor,
   type FormControl,
 } from '../types/aggregate.ts';
@@ -20,6 +23,12 @@ import {
   multilingualLanguagesOverLimit,
   nonEmptyMultilingualValues,
 } from './multilingual-value.ts';
+import {
+  effectiveFields,
+  hasSelectedBranchEvidence,
+  resolveSpecialization,
+  selectedSpecialization,
+} from './specialization.ts';
 
 export type FieldControl = FormControl | 'reference' | 'composition' | 'unsupported';
 
@@ -107,7 +116,11 @@ function validateEntity(
     });
   }
 
-  for (const field of target.fields) {
+  if (!validateSpecialization(model, target, pathPrefix, issues)) {
+    return;
+  }
+
+  for (const field of effectiveFields(target, model)) {
     if (resolveControl(field) === 'unsupported') {
       continue;
     }
@@ -202,6 +215,52 @@ function validateEntity(
       );
     });
   }
+}
+
+function validateSpecialization(
+  model: Record<string, unknown>,
+  target: EntityTarget,
+  pathPrefix: string,
+  issues: ValidationIssue[]
+): boolean {
+  if (!target.specializations?.length) {
+    return true;
+  }
+  const entity = model as EntityRecord;
+  const selected = selectedSpecialization(target, entity);
+  const path = joinPath(pathPrefix, SPECIALIZATION_IRI_PROPERTY);
+  if (!selected) {
+    if (Object.hasOwn(entity, RDF_TYPES_PROPERTY)) {
+      const resolution = resolveSpecialization(target, entity);
+      issues.push({
+        code: ValidationIssueCode.SpecializationUnresolved,
+        message:
+          resolution.kind === 'conflicting'
+            ? `${target.name} contains conflicting evidence for multiple specializations and cannot be saved.`
+            : `${target.name} does not contain enough evidence to identify one specialization and cannot be saved.`,
+        path,
+      });
+    } else {
+      issues.push({
+        code: ValidationIssueCode.SpecializationRequired,
+        message: `Select a specialization for ${target.name}.`,
+        path,
+      });
+    }
+    return false;
+  }
+
+  if (!hasSelectedBranchEvidence(target, entity, selected)) {
+    issues.push({
+      code: ValidationIssueCode.SpecializationEvidenceRequired,
+      message:
+        `Enter a value in at least one field unique to "${selected.label}". ` +
+        'Otherwise the specialization cannot be identified after saving.',
+      path,
+    });
+    return false;
+  }
+  return true;
 }
 
 function validateMultilingualField(

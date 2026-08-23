@@ -12,6 +12,9 @@ export enum ValidationIssueCode {
   InvalidValue = 'invalid_value',
   MissingCompositionTarget = 'missing_composition_target',
   InvalidComposition = 'invalid_composition',
+  SpecializationRequired = 'specialization_required',
+  SpecializationUnresolved = 'specialization_unresolved',
+  SpecializationEvidenceRequired = 'specialization_evidence_required',
 }
 
 export interface ValidationIssue {

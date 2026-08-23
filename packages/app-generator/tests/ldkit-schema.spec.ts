@@ -4,13 +4,12 @@ import { ldkit } from 'ldkit/namespaces';
 
 import { AssociationKind } from '../src/graph/types.ts';
 import { FieldKind } from '../src/metadata/types.ts';
-import type { GeneratedAggregateDescriptor } from '../src/generation-model/types.ts';
-import { datatypeMapping } from '../src/rendering/datatypes.ts';
 import {
-  buildLdkitSchemaBundle,
   RDF_TYPES_PROPERTY,
-  toLdkitSchemaSource,
-} from '../src/rendering/ldkit-schema.ts';
+  type GeneratedAggregateDescriptor,
+} from '../src/generation-model/types.ts';
+import { datatypeMapping } from '../src/rendering/datatypes.ts';
+import { buildLdkitSchemaBundle, toLdkitSchemaSource } from '../src/rendering/ldkit-schema.ts';
 import { toRenderedAggregate } from '../src/rendering/rendered-aggregate.ts';
 
 const XSD = 'http://www.w3.org/2001/XMLSchema#';

@@ -4,12 +4,12 @@ import { ldkit } from 'ldkit/namespaces';
 import type { RenderedField } from './rendered-aggregate.ts';
 
 import { AssociationKind } from '../graph/types.ts';
+import { RDF_TYPES_PROPERTY } from '../generation-model/types.ts';
 import { FieldKind } from '../metadata/types.ts';
 import { compositeKey } from '../utils/composite-key.ts';
 import { datatypeMapping } from './datatypes.ts';
 
 const RDF_TYPE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
-export const RDF_TYPES_PROPERTY = '__rdfTypes';
 
 /**
  * LDKit uses schemas for both querying and encoding. Lists omit compositions to keep paging

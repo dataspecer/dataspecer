@@ -179,6 +179,95 @@ describe('composite mutation planning', () => {
     );
   });
 
+  it('updates only the loaded specialization and ignores another branch and its children', () => {
+    const specialized = specializedDepartments();
+    const aggregate: AggregateDescriptor = { ...companyAggregate, fields: [specialized] };
+    const current: EntityRecord = {
+      id: 'urn:company',
+      departments: [
+        {
+          id: 'urn:department',
+          __specializationIri: 'urn:psm:organization',
+          organizationCode: 'new-code',
+          personCode: 'must-not-write',
+          personOffices: [{ id: 'urn:office:person', label: 'Must stay untouched' }],
+        },
+      ],
+    };
+    const stored: EntityRecord = {
+      id: 'urn:company',
+      departments: [
+        {
+          id: 'urn:department',
+          __specializationIri: 'urn:psm:organization',
+          __rdfTypes: ['urn:class:department'],
+          organizationCode: 'old-code',
+          personCode: 'stored-other-branch',
+          personOffices: [{ id: 'urn:office:person', label: 'Must stay untouched' }],
+        },
+      ],
+    };
+
+    const plan = buildCompositeUpdatePlan(aggregate, aggregateRegistry, current, stored);
+    const department = plan.find((step) => step.id === 'urn:department');
+
+    expect(plan.map((step) => [step.kind, step.id])).toEqual([
+      ['update', 'urn:department'],
+      ['update', 'urn:company'],
+    ]);
+    expect(department?.specializationIri).toBe('urn:psm:organization');
+    expect(department?.payload).toMatchObject({ organizationCode: 'new-code' });
+    expect(department?.payload).not.toHaveProperty('personCode');
+    expect(department?.payload).not.toHaveProperty('personOffices');
+  });
+
+  it('rejects changing or removing a child whose loaded specialization is unavailable', () => {
+    const specialized = specializedDepartments();
+    const aggregate: AggregateDescriptor = { ...companyAggregate, fields: [specialized] };
+    const storedOrganization: EntityRecord = {
+      id: 'urn:company',
+      departments: [
+        {
+          id: 'urn:department',
+          __specializationIri: 'urn:psm:organization',
+          __rdfTypes: ['urn:class:department'],
+          organizationCode: 'organization',
+        },
+      ],
+    };
+    const switched: EntityRecord = {
+      id: 'urn:company',
+      departments: [
+        {
+          id: 'urn:department',
+          __specializationIri: 'urn:psm:person',
+          personCode: 'person',
+        },
+      ],
+    };
+    const unresolved: EntityRecord = {
+      id: 'urn:company',
+      departments: [
+        {
+          id: 'urn:department',
+          __rdfTypes: ['urn:class:department'],
+        },
+      ],
+    };
+
+    expect(() =>
+      buildCompositeUpdatePlan(aggregate, aggregateRegistry, switched, storedOrganization)
+    ).toThrow('cannot be changed after the entity has been saved');
+    expect(() =>
+      buildCompositeUpdatePlan(
+        aggregate,
+        aggregateRegistry,
+        { id: 'urn:company', departments: [] },
+        unresolved
+      )
+    ).toThrow('cannot be removed');
+  });
+
   it('updates children before their parent and deletes removed subtrees after unlinking', () => {
     const payload: EntityRecord = {
       id: 'urn:company',
@@ -481,6 +570,48 @@ describe('default composite update strategy', () => {
     expect(update).not.toHaveBeenCalled();
   });
 });
+
+function specializedDepartments(): FieldDescriptor {
+  const organizationCode: FieldDescriptor = {
+    path: 'organizationCode',
+    propertyName: 'organizationCode',
+    label: 'Organization code',
+    kind: 'primitive',
+    formControl: 'text',
+    many: false,
+    required: false,
+  };
+  const personCode: FieldDescriptor = {
+    ...organizationCode,
+    path: 'personCode',
+    propertyName: 'personCode',
+    label: 'Person code',
+  };
+  const personOffices: FieldDescriptor = {
+    ...offices,
+    path: 'personOffices',
+    propertyName: 'personOffices',
+    label: 'Person offices',
+  };
+  return {
+    ...inlineDepartments,
+    fields: [organizationCode, personCode, personOffices],
+    specializations: [
+      {
+        specializationIri: 'urn:psm:organization',
+        label: 'Organization',
+        classIri: 'urn:class:department',
+        fieldPaths: ['organizationCode'],
+      },
+      {
+        specializationIri: 'urn:psm:person',
+        label: 'Person',
+        classIri: 'urn:class:department',
+        fieldPaths: ['personCode', 'personOffices'],
+      },
+    ],
+  };
+}
 
 describe('default composite delete strategy', () => {
   it('requires the loaded payload only when cascade paths are configured', async () => {

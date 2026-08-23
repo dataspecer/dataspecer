@@ -2,6 +2,7 @@ import type {
   AggregateDescriptor,
   AggregateDescriptorMap,
   FieldDescriptor,
+  SpecializationDescriptor,
 } from '../types/aggregate.ts';
 
 /**
@@ -15,6 +16,7 @@ export interface EntityTarget {
   name: string;
   classIri: string;
   fields: FieldDescriptor[];
+  specializations?: SpecializationDescriptor[];
 }
 
 export function rootEntityTarget(aggregate: AggregateDescriptor): EntityTarget {
@@ -67,6 +69,7 @@ function resolveAssociationTarget(
     name: field.label,
     classIri: field.targetClassIri,
     fields: field.fields,
+    ...(field.specializations ? { specializations: field.specializations } : {}),
   };
 }
 

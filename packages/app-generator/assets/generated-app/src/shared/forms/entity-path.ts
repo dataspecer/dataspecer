@@ -116,7 +116,7 @@ export function nearestPanePath(
       (candidate) => candidate.propertyName === segment.propertyName
     );
     const child = field && resolveCompositionTarget(target, field, aggregateRegistry);
-    if (!child || !child.fields.some(isCompositionField)) {
+    if (!child || (!child.specializations?.length && !child.fields.some(isCompositionField))) {
       return pane;
     }
     pane.push(segment);

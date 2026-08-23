@@ -21,23 +21,31 @@ import {
   resolveCompositionTarget,
   rootEntityTarget,
 } from '../forms/entity-target.ts';
-import { compositionEntities, entityAtPath, updateEntityAtPath } from '../forms/form-draft.ts';
+import {
+  compositionEntities,
+  entityAtPath,
+  selectEntitySpecialization,
+  updateEntityAtPath,
+} from '../forms/form-draft.ts';
 import {
   isMultilingualField,
   languageDisplayName,
   multilingualLanguageTags,
 } from '../forms/multilingual-value.ts';
 import { useEntityPath } from '../navigation/use-location.ts';
+import { effectiveFields } from '../forms/specialization.ts';
 import type { ValidationIssue } from '../operations/operation-result.ts';
-import type {
-  AggregateDescriptor,
-  AggregateDescriptorMap,
-  EntityRecord,
-  FieldDescriptor,
+import {
+  SPECIALIZATION_IRI_PROPERTY,
+  type AggregateDescriptor,
+  type AggregateDescriptorMap,
+  type EntityRecord,
+  type FieldDescriptor,
 } from '../types/aggregate.ts';
 import { CompositionSection } from './composition-section.tsx';
 import { FormBreadcrumbs, StructureDrawer } from './form-navigation.tsx';
 import { FormField } from './form-field.tsx';
+import { SpecializationSelect } from './specialization-select.tsx';
 
 interface EntityFormEditorProps {
   aggregate: AggregateDescriptor;
@@ -78,14 +86,21 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
   // a path from the address bar can point at a child that no longer exists
   const selection = resolveEntityPath(props.model, requestedPath);
   const selectionKey = formatEntityPath(selection);
-  const target = targetAtPath(rootTarget, selection, props.aggregateRegistry);
+  const target = targetAtPath(rootTarget, props.model, selection, props.aggregateRegistry);
   const entity = entityAtPath(props.model, selection);
-  const validationPrefix = validationPathAt(rootTarget, selection, props.aggregateRegistry);
+  const fields = effectiveFields(target, entity);
+  const validationPrefix = validationPathAt(
+    rootTarget,
+    props.model,
+    selection,
+    props.aggregateRegistry
+  );
   const totalIssues = [...issueCounts.values()].reduce((total, count) => total + count, 0);
   // one language selector for every pane, so it offers and keeps the whole form's languages
   const hasMultilingualFields = rootTarget.fields.some(containsMultilingualField);
   const storedLanguages = collectMultilingualLanguages(props.model, rootTarget.fields).sort();
   const languageOptions = [...new Set([...props.languages, ...storedLanguages, selectedLanguage])];
+  const persisted = typeof entity.id === 'string' && existingIds.has(entity.id);
 
   useEffect(() => {
     const previousKey = previousSelectionKey.current;
@@ -170,7 +185,25 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
         onChange={(event) => updateSelected((current) => ({ ...current, id: event.target.value }))}
       />
 
-      {target.fields
+      <SpecializationSelect
+        target={target}
+        entity={entity}
+        persisted={persisted}
+        error={errorAt(joinValidationPath(validationPrefix, SPECIALIZATION_IRI_PROPERTY))}
+        onChange={(specializationIri) =>
+          updateSelected((current) =>
+            selectEntitySpecialization(
+              current,
+              target,
+              props.aggregateRegistry,
+              props.instanceBaseIri,
+              specializationIri
+            )
+          )
+        }
+      />
+
+      {fields
         .filter((field) => !isCompositionField(field))
         .map((field) => (
           <FormField
@@ -186,7 +219,7 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
           />
         ))}
 
-      {target.fields.filter(isCompositionField).map((field) => {
+      {fields.filter(isCompositionField).map((field) => {
         const childTarget = resolveCompositionTarget(target, field, props.aggregateRegistry);
         const fieldPath = joinValidationPath(validationPrefix, field.path);
         return (
@@ -259,11 +292,14 @@ function collectMultilingualLanguages(
     if (!isCompositionField(field) || !field.fields) {
       continue;
     }
+    const childShape = { fields: field.fields, specializations: field.specializations };
     const entries = Array.isArray(value) ? value : [value];
     for (const entry of entries) {
       if (entry !== null && typeof entry === 'object') {
-        collectMultilingualLanguages(entry as Record<string, unknown>, field.fields).forEach(
-          (language) => languages.add(language)
+        const child = entry as EntityRecord;
+        const childFields = effectiveFields(childShape, child);
+        collectMultilingualLanguages(child, childFields).forEach((language) =>
+          languages.add(language)
         );
       }
     }

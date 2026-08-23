@@ -9,6 +9,7 @@ import {
   type FieldDescriptor,
 } from '../types/aggregate.ts';
 import { requireSafeAbsoluteIri } from '../forms/iri.ts';
+import { effectiveFields } from '../forms/specialization.ts';
 import type {
   DataSource,
   DeleteArgs,
@@ -281,9 +282,12 @@ export class RdfLdkitDataSource implements DataSource {
           `Unknown specialization "${specializationIri}" for "${aggregate.name}.${fieldPath.join('.')}".`
         );
       }
-      const fieldPaths = new Set(specialization.fieldPaths);
+      const shape = {
+        fields: target.fields,
+        specializations: target.targetField?.specializations,
+      };
       return {
-        fields: target.fields.filter((field) => fieldPaths.has(field.path)),
+        fields: effectiveFields(shape, { __specializationIri: specializationIri }),
         lens: createLens(schema, this.context()),
       };
     }

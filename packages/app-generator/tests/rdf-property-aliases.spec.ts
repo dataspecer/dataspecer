@@ -228,7 +228,7 @@ function specialization(specializationIri: string, fieldPaths: string[]) {
   return {
     specializationIri,
     label: specializationIri,
-    classIri: 'https://example.org/Contact',
+    classIri: `${specializationIri}/class`,
     identityPolicy: 'ALWAYS' as const,
     fieldPaths,
   };

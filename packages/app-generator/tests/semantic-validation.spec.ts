@@ -799,6 +799,126 @@ describe('analyzeGraphSemantics', () => {
     );
   });
 
+  it('rejects same-class specializations without editable branch-exclusive fields', () => {
+    const metadata = structuredClone(basicMetadata);
+    const book = metadata.aggregates.find(
+      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail'
+    );
+    if (!book) {
+      throw new Error('Missing book aggregate in test metadata.');
+    }
+    book.fields.push({
+      path: 'distributions',
+      label: 'Distributions',
+      kind: FieldKind.Association,
+      propertyIri: 'https://example.org/property/distribution',
+      targetClassIri: 'https://example.org/class/distribution',
+      fields: [
+        {
+          path: 'title',
+          label: 'Title',
+          kind: FieldKind.Primitive,
+          propertyIri: 'https://example.org/property/title',
+        },
+      ],
+      specializations: [
+        {
+          specializationIri: 'https://example.org/psm/download',
+          label: 'Download',
+          classIri: 'https://example.org/class/distribution',
+          fieldPaths: ['title'],
+          identityPolicy: 'ALWAYS',
+        },
+        {
+          specializationIri: 'https://example.org/psm/service',
+          label: 'Data service',
+          classIri: 'https://example.org/class/distribution',
+          fieldPaths: ['title'],
+          identityPolicy: 'ALWAYS',
+        },
+      ],
+    });
+    const graph = validGraph({
+      nodes: [
+        node('Book.Update', book.iri, Operation.Update, {
+          associations: { distributions: AssociationKind.Composition },
+        }),
+      ],
+      edges: [],
+    });
+
+    const result = analyzeGraphSemantics(graph, metadata);
+    const errors = result.violations.filter(
+      (violation) => violation.code === ViolationCode.SemanticUnrecoverableSpecialization
+    );
+
+    expect(result.valid).toBe(false);
+    expect(errors).toHaveLength(2);
+    expect(errors[0].message).toContain('no editable field unique to it');
+  });
+
+  it('accepts same-class specializations with editable branch-exclusive fields', () => {
+    const metadata = structuredClone(basicMetadata);
+    const book = metadata.aggregates.find(
+      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail'
+    );
+    if (!book) {
+      throw new Error('Missing book aggregate in test metadata.');
+    }
+    book.fields.push({
+      path: 'distributions',
+      label: 'Distributions',
+      kind: FieldKind.Association,
+      propertyIri: 'https://example.org/property/distribution',
+      targetClassIri: 'https://example.org/class/distribution',
+      fields: [
+        {
+          path: 'accessUrl',
+          label: 'Access URL',
+          kind: FieldKind.Primitive,
+          propertyIri: 'https://example.org/property/access-url',
+        },
+        {
+          path: 'endpointUrl',
+          label: 'Endpoint URL',
+          kind: FieldKind.Primitive,
+          propertyIri: 'https://example.org/property/endpoint-url',
+        },
+      ],
+      specializations: [
+        {
+          specializationIri: 'https://example.org/psm/download',
+          label: 'Download',
+          classIri: 'https://example.org/class/distribution',
+          fieldPaths: ['accessUrl'],
+          identityPolicy: 'ALWAYS',
+        },
+        {
+          specializationIri: 'https://example.org/psm/service',
+          label: 'Data service',
+          classIri: 'https://example.org/class/distribution',
+          fieldPaths: ['endpointUrl'],
+          identityPolicy: 'ALWAYS',
+        },
+      ],
+    });
+    const graph = validGraph({
+      nodes: [
+        node('Book.Update', book.iri, Operation.Update, {
+          associations: { distributions: AssociationKind.Composition },
+        }),
+      ],
+      edges: [],
+    });
+
+    const result = analyzeGraphSemantics(graph, metadata);
+
+    expect(result.valid).toBe(true);
+    expect(result.violations).not.toContainEqual(
+      expect.objectContaining({ code: ViolationCode.SemanticUnrecoverableSpecialization })
+    );
+  });
+
   it('rejects field-name collisions in composition targets without operation nodes', () => {
     const parentIri = 'urn:aggregate:parent';
     const childIri = 'urn:aggregate:child';
