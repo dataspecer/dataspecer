@@ -12,6 +12,7 @@ import { validateRedirectClasses } from './rules/redirect-classes.ts';
 import { validateTransitionClasses } from './rules/transition-classes.ts';
 import { validateGeneratedFieldNames } from './rules/generated-field-names.ts';
 import { validateNamedNodeIdentityOverrides } from './rules/named-node-identity.ts';
+import { coalesceRdfPropertyAliases } from './coalesce-rdf-property-aliases.ts';
 
 export interface SemanticAnalysisResult extends ValidationResult {
   enrichedMetadata: SpecificationMetadata;
@@ -35,15 +36,23 @@ export function analyzeGraphSemantics(
     graph.nodes.map((node) => node.aggregateIri),
     allAggregates.values()
   );
+  const aliases = coalesceRdfPropertyAliases(graph, enrichment.metadata, reachableAggregateIris);
+  const normalizedAggregates = new Map(
+    aliases.metadata.aggregates.map((aggregate) => [aggregate.iri, aggregate])
+  );
   const context = {
     graph,
     aggregates: new Map(
-      [...allAggregates].filter(([aggregateIri]) => reachableAggregateIris.has(aggregateIri))
+      [...normalizedAggregates].filter(([aggregateIri]) => reachableAggregateIris.has(aggregateIri))
     ),
     nodes: new Map(graph.nodes.map((node) => [node.id, node])),
   };
 
-  const violations: Violation[] = [...structure.violations, ...enrichment.violations];
+  const violations: Violation[] = [
+    ...structure.violations,
+    ...enrichment.violations,
+    ...aliases.violations,
+  ];
   violations.push(...validateAggregateNames(context));
   violations.push(...validateGeneratedFieldNames(context));
   violations.push(...validateNamedNodeIdentityOverrides(context));
@@ -56,6 +65,6 @@ export function analyzeGraphSemantics(
   return {
     valid: !hasErrors(violations),
     violations,
-    enrichedMetadata: enrichment.metadata,
+    enrichedMetadata: aliases.metadata,
   };
 }

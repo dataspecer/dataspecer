@@ -344,6 +344,29 @@ describe('mapDataspecerSpecificationToMetadata', () => {
     ]);
   });
 
+  it('allows same-predicate specialization fields with different validation cardinalities', () => {
+    const fixture = distributionSpecializationFixture();
+    const accessRelationship = fixture.aggregatedSemanticModel.find(
+      (entity) => entity.id === 'relationship-access-service'
+    ) as SemanticModelRelationship;
+    accessRelationship.ends[1].iri = 'https://example.org/property/relationship-download-url';
+    const accessAttribute = fixture.structureModels[0].find(
+      (resource) => resource.iri === 'https://example.org/psm/access-service'
+    ) as DataPsmAttribute;
+    accessAttribute.dataPsmCardinality = [1, 1];
+
+    const metadata = mapDataspecerSpecificationToMetadata(specificationIri, fixture);
+    const distribution = metadata.aggregates
+      .find((aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail')
+      ?.fields.find((field) => field.path === 'distributions');
+
+    expect(distribution?.fields?.map((field) => field.path)).toEqual([
+      'title',
+      'downloadUrl',
+      'accessService',
+    ]);
+  });
+
   it('rejects incompatible field shapes for the same predicate across Or branches', () => {
     const fixture = distributionSpecializationFixture();
     const accessRelationship = fixture.aggregatedSemanticModel.find(

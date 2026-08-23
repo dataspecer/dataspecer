@@ -22,6 +22,7 @@ import {
 
 import type { Entity } from '@dataspecer/core-v2/entity-model';
 
+import { compositeKey } from '../utils/composite-key.ts';
 import type {
   SpecificationSourceLoader,
   SpecificationSource,
@@ -672,7 +673,10 @@ function resolveSpecializationTarget(
 
   specializations.forEach((specialization) => {
     for (const mappedField of specialization.fields) {
-      const key = `${mappedField.sourceFieldIri}\u0000${fieldCompatibilityKey(mappedField.field)}`;
+      const key = compositeKey(
+        mappedField.sourceFieldIri,
+        fieldCompatibilityKey(mappedField.field)
+      );
       if (!unionByIdentityAndShape.has(key)) {
         unionByIdentityAndShape.set(key, mappedField);
       }
@@ -690,8 +694,8 @@ function resolveSpecializationTarget(
 
 /**
  * Rejects incompatible definitions of one RDF predicate across specialization choices. All choices
- * share one LDKit read schema, which cannot give a predicate different datatypes, cardinalities,
- * directions, targets, or nested shapes at the same time.
+ * share one LDKit read schema, which cannot give a predicate different datatypes, scalar/array
+ * representations, directions, targets, or nested shapes at the same time.
  */
 function reportConflictingSpecializationFieldShapes(
   specializations: MappedSpecialization[],
@@ -706,7 +710,7 @@ function reportConflictingSpecializationFieldShapes(
       if (!field.propertyIri) {
         continue;
       }
-      const shape = fieldCompatibilityKey(field);
+      const shape = fieldStorageShapeKey(field);
       const first = firstByPredicate.get(field.propertyIri);
       if (!first) {
         firstByPredicate.set(field.propertyIri, { specializationIndex, shape });
@@ -737,7 +741,19 @@ function reportConflictingSpecializationFieldShapes(
  * identity policies do not affect whether two predicate definitions can share the read schema.
  */
 function fieldCompatibilityKey(field: AggregateFieldMetadata): string {
-  return JSON.stringify({
+  return JSON.stringify(fieldShape(field, true));
+}
+
+/** Describes only the RDF storage shape, leaving field-specific validation constraints out. */
+function fieldStorageShapeKey(field: AggregateFieldMetadata): string {
+  return JSON.stringify(fieldShape(field, false));
+}
+
+function fieldShape(
+  field: AggregateFieldMetadata,
+  includeValidationConstraints: boolean
+): Record<string, unknown> {
+  return {
     kind: field.kind,
     propertyIri: field.propertyIri ?? null,
     datatype: field.datatype ?? null,
@@ -749,11 +765,15 @@ function fieldCompatibilityKey(field: AggregateFieldMetadata): string {
       ) ?? null,
     isReverse: field.isReverse ?? false,
     many: field.many ?? false,
-    required: field.required ?? false,
-    minCount: field.minCount ?? 0,
-    maxCount: field.maxCount ?? null,
-    fields: field.fields?.map(fieldCompatibilityKey) ?? null,
-  });
+    ...(includeValidationConstraints
+      ? {
+          required: field.required ?? false,
+          minCount: field.minCount ?? 0,
+          maxCount: field.maxCount ?? null,
+        }
+      : {}),
+    fields: field.fields?.map((child) => fieldShape(child, includeValidationConstraints)) ?? null,
+  };
 }
 
 function toFieldMetadata(fields: MappedField[]): AggregateFieldMetadata[] {

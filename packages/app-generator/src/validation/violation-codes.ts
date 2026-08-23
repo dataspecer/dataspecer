@@ -11,6 +11,7 @@ export enum ViolationCode {
   SemanticCascadeRequiresParentCascade = 'SEMANTIC_CASCADE_REQUIRES_PARENT_CASCADE',
   SemanticCircularComposition = 'SEMANTIC_CIRCULAR_COMPOSITION',
   SemanticConflictingAssociationKind = 'SEMANTIC_CONFLICTING_ASSOCIATION_KIND',
+  SemanticConflictingRdfPropertyAlias = 'SEMANTIC_CONFLICTING_RDF_PROPERTY_ALIAS',
   SemanticDuplicateAggregateName = 'SEMANTIC_DUPLICATE_AGGREGATE_NAME',
   SemanticDuplicateGeneratedFieldName = 'SEMANTIC_DUPLICATE_GENERATED_FIELD_NAME',
   SemanticDuplicateRouteId = 'SEMANTIC_DUPLICATE_ROUTE_ID',
@@ -21,6 +22,7 @@ export enum ViolationCode {
   SemanticNestedAssociationRequiresComposition = 'SEMANTIC_NESTED_ASSOCIATION_REQUIRES_COMPOSITION',
   SemanticNoNodes = 'SEMANTIC_NO_NODES',
   SemanticRedirectRequiresSameClass = 'SEMANTIC_REDIRECT_REQUIRES_SAME_CLASS',
+  SemanticRdfPropertyAliasConfigPath = 'SEMANTIC_RDF_PROPERTY_ALIAS_CONFIG_PATH',
   SemanticTransitionRequiresSameClass = 'SEMANTIC_TRANSITION_REQUIRES_SAME_CLASS',
   SemanticUnknownAggregate = 'SEMANTIC_UNKNOWN_AGGREGATE',
   SemanticUnknownEdgeSource = 'SEMANTIC_UNKNOWN_EDGE_SOURCE',
@@ -36,5 +38,6 @@ export enum ViolationCode {
   SemanticDuplicateEdge = 'SEMANTIC_DUPLICATE_EDGE',
   SemanticInvalidAssociationKind = 'SEMANTIC_INVALID_ASSOCIATION_KIND',
   SemanticNamedNodeIdentityOverride = 'SEMANTIC_NAMED_NODE_IDENTITY_OVERRIDE',
+  SemanticRdfPropertyAliasesCoalesced = 'SEMANTIC_RDF_PROPERTY_ALIASES_COALESCED',
   SemanticTransitionRequiresAssociation = 'SEMANTIC_TRANSITION_REQUIRES_ASSOCIATION',
 }
