@@ -41,7 +41,12 @@ export function hasValidSyntax(graph: ApplicationGraph): boolean {
 }
 
 function violationKey(violation: Violation): string {
-  return `${violation.code}|${violation.path ?? ""}|${violation.message}`;
+  return JSON.stringify([
+    violation.code,
+    violation.sourceCode ?? null,
+    violation.path ?? null,
+    violation.message,
+  ]);
 }
 
 /**

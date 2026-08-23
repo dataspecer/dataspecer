@@ -123,7 +123,8 @@ export function mapDataspecerSpecificationToMetadata(
   if (specification.structureModels.length === 0) {
     addIssue(context, {
       code: DataspecerMetadataMappingIssueCode.MissingStructureModels,
-      message: 'Specification contains no data structures.',
+      message:
+        'The specification contains no data structures. Create at least one data structure in Dataspecer.',
       path: 'structureModels',
     });
   }
@@ -190,7 +191,9 @@ function mapStructureModel(
   if (!schema) {
     addIssue(context, {
       code: DataspecerMetadataMappingIssueCode.MissingSchema,
-      message: `Data structure ${structureModelIndex} has no schema definition.`,
+      message:
+        `Data structure ${structureModelIndex} has no schema definition. ` +
+        'Recreate or remove it in Dataspecer.',
       path,
     });
     return [];
@@ -199,7 +202,9 @@ function mapStructureModel(
   if (!schema.iri) {
     addIssue(context, {
       code: DataspecerMetadataMappingIssueCode.MissingSchemaIri,
-      message: `Data structure ${structureModelIndex} has no schema IRI.`,
+      message:
+        `Data structure ${structureModelIndex} has no IRI. ` +
+        'Assign one or recreate the structure in Dataspecer.',
       path,
     });
     return [];
@@ -223,7 +228,9 @@ function mapStructureModel(
   if (!rootClassIri || !rootClass || !DataPsmClass.is(rootClass)) {
     addIssue(context, {
       code: DataspecerMetadataMappingIssueCode.MissingRootClass,
-      message: `Data structure "${schema.iri}" does not have a root class that can be resolved.`,
+      message:
+        `Data structure "${schema.iri}" has no resolvable class root. ` +
+        'Select one existing class as its root.',
       path: `${path}.dataPsmRoots[0]`,
     });
     return [];
@@ -281,7 +288,9 @@ function mapClassFields(
     if (!part) {
       addIssue(context, {
         code: DataspecerMetadataMappingIssueCode.MissingFieldResource,
-        message: `Field "${partIri}" cannot be found in the data structure.`,
+        message:
+          `Field "${partIri}" is referenced by the data structure but cannot be found. ` +
+          'Restore it or remove the reference in Dataspecer.',
         path: fieldPath,
       });
       return [];
@@ -304,7 +313,9 @@ function mapClassFields(
     // Containers and external roots are outside the supported structure subset.
     addIssue(context, {
       code: DataspecerMetadataMappingIssueCode.UnsupportedFieldResource,
-      message: `Field "${partIri}" uses a structure construct that the app generator does not support.`,
+      message:
+        `Field "${partIri}" uses an unsupported structure construct. ` +
+        'Replace it with an attribute, association, or Include.',
       path: fieldPath,
     });
     return [];
@@ -324,7 +335,9 @@ function expandInclude(
   if (!targetIri || !target) {
     addIssue(context, {
       code: DataspecerMetadataMappingIssueCode.MissingIncludeTarget,
-      message: `Include "${include.iri ?? path}" has a target that cannot be found.`,
+      message:
+        `Include "${include.iri ?? path}" references a missing target. ` +
+        'Select an existing class or remove the Include.',
       path,
     });
     return [];
@@ -342,7 +355,7 @@ function expandInclude(
   if (classPath.has(targetIri)) {
     addIssue(context, {
       code: DataspecerMetadataMappingIssueCode.CircularInclude,
-      message: `Include "${include.iri ?? path}" creates a circular Include chain.`,
+      message: `Include "${include.iri ?? path}" creates a cycle. Remove one Include from the cycle.`,
       path,
     });
     return [];
@@ -512,8 +525,8 @@ function resolveAssociationTarget(
       addIssue(context, {
         code: DataspecerMetadataMappingIssueCode.MissingTargetAggregate,
         message:
-          `Association "${association.iri ?? fieldPath}" class reference does not resolve ` +
-          'to a data structure.',
+          `Association "${association.iri ?? fieldPath}" references a class that is not the ` +
+          'root of a data structure. Point it to an existing data structure.',
         path: fieldPath,
       });
       return {};
@@ -537,7 +550,9 @@ function resolveAssociationTarget(
   if (targetResource.iri && classPath.has(targetResource.iri)) {
     addIssue(context, {
       code: DataspecerMetadataMappingIssueCode.CircularStructure,
-      message: `Association "${association.iri ?? fieldPath}" creates a circular inline structure.`,
+      message:
+        `Association "${association.iri ?? fieldPath}" creates a circular inline structure. ` +
+        'Break the cycle, usually by using a class reference.',
       path: fieldPath,
     });
     return {};
@@ -577,7 +592,9 @@ function resolveSpecializationTarget(
   if (specializationOr.dataPsmChoices.length === 0) {
     addIssue(context, {
       code: DataspecerMetadataMappingIssueCode.MissingSpecializationChoice,
-      message: `Specialization (Or) "${specializationOr.iri ?? fieldPath}" has no choices.`,
+      message:
+        `Specialization (Or) "${specializationOr.iri ?? fieldPath}" has no choices. ` +
+        'Add at least one class choice.',
       path: fieldPath,
     });
     return {};
@@ -593,8 +610,8 @@ function resolveSpecializationTarget(
         addIssue(context, {
           code: DataspecerMetadataMappingIssueCode.MissingSpecializationChoice,
           message:
-            `Choice "${choiceIri}" in specialization (Or) ` +
-            `"${specializationOr.iri ?? fieldPath}" cannot be found.`,
+            `Specialization (Or) "${specializationOr.iri ?? fieldPath}" references missing ` +
+            `choice "${choiceIri}". Restore it or remove the reference.`,
           path: choicePath,
         });
         return [];
@@ -616,7 +633,7 @@ function resolveSpecializationTarget(
           code: DataspecerMetadataMappingIssueCode.UnsupportedSpecializationChoice,
           message:
             `Specialization (Or) "${specializationOr.iri ?? fieldPath}" contains ` +
-            `the class choice "${choiceIri}" more than once.`,
+            `class choice "${choiceIri}" more than once. Remove the duplicate choice.`,
           path: choicePath,
         });
         return [];
@@ -727,8 +744,9 @@ function reportConflictingSpecializationFieldShapes(
           code: DataspecerMetadataMappingIssueCode.ConflictingSpecializationFieldShape,
           message:
             `Specializations "${firstSpecialization.label}" and "${specialization.label}" ` +
-            `define predicate "${field.propertyIri}" incompatibly. Align their datatype, ` +
-            'cardinality, direction, and target, or use different predicates.',
+            `use RDF property "${field.propertyIri}" with incompatible representations. Align ` +
+            'their datatype, scalar or repeated cardinality, direction, target, and nested fields, ' +
+            'or use different RDF properties.',
           path,
         });
       }

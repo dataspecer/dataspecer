@@ -55,7 +55,7 @@ function visitFields(
         : '';
       const message =
         `Composition "${fieldPath}" in "${aggregateName}" disallows child IRIs, ` +
-        `but generated applications require them.${affected} ` +
+        `but the app requires an IRI to edit each child and will use one.${affected} ` +
         'Set class instance identification to Optional or Required.';
       violations.push(
         semanticWarning(

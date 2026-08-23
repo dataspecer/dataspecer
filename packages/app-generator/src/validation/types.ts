@@ -7,6 +7,8 @@ export enum ViolationSeverity {
 
 export interface Violation {
   code: ViolationCode;
+  /** More specific code supplied by the subsystem that caused the violation. */
+  sourceCode?: string;
   message: string;
   path?: string;
   severity: ViolationSeverity;

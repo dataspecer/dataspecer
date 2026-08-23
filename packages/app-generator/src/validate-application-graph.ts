@@ -65,6 +65,7 @@ function metadataResolutionViolations(error: unknown): Violation[] {
   if (error instanceof DataspecerMetadataMappingError) {
     return error.issues.map((issue) => ({
       code: ViolationCode.MetadataResolutionFailed,
+      sourceCode: issue.code,
       message: issue.message,
       ...(issue.path ? { path: issue.path } : {}),
       severity: ViolationSeverity.Error,
@@ -74,7 +75,7 @@ function metadataResolutionViolations(error: unknown): Violation[] {
   return [
     {
       code: ViolationCode.MetadataResolutionFailed,
-      message: `Unable to resolve Dataspecer specification metadata: ${
+      message: `Could not load metadata for the selected data specification: ${
         error instanceof Error ? error.message : String(error)
       }`,
       severity: ViolationSeverity.Error,

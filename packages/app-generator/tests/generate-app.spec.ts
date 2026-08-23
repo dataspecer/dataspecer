@@ -111,6 +111,7 @@ describe('generateApp', { timeout: 30_000 }, () => {
     expect(result.violations).toEqual([
       expect.objectContaining({
         code: ViolationCode.MetadataResolutionFailed,
+        sourceCode: DataspecerMetadataMappingIssueCode.MissingRootClass,
         message: 'Data structure "example" does not have a root class that can be resolved.',
         path: 'structureModels[0]',
       }),

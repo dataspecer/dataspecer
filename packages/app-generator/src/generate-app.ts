@@ -44,7 +44,9 @@ export async function generateApp(input: GenerateAppInput): Promise<GenerateAppR
       violations: [
         {
           code: ViolationCode.GenerateFormatFailed,
-          message: error instanceof Error ? error.message : String(error),
+          message: `Could not format the generated files: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
           severity: ViolationSeverity.Error,
         },
       ],
@@ -69,7 +71,9 @@ export async function generateApp(input: GenerateAppInput): Promise<GenerateAppR
         violations: [
           {
             code: ViolationCode.GenerateWriteFailed,
-            message: error instanceof Error ? error.message : String(error),
+            message: `Could not write the generated files: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
             severity: ViolationSeverity.Error,
           },
         ],

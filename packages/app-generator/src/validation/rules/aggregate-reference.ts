@@ -11,7 +11,8 @@ export function validateAggregateReferences(context: SemanticValidationContext):
     return [
       semanticViolation(
         ViolationCode.SemanticUnknownAggregate,
-        `Node "${node.id}" references unknown aggregate "${node.aggregateIri}".`,
+        `Node "${node.id}" references unknown aggregate "${node.aggregateIri}". ` +
+          'Select an existing data structure.',
         `/nodes/${index}/aggregateIri`
       ),
     ];

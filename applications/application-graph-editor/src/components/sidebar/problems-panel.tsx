@@ -1,4 +1,8 @@
-import type { ApplicationGraph, Violation } from "@dataspecer/app-generator/graph";
+import {
+  ViolationCode,
+  type ApplicationGraph,
+  type Violation,
+} from "@dataspecer/app-generator/graph";
 import { useValidation, useViolationsBySeverity } from "../../hooks/use-validation.ts";
 import { useEditorStore } from "../../store.ts";
 import { violationTarget } from "../../validation/violations.ts";
@@ -79,6 +83,12 @@ function ViolationGroup({
       <ul className="px-1">
         {violations.map((violation, index) => {
           const target = violationTarget(graph, violation);
+          const isSpecificationProblem =
+            violation.code === ViolationCode.MetadataResolutionFailed ||
+            violation.path === "/dataSpecificationIri";
+          const heading =
+            target?.id ??
+            (isSpecificationProblem ? "Data specification" : "Graph");
           return (
             <li key={index}>
               <button
@@ -86,7 +96,7 @@ function ViolationGroup({
                 className="w-full cursor-pointer rounded px-2 py-1 text-left text-sm hover:bg-slate-50"
                 onClick={() => onFocus(violation)}
               >
-                <ViolationItem violation={violation} heading={target ? target.id : "Graph"} />
+                <ViolationItem violation={violation} heading={heading} />
               </button>
             </li>
           );

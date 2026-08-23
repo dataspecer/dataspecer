@@ -110,7 +110,7 @@ function findDuplicateIdViolations(
 
     violations.push({
       code,
-      message: `${itemLabel} ID "${item.id}" is duplicated.`,
+      message: `${itemLabel} ID "${item.id}" is duplicated. Assign a unique ID.`,
       path: `/${collectionPath}/${index}/id`,
       severity: ViolationSeverity.Error,
     });

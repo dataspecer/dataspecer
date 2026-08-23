@@ -17,7 +17,7 @@ export function validateRedirects(context: StructuralValidationContext): Violati
       violations.push(
         semanticViolation(
           ViolationCode.SemanticMultipleRedirects,
-          `Node "${edge.source}" has more than one redirect.`,
+          `Node "${edge.source}" has more than one redirect. Keep only one redirect from this node.`,
           `/edges/${index}/source`
         )
       );
@@ -34,7 +34,9 @@ export function validateRedirects(context: StructuralValidationContext): Violati
       violations.push(
         semanticViolation(
           ViolationCode.SemanticInvalidRedirect,
-          `Redirect "${edge.id}" from ${sourceNode.operation} to ${targetNode.operation} is not valid.`,
+          `Redirect "${edge.id}" cannot connect ${sourceNode.operation} to ` +
+            `${targetNode.operation}. Redirect Create or Update to ReadList or ReadDetail, ` +
+            'and Delete to ReadList.',
           `/edges/${index}`
         )
       );

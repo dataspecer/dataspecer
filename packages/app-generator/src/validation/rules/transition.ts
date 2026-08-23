@@ -20,7 +20,9 @@ export function validateTransitions(context: StructuralValidationContext): Viola
       return [
         semanticViolation(
           ViolationCode.SemanticInvalidTransition,
-          `Transition "${edge.id}" from ${sourceNode.operation} to ${targetNode.operation} is not valid.`,
+          `Transition "${edge.id}" cannot connect ${sourceNode.operation} to ` +
+            `${targetNode.operation}. Transitions must start from ReadList or ReadDetail. ` +
+            'Use a redirect after a write operation.',
           `/edges/${index}`
         ),
       ];

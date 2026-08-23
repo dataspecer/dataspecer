@@ -37,7 +37,8 @@ export function validateDeleteCascade(context: SemanticValidationContext): Viola
         violations.push(
           semanticViolation(
             ViolationCode.SemanticInvalidDeletePolicy,
-            `Delete policy for "${path}" must be "cascade".`,
+            `Delete path "${path}" has unsupported policy "${String(policy)}". ` +
+              'Use "cascade" or remove the setting.',
             `/nodes/${nodeIndex}/config/delete/${path}`
           )
         );
@@ -49,7 +50,8 @@ export function validateDeleteCascade(context: SemanticValidationContext): Viola
         violations.push(
           semanticWarning(
             ViolationCode.SemanticDeletePathNotAssociation,
-            `Delete cascade path "${path}" is not an association on aggregate "${aggregate.name}".`,
+            `Delete path "${path}" in "${aggregate.name}" is not an association, so no ` +
+              'cascade is generated for it. Correct the path or remove the setting.',
             `/nodes/${nodeIndex}/config/delete/${path}`
           )
         );
@@ -60,7 +62,8 @@ export function validateDeleteCascade(context: SemanticValidationContext): Viola
         violations.push(
           semanticViolation(
             ViolationCode.SemanticCannotCascadeAggregation,
-            `Delete cascade path "${path}" is not a composition.`,
+            `Delete path "${path}" is an aggregation and cannot be cascade-deleted. ` +
+              'Configure it as a composition or remove the cascade setting.',
             `/nodes/${nodeIndex}/config/delete/${path}`
           )
         );

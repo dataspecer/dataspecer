@@ -29,7 +29,8 @@ export function validateRedirectClasses(context: SemanticValidationContext): Vio
       return [
         semanticViolation(
           ViolationCode.SemanticRedirectRequiresSameClass,
-          `Redirect "${edge.id}" to ReadDetail requires source and target aggregates to represent the same class.`,
+          `Redirect "${edge.id}" cannot open a ReadDetail page for a different RDF class. ` +
+            'Use a matching detail aggregate or redirect to ReadList.',
           `/edges/${index}`
         ),
       ];

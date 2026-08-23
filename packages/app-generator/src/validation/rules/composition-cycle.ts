@@ -40,7 +40,8 @@ export function validateCompositionCycles(context: SemanticValidationContext): V
           violations.push(
             semanticViolation(
               ViolationCode.SemanticCircularComposition,
-              `Circular composition detected: ${[...cycle, target].join(' -> ')}.`,
+              `Composition cycle detected: ${[...cycle, target].join(' -> ')}. ` +
+                'Change at least one association in the cycle to an aggregation.',
               '/nodes'
             )
           );

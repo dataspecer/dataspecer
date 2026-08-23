@@ -33,7 +33,8 @@ export function validateTransitionClasses(context: SemanticValidationContext): V
       return [
         semanticViolation(
           ViolationCode.SemanticTransitionRequiresSameClass,
-          `Transition "${edge.id}" requires source and target aggregates to represent the same class.`,
+          `Transition "${edge.id}" connects operations over different RDF classes. ` +
+            'Use operations representing the same class or remove the edge.',
           `/edges/${index}`
         ),
       ];
@@ -52,7 +53,9 @@ export function validateTransitionClasses(context: SemanticValidationContext): V
       return [
         semanticWarning(
           ViolationCode.SemanticTransitionRequiresAssociation,
-          `Transition "${edge.id}" requires same-class aggregates or an association from source to target.`,
+          `Transition "${edge.id}" cannot generate navigation because its aggregates use ` +
+            'different RDF classes and the source has no association to the target. ' +
+            'Use matching aggregates or add an association.',
           `/edges/${index}`
         ),
       ];

@@ -124,9 +124,10 @@ function coalesceFields(
       violations.push(
         semanticViolation(
           ViolationCode.SemanticConflictingRdfPropertyAlias,
-          `Fields ${quotedList(paths)} in aggregate "${aggregate.name}" use predicate ` +
-            `"${representative.propertyIri}" with incompatible RDF shapes. Align their value ` +
-            'kind, datatype or target, cardinality representation, association kind, and nested shape.',
+          `Fields ${quotedList(paths)} in aggregate "${aggregate.name}" share RDF property ` +
+            `"${representative.propertyIri}" but require incompatible representations. Align ` +
+            'their datatype, target, direction, cardinality, association kind, and nested fields, ' +
+            'or use different RDF properties.',
           '/dataSpecificationIri'
         )
       );
@@ -144,9 +145,10 @@ function coalesceFields(
     violations.push(
       semanticWarning(
         ViolationCode.SemanticRdfPropertyAliasesCoalesced,
-        `Fields ${quotedList(paths)} in aggregate "${aggregate.name}" use predicate ` +
-          `"${representative.propertyIri}" and are generated as "${paths[0]}". Their values are ` +
-          'combined, so constraints specific to one source field cannot be enforced.',
+        `In aggregate "${aggregate.name}", fields ${quotedList(paths)} share RDF property ` +
+          `"${representative.propertyIri}". RDF cannot distinguish their stored values, so the ` +
+          `app merges them into "${paths[0]}". It cannot enforce field-specific constraints. ` +
+          'Use different properties to keep them separate.',
         '/dataSpecificationIri'
       )
     );

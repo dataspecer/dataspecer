@@ -62,7 +62,9 @@ export function enrichMetadata(
         violations.push(
           semanticWarning(
             ViolationCode.SemanticInvalidAssociationKind,
-            `Association kind for "${path}" must be "composition" or "aggregation".`,
+            `Association "${path}" has invalid kind "${String(value)}". This setting is ` +
+              'ignored. Use "composition" or "aggregation". Associations without a valid ' +
+              'setting default to aggregation.',
             violationPath
           )
         );
@@ -94,7 +96,9 @@ export function enrichMetadata(
         violations.push(
           semanticViolation(
             ViolationCode.SemanticConflictingAssociationKind,
-            `Association config path "${path}" has conflicting kinds "${previous}" and "${kind}" among nodes of class "${aggregate.classIri}".`,
+            `Association "${path}" is configured as both "${previous}" and "${kind}" on ` +
+              `nodes representing class "${aggregate.classIri}". Use the same kind on every ` +
+              'Create and Update node for that class.',
             violationPath
           )
         );
@@ -209,7 +213,8 @@ function notAssociationViolation(
 ): Violation {
   return semanticWarning(
     ViolationCode.SemanticAssociationPathNotAssociation,
-    `Association config path "${path}" is not an association on aggregate "${aggregate.name}".`,
+    `Association setting "${path}" in "${aggregate.name}" does not point to an association ` +
+      'field, so it is ignored. Correct the path or remove the setting.',
     violationPath
   );
 }

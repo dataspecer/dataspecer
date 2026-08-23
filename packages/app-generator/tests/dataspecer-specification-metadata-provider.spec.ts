@@ -381,7 +381,7 @@ describe('mapDataspecerSpecificationToMetadata', () => {
     expectMappingIssue(
       fixture,
       DataspecerMetadataMappingIssueCode.ConflictingSpecializationFieldShape,
-      'Align their datatype, cardinality, direction, and target'
+      'Align their datatype, scalar or repeated cardinality, direction, target, and nested fields'
     );
   });
 
