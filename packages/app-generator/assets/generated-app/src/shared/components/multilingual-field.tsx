@@ -2,10 +2,12 @@ import { useId } from 'react';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
 import FormControl from '@mui/material/FormControl';
 import FormHelperText from '@mui/material/FormHelperText';
 import FormLabel from '@mui/material/FormLabel';
 import IconButton from '@mui/material/IconButton';
+import InputAdornment from '@mui/material/InputAdornment';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
@@ -57,6 +59,17 @@ export function MultilingualField(props: MultilingualFieldProps) {
               id={`${controlId}-${index}`}
               aria-label={`${props.field.label}, ${languageLabel(props.language)}, value ${index + 1}`}
               value={value}
+              multiline
+              maxRows={8}
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end" sx={{ alignSelf: 'flex-start', mt: 0 }}>
+                      <Chip size="small" label={languageLabel(props.language)} />
+                    </InputAdornment>
+                  ),
+                },
+              }}
               onChange={(event) => {
                 const next = [...rows];
                 next[index] = event.target.value;
@@ -87,10 +100,9 @@ export function MultilingualField(props: MultilingualFieldProps) {
         ) : null}
       </Stack>
       <FormHelperText>
-        Editing: {languageLabel(props.language)}
         {filledLanguages.length > 0
-          ? ` · Has values: ${filledLanguages.join(', ')}`
-          : ' · No values entered'}
+          ? `Has values: ${filledLanguages.join(', ')}`
+          : 'No values entered'}
       </FormHelperText>
       {props.error ? <FormHelperText>{props.error}</FormHelperText> : null}
     </FormControl>

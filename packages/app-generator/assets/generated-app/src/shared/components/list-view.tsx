@@ -3,7 +3,7 @@ import Alert from '@mui/material/Alert';
 import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import {
   DataGrid,
   type GridColDef,
@@ -51,7 +51,10 @@ export interface ListViewProps<TModel extends EntityModel> {
 
 export function ListView<TModel extends EntityModel>(props: ListViewProps<TModel>) {
   const dataSource = useDataSource();
+  const navigate = useNavigate();
   const { title, aggregate, aggregateRegistry, strategy, navigation } = props;
+  // clicking anywhere in a row opens the detail
+  const detailAction = navigation.rowActions.find((action) => action.operation === 'ReadDetail');
   const [items, setItems] = useState<TModel[]>([]);
   const [total, setTotal] = useState(0);
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
@@ -139,7 +142,23 @@ export function ListView<TModel extends EntityModel>(props: ListViewProps<TModel
         <DataGrid
           aria-label={title}
           autoHeight
-          sx={{ bgcolor: 'background.paper' }}
+          sx={{
+            bgcolor: 'background.paper',
+            ...(detailAction ? { '& .MuiDataGrid-row': { cursor: 'pointer' } } : {}),
+          }}
+          onRowClick={(params, event) => {
+            if (
+              !detailAction ||
+              (event.target as HTMLElement).closest('a, button') ||
+              window.getSelection()?.toString()
+            ) {
+              return;
+            }
+            const href = hrefForAction(detailAction, String(params.row.id));
+            if (href) {
+              navigate(href);
+            }
+          }}
           columns={columns}
           rows={items}
           rowCount={total}

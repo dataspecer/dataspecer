@@ -515,7 +515,7 @@ describe('renderGeneratedApp', () => {
     expect(tree.get('src/shared/components/field-label.tsx')).toContain('event.stopPropagation()');
     expect(tree.get('src/shared/components/multilingual-field.tsx')).toContain('Has values:');
     expect(tree.get('src/shared/components/entity-form-editor.tsx')).toContain(
-      'label="Value language"'
+      "'aria-label': 'Show values in'"
     );
     expect(tree.get('src/shared/components/entity-form-editor.tsx')).toContain(
       'Switching languages keeps values entered in other languages.'

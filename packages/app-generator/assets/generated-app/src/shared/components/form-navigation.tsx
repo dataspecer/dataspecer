@@ -31,11 +31,28 @@ export function FormBreadcrumbs(props: FormBreadcrumbsProps) {
     props.aggregateRegistry
   );
 
+  const crumbLimit = { maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis' } as const;
+
   return (
-    <Breadcrumbs sx={{ minWidth: 0 }}>
+    <Breadcrumbs
+      maxItems={3}
+      sx={{
+        minWidth: 0,
+        flex: '1 1 auto',
+        '& .MuiBreadcrumbs-ol': { flexWrap: 'nowrap' },
+        '& .MuiBreadcrumbs-li': { minWidth: 0 },
+      }}
+    >
       {entries.map((entry, index) =>
         index === entries.length - 1 ? (
-          <Typography key={index} variant="body2" color="text.primary">
+          <Typography
+            key={index}
+            variant="body2"
+            color="text.primary"
+            noWrap
+            title={entry.label}
+            sx={crumbLimit}
+          >
             {entry.label}
           </Typography>
         ) : (
@@ -45,6 +62,8 @@ export function FormBreadcrumbs(props: FormBreadcrumbsProps) {
             type="button"
             variant="body2"
             underline="hover"
+            title={entry.label}
+            sx={{ ...crumbLimit, whiteSpace: 'nowrap' }}
             onClick={() => props.onSelect(entry.path)}
           >
             {entry.label}

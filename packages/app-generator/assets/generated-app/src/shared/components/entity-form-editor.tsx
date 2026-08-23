@@ -2,6 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import Badge from '@mui/material/Badge';
 import Button from '@mui/material/Button';
 import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
@@ -23,7 +24,7 @@ import {
 import { compositionEntities, entityAtPath, updateEntityAtPath } from '../forms/form-draft.ts';
 import {
   isMultilingualField,
-  languageLabel,
+  languageDisplayName,
   multilingualLanguageTags,
 } from '../forms/multilingual-value.ts';
 import { useEntityPath } from '../navigation/use-location.ts';
@@ -81,8 +82,9 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
   const entity = entityAtPath(props.model, selection);
   const validationPrefix = validationPathAt(rootTarget, selection, props.aggregateRegistry);
   const totalIssues = [...issueCounts.values()].reduce((total, count) => total + count, 0);
-  const hasMultilingualFields = target.fields.some(containsMultilingualField);
-  const storedLanguages = collectMultilingualLanguages(entity, target.fields).sort();
+  // one language selector for every pane, so it offers and keeps the whole form's languages
+  const hasMultilingualFields = rootTarget.fields.some(containsMultilingualField);
+  const storedLanguages = collectMultilingualLanguages(props.model, rootTarget.fields).sort();
   const languageOptions = [...new Set([...props.languages, ...storedLanguages, selectedLanguage])];
 
   useEffect(() => {
@@ -112,38 +114,45 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
           aggregateRegistry={props.aggregateRegistry}
           onSelect={setPath}
         />
-        {navigable.length > 0 ? (
-          <Badge badgeContent={totalIssues} color="error" overlap="circular">
-            <Button
-              startIcon={<AccountTreeIcon />}
-              onClick={() => setStructureOpen(true)}
-              aria-label={`Structure, ${navigable.length} composed entities, ${totalIssues} problems`}
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center', marginLeft: 'auto' }}>
+          {hasMultilingualFields ? (
+            <Select
+              variant="standard"
+              size="small"
+              disableUnderline
+              value={selectedLanguage}
+              onChange={(event) => setSelectedLanguage(event.target.value)}
+              sx={{
+                fontSize: (theme) => theme.typography.body2.fontSize,
+                '& .MuiSelect-select': { paddingBlock: '3px' },
+              }}
+              SelectDisplayProps={{
+                'aria-label': 'Show values in',
+                title:
+                  'Multilingual fields show and edit values in this language. ' +
+                  'Switching languages keeps values entered in other languages.',
+              }}
             >
-              Structure ({navigable.length})
-            </Button>
-          </Badge>
-        ) : null}
+              {languageOptions.map((language) => (
+                <MenuItem key={language || '__untagged'} value={language}>
+                  {languageDisplayName(language)}
+                </MenuItem>
+              ))}
+            </Select>
+          ) : null}
+          {navigable.length > 0 ? (
+            <Badge badgeContent={totalIssues} color="error" overlap="circular">
+              <Button
+                startIcon={<AccountTreeIcon />}
+                onClick={() => setStructureOpen(true)}
+                aria-label={`Structure, ${navigable.length} composed entities, ${totalIssues} problems`}
+              >
+                Structure ({navigable.length})
+              </Button>
+            </Badge>
+          ) : null}
+        </Stack>
       </Stack>
-
-      {hasMultilingualFields ? (
-        <TextField
-          select
-          label="Value language"
-          value={selectedLanguage}
-          onChange={(event) => setSelectedLanguage(event.target.value)}
-          helperText={
-            'Multilingual fields below show values in this language. ' +
-            'Switching languages keeps values entered in other languages.'
-          }
-          sx={{ maxWidth: 240 }}
-        >
-          {languageOptions.map((language) => (
-            <MenuItem key={language || '__untagged'} value={language}>
-              {languageLabel(language)}
-            </MenuItem>
-          ))}
-        </TextField>
-      ) : null}
 
       <TextField
         id={identifierId}

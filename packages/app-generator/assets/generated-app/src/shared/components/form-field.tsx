@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import Button from '@mui/material/Button';
 import Checkbox from '@mui/material/Checkbox';
 import FormControl from '@mui/material/FormControl';
@@ -49,6 +49,8 @@ export function FormField(props: FormFieldProps) {
   const required = minimumCount(field) > 0;
   const note = control === 'unsupported' ? 'This field type is read-only.' : undefined;
   const cardinality = field.many ? cardinalityDescription(field) : '';
+  // manual reference entry problems
+  const [manualError, setManualError] = useState<string | null>(null);
 
   const readOnly = control === 'unsupported' || control === 'composition';
 
@@ -99,6 +101,7 @@ export function FormField(props: FormFieldProps) {
             aggregateRegistry={aggregateRegistry}
             controlId={controlId}
             onChange={onChange}
+            onManualError={setManualError}
           />
         ) : (
           <RepeatingPrimitiveControl
@@ -112,10 +115,11 @@ export function FormField(props: FormFieldProps) {
         )}
       </div>
       {cardinality ? (
-        <Typography variant="caption" color="text.secondary">
+        <Typography variant="caption" color="text.secondary" sx={{ mx: '14px' }}>
           {cardinality}.
         </Typography>
       ) : null}
+      {manualError ? <FormHelperText error>{manualError}</FormHelperText> : null}
       {note ? <FormHelperText>{note}</FormHelperText> : null}
       {error ? <FormHelperText>{error}</FormHelperText> : null}
     </FormControl>
@@ -128,10 +132,11 @@ interface ReferenceControlProps {
   aggregateRegistry: AggregateDescriptorMap;
   controlId: string;
   onChange: (value: unknown) => void;
+  onManualError: (error: string | null) => void;
 }
 
 function ReferenceControl(props: ReferenceControlProps) {
-  const { field, value, aggregateRegistry, controlId, onChange } = props;
+  const { field, value, aggregateRegistry, controlId, onChange, onManualError } = props;
   if (field.many) {
     const ids = fieldValues(value, field).flatMap((entry) => {
       const id = entry && typeof entry === 'object' ? (entry as { id?: unknown }).id : undefined;
@@ -145,6 +150,7 @@ function ReferenceControl(props: ReferenceControlProps) {
         aggregateRegistry={aggregateRegistry}
         controlId={controlId}
         onChange={(next) => onChange(next.map((id) => ({ id })))}
+        onManualError={onManualError}
       />
     );
   }
@@ -158,6 +164,7 @@ function ReferenceControl(props: ReferenceControlProps) {
       aggregateRegistry={aggregateRegistry}
       controlId={controlId}
       onChange={(ids) => onChange(ids[0] ? { id: ids[0] } : undefined)}
+      onManualError={onManualError}
     />
   );
 }
@@ -227,6 +234,8 @@ function PrimitiveControl(props: PrimitiveControlProps) {
       label={props.label}
       aria-label={props.ariaLabel}
       type={control === 'number' || control === 'integer' ? 'number' : 'text'}
+      multiline={control === 'text'}
+      maxRows={8}
       slotProps={{
         htmlInput: { step: control === 'number' ? 'any' : undefined, readOnly: props.readOnly },
       }}
@@ -248,7 +257,6 @@ interface RepeatingPrimitiveControlProps {
 }
 
 function RepeatingPrimitiveControl(props: RepeatingPrimitiveControlProps) {
-  const minimum = minimumCount(props.field);
   const maximum = maximumCount(props.field);
 
   return (
@@ -271,7 +279,7 @@ function RepeatingPrimitiveControl(props: RepeatingPrimitiveControlProps) {
             <IconButton
               color="error"
               aria-label={`Remove ${props.field.label} ${index + 1}`}
-              disabled={props.readOnly || props.values.length <= minimum}
+              disabled={props.readOnly}
               onClick={() =>
                 props.onChange(props.values.filter((_, candidate) => candidate !== index))
               }

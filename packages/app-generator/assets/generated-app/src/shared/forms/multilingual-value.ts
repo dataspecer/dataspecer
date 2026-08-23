@@ -109,6 +109,19 @@ export function languageLabel(language: string): string {
   return language || 'No language';
 }
 
+/** Returns the language name with its tag, for example "Czech (cs)". */
+export function languageDisplayName(language: string): string {
+  if (!language) {
+    return 'No language';
+  }
+  try {
+    const name = new Intl.DisplayNames(['en'], { type: 'language' }).of(language);
+    return name && name !== language ? `${name} (${language})` : language;
+  } catch {
+    return language;
+  }
+}
+
 /** Prefers the reader's browser languages and uses configured languages as stable fallbacks. */
 export function displayLanguagePreferences(configuredLanguages: readonly string[]): string[] {
   const browserLanguages = typeof navigator === 'undefined' ? [] : navigator.languages;

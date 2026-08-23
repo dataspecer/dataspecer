@@ -193,7 +193,6 @@ export function CompositionSection(props: CompositionSectionProps) {
                         <Button
                           color="error"
                           startIcon={<DeleteIcon />}
-                          disabled={values.length <= minimum}
                           onClick={() => remove(index)}
                         >
                           Remove
@@ -236,7 +235,6 @@ export function CompositionSection(props: CompositionSectionProps) {
                       <IconButton
                         color="error"
                         aria-label={`Remove ${summary}`}
-                        disabled={values.length <= minimum}
                         onClick={() => remove(index)}
                       >
                         <DeleteIcon fontSize="small" />

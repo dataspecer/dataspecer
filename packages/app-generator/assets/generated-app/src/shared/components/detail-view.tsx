@@ -16,7 +16,7 @@ import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useDataSource } from '../data-source/data-source-context.tsx';
@@ -395,6 +395,21 @@ function LeafValue(props: LeafValueProps) {
       </Link>
     );
   }
+  // values without an in-app target still open it in a new tab
+  if (/^https?:\/\//.test(text)) {
+    return (
+      <Link
+        href={text}
+        target="_blank"
+        rel="noopener noreferrer"
+        underline="hover"
+        variant="body2"
+        sx={{ wordBreak: 'break-word' }}
+      >
+        {text}
+      </Link>
+    );
+  }
   return (
     <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
       {text}
@@ -427,7 +442,7 @@ function EntityLink(props: EntityLinkProps) {
           '&:hover, &:focus-visible': { opacity: 1 },
         }}
       >
-        <OpenInNewIcon fontSize="small" />
+        <VisibilityIcon fontSize="small" />
       </IconButton>
     </Tooltip>
   );
