@@ -4,6 +4,10 @@ import {
   createEntityDraft,
   hydrateCompositionTree,
 } from '../assets/generated-app/src/shared/forms/form-draft.ts';
+import {
+  collectMultilingualLanguages,
+  containsMultilingualFields,
+} from '../assets/generated-app/src/shared/forms/composition-tree.ts';
 import type { DataSource } from '../assets/generated-app/src/shared/data-source/data-source.ts';
 import {
   referenceDisplayFields,
@@ -15,8 +19,8 @@ import {
   toInputValue,
   validateModel,
 } from '../assets/generated-app/src/shared/forms/form-model.ts';
+import { isSafeHttpIri } from '../assets/generated-app/src/shared/forms/iri.ts';
 import { ValidationIssueCode } from '../assets/generated-app/src/shared/operations/operation-result.ts';
-import { addManualReference } from '../assets/generated-app/src/shared/components/reference-select.tsx';
 import {
   fieldValues,
   type AggregateDescriptor,
@@ -127,6 +131,31 @@ const localizedAggregate: AggregateDescriptor<EntityRecord> = {
   createEmpty: () => ({}),
 };
 
+const localizedChildrenField: FieldDescriptor = {
+  path: 'localizedChildren',
+  propertyName: 'localizedChildren',
+  label: 'Localized children',
+  kind: 'association',
+  associationKind: 'composition',
+  targetAggregateIri: localizedAggregate.iri,
+  targetClassIri: localizedAggregate.classIri,
+  many: true,
+  required: false,
+};
+
+const localizedRootAggregate: AggregateDescriptor<EntityRecord> = {
+  iri: 'https://example.org/aggregate/localized-root',
+  name: 'Localized root',
+  classIri: 'https://example.org/class/localized-root',
+  fields: [localizedChildrenField],
+  createEmpty: () => ({ localizedChildren: [] }),
+};
+
+const localizedCompositionRegistry: AggregateDescriptorMap = {
+  [localizedRootAggregate.iri]: localizedRootAggregate,
+  [localizedAggregate.iri]: localizedAggregate,
+};
+
 const ownerField: FieldDescriptor = {
   path: 'owner',
   propertyName: 'owner',
@@ -153,6 +182,16 @@ const aggregateRegistry: AggregateDescriptorMap = {
   [childAggregate.iri]: childAggregate,
 };
 
+describe('generated IRI display', () => {
+  it('recognizes only safe HTTP IRIs as external links', () => {
+    expect(isSafeHttpIri('https://example.org/document')).toBe(true);
+    expect(isSafeHttpIri('HTTP://example.org/document')).toBe(true);
+    expect(isSafeHttpIri('https://example.org/documentation is here')).toBe(false);
+    expect(isSafeHttpIri('http://')).toBe(false);
+    expect(isSafeHttpIri('urn:document:1')).toBe(false);
+  });
+});
+
 describe('generated recursive form model', () => {
   it('renders multiplicity independently from the field control', () => {
     expect(resolveControl(tagsField)).toBe('text');
@@ -172,6 +211,25 @@ describe('generated recursive form model', () => {
     expect(() => fieldValues({ cs: ['one', 'two'] }, localizedKeywords)).toThrow(
       'Keywords must contain a list of values.'
     );
+  });
+
+  it('finds multilingual fields and stored languages across aggregate compositions', () => {
+    const target = rootEntityTarget(localizedRootAggregate);
+    const model: EntityRecord = {
+      id: 'urn:root',
+      localizedChildren: [
+        {
+          id: 'urn:child',
+          title: { cs: ['Název'], de: ['Titel'] },
+        },
+      ],
+    };
+
+    expect(containsMultilingualFields(target, localizedCompositionRegistry)).toBe(true);
+    expect(collectMultilingualLanguages(model, target, localizedCompositionRegistry)).toEqual([
+      'cs',
+      'de',
+    ]);
   });
 
   it('validates multilingual presence, per-language scalar limits, and duplicates', () => {
@@ -367,33 +425,5 @@ describe('generated recursive form model', () => {
     expect(child).toMatchObject({ id: 'urn:child:1', name: 'Edited' });
     expect(loadedChild.name).toBe('Loaded child');
     expect((source.children as EntityRecord[])[0]).toEqual({ id: 'urn:child:1' });
-  });
-});
-
-describe('manual reference selection', () => {
-  it('adds an absolute IRI and trims surrounding whitespace', () => {
-    expect(addManualReference([], '  urn:person:1  ', true, null)).toEqual({
-      values: ['urn:person:1'],
-      error: null,
-    });
-  });
-
-  it('rejects malformed, duplicate, and over-limit references', () => {
-    expect(addManualReference([], '/relative', true, null).error).toBe(
-      'Enter a valid absolute IRI.'
-    );
-    expect(addManualReference(['urn:person:1'], 'urn:person:1', true, null).error).toBe(
-      'This reference is already selected.'
-    );
-    expect(addManualReference(['urn:person:1'], 'urn:person:2', true, 1).error).toBe(
-      'The maximum number of references is 1.'
-    );
-  });
-
-  it('replaces a single reference', () => {
-    expect(addManualReference(['urn:person:1'], 'urn:person:2', false, 1)).toEqual({
-      values: ['urn:person:2'],
-      error: null,
-    });
   });
 });

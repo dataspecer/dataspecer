@@ -8,6 +8,7 @@ import {
   type EntityTarget,
 } from './entity-target.ts';
 import { compositionEntities, type EntityPathSegment } from './form-draft.ts';
+import { isMultilingualField, multilingualLanguageTags } from './multilingual-value.ts';
 import { effectiveFields } from './specialization.ts';
 
 /** Describes a composed entity that opens in its own form pane. */
@@ -261,6 +262,76 @@ export function collectEntityIds(
     }
   }
   return ids;
+}
+
+/** Returns whether the composition structure contains a multilingual field. */
+export function containsMultilingualFields(
+  target: EntityTarget,
+  aggregateRegistry: AggregateDescriptorMap
+): boolean {
+  return targetContainsMultilingualFields(target, aggregateRegistry, new Set());
+}
+
+function targetContainsMultilingualFields(
+  target: EntityTarget,
+  aggregateRegistry: AggregateDescriptorMap,
+  visited: Set<string>
+): boolean {
+  const key = JSON.stringify([target.aggregate.iri, target.fieldPath]);
+  if (visited.has(key)) {
+    return false;
+  }
+  visited.add(key);
+
+  return target.fields.some((field) => {
+    if (isMultilingualField(field)) {
+      return true;
+    }
+    if (!isCompositionField(field)) {
+      return false;
+    }
+    const childTarget = resolveCompositionTarget(target, field, aggregateRegistry);
+    return Boolean(
+      childTarget && targetContainsMultilingualFields(childTarget, aggregateRegistry, visited)
+    );
+  });
+}
+
+/** Collects language tags with values anywhere in the editable composition tree. */
+export function collectMultilingualLanguages(
+  entity: EntityRecord,
+  target: EntityTarget,
+  aggregateRegistry: AggregateDescriptorMap
+): string[] {
+  const languages = new Set<string>();
+  collectEntityLanguages(entity, target, aggregateRegistry, languages);
+  return [...languages].sort();
+}
+
+function collectEntityLanguages(
+  entity: EntityRecord,
+  target: EntityTarget,
+  aggregateRegistry: AggregateDescriptorMap,
+  languages: Set<string>
+): void {
+  for (const field of effectiveFields(target, entity)) {
+    if (isMultilingualField(field)) {
+      multilingualLanguageTags(entity[field.propertyName]).forEach((language) =>
+        languages.add(language)
+      );
+      continue;
+    }
+    if (!isCompositionField(field)) {
+      continue;
+    }
+    const childTarget = resolveCompositionTarget(target, field, aggregateRegistry);
+    if (!childTarget) {
+      continue;
+    }
+    for (const child of compositionEntities(entity[field.propertyName], field)) {
+      collectEntityLanguages(child, childTarget, aggregateRegistry, languages);
+    }
+  }
 }
 
 export function joinValidationPath(prefix: string, segment: string): string {

@@ -1,4 +1,4 @@
-import { useId, useState, type ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
 import Button from '@mui/material/Button';
 import Checkbox from '@mui/material/Checkbox';
 import FormControl from '@mui/material/FormControl';
@@ -49,8 +49,6 @@ export function FormField(props: FormFieldProps) {
   const required = minimumCount(field) > 0;
   const note = control === 'unsupported' ? 'This field type is read-only.' : undefined;
   const cardinality = field.many ? cardinalityDescription(field) : '';
-  // manual reference entry problems
-  const [manualError, setManualError] = useState<string | null>(null);
 
   const readOnly = control === 'unsupported' || control === 'composition';
 
@@ -101,7 +99,6 @@ export function FormField(props: FormFieldProps) {
             aggregateRegistry={aggregateRegistry}
             controlId={controlId}
             onChange={onChange}
-            onManualError={setManualError}
           />
         ) : (
           <RepeatingPrimitiveControl
@@ -119,7 +116,6 @@ export function FormField(props: FormFieldProps) {
           {cardinality}.
         </Typography>
       ) : null}
-      {manualError ? <FormHelperText error>{manualError}</FormHelperText> : null}
       {note ? <FormHelperText>{note}</FormHelperText> : null}
       {error ? <FormHelperText>{error}</FormHelperText> : null}
     </FormControl>
@@ -132,11 +128,10 @@ interface ReferenceControlProps {
   aggregateRegistry: AggregateDescriptorMap;
   controlId: string;
   onChange: (value: unknown) => void;
-  onManualError: (error: string | null) => void;
 }
 
 function ReferenceControl(props: ReferenceControlProps) {
-  const { field, value, aggregateRegistry, controlId, onChange, onManualError } = props;
+  const { field, value, aggregateRegistry, controlId, onChange } = props;
   if (field.many) {
     const ids = fieldValues(value, field).flatMap((entry) => {
       const id = entry && typeof entry === 'object' ? (entry as { id?: unknown }).id : undefined;
@@ -150,7 +145,6 @@ function ReferenceControl(props: ReferenceControlProps) {
         aggregateRegistry={aggregateRegistry}
         controlId={controlId}
         onChange={(next) => onChange(next.map((id) => ({ id })))}
-        onManualError={onManualError}
       />
     );
   }
@@ -164,7 +158,6 @@ function ReferenceControl(props: ReferenceControlProps) {
       aggregateRegistry={aggregateRegistry}
       controlId={controlId}
       onChange={(ids) => onChange(ids[0] ? { id: ids[0] } : undefined)}
-      onManualError={onManualError}
     />
   );
 }

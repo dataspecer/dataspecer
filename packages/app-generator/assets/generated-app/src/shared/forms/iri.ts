@@ -7,6 +7,18 @@ export function isSafeAbsoluteIri(value: string): boolean {
   return absoluteIri.test(value) && !forbiddenIriCharacters.test(value);
 }
 
+export function isSafeHttpIri(value: string): boolean {
+  if (!isSafeAbsoluteIri(value)) {
+    return false;
+  }
+  try {
+    const protocol = new URL(value).protocol.toLowerCase();
+    return protocol === 'http:' || protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 export function requireSafeAbsoluteIri(value: unknown, label: string): string {
   if (typeof value !== 'string' || !isSafeAbsoluteIri(value)) {
     throw new Error(`${label} must be a safe absolute IRI.`);

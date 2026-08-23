@@ -53,7 +53,6 @@ export function ListView<TModel extends EntityModel>(props: ListViewProps<TModel
   const dataSource = useDataSource();
   const navigate = useNavigate();
   const { title, aggregate, aggregateRegistry, strategy, navigation } = props;
-  // clicking anywhere in a row opens the detail
   const detailAction = navigation.rowActions.find((action) => action.operation === 'ReadDetail');
   const [items, setItems] = useState<TModel[]>([]);
   const [total, setTotal] = useState(0);
@@ -150,7 +149,7 @@ export function ListView<TModel extends EntityModel>(props: ListViewProps<TModel
             if (
               !detailAction ||
               (event.target as HTMLElement).closest('a, button') ||
-              window.getSelection()?.toString()
+              hasSelectedTextWithin(event.currentTarget)
             ) {
               return;
             }
@@ -180,6 +179,17 @@ export function ListView<TModel extends EntityModel>(props: ListViewProps<TModel
         />
       )}
     </Stack>
+  );
+}
+
+function hasSelectedTextWithin(element: HTMLElement): boolean {
+  const selection = window.getSelection();
+  if (!selection || selection.isCollapsed) {
+    return false;
+  }
+  return Boolean(
+    (selection.anchorNode && element.contains(selection.anchorNode)) ||
+    (selection.focusNode && element.contains(selection.focusNode))
   );
 }
 

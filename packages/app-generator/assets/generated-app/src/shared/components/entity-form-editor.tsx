@@ -9,6 +9,8 @@ import AccountTreeIcon from '@mui/icons-material/AccountTree';
 
 import {
   collectEntityIds,
+  collectMultilingualLanguages,
+  containsMultilingualFields,
   issuesByPane,
   joinValidationPath,
   navigablePanes,
@@ -27,11 +29,7 @@ import {
   selectEntitySpecialization,
   updateEntityAtPath,
 } from '../forms/form-draft.ts';
-import {
-  isMultilingualField,
-  languageDisplayName,
-  multilingualLanguageTags,
-} from '../forms/multilingual-value.ts';
+import { languageDisplayName } from '../forms/multilingual-value.ts';
 import { useEntityPath } from '../navigation/use-location.ts';
 import { effectiveFields } from '../forms/specialization.ts';
 import type { ValidationIssue } from '../operations/operation-result.ts';
@@ -40,7 +38,6 @@ import {
   type AggregateDescriptor,
   type AggregateDescriptorMap,
   type EntityRecord,
-  type FieldDescriptor,
 } from '../types/aggregate.ts';
 import { CompositionSection } from './composition-section.tsx';
 import { FormBreadcrumbs, StructureDrawer } from './form-navigation.tsx';
@@ -97,8 +94,14 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
   );
   const totalIssues = [...issueCounts.values()].reduce((total, count) => total + count, 0);
   // one language selector for every pane, so it offers and keeps the whole form's languages
-  const hasMultilingualFields = rootTarget.fields.some(containsMultilingualField);
-  const storedLanguages = collectMultilingualLanguages(props.model, rootTarget.fields).sort();
+  const hasMultilingualFields = useMemo(
+    () => containsMultilingualFields(rootTarget, props.aggregateRegistry),
+    [rootTarget, props.aggregateRegistry]
+  );
+  const storedLanguages = useMemo(
+    () => collectMultilingualLanguages(props.model, rootTarget, props.aggregateRegistry),
+    [props.model, rootTarget, props.aggregateRegistry]
+  );
   const languageOptions = [...new Set([...props.languages, ...storedLanguages, selectedLanguage])];
   const persisted = typeof entity.id === 'string' && existingIds.has(entity.id);
 
@@ -269,40 +272,4 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
       />
     </Stack>
   );
-}
-
-function containsMultilingualField(field: FieldDescriptor): boolean {
-  return (
-    isMultilingualField(field) ||
-    (isCompositionField(field) && Boolean(field.fields?.some(containsMultilingualField)))
-  );
-}
-
-function collectMultilingualLanguages(
-  entity: Record<string, unknown>,
-  fields: readonly FieldDescriptor[]
-): string[] {
-  const languages = new Set<string>();
-  for (const field of fields) {
-    const value = entity[field.propertyName];
-    if (isMultilingualField(field)) {
-      multilingualLanguageTags(value).forEach((language) => languages.add(language));
-      continue;
-    }
-    if (!isCompositionField(field) || !field.fields) {
-      continue;
-    }
-    const childShape = { fields: field.fields, specializations: field.specializations };
-    const entries = Array.isArray(value) ? value : [value];
-    for (const entry of entries) {
-      if (entry !== null && typeof entry === 'object') {
-        const child = entry as EntityRecord;
-        const childFields = effectiveFields(childShape, child);
-        collectMultilingualLanguages(child, childFields).forEach((language) =>
-          languages.add(language)
-        );
-      }
-    }
-  }
-  return [...languages];
 }

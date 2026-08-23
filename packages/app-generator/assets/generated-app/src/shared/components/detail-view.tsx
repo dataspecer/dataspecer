@@ -40,6 +40,7 @@ import type {
 import { ActionLinks } from './action-links.tsx';
 import { formatPrimitiveValue } from '../forms/field-value.ts';
 import { isCompositionField } from '../forms/entity-target.ts';
+import { isSafeHttpIri } from '../forms/iri.ts';
 import {
   compactMultilingualValue,
   displayLanguagePreferences,
@@ -375,11 +376,13 @@ function LeafValue(props: LeafValueProps) {
           <Typography
             key={language || '__untagged'}
             variant="body2"
-            sx={{ wordBreak: 'break-word' }}
+            sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
           >
-            <Box component="span" sx={{ fontWeight: 600 }}>
-              {languageLabel(language)}:
-            </Box>{' '}
+            {language ? (
+              <Box component="span" sx={{ fontWeight: 600 }}>
+                {languageLabel(language)}:{' '}
+              </Box>
+            ) : null}
             {values.join(', ')}
           </Typography>
         ))}
@@ -401,8 +404,7 @@ function LeafValue(props: LeafValueProps) {
       </Link>
     );
   }
-  // values without an in-app target still open it in a new tab
-  if (/^https?:\/\//.test(text)) {
+  if (isSafeHttpIri(text)) {
     return (
       <Link
         href={text}
@@ -410,14 +412,14 @@ function LeafValue(props: LeafValueProps) {
         rel="noopener noreferrer"
         underline="hover"
         variant="body2"
-        sx={{ wordBreak: 'break-word' }}
+        sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
       >
         {text}
       </Link>
     );
   }
   return (
-    <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+    <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
       {text}
     </Typography>
   );
