@@ -65,7 +65,7 @@ export function parallelEdgeOffsets(
   const groups = new Map<string, string[]>();
   for (const edge of edges) {
     // sorted, so the two directions of a pair share the group
-    const key = [edge.source, edge.target].sort().join("|");
+    const key = JSON.stringify([edge.source, edge.target].sort());
     const group = groups.get(key);
     if (group) {
       group.push(edge.id);

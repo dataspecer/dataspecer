@@ -5,6 +5,7 @@ import type { RenderedField } from './rendered-aggregate.ts';
 
 import { AssociationKind } from '../graph/types.ts';
 import { FieldKind } from '../metadata/types.ts';
+import { compositeKey } from '../utils/composite-key.ts';
 import { datatypeMapping } from './datatypes.ts';
 
 const RDF_TYPE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
@@ -180,7 +181,7 @@ function hasInlineCompositionSchema(field: RenderedField): boolean {
 }
 
 function entityTargetKey(fieldPath: readonly string[]): string {
-  return JSON.stringify(fieldPath);
+  return compositeKey(...fieldPath);
 }
 
 const XSD_TYPE_IRI = /"http:\/\/www\.w3\.org\/2001\/XMLSchema#([A-Za-z][A-Za-z0-9]*)"/g;

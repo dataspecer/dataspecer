@@ -61,4 +61,12 @@ describe("parallelEdgeOffsets", () => {
     ]);
     expect(offsets).toEqual({ one: -40, two: 0, three: 40, other: 0 });
   });
+
+  it("keeps node ids containing separators in distinct groups", () => {
+    const offsets = parallelEdgeOffsets([
+      { id: "first", source: "a|b", target: "c" },
+      { id: "second", source: "a", target: "b|c" },
+    ]);
+    expect(offsets).toEqual({ first: 0, second: 0 });
+  });
 });

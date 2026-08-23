@@ -3,6 +3,7 @@ import {
   type AggregateFieldMetadata,
   type AggregateMetadata,
 } from '../metadata/types.ts';
+import { compositeKey } from '../utils/composite-key.ts';
 import { splitFieldPath } from './field-path.ts';
 
 /**
@@ -41,9 +42,9 @@ export function chainIdentity(classIri: string, chain: AggregateFieldMetadata[])
   const ownerClassIri = chain
     .slice(0, -1)
     .reduce((owner, parent) => parent.targetClassIri ?? owner, classIri);
-  return [
+  return compositeKey(
     ownerClassIri,
     field.isReverse ? 'reverse' : 'forward',
-    field.propertyIri ?? field.path,
-  ].join('|');
+    field.propertyIri ?? field.path
+  );
 }
