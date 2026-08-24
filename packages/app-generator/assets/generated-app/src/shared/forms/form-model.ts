@@ -82,8 +82,8 @@ export function toInputValue(control: FieldControl, value: unknown): string {
   return '';
 }
 
-// Checks identifiers, exact cardinality, duplicate repeated values, and composed entities
-// recursively. Fields without an editable control are excluded.
+// Checks identifiers, cardinality, duplicate and patterned values, and composed entities
+// recursively, fields without an editable control are excluded
 export function validateModel(
   model: Record<string, unknown>,
   target: EntityTarget,
@@ -121,7 +121,8 @@ function validateEntity(
   }
 
   for (const field of effectiveFields(target, model)) {
-    if (resolveControl(field) === 'unsupported') {
+    const control = resolveControl(field);
+    if (control === 'unsupported') {
       continue;
     }
     const fieldPath = joinPath(pathPrefix, field.path);
@@ -169,18 +170,22 @@ function validateEntity(
       });
     }
 
-    if (
-      resolveControl(field) === 'reference' &&
-      presentValues.some((entry) => {
-        const id = referenceId(entry);
-        return id === null || !isSafeAbsoluteIri(id);
-      })
-    ) {
+    const referenceIds = control === 'reference' ? presentValues.map(referenceId) : [];
+    const hasInvalidReference = referenceIds.some((id) => id === null || !isSafeAbsoluteIri(id));
+    if (hasInvalidReference) {
       issues.push({
         code: ValidationIssueCode.InvalidIri,
         message: `${field.label} must contain ${field.many ? 'valid absolute IRIs' : 'a valid absolute IRI'}.`,
         path: fieldPath,
       });
+    }
+
+    const constrainedValues =
+      control === 'reference'
+        ? referenceIds.filter((id): id is string => id !== null)
+        : presentValues.filter((entry): entry is string => typeof entry === 'string');
+    if (!hasInvalidReference && hasPatternMismatch(field, constrainedValues)) {
+      issues.push(patternMismatchIssue(field, fieldPath));
     }
 
     if (!isCompositionField(field)) {
@@ -297,6 +302,43 @@ function validateMultilingualField(
       path: fieldPath,
     });
   }
+
+  if (hasPatternMismatch(field, presentValues)) {
+    issues.push(patternMismatchIssue(field, fieldPath));
+  }
+}
+
+function hasPatternMismatch(field: FieldDescriptor, values: readonly string[]): boolean {
+  if (!field.patterns?.length || values.length === 0) {
+    return false;
+  }
+  let patterns: RegExp[];
+  try {
+    patterns = field.patterns.map((pattern) => new RegExp(pattern));
+  } catch {
+    // generation removes invalid patterns, but a manually edited descriptor must remain usable
+    return false;
+  }
+  return values.some((value) => !patterns.some((pattern) => pattern.test(value)));
+}
+
+function patternMismatchIssue(field: FieldDescriptor, path: string): ValidationIssue {
+  const patterns = field.patterns ?? [];
+  const patternDescription =
+    patterns.length === 1
+      ? ` It must match this pattern: "${patterns[0]}".`
+      : ` It must match one of these patterns: ${patterns
+          .map((pattern) => `"${pattern}"`)
+          .join(' or ')}.`;
+  const example = field.examples?.[0];
+  return {
+    code: ValidationIssueCode.PatternMismatch,
+    message:
+      `${field.label} contains a value that does not match the required format.` +
+      patternDescription +
+      (example ? ` For example: ${example}.` : ''),
+    path,
+  };
 }
 
 function referenceId(value: unknown): string | null {

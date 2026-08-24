@@ -23,6 +23,8 @@ function buildFieldDescriptor(field: AggregateFieldMetadata): GeneratedFieldDesc
     kind: field.kind,
     ...(field.propertyIri ? { propertyIri: field.propertyIri } : {}),
     ...(field.datatype ? { datatype: field.datatype } : {}),
+    ...(field.patterns?.length ? { patterns: [...field.patterns] } : {}),
+    ...(field.examples?.length ? { examples: [...field.examples] } : {}),
     many: field.many ?? false,
     required: field.required ?? false,
     ...(field.minCount !== undefined ? { minCount: field.minCount } : {}),

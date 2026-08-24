@@ -32,6 +32,10 @@ export interface AggregateFieldMetadata {
   propertyIri?: string;
   /** IRI of the value datatype for a primitive field, for example an xsd or OFN type. */
   datatype?: string;
+  /** Regular expressions accepted for editable string values. A value may match any of the provided patterns. */
+  patterns?: string[];
+  /** Example values supplied by the semantic model. */
+  examples?: string[];
   /**
    * Set only when the association target is another aggregate (a class reference or the root
    * class of another structure model). Mutually exclusive with the `fields` property.

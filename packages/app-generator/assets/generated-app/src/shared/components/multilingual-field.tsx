@@ -59,6 +59,9 @@ export function MultilingualField(props: MultilingualFieldProps) {
               id={`${controlId}-${index}`}
               aria-label={`${props.field.label}, ${languageLabel(props.language)}, value ${index + 1}`}
               value={value}
+              placeholder={
+                props.field.examples?.[0] ? `Example: ${props.field.examples[0]}` : undefined
+              }
               multiline
               maxRows={8}
               slotProps={{

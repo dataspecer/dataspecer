@@ -1,3 +1,5 @@
+import { uniq } from 'es-toolkit';
+
 import type { ApplicationGraph } from '../graph/types.ts';
 import {
   type AggregateFieldMetadata,
@@ -134,7 +136,7 @@ function coalesceFields(
       continue;
     }
 
-    normalized[indexes[0]] = withCombinedCardinality(representative, group);
+    normalized[indexes[0]] = withCombinedConstraints(representative, group);
     indexes.slice(1).forEach((index) => {
       removedIndexes.add(index);
       if (normalized[index].path !== representative.path) {
@@ -187,10 +189,14 @@ function storageShapeKey(field: AggregateFieldMetadata): string {
 }
 
 /**
- * Keeps the largest source minimum because RDF cannot identify which source constraint a value
- * satisfies.
+ * Merges fields that write the same RDF predicate into one generated field.
+ *
+ * RDF returns one combined value set without the original field names. The enforceable lower bound
+ * is therefore the highest source minimum. Source maxima are added, or remain unbounded if any
+ * source is unbounded. Examples are combined. Patterns are alternatives only when every source
+ * field has one. If any source lacks a pattern, the merged field must remain unrestricted.
  */
-function withCombinedCardinality(
+function withCombinedConstraints(
   representative: AggregateFieldMetadata,
   fields: AggregateFieldMetadata[]
 ): AggregateFieldMetadata {
@@ -199,12 +205,19 @@ function withCombinedCardinality(
   const maxCount = maxima.includes(null)
     ? null
     : maxima.reduce<number>((total, maximum) => total + (maximum ?? 0), 0);
+  const patterns = fields.every((field) => field.patterns?.length)
+    ? uniq(fields.flatMap((field) => field.patterns ?? []))
+    : [];
+  const examples = uniq(fields.flatMap((field) => field.examples ?? []));
+  const { patterns: _patterns, examples: _examples, ...unchanged } = representative;
   return {
-    ...representative,
+    ...unchanged,
     required: minCount > 0,
     many: maxCount === null || maxCount > 1,
     minCount,
     maxCount,
+    ...(patterns.length ? { patterns } : {}),
+    ...(examples.length ? { examples } : {}),
   };
 }
 

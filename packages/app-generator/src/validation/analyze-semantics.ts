@@ -14,6 +14,7 @@ import { validateGeneratedFieldNames } from './rules/generated-field-names.ts';
 import { validateNamedNodeIdentityOverrides } from './rules/named-node-identity.ts';
 import { coalesceRdfPropertyAliases } from './coalesce-rdf-property-aliases.ts';
 import { validateSpecializationRecoverability } from './rules/specialization-recoverability.ts';
+import { normalizeValueConstraints } from './normalize-value-constraints.ts';
 
 export interface SemanticAnalysisResult extends ValidationResult {
   enrichedMetadata: SpecificationMetadata;
@@ -37,7 +38,8 @@ export function analyzeGraphSemantics(
     graph.nodes.map((node) => node.aggregateIri),
     allAggregates.values()
   );
-  const aliases = coalesceRdfPropertyAliases(graph, enrichment.metadata, reachableAggregateIris);
+  const constraints = normalizeValueConstraints(enrichment.metadata, reachableAggregateIris);
+  const aliases = coalesceRdfPropertyAliases(graph, constraints.metadata, reachableAggregateIris);
   const normalizedAggregates = new Map(
     aliases.metadata.aggregates.map((aggregate) => [aggregate.iri, aggregate])
   );
@@ -52,6 +54,7 @@ export function analyzeGraphSemantics(
   const violations: Violation[] = [
     ...structure.violations,
     ...enrichment.violations,
+    ...constraints.violations,
     ...aliases.violations,
   ];
   violations.push(...validateAggregateNames(context));

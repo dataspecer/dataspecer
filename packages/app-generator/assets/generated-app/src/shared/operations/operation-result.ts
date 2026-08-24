@@ -10,6 +10,7 @@ export enum ValidationIssueCode {
   MaxCount = 'max_count',
   Duplicate = 'duplicate',
   InvalidValue = 'invalid_value',
+  PatternMismatch = 'pattern_mismatch',
   MissingCompositionTarget = 'missing_composition_target',
   InvalidComposition = 'invalid_composition',
   SpecializationRequired = 'specialization_required',

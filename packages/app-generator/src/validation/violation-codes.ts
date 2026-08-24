@@ -38,6 +38,7 @@ export enum ViolationCode {
   SemanticDeletePathNotAssociation = 'SEMANTIC_DELETE_PATH_NOT_ASSOCIATION',
   SemanticDuplicateEdge = 'SEMANTIC_DUPLICATE_EDGE',
   SemanticInvalidAssociationKind = 'SEMANTIC_INVALID_ASSOCIATION_KIND',
+  SemanticInvalidRegexPattern = 'SEMANTIC_INVALID_REGEX_PATTERN',
   SemanticNamedNodeIdentityOverride = 'SEMANTIC_NAMED_NODE_IDENTITY_OVERRIDE',
   SemanticRdfPropertyAliasesCoalesced = 'SEMANTIC_RDF_PROPERTY_ALIASES_COALESCED',
   SemanticTransitionRequiresAssociation = 'SEMANTIC_TRANSITION_REQUIRES_ASSOCIATION',

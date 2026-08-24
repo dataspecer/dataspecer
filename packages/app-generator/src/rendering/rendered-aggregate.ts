@@ -66,6 +66,8 @@ interface DescriptorField {
   maxCount?: number | null;
   propertyIri?: string;
   datatype?: string;
+  patterns?: string[];
+  examples?: string[];
   formControl?: FormControl;
   targetAggregateIri?: string;
   targetClassIri?: string;
@@ -155,6 +157,8 @@ function toDescriptorField(field: RenderedField): DescriptorField {
     ...(field.maxCount !== undefined ? { maxCount: field.maxCount } : {}),
     ...(field.propertyIri ? { propertyIri: field.propertyIri } : {}),
     ...(field.datatype ? { datatype: field.datatype } : {}),
+    ...(field.patterns?.length ? { patterns: [...field.patterns] } : {}),
+    ...(field.examples?.length ? { examples: [...field.examples] } : {}),
     ...(field.formControl ? { formControl: field.formControl } : {}),
     ...(field.targetAggregateIri ? { targetAggregateIri: field.targetAggregateIri } : {}),
     ...(field.targetClassIri ? { targetClassIri: field.targetClassIri } : {}),

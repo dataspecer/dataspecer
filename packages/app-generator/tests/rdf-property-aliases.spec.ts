@@ -32,10 +32,25 @@ describe('RDF property aliases', () => {
     const result = analyzeGraphSemantics(
       graph(),
       metadata([
-        association('téma', THEME, CONCEPT, 1, null),
-        association('geografické_území', SPATIAL, LOCATION, 0, null),
-        association('prvek_rúian', SPATIAL, LOCATION, 0, null),
-        association('koncept_euroVoc', THEME, CONCEPT, 0, null),
+        {
+          ...association('téma', THEME, CONCEPT, 1, null),
+          patterns: ['^https://example\\.org/theme/'],
+          examples: ['https://example.org/theme/transport'],
+        },
+        {
+          ...association('geografické_území', SPATIAL, LOCATION, 0, null),
+          examples: ['https://example.org/place/prague'],
+        },
+        {
+          ...association('prvek_rúian', SPATIAL, LOCATION, 0, null),
+          patterns: ['^https://example\\.org/ruian/'],
+          examples: ['https://example.org/ruian/1'],
+        },
+        {
+          ...association('koncept_euroVoc', THEME, CONCEPT, 0, null),
+          patterns: ['^https://example\\.org/eurovoc/'],
+          examples: ['https://example.org/eurovoc/1001'],
+        },
       ])
     );
 
@@ -51,8 +66,21 @@ describe('RDF property aliases', () => {
     expect(aggregate.fields.map((field) => field.path)).toEqual(['téma', 'geografické_území']);
     expect(aggregate.fields[0]).toMatchObject({ required: true, minCount: 1, maxCount: null });
     expect(aggregate.fields[1]).toMatchObject({ required: false, minCount: 0, maxCount: null });
+    expect(aggregate.fields[0]).toMatchObject({
+      patterns: ['^https://example\\.org/theme/', '^https://example\\.org/eurovoc/'],
+      examples: ['https://example.org/theme/transport', 'https://example.org/eurovoc/1001'],
+    });
+    expect(aggregate.fields[1].patterns).toBeUndefined();
+    expect(aggregate.fields[1].examples).toEqual([
+      'https://example.org/place/prague',
+      'https://example.org/ruian/1',
+    ]);
 
     const rendered = toRenderedAggregate(buildAggregateDescriptor(aggregate));
+    expect(rendered.descriptorFields[0]).toMatchObject({
+      patterns: ['^https://example\\.org/theme/', '^https://example\\.org/eurovoc/'],
+      examples: ['https://example.org/theme/transport', 'https://example.org/eurovoc/1001'],
+    });
     const schemas = buildLdkitSchemaBundle(rendered.classIri, rendered.fields);
     const context = { sources: ['https://example.org/sparql'] };
     expect(() => createLens(schemas.detail, context)).not.toThrow();
@@ -147,6 +175,31 @@ describe('RDF property aliases', () => {
     const code = requiredAggregate(result.enrichedMetadata).fields[0];
     expect(result.valid).toBe(true);
     expect(code).toMatchObject({ path: 'primary_code', many: true, minCount: 0, maxCount: 2 });
+  });
+
+  it('warns and ignores regex patterns that JavaScript cannot compile', () => {
+    const result = analyzeGraphSemantics(
+      graph(),
+      metadata([
+        {
+          ...primitive('code', 'https://example.org/code'),
+          patterns: ['['],
+          examples: ['ABC'],
+        },
+      ])
+    );
+
+    expect(result.valid).toBe(true);
+    expect(result.violations).toContainEqual(
+      expect.objectContaining({
+        code: ViolationCode.SemanticInvalidRegexPattern,
+        severity: ViolationSeverity.Warning,
+      })
+    );
+    expect(requiredAggregate(result.enrichedMetadata).fields[0]).toMatchObject({
+      examples: ['ABC'],
+    });
+    expect(requiredAggregate(result.enrichedMetadata).fields[0].patterns).toBeUndefined();
   });
 });
 

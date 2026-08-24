@@ -126,6 +126,10 @@ export interface GeneratedFieldDescriptor {
   kind: FieldKind;
   propertyIri?: string;
   datatype?: string;
+  /** Regular expressions accepted for editable string values. A value may match any of the provided patterns. */
+  patterns?: string[];
+  /** Example values displayed as input placeholders when the control supports them. */
+  examples?: string[];
   many: boolean;
   required: boolean;
   minCount?: number;

@@ -79,6 +79,38 @@ describe('mapDataspecerSpecificationToMetadata', () => {
     });
   });
 
+  it('maps primitive and reference value constraints from the semantic model', () => {
+    const fixture = dataspecerFixture();
+    const title = fixture.aggregatedSemanticModel.find(
+      (entity) => entity.id === 'relationship-title'
+    ) as SemanticModelRelationship;
+    Object.assign(title.ends[1], {
+      regex: '^Book .+$',
+      example: ['Book one'],
+    });
+    const author = fixture.aggregatedSemanticModel.find(
+      (entity) => entity.id === 'class-author'
+    ) as SemanticModelClass;
+    Object.assign(author, {
+      regex: '^https://example\\.org/author/.+$',
+      example: ['https://example.org/author/1'],
+    });
+
+    const metadata = mapDataspecerSpecificationToMetadata(specificationIri, fixture);
+    const book = metadata.aggregates.find(
+      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail'
+    );
+
+    expect(book?.fields.find((field) => field.path === 'title')).toMatchObject({
+      patterns: ['^Book .+$'],
+      examples: ['Book one'],
+    });
+    expect(book?.fields.find((field) => field.path === 'author')).toMatchObject({
+      patterns: ['^https://example\\.org/author/.+$'],
+      examples: ['https://example.org/author/1'],
+    });
+  });
+
   it('maps inline association target classes to nested fields', () => {
     const fixture = dataspecerFixture();
     fixture.aggregatedSemanticModel.push(
@@ -635,11 +667,14 @@ describe('mapDataspecerSpecificationToMetadata', () => {
   it('uses public concept IRIs when aggregated profiles expose local IRIs', () => {
     const fixture = dataspecerFixture();
     const bookClass = fixture.aggregatedSemanticModel.find((entity) => entity.id === 'class-book');
+    const authorClass = fixture.aggregatedSemanticModel.find(
+      (entity) => entity.id === 'class-author'
+    );
     const titleRelationship = fixture.aggregatedSemanticModel.find(
       (entity) => entity.id === 'relationship-title'
     ) as SemanticModelRelationship | undefined;
 
-    if (!bookClass || !titleRelationship) {
+    if (!bookClass || !authorClass || !titleRelationship) {
       throw new Error('Fixture setup failed.');
     }
 
@@ -648,10 +683,19 @@ describe('mapDataspecerSpecificationToMetadata', () => {
       profiling: ['https://example.org/profiled#Book'],
       conceptIris: ['https://example.org/class/book'],
     });
+    Object.assign(authorClass, {
+      iri: 'https://example.org/profile#Author',
+      profiling: ['https://example.org/profiled#Author'],
+      conceptIris: ['https://example.org/class/author'],
+      regex: '^https://example\\.org/author/.+$',
+      example: ['https://example.org/author/1'],
+    });
     Object.assign(titleRelationship.ends[1], {
       iri: 'https://example.org/profile#Book.title-attribute',
       profiling: ['https://example.org/profiled#Book.title-attribute'],
       conceptIris: ['https://example.org/property/book-title'],
+      regex: '^Book .+$',
+      example: ['Book one'],
     });
 
     const metadata = mapDataspecerSpecificationToMetadata(specificationIri, fixture);
@@ -663,6 +707,15 @@ describe('mapDataspecerSpecificationToMetadata', () => {
     expect(book?.fields.find((field) => field.path === 'title')?.propertyIri).toBe(
       'https://example.org/property/book-title'
     );
+    expect(book?.fields.find((field) => field.path === 'title')).toMatchObject({
+      patterns: ['^Book .+$'],
+      examples: ['Book one'],
+    });
+    expect(book?.fields.find((field) => field.path === 'author')).toMatchObject({
+      targetClassIri: 'https://example.org/class/author',
+      patterns: ['^https://example\\.org/author/.+$'],
+      examples: ['https://example.org/author/1'],
+    });
   });
 
   it('recognizes aggregated profile type markers when profiling arrays are absent', () => {

@@ -1,4 +1,4 @@
-import { sortBy } from 'es-toolkit';
+import { sortBy, uniq } from 'es-toolkit';
 
 import { DataPsmAssociationEnd } from '@dataspecer/core/data-psm/model/data-psm-association-end';
 import { DataPsmAttribute } from '@dataspecer/core/data-psm/model/data-psm-attribute';
@@ -83,6 +83,11 @@ type Cardinality = [number, number | null];
 interface ProfileIriMetadata {
   conceptIris?: string[];
   profiling?: string[];
+}
+
+interface SemanticValueConstraintSource {
+  regex?: string | null;
+  example?: string[] | null;
 }
 
 interface MappingContext {
@@ -405,6 +410,7 @@ function mapAttributeField(
     ...((attribute.dataPsmDatatype ?? valueEnd?.concept)
       ? { datatype: attribute.dataPsmDatatype ?? valueEnd?.concept ?? undefined }
       : {}),
+    ...valueConstraintsFrom(valueEnd as SemanticValueConstraintSource | undefined),
     ...cardinalityFlags(cardinality),
   };
 }
@@ -457,7 +463,10 @@ function mapAssociationField(
     return null;
   }
 
-  const targetClassIri = targetClassIriFrom(targetResource, targetEnd, context);
+  const targetClass = targetSemanticClassFrom(targetResource, targetEnd, context);
+  const targetClassIri = targetClass
+    ? canonicalClassIri(targetClass)
+    : absoluteIri(targetEnd?.concept);
   const target = resolveAssociationTarget(
     association,
     targetResource,
@@ -484,6 +493,8 @@ function mapAssociationField(
     ...(propertyIri ? { propertyIri } : {}),
     ...(target.targetAggregateIri ? { targetAggregateIri: target.targetAggregateIri } : {}),
     ...(targetClassIri ? { targetClassIri } : {}),
+    // class constraints describe the IRI used to reference an instance of that class
+    ...valueConstraintsFrom(targetClass as SemanticValueConstraintSource | undefined),
     ...(target.targetIdentityPolicy ? { targetIdentityPolicy: target.targetIdentityPolicy } : {}),
     ...(target.specializations ? { specializations: target.specializations } : {}),
     ...(association.dataPsmIsReverse ? { isReverse: true } : {}),
@@ -821,17 +832,30 @@ function classReferenceIdentityPolicy(
   return target && DataPsmClass.is(target) ? identityPolicyFrom(target) : 'ALWAYS';
 }
 
-function targetClassIriFrom(
+function targetSemanticClassFrom(
   targetResource: DataPsmClass | DataPsmClassReference | DataPsmOr,
   targetEnd: SemanticModelRelationshipEnd | undefined,
   context: MappingContext
-): string | undefined {
-  const semanticClass =
+): SemanticModelClass | undefined {
+  return (
     getSemanticClass(targetEnd?.concept, context) ??
     (DataPsmClass.is(targetResource)
       ? getSemanticClass(targetResource.dataPsmInterpretation, context)
-      : undefined);
-  return semanticClass ? canonicalClassIri(semanticClass) : absoluteIri(targetEnd?.concept);
+      : undefined)
+  );
+}
+
+function valueConstraintsFrom(
+  source: SemanticValueConstraintSource | undefined
+): Pick<AggregateFieldMetadata, 'patterns' | 'examples'> {
+  const patterns = typeof source?.regex === 'string' && source.regex !== '' ? [source.regex] : [];
+  const examples = Array.isArray(source?.example)
+    ? uniq(source.example.filter((value): value is string => typeof value === 'string'))
+    : [];
+  return {
+    ...(patterns.length ? { patterns } : {}),
+    ...(examples.length ? { examples } : {}),
+  };
 }
 
 function getSemanticClass(

@@ -398,6 +398,73 @@ describe('generated recursive form model', () => {
     ).toEqual([]);
   });
 
+  it('validates text, multilingual, and reference values against alternative patterns', () => {
+    const constrainedTags: FieldDescriptor = {
+      ...tagsField,
+      patterns: ['^tag-[0-9]+$'],
+      examples: ['tag-1'],
+    };
+    const constrainedOwner: FieldDescriptor = {
+      ...ownerField,
+      patterns: ['^urn:owner:', '^https://example\\.org/owner/'],
+      examples: ['urn:owner:1'],
+    };
+    const constrainedTitle: FieldDescriptor = {
+      ...localizedTitle,
+      patterns: ['^[A-Z]'],
+    };
+    const constrainedAggregate: AggregateDescriptor = {
+      iri: 'https://example.org/aggregate/constrained',
+      name: 'Constrained',
+      classIri: 'https://example.org/class/constrained',
+      fields: [constrainedTags, constrainedOwner, constrainedTitle],
+      createEmpty: () => ({}),
+    };
+    const target = rootEntityTarget(constrainedAggregate);
+    const registry = { [constrainedAggregate.iri]: constrainedAggregate };
+
+    const issues = validateModel(
+      {
+        id: 'urn:constrained:1',
+        tags: ['wrong'],
+        owner: { id: 'urn:other:1' },
+        title: { cs: ['lowercase'] },
+      },
+      target,
+      registry
+    );
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: ValidationIssueCode.PatternMismatch,
+          path: 'tags',
+          message: expect.stringContaining('tag-1'),
+        }),
+        expect.objectContaining({ code: ValidationIssueCode.PatternMismatch, path: 'owner' }),
+        expect.objectContaining({ code: ValidationIssueCode.PatternMismatch, path: 'title' }),
+      ])
+    );
+    const ownerIssue = issues.find((issue) => issue.path === 'owner');
+    expect(ownerIssue?.message).toContain('^urn:owner:');
+    expect(ownerIssue?.message).toContain('^https://example\\.org/owner/');
+    const titleIssue = issues.find((issue) => issue.path === 'title');
+    expect(titleIssue?.message).toContain('^[A-Z]');
+    expect(titleIssue?.message).not.toContain('For example');
+
+    expect(
+      validateModel(
+        {
+          id: 'urn:constrained:1',
+          tags: ['tag-1'],
+          owner: { id: 'https://example.org/owner/1' },
+          title: { cs: ['Title'] },
+        },
+        target,
+        registry
+      )
+    ).toEqual([]);
+  });
+
   it('hydrates cross-aggregate composition references without changing loaded values', async () => {
     const loadedChild: EntityRecord = { id: 'urn:child:1', name: 'Loaded child' };
     const readIds: string[] = [];

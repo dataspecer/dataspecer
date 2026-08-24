@@ -76,6 +76,7 @@ export function FormField(props: FormFieldProps) {
         readOnly={readOnly}
         error={error}
         helperText={note}
+        placeholder={examplePlaceholder(field)}
         onChange={onChange}
       />
     );
@@ -174,6 +175,7 @@ interface PrimitiveControlProps {
   readOnly?: boolean;
   error?: string;
   helperText?: string;
+  placeholder?: string;
   onChange: (value: unknown) => void;
 }
 
@@ -233,6 +235,7 @@ function PrimitiveControl(props: PrimitiveControlProps) {
         htmlInput: { step: control === 'number' ? 'any' : undefined, readOnly: props.readOnly },
       }}
       disabled={props.readOnly}
+      placeholder={props.placeholder}
       value={toInputValue(control, value)}
       onChange={(event) => onChange(coerceValue(control, event.target.value, false))}
       {...shared}
@@ -262,6 +265,7 @@ function RepeatingPrimitiveControl(props: RepeatingPrimitiveControlProps) {
             control={props.control}
             value={value}
             readOnly={props.readOnly}
+            placeholder={examplePlaceholder(props.field)}
             onChange={(next) => {
               const values = [...props.values];
               values[index] = next;
@@ -293,4 +297,9 @@ function RepeatingPrimitiveControl(props: RepeatingPrimitiveControlProps) {
       </Button>
     </Stack>
   );
+}
+
+function examplePlaceholder(field: FieldDescriptor): string | undefined {
+  const example = field.examples?.[0];
+  return example ? `Example: ${example}` : undefined;
 }

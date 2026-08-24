@@ -38,6 +38,10 @@ export function ReferenceSelect(props: ReferenceSelectProps) {
   const [draft, setDraft] = useState(false);
   const draftInputRef = useRef<HTMLInputElement | null>(null);
   const maximum = maximumCount(field);
+  const inputAction = classIri && dataSource.listByType ? 'Search or enter an IRI' : 'Enter an IRI';
+  const placeholder = field.examples?.[0]
+    ? `${inputAction}, e.g. ${field.examples[0]}`
+    : inputAction;
 
   useEffect(() => {
     if (!classIri || !dataSource.listByType) {
@@ -103,6 +107,7 @@ export function ReferenceSelect(props: ReferenceSelectProps) {
         exclude={[]}
         labelOf={labelOf}
         loading={loading}
+        placeholder={placeholder}
         clearable
         onCommit={(iri) => {
           onChange(iri === null ? [] : [iri.trim()]);
@@ -123,6 +128,7 @@ export function ReferenceSelect(props: ReferenceSelectProps) {
             exclude={values.filter((_, candidate) => candidate !== index)}
             labelOf={labelOf}
             loading={loading}
+            placeholder={placeholder}
             onCommit={(iri) => {
               if (iri !== null) {
                 replaceAt(index, iri);
@@ -152,6 +158,7 @@ export function ReferenceSelect(props: ReferenceSelectProps) {
             exclude={values}
             labelOf={labelOf}
             loading={loading}
+            placeholder={placeholder}
             autoFocus
             inputRef={draftInputRef}
             onCommit={(iri, keepAdding) => {
@@ -197,6 +204,7 @@ interface ReferenceRowProps {
   exclude: readonly string[];
   labelOf: (id: string) => string;
   loading: boolean;
+  placeholder: string;
   clearable?: boolean;
   autoFocus?: boolean;
   inputRef?: React.Ref<HTMLInputElement>;
@@ -279,7 +287,7 @@ function ReferenceRow(props: ReferenceRowProps) {
           aria-label={props.ariaLabel}
           autoFocus={props.autoFocus}
           inputRef={props.inputRef}
-          placeholder="Search or enter an IRI"
+          placeholder={props.placeholder}
           onBlur={commitTyped}
         />
       )}

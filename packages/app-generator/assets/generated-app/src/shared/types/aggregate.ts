@@ -41,6 +41,10 @@ export interface FieldDescriptor {
   propertyIri?: string;
   /** IRI of the value datatype for a primitive field, for example an xsd or OFN type. */
   datatype?: string;
+  /** Regular expressions accepted for editable string values. A value may match any of the provided patterns. */
+  patterns?: string[];
+  /** Example values displayed as input placeholders when the control supports them. */
+  examples?: string[];
   /** Form control for an editable primitive field. Absent for associations. */
   formControl?: FormControl;
   /** Whether the field holds more than one value (upper cardinality above one). */
