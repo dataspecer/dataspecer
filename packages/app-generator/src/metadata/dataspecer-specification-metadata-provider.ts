@@ -1,4 +1,4 @@
-import { sortBy, uniq } from 'es-toolkit';
+import { sortBy, uniq, uniqBy } from 'es-toolkit';
 
 import { DataPsmAssociationEnd } from '@dataspecer/core/data-psm/model/data-psm-association-end';
 import { DataPsmAttribute } from '@dataspecer/core/data-psm/model/data-psm-attribute';
@@ -612,111 +612,120 @@ function resolveSpecializationTarget(
   }
 
   const seenChoices = new Set<string>();
-  const specializations = specializationOr.dataPsmChoices.flatMap(
-    (choiceIri, index): MappedSpecialization[] => {
-      const choicePath = `${fieldPath}.target.dataPsmChoices[${index}]`;
-      const choice = context.resourcesByIri.get(choiceIri);
-
-      if (!choice) {
-        addIssue(context, {
-          code: DataspecerMetadataMappingIssueCode.MissingSpecializationChoice,
-          message:
-            `Specialization (Or) "${specializationOr.iri ?? fieldPath}" references missing ` +
-            `choice "${choiceIri}". Restore it or remove the reference.`,
-          path: choicePath,
-        });
-        return [];
-      }
-
-      if (!DataPsmClass.is(choice)) {
-        addIssue(context, {
-          code: DataspecerMetadataMappingIssueCode.UnsupportedSpecializationChoice,
-          message:
-            `Choice "${choiceIri}" in specialization (Or) ` +
-            `"${specializationOr.iri ?? fieldPath}" must be a class.`,
-          path: choicePath,
-        });
-        return [];
-      }
-
-      if (seenChoices.has(choiceIri)) {
-        addIssue(context, {
-          code: DataspecerMetadataMappingIssueCode.UnsupportedSpecializationChoice,
-          message:
-            `Specialization (Or) "${specializationOr.iri ?? fieldPath}" contains ` +
-            `class choice "${choiceIri}" more than once. Remove the duplicate choice.`,
-          path: choicePath,
-        });
-        return [];
-      }
-      seenChoices.add(choiceIri);
-
-      const semanticClass = getSemanticClass(choice.dataPsmInterpretation, context);
-      const classIri = semanticClass ? canonicalClassIri(semanticClass) : undefined;
-      if (!choice.dataPsmInterpretation || !semanticClass) {
-        addIssue(context, {
-          code: DataspecerMetadataMappingIssueCode.MissingClassInterpretation,
-          message:
-            `Choice "${choiceIri}" in specialization (Or) ` +
-            `"${specializationOr.iri ?? fieldPath}" has no semantic interpretation. ` +
-            'Check its interpretation in Dataspecer.',
-          path: choicePath,
-        });
-      }
-      if (!classIri) {
-        addIssue(context, {
-          code: DataspecerMetadataMappingIssueCode.MissingClassIri,
-          message:
-            `Choice "${choiceIri}" in specialization (Or) ` +
-            `"${specializationOr.iri ?? fieldPath}" has no RDF vocabulary IRI. ` +
-            'Check its interpretation and profiling in Dataspecer.',
-          path: choicePath,
-        });
-      }
-
-      return [
-        {
-          specializationIri: choiceIri,
-          label:
-            labelFrom(choice.dataPsmHumanLabel) ??
-            choice.dataPsmTechnicalLabel ??
-            labelFrom(semanticClass?.name) ??
-            localName(choiceIri),
-          classIri: classIri ?? '',
-          identityPolicy: identityPolicyFrom(choice),
-          fields: mapClassFields(
-            choice,
-            context,
-            `${choicePath}.target`,
-            withClassOnPath(choice, classPath)
-          ),
-        },
-      ];
-    }
-  );
+  const specializations = specializationOr.dataPsmChoices.flatMap((choiceIri, index) => {
+    const choice = mapSpecializationChoice(
+      specializationOr,
+      choiceIri,
+      index,
+      fieldPath,
+      context,
+      classPath,
+      seenChoices
+    );
+    return choice ? [choice] : [];
+  });
 
   reportConflictingSpecializationFieldShapes(specializations, fieldPath, context);
 
-  const unionByIdentityAndShape = new Map<string, MappedField>();
-
-  specializations.forEach((specialization) => {
-    for (const mappedField of specialization.fields) {
-      const key = compositeKey(
-        mappedField.sourceFieldIri,
-        fieldCompatibilityKey(mappedField.field)
-      );
-      if (!unionByIdentityAndShape.has(key)) {
-        unionByIdentityAndShape.set(key, mappedField);
-      }
-    }
-  });
+  const unionFields = uniqBy(
+    specializations.flatMap((specialization) => specialization.fields),
+    (mappedField) =>
+      compositeKey(mappedField.sourceFieldIri, fieldStorageShapeKey(mappedField.field))
+  );
 
   return {
-    fields: [...unionByIdentityAndShape.values()].map(({ field }) => field),
+    fields: unionFields.map(({ field }) => field),
     specializations: specializations.map(({ fields, ...specialization }) => ({
       ...specialization,
-      fieldPaths: [...new Set(fields.map(({ field }) => field.path))],
+      fieldPaths: uniq(fields.map(({ field }) => field.path)),
     })),
+  };
+}
+
+function mapSpecializationChoice(
+  specializationOr: DataPsmOr,
+  choiceIri: string,
+  index: number,
+  fieldPath: string,
+  context: MappingContext,
+  classPath: ReadonlySet<string>,
+  seenChoices: Set<string>
+): MappedSpecialization | null {
+  const choicePath = `${fieldPath}.target.dataPsmChoices[${index}]`;
+  const choice = context.resourcesByIri.get(choiceIri);
+
+  if (!choice) {
+    addIssue(context, {
+      code: DataspecerMetadataMappingIssueCode.MissingSpecializationChoice,
+      message:
+        `Specialization (Or) "${specializationOr.iri ?? fieldPath}" references missing ` +
+        `choice "${choiceIri}". Restore it or remove the reference.`,
+      path: choicePath,
+    });
+    return null;
+  }
+
+  if (!DataPsmClass.is(choice)) {
+    addIssue(context, {
+      code: DataspecerMetadataMappingIssueCode.UnsupportedSpecializationChoice,
+      message:
+        `Choice "${choiceIri}" in specialization (Or) ` +
+        `"${specializationOr.iri ?? fieldPath}" must be a class.`,
+      path: choicePath,
+    });
+    return null;
+  }
+
+  if (seenChoices.has(choiceIri)) {
+    addIssue(context, {
+      code: DataspecerMetadataMappingIssueCode.UnsupportedSpecializationChoice,
+      message:
+        `Specialization (Or) "${specializationOr.iri ?? fieldPath}" contains ` +
+        `class choice "${choiceIri}" more than once. Remove the duplicate choice.`,
+      path: choicePath,
+    });
+    return null;
+  }
+  seenChoices.add(choiceIri);
+
+  const semanticClass = getSemanticClass(choice.dataPsmInterpretation, context);
+  const classIri = semanticClass ? canonicalClassIri(semanticClass) : undefined;
+  if (!choice.dataPsmInterpretation || !semanticClass) {
+    addIssue(context, {
+      code: DataspecerMetadataMappingIssueCode.MissingClassInterpretation,
+      message:
+        `Choice "${choiceIri}" in specialization (Or) ` +
+        `"${specializationOr.iri ?? fieldPath}" has no semantic interpretation. ` +
+        'Check its interpretation in Dataspecer.',
+      path: choicePath,
+    });
+  }
+  if (!classIri) {
+    addIssue(context, {
+      code: DataspecerMetadataMappingIssueCode.MissingClassIri,
+      message:
+        `Choice "${choiceIri}" in specialization (Or) ` +
+        `"${specializationOr.iri ?? fieldPath}" has no RDF vocabulary IRI. ` +
+        'Check its interpretation and profiling in Dataspecer.',
+      path: choicePath,
+    });
+  }
+
+  return {
+    specializationIri: choiceIri,
+    label:
+      labelFrom(choice.dataPsmHumanLabel) ??
+      choice.dataPsmTechnicalLabel ??
+      labelFrom(semanticClass?.name) ??
+      localName(choiceIri),
+    classIri: classIri ?? '',
+    identityPolicy: identityPolicyFrom(choice),
+    fields: mapClassFields(
+      choice,
+      context,
+      `${choicePath}.target`,
+      withClassOnPath(choice, classPath)
+    ),
   };
 }
 
@@ -769,19 +778,11 @@ function reportConflictingSpecializationFieldShapes(
  * Describes the parts of a field that affect its LDKit schema. Display text and validation-only
  * identity policies do not affect whether two predicate definitions can share the read schema.
  */
-function fieldCompatibilityKey(field: AggregateFieldMetadata): string {
-  return JSON.stringify(fieldShape(field, true));
-}
-
-/** Describes only the RDF storage shape, leaving field-specific validation constraints out. */
 function fieldStorageShapeKey(field: AggregateFieldMetadata): string {
-  return JSON.stringify(fieldShape(field, false));
+  return JSON.stringify(fieldShape(field));
 }
 
-function fieldShape(
-  field: AggregateFieldMetadata,
-  includeValidationConstraints: boolean
-): Record<string, unknown> {
+function fieldShape(field: AggregateFieldMetadata): Record<string, unknown> {
   return {
     kind: field.kind,
     propertyIri: field.propertyIri ?? null,
@@ -789,19 +790,16 @@ function fieldShape(
     targetAggregateIri: field.targetAggregateIri ?? null,
     targetClassIri: field.targetClassIri ?? null,
     specializations:
-      field.specializations?.map(
-        ({ identityPolicy: _identityPolicy, ...specialization }) => specialization
-      ) ?? null,
+      field.specializations
+        ?.map(({ identityPolicy: _identityPolicy, label: _label, ...specialization }) => ({
+          ...specialization,
+          fieldPaths: [...specialization.fieldPaths].sort(),
+        }))
+        .sort((left, right) => left.specializationIri.localeCompare(right.specializationIri)) ??
+      null,
     isReverse: field.isReverse ?? false,
     many: field.many ?? false,
-    ...(includeValidationConstraints
-      ? {
-          required: field.required ?? false,
-          minCount: field.minCount ?? 0,
-          maxCount: field.maxCount ?? null,
-        }
-      : {}),
-    fields: field.fields?.map((child) => fieldShape(child, includeValidationConstraints)) ?? null,
+    fields: field.fields?.map(fieldStorageShapeKey).sort() ?? null,
   };
 }
 
@@ -983,7 +981,7 @@ function canonicalRelationshipEndIri(
 }
 
 function singleAbsoluteIri(values: string[] | undefined): string | undefined {
-  const candidates = [...new Set(values ?? [])];
+  const candidates = uniq(values ?? []);
   return candidates.length === 1 && isAbsoluteIri(candidates[0]) ? candidates[0] : undefined;
 }
 
