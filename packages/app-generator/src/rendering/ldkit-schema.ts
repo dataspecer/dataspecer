@@ -3,6 +3,7 @@ import { ldkit } from 'ldkit/namespaces';
 
 import type { RenderedField } from './rendered-aggregate.ts';
 
+import { hasNestedModel } from '../generation-model/field-shape.ts';
 import { AssociationKind } from '../graph/types.ts';
 import { RDF_TYPES_PROPERTY } from '../generation-model/types.ts';
 import { FieldKind } from '../metadata/types.ts';
@@ -66,8 +67,8 @@ function buildReadSchema(
 function buildReadProperty(field: RenderedField): Property {
   const property = baseProperty(field, 'read');
   if (field.kind === FieldKind.Association) {
-    if (hasInlineCompositionSchema(field)) {
-      const nestedSchema = buildReadSchema(undefined, field.fields ?? [], true);
+    if (hasNestedModel(field)) {
+      const nestedSchema = buildReadSchema(undefined, field.fields, true);
       if (field.specializations?.length) {
         // because LDKit returns only declared properties, expose rdf:type for specialization selection
         nestedSchema[RDF_TYPES_PROPERTY] = {
@@ -112,7 +113,7 @@ function collectNestedWriteSchemas(
   specializationWrites: Record<string, Record<string, Schema>>
 ): void {
   for (const field of fields) {
-    if (!hasInlineCompositionSchema(field)) {
+    if (!hasNestedModel(field)) {
       continue;
     }
 
@@ -122,7 +123,7 @@ function collectNestedWriteSchemas(
       specializationWrites[key] = Object.fromEntries(
         field.specializations.map((specialization) => {
           const fieldPaths = new Set(specialization.fieldPaths);
-          const specializationFields = (field.fields ?? []).filter((candidate) =>
+          const specializationFields = field.fields.filter((candidate) =>
             fieldPaths.has(candidate.path)
           );
           return [
@@ -131,11 +132,11 @@ function collectNestedWriteSchemas(
           ];
         })
       );
-    } else if (field.targetClassIri) {
-      writes[key] = buildWriteSchema(field.targetClassIri, field.fields ?? []);
+    } else {
+      writes[key] = buildWriteSchema(field.targetClassIri, field.fields);
     }
 
-    collectNestedWriteSchemas(field.fields ?? [], fieldPath, writes, specializationWrites);
+    collectNestedWriteSchemas(field.fields, fieldPath, writes, specializationWrites);
   }
 }
 
@@ -168,15 +169,6 @@ function setPrimitiveType(property: Property, field: RenderedField): void {
 function isComposition(field: RenderedField): boolean {
   return (
     field.kind === FieldKind.Association && field.associationKind === AssociationKind.Composition
-  );
-}
-
-function hasInlineCompositionSchema(field: RenderedField): boolean {
-  return Boolean(
-    isComposition(field) &&
-    !field.targetAggregateIri &&
-    field.targetClassIri &&
-    field.fields !== undefined
   );
 }
 

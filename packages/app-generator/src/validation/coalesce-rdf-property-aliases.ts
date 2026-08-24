@@ -1,6 +1,7 @@
-import { uniq } from 'es-toolkit';
+import { maxBy, uniq } from 'es-toolkit';
 
 import type { ApplicationGraph } from '../graph/types.ts';
+import { hasNestedModel } from '../generation-model/field-shape.ts';
 import {
   type AggregateFieldMetadata,
   type AggregateMetadata,
@@ -8,6 +9,7 @@ import {
   type SpecificationMetadata,
 } from '../metadata/types.ts';
 import { compositeKey } from '../utils/composite-key.ts';
+import { joinFieldPath } from '../utils/field-path.ts';
 import { semanticViolation, semanticWarning, type Violation } from './types.ts';
 import { ViolationCode } from './violation-codes.ts';
 
@@ -78,10 +80,10 @@ function coalesceFields(
   const aliases = new Map<string, string>();
   // normalize children first so duplicate child aliases do not make equivalent parents conflict
   const normalized = fields.map((field) => {
-    if (!field.fields) {
+    if (!hasNestedModel(field)) {
       return field;
     }
-    const fieldPath = joinPath(pathPrefix, field.path);
+    const fieldPath = joinFieldPath(pathPrefix, field.path);
     const children = coalesceFields(aggregate, field.fields, fieldPath);
     children.aliases.forEach((representative, alias) => aliases.set(alias, representative));
     violations.push(...children.violations);
@@ -119,7 +121,7 @@ function coalesceFields(
     }
     const group = indexes.map((index) => normalized[index]);
     const shapes = new Set(group.map(storageShapeKey));
-    const paths = group.map((field) => joinPath(pathPrefix, field.path));
+    const paths = group.map((field) => joinFieldPath(pathPrefix, field.path));
     // source order is deterministic and keeps the generated name and label stable
     const representative = group[0];
     if (shapes.size > 1) {
@@ -137,11 +139,11 @@ function coalesceFields(
     }
 
     normalized[indexes[0]] = withCombinedConstraints(representative, group);
-    indexes.slice(1).forEach((index) => {
+    indexes.slice(1).forEach((index, offset) => {
       removedIndexes.add(index);
       if (normalized[index].path !== representative.path) {
         directAliases.set(normalized[index].path, representative.path);
-        aliases.set(paths[indexes.indexOf(index)], paths[0]);
+        aliases.set(paths[offset + 1], paths[0]);
       }
     });
     violations.push(
@@ -170,6 +172,7 @@ function coalesceFields(
  * scalar versus array representation remains part of compatibility.
  */
 function storageShapeKey(field: AggregateFieldMetadata): string {
+  const nested = hasNestedModel(field);
   return JSON.stringify({
     kind: field.kind,
     propertyIri: field.propertyIri ?? null,
@@ -179,12 +182,16 @@ function storageShapeKey(field: AggregateFieldMetadata): string {
     associationKind: field.associationKind ?? null,
     isReverse: field.isReverse ?? false,
     many: field.many ?? false,
-    specializations:
-      field.specializations?.map(({ identityPolicy: _identityPolicy, ...specialization }) => ({
-        ...specialization,
-        fieldPaths: [...specialization.fieldPaths].sort(),
-      })) ?? null,
-    fields: field.fields?.map(storageShapeKey).sort() ?? null,
+    specializations: nested
+      ? (field.specializations
+          ?.map(({ identityPolicy: _identityPolicy, label: _label, ...specialization }) => ({
+            ...specialization,
+            fieldPaths: [...specialization.fieldPaths].sort(),
+          }))
+          .sort((left, right) => left.specializationIri.localeCompare(right.specializationIri)) ??
+        null)
+      : null,
+    fields: nested ? field.fields.map(storageShapeKey).sort() : null,
   });
 }
 
@@ -239,7 +246,7 @@ function remapSpecializationFields(
   }
   return specializations.map((specialization) => ({
     ...specialization,
-    fieldPaths: [...new Set(specialization.fieldPaths.map((path) => aliases.get(path) ?? path))],
+    fieldPaths: uniq(specialization.fieldPaths.map((path) => aliases.get(path) ?? path)),
   }));
 }
 
@@ -297,16 +304,13 @@ function replaceAliasPrefix(
   aliases: ReadonlyMap<string, string>
 ): string | undefined {
   // prefer the deepest alias when nested alias paths overlap
-  const match = [...aliases]
-    .filter(([alias]) => path === alias || path.startsWith(`${alias}.`))
-    .sort(([left], [right]) => right.length - left.length)[0];
+  const match = maxBy(
+    [...aliases].filter(([alias]) => path === alias || path.startsWith(`${alias}.`)),
+    ([alias]) => alias.length
+  );
   return match ? `${match[1]}${path.slice(match[0].length)}` : undefined;
 }
 
 function quotedList(values: string[]): string {
   return values.map((value) => `"${value}"`).join(', ');
-}
-
-function joinPath(prefix: string, path: string): string {
-  return prefix ? `${prefix}.${path}` : path;
 }

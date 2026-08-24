@@ -2,7 +2,7 @@ import { semanticViolation, semanticWarning, type Violation } from '../types.ts'
 import { ViolationCode } from '../violation-codes.ts';
 import { AssociationKind, DeletePolicy, Operation } from '../../graph/types.ts';
 import { resolveAssociationChain } from '../association-chain.ts';
-import { splitFieldPath } from '../field-path.ts';
+import { splitFieldPath } from '../../utils/field-path.ts';
 import type { SemanticValidationContext } from '../semantic-validation-context.ts';
 
 /**

@@ -1,6 +1,7 @@
 import { hasNestedModel } from '../../generation-model/field-shape.ts';
 import { RESERVED_ENTITY_PROPERTY_NAMES } from '../../generation-model/types.ts';
 import type { AggregateFieldMetadata, AggregateMetadata } from '../../metadata/types.ts';
+import { joinFieldPath } from '../../utils/field-path.ts';
 import { toAggregateTypeName, toNestedModelTypeName, toPropertyName } from '../../utils/naming.ts';
 import type { SemanticValidationContext } from '../semantic-validation-context.ts';
 import { semanticViolation, type Violation } from '../types.ts';
@@ -34,7 +35,7 @@ function validateFields(
   const firstPathByPropertyName = new Map<string, string>();
 
   for (const field of fields) {
-    const fieldPath = pathPrefix ? `${pathPrefix}.${field.path}` : field.path;
+    const fieldPath = joinFieldPath(pathPrefix, field.path);
     const propertyName = toPropertyName(field.path);
     if (reservedPropertyNames.has(propertyName)) {
       violations.push(

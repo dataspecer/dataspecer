@@ -4,7 +4,7 @@ import {
   type AggregateMetadata,
 } from '../metadata/types.ts';
 import { compositeKey } from '../utils/composite-key.ts';
-import { splitFieldPath } from './field-path.ts';
+import { splitFieldPath } from '../utils/field-path.ts';
 
 /**
  * Resolves a dotted config path to the chain of association fields it addresses within the

@@ -13,7 +13,7 @@ import {
   FieldKind,
 } from '../metadata/types.ts';
 import { chainIdentity } from './association-chain.ts';
-import { splitFieldPath } from './field-path.ts';
+import { splitFieldPath } from '../utils/field-path.ts';
 import { semanticViolation, semanticWarning, type Violation } from './types.ts';
 import { ViolationCode } from './violation-codes.ts';
 

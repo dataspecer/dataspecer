@@ -6,6 +6,7 @@ import type {
 
 import { hasNestedModel } from '../generation-model/field-shape.ts';
 import { FieldKind } from '../metadata/types.ts';
+import { joinFieldPath } from '../utils/field-path.ts';
 import { toModuleName, toNestedModelTypeName, toPropertyName } from '../utils/naming.ts';
 import { datatypeMapping, type FormControl } from './datatypes.ts';
 import {
@@ -102,7 +103,7 @@ function toRenderedField(
   aggregateTypeName: string,
   pathPrefix = ''
 ): RenderedField {
-  const fieldPath = pathPrefix ? `${pathPrefix}.${field.path}` : field.path;
+  const fieldPath = joinFieldPath(pathPrefix, field.path);
   const children = field.fields?.map((child) =>
     toRenderedField(child, aggregateTypeName, fieldPath)
   );
@@ -192,5 +193,8 @@ function toModelType(
 }
 
 function usesMultilingualValue(field: RenderedField): boolean {
-  return field.formControl === 'multilingual' || Boolean(field.fields?.some(usesMultilingualValue));
+  return (
+    field.formControl === 'multilingual' ||
+    (hasNestedModel(field) && field.fields.some(usesMultilingualValue))
+  );
 }

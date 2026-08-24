@@ -5,6 +5,8 @@ import type {
   AggregateMetadata,
   SpecificationMetadata,
 } from '../metadata/types.ts';
+import { hasNestedModel } from '../generation-model/field-shape.ts';
+import { joinFieldPath } from '../utils/field-path.ts';
 import { semanticWarning, type Violation } from './types.ts';
 import { ViolationCode } from './violation-codes.ts';
 
@@ -34,7 +36,7 @@ function normalizeFields(
   violations: Violation[]
 ): AggregateFieldMetadata[] {
   return fields.map((field) => {
-    const fieldPath = pathPrefix ? `${pathPrefix}.${field.path}` : field.path;
+    const fieldPath = joinFieldPath(pathPrefix, field.path);
     const patterns = uniq(field.patterns ?? []).filter((pattern) => {
       try {
         new RegExp(pattern);
@@ -52,10 +54,10 @@ function normalizeFields(
       }
     });
     const examples = uniq(field.examples ?? []);
-    const children = field.fields
+    const children = hasNestedModel(field)
       ? normalizeFields(aggregate, field.fields, fieldPath, violations)
       : undefined;
-    const { patterns: _patterns, examples: _examples, fields: _fields, ...unchanged } = field;
+    const { patterns: _patterns, examples: _examples, ...unchanged } = field;
     return {
       ...unchanged,
       ...(patterns.length ? { patterns } : {}),

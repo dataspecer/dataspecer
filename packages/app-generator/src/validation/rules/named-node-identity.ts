@@ -1,5 +1,7 @@
 import { AssociationKind } from '../../graph/types.ts';
+import { hasNestedModel } from '../../generation-model/field-shape.ts';
 import { type AggregateFieldMetadata, FieldKind } from '../../metadata/types.ts';
+import { joinFieldPath } from '../../utils/field-path.ts';
 import { chainIdentity } from '../association-chain.ts';
 import type { SemanticValidationContext } from '../semantic-validation-context.ts';
 import { semanticWarning, type Violation } from '../types.ts';
@@ -36,7 +38,7 @@ function visitFields(
       continue;
     }
 
-    const fieldPath = pathPrefix ? `${pathPrefix}.${field.path}` : field.path;
+    const fieldPath = joinFieldPath(pathPrefix, field.path);
     const chain = [...parentChain, field];
     const warningKey = chainIdentity(classIri, chain);
     const neverSpecializations = field.specializations?.filter(
@@ -66,7 +68,7 @@ function visitFields(
       );
     }
 
-    if (field.fields) {
+    if (hasNestedModel(field)) {
       visitFields(classIri, aggregateName, field.fields, chain, fieldPath, warned, violations);
     }
   }

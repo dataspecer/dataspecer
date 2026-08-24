@@ -1,4 +1,5 @@
 import type { ApplicationNode } from '../../graph/types.ts';
+import { hasNestedModel } from '../../generation-model/field-shape.ts';
 import { type AggregateMetadata, FieldKind } from '../../metadata/types.ts';
 
 export function haveSameClass(
@@ -38,6 +39,8 @@ function hasAssociation(
       (field.kind === FieldKind.Association &&
         (field.targetAggregateIri === targetAggregate.iri ||
           field.targetClassIri === targetAggregate.classIri)) ||
-      (recursive && field.fields ? hasAssociation(field.fields, targetAggregate, recursive) : false)
+      (recursive && hasNestedModel(field)
+        ? hasAssociation(field.fields, targetAggregate, recursive)
+        : false)
   );
 }

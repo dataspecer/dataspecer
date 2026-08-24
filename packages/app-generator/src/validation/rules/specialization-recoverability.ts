@@ -1,9 +1,13 @@
+import { countBy } from 'es-toolkit';
+
 import { AssociationKind } from '../../graph/types.ts';
+import { hasNestedModel } from '../../generation-model/field-shape.ts';
 import {
   type AggregateFieldMetadata,
   type SpecializationMetadata,
   FieldKind,
 } from '../../metadata/types.ts';
+import { joinFieldPath } from '../../utils/field-path.ts';
 import type { SemanticValidationContext } from '../semantic-validation-context.ts';
 import { semanticViolation, type Violation } from '../types.ts';
 import { ViolationCode } from '../violation-codes.ts';
@@ -30,11 +34,11 @@ function visitFields(
   violations: Violation[]
 ): void {
   for (const field of fields) {
-    const fieldPath = pathPrefix ? `${pathPrefix}.${field.path}` : field.path;
+    const fieldPath = joinFieldPath(pathPrefix, field.path);
     if (field.associationKind === AssociationKind.Composition && field.specializations?.length) {
       validateChoices(aggregateName, fieldPath, field, violations);
     }
-    if (field.fields) {
+    if (hasNestedModel(field)) {
       visitFields(aggregateName, field.fields, fieldPath, violations);
     }
   }
@@ -48,13 +52,10 @@ function validateChoices(
 ): void {
   const specializations = field.specializations ?? [];
   const memberships = fieldMemberships(specializations);
-  const classCounts = new Map<string, number>();
-  for (const specialization of specializations) {
-    classCounts.set(specialization.classIri, (classCounts.get(specialization.classIri) ?? 0) + 1);
-  }
+  const classCounts = countBy(specializations, (specialization) => specialization.classIri);
 
   for (const specialization of specializations) {
-    if ((classCounts.get(specialization.classIri) ?? 0) < 2) {
+    if ((classCounts[specialization.classIri] ?? 0) < 2) {
       continue;
     }
     const recoverable = (field.fields ?? []).some((candidate) => {

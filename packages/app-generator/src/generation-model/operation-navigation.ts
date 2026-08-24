@@ -1,7 +1,10 @@
-import { Operation } from '../graph/types.ts';
-import { FieldKind } from '../metadata/types.ts';
 import { sortBy } from 'es-toolkit';
 
+import { Operation } from '../graph/types.ts';
+import { FieldKind } from '../metadata/types.ts';
+import { joinFieldPath } from '../utils/field-path.ts';
+
+import { hasNestedModel } from './field-shape.ts';
 import type {
   GeneratedAggregateDescriptor,
   GeneratedAssociationNavigationActionDescriptor,
@@ -207,9 +210,9 @@ function associationActionsFor(
 ): GeneratedAssociationNavigationActionDescriptor[] {
   // detail reads contain inline compositions, while list rows contain only root fields
   return fields.flatMap((field) => {
-    const fieldPath = pathPrefix ? `${pathPrefix}.${field.path}` : field.path;
+    const fieldPath = joinFieldPath(pathPrefix, field.path);
     const nested =
-      recursive && field.fields
+      recursive && hasNestedModel(field)
         ? associationActionsFor(field.fields, targetAggregate, action, recursive, fieldPath)
         : [];
     if (

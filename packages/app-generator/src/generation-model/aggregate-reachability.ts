@@ -1,5 +1,12 @@
+import { type AssociationKind } from '../graph/types.ts';
+import { type FieldKind } from '../metadata/types.ts';
+import { hasNestedModel } from './field-shape.ts';
+
 interface AggregateReferenceField {
+  kind: FieldKind;
+  associationKind?: AssociationKind;
   targetAggregateIri?: string;
+  targetClassIri?: string;
   fields?: readonly AggregateReferenceField[];
 }
 
@@ -38,6 +45,6 @@ export function collectReachableAggregateIris(
 function referencedAggregateIris(fields: readonly AggregateReferenceField[]): string[] {
   return fields.flatMap((field) => [
     ...(field.targetAggregateIri ? [field.targetAggregateIri] : []),
-    ...(field.fields ? referencedAggregateIris(field.fields) : []),
+    ...(hasNestedModel(field) ? referencedAggregateIris(field.fields) : []),
   ]);
 }
