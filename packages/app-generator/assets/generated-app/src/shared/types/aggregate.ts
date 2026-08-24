@@ -82,6 +82,7 @@ export interface AggregateDescriptor<TModel extends EntityModel = EntityModel> {
   createEmpty(): Partial<TModel>;
 }
 
+/** Aggregate descriptors keyed by IRI so fields can resolve referenced structures. */
 export type AggregateDescriptorMap = Record<string, AggregateDescriptor>;
 
 export interface EntityModel {
@@ -122,4 +123,24 @@ export function isEntityRecord(value: unknown): value is EntityRecord {
   }
   const id = (value as { id?: unknown }).id;
   return id === undefined || typeof id === 'string';
+}
+
+export function isEmptyValue(value: unknown): boolean {
+  if (value === null || value === undefined) {
+    return true;
+  }
+  if (typeof value === 'string') {
+    return value.trim() === '';
+  }
+  if (Array.isArray(value)) {
+    return value.every(isEmptyValue);
+  }
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime());
+  }
+  if (typeof value === 'object' && 'id' in value) {
+    const id = (value as { id?: unknown }).id;
+    return typeof id !== 'string' || id.trim() === '';
+  }
+  return false;
 }

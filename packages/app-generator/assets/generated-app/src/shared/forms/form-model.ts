@@ -1,6 +1,7 @@
 import {
   fieldValues,
   isEntityRecord,
+  isEmptyValue,
   RDF_TYPES_PROPERTY,
   SPECIALIZATION_IRI_PROPERTY,
   type AggregateDescriptorMap,
@@ -16,6 +17,7 @@ import {
   resolveCompositionTarget,
   type EntityTarget,
 } from './entity-target.ts';
+import { joinValidationPath } from './field-path.ts';
 import { isSafeAbsoluteIri } from './iri.ts';
 import {
   hasDuplicateMultilingualValues,
@@ -101,7 +103,7 @@ function validateEntity(
   pathPrefix: string,
   issues: ValidationIssue[]
 ): void {
-  const idPath = joinPath(pathPrefix, 'id');
+  const idPath = joinValidationPath(pathPrefix, 'id');
   if (typeof model.id !== 'string' || model.id.trim() === '') {
     issues.push({
       code: ValidationIssueCode.Required,
@@ -125,7 +127,7 @@ function validateEntity(
     if (control === 'unsupported') {
       continue;
     }
-    const fieldPath = joinPath(pathPrefix, field.path);
+    const fieldPath = joinValidationPath(pathPrefix, field.path);
     const value = model[field.propertyName];
     if (isMultilingualField(field)) {
       validateMultilingualField(field, value, fieldPath, issues);
@@ -233,7 +235,7 @@ function validateSpecialization(
   }
   const entity = model as EntityRecord;
   const selected = selectedSpecialization(target, entity);
-  const path = joinPath(pathPrefix, SPECIALIZATION_IRI_PROPERTY);
+  const path = joinValidationPath(pathPrefix, SPECIALIZATION_IRI_PROPERTY);
   if (!selected) {
     if (Object.hasOwn(entity, RDF_TYPES_PROPERTY)) {
       const resolution = resolveSpecialization(target, entity);
@@ -374,30 +376,4 @@ function valueIdentity(value: unknown): string | null {
     return `${typeof value}:${String(value)}`;
   }
   return null;
-}
-
-function joinPath(prefix: string, segment: string): string {
-  return prefix ? `${prefix}.${segment}` : segment;
-}
-
-export function isEmptyValue(value: unknown): boolean {
-  if (value === null || value === undefined) {
-    return true;
-  }
-  if (typeof value === 'string') {
-    return value.trim() === '';
-  }
-  if (Array.isArray(value)) {
-    return value.filter((entry) => !isEmptyValue(entry)).length === 0;
-  }
-  if (value instanceof Date) {
-    return Number.isNaN(value.getTime());
-  }
-  if (typeof value === 'object') {
-    const id = (value as { id?: unknown }).id;
-    if ('id' in value) {
-      return typeof id !== 'string' || id.trim() === '';
-    }
-  }
-  return false;
 }

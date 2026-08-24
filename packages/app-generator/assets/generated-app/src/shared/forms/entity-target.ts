@@ -33,6 +33,23 @@ export function isCompositionField(field: FieldDescriptor): boolean {
   return field.kind === 'association' && field.associationKind === 'composition';
 }
 
+/** Returns whether a composition owns its target, including targets with no editable fields. */
+export function isInlineCompositionField(
+  field: FieldDescriptor
+): field is FieldDescriptor & { targetClassIri: string; fields: FieldDescriptor[] } {
+  return Boolean(
+    isCompositionField(field) &&
+    !field.targetAggregateIri &&
+    field.targetClassIri &&
+    field.fields !== undefined
+  );
+}
+
+/** Returns whether a specialization selector or nested composition needs a separate form pane. */
+export function opensInOwnPane(target: EntityTarget): boolean {
+  return Boolean(target.specializations?.length || target.fields.some(isCompositionField));
+}
+
 export function resolveCompositionTarget(
   owner: EntityTarget,
   field: FieldDescriptor,
@@ -59,7 +76,7 @@ function resolveAssociationTarget(
     return target ? rootEntityTarget(target) : null;
   }
 
-  if (!field.targetClassIri || !field.fields) {
+  if (!isInlineCompositionField(field)) {
     return null;
   }
 
@@ -110,7 +127,14 @@ export function referenceDisplayFields(
 }
 
 function primitiveFields(fields: readonly FieldDescriptor[] | undefined): FieldDescriptor[] {
-  return (fields ?? []).filter((field) => field.kind === 'primitive' && Boolean(field.propertyIri));
+  const propertyIris = new Set<string>();
+  return (fields ?? []).filter((field) => {
+    if (field.kind !== 'primitive' || !field.propertyIri || propertyIris.has(field.propertyIri)) {
+      return false;
+    }
+    propertyIris.add(field.propertyIri);
+    return true;
+  });
 }
 
 export function minimumCount(field: FieldDescriptor): number {

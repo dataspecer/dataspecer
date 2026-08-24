@@ -3,6 +3,7 @@ import {
   type EntityRecord,
   type FieldDescriptor,
   type SpecializationDescriptor,
+  isEmptyValue,
 } from '../types/aggregate.ts';
 import { isMultilingualField, nonEmptyMultilingualValues } from './multilingual-value.ts';
 
@@ -199,25 +200,5 @@ function hasPopulatedValue(field: FieldDescriptor, value: unknown): boolean {
   if (isMultilingualField(field)) {
     return nonEmptyMultilingualValues(value).length > 0;
   }
-  if (Array.isArray(value)) {
-    return value.some((entry) => hasBasicValue(entry));
-  }
-  return hasBasicValue(value);
-}
-
-function hasBasicValue(value: unknown): boolean {
-  if (value === null || value === undefined) {
-    return false;
-  }
-  if (typeof value === 'string') {
-    return value.trim() !== '';
-  }
-  if (value instanceof Date) {
-    return !Number.isNaN(value.getTime());
-  }
-  if (typeof value === 'object' && 'id' in value) {
-    const id = (value as { id?: unknown }).id;
-    return typeof id === 'string' && id.trim() !== '';
-  }
-  return true;
+  return !isEmptyValue(value);
 }

@@ -9,6 +9,7 @@ import {
   type FieldDescriptor,
 } from '../types/aggregate.ts';
 import { requireSafeAbsoluteIri } from '../forms/iri.ts';
+import { isInlineCompositionField } from '../forms/entity-target.ts';
 import { effectiveFields } from '../forms/specialization.ts';
 import type {
   DataSource,
@@ -244,7 +245,7 @@ export class RdfLdkitDataSource implements DataSource {
     for (const segment of fieldPath) {
       traversed.push(segment);
       const field = fields.find((candidate) => candidate.path === segment);
-      if (!field?.fields || field.targetAggregateIri) {
+      if (!field || !isInlineCompositionField(field)) {
         throw new Error(`Missing inline entity target "${aggregate.name}.${traversed.join('.')}".`);
       }
       targetField = field;

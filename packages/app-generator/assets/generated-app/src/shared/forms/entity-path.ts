@@ -2,6 +2,7 @@ import type { AggregateDescriptorMap } from '../types/aggregate.ts';
 import { isEntityRecord, type EntityRecord } from '../types/aggregate.ts';
 import {
   isCompositionField,
+  opensInOwnPane,
   resolveCompositionTarget,
   type EntityTarget,
 } from './entity-target.ts';
@@ -116,7 +117,7 @@ export function nearestPanePath(
       (candidate) => candidate.propertyName === segment.propertyName
     );
     const child = field && resolveCompositionTarget(target, field, aggregateRegistry);
-    if (!child || (!child.specializations?.length && !child.fields.some(isCompositionField))) {
+    if (!child || !opensInOwnPane(child)) {
       return pane;
     }
     pane.push(segment);

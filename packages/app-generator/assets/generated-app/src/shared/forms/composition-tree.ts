@@ -4,12 +4,14 @@ import type { ValidationIssue } from '../operations/operation-result.ts';
 import type { AggregateDescriptorMap, EntityRecord } from '../types/aggregate.ts';
 import {
   isCompositionField,
+  opensInOwnPane,
   resolveCompositionTarget,
   type EntityTarget,
 } from './entity-target.ts';
 import { compositionEntities, type EntityPathSegment } from './form-draft.ts';
 import { isMultilingualField, multilingualLanguageTags } from './multilingual-value.ts';
 import { effectiveFields } from './specialization.ts';
+import { joinValidationPath } from './field-path.ts';
 
 /** Describes a composed entity that opens in its own form pane. */
 export interface NavigablePane {
@@ -36,10 +38,7 @@ export function navigablePanes(
         return [];
       }
       return compositionEntities(entity[field.propertyName], field).flatMap((child, index) => {
-        if (
-          !childTarget.specializations?.length &&
-          !effectiveFields(childTarget, child).some(isCompositionField)
-        ) {
+        if (!opensInOwnPane(childTarget)) {
           // children that compose nothing are edited in place, so they don't need their own pane
           return [];
         }
@@ -332,8 +331,4 @@ function collectEntityLanguages(
       collectEntityLanguages(child, childTarget, aggregateRegistry, languages);
     }
   }
-}
-
-export function joinValidationPath(prefix: string, segment: string): string {
-  return prefix ? `${prefix}.${segment}` : segment;
 }

@@ -1,5 +1,5 @@
 import { compositionEntities } from '../forms/form-draft.ts';
-import { isEmptyValue, resolveControl } from '../forms/form-model.ts';
+import { resolveControl } from '../forms/form-model.ts';
 import {
   isCompositionField,
   resolveCompositionTarget,
@@ -15,6 +15,7 @@ import {
 import {
   fieldValues,
   isEntityRecord,
+  isEmptyValue,
   type AggregateDescriptor,
   type AggregateDescriptorMap,
   type EntityRecord,

@@ -7,7 +7,7 @@ import {
   type FieldDescriptor,
   type SpecializationDescriptor,
 } from '../types/aggregate.ts';
-import { isCompositionField } from '../forms/entity-target.ts';
+import { isCompositionField, isInlineCompositionField } from '../forms/entity-target.ts';
 import { isSafeAbsoluteIri, requireSafeAbsoluteIri } from '../forms/iri.ts';
 import {
   compactMultilingualValue,
@@ -49,7 +49,7 @@ function normalizeEntity(
           ? nested
           : normalizeMultilingualValue(nested, field.label);
     } else if (field?.kind === 'association') {
-      result[key] = readsInlineComposition(field)
+      result[key] = isInlineCompositionField(field)
         ? normalizeEntity(nested, field.fields ?? [], field.specializations)
         : normalizeReference(nested, field);
     } else {
@@ -63,7 +63,7 @@ function normalizeEntity(
     return result;
   }
   const shape = { fields, specializations };
-  return resolveLoadedSpecialization(shape, result as EntityRecord);
+  return resolveLoadedSpecialization(shape, result);
 }
 
 function normalizeReference(value: unknown, field: FieldDescriptor): unknown {
@@ -112,7 +112,7 @@ export function requireNamedCompositionIris(
     }
     const fieldPath = pathPrefix ? `${pathPrefix}.${field.path}` : field.path;
     const values = fieldValues(record[field.propertyName], field);
-    const childShape = readsInlineComposition(field)
+    const childShape = isInlineCompositionField(field)
       ? { fields: field.fields ?? [], specializations: field.specializations }
       : undefined;
     values.forEach((value, index) => {
@@ -128,15 +128,6 @@ export function requireNamedCompositionIris(
       }
     });
   }
-}
-
-function readsInlineComposition(field: FieldDescriptor): boolean {
-  return Boolean(
-    isCompositionField(field) &&
-    !field.targetAggregateIri &&
-    field.targetClassIri &&
-    field.fields !== undefined
-  );
 }
 
 /** Converts model ids to LDKit $id values. Updates keep null and [] because they clear properties. */
