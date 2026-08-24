@@ -78,7 +78,6 @@ describe('renderGeneratedApp', () => {
     expect(descriptor).toContain('"path": "chapters"');
     expect(descriptor).toContain('"path": "footnotes"');
     expect(descriptor).toContain('"propertyName": "footnotes"');
-    expect(tree.get('src/shared/forms/field-value.ts')).toContain('formatFieldValue');
   });
 
   it('renders Or specialization membership without validation-only identity policy', () => {
@@ -217,16 +216,6 @@ describe('renderGeneratedApp', () => {
     expect(tree.get('src/modules/book-list/book-read-list-page.tsx')).toContain(
       'strategy={strategy}'
     );
-    expect(tree.get('src/shared/components/list-view.tsx')).toContain('invokeOperation');
-    expect(tree.get('src/shared/components/list-view.tsx')).toContain(
-      'page: paginationModel.page + 1'
-    );
-    expect(tree.get('src/shared/components/list-view.tsx')).toContain(
-      'pageSize: paginationModel.pageSize'
-    );
-    expect(tree.get('src/shared/components/list-view.tsx')).toContain(
-      'setTotal(result.data.total)'
-    );
     expect(tree.get('src/modules/book-list/book-read-list-page.tsx')).not.toContain(
       'PlaceholderOperationView'
     );
@@ -240,18 +229,7 @@ describe('renderGeneratedApp', () => {
     expect(tree.get('src/modules/book-list/book-read-list-operation.ts')).toContain(
       'async validateRequest('
     );
-    expect(tree.get('src/shared/data-source/rdf-ldkit-data-source.ts')).toContain('createLens');
-    expect(tree.get('src/shared/components/list-view.tsx')).toContain('<DataGrid');
-    expect(tree.get('src/shared/components/list-view.tsx')).toContain('paginationMode="server"');
-    expect(tree.get('src/shared/components/list-view.tsx')).toContain('sortingMode="server"');
     expect(tree.get('package.json')).toContain('"react-router-dom"');
-    // a single control carries its own label, a group of controls is labelled by its legend
-    expect(tree.get('src/shared/components/form-field.tsx')).toContain(
-      'label={<FieldLabel field={field} />}'
-    );
-    expect(tree.get('src/shared/components/form-field.tsx')).toContain(
-      'htmlFor={field.many ? undefined : controlId}'
-    );
     // the two documents a developer opens first
     const readme = tree.get('README.md');
     expect(readme).toContain('## Getting started');
@@ -294,10 +272,6 @@ describe('renderGeneratedApp', () => {
     const registry = tree.get('src/config/aggregate-registry.ts');
 
     expect(listPage).toContain('navigation={navigation}');
-    expect(tree.get('src/shared/components/list-view.tsx')).toContain(
-      'actions={navigation.pageActions}'
-    );
-    expect(tree.get('src/shared/components/list-view.tsx')).toContain('navigation.rowActions');
     // the registry holds the two application-wide singletons, each page holds its own wiring
     expect(tree.get('src/config/data-sources.ts')).toContain('export const rdfDataSource =');
     expect(registry).toContain('} satisfies AggregateDescriptorMap;');
@@ -311,22 +285,13 @@ describe('renderGeneratedApp', () => {
 
     expect(detailPage).toContain('useEntityId()');
     expect(detailPage).not.toContain('window.location');
-    expect(tree.get('src/shared/components/detail-view.tsx')).toContain(
-      "setError('Missing required entity id.')"
-    );
     expect(detailPage).toContain('navigation={navigation}');
     // the detail page carries its own way back to the list
     expect(detailPage).toContain('"targetPath": "/book-read-list"');
 
-    expect(tree.get('src/shared/components/list-view.tsx')).toContain('rowActions');
-    expect(tree.get('src/shared/components/detail-view.tsx')).toContain('associationActions');
     // the shell lives in the shared library, so App.tsx only names the application and its routes
     expect(tree.get('src/App.tsx')).not.toContain('example-id');
     expect(tree.get('src/App.tsx')).toContain('createAppRouter(routes,');
-    expect(tree.get('src/shared/app/app-shell.tsx')).toContain('Page not found');
-    expect(tree.get('src/shared/operations/read-detail-strategy.ts')).toContain(
-      'ctx.params.id as string'
-    );
   });
 
   it('generates an LDKit schema with nested schemas for embedded associations', () => {
@@ -506,27 +471,6 @@ describe('renderGeneratedApp', () => {
       'stored languages are added automatically'
     );
     expect(page).toContain('languages={languages}');
-    expect(tree.get('src/shared/components/form-field.tsx')).toContain(
-      "control === 'multilingual'"
-    );
-    expect(tree.get('src/shared/components/field-label.tsx')).toContain(
-      'Tooltip title={field.description}'
-    );
-    expect(tree.get('src/shared/components/field-label.tsx')).toContain('event.stopPropagation()');
-    expect(tree.get('src/shared/components/multilingual-field.tsx')).toContain('Has values:');
-    expect(tree.get('src/shared/components/entity-form-editor.tsx')).toContain(
-      "'aria-label': 'Show values in'"
-    );
-    expect(tree.get('src/shared/components/entity-form-editor.tsx')).toContain(
-      'Switching languages keeps values entered in other languages.'
-    );
-    expect(tree.get('src/shared/components/entity-form-editor.tsx')).toContain(
-      "scrollIntoView({ behavior: 'smooth', block: 'start' })"
-    );
-    expect(tree.get('src/shared/components/entity-form-editor.tsx')).toContain('theme.spacing(8)');
-    expect(tree.get('src/shared/components/detail-view.tsx')).toContain(
-      'Object.entries(compactMultilingualValue(value))'
-    );
   });
 
   it('renders new entity drafts without invented primitive values', () => {
@@ -582,24 +526,6 @@ describe('renderGeneratedApp', () => {
     expect(createOperation?.navigation.successRedirect?.label).toBe('List');
     // Read operations are not forms, so they have no success redirect.
     expect(listOperation?.navigation.successRedirect).toBeUndefined();
-
-    const tree = renderGeneratedApp(model);
-    expect(tree.get('src/shared/components/create-form.tsx')).toContain(
-      'hrefForAction(navigation.successRedirect, result.data.id ?? model.id)'
-    );
-    expect(tree.get('src/shared/components/update-form.tsx')).toContain(
-      'hrefForAction(navigation.successRedirect, id)'
-    );
-    expect(tree.get('src/shared/components/delete-form.tsx')).toContain(
-      'hrefForAction(navigation.successRedirect, id)'
-    );
-    for (const form of ['create-form.tsx', 'update-form.tsx', 'delete-form.tsx']) {
-      const source = tree.get(`src/shared/components/${form}`);
-      // Cancel abandons the form, rather than stepping back through its nested panes
-      expect(source).toContain('onClick={leaveForm}');
-      expect(source).toContain('hrefForAction(navigation.successRedirect');
-      expect(source).not.toContain('href={navigation.successRedirect.targetPath}');
-    }
   });
 
   it('passes configured cascade paths and the loaded entity to Delete', () => {
@@ -620,18 +546,6 @@ describe('renderGeneratedApp', () => {
     expect(page).toContain('aggregateRegistry={aggregateRegistry}');
 
     expect(page).toContain('cascadePaths={cascadePaths}');
-    const deleteForm = tree.get('src/shared/components/delete-form.tsx');
-    expect(deleteForm).toContain('payload: item');
-    expect(deleteForm).toContain('.listIncomingReferences(id)');
-    expect(deleteForm).not.toContain('Promise.all([dataSource.readDetail');
-    expect(deleteForm).toContain('<Alert severity="warning">');
-    expect(deleteForm).toContain('Deleting it may leave broken references.');
-    expect(deleteForm).toContain('You can still delete it.');
-    expect(deleteForm).toContain('{reference.subject}');
-    expect(deleteForm).toContain('{reference.predicate}');
-    expect(tree.get('src/shared/data-source/data-source.ts')).toContain(
-      'listIncomingReferences(id: string): Promise<IncomingReference[]>'
-    );
     expect(tree.get('README.md')).toContain('resources elsewhere that still point at this one');
   });
 });

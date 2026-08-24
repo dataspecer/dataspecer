@@ -142,6 +142,58 @@ describe('RDF property aliases', () => {
     );
   });
 
+  it('does not coalesce display-only fields of an aggregation', () => {
+    const first = primitive('name', 'https://example.org/name');
+    const second = {
+      ...primitive('number', 'https://example.org/name'),
+      datatype: 'http://www.w3.org/2001/XMLSchema#integer',
+    };
+    const reference = {
+      ...association(
+        'reference',
+        'https://example.org/reference',
+        'https://example.org/Reference',
+        0,
+        1
+      ),
+      fields: [first, second],
+    };
+    const result = analyzeGraphSemantics(
+      graph(Operation.ReadDetail, {
+        associations: { reference: AssociationKind.Aggregation },
+      }),
+      metadata([reference])
+    );
+
+    expect(result.valid).toBe(true);
+    expect(requiredAggregate(result.enrichedMetadata).fields[0].fields).toEqual([first, second]);
+    expect(result.violations).not.toContainEqual(
+      expect.objectContaining({ code: ViolationCode.SemanticConflictingRdfPropertyAlias })
+    );
+  });
+
+  it('coalesces aggregation aliases when only their display fields differ', () => {
+    const propertyIri = 'https://example.org/reference';
+    const targetClassIri = 'https://example.org/Reference';
+    const first = {
+      ...association('first', propertyIri, targetClassIri, 0, 1),
+      fields: [primitive('name', 'https://example.org/name')],
+    };
+    const second = {
+      ...association('second', propertyIri, targetClassIri, 0, 1),
+      fields: [primitive('title', 'https://example.org/title')],
+    };
+    const result = analyzeGraphSemantics(graph(), metadata([first, second]));
+
+    expect(result.valid).toBe(true);
+    expect(requiredAggregate(result.enrichedMetadata).fields.map((field) => field.path)).toEqual([
+      'first',
+    ]);
+    expect(result.violations).toContainEqual(
+      expect.objectContaining({ code: ViolationCode.SemanticRdfPropertyAliasesCoalesced })
+    );
+  });
+
   it('rejects application-graph configuration that names a removed alias', () => {
     const result = analyzeGraphSemantics(
       graph(Operation.Update, {

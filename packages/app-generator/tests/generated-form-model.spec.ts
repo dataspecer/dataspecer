@@ -275,6 +275,19 @@ describe('generated recursive form model', () => {
     expect(referenceDisplayFields(childrenField, aggregateRegistry)).toEqual([nameField]);
   });
 
+  it('queries each reference display property only once', () => {
+    const nameAlias: FieldDescriptor = {
+      ...nameField,
+      path: 'displayName',
+      propertyName: 'displayName',
+      label: 'Display name',
+    };
+
+    expect(
+      referenceDisplayFields({ ...ownerField, fields: [nameField, nameAlias] }, aggregateRegistry)
+    ).toEqual([nameField]);
+  });
+
   it('prefers name over title and label when no primitive field is exposed', () => {
     const fallbackFields = ['label', 'title', 'name'].map(
       (path): FieldDescriptor => ({

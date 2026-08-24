@@ -54,6 +54,16 @@ const listAggregate: AggregateDescriptor<EntityModel> = {
   createEmpty: () => ({}),
 };
 
+function captureRequestBodies(requests: string[]) {
+  return vi.fn((_input: string | URL | Request, init?: RequestInit) => {
+    if (typeof init?.body !== 'string') {
+      throw new Error('Expected a string request body.');
+    }
+    requests.push(init.body);
+    return Promise.resolve(new Response('', { status: 200 }));
+  });
+}
+
 const inverseField: AggregateDescriptor<EntityModel>['fields'][number] = {
   path: 'books',
   propertyName: 'books',
@@ -583,6 +593,25 @@ describe('generated RDF read normalization', () => {
     });
   });
 
+  it('keeps an empty inline composition as an entity', () => {
+    const emptyChild: AggregateDescriptor<EntityModel>['fields'][number] = {
+      path: 'child',
+      propertyName: 'child',
+      label: 'Child',
+      kind: 'association',
+      propertyIri: 'https://example.org/child',
+      targetClassIri: 'https://example.org/class/child',
+      associationKind: 'composition',
+      fields: [],
+      many: false,
+      required: false,
+    };
+
+    expect(
+      normalizeLdkitEntity({ child: { $id: 'https://example.org/child/1' } }, [emptyChild])
+    ).toEqual({ child: { id: 'https://example.org/child/1' } });
+  });
+
   it('normalizes scalar and repeated multilingual reads without losing languages', () => {
     expect(
       normalizeLdkitEntity(
@@ -670,13 +699,7 @@ describe('generated RDF read normalization', () => {
 describe('generated RDF write schema selection', () => {
   it('deletes all subject triples without requiring a target write schema', async () => {
     const requests: string[] = [];
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockImplementation(async (_input, init: RequestInit) => {
-        requests.push(String(init.body));
-        return new Response('', { status: 200 });
-      })
-    );
+    vi.stubGlobal('fetch', captureRequestBodies(requests));
     const dataSource = new RdfLdkitDataSource('https://example.org/sparql', {});
 
     try {
@@ -695,13 +718,7 @@ describe('generated RDF write schema selection', () => {
 
   it('updates and clears scalar and repeated IRI pointers through LDKit', async () => {
     const requests: string[] = [];
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockImplementation(async (_input, init: RequestInit) => {
-        requests.push(String(init.body));
-        return new Response('', { status: 200 });
-      })
-    );
+    vi.stubGlobal('fetch', captureRequestBodies(requests));
 
     const aggregate: AggregateDescriptor<EntityModel> = {
       ...listAggregate,
@@ -755,13 +772,7 @@ describe('generated RDF write schema selection', () => {
 
   it('writes Czech, English, repeated, and untagged multilingual literals through LDKit', async () => {
     const requests: string[] = [];
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockImplementation(async (_input, init: RequestInit) => {
-        requests.push(String(init.body));
-        return new Response('', { status: 200 });
-      })
-    );
+    vi.stubGlobal('fetch', captureRequestBodies(requests));
 
     const aggregate: AggregateDescriptor<EntityModel> = {
       ...listAggregate,
@@ -818,13 +829,7 @@ describe('generated RDF write schema selection', () => {
 
   it('uses the selected specialization schema and stamps its concrete RDF class', async () => {
     const requests: string[] = [];
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockImplementation(async (_input, init: RequestInit) => {
-        requests.push(String(init.body));
-        return new Response('', { status: 200 });
-      })
-    );
+    vi.stubGlobal('fetch', captureRequestBodies(requests));
 
     const nameField: AggregateDescriptor<EntityModel>['fields'][number] = {
       path: 'name',

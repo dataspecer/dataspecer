@@ -265,7 +265,13 @@ describe('buildGenerationModel', () => {
       node('BookNested.ReadList', 'https://example.org/aggregate/book-detail', Operation.ReadList),
       node('Book.ReadDetail', 'https://example.org/aggregate/book-detail', Operation.ReadDetail),
       node('Book.Create', 'https://example.org/aggregate/book-form', Operation.Create),
-      node('Book.Update', 'https://example.org/aggregate/book-detail', Operation.Update),
+      node('Book.Update', 'https://example.org/aggregate/book-detail', Operation.Update, {
+        associations: {
+          chapters: AssociationKind.Composition,
+          author: AssociationKind.Aggregation,
+          'chapters.editor': AssociationKind.Aggregation,
+        },
+      }),
       node('Book.Delete', 'https://example.org/aggregate/book-detail', Operation.Delete),
       node(
         'Author.ReadDetail',
@@ -285,7 +291,7 @@ describe('buildGenerationModel', () => {
       transition('detail-author-detail', 'Book.ReadDetail', 'Author.ReadDetail'),
     ];
 
-    const model = buildGenerationModel(graph, basicMetadata);
+    const model = buildGenerationModel(graph, preparedMetadataFor(graph));
     const list = model.operations.find((operation) => operation.id === 'BookNested.ReadList');
     const detail = model.operations.find((operation) => operation.id === 'Book.ReadDetail');
 

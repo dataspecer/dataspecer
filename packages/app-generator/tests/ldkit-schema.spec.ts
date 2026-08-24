@@ -209,6 +209,61 @@ describe('LDKit schema generation', () => {
     });
   });
 
+  it('keeps an empty composition as a nested entity with its own write schema', () => {
+    const aggregate = renderedAggregate([
+      {
+        path: 'child',
+        label: 'Child',
+        kind: FieldKind.Association,
+        propertyIri: 'https://example.org/p/child',
+        targetClassIri: 'https://example.org/class/child',
+        associationKind: AssociationKind.Composition,
+        fields: [],
+        many: false,
+        required: false,
+      },
+    ]);
+    const bundle = buildLdkitSchemaBundle(aggregate.classIri, aggregate.fields);
+
+    expect((bundle.detail.child as Record<string, unknown>)['@schema']).toEqual({});
+    expect(bundle.writes['["child"]']).toEqual({
+      '@type': 'https://example.org/class/child',
+    });
+    expect(aggregate.fields[0].modelDeclaration).toBe('child?: SampleChildModel | null');
+    expect(aggregate.nestedModels).toEqual([{ name: 'SampleChildModel', fields: [] }]);
+  });
+
+  it('ignores multilingual display fields that do not produce a nested model', () => {
+    const aggregate = renderedAggregate([
+      {
+        path: 'author',
+        label: 'Author',
+        kind: FieldKind.Association,
+        propertyIri: 'https://example.org/p/author',
+        targetAggregateIri: 'https://example.org/aggregate/author',
+        targetClassIri: 'https://example.org/class/author',
+        associationKind: AssociationKind.Aggregation,
+        many: false,
+        required: false,
+        fields: [
+          {
+            path: 'name',
+            label: 'Name',
+            kind: FieldKind.Primitive,
+            propertyIri: 'https://example.org/p/name',
+            datatype: RDF_LANG_STRING,
+            many: false,
+            required: false,
+          },
+        ],
+      },
+    ]);
+
+    expect(aggregate.fields[0].modelDeclaration).toBe('author?: { id: string } | null');
+    expect(aggregate.nestedModels).toEqual([]);
+    expect(aggregate.usesMultilingualValues).toBe(false);
+  });
+
   it('marks a reverse reference @inverse so LDKit reads it backwards', () => {
     const schema = schemaFor([
       {

@@ -13,7 +13,12 @@ import {
 } from '../src/graph/types.ts';
 import { analyzeGraphSemantics } from '../src/validation/analyze-semantics.ts';
 import { ViolationSeverity } from '../src/validation/types.ts';
-import { FieldKind } from '../src/metadata/types.ts';
+import {
+  FieldKind,
+  type AggregateFieldMetadata,
+  type AggregateMetadata,
+  type SpecificationMetadata,
+} from '../src/metadata/types.ts';
 import { basicMetadata, specificationIri } from './fixtures/metadata/basic-metadata.ts';
 
 describe('analyzeGraphSemantics', () => {
@@ -393,16 +398,15 @@ describe('analyzeGraphSemantics', () => {
   });
 
   it('inherits a composition across matching aggregates of the same class', () => {
-    const metadata = structuredClone(basicMetadata);
-    const detailAuthor = metadata.aggregates
-      .find((aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail')
-      ?.fields.find((field) => field.path === 'author');
-    const listAuthor = metadata.aggregates
-      .find((aggregate) => aggregate.iri === 'https://example.org/aggregate/book-list')
-      ?.fields.find((field) => field.path === 'author');
-    if (!detailAuthor || !listAuthor) {
-      throw new Error('Missing author fields in the test metadata.');
-    }
+    const metadata = testMetadata();
+    const detailAuthor = requiredField(
+      requiredAggregate(metadata, 'https://example.org/aggregate/book-detail').fields,
+      'author'
+    );
+    const listAuthor = requiredField(
+      requiredAggregate(metadata, 'https://example.org/aggregate/book-list').fields,
+      'author'
+    );
     detailAuthor.propertyIri = 'https://example.org/property/author';
     listAuthor.path = 'writer';
     listAuthor.propertyIri = detailAuthor.propertyIri;
@@ -432,17 +436,16 @@ describe('analyzeGraphSemantics', () => {
   });
 
   it('inherits a nested association kind in an aggregate rooted at the nested class', () => {
-    const metadata = structuredClone(basicMetadata);
-    const bookChapters = metadata.aggregates
-      .find((aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail')
-      ?.fields.find((field) => field.path === 'chapters');
-    const nestedFootnotes = bookChapters?.fields?.find((field) => field.path === 'footnotes');
-    const chapterFootnotes = metadata.aggregates
-      .find((aggregate) => aggregate.iri === 'https://example.org/aggregate/chapter-detail')
-      ?.fields.find((field) => field.path === 'footnotes');
-    if (!nestedFootnotes || !chapterFootnotes) {
-      throw new Error('Missing footnote fields in the test metadata.');
-    }
+    const metadata = testMetadata();
+    const bookChapters = requiredField(
+      requiredAggregate(metadata, 'https://example.org/aggregate/book-detail').fields,
+      'chapters'
+    );
+    const nestedFootnotes = requiredField(bookChapters.fields ?? [], 'footnotes');
+    const chapterFootnotes = requiredField(
+      requiredAggregate(metadata, 'https://example.org/aggregate/chapter-detail').fields,
+      'footnotes'
+    );
     nestedFootnotes.propertyIri = 'https://example.org/property/footnotes';
     chapterFootnotes.propertyIri = nestedFootnotes.propertyIri;
 
@@ -569,7 +572,7 @@ describe('analyzeGraphSemantics', () => {
   });
 
   it('ignores generated-name problems in aggregates the application does not use', () => {
-    const metadata = structuredClone(basicMetadata);
+    const metadata = testMetadata();
     metadata.aggregates.push({
       iri: 'https://example.org/aggregate/unused',
       name: 'BookList',
@@ -626,13 +629,8 @@ describe('analyzeGraphSemantics', () => {
 
   it('rejects fields that collide with generated runtime properties', () => {
     const graph = validGraph();
-    const metadata = structuredClone(basicMetadata);
-    const book = metadata.aggregates.find(
-      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail'
-    );
-    if (!book) {
-      throw new Error('Missing book aggregate in test metadata.');
-    }
+    const metadata = testMetadata();
+    const book = requiredAggregate(metadata, 'https://example.org/aggregate/book-detail');
     book.fields.push(
       { path: 'id', label: 'Id', kind: FieldKind.Primitive },
       {
@@ -728,14 +726,9 @@ describe('analyzeGraphSemantics', () => {
   });
 
   it('warns once per writable NEVER composition, including specialization targets', () => {
-    const metadata = structuredClone(basicMetadata);
-    const book = metadata.aggregates.find(
-      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail'
-    );
-    const chapters = book?.fields.find((field) => field.path === 'chapters');
-    if (!book || !chapters) {
-      throw new Error('Missing book composition in test metadata.');
-    }
+    const metadata = testMetadata();
+    const book = requiredAggregate(metadata, 'https://example.org/aggregate/book-detail');
+    const chapters = requiredField(book.fields, 'chapters');
     chapters.targetIdentityPolicy = 'NEVER';
     book.fields.push({
       path: 'contacts',
@@ -800,13 +793,8 @@ describe('analyzeGraphSemantics', () => {
   });
 
   it('rejects same-class specializations without editable branch-exclusive fields', () => {
-    const metadata = structuredClone(basicMetadata);
-    const book = metadata.aggregates.find(
-      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail'
-    );
-    if (!book) {
-      throw new Error('Missing book aggregate in test metadata.');
-    }
+    const metadata = testMetadata();
+    const book = requiredAggregate(metadata, 'https://example.org/aggregate/book-detail');
     book.fields.push({
       path: 'distributions',
       label: 'Distributions',
@@ -858,13 +846,8 @@ describe('analyzeGraphSemantics', () => {
   });
 
   it('accepts same-class specializations with editable branch-exclusive fields', () => {
-    const metadata = structuredClone(basicMetadata);
-    const book = metadata.aggregates.find(
-      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail'
-    );
-    if (!book) {
-      throw new Error('Missing book aggregate in test metadata.');
-    }
+    const metadata = testMetadata();
+    const book = requiredAggregate(metadata, 'https://example.org/aggregate/book-detail');
     book.fields.push({
       path: 'distributions',
       label: 'Distributions',
@@ -1223,6 +1206,26 @@ function expectWarnings(graph: ApplicationGraph, code: ViolationCode) {
 
 function validatePreparedGraph(graph: ApplicationGraph) {
   return analyzeGraphSemantics(graph, basicMetadata);
+}
+
+function testMetadata(): SpecificationMetadata {
+  return structuredClone(basicMetadata);
+}
+
+function requiredAggregate(metadata: SpecificationMetadata, iri: string): AggregateMetadata {
+  const aggregate = metadata.aggregates.find((candidate) => candidate.iri === iri);
+  if (!aggregate) {
+    throw new Error(`Missing aggregate "${iri}" in the test metadata.`);
+  }
+  return aggregate;
+}
+
+function requiredField(fields: AggregateFieldMetadata[], path: string): AggregateFieldMetadata {
+  const field = fields.find((candidate) => candidate.path === path);
+  if (!field) {
+    throw new Error(`Missing field "${path}" in the test metadata.`);
+  }
+  return field;
 }
 
 function validGraph(overrides: Partial<ApplicationGraph> = {}): ApplicationGraph {
