@@ -12,11 +12,11 @@ import {
   collectMultilingualLanguages,
   containsMultilingualFields,
   issuesByPane,
-  joinValidationPath,
   navigablePanes,
   targetAtPath,
   validationPathAt,
 } from '../forms/composition-tree.ts';
+import { joinValidationPath } from '../forms/field-path.ts';
 import { formatEntityPath, resolveEntityPath } from '../forms/entity-path.ts';
 import {
   isCompositionField,

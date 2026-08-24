@@ -9,7 +9,6 @@ import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
-import Typography from '@mui/material/Typography';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { DateTime } from 'luxon';
@@ -112,11 +111,7 @@ export function FormField(props: FormFieldProps) {
           />
         )}
       </div>
-      {cardinality ? (
-        <Typography variant="caption" color="text.secondary" sx={{ mx: '14px' }}>
-          {cardinality}.
-        </Typography>
-      ) : null}
+      {cardinality ? <FormHelperText>{cardinality}.</FormHelperText> : null}
       {note ? <FormHelperText>{note}</FormHelperText> : null}
       {error ? <FormHelperText>{error}</FormHelperText> : null}
     </FormControl>

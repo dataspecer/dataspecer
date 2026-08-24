@@ -345,7 +345,7 @@ function LeafValue(props: LeafValueProps) {
 
   if (Array.isArray(value)) {
     return (
-      <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap' }}>
+      <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 0.5 }}>
         {(value as unknown[]).map((entry, index) => (
           <LeafValue
             key={index}

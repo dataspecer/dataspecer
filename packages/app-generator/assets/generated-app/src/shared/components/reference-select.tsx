@@ -171,6 +171,7 @@ export function ReferenceSelect(props: ReferenceSelectProps) {
             <IconButton
               color="error"
               aria-label={`Discard new ${field.label}`}
+              onMouseDown={(event) => event.preventDefault()}
               onClick={() => setDraft(false)}
             >
               <DeleteIcon fontSize="small" />
@@ -230,19 +231,12 @@ function ReferenceRow(props: ReferenceRowProps) {
     [labelOf]
   );
 
-  const commitTyped = () => {
-    const typed = inputText.trim();
-    if (typed === '' || typed === (value ?? '')) {
-      setInputText(value ?? '');
-      return;
-    }
-    onCommit(typed);
-  };
-
   return (
     <Autocomplete
       fullWidth
       freeSolo
+      autoSelect
+      clearOnBlur
       handleHomeEndKeys
       disableClearable={!props.clearable}
       loading={props.loading}
@@ -254,8 +248,6 @@ function ReferenceRow(props: ReferenceRowProps) {
       onInputChange={(_event, next) => {
         setInputText(next);
       }}
-      getOptionLabel={(option) => (typeof option === 'string' ? option : '')}
-      isOptionEqualToValue={(option, candidate) => option === candidate}
       renderOption={(optionProps, option) => (
         <li {...optionProps} key={option}>
           <span>
@@ -268,13 +260,13 @@ function ReferenceRow(props: ReferenceRowProps) {
           </span>
         </li>
       )}
-      onChange={(_event, next) => {
+      onChange={(_event, next, reason) => {
         if (next === null) {
           onCommit(null);
           return;
         }
         if (typeof next === 'string') {
-          onCommit(next, true);
+          onCommit(next, reason !== 'blur');
           if (value === null) {
             setInputText('');
           }
@@ -288,7 +280,6 @@ function ReferenceRow(props: ReferenceRowProps) {
           autoFocus={props.autoFocus}
           inputRef={props.inputRef}
           placeholder={props.placeholder}
-          onBlur={commitTyped}
         />
       )}
     />

@@ -17,14 +17,15 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
-import { countIssues, entitySummary, joinValidationPath } from '../forms/composition-tree.ts';
+import { countIssues, entitySummary } from '../forms/composition-tree.ts';
 import {
   cardinalityDescription,
-  isCompositionField,
   maximumCount,
   minimumCount,
+  opensInOwnPane,
   type EntityTarget,
 } from '../forms/entity-target.ts';
+import { joinValidationPath } from '../forms/field-path.ts';
 import {
   compositionEntities,
   createEntityDraft,
@@ -72,7 +73,7 @@ export function CompositionSection(props: CompositionSectionProps) {
   const target = props.target;
   // specialized children open in their own pane, the same editor can then show their selector and
   // any composition fields introduced by the selected branch
-  const editsInline = !target.specializations?.length && !target.fields.some(isCompositionField);
+  const editsInline = !opensInOwnPane(target);
 
   const add = () => {
     const child = createEntityDraft(target, props.aggregateRegistry, props.instanceBaseIri);

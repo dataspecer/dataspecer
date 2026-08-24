@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import MonacoEditor, { type Monaco, type OnMount } from "@monaco-editor/react";
 import type * as monaco from "monaco-editor";
 import { applicationGraphSchema, type ApplicationGraph } from "@dataspecer/app-generator/graph";
@@ -112,7 +112,7 @@ export function JsonPanel({ graph }: { graph: ApplicationGraph }) {
     });
   };
 
-  const apply = () => {
+  const apply = useCallback(() => {
     applyGraphJson(draft)
       .then((result) => {
         setError(result.error);
@@ -125,8 +125,11 @@ export function JsonPanel({ graph }: { graph: ApplicationGraph }) {
         console.error(caught);
         setError(caught instanceof Error ? caught.message : String(caught));
       });
-  };
-  applyRef.current = apply;
+  }, [draft, setDraft]);
+
+  useEffect(() => {
+    applyRef.current = apply;
+  }, [apply]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">

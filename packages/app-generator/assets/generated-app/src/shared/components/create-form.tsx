@@ -152,6 +152,7 @@ export function CreateForm<TModel extends EntityModel>(props: CreateFormProps<TM
           position: 'sticky',
           bottom: 0,
           py: 1.5,
+          alignItems: 'baseline',
           bgcolor: 'background.default',
           borderTop: 1,
           borderColor: 'divider',
@@ -164,6 +165,13 @@ export function CreateForm<TModel extends EntityModel>(props: CreateFormProps<TM
         <Button type="button" onClick={leaveForm}>
           Cancel
         </Button>
+        {issues.length > 0 ? (
+          <Typography variant="body2" color="error">
+            {issues.length === 1
+              ? '1 issue prevents saving'
+              : `${issues.length} issues prevent saving`}
+          </Typography>
+        ) : null}
       </Stack>
 
       <UnsavedChangesDialog blocker={blocker} />
