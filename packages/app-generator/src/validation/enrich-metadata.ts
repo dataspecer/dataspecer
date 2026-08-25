@@ -1,11 +1,6 @@
-import { isPlainObject, sortBy } from 'es-toolkit';
+import { sortBy } from 'es-toolkit';
 
-import {
-  AssociationKind,
-  Operation,
-  type ApplicationGraph,
-  type ApplicationNodeConfig,
-} from '../graph/types.ts';
+import { AssociationKind, Operation, type ApplicationGraph } from '../graph/types.ts';
 import {
   type AggregateFieldMetadata,
   type AggregateMetadata,
@@ -45,7 +40,7 @@ export function enrichMetadata(
       return;
     }
 
-    const associations = associationConfigFrom(node.config);
+    const associations = node.config?.associations;
     if (!associations) {
       return;
     }
@@ -216,16 +211,6 @@ function notAssociationViolation(
       'field, so it is ignored. Correct the path or remove the setting.',
     violationPath
   );
-}
-
-function associationConfigFrom(
-  config: ApplicationNodeConfig | undefined
-): Record<string, unknown> | undefined {
-  const value = config?.associations;
-  if (!isPlainObject(value)) {
-    return undefined;
-  }
-  return value;
 }
 
 function associationKindFrom(value: unknown): AssociationKind | undefined {

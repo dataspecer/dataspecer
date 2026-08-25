@@ -7,7 +7,7 @@ import addFormats from 'ajv-formats';
 import { ViolationCode } from './violation-codes.ts';
 import type { Violation, ValidationResult } from './types.ts';
 import { ViolationSeverity } from './types.ts';
-import { applicationGraphSchema } from '../graph/schema.ts';
+import applicationGraphSchema from '../graph/application-graph.schema.json' with { type: 'json' };
 import type { ApplicationGraph } from '../graph/types.ts';
 
 export interface SyntaxValidationResult extends ValidationResult {

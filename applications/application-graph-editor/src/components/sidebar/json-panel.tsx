@@ -15,7 +15,9 @@ function configureJsonLanguage(instance: Monaco) {
     validate: true,
     schemas: [
       {
-        uri: "inmemory://application-graph-schema.json",
+        // registering under the real $id also resolves an inline "$schema" reference in a
+        // pasted graph, which would otherwise fail because schema requests are disabled
+        uri: applicationGraphSchema.$id,
         fileMatch: ["*"],
         schema: applicationGraphSchema,
       },

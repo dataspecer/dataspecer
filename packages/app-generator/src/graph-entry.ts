@@ -1,5 +1,5 @@
 // This entry exposes only the graph contract and the validations that need no filesystem or metadata provider.
-export { applicationGraphSchema } from './graph/schema.ts';
+export { default as applicationGraphSchema } from './graph/application-graph.schema.json' with { type: 'json' };
 export {
   AssociationKind,
   DatasourceType,

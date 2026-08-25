@@ -4,6 +4,14 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
+import applicationGraphSchema from '../src/graph/application-graph.schema.json' with { type: 'json' };
+import {
+  AssociationKind,
+  DatasourceType,
+  DeletePolicy,
+  EdgeType,
+  Operation,
+} from '../src/graph/types.ts';
 import { ViolationCode } from '../src/validation/violation-codes.ts';
 import { validateGraphSyntax } from '../src/validation/validate-syntax.ts';
 
@@ -16,6 +24,16 @@ describe('validateGraphSyntax', () => {
     expect(result.valid).toBe(true);
     expect(result.violations).toEqual([]);
     expect(result.graph?.nodes).toHaveLength(2);
+  });
+
+  it('accepts a graph that references the schema through $schema', () => {
+    const graph = readGraphFixture('valid-basic.json');
+    graph.$schema = applicationGraphSchema.$id;
+
+    const result = validateGraphSyntax(graph);
+
+    expect(result.valid).toBe(true);
+    expect(result.violations).toEqual([]);
   });
 
   it('rejects missing required graph properties', () => {
@@ -128,6 +146,21 @@ describe('validateGraphSyntax', () => {
     );
   });
 
+  it('rejects null node config', () => {
+    const graph = readGraphFixture('valid-basic.json');
+    graph.nodes[0].config = null;
+
+    const result = validateGraphSyntax(graph);
+
+    expect(result.valid).toBe(false);
+    expect(result.violations).toContainEqual(
+      expect.objectContaining({
+        code: ViolationCode.GraphSyntaxInvalid,
+        path: '/nodes/0/config',
+      })
+    );
+  });
+
   it('rejects unsupported node config keys and values', () => {
     const unsupportedKey = readGraphFixture('valid-basic.json');
     unsupportedKey.nodes[0].config = {
@@ -150,6 +183,21 @@ describe('validateGraphSyntax', () => {
     expect(validateGraphSyntax(unsupportedKey).valid).toBe(false);
     expect(validateGraphSyntax(unsupportedAssociationKind).valid).toBe(false);
     expect(validateGraphSyntax(unsupportedDeletePolicy).valid).toBe(false);
+  });
+});
+
+describe('application graph schema', () => {
+  it('pins enum values to the constants in types.ts', () => {
+    const properties = applicationGraphSchema.properties;
+    const config = properties.nodes.items.properties.config.properties;
+
+    expect(properties.nodes.items.properties.operation.enum).toEqual(Object.values(Operation));
+    expect(properties.edges.items.properties.type.enum).toEqual(Object.values(EdgeType));
+    expect(properties.datasources.items.properties.type.enum).toEqual(
+      Object.values(DatasourceType)
+    );
+    expect(config.associations.additionalProperties.enum).toEqual(Object.values(AssociationKind));
+    expect(config.delete.additionalProperties.enum).toEqual(Object.values(DeletePolicy));
   });
 });
 
