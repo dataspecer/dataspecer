@@ -488,17 +488,7 @@ describe('mapDataspecerSpecificationToMetadata', () => {
       )
     );
 
-    try {
-      mapDataspecerSpecificationToMetadata(specificationIri, fixture);
-      expect.unreachable('Expected mapping to fail on a circular inline structure.');
-    } catch (error) {
-      expect(error).toBeInstanceOf(DataspecerMetadataMappingError);
-      expect((error as DataspecerMetadataMappingError).issues).toContainEqual(
-        expect.objectContaining({
-          code: DataspecerMetadataMappingIssueCode.CircularStructure,
-        })
-      );
-    }
+    expectMappingIssue(fixture, DataspecerMetadataMappingIssueCode.CircularStructure);
   });
 
   it('maps a real getSpecification payload', () => {
@@ -629,17 +619,7 @@ describe('mapDataspecerSpecificationToMetadata', () => {
     ) as DataPsmSchema;
     bookSchema.dataPsmRoots = [...bookSchema.dataPsmRoots, 'https://example.org/psm/chapter'];
 
-    try {
-      mapDataspecerSpecificationToMetadata(specificationIri, fixture);
-      expect.unreachable('Expected mapping to fail on a multi-root schema.');
-    } catch (error) {
-      expect(error).toBeInstanceOf(DataspecerMetadataMappingError);
-      expect((error as DataspecerMetadataMappingError).issues).toContainEqual(
-        expect.objectContaining({
-          code: DataspecerMetadataMappingIssueCode.UnsupportedStructureRoot,
-        })
-      );
-    }
+    expectMappingIssue(fixture, DataspecerMetadataMappingIssueCode.UnsupportedStructureRoot);
   });
 
   it('surfaces missing association targets as mapping issues', () => {
@@ -648,20 +628,7 @@ describe('mapDataspecerSpecificationToMetadata', () => {
       (resource) => resource.iri !== 'https://example.org/psm/author-ref'
     );
 
-    expect(() => mapDataspecerSpecificationToMetadata(specificationIri, fixture)).toThrow(
-      DataspecerMetadataMappingError
-    );
-
-    try {
-      mapDataspecerSpecificationToMetadata(specificationIri, fixture);
-    } catch (error) {
-      expect(error).toBeInstanceOf(DataspecerMetadataMappingError);
-      expect((error as DataspecerMetadataMappingError).issues).toContainEqual(
-        expect.objectContaining({
-          code: DataspecerMetadataMappingIssueCode.MissingAssociationTarget,
-        })
-      );
-    }
+    expectMappingIssue(fixture, DataspecerMetadataMappingIssueCode.MissingAssociationTarget);
   });
 
   it('uses public concept IRIs when aggregated profiles expose local IRIs', () => {

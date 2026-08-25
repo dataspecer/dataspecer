@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   DEFAULT_READ_LIST_SORT,
-  DataSourceKind,
   type DataSource,
   type ReadListSort,
   type ReadListResult,
@@ -80,7 +79,6 @@ function context(
     aggregate,
     aggregateRegistry: { [aggregate.iri]: aggregate },
     datasource: {
-      kind: DataSourceKind.Rdf,
       ...datasource,
     } as DataSource,
     params,

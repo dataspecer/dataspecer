@@ -27,7 +27,7 @@ describe('buildGenerationModel', () => {
     expect(first).toEqual(second);
   });
 
-  it('describes app, datasource, operations, routes, navigation, and redirects', () => {
+  it('describes app, datasource, operations, navigation, and redirects', () => {
     const graph = graphFixture();
     const model = buildGenerationModel(graph, preparedMetadataFor(graph));
 
@@ -48,9 +48,10 @@ describe('buildGenerationModel', () => {
       'Book.ReadList',
       'Book.Update',
     ]);
-    expect(model.routes).toContainEqual(
+    expect(model.operations).toContainEqual(
       expect.objectContaining({
-        id: 'book-read-detail',
+        id: 'Book.ReadDetail',
+        routeId: 'book-read-detail',
         path: '/book-read-detail',
         pageComponentName: 'BookReadDetailPage',
         requiresEntityId: true,
@@ -61,22 +62,16 @@ describe('buildGenerationModel', () => {
         id: 'detail-delete',
         sourceOperationId: 'Book.ReadDetail',
         targetOperationId: 'Book.Delete',
-        sourceNodeId: 'Book.ReadDetail',
-        targetNodeId: 'Book.Delete',
       },
       {
         id: 'detail-update',
         sourceOperationId: 'Book.ReadDetail',
         targetOperationId: 'Book.Update',
-        sourceNodeId: 'Book.ReadDetail',
-        targetNodeId: 'Book.Update',
       },
       {
         id: 'list-detail',
         sourceOperationId: 'Book.ReadList',
         targetOperationId: 'Book.ReadDetail',
-        sourceNodeId: 'Book.ReadList',
-        targetNodeId: 'Book.ReadDetail',
       },
     ]);
     expect(model.redirects).toEqual([
@@ -84,22 +79,16 @@ describe('buildGenerationModel', () => {
         id: 'create-list',
         sourceOperationId: 'Book.Create',
         targetOperationId: 'Book.ReadList',
-        sourceNodeId: 'Book.Create',
-        targetNodeId: 'Book.ReadList',
       },
       {
         id: 'delete-list',
         sourceOperationId: 'Book.Delete',
         targetOperationId: 'Book.ReadList',
-        sourceNodeId: 'Book.Delete',
-        targetNodeId: 'Book.ReadList',
       },
       {
         id: 'update-detail',
         sourceOperationId: 'Book.Update',
         targetOperationId: 'Book.ReadDetail',
-        sourceNodeId: 'Book.Update',
-        targetNodeId: 'Book.ReadDetail',
       },
     ]);
 
@@ -231,7 +220,7 @@ describe('buildGenerationModel', () => {
 
     expect(model.aggregates[0].safeName).toBe('_123Books');
     expect(model.operations[0].pageComponentName).toBe('_123BooksReadListPage');
-    expect(toOperationClassName(model.operations[0].nodeId)).toBe('_123BooksReadListOperation');
+    expect(toOperationClassName(model.operations[0].id)).toBe('_123BooksReadListOperation');
   });
 
   it('resolves association kinds from graph association config', () => {

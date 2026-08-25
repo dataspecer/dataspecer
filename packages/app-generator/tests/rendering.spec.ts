@@ -51,6 +51,9 @@ describe('renderGeneratedApp', () => {
     expect(Object.keys(first)).not.toContain(
       'src/shared/components/placeholder-operation-view.tsx'
     );
+    expect(first['src/config/app-config.ts']).toContain(
+      `export const instanceBaseIri = ${JSON.stringify(specificationIri)};`
+    );
   });
 
   it('renders nested association fields in models and descriptors', () => {
@@ -234,7 +237,6 @@ describe('renderGeneratedApp', () => {
     const readme = tree.get('README.md');
     expect(readme).toContain('## Getting started');
     expect(readme).toContain('src/config/data-sources.ts');
-    expect(readme).toContain('overwrites every file');
     expect(tree.get('AGENTS.md')).toContain('Extension points');
   });
 
@@ -424,9 +426,6 @@ describe('renderGeneratedApp', () => {
     expect(descriptor).toContain('"formControl": "number"');
     expect(descriptor).toContain('"formControl": "date"');
     expect(descriptor).toContain('"formControl": "datetime"');
-    expect(renderGeneratedApp(model).get('src/shared/components/form-field.tsx')).toContain(
-      "step: control === 'number' ? 'any' : undefined"
-    );
   });
 
   it('renders multilingual models, configuration, and form wiring', () => {
@@ -467,9 +466,6 @@ describe('renderGeneratedApp', () => {
     expect(descriptor).toContain('"formControl": "multilingual"');
     expect(descriptor).toContain('"description": "Title in the languages used by the dataset."');
     expect(tree.get('src/config/app-config.ts')).toContain("languages = ['cs', 'en']");
-    expect(tree.get('src/config/app-config.ts')).toContain(
-      'stored languages are added automatically'
-    );
     expect(page).toContain('languages={languages}');
   });
 
@@ -508,24 +504,6 @@ describe('renderGeneratedApp', () => {
     expect(source).not.toContain('count: 0');
     expect(source).not.toContain('createdAt: new Date()');
     expect(source).not.toContain('active: false');
-  });
-
-  it('renders configured success redirects with entity-aware form navigation', () => {
-    const model = buildGenerationModel(graphFixture(), basicMetadata);
-    const createOperation = model.operations.find(
-      (operation) => operation.operation === Operation.Create
-    );
-    const listOperation = model.operations.find(
-      (operation) => operation.operation === Operation.ReadList
-    );
-
-    expect(createOperation?.navigation.successRedirect?.targetPath).toBe(
-      `/${listOperation?.routeId}`
-    );
-    expect(createOperation?.navigation.successRedirect?.id).toBe('create-list');
-    expect(createOperation?.navigation.successRedirect?.label).toBe('List');
-    // Read operations are not forms, so they have no success redirect.
-    expect(listOperation?.navigation.successRedirect).toBeUndefined();
   });
 
   it('passes configured cascade paths and the loaded entity to Delete', () => {

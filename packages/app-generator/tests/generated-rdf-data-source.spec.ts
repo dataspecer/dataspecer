@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ldkit } from 'ldkit/namespaces';
 import { DataFactory } from 'ldkit/rdf';
 
@@ -22,6 +22,12 @@ import type {
   EntityModel,
 } from '../assets/generated-app/src/shared/types/aggregate.ts';
 import { normalizeMultilingualValue } from '../assets/generated-app/src/shared/forms/multilingual-value.ts';
+import { AssociationKind } from '../src/graph/types.ts';
+import { FieldKind } from '../src/metadata/types.ts';
+import { buildLdkitSchemaBundle } from '../src/rendering/ldkit-schema.ts';
+import { toRenderedAggregate } from '../src/rendering/rendered-aggregate.ts';
+
+afterEach(() => vi.unstubAllGlobals());
 
 const listAggregate: AggregateDescriptor<EntityModel> = {
   iri: 'https://example.org/aggregate/book',
@@ -62,6 +68,20 @@ function captureRequestBodies(requests: string[]) {
     requests.push(init.body);
     return Promise.resolve(new Response('', { status: 200 }));
   });
+}
+
+function sparqlResultsResponse(
+  vars: string[],
+  bindings: Record<string, { type: string; value: string }>[]
+): Response {
+  return new Response(JSON.stringify({ head: { vars }, results: { bindings } }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/sparql-results+json' },
+  });
+}
+
+function stubFetchResponse(response: Response): void {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response));
 }
 
 const inverseField: AggregateDescriptor<EntityModel>['fields'][number] = {
@@ -206,67 +226,36 @@ describe('generated RDF incoming reference query', () => {
   });
 
   it('resolves an empty result stream', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          head: { vars: ['subject', 'predicate'] },
-          results: { bindings: [] },
-        }),
-        {
-          status: 200,
-          headers: { 'Content-Type': 'application/sparql-results+json' },
-        }
-      )
+    stubFetchResponse(sparqlResultsResponse(['subject', 'predicate'], []));
+
+    const dataSource = new RdfLdkitDataSource('https://example.org/sparql', {});
+
+    await expect(dataSource.listIncomingReferences('https://example.org/book/1')).resolves.toEqual(
+      []
     );
-    vi.stubGlobal('fetch', fetchMock);
-
-    try {
-      const dataSource = new RdfLdkitDataSource('https://example.org/sparql', {});
-
-      await expect(
-        dataSource.listIncomingReferences('https://example.org/book/1')
-      ).resolves.toEqual([]);
-    } finally {
-      vi.unstubAllGlobals();
-    }
   });
 
   it('reads reference bindings from the result stream', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          head: { vars: ['subject', 'predicate'] },
-          results: {
-            bindings: [
-              {
-                subject: { type: 'uri', value: 'https://example.org/review/1' },
-                predicate: { type: 'uri', value: 'https://example.org/property/book' },
-              },
-            ],
+    stubFetchResponse(
+      sparqlResultsResponse(
+        ['subject', 'predicate'],
+        [
+          {
+            subject: { type: 'uri', value: 'https://example.org/review/1' },
+            predicate: { type: 'uri', value: 'https://example.org/property/book' },
           },
-        }),
-        {
-          status: 200,
-          headers: { 'Content-Type': 'application/sparql-results+json' },
-        }
+        ]
       )
     );
-    vi.stubGlobal('fetch', fetchMock);
 
-    try {
-      const dataSource = new RdfLdkitDataSource('https://example.org/sparql', {});
+    const dataSource = new RdfLdkitDataSource('https://example.org/sparql', {});
 
-      await expect(
-        dataSource.listIncomingReferences('https://example.org/book/1')
-      ).resolves.toEqual([
-        {
-          subject: 'https://example.org/review/1',
-          predicate: 'https://example.org/property/book',
-        },
-      ]);
-    } finally {
-      vi.unstubAllGlobals();
-    }
+    await expect(dataSource.listIncomingReferences('https://example.org/book/1')).resolves.toEqual([
+      {
+        subject: 'https://example.org/review/1',
+        predicate: 'https://example.org/property/book',
+      },
+    ]);
   });
 });
 
@@ -286,52 +275,39 @@ describe('generated RDF reference options', () => {
   });
 
   it('joins display values in field order and falls back to the IRI', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          head: { vars: ['iri', 'value0', 'value1'] },
-          results: {
-            bindings: [
-              {
-                iri: { type: 'uri', value: 'https://example.org/person/1' },
-                value0: { type: 'literal', value: 'Alice' },
-                value1: { type: 'literal', value: 'alice@example.org' },
-              },
-              {
-                iri: { type: 'uri', value: 'https://example.org/person/1' },
-                value0: { type: 'literal', value: 'Alice' },
-                value1: { type: 'literal', value: 'alice@work.example' },
-              },
-              {
-                iri: { type: 'uri', value: 'https://example.org/person/2' },
-              },
-            ],
+    stubFetchResponse(
+      sparqlResultsResponse(
+        ['iri', 'value0', 'value1'],
+        [
+          {
+            iri: { type: 'uri', value: 'https://example.org/person/1' },
+            value0: { type: 'literal', value: 'Alice' },
+            value1: { type: 'literal', value: 'alice@example.org' },
           },
-        }),
-        {
-          status: 200,
-          headers: { 'Content-Type': 'application/sparql-results+json' },
-        }
+          {
+            iri: { type: 'uri', value: 'https://example.org/person/1' },
+            value0: { type: 'literal', value: 'Alice' },
+            value1: { type: 'literal', value: 'alice@work.example' },
+          },
+          {
+            iri: { type: 'uri', value: 'https://example.org/person/2' },
+          },
+        ]
       )
     );
-    vi.stubGlobal('fetch', fetchMock);
 
-    try {
-      const dataSource = new RdfLdkitDataSource('https://example.org/sparql', {});
+    const dataSource = new RdfLdkitDataSource('https://example.org/sparql', {});
 
-      await expect(dataSource.listByType(args)).resolves.toEqual([
-        {
-          id: 'https://example.org/person/1',
-          label: 'Alice, alice@example.org, alice@work.example',
-        },
-        {
-          id: 'https://example.org/person/2',
-          label: 'https://example.org/person/2',
-        },
-      ]);
-    } finally {
-      vi.unstubAllGlobals();
-    }
+    await expect(dataSource.listByType(args)).resolves.toEqual([
+      {
+        id: 'https://example.org/person/1',
+        label: 'Alice, alice@example.org, alice@work.example',
+      },
+      {
+        id: 'https://example.org/person/2',
+        label: 'https://example.org/person/2',
+      },
+    ]);
   });
 
   it('uses conventional title and label predicates when the structure has no display field', async () => {
@@ -342,37 +318,22 @@ describe('generated RDF reference options', () => {
     expect(query).toContain('<http://purl.org/dc/terms/title> ?value0');
     expect(query).toContain('<http://www.w3.org/2000/01/rdf-schema#label> ?value2');
 
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(
-        new Response(
-          JSON.stringify({
-            head: { vars: ['iri', 'value0', 'value1', 'value2'] },
-            results: {
-              bindings: [
-                {
-                  iri: { type: 'uri', value: 'https://example.org/person/1' },
-                  value2: { type: 'literal', value: 'Alice' },
-                },
-              ],
-            },
-          }),
+    stubFetchResponse(
+      sparqlResultsResponse(
+        ['iri', 'value0', 'value1', 'value2'],
+        [
           {
-            status: 200,
-            headers: { 'Content-Type': 'application/sparql-results+json' },
-          }
-        )
+            iri: { type: 'uri', value: 'https://example.org/person/1' },
+            value2: { type: 'literal', value: 'Alice' },
+          },
+        ]
       )
     );
 
-    try {
-      const dataSource = new RdfLdkitDataSource('https://example.org/sparql', {});
-      await expect(
-        dataSource.listByType({ classIri: args.classIri, displayProperties: [] })
-      ).resolves.toEqual([{ id: 'https://example.org/person/1', label: 'Alice' }]);
-    } finally {
-      vi.unstubAllGlobals();
-    }
+    const dataSource = new RdfLdkitDataSource('https://example.org/sparql', {});
+    await expect(
+      dataSource.listByType({ classIri: args.classIri, displayProperties: [] })
+    ).resolves.toEqual([{ id: 'https://example.org/person/1', label: 'Alice' }]);
   });
 });
 
@@ -632,17 +593,12 @@ describe('generated RDF read normalization', () => {
   it('normalizes an optional multilingual property omitted by LDKit', async () => {
     const entityIri = 'https://example.org/book/1';
     const classIri = 'https://example.org/class/book';
-    vi.stubGlobal(
-      'fetch',
-      vi
-        .fn()
-        .mockResolvedValue(
-          new Response(
-            `<${entityIri}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ldkit.io/ontology/Resource> .\n` +
-              `<${entityIri}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <${classIri}> .`,
-            { status: 200, headers: { 'content-type': 'application/n-triples' } }
-          )
-        )
+    stubFetchResponse(
+      new Response(
+        `<${entityIri}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ldkit.io/ontology/Resource> .\n` +
+          `<${entityIri}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <${classIri}> .`,
+        { status: 200, headers: { 'content-type': 'application/n-triples' } }
+      )
     );
     const aggregate: AggregateDescriptor<EntityModel> = {
       ...listAggregate,
@@ -667,14 +623,10 @@ describe('generated RDF read normalization', () => {
       },
     });
 
-    try {
-      await expect(dataSource.readDetail({ aggregate, id: entityIri })).resolves.toEqual({
-        id: entityIri,
-        title: {},
-      });
-    } finally {
-      vi.unstubAllGlobals();
-    }
+    await expect(dataSource.readDetail({ aggregate, id: entityIri })).resolves.toEqual({
+      id: entityIri,
+      title: {},
+    });
   });
 
   it('does not accept a populated array as a multilingual language map', () => {
@@ -702,18 +654,14 @@ describe('generated RDF write schema selection', () => {
     vi.stubGlobal('fetch', captureRequestBodies(requests));
     const dataSource = new RdfLdkitDataSource('https://example.org/sparql', {});
 
-    try {
-      await dataSource.delete({
-        aggregate: listAggregate,
-        id: 'https://example.org/book/1',
-      });
+    await dataSource.delete({
+      aggregate: listAggregate,
+      id: 'https://example.org/book/1',
+    });
 
-      expect(requests).toHaveLength(1);
-      expect(requests[0]).toContain('?s ?p ?o');
-      expect(requests[0]).toContain('VALUES ?s { <https://example.org/book/1> }');
-    } finally {
-      vi.unstubAllGlobals();
-    }
+    expect(requests).toHaveLength(1);
+    expect(requests[0]).toContain('?s ?p ?o');
+    expect(requests[0]).toContain('VALUES ?s { <https://example.org/book/1> }');
   });
 
   it('updates and clears scalar and repeated IRI pointers through LDKit', async () => {
@@ -747,27 +695,27 @@ describe('generated RDF write schema selection', () => {
       },
     });
 
-    try {
-      await dataSource.update({
-        aggregate,
-        id: 'https://example.org/book/1',
-        payload: {
-          publisher: { id: 'https://example.org/publisher/1' },
-          related: [{ id: 'https://example.org/book/2' }],
-        } as EntityModel,
-      });
-      await dataSource.update({
-        aggregate,
-        id: 'https://example.org/book/1',
-        payload: { publisher: null, related: [] } as EntityModel,
-      });
+    await dataSource.update({
+      aggregate,
+      id: 'https://example.org/book/1',
+      payload: {
+        publisher: { id: 'https://example.org/publisher/1' },
+        related: [{ id: 'https://example.org/book/2' }],
+      } as EntityModel,
+    });
+    await dataSource.update({
+      aggregate,
+      id: 'https://example.org/book/1',
+      payload: { publisher: null, related: [] } as EntityModel,
+    });
 
-      expect(requests.join('\n')).toContain('<https://example.org/publisher/1>');
-      expect(requests.join('\n')).toContain('<https://example.org/book/2>');
-      expect(requests).toHaveLength(2);
-    } finally {
-      vi.unstubAllGlobals();
-    }
+    expect(requests.join('\n')).toContain('<https://example.org/publisher/1>');
+    expect(requests.join('\n')).toContain('<https://example.org/book/2>');
+    expect(requests).toHaveLength(2);
+    expect(requests[1]).toContain(`<${scalarReference.propertyIri}>`);
+    expect(requests[1]).toContain(`<${repeatedReference.propertyIri}>`);
+    expect(requests[1]).not.toContain('<https://example.org/publisher/1>');
+    expect(requests[1]).not.toContain('<https://example.org/book/2>');
   });
 
   it('writes Czech, English, repeated, and untagged multilingual literals through LDKit', async () => {
@@ -800,106 +748,93 @@ describe('generated RDF write schema selection', () => {
       },
     });
 
-    try {
-      await dataSource.create({
-        aggregate,
-        payload: {
-          id: 'https://example.org/book/1',
-          title: { cs: ['Název'], en: ['Title'] },
-          keywords: { cs: ['jedna', 'dvě'], '': ['untagged'] },
-        } as EntityModel,
-      });
-      await dataSource.update({
-        aggregate,
+    await dataSource.create({
+      aggregate,
+      payload: {
         id: 'https://example.org/book/1',
-        payload: { title: {} } as EntityModel,
-      });
+        title: { cs: ['Název'], en: ['Title'] },
+        keywords: { cs: ['jedna', 'dvě'], '': ['untagged'] },
+      } as EntityModel,
+    });
+    await dataSource.update({
+      aggregate,
+      id: 'https://example.org/book/1',
+      payload: { title: {} } as EntityModel,
+    });
 
-      const query = requests.join('\n');
-      expect(query).toContain('"Název"@cs');
-      expect(query).toContain('"Title"@en');
-      expect(query).toContain('"jedna"@cs');
-      expect(query).toContain('"dvě"@cs');
-      expect(query).toContain('"untagged"');
-      expect(requests).toHaveLength(2);
-    } finally {
-      vi.unstubAllGlobals();
-    }
+    const query = requests.join('\n');
+    expect(query).toContain('"Název"@cs');
+    expect(query).toContain('"Title"@en');
+    expect(query).toContain('"jedna"@cs');
+    expect(query).toContain('"dvě"@cs');
+    expect(query).toContain('"untagged"');
+    expect(requests).toHaveLength(2);
   });
 
   it('uses the selected specialization schema and stamps its concrete RDF class', async () => {
     const requests: string[] = [];
     vi.stubGlobal('fetch', captureRequestBodies(requests));
 
-    const nameField: AggregateDescriptor<EntityModel>['fields'][number] = {
-      path: 'name',
-      propertyName: 'name',
-      label: 'Name',
-      kind: 'primitive',
-      propertyIri: 'https://example.org/name',
-      many: false,
-      required: false,
-    };
-    const contacts: AggregateDescriptor<EntityModel>['fields'][number] = {
-      path: 'contacts',
-      propertyName: 'contacts',
-      label: 'Contacts',
-      kind: 'association',
-      propertyIri: 'https://example.org/contact',
-      targetClassIri: 'https://example.org/class/contact',
-      associationKind: 'composition',
-      fields: [nameField],
-      specializations: [
+    const rendered = toRenderedAggregate({
+      iri: listAggregate.iri,
+      name: listAggregate.name,
+      safeName: 'Book',
+      classIri: listAggregate.classIri,
+      fields: [
         {
-          specializationIri: 'https://example.org/psm/organization',
-          label: 'Organization',
-          classIri: 'https://example.org/class/organization',
-          fieldPaths: ['name'],
+          path: 'contacts',
+          label: 'Contacts',
+          kind: FieldKind.Association,
+          propertyIri: 'https://example.org/contact',
+          targetClassIri: 'https://example.org/class/contact',
+          associationKind: AssociationKind.Composition,
+          fields: [
+            {
+              path: 'name',
+              label: 'Name',
+              kind: FieldKind.Primitive,
+              propertyIri: 'https://example.org/name',
+              many: false,
+              required: false,
+            },
+          ],
+          specializations: [
+            {
+              specializationIri: 'https://example.org/psm/organization',
+              label: 'Organization',
+              classIri: 'https://example.org/class/organization',
+              fieldPaths: ['name'],
+            },
+          ],
+          many: true,
+          required: false,
         },
       ],
-      many: true,
-      required: false,
-    };
+    });
     const aggregate: AggregateDescriptor<EntityModel> = {
       ...listAggregate,
-      fields: [contacts],
+      fields: rendered.descriptorFields,
     };
-    const organizationSchema = {
-      '@type': 'https://example.org/class/organization',
-      name: { '@id': 'https://example.org/name', '@optional': true as const },
-    };
+    const schemas = buildLdkitSchemaBundle(rendered.classIri, rendered.fields);
     const dataSource = new RdfLdkitDataSource('https://example.org/sparql', {
-      [aggregate.iri]: {
-        detail: { '@type': aggregate.classIri },
-        list: { '@type': aggregate.classIri },
-        writes: { '[]': { '@type': aggregate.classIri } },
-        specializationWrites: {
-          '["contacts"]': {
-            'https://example.org/psm/organization': organizationSchema,
-          },
-        },
-      },
+      [aggregate.iri]: schemas,
     });
 
-    try {
-      await dataSource.create({
+    await dataSource.create({
+      aggregate,
+      fieldPath: ['contacts'],
+      specializationIri: 'https://example.org/psm/organization',
+      payload: { id: 'https://example.org/contact/1', name: 'Example' } as EntityModel,
+    });
+
+    expect(requests.join('\n')).toContain('<https://example.org/class/organization>');
+    expect(requests.join('\n')).not.toContain('<https://example.org/class/contact>');
+    await expect(
+      dataSource.create({
         aggregate,
         fieldPath: ['contacts'],
-        specializationIri: 'https://example.org/psm/organization',
-        payload: { id: 'https://example.org/contact/1', name: 'Example' } as EntityModel,
-      });
-
-      expect(requests.join('\n')).toContain('<https://example.org/class/organization>');
-      expect(requests.join('\n')).not.toContain('<https://example.org/class/contact>');
-      await expect(
-        dataSource.create({
-          aggregate,
-          fieldPath: ['contacts'],
-          payload: { id: 'https://example.org/contact/2' },
-        })
-      ).rejects.toThrow('requires a specialization');
-    } finally {
-      vi.unstubAllGlobals();
-    }
+        payload: { id: 'https://example.org/contact/2' },
+      })
+    ).rejects.toThrow('requires a specialization');
   });
 });
