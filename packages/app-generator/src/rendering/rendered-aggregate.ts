@@ -1,10 +1,10 @@
 import type {
   GeneratedAggregateDescriptor,
   GeneratedFieldDescriptor,
-  GeneratedSpecializationDescriptor,
 } from '../generation-model/types.ts';
 
-import { hasNestedModel } from '../generation-model/field-shape.ts';
+import { hasNestedModel } from '../metadata/field-shape.ts';
+import { projectGeneratedField } from '../generation-model/aggregate-descriptor.ts';
 import { FieldKind } from '../metadata/types.ts';
 import { joinFieldPath } from '../utils/field-path.ts';
 import { toModuleName, toNestedModelTypeName, toPropertyName } from '../utils/naming.ts';
@@ -55,28 +55,11 @@ export interface RenderedNestedModel {
   fields: RenderedField[];
 }
 
-interface DescriptorField {
-  path: string;
+type DescriptorField = Omit<GeneratedFieldDescriptor, 'fields'> & {
   propertyName: string;
-  label: string;
-  description?: string;
-  kind: string;
-  many: boolean;
-  required: boolean;
-  minCount?: number;
-  maxCount?: number | null;
-  propertyIri?: string;
-  datatype?: string;
-  patterns?: string[];
-  examples?: string[];
   formControl?: FormControl;
-  targetAggregateIri?: string;
-  targetClassIri?: string;
-  specializations?: GeneratedSpecializationDescriptor[];
-  associationKind?: string;
-  isReverse?: boolean;
   fields?: DescriptorField[];
-}
+};
 
 export function toRenderedAggregate(aggregate: GeneratedAggregateDescriptor): RenderedAggregate {
   const modelName = `${aggregate.safeName}Model`;
@@ -147,27 +130,9 @@ function toModelDeclaration(propertyName: string, required: boolean, modelType: 
 
 function toDescriptorField(field: RenderedField): DescriptorField {
   return {
-    path: field.path,
+    ...projectGeneratedField(field),
     propertyName: field.propertyName,
-    label: field.label,
-    ...(field.description ? { description: field.description } : {}),
-    kind: field.kind,
-    many: field.many,
-    required: field.required,
-    ...(field.minCount !== undefined ? { minCount: field.minCount } : {}),
-    ...(field.maxCount !== undefined ? { maxCount: field.maxCount } : {}),
-    ...(field.propertyIri ? { propertyIri: field.propertyIri } : {}),
-    ...(field.datatype ? { datatype: field.datatype } : {}),
-    ...(field.patterns?.length ? { patterns: [...field.patterns] } : {}),
-    ...(field.examples?.length ? { examples: [...field.examples] } : {}),
     ...(field.formControl ? { formControl: field.formControl } : {}),
-    ...(field.targetAggregateIri ? { targetAggregateIri: field.targetAggregateIri } : {}),
-    ...(field.targetClassIri ? { targetClassIri: field.targetClassIri } : {}),
-    ...(field.specializations
-      ? { specializations: field.specializations.map((specialization) => ({ ...specialization })) }
-      : {}),
-    ...(field.associationKind ? { associationKind: field.associationKind } : {}),
-    ...(field.isReverse ? { isReverse: true } : {}),
     ...(field.fields ? { fields: field.fields.map(toDescriptorField) } : {}),
   };
 }

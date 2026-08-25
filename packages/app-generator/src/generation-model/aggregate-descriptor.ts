@@ -1,5 +1,9 @@
 import type { AggregateFieldMetadata, AggregateMetadata } from '../metadata/types.ts';
-import type { GeneratedAggregateDescriptor, GeneratedFieldDescriptor } from './types.ts';
+import type {
+  GeneratedAggregateDescriptor,
+  GeneratedFieldDescriptor,
+  GeneratedSpecializationDescriptor,
+} from './types.ts';
 
 import { toAggregateTypeName } from '../utils/naming.ts';
 
@@ -16,6 +20,38 @@ export function buildAggregateDescriptor(
 }
 
 function buildFieldDescriptor(field: AggregateFieldMetadata): GeneratedFieldDescriptor {
+  return {
+    ...projectGeneratedField(field),
+    ...(field.fields ? { fields: field.fields.map(buildFieldDescriptor) } : {}),
+  };
+}
+
+interface FieldProjectionSource {
+  path: string;
+  label: string;
+  description?: string;
+  kind: GeneratedFieldDescriptor['kind'];
+  propertyIri?: string;
+  datatype?: string;
+  patterns?: readonly string[];
+  examples?: readonly string[];
+  many?: boolean;
+  required?: boolean;
+  minCount?: number;
+  maxCount?: number | null;
+  targetAggregateIri?: string;
+  targetClassIri?: string;
+  specializations?: readonly (GeneratedSpecializationDescriptor & {
+    identityPolicy?: unknown;
+  })[];
+  associationKind?: GeneratedFieldDescriptor['associationKind'];
+  isReverse?: boolean;
+}
+
+/** Copies only properties that belong to a generated field descriptor. */
+export function projectGeneratedField(
+  field: FieldProjectionSource
+): Omit<GeneratedFieldDescriptor, 'fields'> {
   return {
     path: field.path,
     label: field.label,
@@ -41,6 +77,5 @@ function buildFieldDescriptor(field: AggregateFieldMetadata): GeneratedFieldDesc
       : {}),
     ...(field.associationKind ? { associationKind: field.associationKind } : {}),
     ...(field.isReverse ? { isReverse: true } : {}),
-    ...(field.fields ? { fields: field.fields.map(buildFieldDescriptor) } : {}),
   };
 }
