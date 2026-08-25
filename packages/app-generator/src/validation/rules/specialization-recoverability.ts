@@ -1,7 +1,7 @@
 import { countBy } from 'es-toolkit';
 
 import { AssociationKind } from '../../graph/types.ts';
-import { hasNestedModel } from '../../generation-model/field-shape.ts';
+import { hasNestedModel } from '../../metadata/field-shape.ts';
 import {
   type AggregateFieldMetadata,
   type SpecializationMetadata,

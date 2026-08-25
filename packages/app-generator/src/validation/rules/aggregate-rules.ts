@@ -1,5 +1,5 @@
 import type { ApplicationNode } from '../../graph/types.ts';
-import { hasNestedModel } from '../../generation-model/field-shape.ts';
+import { hasNestedModel } from '../../metadata/field-shape.ts';
 import { type AggregateMetadata, FieldKind } from '../../metadata/types.ts';
 
 export function haveSameClass(

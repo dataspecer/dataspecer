@@ -1,7 +1,7 @@
 import { maxBy, uniq } from 'es-toolkit';
 
 import type { ApplicationGraph } from '../graph/types.ts';
-import { hasNestedModel } from '../generation-model/field-shape.ts';
+import { hasNestedModel } from '../metadata/field-shape.ts';
 import {
   type AggregateFieldMetadata,
   type AggregateMetadata,
@@ -9,6 +9,7 @@ import {
   type SpecificationMetadata,
 } from '../metadata/types.ts';
 import { compositeKey } from '../utils/composite-key.ts';
+import { specializationStorageShapes } from '../metadata/specialization-storage-shape.ts';
 import { joinFieldPath } from '../utils/field-path.ts';
 import { semanticViolation, semanticWarning, type Violation } from './types.ts';
 import { ViolationCode } from './violation-codes.ts';
@@ -182,15 +183,7 @@ function storageShapeKey(field: AggregateFieldMetadata): string {
     associationKind: field.associationKind ?? null,
     isReverse: field.isReverse ?? false,
     many: field.many ?? false,
-    specializations: nested
-      ? (field.specializations
-          ?.map(({ identityPolicy: _identityPolicy, label: _label, ...specialization }) => ({
-            ...specialization,
-            fieldPaths: [...specialization.fieldPaths].sort(),
-          }))
-          .sort((left, right) => left.specializationIri.localeCompare(right.specializationIri)) ??
-        null)
-      : null,
+    specializations: nested ? specializationStorageShapes(field.specializations) : null,
     fields: nested ? field.fields.map(storageShapeKey).sort() : null,
   });
 }

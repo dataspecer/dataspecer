@@ -1,5 +1,5 @@
 import { AssociationKind } from '../../graph/types.ts';
-import { hasNestedModel } from '../../generation-model/field-shape.ts';
+import { hasNestedModel } from '../../metadata/field-shape.ts';
 import { type AggregateFieldMetadata, FieldKind } from '../../metadata/types.ts';
 import { joinFieldPath } from '../../utils/field-path.ts';
 import { chainIdentity } from '../association-chain.ts';

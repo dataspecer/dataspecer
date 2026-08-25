@@ -1,6 +1,6 @@
 import { type AssociationKind } from '../graph/types.ts';
 import { type FieldKind } from '../metadata/types.ts';
-import { hasNestedModel } from './field-shape.ts';
+import { hasNestedModel } from '../metadata/field-shape.ts';
 
 interface AggregateReferenceField {
   kind: FieldKind;

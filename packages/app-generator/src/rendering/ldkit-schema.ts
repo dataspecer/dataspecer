@@ -1,9 +1,7 @@
 import type { Property, Schema } from 'ldkit';
 import { ldkit } from 'ldkit/namespaces';
 
-import type { RenderedField } from './rendered-aggregate.ts';
-
-import { hasNestedModel } from '../generation-model/field-shape.ts';
+import { hasNestedModel } from '../metadata/field-shape.ts';
 import { AssociationKind } from '../graph/types.ts';
 import { RDF_TYPES_PROPERTY } from '../generation-model/types.ts';
 import { FieldKind } from '../metadata/types.ts';
@@ -30,10 +28,30 @@ export interface GeneratedLdkitSchemaBundle {
 
 export type LdkitSchemaNamespace = 'ldkit' | 'xsd';
 
+/** Field properties used to construct LDKit schemas. */
+export interface LdkitSchemaField {
+  path: string;
+  propertyName: string;
+  kind: FieldKind;
+  propertyIri?: string;
+  datatype?: string;
+  many: boolean;
+  targetAggregateIri?: string;
+  targetClassIri?: string;
+  associationKind?: AssociationKind;
+  isReverse?: boolean;
+  fields?: readonly LdkitSchemaField[];
+  specializations?: readonly {
+    specializationIri: string;
+    classIri: string;
+    fieldPaths: readonly string[];
+  }[];
+}
+
 /** Builds the operation-specific LDKit schemas used for one aggregate. */
 export function buildLdkitSchemaBundle(
   classIri: string,
-  fields: RenderedField[]
+  fields: readonly LdkitSchemaField[]
 ): GeneratedLdkitSchemaBundle {
   const writes: Record<string, Schema> = {
     [entityTargetKey([])]: buildWriteSchema(classIri, fields),
@@ -51,7 +69,7 @@ export function buildLdkitSchemaBundle(
 
 function buildReadSchema(
   classIri: string | undefined,
-  fields: RenderedField[],
+  fields: readonly LdkitSchemaField[],
   includeCompositions: boolean
 ): Schema {
   const schema: Schema = classIri ? { '@type': classIri } : {};
@@ -64,7 +82,7 @@ function buildReadSchema(
   return schema;
 }
 
-function buildReadProperty(field: RenderedField): Property {
+function buildReadProperty(field: LdkitSchemaField): Property {
   const property = baseProperty(field, 'read');
   if (field.kind === FieldKind.Association) {
     if (hasNestedModel(field)) {
@@ -88,7 +106,7 @@ function buildReadProperty(field: RenderedField): Property {
   return property;
 }
 
-function buildWriteSchema(classIri: string, fields: RenderedField[]): Schema {
+function buildWriteSchema(classIri: string, fields: readonly LdkitSchemaField[]): Schema {
   const schema: Schema = { '@type': classIri };
   for (const field of fields) {
     if (!field.propertyIri) {
@@ -107,7 +125,7 @@ function buildWriteSchema(classIri: string, fields: RenderedField[]): Schema {
 }
 
 function collectNestedWriteSchemas(
-  fields: RenderedField[],
+  fields: readonly LdkitSchemaField[],
   parentPath: readonly string[],
   writes: Record<string, Schema>,
   specializationWrites: Record<string, Record<string, Schema>>
@@ -140,7 +158,7 @@ function collectNestedWriteSchemas(
   }
 }
 
-function baseProperty(field: RenderedField, mode: 'read' | 'write'): Property {
+function baseProperty(field: LdkitSchemaField, mode: 'read' | 'write'): Property {
   // keep properties optional so incomplete RDF stays visible and updates can omit fields (form validation enforces
   // cardinality on save)
   const property: Property = {
@@ -157,7 +175,7 @@ function baseProperty(field: RenderedField, mode: 'read' | 'write'): Property {
   return property;
 }
 
-function setPrimitiveType(property: Property, field: RenderedField): void {
+function setPrimitiveType(property: Property, field: LdkitSchemaField): void {
   const mapping = datatypeMapping(field.datatype);
   if (mapping.multilingual) {
     property['@multilang'] = true;
@@ -166,7 +184,7 @@ function setPrimitiveType(property: Property, field: RenderedField): void {
   }
 }
 
-function isComposition(field: RenderedField): boolean {
+function isComposition(field: LdkitSchemaField): boolean {
   return (
     field.kind === FieldKind.Association && field.associationKind === AssociationKind.Composition
   );

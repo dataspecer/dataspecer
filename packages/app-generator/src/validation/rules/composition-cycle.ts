@@ -2,7 +2,7 @@ import { semanticViolation, type Violation } from '../types.ts';
 import { ViolationCode } from '../violation-codes.ts';
 import type { SemanticValidationContext } from '../semantic-validation-context.ts';
 import { AssociationKind } from '../../graph/types.ts';
-import { hasNestedModel } from '../../generation-model/field-shape.ts';
+import { hasNestedModel } from '../../metadata/field-shape.ts';
 import { type AggregateFieldMetadata, FieldKind } from '../../metadata/types.ts';
 import { compositeKey } from '../../utils/composite-key.ts';
 

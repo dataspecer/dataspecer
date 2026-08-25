@@ -1,4 +1,4 @@
-import { hasNestedModel } from '../../generation-model/field-shape.ts';
+import { hasNestedModel } from '../../metadata/field-shape.ts';
 import { RESERVED_ENTITY_PROPERTY_NAMES } from '../../generation-model/types.ts';
 import type { AggregateFieldMetadata, AggregateMetadata } from '../../metadata/types.ts';
 import { joinFieldPath } from '../../utils/field-path.ts';

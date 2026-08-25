@@ -1,5 +1,5 @@
 import { AssociationKind } from '../graph/types.ts';
-import { FieldKind } from '../metadata/types.ts';
+import { FieldKind } from './types.ts';
 
 interface NestedModelFieldShape {
   kind: FieldKind;

@@ -5,7 +5,7 @@ import type {
   AggregateMetadata,
   SpecificationMetadata,
 } from '../metadata/types.ts';
-import { hasNestedModel } from '../generation-model/field-shape.ts';
+import { hasNestedModel } from '../metadata/field-shape.ts';
 import { joinFieldPath } from '../utils/field-path.ts';
 import { semanticWarning, type Violation } from './types.ts';
 import { ViolationCode } from './violation-codes.ts';

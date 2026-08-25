@@ -172,7 +172,6 @@ function resolveConfiguredAssociationChain(
   let fields = aggregate.fields;
   const chain: AggregateFieldMetadata[] = [];
   const resolvedSegments: string[] = [];
-
   for (const [index, segment] of segments.entries()) {
     const field = fields.find((candidate) => candidate.path === segment);
     if (!field || field.kind !== FieldKind.Association) {

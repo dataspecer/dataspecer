@@ -23,6 +23,7 @@ import {
 import type { Entity } from '@dataspecer/core-v2/entity-model';
 
 import { compositeKey } from '../utils/composite-key.ts';
+import { specializationStorageShapes } from './specialization-storage-shape.ts';
 import type {
   SpecificationSourceLoader,
   SpecificationSource,
@@ -789,14 +790,7 @@ function fieldShape(field: AggregateFieldMetadata): Record<string, unknown> {
     datatype: field.datatype ?? null,
     targetAggregateIri: field.targetAggregateIri ?? null,
     targetClassIri: field.targetClassIri ?? null,
-    specializations:
-      field.specializations
-        ?.map(({ identityPolicy: _identityPolicy, label: _label, ...specialization }) => ({
-          ...specialization,
-          fieldPaths: [...specialization.fieldPaths].sort(),
-        }))
-        .sort((left, right) => left.specializationIri.localeCompare(right.specializationIri)) ??
-      null,
+    specializations: specializationStorageShapes(field.specializations),
     isReverse: field.isReverse ?? false,
     many: field.many ?? false,
     fields: field.fields?.map(fieldStorageShapeKey).sort() ?? null,

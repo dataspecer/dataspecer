@@ -30,23 +30,19 @@ export function analyzeGraphSemantics(
 ): SemanticAnalysisResult {
   const structure = validateGraphStructure(graph);
   const enrichment = enrichMetadata(graph, metadata);
-  const allAggregates = new Map(
-    enrichment.metadata.aggregates.map((aggregate) => [aggregate.iri, aggregate])
-  );
   // validate only aggregates that rendering emits, unused structures must not block generation
   const reachableAggregateIris = collectReachableAggregateIris(
     graph.nodes.map((node) => node.aggregateIri),
-    allAggregates.values()
+    enrichment.metadata.aggregates
   );
   const constraints = normalizeValueConstraints(enrichment.metadata, reachableAggregateIris);
   const aliases = coalesceRdfPropertyAliases(graph, constraints.metadata, reachableAggregateIris);
-  const normalizedAggregates = new Map(
-    aliases.metadata.aggregates.map((aggregate) => [aggregate.iri, aggregate])
-  );
   const context = {
     graph,
     aggregates: new Map(
-      [...normalizedAggregates].filter(([aggregateIri]) => reachableAggregateIris.has(aggregateIri))
+      aliases.metadata.aggregates
+        .filter((aggregate) => reachableAggregateIris.has(aggregate.iri))
+        .map((aggregate) => [aggregate.iri, aggregate])
     ),
     nodes: new Map(graph.nodes.map((node) => [node.id, node])),
   };
