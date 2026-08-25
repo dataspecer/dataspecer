@@ -74,7 +74,7 @@ export function buildRenderContext(model: GenerationModel): GeneratedAppRenderCo
         moduleName: aggregate.moduleName,
         modelName: aggregate.modelName,
         descriptorName: aggregate.descriptorName,
-        operationClassName: toOperationClassName(operation.nodeId),
+        operationClassName: toOperationClassName(operation.id),
         strategyBaseName: STRATEGY[operation.operation].className,
         strategyModuleName: STRATEGY[operation.operation].moduleName,
         resultTypeName: resultTypeName(operation.operation, aggregate.modelName),

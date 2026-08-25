@@ -9,8 +9,6 @@ export function buildEdgeDescriptor(
     id: edge.id,
     sourceOperationId: requireOperation(operationByNodeId, edge.source).id,
     targetOperationId: requireOperation(operationByNodeId, edge.target).id,
-    sourceNodeId: edge.source,
-    targetNodeId: edge.target,
   };
 }
 

@@ -14,7 +14,6 @@ import { buildAggregateDescriptor } from './aggregate-descriptor.ts';
 import { buildEdgeDescriptor } from './edge-descriptor.ts';
 import { buildOperationDescriptor } from './operation-descriptor.ts';
 import { buildOperationNavigation } from './operation-navigation.ts';
-import { buildRouteDescriptor } from './route-descriptor.ts';
 
 export function buildGenerationModel(
   graph: ApplicationGraph,
@@ -32,8 +31,6 @@ export function buildGenerationModel(
     return operation;
   });
 
-  const routes = operations.map(buildRouteDescriptor);
-  const routeByOperationId = new Map(routes.map((route) => [route.operationId, route]));
   const operationById = new Map(operations.map((operation) => [operation.id, operation]));
   const transitionDescriptors = sortBy(
     graph.edges.filter((edge) => edge.type === EdgeType.Transition),
@@ -50,7 +47,6 @@ export function buildGenerationModel(
       transitionDescriptors,
       redirectDescriptors,
       operationById,
-      routeByOperationId,
       aggregateByIri
     );
   }
@@ -69,7 +65,6 @@ export function buildGenerationModel(
     },
     aggregates,
     operations,
-    routes,
     navigation: transitionDescriptors,
     redirects: redirectDescriptors,
   };

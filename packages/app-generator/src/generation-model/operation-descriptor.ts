@@ -13,13 +13,18 @@ export function buildOperationDescriptor(
   aggregate: GeneratedAggregateDescriptor
 ): GeneratedOperationDescriptor {
   const pageComponentName = toPageComponentName(node.id);
+  const routeId = toRouteId(node.id);
   const descriptor: GeneratedOperationDescriptor = {
     id: node.id,
-    nodeId: node.id,
     aggregateIri: aggregate.iri,
     aggregateName: aggregate.name,
     operation: node.operation,
-    routeId: toRouteId(node.id),
+    routeId,
+    path: `/${routeId}`,
+    requiresEntityId:
+      node.operation === Operation.ReadDetail ||
+      node.operation === Operation.Update ||
+      node.operation === Operation.Delete,
     pageComponentName,
     pageTitle: getPageTitle(node, aggregate),
     navigation: {
@@ -40,7 +45,7 @@ function buildDeleteDescriptor(node: ApplicationNode): GeneratedDeleteDescriptor
   const cascadePaths = Object.entries(node.config?.delete ?? {})
     .filter(([, value]) => value === DeletePolicy.Cascade)
     .map(([path]) => path)
-    .sort((left, right) => left.localeCompare(right));
+    .sort();
 
   return {
     cascadePaths,

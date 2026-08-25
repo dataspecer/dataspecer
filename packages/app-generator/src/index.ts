@@ -31,7 +31,6 @@ export type {
   GeneratedNavigationDescriptor,
   GeneratedOperationDescriptor,
   GeneratedRedirectDescriptor,
-  GeneratedRouteDescriptor,
   GenerationModel,
 } from './generation-model/types.ts';
 export type {

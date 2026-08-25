@@ -5,7 +5,7 @@ export const routes: RouteDescriptor[] = [
 <% it.pages.forEach((page) => { -%>
   {
     id: <%~ it.json(page.operation.routeId) %>,
-    path: <%~ it.json(it.model.routes.find((route) => route.operationId === page.operation.id)?.path) %>,
+    path: <%~ it.json(page.operation.path) %>,
     title: <%~ it.json(page.operation.pageTitle) %>,
     operation: <%~ it.json(page.operation.operation) %>,
     lazy: () =>

@@ -4,7 +4,7 @@ import { Operation } from '../graph/types.ts';
 import { FieldKind } from '../metadata/types.ts';
 import { joinFieldPath } from '../utils/field-path.ts';
 
-import { hasNestedModel } from './field-shape.ts';
+import { hasNestedModel } from '../metadata/field-shape.ts';
 import type {
   GeneratedAggregateDescriptor,
   GeneratedAssociationNavigationActionDescriptor,
@@ -14,7 +14,6 @@ import type {
   GeneratedOperationDescriptor,
   GeneratedOperationNavigation,
   GeneratedRedirectDescriptor,
-  GeneratedRouteDescriptor,
 } from './types.ts';
 
 export function buildOperationNavigation(
@@ -22,7 +21,6 @@ export function buildOperationNavigation(
   transitions: readonly GeneratedNavigationDescriptor[],
   redirects: readonly GeneratedRedirectDescriptor[],
   operationById: ReadonlyMap<string, GeneratedOperationDescriptor>,
-  routeByOperationId: ReadonlyMap<string, GeneratedRouteDescriptor>,
   aggregateByIri: ReadonlyMap<string, GeneratedAggregateDescriptor>
 ): GeneratedOperationNavigation {
   const sourceAggregate = requireAggregate(aggregateByIri, sourceOperation.aggregateIri);
@@ -36,9 +34,8 @@ export function buildOperationNavigation(
     }
 
     const targetOperation = requireOperationById(operationById, transition.targetOperationId);
-    const targetRoute = requireRoute(routeByOperationId, targetOperation.id);
     const targetAggregate = requireAggregate(aggregateByIri, targetOperation.aggregateIri);
-    const action = buildNavigationAction(transition.id, targetOperation, targetRoute);
+    const action = buildNavigationAction(transition.id, targetOperation);
 
     if (sourceOperation.operation === Operation.ReadList) {
       if (targetOperation.operation === Operation.Create) {
@@ -78,18 +75,11 @@ export function buildOperationNavigation(
     sourceAggregate,
     redirects,
     operationById,
-    routeByOperationId,
     aggregateByIri
   );
 
   const cancelTarget = isWriteOperation(sourceOperation.operation)
-    ? listAction(
-        `${sourceOperation.id}:cancel`,
-        sourceAggregate,
-        operationById,
-        routeByOperationId,
-        aggregateByIri
-      )
+    ? listAction(`${sourceOperation.id}:cancel`, sourceAggregate, operationById, aggregateByIri)
     : undefined;
 
   return {
@@ -106,7 +96,6 @@ function buildSuccessRedirect(
   sourceAggregate: GeneratedAggregateDescriptor,
   redirects: readonly GeneratedRedirectDescriptor[],
   operationById: ReadonlyMap<string, GeneratedOperationDescriptor>,
-  routeByOperationId: ReadonlyMap<string, GeneratedRouteDescriptor>,
   aggregateByIri: ReadonlyMap<string, GeneratedAggregateDescriptor>
 ): GeneratedNavigationActionDescriptor | undefined {
   if (!isWriteOperation(sourceOperation.operation)) {
@@ -118,8 +107,7 @@ function buildSuccessRedirect(
   );
   if (configured) {
     const targetOperation = requireOperationById(operationById, configured.targetOperationId);
-    const targetRoute = requireRoute(routeByOperationId, targetOperation.id);
-    return buildNavigationAction(configured.id, targetOperation, targetRoute);
+    return buildNavigationAction(configured.id, targetOperation);
   }
 
   // without an explicit redirect, return to any list that presents the same RDF class
@@ -127,7 +115,6 @@ function buildSuccessRedirect(
     `${sourceOperation.id}:success`,
     sourceAggregate,
     operationById,
-    routeByOperationId,
     aggregateByIri
   );
 }
@@ -136,7 +123,6 @@ function listAction(
   idPrefix: string,
   sourceAggregate: GeneratedAggregateDescriptor,
   operationById: ReadonlyMap<string, GeneratedOperationDescriptor>,
-  routeByOperationId: ReadonlyMap<string, GeneratedRouteDescriptor>,
   aggregateByIri: ReadonlyMap<string, GeneratedAggregateDescriptor>
 ): GeneratedNavigationActionDescriptor | undefined {
   const listOperation = operationById
@@ -146,8 +132,7 @@ function listAction(
         candidate.operation === Operation.ReadList &&
         aggregateByIri.get(candidate.aggregateIri)?.classIri === sourceAggregate.classIri
     );
-  const listRoute = listOperation && routeByOperationId.get(listOperation.id);
-  if (!listOperation || !listRoute) {
+  if (!listOperation) {
     return undefined;
   }
 
@@ -156,8 +141,8 @@ function listAction(
     label: 'Back to list',
     operation: listOperation.operation,
     targetTitle: listOperation.pageTitle,
-    targetPath: listRoute.path,
-    requiresEntityId: listRoute.requiresEntityId,
+    targetPath: listOperation.path,
+    requiresEntityId: listOperation.requiresEntityId,
   };
 }
 
@@ -188,16 +173,15 @@ function byOperation(
 
 function buildNavigationAction(
   id: string,
-  targetOperation: GeneratedOperationDescriptor,
-  targetRoute: GeneratedRouteDescriptor
+  targetOperation: GeneratedOperationDescriptor
 ): GeneratedNavigationActionDescriptor {
   return {
     id,
     label: operationActionLabel(targetOperation.operation),
     operation: targetOperation.operation,
     targetTitle: targetOperation.pageTitle,
-    targetPath: targetRoute.path,
-    requiresEntityId: targetRoute.requiresEntityId,
+    targetPath: targetOperation.path,
+    requiresEntityId: targetOperation.requiresEntityId,
   };
 }
 
@@ -273,16 +257,4 @@ function requireOperationById(
   }
 
   return operation;
-}
-
-function requireRoute(
-  routeByOperationId: ReadonlyMap<string, GeneratedRouteDescriptor>,
-  operationId: string
-): GeneratedRouteDescriptor {
-  const route = routeByOperationId.get(operationId);
-  if (!route) {
-    throw new Error(`Missing route descriptor for operation "${operationId}".`);
-  }
-
-  return route;
 }

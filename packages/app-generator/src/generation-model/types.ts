@@ -14,7 +14,6 @@ export interface GenerationModel {
   datasource: GeneratedDatasourceDescriptor;
   aggregates: GeneratedAggregateDescriptor[];
   operations: GeneratedOperationDescriptor[];
-  routes: GeneratedRouteDescriptor[];
   navigation: GeneratedNavigationDescriptor[];
   redirects: GeneratedRedirectDescriptor[];
 }
@@ -41,41 +40,28 @@ export interface GeneratedAggregateDescriptor {
 
 export interface GeneratedOperationDescriptor {
   id: string;
-  nodeId: string;
   aggregateIri: string;
   aggregateName: string;
   operation: Operation;
   routeId: string;
+  path: string;
+  requiresEntityId: boolean;
   pageComponentName: string;
   pageTitle: string;
   navigation: GeneratedOperationNavigation;
   delete?: GeneratedDeleteDescriptor;
 }
 
-export interface GeneratedRouteDescriptor {
-  id: string;
-  nodeId: string;
-  path: string;
-  operationId: string;
-  operation: Operation;
-  pageComponentName: string;
-  requiresEntityId: boolean;
-}
-
 export interface GeneratedNavigationDescriptor {
   id: string;
   sourceOperationId: string;
   targetOperationId: string;
-  sourceNodeId: string;
-  targetNodeId: string;
 }
 
 export interface GeneratedRedirectDescriptor {
   id: string;
   sourceOperationId: string;
   targetOperationId: string;
-  sourceNodeId: string;
-  targetNodeId: string;
 }
 
 export interface GeneratedOperationNavigation {
