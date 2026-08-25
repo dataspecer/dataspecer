@@ -1,4 +1,4 @@
-/** Joins one segment onto a dotted validation path. */
-export function joinValidationPath(prefix: string, segment: string): string {
+/** Joins one segment onto a dotted field path. */
+export function joinFieldPath(prefix: string, segment: string): string {
   return prefix ? `${prefix}.${segment}` : segment;
 }

@@ -1,6 +1,7 @@
 import {
   fieldValues,
   isEntityRecord,
+  referenceIdOf,
   RDF_TYPES_PROPERTY,
   SPECIALIZATION_IRI_PROPERTY,
   type EntityRecord,
@@ -8,6 +9,7 @@ import {
   type SpecializationDescriptor,
 } from '../types/aggregate.ts';
 import { isCompositionField, isInlineCompositionField } from '../forms/entity-target.ts';
+import { joinFieldPath } from '../forms/field-path.ts';
 import { isSafeAbsoluteIri, requireSafeAbsoluteIri } from '../forms/iri.ts';
 import {
   compactMultilingualValue,
@@ -110,7 +112,7 @@ export function requireNamedCompositionIris(
     if (!isCompositionField(field)) {
       continue;
     }
-    const fieldPath = pathPrefix ? `${pathPrefix}.${field.path}` : field.path;
+    const fieldPath = joinFieldPath(pathPrefix, field.path);
     const values = fieldValues(record[field.propertyName], field);
     const childShape = isInlineCompositionField(field)
       ? { fields: field.fields ?? [], specializations: field.specializations }
@@ -231,7 +233,7 @@ function toLdkitReference(
 }
 
 function referenceIri(value: unknown, field: FieldDescriptor): string | null {
-  const id = typeof value === 'string' ? value : isEntityRecord(value) ? value.id : undefined;
+  const id = referenceIdOf(value);
   if (id === '') {
     return null;
   }

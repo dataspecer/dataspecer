@@ -67,10 +67,6 @@ function resolveAssociationTarget(
   field: FieldDescriptor,
   aggregateRegistry: AggregateDescriptorMap
 ): EntityTarget | null {
-  if (field.kind !== 'association') {
-    return null;
-  }
-
   if (field.targetAggregateIri) {
     const target = aggregateRegistry[field.targetAggregateIri];
     return target ? rootEntityTarget(target) : null;

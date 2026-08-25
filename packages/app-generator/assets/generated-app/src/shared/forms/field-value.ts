@@ -1,4 +1,4 @@
-import type { FieldDescriptor } from '../types/aggregate.ts';
+import { referenceIdOf, type FieldDescriptor } from '../types/aggregate.ts';
 import { isMultilingualField, selectMultilingualValues } from './multilingual-value.ts';
 
 const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' });
@@ -35,13 +35,10 @@ export function formatFieldValue(
   if (Array.isArray(value)) {
     return value.map((entry) => formatFieldValue(field, entry, preferredLanguages)).join(', ');
   }
-  if (value instanceof Date) {
-    return formatDate(value, field);
-  }
-  if (typeof value === 'object') {
+  if (typeof value === 'object' && !(value instanceof Date)) {
     return formatObjectValue(field, value as Record<string, unknown>, preferredLanguages);
   }
-  return formatPrimitiveValue(value);
+  return formatPrimitiveValue(value, field, preferredLanguages);
 }
 
 function formatObjectValue(
@@ -56,8 +53,9 @@ function formatObjectValue(
   if (firstPrimitive) {
     return formatFieldValue(firstPrimitive, value[firstPrimitive.propertyName], preferredLanguages);
   }
-  if (typeof value.id === 'string') {
-    return value.id;
+  const id = referenceIdOf(value);
+  if (id !== undefined) {
+    return id;
   }
   return JSON.stringify(value);
 }

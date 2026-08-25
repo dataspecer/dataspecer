@@ -125,6 +125,14 @@ export function isEntityRecord(value: unknown): value is EntityRecord {
   return id === undefined || typeof id === 'string';
 }
 
+/** Returns an IRI-shaped identifier from a reference string or object. */
+export function referenceIdOf(value: unknown): string | undefined {
+  if (typeof value === 'string') {
+    return value;
+  }
+  return isEntityRecord(value) && typeof value.id === 'string' ? value.id : undefined;
+}
+
 export function isEmptyValue(value: unknown): boolean {
   if (value === null || value === undefined) {
     return true;

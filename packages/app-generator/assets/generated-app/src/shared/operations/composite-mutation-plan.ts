@@ -7,6 +7,7 @@ import {
   type EntityTarget,
 } from '../forms/entity-target.ts';
 import { compactMultilingualValue, isMultilingualField } from '../forms/multilingual-value.ts';
+import { joinFieldPath } from '../forms/field-path.ts';
 import {
   effectiveFields,
   hasSelectedBranchEvidence,
@@ -22,13 +23,22 @@ import {
   type FieldDescriptor,
 } from '../types/aggregate.ts';
 
-export interface CompositeMutationStep {
-  kind: 'create' | 'update' | 'delete';
+interface MutationStep {
   target: EntityTarget;
-  payload?: EntityRecord;
-  specializationIri?: string;
   id: string;
 }
+
+interface UpsertMutationStep extends MutationStep {
+  kind: 'create' | 'update';
+  payload: EntityRecord;
+  specializationIri?: string;
+}
+
+interface DeleteMutationStep extends MutationStep {
+  kind: 'delete';
+}
+
+export type CompositeMutationStep = UpsertMutationStep | DeleteMutationStep;
 
 /** Plans child creates before the parent writes links to them. */
 export function buildCompositeCreatePlan(
@@ -182,7 +192,7 @@ function collectCascadeDeleteSteps(
 ): void {
   requireMutationSpecialization(entity, target, entity, 'remove');
   for (const field of effectiveFields(target, entity)) {
-    const fieldPath = pathPrefix ? `${pathPrefix}.${field.path}` : field.path;
+    const fieldPath = joinFieldPath(pathPrefix, field.path);
     if (!cascadePaths.has(fieldPath) || !isCompositionField(field)) {
       continue;
     }

@@ -1,12 +1,5 @@
 import type { AggregateDescriptor, EntityModel, FieldDescriptor } from '../types/aggregate.ts';
 
-export enum DataSourceKind {
-  Rdf = 'rdf',
-  File = 'file',
-  Rest = 'rest',
-  Other = 'other',
-}
-
 export type SortDirection = 'asc' | 'desc';
 
 export type ReadListSort =
@@ -70,7 +63,6 @@ export interface ReferenceListArgs {
 }
 
 export interface DataSource {
-  kind: DataSourceKind;
   readList<TModel extends EntityModel>(args: ReadListArgs<TModel>): Promise<ReadListResult<TModel>>;
   readDetail<TModel extends EntityModel>(args: ReadDetailArgs<TModel>): Promise<TModel | null>;
   create<TModel extends EntityModel>(args: MutationArgs<TModel>): Promise<TModel>;

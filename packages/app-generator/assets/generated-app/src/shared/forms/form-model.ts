@@ -2,6 +2,7 @@ import {
   fieldValues,
   isEntityRecord,
   isEmptyValue,
+  referenceIdOf,
   RDF_TYPES_PROPERTY,
   SPECIALIZATION_IRI_PROPERTY,
   type AggregateDescriptorMap,
@@ -17,7 +18,7 @@ import {
   resolveCompositionTarget,
   type EntityTarget,
 } from './entity-target.ts';
-import { joinValidationPath } from './field-path.ts';
+import { joinFieldPath } from './field-path.ts';
 import { isSafeAbsoluteIri } from './iri.ts';
 import {
   hasDuplicateMultilingualValues,
@@ -103,7 +104,7 @@ function validateEntity(
   pathPrefix: string,
   issues: ValidationIssue[]
 ): void {
-  const idPath = joinValidationPath(pathPrefix, 'id');
+  const idPath = joinFieldPath(pathPrefix, 'id');
   if (typeof model.id !== 'string' || model.id.trim() === '') {
     issues.push({
       code: ValidationIssueCode.Required,
@@ -127,7 +128,7 @@ function validateEntity(
     if (control === 'unsupported') {
       continue;
     }
-    const fieldPath = joinValidationPath(pathPrefix, field.path);
+    const fieldPath = joinFieldPath(pathPrefix, field.path);
     const value = model[field.propertyName];
     if (isMultilingualField(field)) {
       validateMultilingualField(field, value, fieldPath, issues);
@@ -235,7 +236,7 @@ function validateSpecialization(
   }
   const entity = model as EntityRecord;
   const selected = selectedSpecialization(target, entity);
-  const path = joinValidationPath(pathPrefix, SPECIALIZATION_IRI_PROPERTY);
+  const path = joinFieldPath(pathPrefix, SPECIALIZATION_IRI_PROPERTY);
   if (!selected) {
     if (Object.hasOwn(entity, RDF_TYPES_PROPERTY)) {
       const resolution = resolveSpecialization(target, entity);
@@ -343,15 +344,7 @@ function patternMismatchIssue(field: FieldDescriptor, path: string): ValidationI
   };
 }
 
-function referenceId(value: unknown): string | null {
-  if (typeof value === 'string') {
-    return value;
-  }
-  if (isEntityRecord(value) && typeof value.id === 'string') {
-    return value.id;
-  }
-  return null;
-}
+const referenceId = (value: unknown): string | null => referenceIdOf(value) ?? null;
 
 function hasDuplicateValues(values: unknown[]): boolean {
   // only scalar values and entity references have a stable identity suitable for comparison

@@ -6,7 +6,7 @@ import {
   type EntityModel,
   type FieldDescriptor,
   fieldValues,
-  isEntityRecord,
+  referenceIdOf,
 } from '../types/aggregate.ts';
 import { requireSafeAbsoluteIri } from '../forms/iri.ts';
 import type { ReadListSort, ReferenceListArgs } from './data-source.ts';
@@ -141,7 +141,7 @@ export function toSafeNamedNodeValue(term: RDF.Term | undefined, label: string):
 
 function referenceIds(value: unknown, field: FieldDescriptor): string[] {
   return fieldValues(value, field).flatMap((entry) => {
-    const id = typeof entry === 'string' ? entry : isEntityRecord(entry) ? entry.id : undefined;
+    const id = referenceIdOf(entry);
     return id === '' ? [] : [requireSafeAbsoluteIri(id, `${field.label} reference IRI`)];
   });
 }

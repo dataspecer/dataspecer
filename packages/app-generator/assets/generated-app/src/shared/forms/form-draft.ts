@@ -7,6 +7,7 @@ import {
   type FieldDescriptor,
 } from '../types/aggregate.ts';
 import { generateIri } from './generate-iri.ts';
+import { joinFieldPath } from './field-path.ts';
 import {
   type EntityTarget,
   isCompositionField,
@@ -130,7 +131,7 @@ async function hydrateCompositionChildren(
   const fields = effectiveFields(target, entity);
   await Promise.all(
     fields.map(async (field) => {
-      const fieldPath = pathPrefix ? `${pathPrefix}.${field.path}` : field.path;
+      const fieldPath = joinFieldPath(pathPrefix, field.path);
       if (!isCompositionField(field) || (paths && !paths.has(fieldPath))) {
         return;
       }

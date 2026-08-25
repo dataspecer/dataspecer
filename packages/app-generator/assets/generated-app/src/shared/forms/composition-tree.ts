@@ -11,7 +11,7 @@ import {
 import { compositionEntities, type EntityPathSegment } from './form-draft.ts';
 import { isMultilingualField, multilingualLanguageTags } from './multilingual-value.ts';
 import { effectiveFields } from './specialization.ts';
-import { joinValidationPath } from './field-path.ts';
+import { joinFieldPath } from './field-path.ts';
 
 /** Describes a composed entity that opens in its own form pane. */
 export interface NavigablePane {
@@ -47,8 +47,8 @@ export function navigablePanes(
           { propertyName: field.propertyName, ...(field.many ? { index } : {}) },
         ];
         const childValidationPath = field.many
-          ? `${joinValidationPath(validationPrefix, field.path)}[${index}]`
-          : joinValidationPath(validationPrefix, field.path);
+          ? `${joinFieldPath(validationPrefix, field.path)}[${index}]`
+          : joinFieldPath(validationPrefix, field.path);
         return [
           {
             key: childValidationPath,
@@ -63,63 +63,65 @@ export function navigablePanes(
     });
 }
 
-export function targetAtPath(
-  rootTarget: EntityTarget,
-  root: EntityRecord,
-  path: readonly EntityPathSegment[],
-  aggregateRegistry: AggregateDescriptorMap
-): EntityTarget {
-  let target = rootTarget;
-  let entity = root;
-  for (const segment of path) {
-    const field = effectiveFields(target, entity).find(
-      (candidate) => candidate.propertyName === segment.propertyName
-    );
-    const child = field && resolveCompositionTarget(target, field, aggregateRegistry);
-    if (!child) {
-      return target;
-    }
-    const values = compositionEntities(entity[field.propertyName], field);
-    const next = values[segment.index ?? 0];
-    if (!next) {
-      return target;
-    }
-    target = child;
-    entity = next;
-  }
-  return target;
+interface CompositionPathStep {
+  segment: EntityPathSegment;
+  target: EntityTarget;
+  entity: EntityRecord;
+  validationPath: string;
+  index: number;
 }
 
-export function validationPathAt(
+interface CompositionPathWalk {
+  target: EntityTarget;
+  validationPath: string;
+  steps: CompositionPathStep[];
+}
+
+function walkCompositionPath(
   rootTarget: EntityTarget,
   root: EntityRecord,
   path: readonly EntityPathSegment[],
   aggregateRegistry: AggregateDescriptorMap
-): string {
+): CompositionPathWalk {
   let target = rootTarget;
   let entity = root;
   let validationPath = '';
+  const steps: CompositionPathStep[] = [];
+
   for (const segment of path) {
     const field = effectiveFields(target, entity).find(
       (candidate) => candidate.propertyName === segment.propertyName
     );
     const child = field && resolveCompositionTarget(target, field, aggregateRegistry);
     if (!field || !child) {
-      return validationPath;
+      break;
     }
-    validationPath = joinValidationPath(validationPath, field.path);
+    validationPath = joinFieldPath(validationPath, field.path);
     if (segment.index !== undefined) {
       validationPath = `${validationPath}[${segment.index}]`;
     }
     const values = compositionEntities(entity[field.propertyName], field);
-    const next = values[segment.index ?? 0];
+    const index = segment.index ?? 0;
+    const next = values[index];
     if (!next) {
-      return validationPath;
+      break;
     }
     target = child;
     entity = next;
+    steps.push({ segment, target, entity, validationPath, index });
   }
-  return validationPath;
+
+  return { target, validationPath, steps };
+}
+
+export function compositionAtPath(
+  rootTarget: EntityTarget,
+  root: EntityRecord,
+  path: readonly EntityPathSegment[],
+  aggregateRegistry: AggregateDescriptorMap
+): Pick<CompositionPathWalk, 'target' | 'validationPath'> {
+  const { target, validationPath } = walkCompositionPath(rootTarget, root, path, aggregateRegistry);
+  return { target, validationPath };
 }
 
 export interface BreadcrumbEntry {
@@ -134,40 +136,19 @@ export function breadcrumbEntries(
   path: readonly EntityPathSegment[],
   aggregateRegistry: AggregateDescriptorMap
 ): BreadcrumbEntry[] {
-  const entries: BreadcrumbEntry[] = [{ label: rootTarget.name, path: [], validationPath: '' }];
-  let entity = root;
-  let target = rootTarget;
-  let validationPath = '';
+  const { steps } = walkCompositionPath(rootTarget, root, path, aggregateRegistry);
   const traversed: EntityPathSegment[] = [];
-
-  for (const segment of path) {
-    const field = effectiveFields(target, entity).find(
-      (candidate) => candidate.propertyName === segment.propertyName
-    );
-    const child = field && resolveCompositionTarget(target, field, aggregateRegistry);
-    if (!field || !child) {
-      break;
-    }
-    const values = compositionEntities(entity[field.propertyName], field);
-    const index = segment.index ?? 0;
-    const next = values[index];
-    if (!next) {
-      break;
-    }
-    traversed.push(segment);
-    validationPath = joinValidationPath(validationPath, field.path);
-    if (segment.index !== undefined) {
-      validationPath = `${validationPath}[${segment.index}]`;
-    }
-    entries.push({
-      label: entitySummary(child, next, index),
-      path: [...traversed],
-      validationPath,
-    });
-    entity = next;
-    target = child;
-  }
-  return entries;
+  return [
+    { label: rootTarget.name, path: [], validationPath: '' },
+    ...steps.map((step) => {
+      traversed.push(step.segment);
+      return {
+        label: entitySummary(step.target, step.entity, step.index),
+        path: [...traversed],
+        validationPath: step.validationPath,
+      };
+    }),
+  ];
 }
 
 /** Names a composed entity using its first non-empty primitive field. */
@@ -176,8 +157,11 @@ export function entitySummary(
   entity: EntityRecord | undefined,
   index: number
 ): string {
-  for (const field of entity ? effectiveFields(target, entity) : target.fields) {
-    if (field.kind !== 'primitive' || !entity) {
+  if (!entity) {
+    return `${target.name} ${index + 1}`;
+  }
+  for (const field of effectiveFields(target, entity)) {
+    if (field.kind !== 'primitive') {
       continue;
     }
     const value = formatFieldValue(field, entity[field.propertyName]);

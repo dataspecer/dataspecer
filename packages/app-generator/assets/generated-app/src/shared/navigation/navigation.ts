@@ -1,4 +1,5 @@
 import type { OperationKind } from '../operations/operation-kind.ts';
+import { referenceIdOf } from '../types/aggregate.ts';
 
 export interface RoutableActionDescriptor {
   targetPath: string;
@@ -61,12 +62,5 @@ export function partitionPageActions(actions: readonly NavigationActionDescripto
 }
 
 export function entityIdFromValue(value: unknown): string | undefined {
-  if (typeof value === 'string') {
-    return value;
-  }
-  if (value === null || typeof value !== 'object') {
-    return undefined;
-  }
-  const id = (value as { id?: unknown }).id;
-  return typeof id === 'string' ? id : undefined;
+  return referenceIdOf(value);
 }

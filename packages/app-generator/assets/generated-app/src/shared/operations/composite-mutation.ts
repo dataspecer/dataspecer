@@ -78,7 +78,7 @@ async function executePlan(
         aggregate: step.target.aggregate,
         fieldPath: step.target.fieldPath,
         specializationIri: step.specializationIri,
-        payload: step.payload as EntityRecord,
+        payload: step.payload,
       });
     } else {
       await dataSource.update({
@@ -86,7 +86,7 @@ async function executePlan(
         fieldPath: step.target.fieldPath,
         specializationIri: step.specializationIri,
         id: step.id,
-        payload: step.payload as EntityRecord,
+        payload: step.payload,
       });
     }
   }

@@ -23,7 +23,6 @@ import type {
   ReferenceListArgs,
   ReferenceOption,
 } from './data-source.ts';
-import { DataSourceKind } from './data-source.ts';
 import {
   normalizeLdkitEntity,
   requireNamedCompositionIris,
@@ -57,8 +56,6 @@ export type LdkitSchemaMap = Record<string, LdkitSchemaBundle>;
 
 /** Reads and writes a SPARQL endpoint through LDKit lenses. */
 export class RdfLdkitDataSource implements DataSource {
-  readonly kind: DataSourceKind = DataSourceKind.Rdf;
-
   constructor(
     private readonly endpoint: string,
     private readonly schemas: LdkitSchemaMap
