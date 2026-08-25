@@ -38,7 +38,7 @@ export function MultilingualField(props: MultilingualFieldProps) {
   const filledLanguages = multilingualLanguageTags(props.value).sort().map(languageLabel);
   // scalar data with more than one stored value stays visible so the user can resolve it
   const rows = props.field.many || values.length > 0 ? values : [''];
-  const maximum = props.field.many ? maximumCount(props.field) : 1;
+  const maximum = maximumCount(props.field);
   const changeValues = (next: string[]) =>
     props.onChange(withMultilingualLanguage(props.value, props.language, next));
 

@@ -10,13 +10,12 @@ import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import {
   collectEntityIds,
   collectMultilingualLanguages,
+  compositionAtPath,
   containsMultilingualFields,
   issuesByPane,
   navigablePanes,
-  targetAtPath,
-  validationPathAt,
 } from '../forms/composition-tree.ts';
-import { joinValidationPath } from '../forms/field-path.ts';
+import { joinFieldPath } from '../forms/field-path.ts';
 import { formatEntityPath, resolveEntityPath } from '../forms/entity-path.ts';
 import {
   isCompositionField,
@@ -83,15 +82,14 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
   // a path from the address bar can point at a child that no longer exists
   const selection = resolveEntityPath(props.model, requestedPath);
   const selectionKey = formatEntityPath(selection);
-  const target = targetAtPath(rootTarget, props.model, selection, props.aggregateRegistry);
-  const entity = entityAtPath(props.model, selection);
-  const fields = effectiveFields(target, entity);
-  const validationPrefix = validationPathAt(
+  const { target, validationPath: validationPrefix } = compositionAtPath(
     rootTarget,
     props.model,
     selection,
     props.aggregateRegistry
   );
+  const entity = entityAtPath(props.model, selection);
+  const fields = effectiveFields(target, entity);
   const totalIssues = [...issueCounts.values()].reduce((total, count) => total + count, 0);
   // one language selector for every pane, so it offers and keeps the whole form's languages
   const hasMultilingualFields = useMemo(
@@ -180,9 +178,9 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
         slotProps={{
           htmlInput: { readOnly: selection.length > 0 || props.rootIdentifierReadOnly },
         }}
-        error={errorAt(joinValidationPath(validationPrefix, 'id')) !== undefined}
+        error={errorAt(joinFieldPath(validationPrefix, 'id')) !== undefined}
         helperText={
-          errorAt(joinValidationPath(validationPrefix, 'id')) ??
+          errorAt(joinFieldPath(validationPrefix, 'id')) ??
           (selection.length > 0 ? 'Identifiers of composed entities are generated.' : undefined)
         }
         onChange={(event) => updateSelected((current) => ({ ...current, id: event.target.value }))}
@@ -192,7 +190,7 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
         target={target}
         entity={entity}
         persisted={persisted}
-        error={errorAt(joinValidationPath(validationPrefix, SPECIALIZATION_IRI_PROPERTY))}
+        error={errorAt(joinFieldPath(validationPrefix, SPECIALIZATION_IRI_PROPERTY))}
         onChange={(specializationIri) =>
           updateSelected((current) =>
             selectEntitySpecialization(
@@ -214,7 +212,7 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
             field={field}
             value={entity[field.propertyName]}
             language={selectedLanguage}
-            error={errorAt(joinValidationPath(validationPrefix, field.path))}
+            error={errorAt(joinFieldPath(validationPrefix, field.path))}
             aggregateRegistry={props.aggregateRegistry}
             onChange={(value) =>
               updateSelected((current) => ({ ...current, [field.propertyName]: value }))
@@ -224,7 +222,7 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
 
       {fields.filter(isCompositionField).map((field) => {
         const childTarget = resolveCompositionTarget(target, field, props.aggregateRegistry);
-        const fieldPath = joinValidationPath(validationPrefix, field.path);
+        const fieldPath = joinFieldPath(validationPrefix, field.path);
         return (
           <CompositionSection
             key={field.path}

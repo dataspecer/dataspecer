@@ -146,7 +146,11 @@ export function ListView<TModel extends EntityModel>(props: ListViewProps<TModel
             ...(detailAction ? { '& .MuiDataGrid-row': { cursor: 'pointer' } } : {}),
           }}
           onRowClick={(params, event) => {
-            if (!detailAction || (event.target as HTMLElement).closest('a, button')) {
+            if (
+              !detailAction ||
+              (event.target as HTMLElement).closest('a, button') ||
+              hasSelectedTextWithin(event.currentTarget)
+            ) {
               return;
             }
             const href = hrefForAction(detailAction, String(params.id));
@@ -175,6 +179,17 @@ export function ListView<TModel extends EntityModel>(props: ListViewProps<TModel
         />
       )}
     </Stack>
+  );
+}
+
+function hasSelectedTextWithin(element: HTMLElement): boolean {
+  const selection = window.getSelection();
+  if (!selection || selection.isCollapsed) {
+    return false;
+  }
+  return Boolean(
+    (selection.anchorNode && element.contains(selection.anchorNode)) ||
+    (selection.focusNode && element.contains(selection.focusNode))
   );
 }
 

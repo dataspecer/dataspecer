@@ -25,7 +25,7 @@ import {
   opensInOwnPane,
   type EntityTarget,
 } from '../forms/entity-target.ts';
-import { joinValidationPath } from '../forms/field-path.ts';
+import { joinFieldPath } from '../forms/field-path.ts';
 import {
   compositionEntities,
   createEntityDraft,
@@ -297,7 +297,7 @@ function InlineEntityFields(props: InlineEntityFieldsProps) {
           field={field}
           value={props.entity[field.propertyName]}
           language={props.language}
-          error={errorAt(joinValidationPath(props.validationPrefix, field.path))}
+          error={errorAt(joinFieldPath(props.validationPrefix, field.path))}
           aggregateRegistry={props.aggregateRegistry}
           onChange={(value) => props.onChange({ ...props.entity, [field.propertyName]: value })}
         />

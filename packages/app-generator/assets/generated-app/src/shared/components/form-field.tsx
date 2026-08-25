@@ -49,7 +49,7 @@ export function FormField(props: FormFieldProps) {
   const note = control === 'unsupported' ? 'This field type is read-only.' : undefined;
   const cardinality = field.many ? cardinalityDescription(field) : '';
 
-  const readOnly = control === 'unsupported' || control === 'composition';
+  const readOnly = control === 'unsupported';
 
   if (control === 'multilingual') {
     return (
@@ -227,7 +227,7 @@ function PrimitiveControl(props: PrimitiveControlProps) {
       multiline={control === 'text'}
       maxRows={8}
       slotProps={{
-        htmlInput: { step: control === 'number' ? 'any' : undefined, readOnly: props.readOnly },
+        htmlInput: { step: control === 'number' ? 'any' : undefined },
       }}
       disabled={props.readOnly}
       placeholder={props.placeholder}

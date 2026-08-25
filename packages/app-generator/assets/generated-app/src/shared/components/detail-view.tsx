@@ -39,6 +39,7 @@ import type {
 } from '../types/aggregate.ts';
 import { ActionLinks } from './action-links.tsx';
 import { formatPrimitiveValue } from '../forms/field-value.ts';
+import { joinFieldPath } from '../forms/field-path.ts';
 import { isCompositionField } from '../forms/entity-target.ts';
 import { isSafeHttpIri } from '../forms/iri.ts';
 import {
@@ -184,7 +185,7 @@ function FieldList(props: FieldListProps) {
   return (
     <Stack divider={<Divider flexItem />}>
       {props.fields.map((field) => {
-        const fieldPath = props.pathPrefix ? `${props.pathPrefix}.${field.path}` : field.path;
+        const fieldPath = joinFieldPath(props.pathPrefix ?? '', field.path);
         return (
           <Field
             key={fieldPath}
