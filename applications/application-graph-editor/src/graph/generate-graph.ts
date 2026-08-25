@@ -6,6 +6,7 @@ import {
   type ApplicationGraph,
   type ApplicationNode,
 } from "@dataspecer/app-generator/graph";
+import { groupBy, maxBy, minBy } from "es-toolkit";
 import { addEdge, addNode, connectionEdge, nextNodeId } from "./mutations.ts";
 
 /** The order nodes are generated in, which also orders them inside each class. */
@@ -114,30 +115,16 @@ export function skeletonGraph(
 }
 
 function classOwners(aggregates: readonly AggregateMetadata[]): Map<string, ClassOwners> {
-  const byClass = new Map<string, AggregateMetadata[]>();
-  for (const aggregate of aggregates) {
-    const members = byClass.get(aggregate.classIri);
-    if (members) {
-      members.push(aggregate);
-    } else {
-      byClass.set(aggregate.classIri, [aggregate]);
-    }
-  }
-
   const owners = new Map<string, ClassOwners>();
-  for (const [classIri, members] of byClass) {
-    let detail = members[0];
-    for (const member of members) {
-      if (fieldCount(member.fields) > fieldCount(detail.fields)) {
-        detail = member;
-      }
+  for (const [classIri, members] of Object.entries(groupBy(aggregates, (item) => item.classIri))) {
+    const detail = maxBy(members, (member) => fieldCount(member.fields));
+    if (!detail) {
+      continue;
     }
-    let list = detail;
-    for (const member of members) {
-      if (member !== detail && (list === detail || fieldCount(member.fields) < fieldCount(list.fields))) {
-        list = member;
-      }
-    }
+    const list = minBy(
+      members.filter((member) => member !== detail),
+      (member) => fieldCount(member.fields),
+    ) ?? detail;
     owners.set(classIri, { list, detail, members });
   }
   return owners;

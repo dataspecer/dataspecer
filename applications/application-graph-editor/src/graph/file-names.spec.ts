@@ -22,12 +22,16 @@ describe("exportFileName", () => {
   });
 
   it("falls back when the name has no usable characters", () => {
-    expect(exportFileName({ ...graphFixture(), name: "—" })).toBe("application-graph.json");
+    expect(exportFileName({ ...graphFixture(), name: "—" })).toBe("generated-application.json");
   });
 });
 
 describe("archiveFileName", () => {
   it("matches the name the backend derives for the generated archive", () => {
     expect(archiveFileName(graphFixture())).toBe("katalog-knih-aeiouycrszdnte-uaeiouycrszdnteu.zip");
+  });
+
+  it("uses the backend fallback when the name has no usable characters", () => {
+    expect(archiveFileName({ ...graphFixture(), name: "—" })).toBe("generated-application.zip");
   });
 });

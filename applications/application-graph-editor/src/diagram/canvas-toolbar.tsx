@@ -14,7 +14,10 @@ import { GenerateGraphDialog } from "./generate-graph-dialog.tsx";
 import { ShortcutsDialog } from "./shortcuts-dialog.tsx";
 
 export function CanvasToolbar() {
-  const { undo, redo, pastStates, futureStates } = useStore(useEditorStore.temporal);
+  const undo = useStore(useEditorStore.temporal, (state) => state.undo);
+  const redo = useStore(useEditorStore.temporal, (state) => state.redo);
+  const canUndo = useStore(useEditorStore.temporal, (state) => state.pastStates.length > 0);
+  const canRedo = useStore(useEditorStore.temporal, (state) => state.futureStates.length > 0);
   const importInput = useRef<HTMLInputElement>(null);
   const metadata = useEditorStore((state) => state.metadata);
   const cannotAddNode = nodeBlockedReason(metadata);
@@ -151,7 +154,7 @@ export function CanvasToolbar() {
       <ButtonGroup>
         <GroupButton
           onClick={() => undo()}
-          disabled={pastStates.length === 0}
+          disabled={!canUndo}
           title="Undo (Ctrl+Z)"
           aria-label="Undo"
         >
@@ -159,7 +162,7 @@ export function CanvasToolbar() {
         </GroupButton>
         <GroupButton
           onClick={() => redo()}
-          disabled={futureStates.length === 0}
+          disabled={!canRedo}
           title="Redo (Ctrl+Shift+Z)"
           aria-label="Redo"
         >

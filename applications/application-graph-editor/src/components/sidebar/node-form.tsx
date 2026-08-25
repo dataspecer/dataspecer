@@ -58,12 +58,10 @@ export function NodeForm({ node }: { node: ApplicationNode }) {
   const generatedId =
     aggregateName !== undefined && isGeneratedNodeId(node.id, aggregateName, node.operation);
 
-  const applyWithId = (
-    patch: Partial<Omit<ApplicationNode, "id">>,
-    aggregateIri: string,
-    operation: Operation,
-  ) => {
+  const applyWithId = (patch: Partial<Omit<ApplicationNode, "id">>) => {
     const { graph } = useEditorStore.getState();
+    const aggregateIri = patch.aggregateIri ?? node.aggregateIri;
+    const operation = patch.operation ?? node.operation;
     const name = nameOf(aggregateIri);
     if (graph && name && generatedId) {
       renameNode(node.id, nextNodeId(graph, name, operation, node.id), patch);
@@ -75,29 +73,21 @@ export function NodeForm({ node }: { node: ApplicationNode }) {
   // Association paths belong to the aggregate, so a different aggregate invalidates them. The
   // stale sections would otherwise stay in the config while the form no longer shows them.
   const changeAggregate = (aggregateIri: string) => {
-    applyWithId(
-      { aggregateIri, config: normalizeConfig({ pageTitle: node.config?.pageTitle }) },
-      aggregateIri,
-      node.operation,
-    );
+    applyWithId({ aggregateIri, config: normalizeConfig({ pageTitle: node.config?.pageTitle }) });
   };
 
   // Association kinds are meaningful on Create and Update nodes, delete policies on Delete
   // nodes. Switching the operation drops the sections the new operation cannot have.
   const changeOperation = (operation: Operation) => {
     const keepAssociations = operation === Operation.Create || operation === Operation.Update;
-    applyWithId(
-      {
-        operation,
-        config: normalizeConfig({
-          pageTitle: node.config?.pageTitle,
-          associations: keepAssociations ? node.config?.associations : undefined,
-          delete: operation === Operation.Delete ? node.config?.delete : undefined,
-        }),
-      },
-      node.aggregateIri,
+    applyWithId({
       operation,
-    );
+      config: normalizeConfig({
+        pageTitle: node.config?.pageTitle,
+        associations: keepAssociations ? node.config?.associations : undefined,
+        delete: operation === Operation.Delete ? node.config?.delete : undefined,
+      }),
+    });
   };
 
   return (

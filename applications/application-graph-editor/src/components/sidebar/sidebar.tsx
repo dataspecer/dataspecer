@@ -59,7 +59,7 @@ export function Sidebar({ graph }: { graph: ApplicationGraph }) {
         subtitle={node.id}
         level={violationLevel(validation, "node", node.id)}
         action={<NodeIdReset node={node} />}
-        onClose={() => useEditorStore.getState().requestSelect("")}
+        onClose={() => useEditorStore.getState().requestSelect(null)}
       />
     );
     content = <FormScroll>{<NodeForm node={node} />}</FormScroll>;
@@ -69,7 +69,7 @@ export function Sidebar({ graph }: { graph: ApplicationGraph }) {
         title="Edge"
         subtitle={edge.id}
         level={violationLevel(validation, "edge", edge.id)}
-        onClose={() => useEditorStore.getState().requestSelect("")}
+        onClose={() => useEditorStore.getState().requestSelect(null)}
       />
     );
     content = <FormScroll>{<EdgeForm edge={edge} />}</FormScroll>;

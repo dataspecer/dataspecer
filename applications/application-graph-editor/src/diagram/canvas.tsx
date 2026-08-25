@@ -302,7 +302,7 @@ function CanvasFlow() {
 /** Marks one element as the only selected one, leaving the objects of the others alone. */
 function withSelection<Element extends { id: string; selected?: boolean }>(
   elements: Element[],
-  id: string,
+  id: string | null,
 ): Element[] {
   return elements.map((element) =>
     Boolean(element.selected) === (element.id === id)

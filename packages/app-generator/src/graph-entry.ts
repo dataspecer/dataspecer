@@ -27,6 +27,7 @@ export {
   isValidTransitionOperation,
 } from './validation/rules/edge-rules.ts';
 export { FieldKind } from './metadata/types.ts';
+export { toAppName } from './utils/naming.ts';
 export type {
   AggregateFieldMetadata,
   AggregateMetadata,

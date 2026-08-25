@@ -34,7 +34,6 @@ export function JsonPanel({ graph }: { graph: ApplicationGraph }) {
   const draft = editing?.text ?? json;
   const [error, setError] = useState<string | null>(null);
   const editorRef = useRef<{ editor: monaco.editor.IStandaloneCodeEditor; monaco: Monaco }>(null);
-  const applyRef = useRef<() => void>(() => {});
   // the editor mounts asynchronously, the marker effect has to run again once it is there
   const [editorMounted, setEditorMounted] = useState(false);
 
@@ -89,13 +88,30 @@ export function JsonPanel({ graph }: { graph: ApplicationGraph }) {
     return exists ? target : null;
   };
 
+  const apply = useCallback(() => {
+    const currentDraft = useEditorStore.getState().jsonDraft;
+    if (currentDraft === null) {
+      return;
+    }
+    applyGraphJson(currentDraft.text)
+      .then((result) => {
+        setError(result.error);
+        if (result.applied) {
+          // the view follows the graph again, which also reformats a differently written draft
+          setDraft(null);
+        }
+      })
+      .catch((caught: unknown) => {
+        console.error(caught);
+        setError(caught instanceof Error ? caught.message : String(caught));
+      });
+  }, [setDraft]);
+
   const onMount: OnMount = (editor, instance) => {
     editorRef.current = { editor, monaco: instance };
     setEditorMounted(true);
     // Ctrl+S applies the draft
-    editor.addCommand(instance.KeyMod.CtrlCmd | instance.KeyCode.KeyS, () => {
-      applyRef.current();
-    });
+    editor.addCommand(instance.KeyMod.CtrlCmd | instance.KeyCode.KeyS, apply);
     // The cursor highlights its element on the canvas, and a click also brings it into view.
     // Keyboard moves only highlight, so typing does not pan the canvas.
     editor.onDidChangeCursorPosition((event) => {
@@ -111,25 +127,6 @@ export function JsonPanel({ graph }: { graph: ApplicationGraph }) {
       }
     });
   };
-
-  const apply = useCallback(() => {
-    applyGraphJson(draft)
-      .then((result) => {
-        setError(result.error);
-        if (result.applied) {
-          // the view follows the graph again, which also reformats a differently written draft
-          setDraft(null);
-        }
-      })
-      .catch((caught: unknown) => {
-        console.error(caught);
-        setError(caught instanceof Error ? caught.message : String(caught));
-      });
-  }, [draft, setDraft]);
-
-  useEffect(() => {
-    applyRef.current = apply;
-  }, [apply]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">

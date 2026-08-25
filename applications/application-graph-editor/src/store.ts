@@ -27,6 +27,11 @@ export interface ElementRequest {
   seq: number;
 }
 
+interface SelectionRequest {
+  id: string | null;
+  seq: number;
+}
+
 /** The part of the state that undo and redo travel through. */
 interface UndoableState {
   graph: ApplicationGraph | null;
@@ -66,7 +71,7 @@ interface EditorState extends UndoableState {
   /** The last computed violations with the graph they belong to. Null until the first pass. */
   validation: ValidationSnapshot | null;
   focusRequest: ElementRequest | null;
-  selectRequest: ElementRequest | null;
+  selectRequest: SelectionRequest | null;
   fitRequest: number;
   selectedNodes: string[];
   selectedEdges: string[];
@@ -92,7 +97,7 @@ interface EditorState extends UndoableState {
   setGenerationViolations: (violations: Violation[] | null) => void;
   setValidation: (validation: ValidationSnapshot) => void;
   requestFocus: (id: string) => void;
-  requestSelect: (id: string) => void;
+  requestSelect: (id: string | null) => void;
   requestFitView: () => void;
   setSelectedElements: (nodes: string[], edges: string[]) => void;
 
@@ -153,7 +158,7 @@ function withGraph(
   return { graph: mutate(state.graph), generationViolations: null };
 }
 
-function selectRequestFor(state: EditorState, id: string): ElementRequest {
+function selectRequestFor(state: EditorState, id: string | null): SelectionRequest {
   return { id, seq: (state.selectRequest?.seq ?? 0) + 1 };
 }
 
