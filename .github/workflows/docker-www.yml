@@ -36,6 +36,7 @@ jobs:
 
   notify-deploy-webhook:
     name: Notify deploy webhook
+    continue-on-error: true
     needs: build-and-push-image
     runs-on: ubuntu-latest
     steps:
@@ -56,5 +57,5 @@ jobs:
           curl -fsS -X POST "$DEPLOY_WEBHOOK_URL" \
             -H "Authorization: Bearer $DEPLOY_WEBHOOK_TOKEN" \
             -H "Content-Type: application/json" \
-            -d '{"image":"www","tag":"latest"}'
+            -d '{"image":"${{env.REGISTRY}}/${{env.IMAGE_NAME}}:latest"}'
 
