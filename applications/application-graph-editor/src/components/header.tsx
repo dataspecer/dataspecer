@@ -5,6 +5,8 @@ import { useViolationsBySeverity } from "../hooks/use-validation.ts";
 import { downloadBlob } from "../utils/download-blob.ts";
 import { archiveFileName } from "../graph/file-names.ts";
 import { useEditorStore } from "../store.ts";
+import { shouldShowGenerateHelp } from "../utils/generate-help.ts";
+import { GenerateHelpDialog } from "./generate-help-dialog.tsx";
 
 export function EditorHeader({
   graph,
@@ -15,6 +17,7 @@ export function EditorHeader({
   flushAutosave: () => Promise<void>;
 }) {
   const [generating, setGenerating] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const { errors, warnings } = useViolationsBySeverity();
   const empty = graph.nodes.length === 0;
 
@@ -34,6 +37,9 @@ export function EditorHeader({
       const result = await generateApplication(resourceIri);
       if (result.ok) {
         downloadBlob(result.archive, archiveFileName(current));
+        if (shouldShowGenerateHelp()) {
+          setHelpOpen(true);
+        }
       } else {
         // some failures only show up on the server, such as metadata resolution
         setGenerationViolations(result.violations);
@@ -86,6 +92,7 @@ export function EditorHeader({
       >
         {generating ? "Generating..." : "Generate application"}
       </button>
+      <GenerateHelpDialog open={helpOpen} onClose={() => setHelpOpen(false)} />
     </header>
   );
 }

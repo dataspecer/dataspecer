@@ -138,7 +138,7 @@ application.post(apiBasename + "/experimental/lightweight-owl-from-simplified.tt
 application.get(apiBasename + "/generate", getZip);
 application.get(apiBasename + "/experimental/output.zip", getZip);
 application.get(apiBasename + "/preview/{*splat}", getSingleFile);
-// todo make post
+
 application.get(apiBasename + "/app-generator/generate", generateApplicationByModelId);
 application.get(apiBasename + "/app-generator/metadata", getSpecificationMetadataForEditor);
 
