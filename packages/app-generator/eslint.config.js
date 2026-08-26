@@ -59,7 +59,7 @@ export default defineConfig([
         extends: [
             js.configs.recommended,
             tseslint.configs.recommendedTypeChecked,
-            reactHooks.configs['recommended-latest'],
+            reactHooks.configs.flat.recommended,
         ],
         languageOptions: {
             globals: {
@@ -81,6 +81,7 @@ export default defineConfig([
                 },
             ],
             'react-hooks/exhaustive-deps': 'error',
+            'react-hooks/set-state-in-effect': 'off',
         },
     },
 

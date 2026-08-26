@@ -8,7 +8,7 @@ import type { ApplicationGraph } from "@dataspecer/app-generator/graph";
 describe("createAutosaveQueue", () => {
   it("persists a snapshot passed to flush without a prior schedule", async () => {
     const persist = vi.fn<(_snapshot: AutosaveSnapshot) => Promise<void>>(
-      async () => undefined,
+      () => Promise.resolve(),
     );
     const queue = createAutosaveQueue(persist, vi.fn());
     const current = snapshot(graph("current"));
@@ -21,7 +21,7 @@ describe("createAutosaveQueue", () => {
 
   it("coalesces pending snapshots to the newest state", async () => {
     const persist = vi.fn<(_snapshot: AutosaveSnapshot) => Promise<void>>(
-      async () => undefined,
+      () => Promise.resolve(),
     );
     const queue = createAutosaveQueue(persist, vi.fn());
     const first = snapshot(graph("first"));
@@ -65,9 +65,7 @@ describe("createAutosaveQueue", () => {
   it("reports a failed write without retrying the unchanged snapshot", async () => {
     const error = new Error("save failed");
     const persist = vi.fn<(_snapshot: AutosaveSnapshot) => Promise<void>>(
-      async () => {
-        throw error;
-      },
+      () => Promise.reject(error),
     );
     const states: string[] = [];
     const queue = createAutosaveQueue(persist, (state) => states.push(state));
@@ -110,10 +108,10 @@ describe("createAutosaveQueue", () => {
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
     try {
       const error = new Error("first save failed");
-      const persist = vi.fn<(_snapshot: AutosaveSnapshot) => Promise<void>>(async () => {
-        if (persist.mock.calls.length === 1) {
-          throw error;
-        }
+      let attempts = 0;
+      const persist = vi.fn<(_snapshot: AutosaveSnapshot) => Promise<void>>(() => {
+        attempts += 1;
+        return attempts === 1 ? Promise.reject(error) : Promise.resolve();
       });
       const states: string[] = [];
       const queue = createAutosaveQueue(persist, (state) => states.push(state), 1);
@@ -162,7 +160,7 @@ describe("createAutosaveQueue", () => {
 
   it("refuses a graph the editor could not load again", async () => {
     const persist = vi.fn<(_snapshot: AutosaveSnapshot) => Promise<void>>(
-      async () => undefined,
+      () => Promise.resolve(),
     );
     const setSaveState = vi.fn();
     const queue = createAutosaveQueue(persist, setSaveState);
@@ -175,7 +173,7 @@ describe("createAutosaveQueue", () => {
 
   it("persists again once the graph is valid", async () => {
     const persist = vi.fn<(_snapshot: AutosaveSnapshot) => Promise<void>>(
-      async () => undefined,
+      () => Promise.resolve(),
     );
     const setSaveState = vi.fn();
     const queue = createAutosaveQueue(persist, setSaveState);

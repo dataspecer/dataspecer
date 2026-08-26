@@ -9,9 +9,9 @@ import { ViolationCode } from '../src/validation/violation-codes.ts';
 import { ViolationSeverity } from '../src/validation/types.ts';
 import { generateApp } from '../src/generate-app.ts';
 import {
-  AssociationKind,
   type ApplicationGraph,
   type ApplicationNode,
+  AssociationKind,
   DatasourceType,
   EdgeType,
   Operation,
@@ -200,12 +200,12 @@ describe('generateApp', { timeout: 30_000 }, () => {
     expect(Object.keys(result.files)).toContain('src/routes.tsx');
     // navigation is emitted into the page it belongs to, as source rather than quoted JSON
     expect(result.files['src/modules/book-list/book-read-list-page.tsx']).toContain(
-      'targetPath: "/book-read-detail"'
+      "targetPath: '/book-read-detail'"
     );
     expect(result.files['src/modules/book-list/book-read-list-page.tsx']).not.toContain(
       '"targetPath":'
     );
-    expect(result.files['src/modules/book-detail/descriptor.ts']).toContain('path: "chapters"');
+    expect(result.files['src/modules/book-detail/descriptor.ts']).toContain("path: 'chapters'");
     expect(result.files['src/modules/book-detail/descriptor.ts']).not.toContain('"path":');
     expect(result.generationModel?.operations).toHaveLength(2);
   });
@@ -397,7 +397,7 @@ describe('generateApp', { timeout: 30_000 }, () => {
       join(outputDirectory, 'src/modules/link/ldkit-schema.ts'),
       'utf8'
     );
-    expect(schema).toContain('import { ldkit, xsd } from "ldkit/namespaces";');
+    expect(schema).toContain("import { ldkit, xsd } from 'ldkit/namespaces';");
     expect(schema).toContain('xsd.base64Binary');
     expect(schema).toContain('specializationWrites:');
 

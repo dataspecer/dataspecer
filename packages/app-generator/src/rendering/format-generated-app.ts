@@ -27,5 +27,5 @@ async function formatGeneratedFile(path: string, content: string): Promise<strin
   if (!FORMATTABLE_EXTENSIONS.has(extname(path))) {
     return content;
   }
-  return format(content, { filepath: path, printWidth: 100 });
+  return format(content, { filepath: path, printWidth: 100, singleQuote: true });
 }
