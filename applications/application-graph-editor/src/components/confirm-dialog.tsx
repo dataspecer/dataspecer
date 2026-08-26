@@ -1,6 +1,6 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { AlertTriangle } from "lucide-react";
-import { useEditorStore } from "../store.ts";
+import { useEditorStore } from "@/store.ts";
 
 /** Answers the pending confirmation request, if there is one. */
 export function ConfirmDialog() {

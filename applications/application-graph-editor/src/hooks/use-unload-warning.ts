@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useEditorStore } from "../store.ts";
+import { useEditorStore } from "@/store.ts";
 
 /**
  * Warns before the tab closes while there is work that would be erased: unsaved JSON draft or graph changes autosave

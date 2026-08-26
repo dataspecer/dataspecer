@@ -1,6 +1,6 @@
 import ELK from "elkjs/lib/elk.bundled.js";
 import type { ApplicationGraph } from "@dataspecer/app-generator/graph";
-import type { NodePositions } from "../store.ts";
+import type { NodePositions } from "@/store.ts";
 import { NODE_SIZE } from "./node-size.ts";
 
 const elk = new ELK();

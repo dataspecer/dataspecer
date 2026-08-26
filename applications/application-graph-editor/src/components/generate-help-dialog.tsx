@@ -1,7 +1,7 @@
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { CheckCircle2 } from "lucide-react";
-import { hideGenerateHelp } from "../utils/generate-help.ts";
+import { hideGenerateHelp } from "@/utils/generate-help.ts";
 
 /** Explains how to run the downloaded application archive. */
 export function GenerateHelpDialog({ open, onClose }: { open: boolean; onClose: () => void }) {

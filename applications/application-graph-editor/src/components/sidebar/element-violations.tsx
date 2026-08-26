@@ -1,6 +1,6 @@
 import { ViolationSeverity } from "@dataspecer/app-generator/graph";
-import { useValidation } from "../../hooks/use-validation.ts";
-import { violationsFor } from "../../validation/violations.ts";
+import { useValidation } from "@/hooks/use-validation.ts";
+import { violationsFor } from "@/validation/violations.ts";
 import { ViolationItem } from "./violation-item.tsx";
 
 /**

@@ -9,8 +9,8 @@ import {
   type SpecificationMetadata,
   type Violation,
 } from "@dataspecer/app-generator/graph";
-import type { GraphElementRef } from "../graph/graph-element-ref.ts";
-import { connectionEdge } from "../graph/mutations.ts";
+import type { GraphElementRef } from "@/graph/graph-element-ref.ts";
+import { connectionEdge } from "@/graph/mutations.ts";
 
 /**
  * Every violation the editor can find on its own. Syntax comes first, because the later rules

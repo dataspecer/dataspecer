@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
-import { useEditorStore } from "../store.ts";
+import { useEditorStore } from "@/store.ts";
 import { OPERATION_BADGE, OPERATION_LABELS } from "./operation-style.ts";
 import type { OperationFlowNode } from "./graph-to-flow.ts";
 import { NODE_SIZE } from "./node-size.ts";

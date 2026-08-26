@@ -8,7 +8,7 @@ import {
   type ApplicationNodeConfig,
 } from "@dataspecer/app-generator/graph";
 import { omit } from "es-toolkit";
-import { Hint } from "../hint.tsx";
+import { Hint } from "@/components/hint.tsx";
 
 interface ConfigEditorProps {
   node: ApplicationNode;

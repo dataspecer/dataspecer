@@ -2,11 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import MonacoEditor, { type Monaco, type OnMount } from "@monaco-editor/react";
 import type * as monaco from "monaco-editor";
 import { applicationGraphSchema, type ApplicationGraph } from "@dataspecer/app-generator/graph";
-import { applyGraphJson } from "../../graph/apply-json.ts";
-import { graphElementAtOffset } from "../../graph/json-cursor.ts";
-import { useEditorStore } from "../../store.ts";
-import { useValidation } from "../../hooks/use-validation.ts";
-import { violationRanges } from "../../validation/violation-ranges.ts";
+import { applyGraphJson } from "@/graph/apply-json.ts";
+import { graphElementAtOffset } from "@/graph/json-cursor.ts";
+import { useEditorStore } from "@/store.ts";
+import { useValidation } from "@/hooks/use-validation.ts";
+import { violationRanges } from "@/validation/violation-ranges.ts";
 
 const VIOLATION_MARKER_OWNER = "application-graph-violations";
 

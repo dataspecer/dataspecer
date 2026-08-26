@@ -4,8 +4,8 @@ import type {
   SpecificationMetadata,
   Violation,
 } from "@dataspecer/app-generator/graph";
-import { checkGraph } from "../graph/parse-graph.ts";
-import type { NodePositions } from "../store.ts";
+import { checkGraph } from "@/graph/parse-graph.ts";
+import type { NodePositions } from "@/store.ts";
 
 const backendUrl = import.meta.env.VITE_BACKEND as string;
 

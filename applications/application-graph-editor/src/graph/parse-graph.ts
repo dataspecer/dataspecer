@@ -28,6 +28,6 @@ export function parseGraph(text: string): GraphCheckResult {
   try {
     return checkGraph(JSON.parse(text));
   } catch (caught) {
-    return { error: `Not valid JSON: ${caught instanceof Error ? caught.message : caught}` };
+    return { error: `Not valid JSON: ${caught instanceof Error ? caught.message : String(caught)}` };
   }
 }

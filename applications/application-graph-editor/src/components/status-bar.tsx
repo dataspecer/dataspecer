@@ -1,6 +1,6 @@
 import { AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
-import { useViolationsBySeverity } from "../hooks/use-validation.ts";
-import { useEditorStore, type SaveState } from "../store.ts";
+import { useViolationsBySeverity } from "@/hooks/use-validation.ts";
+import { useEditorStore, type SaveState } from "@/store.ts";
 
 export function StatusBar() {
   const saveState = useEditorStore((state) => state.saveState);

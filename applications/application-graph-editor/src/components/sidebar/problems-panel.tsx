@@ -3,9 +3,9 @@ import {
   type ApplicationGraph,
   type Violation,
 } from "@dataspecer/app-generator/graph";
-import { useValidation, useViolationsBySeverity } from "../../hooks/use-validation.ts";
-import { useEditorStore } from "../../store.ts";
-import { violationTarget } from "../../validation/violations.ts";
+import { useValidation, useViolationsBySeverity } from "@/hooks/use-validation.ts";
+import { useEditorStore } from "@/store.ts";
+import { violationTarget } from "@/validation/violations.ts";
 import { ViolationItem } from "./violation-item.tsx";
 
 /**

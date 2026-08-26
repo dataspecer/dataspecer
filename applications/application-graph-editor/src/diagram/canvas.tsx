@@ -19,12 +19,12 @@ import {
   type OnSelectionChangeParams,
 } from "@xyflow/react";
 import { isEqual } from "es-toolkit";
-import { connectionEdge } from "../graph/mutations.ts";
-import type { GraphElementRef } from "../graph/graph-element-ref.ts";
-import { newNode, nodeBlockedReason } from "../graph/new-node.ts";
-import { useEditorStore } from "../store.ts";
-import { useValidation } from "../hooks/use-validation.ts";
-import { connectableTargets, flaggedIds } from "../validation/violations.ts";
+import { connectionEdge } from "@/graph/mutations.ts";
+import type { GraphElementRef } from "@/graph/graph-element-ref.ts";
+import { newNode, nodeBlockedReason } from "@/graph/new-node.ts";
+import { useEditorStore } from "@/store.ts";
+import { useValidation } from "@/hooks/use-validation.ts";
+import { connectableTargets, flaggedIds } from "@/validation/violations.ts";
 import { CanvasContextMenu } from "./canvas-context-menu.tsx";
 import { CanvasToolbar } from "./canvas-toolbar.tsx";
 import { ConnectionLine } from "./connection-line.tsx";

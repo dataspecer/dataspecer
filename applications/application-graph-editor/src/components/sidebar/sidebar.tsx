@@ -2,9 +2,9 @@ import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from "
 import { clamp } from "es-toolkit";
 import { AlertTriangle, ChevronsLeft, X, XCircle } from "lucide-react";
 import type { ApplicationGraph } from "@dataspecer/app-generator/graph";
-import { useEditorStore, type SidebarTab } from "../../store.ts";
-import { useValidation, useViolationsBySeverity } from "../../hooks/use-validation.ts";
-import { bySeverity, violationsFor, type ValidationSnapshot } from "../../validation/violations.ts";
+import { useEditorStore, type SidebarTab } from "@/store.ts";
+import { useValidation, useViolationsBySeverity } from "@/hooks/use-validation.ts";
+import { bySeverity, violationsFor, type ValidationSnapshot } from "@/validation/violations.ts";
 import { EdgeForm } from "./edge-form.tsx";
 import { JsonPanel } from "./json-panel.tsx";
 import { NodeIdReset } from "./node-id-reset.tsx";

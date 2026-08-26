@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import { EdgeType } from "@dataspecer/app-generator/graph";
-import { useEditorStore } from "../store.ts";
-import type { GraphElementRef } from "../graph/graph-element-ref.ts";
+import { useEditorStore } from "@/store.ts";
+import type { GraphElementRef } from "@/graph/graph-element-ref.ts";
 
 export function CanvasContextMenu({
   target,

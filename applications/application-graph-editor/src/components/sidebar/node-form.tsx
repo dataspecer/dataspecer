@@ -3,10 +3,10 @@ import {
   type ApplicationNode,
   type ApplicationNodeConfig,
 } from "@dataspecer/app-generator/graph";
-import { isGeneratedNodeId, nextNodeId } from "../../graph/mutations.ts";
-import { useEditorStore } from "../../store.ts";
-import { aggregateLink } from "../../utils/specification-links.ts";
-import { ExternalLink } from "../external-link.tsx";
+import { isGeneratedNodeId, nextNodeId } from "@/graph/mutations.ts";
+import { useEditorStore } from "@/store.ts";
+import { aggregateLink } from "@/utils/specification-links.ts";
+import { ExternalLink } from "@/components/external-link.tsx";
 import { AssociationEditor, CascadeEditor } from "./config-editors.tsx";
 import { ElementViolations } from "./element-violations.tsx";
 import { FormField, inputClass } from "./form-field.tsx";

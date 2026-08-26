@@ -8,7 +8,7 @@
     "build": "tsc && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --pass-with-no-tests"
   },
   "dependencies": {
     "@dataspecer/app-generator": "*",
@@ -25,26 +25,25 @@
     "jsonc-parser": "^3.3.1",
     "lucide-react": "^0.323.0",
     "monaco-editor": "^0.49.0",
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "zundo": "^2.3.0",
     "zustand": "^4.5.7"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^25.5.2",
-    "@types/react": "^19.0.7",
-    "@types/react-dom": "^19.0.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^5.1.1",
-    "eslint": "^10.1.0",
+    "eslint": "^10.3.0",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
-    "globals": "^17.4.0",
+    "globals": "^17.6.0",
     "tailwindcss": "^4.1.17",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.58.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.59.3",
     "vite": "^7.3.1",
-    "vitest": "^4.1.6",
-    "zod-validation-error": "^4.0.0"
+    "vitest": "^4.1.6"
   }
 }

@@ -1,7 +1,7 @@
 import { DatasourceType, type ApplicationGraph } from "@dataspecer/app-generator/graph";
-import { useEditorStore } from "../../store.ts";
-import { specificationLink } from "../../utils/specification-links.ts";
-import { ExternalLink } from "../external-link.tsx";
+import { useEditorStore } from "@/store.ts";
+import { specificationLink } from "@/utils/specification-links.ts";
+import { ExternalLink } from "@/components/external-link.tsx";
 import { FormField, inputClass } from "./form-field.tsx";
 
 export function SettingsForm({ graph }: { graph: ApplicationGraph }) {

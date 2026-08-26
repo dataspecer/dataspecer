@@ -1,8 +1,8 @@
 import { useRef, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import type { Operation } from "@dataspecer/app-generator/graph";
-import { skeletonGraph, SKELETON_OPERATIONS } from "../graph/generate-graph.ts";
-import { useEditorStore } from "../store.ts";
+import { skeletonGraph, SKELETON_OPERATIONS } from "@/graph/generate-graph.ts";
+import { useEditorStore } from "@/store.ts";
 import { autoLayout } from "./auto-layout.ts";
 import { OPERATION_LABELS } from "./operation-style.ts";
 

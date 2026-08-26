@@ -1,5 +1,5 @@
-import { autoLayout } from "../diagram/auto-layout.ts";
-import { useEditorStore } from "../store.ts";
+import { autoLayout } from "@/diagram/auto-layout.ts";
+import { useEditorStore } from "@/store.ts";
 import { parseGraph } from "./parse-graph.ts";
 
 export interface ApplyGraphResult {

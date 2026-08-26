@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useEditorStore } from "../store.ts";
+import { useEditorStore } from "@/store.ts";
 
 /** Binds Ctrl/Cmd+Z to undo and Ctrl/Cmd+Shift+Z to redo on the graph. */
 export function useUndoRedoShortcuts(): void {

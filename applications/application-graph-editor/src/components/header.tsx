@@ -1,11 +1,11 @@
 import { useState } from "react";
 import type { ApplicationGraph } from "@dataspecer/app-generator/graph";
-import { generateApplication } from "../backend/client.ts";
-import { useViolationsBySeverity } from "../hooks/use-validation.ts";
-import { downloadBlob } from "../utils/download-blob.ts";
-import { archiveFileName } from "../graph/file-names.ts";
-import { useEditorStore } from "../store.ts";
-import { shouldShowGenerateHelp } from "../utils/generate-help.ts";
+import { generateApplication } from "@/backend/client.ts";
+import { useViolationsBySeverity } from "@/hooks/use-validation.ts";
+import { downloadBlob } from "@/utils/download-blob.ts";
+import { archiveFileName } from "@/graph/file-names.ts";
+import { useEditorStore } from "@/store.ts";
+import { shouldShowGenerateHelp } from "@/utils/generate-help.ts";
 import { GenerateHelpDialog } from "./generate-help-dialog.tsx";
 
 export function EditorHeader({

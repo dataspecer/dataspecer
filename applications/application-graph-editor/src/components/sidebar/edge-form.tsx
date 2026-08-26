@@ -1,6 +1,6 @@
 import { ArrowRight } from "lucide-react";
 import { EdgeType, type ApplicationEdge } from "@dataspecer/app-generator/graph";
-import { useEditorStore } from "../../store.ts";
+import { useEditorStore } from "@/store.ts";
 import { ElementViolations } from "./element-violations.tsx";
 import { FormField, inputClass } from "./form-field.tsx";
 

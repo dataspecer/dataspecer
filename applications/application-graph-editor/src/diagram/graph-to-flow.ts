@@ -1,9 +1,9 @@
 import { MarkerType, type Edge, type Node } from "@xyflow/react";
 import { isEqual } from "es-toolkit";
 import { EdgeType, type ApplicationGraph, type ApplicationNode } from "@dataspecer/app-generator/graph";
-import type { GraphElementRef } from "../graph/graph-element-ref.ts";
-import type { NodePositions } from "../store.ts";
-import type { FlaggedIds, ViolationLevel } from "../validation/violations.ts";
+import type { GraphElementRef } from "@/graph/graph-element-ref.ts";
+import type { NodePositions } from "@/store.ts";
+import type { FlaggedIds, ViolationLevel } from "@/validation/violations.ts";
 import { parallelEdgeOffsets } from "./edge-geometry.ts";
 
 export type OperationFlowNode = Node<
