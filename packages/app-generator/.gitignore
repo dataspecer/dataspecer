@@ -6,3 +6,4 @@ src/generated/
 !.prettierrc.yaml
 !.prettierignore
 !.prettierrc.eta
+!.gitignore.eta

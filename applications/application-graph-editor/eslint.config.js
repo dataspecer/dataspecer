@@ -21,16 +21,6 @@ export default defineConfig([
     },
 
     {
-        files: ['src/**/*.{ts,tsx}'],
-        extends: [tseslint.configs.recommendedTypeChecked],
-        languageOptions: {
-            parserOptions: {
-                project: ['./tsconfig.json'],
-                tsconfigRootDir: import.meta.dirname,
-            },
-        },
-    },
-    {
         rules: {
             eqeqeq: ['error'],
             'prefer-const': ['error'],

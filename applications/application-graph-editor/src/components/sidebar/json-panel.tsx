@@ -7,6 +7,7 @@ import { graphElementAtOffset } from '@/graph/json-cursor.ts';
 import { useEditorStore } from '@/store.ts';
 import { useValidation } from '@/hooks/use-validation.ts';
 import { violationRanges } from '@/validation/violation-ranges.ts';
+import { errorMessage } from '@/utils/error-message.ts';
 
 const VIOLATION_MARKER_OWNER = 'application-graph-violations';
 
@@ -105,7 +106,7 @@ export function JsonPanel({ graph }: { graph: ApplicationGraph }) {
       })
       .catch((caught: unknown) => {
         console.error(caught);
-        setError(caught instanceof Error ? caught.message : String(caught));
+        setError(errorMessage(caught));
       });
   }, [setDraft]);
 
@@ -159,14 +160,14 @@ export function JsonPanel({ graph }: { graph: ApplicationGraph }) {
         <div className="flex items-center gap-2 border-t border-slate-200 px-3 py-2">
           <button
             type="button"
-            className="cursor-pointer rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700"
+            className="rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700"
             onClick={apply}
           >
             Apply
           </button>
           <button
             type="button"
-            className="cursor-pointer rounded border border-slate-300 px-2 py-1 text-sm text-slate-600 hover:bg-slate-100"
+            className="rounded border border-slate-300 px-2 py-1 text-sm text-slate-600 hover:bg-slate-100"
             onClick={() => {
               setDraft(null);
               setError(null);

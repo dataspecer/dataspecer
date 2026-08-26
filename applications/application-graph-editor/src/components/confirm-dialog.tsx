@@ -31,14 +31,14 @@ export function ConfirmDialog() {
           <div className="mt-4 flex justify-end gap-2">
             <button
               type="button"
-              className="cursor-pointer rounded border border-slate-300 px-3 py-1 text-sm text-slate-600 hover:bg-slate-100"
+              className="rounded border border-slate-300 px-3 py-1 text-sm text-slate-600 hover:bg-slate-100"
               onClick={() => answer(false)}
             >
               Cancel
             </button>
             <button
               type="button"
-              className="cursor-pointer rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700"
+              className="rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700"
               onClick={() => answer(true)}
             >
               {request?.confirmLabel ?? 'Continue'}

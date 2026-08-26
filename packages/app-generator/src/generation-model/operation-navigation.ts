@@ -3,6 +3,7 @@ import { sortBy } from 'es-toolkit';
 import { Operation } from '../graph/types.ts';
 import { FieldKind } from '../metadata/types.ts';
 import { joinFieldPath } from '../utils/field-path.ts';
+import { requireAggregate } from './aggregate-lookup.ts';
 
 import { hasNestedModel } from '../metadata/field-shape.ts';
 import type {
@@ -233,18 +234,6 @@ function operationActionLabel(operation: Operation): string {
     default:
       throw new Error(`Unsupported operation "${String(operation)}".`);
   }
-}
-
-function requireAggregate(
-  aggregateByIri: ReadonlyMap<string, GeneratedAggregateDescriptor>,
-  aggregateIri: string,
-): GeneratedAggregateDescriptor {
-  const aggregate = aggregateByIri.get(aggregateIri);
-  if (!aggregate) {
-    throw new Error(`Missing aggregate metadata for "${aggregateIri}".`);
-  }
-
-  return aggregate;
 }
 
 function requireOperationById(

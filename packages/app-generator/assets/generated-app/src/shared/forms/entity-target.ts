@@ -112,8 +112,7 @@ export function referenceDisplayFields(
   for (const name of ['name', 'title', 'label']) {
     const fallback = fallbackFields.find(
       (candidate) =>
-        candidate.path.toLocaleLowerCase() === name ||
-        candidate.propertyName.toLocaleLowerCase() === name,
+        candidate.path.toLowerCase() === name || candidate.propertyName.toLowerCase() === name,
     );
     if (fallback) {
       return [fallback];

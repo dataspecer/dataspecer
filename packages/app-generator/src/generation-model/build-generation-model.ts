@@ -3,14 +3,11 @@ import { sortBy } from 'es-toolkit';
 import type { ApplicationGraph } from '../graph/types.ts';
 import { DatasourceType, EdgeType } from '../graph/types.ts';
 import type { SpecificationMetadata } from '../metadata/types.ts';
-import type {
-  GeneratedAggregateDescriptor,
-  GeneratedOperationDescriptor,
-  GenerationModel,
-} from './types.ts';
+import type { GeneratedOperationDescriptor, GenerationModel } from './types.ts';
 
 import { toAppName } from '../utils/naming.ts';
 import { buildAggregateDescriptor } from './aggregate-descriptor.ts';
+import { requireAggregate } from './aggregate-lookup.ts';
 import { buildEdgeDescriptor } from './edge-descriptor.ts';
 import { buildOperationDescriptor } from './operation-descriptor.ts';
 import { buildOperationNavigation } from './operation-navigation.ts';
@@ -23,23 +20,21 @@ export function buildGenerationModel(
     buildAggregateDescriptor,
   );
   const aggregateByIri = new Map(aggregates.map((aggregate) => [aggregate.iri, aggregate]));
-  const operationByNodeId = new Map<string, GeneratedOperationDescriptor>();
+  const operationById = new Map<string, GeneratedOperationDescriptor>();
   const operations = sortBy(graph.nodes, [(node) => node.id]).map((node) => {
     const aggregate = requireAggregate(aggregateByIri, node.aggregateIri);
     const operation = buildOperationDescriptor(node, aggregate);
-    operationByNodeId.set(node.id, operation);
+    operationById.set(operation.id, operation);
     return operation;
   });
-
-  const operationById = new Map(operations.map((operation) => [operation.id, operation]));
   const transitionDescriptors = sortBy(
     graph.edges.filter((edge) => edge.type === EdgeType.Transition),
     [(edge) => edge.id],
-  ).map((edge) => buildEdgeDescriptor(edge, operationByNodeId));
+  ).map((edge) => buildEdgeDescriptor(edge, operationById));
   const redirectDescriptors = sortBy(
     graph.edges.filter((edge) => edge.type === EdgeType.Redirect),
     [(edge) => edge.id],
-  ).map((edge) => buildEdgeDescriptor(edge, operationByNodeId));
+  ).map((edge) => buildEdgeDescriptor(edge, operationById));
 
   for (const operation of operations) {
     operation.navigation = buildOperationNavigation(
@@ -68,16 +63,4 @@ export function buildGenerationModel(
     navigation: transitionDescriptors,
     redirects: redirectDescriptors,
   };
-}
-
-function requireAggregate(
-  aggregateByIri: ReadonlyMap<string, GeneratedAggregateDescriptor>,
-  aggregateIri: string,
-): GeneratedAggregateDescriptor {
-  const aggregate = aggregateByIri.get(aggregateIri);
-  if (!aggregate) {
-    throw new Error(`Missing aggregate metadata for "${aggregateIri}".`);
-  }
-
-  return aggregate;
 }

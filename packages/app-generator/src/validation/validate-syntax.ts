@@ -96,7 +96,7 @@ function findDuplicateIdViolations(
   collectionPath: string,
   itemLabel: string,
 ): Violation[] {
-  const seen = new Map<string, number>();
+  const seen = new Set<string>();
   const violations: Violation[] = [];
 
   items.forEach((item, index) => {
@@ -107,9 +107,8 @@ function findDuplicateIdViolations(
       return;
     }
 
-    const firstIndex = seen.get(item.id);
-    if (firstIndex === undefined) {
-      seen.set(item.id, index);
+    if (!seen.has(item.id)) {
+      seen.add(item.id);
       return;
     }
 

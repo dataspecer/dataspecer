@@ -1,6 +1,5 @@
 node_modules
 dist
-dist-ssr
 *.local
 
 logs
@@ -10,4 +9,3 @@ npm-debug.log*
 .DS_Store
 .idea
 .vscode/*
-!.vscode/extensions.json

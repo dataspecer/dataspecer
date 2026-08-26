@@ -5,6 +5,10 @@ html {
     color-scheme: light;
 }
 
+button:not(:disabled) {
+    cursor: pointer;
+}
+
 html,
 body,
 #root {

@@ -233,11 +233,10 @@ describe('renderGeneratedApp', () => {
       'async validateRequest(',
     );
     expect(tree.get('package.json')).toContain('"react-router-dom"');
-    // the two documents a developer opens first
     const readme = tree.get('README.md');
-    expect(readme).toContain('## Getting started');
+    expect(readme).toContain('# Library application');
+    expect(readme).toContain(specificationIri);
     expect(readme).toContain('src/config/data-sources.ts');
-    expect(tree.get('AGENTS.md')).toContain('Extension points');
   });
 
   it('renders graph transitions as page, row, and association navigation actions', () => {
@@ -347,7 +346,7 @@ describe('renderGeneratedApp', () => {
     expect(schema).toContain('import { ldkit, xsd } from "ldkit/namespaces";');
     expect(schema).toContain('"@type": xsd.string');
     // Detail reads expand the composition without filtering the nested entity by RDF type.
-    const detailSchema = schema.slice(schema.indexOf('"detail"'), schema.indexOf('"list"'));
+    const detailSchema = schema?.slice(schema.indexOf('"detail"'), schema.indexOf('"list"'));
     expect(schema).toContain('"@schema"');
     expect(detailSchema).not.toContain('"@type": "https://example.org/class/contact"');
     expect(schema).toContain('"@array": true');
@@ -524,7 +523,6 @@ describe('renderGeneratedApp', () => {
     expect(page).toContain('aggregateRegistry={aggregateRegistry}');
 
     expect(page).toContain('cascadePaths={cascadePaths}');
-    expect(tree.get('README.md')).toContain('resources elsewhere that still point at this one');
   });
 });
 

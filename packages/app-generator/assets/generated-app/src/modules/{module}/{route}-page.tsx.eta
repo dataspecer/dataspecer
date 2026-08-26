@@ -16,7 +16,7 @@ import type { OperationNavigationDescriptor } from "@/shared/navigation/navigati
 import { aggregateRegistry } from "@/config/aggregate-registry.ts";
 <% if (it.page.operation.operation === "Create" || it.page.operation.operation === "Update") { -%>
 import { instanceBaseIri, languages } from "@/config/app-config.ts";
-<% } else if (it.page.operation.operation === "ReadList" || it.page.operation.operation === "ReadDetail") { -%>
+<% } else { -%>
 import { languages } from "@/config/app-config.ts";
 <% } -%>
 import { <%= it.page.descriptorName %> } from "./descriptor.ts";
@@ -92,6 +92,7 @@ export function <%= it.page.componentName %>() {
   return (
     <DeleteForm
       title={title}
+      languages={languages}
       aggregate={<%= it.page.descriptorName %>}
       aggregateRegistry={aggregateRegistry}
       strategy={strategy}

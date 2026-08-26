@@ -165,7 +165,7 @@ function ExpandButton({ onOpen }: { onOpen: () => void }) {
   return (
     <button
       type="button"
-      className="absolute right-2 top-2 z-10 cursor-pointer rounded border border-slate-300 bg-white p-1 text-slate-500 shadow-sm hover:bg-slate-100"
+      className="absolute right-2 top-2 z-10 rounded border border-slate-300 bg-white p-1 text-slate-500 shadow-sm hover:bg-slate-100"
       onClick={onOpen}
       aria-label="Open sidebar"
       title="Open sidebar"
@@ -187,7 +187,7 @@ function Tab({
   return (
     <button
       type="button"
-      className={`inline-flex cursor-pointer items-center gap-1 rounded px-2 py-0.5 text-sm ${
+      className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-sm ${
         active === tab
           ? 'bg-slate-200 font-medium text-slate-800'
           : 'text-slate-500 hover:bg-slate-100'

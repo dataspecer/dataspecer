@@ -28,11 +28,11 @@ export default defineConfig([
 
     {
         files: ['src/**/*.{ts,tsx}'],
-        extends: [tseslint.configs.recommendedTypeChecked],
+        extends: [js.configs.recommended, tseslint.configs.recommendedTypeChecked],
         languageOptions: {
             globals: globals.node,
             parserOptions: {
-                project: ['./tsconfig.json', './tsconfig.spec.json'],
+                project: ['./tsconfig.json'],
                 tsconfigRootDir: import.meta.dirname,
             },
         },
@@ -87,20 +87,9 @@ export default defineConfig([
 
     {
         files: ['tests/**/*.{ts,tsx}'],
-        extends: [tseslint.configs.recommendedTypeChecked],
+        extends: [js.configs.recommended, tseslint.configs.recommendedTypeChecked],
         languageOptions: {
-            globals: {
-                ...globals.node,
-                describe: 'readonly',
-                it: 'readonly',
-                test: 'readonly',
-                expect: 'readonly',
-                beforeEach: 'readonly',
-                afterEach: 'readonly',
-                beforeAll: 'readonly',
-                afterAll: 'readonly',
-                vi: 'readonly',
-            },
+            globals: globals.node,
             parserOptions: {
                 project: ['./tsconfig.spec.json'],
                 tsconfigRootDir: import.meta.dirname,

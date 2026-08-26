@@ -199,7 +199,7 @@ function validateEntity(
     if (!childTarget) {
       issues.push({
         code: ValidationIssueCode.MissingCompositionTarget,
-        message: `Composition target for ${field.label} is unavailable.`,
+        message: `Composition target for "${field.label}" is unavailable.`,
         path: fieldPath,
       });
       continue;

@@ -11,8 +11,6 @@ export function GenerateHelpDialog({ open, onClose }: { open: boolean; onClose: 
     if (hideNextTime) {
       hideGenerateHelp();
     }
-    // the dialog stays mounted, so a later open starts with a clean checkbox again
-    setHideNextTime(false);
     onClose();
   };
 
@@ -53,7 +51,7 @@ export function GenerateHelpDialog({ open, onClose }: { open: boolean; onClose: 
             </label>
             <button
               type="button"
-              className="cursor-pointer rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700"
+              className="rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700"
               onClick={close}
             >
               OK

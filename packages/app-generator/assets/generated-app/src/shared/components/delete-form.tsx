@@ -26,6 +26,7 @@ import {
   errorMessage,
   ValidationIssueCode,
   type ValidationIssue,
+  issueMessageAt,
 } from '../operations/operation-result.ts';
 import { invokeOperation, type OperationStrategy } from '../operations/operation-strategy.ts';
 import type {
@@ -44,6 +45,7 @@ interface DeleteFormProps<TModel extends EntityModel> {
   navigation: OperationNavigationDescriptor;
   cascadePaths: readonly string[];
   id: string;
+  languages: readonly string[];
 }
 
 type IncomingReferenceCheck =
@@ -152,7 +154,7 @@ export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TM
 
   const checking =
     item !== null && (incomingReferenceCheck === null || (cascadePaths.length > 0 && !cascade));
-  const errorFor = (path: string) => issues.find((issue) => issue.path === path)?.message;
+  const errorFor = (path: string) => issueMessageAt(issues, path);
   const generalErrors = issues.filter((issue) => !issue.path);
 
   const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
@@ -228,7 +230,11 @@ export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TM
                     <SummaryRow
                       key={field.path}
                       label={field.label}
-                      value={formatFieldValue(field, (item as EntityRecord)[field.propertyName])}
+                      value={formatFieldValue(
+                        field,
+                        (item as EntityRecord)[field.propertyName],
+                        props.languages,
+                      )}
                     />
                   ))
               : null}

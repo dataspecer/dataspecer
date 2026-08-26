@@ -35,7 +35,7 @@ export function SettingsForm({ graph }: { graph: ApplicationGraph }) {
       <FormField label="Datasource ID">
         <input
           className={inputClass}
-          value={datasource?.id ?? ''}
+          value={datasource.id}
           onChange={(event) =>
             updateGraphMeta({ datasources: [{ ...datasource, id: event.target.value }] })
           }
@@ -45,7 +45,7 @@ export function SettingsForm({ graph }: { graph: ApplicationGraph }) {
       <FormField label="Datasource endpoint">
         <input
           className={inputClass}
-          value={datasource?.endpoint ?? ''}
+          value={datasource.endpoint}
           onChange={(event) =>
             updateGraphMeta({ datasources: [{ ...datasource, endpoint: event.target.value }] })
           }

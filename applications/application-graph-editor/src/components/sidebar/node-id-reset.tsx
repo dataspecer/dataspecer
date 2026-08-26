@@ -29,7 +29,7 @@ export function NodeIdReset({ node }: { node: ApplicationNode }) {
       <Tooltip.Trigger asChild>
         <button
           type="button"
-          className="cursor-pointer rounded p-1 text-slate-500 hover:bg-slate-100"
+          className="rounded p-1 text-slate-500 hover:bg-slate-100"
           onClick={() => renameNode(node.id, generated)}
           aria-label={`Reset the node ID to ${generated}`}
         >

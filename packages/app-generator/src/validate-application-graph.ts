@@ -7,6 +7,7 @@ import { validateGraphSyntax } from './validation/validate-syntax.ts';
 import { DataspecerMetadataMappingError } from './metadata/dataspecer-specification-metadata-provider.ts';
 import type { DataspecerMetadataProvider, SpecificationMetadata } from './metadata/types.ts';
 import { analyzeGraphSemantics } from './validation/analyze-semantics.ts';
+import { errorMessage } from './utils/error-message.ts';
 
 export interface ValidateApplicationGraphInput {
   graph: unknown;
@@ -75,9 +76,7 @@ function metadataResolutionViolations(error: unknown): Violation[] {
   return [
     {
       code: ViolationCode.MetadataResolutionFailed,
-      message: `Could not load metadata for the selected data specification: ${
-        error instanceof Error ? error.message : String(error)
-      }`,
+      message: `Could not load metadata for the selected data specification: ${errorMessage(error)}`,
       severity: ViolationSeverity.Error,
     },
   ];

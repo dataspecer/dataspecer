@@ -28,8 +28,6 @@ describe('generated navigation helpers', () => {
     );
     expect(
       hrefForAction({
-        id: 'create',
-        label: 'Create',
         targetPath: '/book-create',
         requiresEntityId: false,
       }),

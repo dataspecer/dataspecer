@@ -55,6 +55,7 @@ export interface ApplicationEdge {
 }
 
 export interface ApplicationGraph {
+  $schema?: string;
   name: string;
   dataSpecificationIri: string;
   datasources: DatasourceConfig[];

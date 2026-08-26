@@ -32,6 +32,7 @@ import { languageDisplayName } from '../forms/multilingual-value.ts';
 import { useEntityPath } from '../navigation/use-location.ts';
 import { effectiveFields } from '../forms/specialization.ts';
 import type { ValidationIssue } from '../operations/operation-result.ts';
+import { issueMessageAt } from '../operations/operation-result.ts';
 import {
   SPECIALIZATION_IRI_PROPERTY,
   type AggregateDescriptor,
@@ -114,7 +115,7 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
   const updateSelected = (update: (entity: EntityRecord) => EntityRecord) => {
     props.onChange(updateEntityAtPath(props.model, selection, update));
   };
-  const errorAt = (path: string) => props.issues.find((issue) => issue.path === path)?.message;
+  const errorAt = (path: string) => issueMessageAt(props.issues, path);
 
   return (
     <Stack ref={paneTopRef} spacing={2} sx={{ scrollMarginTop: (theme) => theme.spacing(8) }}>

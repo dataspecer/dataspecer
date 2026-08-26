@@ -9,6 +9,7 @@ import { ViolationCode } from '../src/validation/violation-codes.ts';
 import { ViolationSeverity } from '../src/validation/types.ts';
 import { generateApp } from '../src/generate-app.ts';
 import {
+  type ApplicationEdge,
   type ApplicationGraph,
   type ApplicationNode,
   AssociationKind,
@@ -308,8 +309,20 @@ describe('generateApp', { timeout: 30_000 }, () => {
             },
           },
           node('Link.ReadDetail', aggregateIri, Operation.ReadDetail),
+          node('Link.ReadList', aggregateIri, Operation.ReadList),
+          node('Link.Delete', aggregateIri, Operation.Delete),
         ],
-        edges: [],
+        // Transitions and redirects are the only source of navigation code in the generated
+        // pages, so without edges the typecheck never sees it.
+        edges: [
+          transition('list-create', 'Link.ReadList', 'Link.Create'),
+          transition('list-detail', 'Link.ReadList', 'Link.ReadDetail'),
+          transition('detail-update', 'Link.ReadDetail', 'Link.Update'),
+          transition('detail-delete', 'Link.ReadDetail', 'Link.Delete'),
+          redirect('create-detail', 'Link.Create', 'Link.ReadDetail'),
+          redirect('update-detail', 'Link.Update', 'Link.ReadDetail'),
+          redirect('delete-list', 'Link.Delete', 'Link.ReadList'),
+        ],
       }),
       metadataProvider: new FakeDataspecerMetadataProvider({
         [specificationIri]: {
@@ -492,6 +505,14 @@ function node(
     aggregateIri,
     operation,
   };
+}
+
+function transition(id: string, source: string, target: string): ApplicationEdge {
+  return { id, source, target, type: EdgeType.Transition };
+}
+
+function redirect(id: string, source: string, target: string): ApplicationEdge {
+  return { id, source, target, type: EdgeType.Redirect };
 }
 
 async function createTempDirectory(): Promise<string> {

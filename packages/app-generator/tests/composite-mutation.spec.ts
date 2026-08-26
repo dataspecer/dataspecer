@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { DataSource } from '../assets/generated-app/src/shared/data-source/data-source.ts';
 import {
@@ -14,11 +14,18 @@ import { DefaultDeleteStrategy } from '../assets/generated-app/src/shared/operat
 import { ValidationIssueCode } from '../assets/generated-app/src/shared/operations/operation-result.ts';
 import { DefaultUpdateStrategy } from '../assets/generated-app/src/shared/operations/update-strategy.ts';
 import type {
+  EntityModel,
   AggregateDescriptor,
   AggregateDescriptorMap,
   EntityRecord,
   FieldDescriptor,
 } from '../assets/generated-app/src/shared/types/aggregate.ts';
+import type { CompositeMutationStep } from '../assets/generated-app/src/shared/operations/composite-mutation-plan.ts';
+
+/** Narrows a plan step to the upsert member, which carries payload and specializationIri. */
+function upsert(step: CompositeMutationStep | undefined) {
+  return step && step.kind !== 'delete' ? step : undefined;
+}
 
 const officeName: FieldDescriptor = {
   path: 'label',
@@ -140,9 +147,9 @@ describe('composite mutation planning', () => {
       ['create', 'urn:department', []],
       ['create', 'urn:company', []],
     ]);
-    expect(plan[1].payload?.offices).toEqual([{ id: 'urn:office' }]);
-    expect(plan[2].payload?.departments).toEqual([{ id: 'urn:department' }]);
-    expect(plan[2].payload?.partners).toEqual([{ id: 'urn:partner' }]);
+    expect(upsert(plan[1])?.payload.offices).toEqual([{ id: 'urn:office' }]);
+    expect(upsert(plan[2])?.payload.departments).toEqual([{ id: 'urn:department' }]);
+    expect(upsert(plan[2])?.payload.partners).toEqual([{ id: 'urn:partner' }]);
   });
 
   it('carries a child specialization to datasource mutation steps', () => {
@@ -174,7 +181,7 @@ describe('composite mutation planning', () => {
       ],
     });
 
-    expect(plan.find((step) => step.id === 'urn:department')?.specializationIri).toBe(
+    expect(upsert(plan.find((step) => step.id === 'urn:department'))?.specializationIri).toBe(
       'urn:psm:research',
     );
   });
@@ -209,7 +216,7 @@ describe('composite mutation planning', () => {
     };
 
     const plan = buildCompositeUpdatePlan(aggregate, aggregateRegistry, current, stored);
-    const department = plan.find((step) => step.id === 'urn:department');
+    const department = upsert(plan.find((step) => step.id === 'urn:department'));
 
     expect(plan.map((step) => [step.kind, step.id])).toEqual([
       ['update', 'urn:department'],
@@ -288,7 +295,7 @@ describe('composite mutation planning', () => {
       ['delete', 'urn:office:removed'],
       ['delete', 'urn:department:old'],
     ]);
-    expect(plan[1].payload?.departments).toEqual([{ id: 'urn:department:new' }]);
+    expect(upsert(plan[1])?.payload.departments).toEqual([{ id: 'urn:department:new' }]);
   });
 
   it('stops before creating an ancestor when a child write fails', async () => {
@@ -345,7 +352,7 @@ describe('composite mutation planning', () => {
       { id: 'urn:localized', labels },
     );
 
-    expect(plan[0].payload).not.toHaveProperty('labels');
+    expect(upsert(plan[0])?.payload).not.toHaveProperty('labels');
   });
 
   it('keeps multilingual maps intact instead of treating repeated text as an array', () => {
@@ -387,9 +394,9 @@ describe('composite mutation planning', () => {
       { id: 'urn:localized', labels: { cs: ['Starý název'] } },
     );
 
-    expect(update[0].payload?.labels).toEqual({ cs: ['Název'], en: ['Name'] });
-    expect(clear[0].payload?.labels).toBeNull();
-    expect(untouched[0].payload).not.toHaveProperty('labels');
+    expect(upsert(update[0])?.payload.labels).toEqual({ cs: ['Název'], en: ['Name'] });
+    expect(upsert(clear[0])?.payload.labels).toBeNull();
+    expect(upsert(untouched[0])?.payload).not.toHaveProperty('labels');
   });
 
   it('rejects malformed repeating references instead of clearing them', () => {
@@ -472,7 +479,7 @@ describe('composite mutation planning', () => {
         {
           id: 'urn:company',
           departments: [{ id: 'urn:department', offices: [{ id: 'urn:office' }] }],
-        },
+        } as EntityModel,
         ['departments', 'departments.offices'],
       ),
     ).rejects.toThrow('office delete failed');
@@ -501,7 +508,7 @@ describe('composite mutation planning', () => {
       dataSource,
       companyAggregate,
       aggregateRegistry,
-      { id: 'urn:company', departments: [{ id: 'urn:department' }] },
+      { id: 'urn:company', departments: [{ id: 'urn:department' }] } as EntityModel,
       ['departments', 'departments.offices'],
     );
 
@@ -537,7 +544,7 @@ describe('composite mutation planning', () => {
         id: 'urn:company',
         departments: [{ id: 'urn:department:active' }],
         archivedDepartments: [{ id: 'urn:department:archived' }],
-      },
+      } as EntityModel,
       ['departments'],
     );
 
@@ -555,7 +562,7 @@ describe('default composite update strategy', () => {
       aggregateRegistry,
       datasource: { update } as unknown as DataSource,
       params: { id: 'urn:company' },
-      payload: { id: 'urn:company', departments: [] },
+      payload: { id: 'urn:company', departments: [] } as EntityModel,
     });
 
     expect(result).toEqual({

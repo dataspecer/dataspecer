@@ -41,7 +41,7 @@ function collectFiles(directory) {
             const entryPath = join(directory, entry.name);
             return entry.isDirectory() ? collectFiles(entryPath) : [entryPath];
         })
-        .sort((left, right) => left.localeCompare(right));
+        .sort();
 }
 
 function formatRecord(record) {

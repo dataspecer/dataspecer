@@ -9,6 +9,7 @@ import type { FileTreeContent } from './rendering/file-tree.ts';
 import { renderGeneratedApp } from './rendering/render-generated-app.ts';
 import { formatGeneratedApp } from './rendering/format-generated-app.ts';
 import { validateApplicationGraph } from './validate-application-graph.ts';
+import { errorMessage } from './utils/error-message.ts';
 
 export interface GenerateAppInput {
   graph: unknown;
@@ -44,9 +45,7 @@ export async function generateApp(input: GenerateAppInput): Promise<GenerateAppR
       violations: [
         {
           code: ViolationCode.GenerateFormatFailed,
-          message: `Could not format the generated files: ${
-            error instanceof Error ? error.message : String(error)
-          }`,
+          message: `Could not format the generated files: ${errorMessage(error)}`,
           severity: ViolationSeverity.Error,
         },
       ],
@@ -71,9 +70,7 @@ export async function generateApp(input: GenerateAppInput): Promise<GenerateAppR
         violations: [
           {
             code: ViolationCode.GenerateWriteFailed,
-            message: `Could not write the generated files: ${
-              error instanceof Error ? error.message : String(error)
-            }`,
+            message: `Could not write the generated files: ${errorMessage(error)}`,
             severity: ViolationSeverity.Error,
           },
         ],

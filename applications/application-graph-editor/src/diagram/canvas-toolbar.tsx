@@ -22,6 +22,7 @@ import { autoLayout, type LayoutOptions } from './auto-layout.ts';
 import { centeredOn, paneToGraph } from './pane-position.ts';
 import { GenerateGraphDialog } from './generate-graph-dialog.tsx';
 import { ShortcutsDialog } from './shortcuts-dialog.tsx';
+import { errorMessage } from '@/utils/error-message.ts';
 
 export function CanvasToolbar() {
   const undo = useStore(useEditorStore.temporal, (state) => state.undo);
@@ -47,7 +48,7 @@ export function CanvasToolbar() {
       setActionError(error && `Import failed: ${error}`);
     } catch (caught) {
       console.error(caught);
-      setActionError(`Import failed: ${caught instanceof Error ? caught.message : String(caught)}`);
+      setActionError(`Import failed: ${errorMessage(caught)}`);
     }
   };
 
@@ -84,7 +85,7 @@ export function CanvasToolbar() {
       setAllPositions(await autoLayout(graph, options));
     } catch (caught) {
       console.error(caught);
-      setActionError(`Layout failed: ${caught instanceof Error ? caught.message : String(caught)}`);
+      setActionError(`Layout failed: ${errorMessage(caught)}`);
     }
   };
 

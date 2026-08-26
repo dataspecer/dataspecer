@@ -1,4 +1,6 @@
 import { validateGraphSyntax, type ApplicationGraph } from '@dataspecer/app-generator/graph';
+import { errorMessage } from '@/utils/error-message.ts';
+import { countNoun } from '@/utils/count-noun.ts';
 
 export type GraphCheckResult = { graph: ApplicationGraph } | { error: string };
 
@@ -14,7 +16,7 @@ export function checkGraph(data: unknown): GraphCheckResult {
     return {
       error:
         `Not a valid application graph ` +
-        `(${syntax.violations.length} syntax violation(s), first: ${first.message})`,
+        `(${countNoun(syntax.violations.length, 'syntax violation')}, first: ${first.message})`,
     };
   }
   return { graph: syntax.graph };
@@ -26,7 +28,7 @@ export function parseGraph(text: string): GraphCheckResult {
     return checkGraph(JSON.parse(text));
   } catch (caught) {
     return {
-      error: `Not valid JSON: ${caught instanceof Error ? caught.message : String(caught)}`,
+      error: `Not valid JSON: ${errorMessage(caught)}`,
     };
   }
 }

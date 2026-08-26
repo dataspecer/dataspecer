@@ -3,10 +3,12 @@ import type { ApplicationGraph } from '@dataspecer/app-generator/graph';
 import { generateApplication } from '@/backend/client.ts';
 import { useViolationsBySeverity } from '@/hooks/use-validation.ts';
 import { downloadBlob } from '@/utils/download-blob.ts';
+import { errorMessage } from '@/utils/error-message.ts';
 import { archiveFileName } from '@/graph/file-names.ts';
 import { useEditorStore } from '@/store.ts';
 import { shouldShowGenerateHelp } from '@/utils/generate-help.ts';
 import { GenerateHelpDialog } from './generate-help-dialog.tsx';
+import { countNoun } from '@/utils/count-noun.ts';
 
 export function EditorHeader({
   graph,
@@ -48,8 +50,7 @@ export function EditorHeader({
       }
     } catch (caught) {
       console.error(caught);
-      const { setActionError: report } = useEditorStore.getState();
-      report(caught instanceof Error ? caught.message : String(caught));
+      setActionError(errorMessage(caught));
     } finally {
       setGenerating(false);
     }
@@ -59,7 +60,7 @@ export function EditorHeader({
   const onGenerate = async () => {
     if (warnings.length > 0) {
       const confirmed = await useEditorStore.getState().requestConfirm({
-        title: `Generate with ${warnings.length} warning${warnings.length === 1 ? '' : 's'}?`,
+        title: `Generate with ${countNoun(warnings.length, 'warning')}?`,
         message: 'The application may not work as expected.',
         details: warnings.map((violation) => violation.message),
         confirmLabel: 'Generate anyway',
@@ -86,7 +87,7 @@ export function EditorHeader({
           empty
             ? 'Add at least one node before generating.'
             : errors.length > 0
-              ? `${errors.length} error${errors.length === 1 ? '' : 's'} block generation`
+              ? `Generation is blocked by ${countNoun(errors.length, 'error')}.`
               : undefined
         }
       >

@@ -82,7 +82,7 @@ describe('RDF property aliases', () => {
       examples: ['https://example.org/theme/transport', 'https://example.org/eurovoc/1001'],
     });
     const schemas = buildLdkitSchemaBundle(rendered.classIri, rendered.fields);
-    const context = { sources: ['https://example.org/sparql'] };
+    const context = { sources: ['https://example.org/sparql'] as [string] };
     expect(() => createLens(schemas.detail, context)).not.toThrow();
     expect(() => createLens(schemas.list, context)).not.toThrow();
     Object.values(schemas.writes).forEach((schema) => {

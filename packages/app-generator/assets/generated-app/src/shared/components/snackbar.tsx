@@ -11,7 +11,7 @@ interface SnackbarContextValue {
   notify: (message: string, severity?: AlertColor) => void;
 }
 
-const SnackbarContext = createContext<SnackbarContextValue>({ notify: () => undefined });
+const SnackbarContext = createContext<SnackbarContextValue | null>(null);
 
 export function SnackbarProvider(props: { children: ReactNode }) {
   const [notification, setNotification] = useState<Notification | null>(null);
@@ -50,5 +50,9 @@ export function SnackbarProvider(props: { children: ReactNode }) {
 }
 
 export function useSnackbar(): SnackbarContextValue {
-  return useContext(SnackbarContext);
+  const context = useContext(SnackbarContext);
+  if (context === null) {
+    throw new Error('Components that notify must be rendered inside a SnackbarProvider.');
+  }
+  return context;
 }

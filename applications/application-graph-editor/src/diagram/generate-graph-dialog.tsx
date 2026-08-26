@@ -5,6 +5,8 @@ import { skeletonGraph, SKELETON_OPERATIONS } from '@/graph/generate-graph.ts';
 import { useEditorStore } from '@/store.ts';
 import { autoLayout } from './auto-layout.ts';
 import { OPERATION_LABELS } from './operation-style.ts';
+import { errorMessage } from '@/utils/error-message.ts';
+import { countNoun } from '@/utils/count-noun.ts';
 
 const DEFAULT_OPERATIONS: ReadonlySet<Operation> = new Set(SKELETON_OPERATIONS);
 
@@ -36,7 +38,7 @@ export function GenerateGraphDialog({ open, onClose }: { open: boolean; onClose:
     if (graph.nodes.length > 0) {
       const confirmed = await requestConfirm({
         title: 'Replace the graph?',
-        message: `The generated graph replaces the current ${graph.nodes.length} node(s) and ${graph.edges.length} edge(s).`,
+        message: `The generated graph replaces the current ${countNoun(graph.nodes.length, 'node')} and ${countNoun(graph.edges.length, 'edge')}.`,
         confirmLabel: 'Replace',
       });
       if (!confirmed) {
@@ -51,9 +53,7 @@ export function GenerateGraphDialog({ open, onClose }: { open: boolean; onClose:
       onClose();
     } catch (caught) {
       console.error(caught);
-      setActionError(
-        `Generating the graph failed: ${caught instanceof Error ? caught.message : String(caught)}`,
-      );
+      setActionError(`Generating the graph failed: ${errorMessage(caught)}`);
     } finally {
       setBuilding(false);
     }
@@ -86,14 +86,14 @@ export function GenerateGraphDialog({ open, onClose }: { open: boolean; onClose:
               <span className="grow" />
               <button
                 type="button"
-                className="cursor-pointer text-xs text-blue-600 hover:underline"
+                className="text-xs text-blue-600 hover:underline"
                 onClick={() => setExcluded(new Set())}
               >
                 All
               </button>
               <button
                 type="button"
-                className="cursor-pointer text-xs text-blue-600 hover:underline"
+                className="text-xs text-blue-600 hover:underline"
                 onClick={() => setExcluded(new Set(aggregates.map((aggregate) => aggregate.iri)))}
               >
                 None
@@ -147,14 +147,14 @@ export function GenerateGraphDialog({ open, onClose }: { open: boolean; onClose:
           <div className="mt-5 flex justify-end gap-2">
             <button
               type="button"
-              className="cursor-pointer rounded border border-slate-300 px-3 py-1 text-sm text-slate-600 hover:bg-slate-100"
+              className="rounded border border-slate-300 px-3 py-1 text-sm text-slate-600 hover:bg-slate-100"
               onClick={onClose}
             >
               Cancel
             </button>
             <button
               type="button"
-              className="cursor-pointer rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-40"
+              className="rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-40"
               onClick={() => void generate()}
               disabled={building || operations.size === 0 || selectedAggregates.length === 0}
             >

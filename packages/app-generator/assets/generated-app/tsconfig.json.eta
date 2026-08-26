@@ -3,16 +3,14 @@
     "target": "ES2022",
     "useDefineForClassFields": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "allowJs": false,
     "skipLibCheck": true,
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
     "strict": true,
+    "noFallthroughCasesInSwitch": true,
     "verbatimModuleSyntax": true,
     "noImplicitOverride": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "forceConsistentCasingInFileNames": true,
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "resolveJsonModule": true,
@@ -24,6 +22,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src"],
-  "references": []
+  "include": ["src"]
 }

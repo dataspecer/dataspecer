@@ -1,38 +1,37 @@
-import type { Operation } from '../../graph/types.ts';
-import { Operation as OperationValue } from '../../graph/types.ts';
+import { Operation } from '../../graph/types.ts';
 
 export function isValidRedirectOperation(source: Operation, target: Operation): boolean {
-  if (source === OperationValue.Create) {
-    return target === OperationValue.ReadList || target === OperationValue.ReadDetail;
+  if (source === Operation.Create) {
+    return target === Operation.ReadList || target === Operation.ReadDetail;
   }
 
-  if (source === OperationValue.Update) {
-    return target === OperationValue.ReadList || target === OperationValue.ReadDetail;
+  if (source === Operation.Update) {
+    return target === Operation.ReadList || target === Operation.ReadDetail;
   }
 
-  if (source === OperationValue.Delete) {
-    return target === OperationValue.ReadList;
+  if (source === Operation.Delete) {
+    return target === Operation.ReadList;
   }
 
   return false;
 }
 
 export function isValidTransitionOperation(source: Operation, target: Operation): boolean {
-  if (source === OperationValue.ReadList) {
+  if (source === Operation.ReadList) {
     return (
-      target === OperationValue.Create ||
-      target === OperationValue.ReadDetail ||
-      target === OperationValue.Update ||
-      target === OperationValue.Delete
+      target === Operation.Create ||
+      target === Operation.ReadDetail ||
+      target === Operation.Update ||
+      target === Operation.Delete
     );
   }
 
-  if (source === OperationValue.ReadDetail) {
+  if (source === Operation.ReadDetail) {
     return (
-      target === OperationValue.ReadList ||
-      target === OperationValue.ReadDetail ||
-      target === OperationValue.Update ||
-      target === OperationValue.Delete
+      target === Operation.ReadList ||
+      target === Operation.ReadDetail ||
+      target === Operation.Update ||
+      target === Operation.Delete
     );
   }
 
@@ -41,12 +40,12 @@ export function isValidTransitionOperation(source: Operation, target: Operation)
 
 export function requiresSameClassTransition(source: Operation, target: Operation): boolean {
   return (
-    (source === OperationValue.ReadList &&
-      (target === OperationValue.Create ||
-        target === OperationValue.Update ||
-        target === OperationValue.Delete)) ||
-    (source === OperationValue.ReadDetail &&
-      (target === OperationValue.Update || target === OperationValue.Delete))
+    (source === Operation.ReadList &&
+      (target === Operation.Create ||
+        target === Operation.Update ||
+        target === Operation.Delete)) ||
+    (source === Operation.ReadDetail &&
+      (target === Operation.Update || target === Operation.Delete))
   );
 }
 
@@ -55,7 +54,7 @@ export function requiresSameClassOrAssociationTransition(
   target: Operation,
 ): boolean {
   return (
-    (source === OperationValue.ReadList && target === OperationValue.ReadDetail) ||
-    (source === OperationValue.ReadDetail && target === OperationValue.ReadDetail)
+    (source === Operation.ReadList && target === Operation.ReadDetail) ||
+    (source === Operation.ReadDetail && target === Operation.ReadDetail)
   );
 }

@@ -14,7 +14,7 @@ function NodeLink({ id }: { id: string }) {
   return (
     <button
       type="button"
-      className="min-w-0 cursor-pointer truncate rounded px-1 text-slate-700 hover:bg-slate-100 hover:underline"
+      className="min-w-0 truncate rounded px-1 text-slate-700 hover:bg-slate-100 hover:underline"
       onClick={select}
       title={id}
     >

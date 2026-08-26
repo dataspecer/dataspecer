@@ -1,6 +1,7 @@
 import { AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
 import { useViolationsBySeverity } from '@/hooks/use-validation.ts';
 import { useEditorStore, type SaveState } from '@/store.ts';
+import { countNoun } from '@/utils/count-noun.ts';
 
 export function StatusBar() {
   const saveState = useEditorStore((state) => state.saveState);
@@ -11,7 +12,7 @@ export function StatusBar() {
     <div className="flex items-center gap-3 border-t border-slate-200 bg-white px-3 py-1">
       <button
         type="button"
-        className="inline-flex cursor-pointer items-center gap-2 text-sm"
+        className="inline-flex items-center gap-2 text-sm"
         onClick={() => setSidebarTab('problems')}
       >
         {errors.length === 0 && warnings.length === 0 && (
@@ -22,13 +23,13 @@ export function StatusBar() {
         {errors.length > 0 && (
           <span className="inline-flex items-center gap-1 text-red-700">
             <XCircle size={13} />
-            {errors.length} error{errors.length === 1 ? '' : 's'}
+            {countNoun(errors.length, 'error')}
           </span>
         )}
         {warnings.length > 0 && (
           <span className="inline-flex items-center gap-1 text-amber-700">
             <AlertTriangle size={13} />
-            {warnings.length} warning{warnings.length === 1 ? '' : 's'}
+            {countNoun(warnings.length, 'warning')}
           </span>
         )}
       </button>

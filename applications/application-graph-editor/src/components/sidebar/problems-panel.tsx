@@ -91,7 +91,7 @@ function ViolationGroup({
             <li key={index}>
               <button
                 type="button"
-                className="w-full cursor-pointer rounded px-2 py-1 text-left text-sm hover:bg-slate-50"
+                className="w-full rounded px-2 py-1 text-left text-sm hover:bg-slate-50"
                 onClick={() => onFocus(violation)}
               >
                 <ViolationItem violation={violation} heading={heading} />

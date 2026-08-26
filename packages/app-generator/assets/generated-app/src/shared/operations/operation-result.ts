@@ -42,3 +42,10 @@ export type OperationResult<TData = unknown> =
 export function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
+
+export function issueMessageAt(
+  issues: readonly ValidationIssue[],
+  path: string,
+): string | undefined {
+  return issues.find((issue) => issue.path === path)?.message;
+}

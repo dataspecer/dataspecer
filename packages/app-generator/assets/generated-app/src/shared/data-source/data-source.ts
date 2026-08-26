@@ -68,7 +68,7 @@ export interface DataSource {
   create<TModel extends EntityModel>(args: MutationArgs<TModel>): Promise<TModel>;
   update<TModel extends EntityModel>(args: IdentifiedMutationArgs<TModel>): Promise<TModel>;
   delete<TModel extends EntityModel>(args: DeleteArgs<TModel>): Promise<void>;
-  /** Lists up to ten RDF references to the entity. */
+  /** Lists up to INCOMING_REFERENCE_LIMIT RDF references to the entity. */
   listIncomingReferences(id: string): Promise<IncomingReference[]>;
   /**
    * Lists candidate targets of a reference by RDF class and formats them from the requested

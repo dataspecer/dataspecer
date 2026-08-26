@@ -32,6 +32,7 @@ import {
   type EntityPathSegment,
 } from '../forms/form-draft.ts';
 import type { ValidationIssue } from '../operations/operation-result.ts';
+import { issueMessageAt } from '../operations/operation-result.ts';
 import type { AggregateDescriptorMap, EntityRecord, FieldDescriptor } from '../types/aggregate.ts';
 import { effectiveFields } from '../forms/specialization.ts';
 import { ConfirmDialog } from './confirm-dialog.tsx';
@@ -220,13 +221,8 @@ export function CompositionSection(props: CompositionSectionProps) {
                       <Typography variant="body2" noWrap>
                         {summary}
                       </Typography>
-                      {childIssues > 0 ? (
-                        <Chip
-                          label={`${childIssues} ${childIssues === 1 ? 'issue' : 'issues'}`}
-                          color="error"
-                        />
-                      ) : null}
                     </Box>
+                    {childIssues > 0 ? <Chip label={childIssues} color="error" /> : null}
                     <Tooltip title="Edit">
                       <IconButton
                         aria-label={`Edit ${summary}`}
@@ -286,7 +282,7 @@ interface InlineEntityFieldsProps {
 
 /** Edits a composed child without leaving the current pane. */
 function InlineEntityFields(props: InlineEntityFieldsProps) {
-  const errorAt = (path: string) => props.issues.find((issue) => issue.path === path)?.message;
+  const errorAt = (path: string) => issueMessageAt(props.issues, path);
   const fields = effectiveFields(props.target, props.entity);
 
   return (

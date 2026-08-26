@@ -2,7 +2,10 @@
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "noEmit": true,
-    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "jsx": "react-jsx",
     "types": ["vite/client"]
   },

@@ -70,7 +70,7 @@ function validateFields(
       } else {
         nestedModelPaths.set(nestedModelName, fieldPath);
       }
-      validateFields(aggregate, field.fields ?? [], fieldPath, nestedModelPaths, violations);
+      validateFields(aggregate, field.fields, fieldPath, nestedModelPaths, violations);
     }
   }
 }

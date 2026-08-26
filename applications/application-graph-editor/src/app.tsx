@@ -13,6 +13,7 @@ import { useUnloadWarning } from './hooks/use-unload-warning.ts';
 import { useValidationSync } from './hooks/use-validation.ts';
 import { useUndoRedoShortcuts } from './hooks/use-undo-redo-shortcuts.ts';
 import { useEditorStore, type NodePositions } from './store.ts';
+import { errorMessage } from '@/utils/error-message.ts';
 
 export function App() {
   const loadState = useEditorStore((state) => state.loadState);
@@ -38,9 +39,7 @@ export function App() {
     })().catch((caught: unknown) => {
       console.error(caught);
       if (active) {
-        useEditorStore
-          .getState()
-          .failLoad(caught instanceof Error ? caught.message : String(caught));
+        useEditorStore.getState().failLoad(errorMessage(caught));
       }
     });
     return () => {
@@ -64,7 +63,7 @@ export function App() {
       .catch((caught: unknown) => {
         console.error(caught);
         if (active) {
-          const message = caught instanceof Error ? caught.message : String(caught);
+          const message = errorMessage(caught);
           useEditorStore
             .getState()
             .failMetadata(`Failed to load the data structures of the specification: ${message}`);

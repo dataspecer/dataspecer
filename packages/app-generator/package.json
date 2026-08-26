@@ -10,16 +10,18 @@
     "predev": "npm run compile-assets --silent",
     "pretest": "npm run compile-assets --silent",
     "prelint": "npm run compile-assets --silent",
-    "test": "vitest run --pass-with-no-tests",
+    "test": "tsc -p tsconfig.spec.json && vitest run",
     "lint": "eslint . && prettier . --check",
     "lint:fix": "eslint . --fix && prettier . --write"
   },
   "dependencies": {
+    "@dataspecer/core": "*",
     "@dataspecer/core-v2": "*",
-    "ajv": "8.20.0",
-    "ajv-formats": "3.0.1",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
     "es-toolkit": "^1.49.0",
     "eta": "^4.6.0",
+    "ldkit": "^2.7.2",
     "prettier": "^3.8.3"
   },
   "exports": {
@@ -42,7 +44,6 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react-hooks": "^7.0.1",
     "globals": "^17.6.0",
-    "ldkit": "^2.7.2",
     "luxon": "^3.7.2",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
