@@ -17,10 +17,10 @@ import { buildOperationNavigation } from './operation-navigation.ts';
 
 export function buildGenerationModel(
   graph: ApplicationGraph,
-  metadata: SpecificationMetadata
+  metadata: SpecificationMetadata,
 ): GenerationModel {
   const aggregates = sortBy(metadata.aggregates, [(aggregate) => aggregate.iri]).map(
-    buildAggregateDescriptor
+    buildAggregateDescriptor,
   );
   const aggregateByIri = new Map(aggregates.map((aggregate) => [aggregate.iri, aggregate]));
   const operationByNodeId = new Map<string, GeneratedOperationDescriptor>();
@@ -34,11 +34,11 @@ export function buildGenerationModel(
   const operationById = new Map(operations.map((operation) => [operation.id, operation]));
   const transitionDescriptors = sortBy(
     graph.edges.filter((edge) => edge.type === EdgeType.Transition),
-    [(edge) => edge.id]
+    [(edge) => edge.id],
   ).map((edge) => buildEdgeDescriptor(edge, operationByNodeId));
   const redirectDescriptors = sortBy(
     graph.edges.filter((edge) => edge.type === EdgeType.Redirect),
-    [(edge) => edge.id]
+    [(edge) => edge.id],
   ).map((edge) => buildEdgeDescriptor(edge, operationByNodeId));
 
   for (const operation of operations) {
@@ -47,7 +47,7 @@ export function buildGenerationModel(
       transitionDescriptors,
       redirectDescriptors,
       operationById,
-      aggregateByIri
+      aggregateByIri,
     );
   }
 
@@ -72,7 +72,7 @@ export function buildGenerationModel(
 
 function requireAggregate(
   aggregateByIri: ReadonlyMap<string, GeneratedAggregateDescriptor>,
-  aggregateIri: string
+  aggregateIri: string,
 ): GeneratedAggregateDescriptor {
   const aggregate = aggregateByIri.get(aggregateIri);
   if (!aggregate) {

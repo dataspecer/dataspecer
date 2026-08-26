@@ -46,7 +46,7 @@ const all = await graphs.find();
 check(all.length === 3, `expected 3 graphs, got ${all.length}`);
 for (const graph of all) {
   console.log(
-    `- ${graph.name} | created ${graph.created.toISOString()} | archived ${graph.archived ?? '(unset)'} | dataSources ${graph.dataSources.length} | nodes ${graph.nodes.length}`
+    `- ${graph.name} | created ${graph.created.toISOString()} | archived ${graph.archived ?? '(unset)'} | dataSources ${graph.dataSources.length} | nodes ${graph.nodes.length}`,
   );
 }
 
@@ -61,14 +61,14 @@ check(manager !== null, 'graph-manager not found by IRI');
 check(manager!.archived === true, 'graph-manager should be archived');
 check(
   manager!.nodes.length === 2,
-  `graph-manager should have 2 nodes, got ${manager!.nodes.length}`
+  `graph-manager should have 2 nodes, got ${manager!.nodes.length}`,
 );
 
 console.log(`\nnodes of "${manager!.name}":`);
 for (const node of manager!.nodes) {
   check(
     typeof node.nodeId === 'string' && node.nodeId.length > 0,
-    'node nodeId should be a string'
+    'node nodeId should be a string',
   );
   check(typeof node.operation === 'string', 'node operation should resolve to an IRI string');
   console.log(`- ${node.nodeId} | aggregate ${node.aggregateIri} | operation ${node.operation}`);

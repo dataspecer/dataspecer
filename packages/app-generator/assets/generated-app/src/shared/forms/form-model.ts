@@ -90,7 +90,7 @@ export function toInputValue(control: FieldControl, value: unknown): string {
 export function validateModel(
   model: Record<string, unknown>,
   target: EntityTarget,
-  aggregateRegistry: AggregateDescriptorMap
+  aggregateRegistry: AggregateDescriptorMap,
 ): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   validateEntity(model, target, aggregateRegistry, '', issues);
@@ -102,7 +102,7 @@ function validateEntity(
   target: EntityTarget,
   aggregateRegistry: AggregateDescriptorMap,
   pathPrefix: string,
-  issues: ValidationIssue[]
+  issues: ValidationIssue[],
 ): void {
   const idPath = joinFieldPath(pathPrefix, 'id');
   if (typeof model.id !== 'string' || model.id.trim() === '') {
@@ -219,7 +219,7 @@ function validateEntity(
         childTarget,
         aggregateRegistry,
         field.many ? `${fieldPath}[${index}]` : fieldPath,
-        issues
+        issues,
       );
     });
   }
@@ -229,7 +229,7 @@ function validateSpecialization(
   model: Record<string, unknown>,
   target: EntityTarget,
   pathPrefix: string,
-  issues: ValidationIssue[]
+  issues: ValidationIssue[],
 ): boolean {
   if (!target.specializations?.length) {
     return true;
@@ -275,7 +275,7 @@ function validateMultilingualField(
   field: FieldDescriptor,
   value: unknown,
   fieldPath: string,
-  issues: ValidationIssue[]
+  issues: ValidationIssue[],
 ): void {
   const presentValues = nonEmptyMultilingualValues(value);
   if (minimumCount(field) > 0 && presentValues.length === 0) {

@@ -28,7 +28,7 @@ describe('validateApplicationGraph', () => {
     expect(result.valid).toBe(false);
     expect(result.graph).toBeUndefined();
     expect(result.violations).toContainEqual(
-      expect.objectContaining({ code: ViolationCode.GraphSyntaxInvalid })
+      expect.objectContaining({ code: ViolationCode.GraphSyntaxInvalid }),
     );
   });
 
@@ -42,7 +42,7 @@ describe('validateApplicationGraph', () => {
 
     expect(result.valid).toBe(false);
     expect(result.violations).toContainEqual(
-      expect.objectContaining({ code: ViolationCode.SemanticUnsupportedDatasourceCount })
+      expect.objectContaining({ code: ViolationCode.SemanticUnsupportedDatasourceCount }),
     );
   });
 
@@ -54,7 +54,7 @@ describe('validateApplicationGraph', () => {
 
     expect(result.valid).toBe(false);
     expect(result.violations).toContainEqual(
-      expect.objectContaining({ code: ViolationCode.MetadataResolutionFailed })
+      expect.objectContaining({ code: ViolationCode.MetadataResolutionFailed }),
     );
   });
 
@@ -69,7 +69,7 @@ describe('validateApplicationGraph', () => {
 
     expect(result.valid).toBe(false);
     expect(result.violations).toContainEqual(
-      expect.objectContaining({ code: ViolationCode.SemanticUnknownAggregate })
+      expect.objectContaining({ code: ViolationCode.SemanticUnknownAggregate }),
     );
   });
 });

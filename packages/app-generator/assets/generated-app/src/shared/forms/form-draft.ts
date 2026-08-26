@@ -26,7 +26,7 @@ export function createEntityDraft(
   target: EntityTarget,
   aggregateRegistry: AggregateDescriptorMap,
   instanceBaseIri: string,
-  specializationIri?: string
+  specializationIri?: string,
 ): EntityRecord {
   const entity: EntityRecord = {
     // createEmpty describes the aggregate root, inline targets initialize from their own fields
@@ -71,7 +71,7 @@ export function selectEntitySpecialization(
   target: EntityTarget,
   aggregateRegistry: AggregateDescriptorMap,
   instanceBaseIri: string,
-  specializationIri: string
+  specializationIri: string,
 ): EntityRecord {
   const selected = createEntityDraft(target, aggregateRegistry, instanceBaseIri, specializationIri);
   selected.id = entity.id;
@@ -87,7 +87,7 @@ function createFieldValue(
   field: FieldDescriptor,
   owner: EntityTarget,
   aggregateRegistry: AggregateDescriptorMap,
-  instanceBaseIri: string
+  instanceBaseIri: string,
 ): unknown {
   if (isCompositionField(field)) {
     const target = resolveCompositionTarget(owner, field, aggregateRegistry);
@@ -106,7 +106,7 @@ export async function hydrateCompositionTree(
   target: EntityTarget,
   aggregateRegistry: AggregateDescriptorMap,
   dataSource: DataSource,
-  paths?: readonly string[]
+  paths?: readonly string[],
 ): Promise<EntityRecord> {
   const result = structuredClone(model);
   await hydrateCompositionChildren(
@@ -115,7 +115,7 @@ export async function hydrateCompositionTree(
     aggregateRegistry,
     dataSource,
     paths ? new Set(paths) : null,
-    ''
+    '',
   );
   return result;
 }
@@ -126,7 +126,7 @@ async function hydrateCompositionChildren(
   aggregateRegistry: AggregateDescriptorMap,
   dataSource: DataSource,
   paths: ReadonlySet<string> | null,
-  pathPrefix: string
+  pathPrefix: string,
 ): Promise<void> {
   const fields = effectiveFields(target, entity);
   await Promise.all(
@@ -159,9 +159,9 @@ async function hydrateCompositionChildren(
               aggregateRegistry,
               dataSource,
               paths,
-              fieldPath
-            )
-          )
+              fieldPath,
+            ),
+          ),
         );
       } else if (value !== null && value !== undefined) {
         entity[field.propertyName] = await hydrateCompositionEntry(
@@ -171,10 +171,10 @@ async function hydrateCompositionChildren(
           aggregateRegistry,
           dataSource,
           paths,
-          fieldPath
+          fieldPath,
         );
       }
-    })
+    }),
   );
 }
 
@@ -185,7 +185,7 @@ async function hydrateCompositionEntry(
   aggregateRegistry: AggregateDescriptorMap,
   dataSource: DataSource,
   paths: ReadonlySet<string> | null,
-  pathPrefix: string
+  pathPrefix: string,
 ): Promise<unknown> {
   if (!isEntityRecord(value)) {
     throw new Error(`Composed ${field.label} must contain an entity.`);
@@ -213,7 +213,7 @@ async function hydrateCompositionEntry(
     aggregateRegistry,
     dataSource,
     paths,
-    pathPrefix
+    pathPrefix,
   );
   return entity;
 }
@@ -239,7 +239,7 @@ export function entityAtPath(root: EntityRecord, path: readonly EntityPathSegmen
 export function updateEntityAtPath(
   root: EntityRecord,
   path: readonly EntityPathSegment[],
-  update: (entity: EntityRecord) => EntityRecord
+  update: (entity: EntityRecord) => EntityRecord,
 ): EntityRecord {
   if (path.length === 0) {
     return update(root);

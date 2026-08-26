@@ -218,7 +218,7 @@ interface FieldProps {
 function Field(props: FieldProps) {
   const { field, value } = props;
   const action = props.associationActions.find(
-    (candidate) => candidate.fieldPath === props.fieldPath
+    (candidate) => candidate.fieldPath === props.fieldPath,
   );
   const isNested = isCompositionField(field) && Boolean(field.fields?.length);
 
@@ -362,7 +362,7 @@ function LeafValue(props: LeafValueProps) {
 
   if (isMultilingualField(field)) {
     const entries = Object.entries(compactMultilingualValue(value)).sort(([left], [right]) =>
-      left.localeCompare(right)
+      left.localeCompare(right),
     );
     if (entries.length === 0) {
       return (

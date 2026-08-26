@@ -1,4 +1,4 @@
-import { ExternalLink as ExternalLinkIcon } from "lucide-react";
+import { ExternalLink as ExternalLinkIcon } from 'lucide-react';
 
 export function ExternalLink({ href, label }: { href: string; label: string }) {
   return (

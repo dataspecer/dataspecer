@@ -2,11 +2,11 @@ import {
   ViolationCode,
   type ApplicationGraph,
   type Violation,
-} from "@dataspecer/app-generator/graph";
-import { useValidation, useViolationsBySeverity } from "@/hooks/use-validation.ts";
-import { useEditorStore } from "@/store.ts";
-import { violationTarget } from "@/validation/violations.ts";
-import { ViolationItem } from "./violation-item.tsx";
+} from '@dataspecer/app-generator/graph';
+import { useValidation, useViolationsBySeverity } from '@/hooks/use-validation.ts';
+import { useEditorStore } from '@/store.ts';
+import { violationTarget } from '@/validation/violations.ts';
+import { ViolationItem } from './violation-item.tsx';
 
 /**
  * The sidebar tab listing the current violations. Everything except metadata resolution is
@@ -24,7 +24,7 @@ export function ProblemsPanel({ graph }: { graph: ApplicationGraph }) {
     const store = useEditorStore.getState();
     const target = violationTarget(validated, violation);
     if (target === null) {
-      store.setSidebarTab("json");
+      store.setSidebarTab('json');
       return;
     }
     store.requestSelect(target.id);
@@ -85,10 +85,8 @@ function ViolationGroup({
           const target = violationTarget(graph, violation);
           const isSpecificationProblem =
             violation.code === ViolationCode.MetadataResolutionFailed ||
-            violation.path === "/dataSpecificationIri";
-          const heading =
-            target?.id ??
-            (isSpecificationProblem ? "Data specification" : "Graph");
+            violation.path === '/dataSpecificationIri';
+          const heading = target?.id ?? (isSpecificationProblem ? 'Data specification' : 'Graph');
           return (
             <li key={index}>
               <button

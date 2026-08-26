@@ -25,8 +25,8 @@ export function validateAggregateNames(context: SemanticValidationContext): Viol
       semanticViolation(
         ViolationCode.SemanticDuplicateAggregateName,
         `Aggregates "${first.iri}" and "${aggregate.iri}" both produce module name "${moduleName}". Rename one of the structures in Dataspecer.`,
-        '/dataSpecificationIri'
-      )
+        '/dataSpecificationIri',
+      ),
     );
   }
 

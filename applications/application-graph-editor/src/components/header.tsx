@@ -1,12 +1,12 @@
-import { useState } from "react";
-import type { ApplicationGraph } from "@dataspecer/app-generator/graph";
-import { generateApplication } from "@/backend/client.ts";
-import { useViolationsBySeverity } from "@/hooks/use-validation.ts";
-import { downloadBlob } from "@/utils/download-blob.ts";
-import { archiveFileName } from "@/graph/file-names.ts";
-import { useEditorStore } from "@/store.ts";
-import { shouldShowGenerateHelp } from "@/utils/generate-help.ts";
-import { GenerateHelpDialog } from "./generate-help-dialog.tsx";
+import { useState } from 'react';
+import type { ApplicationGraph } from '@dataspecer/app-generator/graph';
+import { generateApplication } from '@/backend/client.ts';
+import { useViolationsBySeverity } from '@/hooks/use-validation.ts';
+import { downloadBlob } from '@/utils/download-blob.ts';
+import { archiveFileName } from '@/graph/file-names.ts';
+import { useEditorStore } from '@/store.ts';
+import { shouldShowGenerateHelp } from '@/utils/generate-help.ts';
+import { GenerateHelpDialog } from './generate-help-dialog.tsx';
 
 export function EditorHeader({
   graph,
@@ -43,8 +43,8 @@ export function EditorHeader({
       } else {
         // some failures only show up on the server, such as metadata resolution
         setGenerationViolations(result.violations);
-        useEditorStore.getState().setSidebarTab("problems");
-        setActionError("Generation failed, see the problems panel.");
+        useEditorStore.getState().setSidebarTab('problems');
+        setActionError('Generation failed, see the problems panel.');
       }
     } catch (caught) {
       console.error(caught);
@@ -59,10 +59,10 @@ export function EditorHeader({
   const onGenerate = async () => {
     if (warnings.length > 0) {
       const confirmed = await useEditorStore.getState().requestConfirm({
-        title: `Generate with ${warnings.length} warning${warnings.length === 1 ? "" : "s"}?`,
-        message: "The application may not work as expected.",
+        title: `Generate with ${warnings.length} warning${warnings.length === 1 ? '' : 's'}?`,
+        message: 'The application may not work as expected.',
         details: warnings.map((violation) => violation.message),
-        confirmLabel: "Generate anyway",
+        confirmLabel: 'Generate anyway',
       });
       if (!confirmed) {
         return;
@@ -84,13 +84,13 @@ export function EditorHeader({
         disabled={generating || empty || errors.length > 0}
         title={
           empty
-            ? "Add at least one node before generating."
+            ? 'Add at least one node before generating.'
             : errors.length > 0
-              ? `${errors.length} error${errors.length === 1 ? "" : "s"} block generation`
+              ? `${errors.length} error${errors.length === 1 ? '' : 's'} block generation`
               : undefined
         }
       >
-        {generating ? "Generating..." : "Generate application"}
+        {generating ? 'Generating...' : 'Generate application'}
       </button>
       <GenerateHelpDialog open={helpOpen} onClose={() => setHelpOpen(false)} />
     </header>

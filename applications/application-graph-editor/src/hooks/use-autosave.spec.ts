@@ -1,17 +1,12 @@
-import { describe, expect, it, vi } from "vitest";
-import {
-  createAutosaveQueue,
-  type AutosaveSnapshot,
-} from "./use-autosave.ts";
-import type { ApplicationGraph } from "@dataspecer/app-generator/graph";
+import { describe, expect, it, vi } from 'vitest';
+import { createAutosaveQueue, type AutosaveSnapshot } from './use-autosave.ts';
+import type { ApplicationGraph } from '@dataspecer/app-generator/graph';
 
-describe("createAutosaveQueue", () => {
-  it("persists a snapshot passed to flush without a prior schedule", async () => {
-    const persist = vi.fn<(_snapshot: AutosaveSnapshot) => Promise<void>>(
-      () => Promise.resolve(),
-    );
+describe('createAutosaveQueue', () => {
+  it('persists a snapshot passed to flush without a prior schedule', async () => {
+    const persist = vi.fn<(_snapshot: AutosaveSnapshot) => Promise<void>>(() => Promise.resolve());
     const queue = createAutosaveQueue(persist, vi.fn());
-    const current = snapshot(graph("current"));
+    const current = snapshot(graph('current'));
 
     await queue.flush(current);
 
@@ -19,13 +14,11 @@ describe("createAutosaveQueue", () => {
     expect(persist).toHaveBeenCalledWith(current);
   });
 
-  it("coalesces pending snapshots to the newest state", async () => {
-    const persist = vi.fn<(_snapshot: AutosaveSnapshot) => Promise<void>>(
-      () => Promise.resolve(),
-    );
+  it('coalesces pending snapshots to the newest state', async () => {
+    const persist = vi.fn<(_snapshot: AutosaveSnapshot) => Promise<void>>(() => Promise.resolve());
     const queue = createAutosaveQueue(persist, vi.fn());
-    const first = snapshot(graph("first"));
-    const latest = snapshot(graph("latest"));
+    const first = snapshot(graph('first'));
+    const latest = snapshot(graph('latest'));
 
     queue.schedule(first);
     queue.schedule(latest);
@@ -35,7 +28,7 @@ describe("createAutosaveQueue", () => {
     expect(persist).toHaveBeenCalledWith(latest);
   });
 
-  it("serializes an in-flight write before a newer flush", async () => {
+  it('serializes an in-flight write before a newer flush', async () => {
     const resolutions: Array<() => void> = [];
     const persist = vi.fn(
       (_snapshot: AutosaveSnapshot) =>
@@ -44,8 +37,8 @@ describe("createAutosaveQueue", () => {
         }),
     );
     const queue = createAutosaveQueue(persist, vi.fn());
-    const first = snapshot(graph("first"));
-    const latest = snapshot(graph("latest"));
+    const first = snapshot(graph('first'));
+    const latest = snapshot(graph('latest'));
 
     queue.schedule(first);
     const firstFlush = queue.flush();
@@ -62,23 +55,23 @@ describe("createAutosaveQueue", () => {
     await Promise.all([firstFlush, latestFlush]);
   });
 
-  it("reports a failed write without retrying the unchanged snapshot", async () => {
-    const error = new Error("save failed");
-    const persist = vi.fn<(_snapshot: AutosaveSnapshot) => Promise<void>>(
-      () => Promise.reject(error),
+  it('reports a failed write without retrying the unchanged snapshot', async () => {
+    const error = new Error('save failed');
+    const persist = vi.fn<(_snapshot: AutosaveSnapshot) => Promise<void>>(() =>
+      Promise.reject(error),
     );
     const states: string[] = [];
     const queue = createAutosaveQueue(persist, (state) => states.push(state));
 
-    queue.schedule(snapshot(graph("changed")));
+    queue.schedule(snapshot(graph('changed')));
 
     await expect(queue.flush()).rejects.toBe(error);
     expect(persist).toHaveBeenCalledOnce();
-    expect(states).toEqual(["saving", "error"]);
+    expect(states).toEqual(['saving', 'error']);
   });
 
-  it("resolves a flush whose snapshot saves after an earlier write failed", async () => {
-    const error = new Error("first save failed");
+  it('resolves a flush whose snapshot saves after an earlier write failed', async () => {
+    const error = new Error('first save failed');
     const settlers: Array<{ resolve: () => void; reject: (error: Error) => void }> = [];
     const persist = vi.fn(
       (_snapshot: AutosaveSnapshot) =>
@@ -87,8 +80,8 @@ describe("createAutosaveQueue", () => {
         }),
     );
     const queue = createAutosaveQueue(persist, vi.fn());
-    const first = snapshot(graph("first"));
-    const latest = snapshot(graph("latest"));
+    const first = snapshot(graph('first'));
+    const latest = snapshot(graph('latest'));
 
     queue.schedule(first);
     const firstFlush = queue.flush();
@@ -104,10 +97,10 @@ describe("createAutosaveQueue", () => {
     await expect(latestFlush).resolves.toBeUndefined();
   });
 
-  it("saves a scheduled snapshot in the background after an earlier write failed", async () => {
-    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+  it('saves a scheduled snapshot in the background after an earlier write failed', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     try {
-      const error = new Error("first save failed");
+      const error = new Error('first save failed');
       let attempts = 0;
       const persist = vi.fn<(_snapshot: AutosaveSnapshot) => Promise<void>>(() => {
         attempts += 1;
@@ -115,25 +108,25 @@ describe("createAutosaveQueue", () => {
       });
       const states: string[] = [];
       const queue = createAutosaveQueue(persist, (state) => states.push(state), 1);
-      const first = snapshot(graph("first"));
-      const latest = snapshot(graph("latest"));
+      const first = snapshot(graph('first'));
+      const latest = snapshot(graph('latest'));
 
       queue.schedule(first);
-      await vi.waitFor(() => expect(states).toContain("error"));
+      await vi.waitFor(() => expect(states).toContain('error'));
 
       queue.schedule(latest);
       await vi.waitFor(() => expect(persist).toHaveBeenCalledTimes(2));
       expect(persist).toHaveBeenNthCalledWith(2, latest);
-      await vi.waitFor(() => expect(states).toEqual(["saving", "error", "saving", "saved"]));
+      await vi.waitFor(() => expect(states).toEqual(['saving', 'error', 'saving', 'saved']));
       expect(consoleError).toHaveBeenCalledWith(error);
     } finally {
       consoleError.mockRestore();
     }
   });
 
-  it("rejects each flush with its own error when every write fails", async () => {
-    const firstError = new Error("first save failed");
-    const latestError = new Error("latest save failed");
+  it('rejects each flush with its own error when every write fails', async () => {
+    const firstError = new Error('first save failed');
+    const latestError = new Error('latest save failed');
     const settlers: Array<{ resolve: () => void; reject: (error: Error) => void }> = [];
     const persist = vi.fn(
       (_snapshot: AutosaveSnapshot) =>
@@ -142,8 +135,8 @@ describe("createAutosaveQueue", () => {
         }),
     );
     const queue = createAutosaveQueue(persist, vi.fn());
-    const first = snapshot(graph("first"));
-    const latest = snapshot(graph("latest"));
+    const first = snapshot(graph('first'));
+    const latest = snapshot(graph('latest'));
 
     queue.schedule(first);
     const firstFlush = queue.flush();
@@ -158,35 +151,31 @@ describe("createAutosaveQueue", () => {
     await expect(latestFlush).rejects.toBe(latestError);
   });
 
-  it("refuses a graph the editor could not load again", async () => {
-    const persist = vi.fn<(_snapshot: AutosaveSnapshot) => Promise<void>>(
-      () => Promise.resolve(),
-    );
+  it('refuses a graph the editor could not load again', async () => {
+    const persist = vi.fn<(_snapshot: AutosaveSnapshot) => Promise<void>>(() => Promise.resolve());
     const setSaveState = vi.fn();
     const queue = createAutosaveQueue(persist, setSaveState);
 
-    await queue.flush(snapshot({ ...graph("valid"), name: "" }));
+    await queue.flush(snapshot({ ...graph('valid'), name: '' }));
 
     expect(persist).not.toHaveBeenCalled();
-    expect(setSaveState).toHaveBeenCalledWith("invalid");
+    expect(setSaveState).toHaveBeenCalledWith('invalid');
   });
 
-  it("persists again once the graph is valid", async () => {
-    const persist = vi.fn<(_snapshot: AutosaveSnapshot) => Promise<void>>(
-      () => Promise.resolve(),
-    );
+  it('persists again once the graph is valid', async () => {
+    const persist = vi.fn<(_snapshot: AutosaveSnapshot) => Promise<void>>(() => Promise.resolve());
     const setSaveState = vi.fn();
     const queue = createAutosaveQueue(persist, setSaveState);
 
-    await queue.flush(snapshot({ ...graph("valid"), name: "" }));
-    const repaired = snapshot(graph("repaired"));
+    await queue.flush(snapshot({ ...graph('valid'), name: '' }));
+    const repaired = snapshot(graph('repaired'));
     await queue.flush(repaired);
 
     expect(persist).toHaveBeenCalledExactlyOnceWith(repaired);
-    expect(setSaveState).toHaveBeenLastCalledWith("saved");
+    expect(setSaveState).toHaveBeenLastCalledWith('saved');
   });
 
-  it("stops persisting after dispose", async () => {
+  it('stops persisting after dispose', async () => {
     const settlers: Array<{ resolve: () => void; reject: (error: Error) => void }> = [];
     const persist = vi.fn(
       (_snapshot: AutosaveSnapshot) =>
@@ -195,8 +184,8 @@ describe("createAutosaveQueue", () => {
         }),
     );
     const queue = createAutosaveQueue(persist, vi.fn());
-    const first = snapshot(graph("first"));
-    const latest = snapshot(graph("latest"));
+    const first = snapshot(graph('first'));
+    const latest = snapshot(graph('latest'));
 
     queue.schedule(first);
     const firstFlush = queue.flush();
@@ -207,7 +196,7 @@ describe("createAutosaveQueue", () => {
     settlers[0].resolve();
 
     await Promise.all([firstFlush, latestFlush]);
-    queue.schedule(snapshot(graph("after-dispose")));
+    queue.schedule(snapshot(graph('after-dispose')));
     await queue.flush();
     expect(persist).toHaveBeenCalledOnce();
   });
@@ -215,7 +204,7 @@ describe("createAutosaveQueue", () => {
 
 function snapshot(value: ApplicationGraph): AutosaveSnapshot {
   return {
-    resourceIri: "urn:graph",
+    resourceIri: 'urn:graph',
     graph: value,
     positions: {},
   };
@@ -224,7 +213,7 @@ function snapshot(value: ApplicationGraph): AutosaveSnapshot {
 function graph(name: string): ApplicationGraph {
   return {
     name,
-    dataSpecificationIri: "urn:specification",
+    dataSpecificationIri: 'urn:specification',
     datasources: [],
     nodes: [],
     edges: [],

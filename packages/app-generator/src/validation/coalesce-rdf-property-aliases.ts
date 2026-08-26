@@ -54,7 +54,7 @@ interface CoalescedFields {
 export function coalesceRdfPropertyAliases(
   graph: ApplicationGraph,
   metadata: SpecificationMetadata,
-  aggregateIris: ReadonlySet<string>
+  aggregateIris: ReadonlySet<string>,
 ): PropertyAliasCoalescingResult {
   const violations: Violation[] = [];
   const aliasesByAggregate = new Map<string, ReadonlyMap<string, string>>();
@@ -75,7 +75,7 @@ export function coalesceRdfPropertyAliases(
 function coalesceFields(
   aggregate: AggregateMetadata,
   fields: AggregateFieldMetadata[],
-  pathPrefix: string
+  pathPrefix: string,
 ): CoalescedFields {
   const violations: Violation[] = [];
   const aliases = new Map<string, string>();
@@ -95,7 +95,7 @@ function coalesceFields(
         ? {
             specializations: remapSpecializationFields(
               field.specializations,
-              children.directAliases
+              children.directAliases,
             ),
           }
         : {}),
@@ -133,8 +133,8 @@ function coalesceFields(
             `"${representative.propertyIri}" but require incompatible representations. Align ` +
             'their datatype, target, direction, cardinality, association kind, and nested fields, ' +
             'or use different RDF properties.',
-          '/dataSpecificationIri'
-        )
+          '/dataSpecificationIri',
+        ),
       );
       continue;
     }
@@ -154,8 +154,8 @@ function coalesceFields(
           `"${representative.propertyIri}". RDF cannot distinguish their stored values, so the ` +
           `app merges them into "${paths[0]}". It cannot enforce field-specific constraints. ` +
           'Use different properties to keep them separate.',
-        '/dataSpecificationIri'
-      )
+        '/dataSpecificationIri',
+      ),
     );
   }
 
@@ -198,7 +198,7 @@ function storageShapeKey(field: AggregateFieldMetadata): string {
  */
 function withCombinedConstraints(
   representative: AggregateFieldMetadata,
-  fields: AggregateFieldMetadata[]
+  fields: AggregateFieldMetadata[],
 ): AggregateFieldMetadata {
   const minCount = Math.max(...fields.map(minimumCount));
   const maxima = fields.map(maximumCount);
@@ -232,7 +232,7 @@ function maximumCount(field: AggregateFieldMetadata): number | null {
 /** Keeps specialization membership pointing at the generated representative field. */
 function remapSpecializationFields(
   specializations: SpecializationMetadata[],
-  aliases: ReadonlyMap<string, string>
+  aliases: ReadonlyMap<string, string>,
 ): SpecializationMetadata[] {
   if (aliases.size === 0) {
     return specializations;
@@ -246,7 +246,7 @@ function remapSpecializationFields(
 /** Rejects configuration paths that would silently become inactive after an alias is removed. */
 function validateConfiguredAliasPaths(
   graph: ApplicationGraph,
-  aliasesByAggregate: ReadonlyMap<string, ReadonlyMap<string, string>>
+  aliasesByAggregate: ReadonlyMap<string, ReadonlyMap<string, string>>,
 ): Violation[] {
   return graph.nodes.flatMap((node, nodeIndex) => {
     const aliases = aliasesByAggregate.get(node.aggregateIri);
@@ -258,13 +258,13 @@ function validateConfiguredAliasPaths(
         Object.keys(node.config?.associations ?? {}),
         aliases,
         node.id,
-        `/nodes/${nodeIndex}/config/associations`
+        `/nodes/${nodeIndex}/config/associations`,
       ),
       ...configuredPathViolations(
         Object.keys(node.config?.delete ?? {}),
         aliases,
         node.id,
-        `/nodes/${nodeIndex}/config/delete`
+        `/nodes/${nodeIndex}/config/delete`,
       ),
     ];
   });
@@ -274,7 +274,7 @@ function configuredPathViolations(
   paths: string[],
   aliases: ReadonlyMap<string, string>,
   nodeId: string,
-  pathPrefix: string
+  pathPrefix: string,
 ): Violation[] {
   return paths.flatMap((path) => {
     const replacement = replaceAliasPrefix(path, aliases);
@@ -286,7 +286,7 @@ function configuredPathViolations(
         ViolationCode.SemanticRdfPropertyAliasConfigPath,
         `Configuration path "${path}" on node "${nodeId}" refers to a field merged into ` +
           `"${replacement}". Use the generated representative path instead.`,
-        `${pathPrefix}/${path}`
+        `${pathPrefix}/${path}`,
       ),
     ];
   });
@@ -294,12 +294,12 @@ function configuredPathViolations(
 
 function replaceAliasPrefix(
   path: string,
-  aliases: ReadonlyMap<string, string>
+  aliases: ReadonlyMap<string, string>,
 ): string | undefined {
   // prefer the deepest alias when nested alias paths overlap
   const match = maxBy(
     [...aliases].filter(([alias]) => path === alias || path.startsWith(`${alias}.`)),
-    ([alias]) => alias.length
+    ([alias]) => alias.length,
   );
   return match ? `${match[1]}${path.slice(match[0].length)}` : undefined;
 }

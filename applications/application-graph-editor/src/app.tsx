@@ -1,18 +1,18 @@
-import { useEffect, type ReactNode } from "react";
-import { type ApplicationGraph } from "@dataspecer/app-generator/graph";
-import { loadGraph, loadMetadata, loadPositions } from "./backend/client.ts";
-import { ConfirmDialog } from "./components/confirm-dialog.tsx";
-import { EditorHeader } from "./components/header.tsx";
-import { Sidebar } from "./components/sidebar/sidebar.tsx";
-import { StatusBar } from "./components/status-bar.tsx";
-import { autoLayout } from "./diagram/auto-layout.ts";
-import { Canvas } from "./diagram/canvas.tsx";
-import { useAutosave } from "./hooks/use-autosave.ts";
-import { useSaveShortcut } from "./hooks/use-save-shortcut.ts";
-import { useUnloadWarning } from "./hooks/use-unload-warning.ts";
-import { useValidationSync } from "./hooks/use-validation.ts";
-import { useUndoRedoShortcuts } from "./hooks/use-undo-redo-shortcuts.ts";
-import { useEditorStore, type NodePositions } from "./store.ts";
+import { useEffect, type ReactNode } from 'react';
+import { type ApplicationGraph } from '@dataspecer/app-generator/graph';
+import { loadGraph, loadMetadata, loadPositions } from './backend/client.ts';
+import { ConfirmDialog } from './components/confirm-dialog.tsx';
+import { EditorHeader } from './components/header.tsx';
+import { Sidebar } from './components/sidebar/sidebar.tsx';
+import { StatusBar } from './components/status-bar.tsx';
+import { autoLayout } from './diagram/auto-layout.ts';
+import { Canvas } from './diagram/canvas.tsx';
+import { useAutosave } from './hooks/use-autosave.ts';
+import { useSaveShortcut } from './hooks/use-save-shortcut.ts';
+import { useUnloadWarning } from './hooks/use-unload-warning.ts';
+import { useValidationSync } from './hooks/use-validation.ts';
+import { useUndoRedoShortcuts } from './hooks/use-undo-redo-shortcuts.ts';
+import { useEditorStore, type NodePositions } from './store.ts';
 
 export function App() {
   const loadState = useEditorStore((state) => state.loadState);
@@ -20,9 +20,9 @@ export function App() {
   const graph = useEditorStore((state) => state.graph);
 
   useEffect(() => {
-    const iri = new URLSearchParams(window.location.search).get("iri");
+    const iri = new URLSearchParams(window.location.search).get('iri');
     if (!iri) {
-      useEditorStore.getState().failLoad("Missing the ?iri query parameter.");
+      useEditorStore.getState().failLoad('Missing the ?iri query parameter.');
       return;
     }
 
@@ -75,11 +75,11 @@ export function App() {
     };
   }, [dataSpecificationIri]);
 
-  if (loadState === "loading") {
+  if (loadState === 'loading') {
     return <Centered>Loading application graph...</Centered>;
   }
-  if (loadState === "error" || graph === null) {
-    return <Centered>{loadError ?? "Failed to load the application graph."}</Centered>;
+  if (loadState === 'error' || graph === null) {
+    return <Centered>{loadError ?? 'Failed to load the application graph.'}</Centered>;
   }
   return <Editor graph={graph} />;
 }
@@ -117,7 +117,7 @@ function Editor({ graph }: { graph: ApplicationGraph }) {
           {actionError}
         </button>
       )}
-      {saveState === "invalid" && (
+      {saveState === 'invalid' && (
         <div
           role="alert"
           className="border-b border-amber-200 bg-amber-50 px-4 py-1 text-sm text-amber-800"
@@ -147,8 +147,6 @@ function Editor({ graph }: { graph: ApplicationGraph }) {
 
 function Centered({ children }: { children: ReactNode }) {
   return (
-    <div className="flex h-full items-center justify-center text-sm text-slate-600">
-      {children}
-    </div>
+    <div className="flex h-full items-center justify-center text-sm text-slate-600">{children}</div>
   );
 }

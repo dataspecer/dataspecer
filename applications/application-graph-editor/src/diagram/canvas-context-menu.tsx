@@ -1,8 +1,8 @@
-import type { ReactNode } from "react";
-import * as ContextMenu from "@radix-ui/react-context-menu";
-import { EdgeType } from "@dataspecer/app-generator/graph";
-import { useEditorStore } from "@/store.ts";
-import type { GraphElementRef } from "@/graph/graph-element-ref.ts";
+import type { ReactNode } from 'react';
+import * as ContextMenu from '@radix-ui/react-context-menu';
+import { EdgeType } from '@dataspecer/app-generator/graph';
+import { useEditorStore } from '@/store.ts';
+import type { GraphElementRef } from '@/graph/graph-element-ref.ts';
 
 export function CanvasContextMenu({
   target,
@@ -23,11 +23,11 @@ export function CanvasContextMenu({
       {target !== null && (
         <ContextMenu.Portal>
           <ContextMenu.Content className="min-w-40 rounded border border-slate-200 bg-white py-1 shadow-md">
-            {target.kind === "edge" && <EdgeTypeItem edgeId={target.id} />}
+            {target.kind === 'edge' && <EdgeTypeItem edgeId={target.id} />}
             <Item
               onSelect={() => {
                 const store = useEditorStore.getState();
-                if (target.kind === "node") {
+                if (target.kind === 'node') {
                   store.removeNode(target.id);
                 } else {
                   store.removeEdge(target.id);

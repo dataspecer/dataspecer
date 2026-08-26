@@ -12,10 +12,7 @@ export function specificationLink(dataSpecificationIri: string): string | null {
  * Link to the structure an aggregate comes from. The aggregate IRI is the data-psm schema IRI,
  * which is what the specification editor opens.
  */
-export function aggregateLink(
-  dataSpecificationIri: string,
-  aggregateIri: string,
-): string | null {
+export function aggregateLink(dataSpecificationIri: string, aggregateIri: string): string | null {
   if (!editorUrl || !aggregateIri) {
     return null;
   }

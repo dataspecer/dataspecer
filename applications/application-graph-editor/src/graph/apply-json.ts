@@ -1,6 +1,6 @@
-import { autoLayout } from "@/diagram/auto-layout.ts";
-import { useEditorStore } from "@/store.ts";
-import { parseGraph } from "./parse-graph.ts";
+import { autoLayout } from '@/diagram/auto-layout.ts';
+import { useEditorStore } from '@/store.ts';
+import { parseGraph } from './parse-graph.ts';
 
 export interface ApplyGraphResult {
   /** False when the text was rejected or the user canceled the change. */
@@ -15,7 +15,7 @@ export interface ApplyGraphResult {
  */
 export async function applyGraphJson(jsonText: string): Promise<ApplyGraphResult> {
   const parsed = parseGraph(jsonText);
-  if ("error" in parsed) {
+  if ('error' in parsed) {
     return { applied: false, error: parsed.error };
   }
 
@@ -24,12 +24,12 @@ export async function applyGraphJson(jsonText: string): Promise<ApplyGraphResult
   // every node. The field cannot be edited in the form, so this is the only way to change it.
   if (current !== null && current.dataSpecificationIri !== parsed.graph.dataSpecificationIri) {
     const confirmed = await requestConfirm({
-      title: "Different data specification",
+      title: 'Different data specification',
       message:
         `The graph targets "${parsed.graph.dataSpecificationIri}" instead of ` +
         `"${current.dataSpecificationIri}". Data structures of the current specification will not ` +
         `resolve.`,
-      confirmLabel: "Apply anyway",
+      confirmLabel: 'Apply anyway',
     });
     if (!confirmed) {
       return { applied: false, error: null };

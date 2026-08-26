@@ -35,13 +35,13 @@ export function isCompositionField(field: FieldDescriptor): boolean {
 
 /** Returns whether a composition owns its target, including targets with no editable fields. */
 export function isInlineCompositionField(
-  field: FieldDescriptor
+  field: FieldDescriptor,
 ): field is FieldDescriptor & { targetClassIri: string; fields: FieldDescriptor[] } {
   return Boolean(
     isCompositionField(field) &&
     !field.targetAggregateIri &&
     field.targetClassIri &&
-    field.fields !== undefined
+    field.fields !== undefined,
   );
 }
 
@@ -53,7 +53,7 @@ export function opensInOwnPane(target: EntityTarget): boolean {
 export function resolveCompositionTarget(
   owner: EntityTarget,
   field: FieldDescriptor,
-  aggregateRegistry: AggregateDescriptorMap
+  aggregateRegistry: AggregateDescriptorMap,
 ): EntityTarget | null {
   if (!isCompositionField(field)) {
     return null;
@@ -65,7 +65,7 @@ export function resolveCompositionTarget(
 function resolveAssociationTarget(
   owner: EntityTarget,
   field: FieldDescriptor,
-  aggregateRegistry: AggregateDescriptorMap
+  aggregateRegistry: AggregateDescriptorMap,
 ): EntityTarget | null {
   if (field.targetAggregateIri) {
     const target = aggregateRegistry[field.targetAggregateIri];
@@ -88,7 +88,7 @@ function resolveAssociationTarget(
 
 export function referenceDisplayFields(
   field: FieldDescriptor,
-  aggregateRegistry: AggregateDescriptorMap
+  aggregateRegistry: AggregateDescriptorMap,
 ): FieldDescriptor[] {
   const exposedFields = primitiveFields(field.fields);
   if (exposedFields.length > 0) {
@@ -106,14 +106,14 @@ export function referenceDisplayFields(
   }
 
   const fallbackAggregate = Object.values(aggregateRegistry).find(
-    (aggregate) => aggregate.classIri === field.targetClassIri
+    (aggregate) => aggregate.classIri === field.targetClassIri,
   );
   const fallbackFields = primitiveFields(fallbackAggregate?.fields);
   for (const name of ['name', 'title', 'label']) {
     const fallback = fallbackFields.find(
       (candidate) =>
         candidate.path.toLocaleLowerCase() === name ||
-        candidate.propertyName.toLocaleLowerCase() === name
+        candidate.propertyName.toLocaleLowerCase() === name,
     );
     if (fallback) {
       return [fallback];

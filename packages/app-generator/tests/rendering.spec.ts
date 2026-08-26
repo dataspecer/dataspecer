@@ -46,13 +46,13 @@ describe('renderGeneratedApp', () => {
         'src/shared/data-source/data-source.ts',
         'src/shared/operations/operation-strategy.ts',
         'src/shared/components/list-view.tsx',
-      ])
+      ]),
     );
     expect(Object.keys(first)).not.toContain(
-      'src/shared/components/placeholder-operation-view.tsx'
+      'src/shared/components/placeholder-operation-view.tsx',
     );
     expect(first['src/config/app-config.ts']).toContain(
-      `export const instanceBaseIri = ${JSON.stringify(specificationIri)};`
+      `export const instanceBaseIri = ${JSON.stringify(specificationIri)};`,
     );
   });
 
@@ -73,7 +73,7 @@ describe('renderGeneratedApp', () => {
     const modelSource = tree.get('src/modules/book-detail/model.ts');
     expect(modelSource).toContain('export interface BookDetailChaptersModel extends EntityModel');
     expect(modelSource).toContain(
-      'export interface BookDetailChaptersFootnotesModel extends EntityModel'
+      'export interface BookDetailChaptersFootnotesModel extends EntityModel',
     );
     expect(modelSource).toContain('chapters?: BookDetailChaptersModel[] | null;');
     expect(modelSource).toContain('footnotes?: BookDetailChaptersFootnotesModel[] | null;');
@@ -161,16 +161,16 @@ describe('renderGeneratedApp', () => {
             ],
           },
         ],
-      })
+      }),
     );
 
     expect(tree.paths()).toContain('src/modules/department/descriptor.ts');
     expect(tree.paths()).toContain('src/modules/department/ldkit-schema.ts');
     expect(tree.get('src/config/aggregate-registry.ts')).toContain(
-      '"https://example.org/aggregate/department": DepartmentAggregateDescriptor'
+      '"https://example.org/aggregate/department": DepartmentAggregateDescriptor',
     );
     expect(tree.get('src/config/data-sources.ts')).toContain(
-      '"https://example.org/aggregate/department": DepartmentLdkitSchemas'
+      '"https://example.org/aggregate/department": DepartmentLdkitSchemas',
     );
   });
 
@@ -200,7 +200,7 @@ describe('renderGeneratedApp', () => {
 
     expect(tree.get('src/modules/turisticky-cil/model.ts')).toContain('ma_url?: string | null');
     expect(tree.get('src/modules/turisticky-cil/descriptor.ts')).toContain(
-      '"propertyName": "ma_url"'
+      '"propertyName": "ma_url"',
     );
     expect(tree.get('src/modules/turisticky-cil/descriptor.ts')).toContain('"label": "Má URL"');
   });
@@ -211,26 +211,26 @@ describe('renderGeneratedApp', () => {
 
     // a route loads its page on demand rather than importing it up front
     expect(tree.get('src/routes.tsx')).toContain(
-      'import("@/modules/book-list/book-read-list-page.tsx")'
+      'import("@/modules/book-list/book-read-list-page.tsx")',
     );
     expect(tree.get('src/routes.tsx')).toContain('Component: module.BookReadListPage');
     expect(tree.get('src/routes.tsx')).toContain('path: "/book-read-detail"');
     expect(tree.get('src/modules/book-list/book-read-list-page.tsx')).toContain('<ListView');
     expect(tree.get('src/modules/book-list/book-read-list-page.tsx')).toContain(
-      'strategy={strategy}'
+      'strategy={strategy}',
     );
     expect(tree.get('src/modules/book-list/book-read-list-page.tsx')).not.toContain(
-      'PlaceholderOperationView'
+      'PlaceholderOperationView',
     );
     expect(tree.get('src/modules/book-list/book-read-list-page.tsx')).not.toContain(
-      '"fieldPath": "author"'
+      '"fieldPath": "author"',
     );
     expect(tree.get('src/modules/book-list/model.ts')).toContain('export interface BookListModel');
     expect(tree.get('src/modules/book-list/book-read-list-operation.ts')).toContain(
-      'extends DefaultReadListStrategy<BookListModel>'
+      'extends DefaultReadListStrategy<BookListModel>',
     );
     expect(tree.get('src/modules/book-list/book-read-list-operation.ts')).toContain(
-      'async validateRequest('
+      'async validateRequest(',
     );
     expect(tree.get('package.json')).toContain('"react-router-dom"');
     // the two documents a developer opens first
@@ -253,7 +253,7 @@ describe('renderGeneratedApp', () => {
       node(
         'Author.ReadDetail',
         'https://example.org/aggregate/author-detail',
-        Operation.ReadDetail
+        Operation.ReadDetail,
       ),
     ];
     graph.edges = [
@@ -453,7 +453,7 @@ describe('renderGeneratedApp', () => {
             ],
           },
         ],
-      })
+      }),
     );
     const model = tree.get('src/modules/localized/model.ts');
     const descriptor = tree.get('src/modules/localized/descriptor.ts');
@@ -577,7 +577,7 @@ function node(
   id: string,
   aggregateIri: string,
   operation: ApplicationNode['operation'],
-  config?: ApplicationNodeConfig
+  config?: ApplicationNodeConfig,
 ): ApplicationNode {
   return {
     id,

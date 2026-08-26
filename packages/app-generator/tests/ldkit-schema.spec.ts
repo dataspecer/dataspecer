@@ -427,14 +427,14 @@ describe('LDKit schema generation', () => {
     expect(bundle.writes['[]'].contacts['@type']).toBe(ldkit.IRI);
     expect(bundle.writes['["contacts"]']).toBeUndefined();
     expect(
-      bundle.specializationWrites['["contacts"]']['https://example.org/psm/organization']
+      bundle.specializationWrites['["contacts"]']['https://example.org/psm/organization'],
     ).toMatchObject({
       '@type': 'https://example.org/class/organization',
       name: { '@id': 'https://example.org/p/name' },
       email: { '@id': 'https://example.org/p/email' },
     });
     expect(
-      bundle.specializationWrites['["contacts"]']['https://example.org/psm/person'].email
+      bundle.specializationWrites['["contacts"]']['https://example.org/psm/person'].email,
     ).toBeUndefined();
   });
 
@@ -461,7 +461,7 @@ describe('LDKit schema generation', () => {
       },
     ]);
     const source = toLdkitSchemaSource(
-      buildLdkitSchemaBundle(aggregate.classIri, aggregate.fields)
+      buildLdkitSchemaBundle(aggregate.classIri, aggregate.fields),
     );
 
     expect(source).toContain('"@type": xsd.string');
@@ -533,7 +533,7 @@ describe('LDKit schema generation', () => {
     ]);
 
     expect(
-      toLdkitSchemaSource(buildLdkitSchemaBundle(aggregate.classIri, aggregate.fields))
+      toLdkitSchemaSource(buildLdkitSchemaBundle(aggregate.classIri, aggregate.fields)),
     ).toContain('"@type": xsd.base64Binary');
   });
 });

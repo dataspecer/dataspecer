@@ -31,7 +31,7 @@ function readAssetMap(root) {
         collectFiles(root).map((filePath) => [
             toPosixPath(relative(root, filePath)),
             readFileSync(filePath, 'utf8'),
-        ])
+        ]),
     );
 }
 

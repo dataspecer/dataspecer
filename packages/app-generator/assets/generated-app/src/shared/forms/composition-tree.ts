@@ -28,7 +28,7 @@ export function navigablePanes(
   target: EntityTarget,
   aggregateRegistry: AggregateDescriptorMap,
   path: EntityPathSegment[],
-  validationPrefix = ''
+  validationPrefix = '',
 ): NavigablePane[] {
   return effectiveFields(target, entity)
     .filter(isCompositionField)
@@ -81,7 +81,7 @@ function walkCompositionPath(
   rootTarget: EntityTarget,
   root: EntityRecord,
   path: readonly EntityPathSegment[],
-  aggregateRegistry: AggregateDescriptorMap
+  aggregateRegistry: AggregateDescriptorMap,
 ): CompositionPathWalk {
   let target = rootTarget;
   let entity = root;
@@ -90,7 +90,7 @@ function walkCompositionPath(
 
   for (const segment of path) {
     const field = effectiveFields(target, entity).find(
-      (candidate) => candidate.propertyName === segment.propertyName
+      (candidate) => candidate.propertyName === segment.propertyName,
     );
     const child = field && resolveCompositionTarget(target, field, aggregateRegistry);
     if (!field || !child) {
@@ -118,7 +118,7 @@ export function compositionAtPath(
   rootTarget: EntityTarget,
   root: EntityRecord,
   path: readonly EntityPathSegment[],
-  aggregateRegistry: AggregateDescriptorMap
+  aggregateRegistry: AggregateDescriptorMap,
 ): Pick<CompositionPathWalk, 'target' | 'validationPath'> {
   const { target, validationPath } = walkCompositionPath(rootTarget, root, path, aggregateRegistry);
   return { target, validationPath };
@@ -134,7 +134,7 @@ export function breadcrumbEntries(
   root: EntityRecord,
   rootTarget: EntityTarget,
   path: readonly EntityPathSegment[],
-  aggregateRegistry: AggregateDescriptorMap
+  aggregateRegistry: AggregateDescriptorMap,
 ): BreadcrumbEntry[] {
   const { steps } = walkCompositionPath(rootTarget, root, path, aggregateRegistry);
   const traversed: EntityPathSegment[] = [];
@@ -155,7 +155,7 @@ export function breadcrumbEntries(
 export function entitySummary(
   target: EntityTarget,
   entity: EntityRecord | undefined,
-  index: number
+  index: number,
 ): string {
   if (!entity) {
     return `${target.name} ${index + 1}`;
@@ -181,7 +181,7 @@ export function countIssues(issues: readonly ValidationIssue[], path: string): n
     (issue) =>
       issue.path === path ||
       issue.path?.startsWith(`${path}.`) === true ||
-      issue.path?.startsWith(`${path}[`) === true
+      issue.path?.startsWith(`${path}[`) === true,
   ).length;
 }
 
@@ -189,7 +189,7 @@ export function countIssues(issues: readonly ValidationIssue[], path: string): n
 export function issuesByPane(
   rootTarget: EntityTarget,
   aggregateRegistry: AggregateDescriptorMap,
-  issues: readonly ValidationIssue[]
+  issues: readonly ValidationIssue[],
 ): Map<string, number> {
   const counts = new Map<string, number>();
   for (const issue of issues) {
@@ -199,7 +199,7 @@ export function issuesByPane(
     const pane = nearestPanePath(
       rootTarget,
       aggregateRegistry,
-      entityPathForValidationPath(rootTarget, aggregateRegistry, issue.path)
+      entityPathForValidationPath(rootTarget, aggregateRegistry, issue.path),
     );
     const key = formatEntityPath(pane);
     counts.set(key, (counts.get(key) ?? 0) + 1);
@@ -209,13 +209,14 @@ export function issuesByPane(
 
 export function samePath(
   left: readonly EntityPathSegment[],
-  right: readonly EntityPathSegment[]
+  right: readonly EntityPathSegment[],
 ): boolean {
   return (
     left.length === right.length &&
     left.every(
       (segment, index) =>
-        segment.propertyName === right[index]?.propertyName && segment.index === right[index]?.index
+        segment.propertyName === right[index]?.propertyName &&
+        segment.index === right[index]?.index,
     )
   );
 }
@@ -224,7 +225,7 @@ export function samePath(
 export function collectEntityIds(
   entity: EntityRecord | undefined,
   target: EntityTarget,
-  aggregateRegistry: AggregateDescriptorMap
+  aggregateRegistry: AggregateDescriptorMap,
 ): Set<string> {
   const ids = new Set<string>();
   if (!entity) {
@@ -250,7 +251,7 @@ export function collectEntityIds(
 /** Returns whether the composition structure contains a multilingual field. */
 export function containsMultilingualFields(
   target: EntityTarget,
-  aggregateRegistry: AggregateDescriptorMap
+  aggregateRegistry: AggregateDescriptorMap,
 ): boolean {
   return targetContainsMultilingualFields(target, aggregateRegistry, new Set());
 }
@@ -258,7 +259,7 @@ export function containsMultilingualFields(
 function targetContainsMultilingualFields(
   target: EntityTarget,
   aggregateRegistry: AggregateDescriptorMap,
-  visited: Set<string>
+  visited: Set<string>,
 ): boolean {
   const key = JSON.stringify([target.aggregate.iri, target.fieldPath]);
   if (visited.has(key)) {
@@ -275,7 +276,7 @@ function targetContainsMultilingualFields(
     }
     const childTarget = resolveCompositionTarget(target, field, aggregateRegistry);
     return Boolean(
-      childTarget && targetContainsMultilingualFields(childTarget, aggregateRegistry, visited)
+      childTarget && targetContainsMultilingualFields(childTarget, aggregateRegistry, visited),
     );
   });
 }
@@ -284,7 +285,7 @@ function targetContainsMultilingualFields(
 export function collectMultilingualLanguages(
   entity: EntityRecord,
   target: EntityTarget,
-  aggregateRegistry: AggregateDescriptorMap
+  aggregateRegistry: AggregateDescriptorMap,
 ): string[] {
   const languages = new Set<string>();
   collectEntityLanguages(entity, target, aggregateRegistry, languages);
@@ -295,12 +296,12 @@ function collectEntityLanguages(
   entity: EntityRecord,
   target: EntityTarget,
   aggregateRegistry: AggregateDescriptorMap,
-  languages: Set<string>
+  languages: Set<string>,
 ): void {
   for (const field of effectiveFields(target, entity)) {
     if (isMultilingualField(field)) {
       multilingualLanguageTags(entity[field.propertyName]).forEach((language) =>
-        languages.add(language)
+        languages.add(language),
       );
       continue;
     }

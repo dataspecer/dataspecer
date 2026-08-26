@@ -32,10 +32,10 @@ export function useEntityPath(): [
           }
           return updated;
         },
-        { replace: false }
+        { replace: false },
       );
     },
-    [setSearchParams]
+    [setSearchParams],
   );
 
   return [path, setPath];

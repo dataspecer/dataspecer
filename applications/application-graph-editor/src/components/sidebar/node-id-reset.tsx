@@ -1,8 +1,8 @@
-import * as Tooltip from "@radix-ui/react-tooltip";
-import { RotateCcw } from "lucide-react";
-import type { ApplicationNode } from "@dataspecer/app-generator/graph";
-import { isGeneratedNodeId, nextNodeId } from "@/graph/mutations.ts";
-import { useEditorStore } from "@/store.ts";
+import * as Tooltip from '@radix-ui/react-tooltip';
+import { RotateCcw } from 'lucide-react';
+import type { ApplicationNode } from '@dataspecer/app-generator/graph';
+import { isGeneratedNodeId, nextNodeId } from '@/graph/mutations.ts';
+import { useEditorStore } from '@/store.ts';
 
 /**
  * Names the node after its aggregate and operation. Only a hand written ID offers this, an ID the

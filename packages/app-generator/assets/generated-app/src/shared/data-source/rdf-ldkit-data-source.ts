@@ -58,11 +58,11 @@ export type LdkitSchemaMap = Record<string, LdkitSchemaBundle>;
 export class RdfLdkitDataSource implements DataSource {
   constructor(
     private readonly endpoint: string,
-    private readonly schemas: LdkitSchemaMap
+    private readonly schemas: LdkitSchemaMap,
   ) {}
 
   async readList<TModel extends EntityModel>(
-    args: ReadListArgs<TModel>
+    args: ReadListArgs<TModel>,
   ): Promise<ReadListResult<TModel>> {
     const schemas = this.requireSchemas(args.aggregate);
     const lens = createLens(schemas.list, this.context());
@@ -75,14 +75,14 @@ export class RdfLdkitDataSource implements DataSource {
       new QueryEngine().queryBindings(iriQuery, this.context()).then(readBindings),
     ]);
     const iris = iriBindings.map((binding) =>
-      toSafeNamedNodeValue(binding.get('iri'), 'List result IRI')
+      toSafeNamedNodeValue(binding.get('iri'), 'List result IRI'),
     );
     if (iris.length === 0) {
       return { items: [], total };
     }
 
     const items = (await lens.findByIris(iris)).map(
-      (entity) => normalizeLdkitEntity(entity, args.aggregate.fields) as TModel
+      (entity) => normalizeLdkitEntity(entity, args.aggregate.fields) as TModel,
     );
     const itemById = new Map(items.map((item) => [item.id, item]));
     return {
@@ -96,7 +96,7 @@ export class RdfLdkitDataSource implements DataSource {
   }
 
   async readDetail<TModel extends EntityModel>(
-    args: ReadDetailArgs<TModel>
+    args: ReadDetailArgs<TModel>,
   ): Promise<TModel | null> {
     requireSafeAbsoluteIri(args.id, 'Entity IRI');
     const lens = createLens(this.requireSchemas(args.aggregate).detail, this.context());
@@ -115,7 +115,7 @@ export class RdfLdkitDataSource implements DataSource {
     const { fields, lens } = this.resolveWriteTarget(
       args.aggregate,
       args.fieldPath,
-      args.specializationIri
+      args.specializationIri,
     );
     const inverseFields = inverseWritableFields(fields);
     const forwardPayload = omitFields(args.payload, inverseFields);
@@ -138,11 +138,11 @@ export class RdfLdkitDataSource implements DataSource {
     const { fields, lens } = this.resolveWriteTarget(
       args.aggregate,
       args.fieldPath,
-      args.specializationIri
+      args.specializationIri,
     );
     // replace only inverse fields present in the payload, absent fields keep their stored values
     const inverseFields = inverseWritableFields(fields).filter((field) =>
-      Object.hasOwn(payloadRecord, field.propertyName)
+      Object.hasOwn(payloadRecord, field.propertyName),
     );
     const forwardPayload = omitFields(payload, inverseFields);
     const inverseDeleteQuery = buildInverseDeleteQuery(inverseFields, args.id);
@@ -178,7 +178,7 @@ export class RdfLdkitDataSource implements DataSource {
   async listIncomingReferences(id: string): Promise<IncomingReference[]> {
     const stream = await new QueryEngine().queryBindings(
       buildIncomingReferencesQuery(id),
-      this.context()
+      this.context(),
     );
     const bindings = readBindings(stream);
     return bindings.map((binding) => ({
@@ -222,7 +222,7 @@ export class RdfLdkitDataSource implements DataSource {
   }
 
   private requireSchemas<TModel extends EntityModel>(
-    aggregate: AggregateDescriptor<TModel>
+    aggregate: AggregateDescriptor<TModel>,
   ): LdkitSchemaBundle {
     const schemas = this.schemas[aggregate.iri];
     if (!schemas) {
@@ -233,7 +233,7 @@ export class RdfLdkitDataSource implements DataSource {
 
   private resolveEntityTarget<TModel extends EntityModel>(
     aggregate: AggregateDescriptor<TModel>,
-    fieldPath: readonly string[] = []
+    fieldPath: readonly string[] = [],
   ): { fields: FieldDescriptor[]; key: string; targetField?: FieldDescriptor } {
     let fields = aggregate.fields;
     let targetField: FieldDescriptor | undefined;
@@ -259,7 +259,7 @@ export class RdfLdkitDataSource implements DataSource {
   private resolveWriteTarget<TModel extends EntityModel>(
     aggregate: AggregateDescriptor<TModel>,
     fieldPath: readonly string[] = [],
-    specializationIri?: string
+    specializationIri?: string,
   ): { fields: FieldDescriptor[]; lens: Lens<Schema> } {
     const schemas = this.requireSchemas(aggregate);
     const target = this.resolveEntityTarget(aggregate, fieldPath);
@@ -268,16 +268,16 @@ export class RdfLdkitDataSource implements DataSource {
     if (specializedSchemas) {
       if (!specializationIri) {
         throw new Error(
-          `Write target "${aggregate.name}.${fieldPath.join('.')}" requires a specialization.`
+          `Write target "${aggregate.name}.${fieldPath.join('.')}" requires a specialization.`,
         );
       }
       const schema = specializedSchemas[specializationIri];
       const specialization = target.targetField?.specializations?.find(
-        (candidate) => candidate.specializationIri === specializationIri
+        (candidate) => candidate.specializationIri === specializationIri,
       );
       if (!schema || !specialization) {
         throw new Error(
-          `Unknown specialization "${specializationIri}" for "${aggregate.name}.${fieldPath.join('.')}".`
+          `Unknown specialization "${specializationIri}" for "${aggregate.name}.${fieldPath.join('.')}".`,
         );
       }
       const shape = {
@@ -292,7 +292,7 @@ export class RdfLdkitDataSource implements DataSource {
 
     if (specializationIri) {
       throw new Error(
-        `Write target "${aggregate.name}.${fieldPath.join('.')}" has no specializations.`
+        `Write target "${aggregate.name}.${fieldPath.join('.')}" has no specializations.`,
       );
     }
     const schema = schemas.writes[target.key];
@@ -316,7 +316,7 @@ function inverseWritableFields(fields: readonly FieldDescriptor[]): FieldDescrip
 
 function omitFields<TModel extends EntityModel>(
   payload: TModel,
-  fields: readonly FieldDescriptor[]
+  fields: readonly FieldDescriptor[],
 ): Record<string, unknown> {
   const result = { ...payload } as Record<string, unknown>;
   for (const field of fields) {
@@ -344,7 +344,7 @@ const throwOnFailedRequest: typeof fetch = async (input, init) => {
   if (!response.ok) {
     await response.body?.cancel();
     throw new Error(
-      `The endpoint rejected the request: ${response.status} ${response.statusText}.`
+      `The endpoint rejected the request: ${response.status} ${response.statusText}.`,
     );
   }
   return response;

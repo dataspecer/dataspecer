@@ -1,7 +1,4 @@
-import {
-  validateGraphSyntax,
-  type ApplicationGraph,
-} from "@dataspecer/app-generator/graph";
+import { validateGraphSyntax, type ApplicationGraph } from '@dataspecer/app-generator/graph';
 
 export type GraphCheckResult = { graph: ApplicationGraph } | { error: string };
 
@@ -28,6 +25,8 @@ export function parseGraph(text: string): GraphCheckResult {
   try {
     return checkGraph(JSON.parse(text));
   } catch (caught) {
-    return { error: `Not valid JSON: ${caught instanceof Error ? caught.message : String(caught)}` };
+    return {
+      error: `Not valid JSON: ${caught instanceof Error ? caught.message : String(caught)}`,
+    };
   }
 }

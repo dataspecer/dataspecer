@@ -49,7 +49,7 @@ function resultTypeName(operation: Operation, modelName: string): string {
 export function buildRenderContext(model: GenerationModel): GeneratedAppRenderContext {
   const usedAggregateIris = collectReachableAggregateIris(
     model.operations.map((operation) => operation.aggregateIri),
-    model.aggregates
+    model.aggregates,
   );
 
   // referenced targets need descriptors even when they have no operation of their own

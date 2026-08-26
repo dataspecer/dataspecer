@@ -12,7 +12,7 @@ import { ViolationCode } from '../violation-codes.ts';
  * (some IRI has to be provided when creating an instance, so it cannot be forbidden).
  */
 export function validateNamedNodeIdentityOverrides(
-  context: SemanticValidationContext
+  context: SemanticValidationContext,
 ): Violation[] {
   const violations: Violation[] = [];
   const warned = new Set<string>();
@@ -31,7 +31,7 @@ function visitFields(
   parentChain: AggregateFieldMetadata[],
   pathPrefix: string,
   warned: Set<string>,
-  violations: Violation[]
+  violations: Violation[],
 ): void {
   for (const field of fields) {
     if (field.kind !== FieldKind.Association) {
@@ -42,7 +42,7 @@ function visitFields(
     const chain = [...parentChain, field];
     const warningKey = chainIdentity(classIri, chain);
     const neverSpecializations = field.specializations?.filter(
-      (specialization) => specialization.identityPolicy === 'NEVER'
+      (specialization) => specialization.identityPolicy === 'NEVER',
     );
     if (
       field.associationKind === AssociationKind.Composition &&
@@ -63,8 +63,8 @@ function visitFields(
         semanticWarning(
           ViolationCode.SemanticNamedNodeIdentityOverride,
           message,
-          '/dataSpecificationIri'
-        )
+          '/dataSpecificationIri',
+        ),
       );
     }
 

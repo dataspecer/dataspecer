@@ -11,13 +11,13 @@ interface NestedModelFieldShape {
 
 /** Returns true when a field produces an inline entity model rather than an IRI reference. */
 export function hasNestedModel<TField extends NestedModelFieldShape>(
-  field: TField
+  field: TField,
 ): field is TField & { targetClassIri: string; fields: NonNullable<TField['fields']> } {
   return Boolean(
     field.kind === FieldKind.Association &&
     field.associationKind === AssociationKind.Composition &&
     !field.targetAggregateIri &&
     field.fields !== undefined &&
-    field.targetClassIri
+    field.targetClassIri,
   );
 }

@@ -14,7 +14,7 @@ export function formatEntityPath(path: readonly EntityPathSegment[]): string {
     .map((segment) =>
       segment.index === undefined
         ? segment.propertyName
-        : `${segment.propertyName}[${segment.index}]`
+        : `${segment.propertyName}[${segment.index}]`,
     )
     .join('.');
 }
@@ -42,7 +42,7 @@ export function parseEntityPath(value: string): EntityPathSegment[] {
  */
 export function resolveEntityPath(
   root: EntityRecord,
-  path: readonly EntityPathSegment[]
+  path: readonly EntityPathSegment[],
 ): EntityPathSegment[] {
   const resolved: EntityPathSegment[] = [];
   let current: EntityRecord = root;
@@ -71,7 +71,7 @@ export function resolveEntityPath(
 export function entityPathForValidationPath(
   rootTarget: EntityTarget,
   aggregateRegistry: AggregateDescriptorMap,
-  validationPath: string
+  validationPath: string,
 ): EntityPathSegment[] {
   const path: EntityPathSegment[] = [];
   let target = rootTarget;
@@ -93,7 +93,7 @@ export function entityPathForValidationPath(
     path.push(
       match[2] === undefined
         ? { propertyName: field.propertyName }
-        : { propertyName: field.propertyName, index: Number(match[2]) }
+        : { propertyName: field.propertyName, index: Number(match[2]) },
     );
     target = child;
   }
@@ -107,14 +107,14 @@ export function entityPathForValidationPath(
 export function nearestPanePath(
   rootTarget: EntityTarget,
   aggregateRegistry: AggregateDescriptorMap,
-  path: readonly EntityPathSegment[]
+  path: readonly EntityPathSegment[],
 ): EntityPathSegment[] {
   const pane: EntityPathSegment[] = [];
   let target = rootTarget;
 
   for (const segment of path) {
     const field = target.fields.find(
-      (candidate) => candidate.propertyName === segment.propertyName
+      (candidate) => candidate.propertyName === segment.propertyName,
     );
     const child = field && resolveCompositionTarget(target, field, aggregateRegistry);
     if (!child || !opensInOwnPane(child)) {

@@ -43,8 +43,8 @@ export function validateCompositionCycles(context: SemanticValidationContext): V
               ViolationCode.SemanticCircularComposition,
               `Composition cycle detected: ${[...cycle, target].join(' -> ')}. ` +
                 'Change at least one association in the cycle to an aggregation.',
-              '/nodes'
-            )
+              '/nodes',
+            ),
           );
         }
       } else if (targetState === undefined) {

@@ -51,7 +51,7 @@ export interface LdkitSchemaField {
 /** Builds the operation-specific LDKit schemas used for one aggregate. */
 export function buildLdkitSchemaBundle(
   classIri: string,
-  fields: readonly LdkitSchemaField[]
+  fields: readonly LdkitSchemaField[],
 ): GeneratedLdkitSchemaBundle {
   const writes: Record<string, Schema> = {
     [entityTargetKey([])]: buildWriteSchema(classIri, fields),
@@ -70,7 +70,7 @@ export function buildLdkitSchemaBundle(
 function buildReadSchema(
   classIri: string | undefined,
   fields: readonly LdkitSchemaField[],
-  includeCompositions: boolean
+  includeCompositions: boolean,
 ): Schema {
   const schema: Schema = classIri ? { '@type': classIri } : {};
   for (const field of fields) {
@@ -128,7 +128,7 @@ function collectNestedWriteSchemas(
   fields: readonly LdkitSchemaField[],
   parentPath: readonly string[],
   writes: Record<string, Schema>,
-  specializationWrites: Record<string, Record<string, Schema>>
+  specializationWrites: Record<string, Record<string, Schema>>,
 ): void {
   for (const field of fields) {
     if (!hasNestedModel(field)) {
@@ -142,13 +142,13 @@ function collectNestedWriteSchemas(
         field.specializations.map((specialization) => {
           const fieldPaths = new Set(specialization.fieldPaths);
           const specializationFields = field.fields.filter((candidate) =>
-            fieldPaths.has(candidate.path)
+            fieldPaths.has(candidate.path),
           );
           return [
             specialization.specializationIri,
             buildWriteSchema(specialization.classIri, specializationFields),
           ];
-        })
+        }),
       );
     } else {
       writes[key] = buildWriteSchema(field.targetClassIri, field.fields);

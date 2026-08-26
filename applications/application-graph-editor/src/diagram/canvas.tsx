@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Background,
   ConnectionMode,
@@ -17,22 +17,22 @@ import {
   type NodeChange,
   type OnConnectStartParams,
   type OnSelectionChangeParams,
-} from "@xyflow/react";
-import { isEqual } from "es-toolkit";
-import { connectionEdge } from "@/graph/mutations.ts";
-import type { GraphElementRef } from "@/graph/graph-element-ref.ts";
-import { newNode, nodeBlockedReason } from "@/graph/new-node.ts";
-import { useEditorStore } from "@/store.ts";
-import { useValidation } from "@/hooks/use-validation.ts";
-import { connectableTargets, flaggedIds } from "@/validation/violations.ts";
-import { CanvasContextMenu } from "./canvas-context-menu.tsx";
-import { CanvasToolbar } from "./canvas-toolbar.tsx";
-import { ConnectionLine } from "./connection-line.tsx";
-import { FloatingEdge } from "./floating-edge.tsx";
-import { projectEdges, projectNodes, type OperationFlowNode } from "./graph-to-flow.ts";
-import { OperationNode } from "./operation-node.tsx";
-import { OPERATION_FILL } from "./operation-style.ts";
-import { centeredOn, paneToGraph } from "./pane-position.ts";
+} from '@xyflow/react';
+import { isEqual } from 'es-toolkit';
+import { connectionEdge } from '@/graph/mutations.ts';
+import type { GraphElementRef } from '@/graph/graph-element-ref.ts';
+import { newNode, nodeBlockedReason } from '@/graph/new-node.ts';
+import { useEditorStore } from '@/store.ts';
+import { useValidation } from '@/hooks/use-validation.ts';
+import { connectableTargets, flaggedIds } from '@/validation/violations.ts';
+import { CanvasContextMenu } from './canvas-context-menu.tsx';
+import { CanvasToolbar } from './canvas-toolbar.tsx';
+import { ConnectionLine } from './connection-line.tsx';
+import { FloatingEdge } from './floating-edge.tsx';
+import { projectEdges, projectNodes, type OperationFlowNode } from './graph-to-flow.ts';
+import { OperationNode } from './operation-node.tsx';
+import { OPERATION_FILL } from './operation-style.ts';
+import { centeredOn, paneToGraph } from './pane-position.ts';
 
 const NOTHING_DIMMED: ReadonlySet<string> = new Set();
 
@@ -87,7 +87,17 @@ function CanvasFlow() {
     const selected = { nodes: new Set(selectedNodes), edges: new Set(selectedEdges) };
     setNodes((current) => projectNodes(graph, positions, flagged, highlight, dimmed, current));
     setEdges((current) => projectEdges(graph, flagged, highlight, selected, current));
-  }, [graph, positions, highlight, flagged, dimmed, selectedNodes, selectedEdges, setNodes, setEdges]);
+  }, [
+    graph,
+    positions,
+    highlight,
+    flagged,
+    dimmed,
+    selectedNodes,
+    selectedEdges,
+    setNodes,
+    setEdges,
+  ]);
 
   // when a panel asks to select an element, it becomes the only selected one
   useEffect(() => {
@@ -104,7 +114,7 @@ function CanvasFlow() {
     (changes: NodeChange<OperationFlowNode>[]) => {
       onNodesChange(changes);
       const moves = changes.flatMap((change) =>
-        change.type === "position" && change.dragging !== true && change.position
+        change.type === 'position' && change.dragging !== true && change.position
           ? [{ id: change.id, position: change.position }]
           : [],
       );
@@ -191,15 +201,15 @@ function CanvasFlow() {
 
   useEffect(() => {
     const cancelOnEscape = (event: KeyboardEvent) => {
-      if (event.key !== "Escape" || !flowStore.getState().connection.inProgress) {
+      if (event.key !== 'Escape' || !flowStore.getState().connection.inProgress) {
         return;
       }
       flowStore.getState().cancelConnection();
       canceled.current = true;
       setDimmed(NOTHING_DIMMED);
     };
-    document.addEventListener("keydown", cancelOnEscape);
-    return () => document.removeEventListener("keydown", cancelOnEscape);
+    document.addEventListener('keydown', cancelOnEscape);
+    return () => document.removeEventListener('keydown', cancelOnEscape);
   }, [flowStore]);
 
   useEffect(() => {
@@ -239,9 +249,9 @@ function CanvasFlow() {
   const onSelectionChange = useCallback((params: OnSelectionChangeParams) => {
     const store = useEditorStore.getState();
     const next = params.nodes[0]
-      ? ({ kind: "node", id: params.nodes[0].id } as const)
+      ? ({ kind: 'node', id: params.nodes[0].id } as const)
       : params.edges[0]
-        ? ({ kind: "edge", id: params.edges[0].id } as const)
+        ? ({ kind: 'edge', id: params.edges[0].id } as const)
         : null;
     if (next?.kind !== store.selection?.kind || next?.id !== store.selection?.id) {
       store.setSelection(next);
@@ -264,12 +274,12 @@ function CanvasFlow() {
         connectionMode={ConnectionMode.Loose}
         connectionRadius={36}
         connectOnClick={false}
-        selectionOnDrag={canvasTool === "select"}
-        panOnDrag={canvasTool === "pan" ? true : [1]}
+        selectionOnDrag={canvasTool === 'select'}
+        panOnDrag={canvasTool === 'pan' ? true : [1]}
         fitView
         // the default lower bound of 0.5 cannot fit a spread out graph into the pane
         minZoom={0.2}
-        deleteKeyCode={["Backspace", "Delete"]}
+        deleteKeyCode={['Backspace', 'Delete']}
         onNodesChange={onNodesChangeWithPositions}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
@@ -279,12 +289,12 @@ function CanvasFlow() {
         onEdgesDelete={onEdgesDelete}
         onSelectionChange={onSelectionChange}
         onNodeContextMenu={(_event, node) => {
-          setContextTarget({ kind: "node", id: node.id });
+          setContextTarget({ kind: 'node', id: node.id });
           setNodes((current) => withSelection(current, node.id));
           setEdges((current) => withSelection(current, node.id));
         }}
         onEdgeContextMenu={(_event, edge) => {
-          setContextTarget({ kind: "edge", id: edge.id });
+          setContextTarget({ kind: 'edge', id: edge.id });
           setNodes((current) => withSelection(current, edge.id));
           setEdges((current) => withSelection(current, edge.id));
         }}

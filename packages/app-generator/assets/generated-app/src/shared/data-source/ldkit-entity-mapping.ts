@@ -28,7 +28,7 @@ export function normalizeLdkitEntity(value: unknown, fields: readonly FieldDescr
 function normalizeEntity(
   value: unknown,
   fields: readonly FieldDescriptor[],
-  specializations?: readonly SpecializationDescriptor[]
+  specializations?: readonly SpecializationDescriptor[],
 ): unknown {
   if (Array.isArray(value)) {
     return value.map((entry) => normalizeEntity(entry, fields, specializations));
@@ -105,7 +105,7 @@ function normalizeUnknown(value: unknown): unknown {
 export function requireNamedCompositionIris(
   model: EntityRecord,
   fields: readonly FieldDescriptor[],
-  pathPrefix = ''
+  pathPrefix = '',
 ): void {
   const record = model as Record<string, unknown>;
   for (const field of fields) {
@@ -122,7 +122,7 @@ export function requireNamedCompositionIris(
       if (!isEntityRecord(value) || typeof value.id !== 'string' || !isSafeAbsoluteIri(value.id)) {
         throw new Error(
           `Composed entity "${valuePath}" must have a safe absolute IRI. ` +
-            'Blank-node compositions are not editable by this generated application.'
+            'Blank-node compositions are not editable by this generated application.',
         );
       }
       if (childShape) {
@@ -136,7 +136,7 @@ export function requireNamedCompositionIris(
 export function toLdkitEntity(
   value: unknown,
   mode: LdkitMutationMode,
-  fields: readonly FieldDescriptor[] = []
+  fields: readonly FieldDescriptor[] = [],
 ): unknown {
   if (Array.isArray(value)) {
     const entries = value
@@ -183,7 +183,7 @@ export function toLdkitEntity(
 function toLdkitFieldValue(
   value: unknown,
   field: FieldDescriptor,
-  mode: LdkitMutationMode
+  mode: LdkitMutationMode,
 ): unknown {
   if (isMultilingualField(field)) {
     return toLdkitMultilingual(value, field, mode);
@@ -196,7 +196,7 @@ function toLdkitFieldValue(
 function toLdkitMultilingual(
   value: unknown,
   field: FieldDescriptor,
-  mode: LdkitMutationMode
+  mode: LdkitMutationMode,
 ): unknown {
   if (value === null) {
     return mode === 'update' ? null : undefined;
@@ -211,7 +211,7 @@ function toLdkitMultilingual(
 function toLdkitReference(
   value: unknown,
   field: FieldDescriptor,
-  mode: LdkitMutationMode
+  mode: LdkitMutationMode,
 ): unknown {
   if (value === null) {
     return mode === 'update' ? null : undefined;

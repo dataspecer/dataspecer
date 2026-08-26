@@ -10,7 +10,7 @@ import { toPageComponentName, toRouteId } from '../utils/naming.ts';
 
 export function buildOperationDescriptor(
   node: ApplicationNode,
-  aggregate: GeneratedAggregateDescriptor
+  aggregate: GeneratedAggregateDescriptor,
 ): GeneratedOperationDescriptor {
   const pageComponentName = toPageComponentName(node.id);
   const routeId = toRouteId(node.id);

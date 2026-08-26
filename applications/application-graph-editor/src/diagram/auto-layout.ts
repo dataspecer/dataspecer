@@ -1,11 +1,11 @@
-import ELK from "elkjs/lib/elk.bundled.js";
-import type { ApplicationGraph } from "@dataspecer/app-generator/graph";
-import type { NodePositions } from "@/store.ts";
-import { NODE_SIZE } from "./node-size.ts";
+import ELK from 'elkjs/lib/elk.bundled.js';
+import type { ApplicationGraph } from '@dataspecer/app-generator/graph';
+import type { NodePositions } from '@/store.ts';
+import { NODE_SIZE } from './node-size.ts';
 
 const elk = new ELK();
 
-type LayoutDirection = "DOWN" | "RIGHT";
+type LayoutDirection = 'DOWN' | 'RIGHT';
 
 /**
  * A stress layout places nodes by how far apart they are in the graph, which keeps the edges of
@@ -13,10 +13,10 @@ type LayoutDirection = "DOWN" | "RIGHT";
  * edges instead, which suits a graph read as a flow.
  */
 export type LayoutOptions =
-  | { algorithm: "stress" }
-  | { algorithm: "layered"; direction: LayoutDirection };
+  | { algorithm: 'stress' }
+  | { algorithm: 'layered'; direction: LayoutDirection };
 
-const DEFAULT_LAYOUT: LayoutOptions = { algorithm: "stress" };
+const DEFAULT_LAYOUT: LayoutOptions = { algorithm: 'stress' };
 
 // Below roughly this length the stress layout starts placing nodes on top of each other, above it
 // the drawing only grows.
@@ -29,18 +29,18 @@ export async function autoLayout(
 ): Promise<NodePositions> {
   const nodeIds = new Set(graph.nodes.map((node) => node.id));
   const result = await elk.layout({
-    id: "root",
+    id: 'root',
     layoutOptions:
-      options.algorithm === "stress"
+      options.algorithm === 'stress'
         ? {
-            "elk.algorithm": "stress",
-            "elk.stress.desiredEdgeLength": String(DESIRED_EDGE_LENGTH),
+            'elk.algorithm': 'stress',
+            'elk.stress.desiredEdgeLength': String(DESIRED_EDGE_LENGTH),
           }
         : {
-            "elk.algorithm": "layered",
-            "elk.direction": options.direction,
-            "elk.spacing.nodeNode": "60",
-            "elk.layered.spacing.nodeNodeBetweenLayers": "90",
+            'elk.algorithm': 'layered',
+            'elk.direction': options.direction,
+            'elk.spacing.nodeNode': '60',
+            'elk.layered.spacing.nodeNodeBetweenLayers': '90',
           },
     children: graph.nodes.map((node) => ({
       id: node.id,

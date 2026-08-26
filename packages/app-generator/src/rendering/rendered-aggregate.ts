@@ -84,11 +84,11 @@ export function toRenderedAggregate(aggregate: GeneratedAggregateDescriptor): Re
 function toRenderedField(
   field: GeneratedFieldDescriptor,
   aggregateTypeName: string,
-  pathPrefix = ''
+  pathPrefix = '',
 ): RenderedField {
   const fieldPath = joinFieldPath(pathPrefix, field.path);
   const children = field.fields?.map((child) =>
-    toRenderedField(child, aggregateTypeName, fieldPath)
+    toRenderedField(child, aggregateTypeName, fieldPath),
   );
   const propertyName = toPropertyName(field.path);
   const nestedModelName = hasNestedModel(field)
@@ -140,7 +140,7 @@ function toDescriptorField(field: RenderedField): DescriptorField {
 function toModelType(
   field: GeneratedFieldDescriptor,
   children?: RenderedField[],
-  nestedModelName?: string
+  nestedModelName?: string,
 ): string {
   if (field.kind === FieldKind.Association) {
     let baseType: string;

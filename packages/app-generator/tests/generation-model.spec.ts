@@ -55,7 +55,7 @@ describe('buildGenerationModel', () => {
         path: '/book-read-detail',
         pageComponentName: 'BookReadDetailPage',
         requiresEntityId: true,
-      })
+      }),
     );
     expect(model.navigation).toEqual([
       {
@@ -94,7 +94,7 @@ describe('buildGenerationModel', () => {
 
     expect(
       model.operations.find((operation) => operation.id === 'Book.Create')?.navigation
-        .successRedirect
+        .successRedirect,
     ).toEqual({
       id: 'create-list',
       label: 'List',
@@ -105,7 +105,7 @@ describe('buildGenerationModel', () => {
     });
     expect(
       model.operations.find((operation) => operation.id === 'Book.Update')?.navigation
-        .successRedirect
+        .successRedirect,
     ).toEqual({
       id: 'update-detail',
       label: 'Detail',
@@ -116,7 +116,7 @@ describe('buildGenerationModel', () => {
     });
     expect(
       model.operations.find((operation) => operation.id === 'Book.Delete')?.navigation
-        .successRedirect
+        .successRedirect,
     ).toEqual({
       id: 'delete-list',
       label: 'List',
@@ -156,7 +156,7 @@ describe('buildGenerationModel', () => {
             id: 'create-detail',
             target: 'Book.ReadDetail',
           }
-        : edge
+        : edge,
     );
 
     const model = buildGenerationModel(graph, preparedMetadataFor(graph));
@@ -227,7 +227,7 @@ describe('buildGenerationModel', () => {
     const graph = graphFixture();
     const model = buildGenerationModel(graph, preparedMetadataFor(graph));
     const bookDetail = model.aggregates.find(
-      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail'
+      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail',
     );
 
     const chapters = bookDetail?.fields.find((field) => field.path === 'chapters');
@@ -241,10 +241,10 @@ describe('buildGenerationModel', () => {
       associationKind: AssociationKind.Aggregation,
     });
     const chapterDetail = model.aggregates.find(
-      (aggregate) => aggregate.iri === 'https://example.org/aggregate/chapter-detail'
+      (aggregate) => aggregate.iri === 'https://example.org/aggregate/chapter-detail',
     );
     expect(chapterDetail?.fields.find((field) => field.path === 'editor')?.associationKind).toBe(
-      AssociationKind.Aggregation
+      AssociationKind.Aggregation,
     );
   });
 
@@ -265,7 +265,7 @@ describe('buildGenerationModel', () => {
       node(
         'Author.ReadDetail',
         'https://example.org/aggregate/author-detail',
-        Operation.ReadDetail
+        Operation.ReadDetail,
       ),
     ];
     graph.edges = [
@@ -511,7 +511,7 @@ function node(
   id: string,
   aggregateIri: string,
   operation: ApplicationNode['operation'],
-  config?: ApplicationNodeConfig
+  config?: ApplicationNodeConfig,
 ): ApplicationNode {
   return {
     id,

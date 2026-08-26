@@ -44,7 +44,7 @@ export type CompositeMutationStep = UpsertMutationStep | DeleteMutationStep;
 export function buildCompositeCreatePlan(
   aggregate: AggregateDescriptor,
   aggregateRegistry: AggregateDescriptorMap,
-  payload: EntityRecord
+  payload: EntityRecord,
 ): CompositeMutationStep[] {
   const steps: CompositeMutationStep[] = [];
   collectCreateSteps(payload, rootEntityTarget(aggregate), aggregateRegistry, steps);
@@ -55,7 +55,7 @@ export function buildCompositeUpdatePlan(
   aggregate: AggregateDescriptor,
   aggregateRegistry: AggregateDescriptorMap,
   payload: EntityRecord,
-  original: EntityRecord
+  original: EntityRecord,
 ): CompositeMutationStep[] {
   const upserts: CompositeMutationStep[] = [];
   const removals: CompositeMutationStep[] = [];
@@ -65,7 +65,7 @@ export function buildCompositeUpdatePlan(
     rootEntityTarget(aggregate),
     aggregateRegistry,
     upserts,
-    removals
+    removals,
   );
   // Upserts create children before updating their parent links. Removed children are deleted only
   // after their edited parent has stopped referencing them.
@@ -76,7 +76,7 @@ export function buildCompositeDeletePlan(
   aggregate: AggregateDescriptor,
   aggregateRegistry: AggregateDescriptorMap,
   payload: EntityRecord,
-  cascadePaths: readonly string[]
+  cascadePaths: readonly string[],
 ): CompositeMutationStep[] {
   // only configured cascade paths are followed, with every descendant placed before its owner
   const steps: CompositeMutationStep[] = [];
@@ -86,7 +86,7 @@ export function buildCompositeDeletePlan(
     aggregateRegistry,
     new Set(cascadePaths),
     '',
-    steps
+    steps,
   );
   return steps;
 }
@@ -95,7 +95,7 @@ function collectCreateSteps(
   entity: EntityRecord,
   target: EntityTarget,
   aggregateRegistry: AggregateDescriptorMap,
-  steps: CompositeMutationStep[]
+  steps: CompositeMutationStep[],
 ): void {
   const specializationIri = requireMutationSpecialization(entity, target);
   visitCompositionChildren(entity, target, aggregateRegistry, (child, childTarget) => {
@@ -116,7 +116,7 @@ function collectUpdateSteps(
   target: EntityTarget,
   aggregateRegistry: AggregateDescriptorMap,
   upserts: CompositeMutationStep[],
-  removals: CompositeMutationStep[]
+  removals: CompositeMutationStep[],
 ): void {
   const specializationIri = requireMutationSpecialization(entity, target, original);
   for (const field of effectiveFields(target, entity)) {
@@ -129,7 +129,7 @@ function collectUpdateSteps(
     const originalById = new Map(
       originalChildren
         .map((child) => [entityId(child), child] as const)
-        .filter((entry): entry is [string, EntityRecord] => entry[0] !== null)
+        .filter((entry): entry is [string, EntityRecord] => entry[0] !== null),
     );
     const currentIds = new Set<string>();
 
@@ -144,7 +144,7 @@ function collectUpdateSteps(
         childTarget,
         aggregateRegistry,
         upserts,
-        removals
+        removals,
       );
     }
 
@@ -170,7 +170,7 @@ function collectDeleteSteps(
   entity: EntityRecord,
   target: EntityTarget,
   aggregateRegistry: AggregateDescriptorMap,
-  removals: CompositeMutationStep[]
+  removals: CompositeMutationStep[],
 ): void {
   requireMutationSpecialization(entity, target, entity, 'remove');
   visitCompositionChildren(entity, target, aggregateRegistry, (child, childTarget) => {
@@ -188,7 +188,7 @@ function collectCascadeDeleteSteps(
   aggregateRegistry: AggregateDescriptorMap,
   cascadePaths: ReadonlySet<string>,
   pathPrefix: string,
-  removals: CompositeMutationStep[]
+  removals: CompositeMutationStep[],
 ): void {
   requireMutationSpecialization(entity, target, entity, 'remove');
   for (const field of effectiveFields(target, entity)) {
@@ -205,7 +205,7 @@ function collectCascadeDeleteSteps(
         aggregateRegistry,
         cascadePaths,
         fieldPath,
-        removals
+        removals,
       );
     }
   }
@@ -221,7 +221,7 @@ function visitCompositionChildren(
   entity: EntityRecord,
   target: EntityTarget,
   aggregateRegistry: AggregateDescriptorMap,
-  visit: (entity: EntityRecord, target: EntityTarget) => void
+  visit: (entity: EntityRecord, target: EntityTarget) => void,
 ): void {
   for (const field of effectiveFields(target, entity)) {
     if (!isCompositionField(field)) {
@@ -237,7 +237,7 @@ function visitCompositionChildren(
 function requireCompositionTarget(
   owner: EntityTarget,
   field: FieldDescriptor,
-  aggregateRegistry: AggregateDescriptorMap
+  aggregateRegistry: AggregateDescriptorMap,
 ): EntityTarget {
   const target = resolveCompositionTarget(owner, field, aggregateRegistry);
   if (!target) {
@@ -249,7 +249,7 @@ function requireCompositionTarget(
 function serializeEntity(
   entity: EntityRecord,
   target: EntityTarget,
-  mode: 'create' | 'update'
+  mode: 'create' | 'update',
 ): EntityRecord {
   const payload: EntityRecord = { id: requireEntityId(entity, target.name) };
   for (const field of effectiveFields(target, entity)) {
@@ -297,7 +297,7 @@ function requireMutationSpecialization(
   entity: EntityRecord,
   target: EntityTarget,
   original?: EntityRecord,
-  operation: 'save' | 'remove' = 'save'
+  operation: 'save' | 'remove' = 'save',
 ): string | undefined {
   if (!target.specializations?.length) {
     return undefined;
@@ -308,7 +308,7 @@ function requireMutationSpecialization(
     if (original) {
       throw new Error(
         `The stored specialization of "${target.name}" cannot be identified, ` +
-          `so it cannot be ${action}.`
+          `so it cannot be ${action}.`,
       );
     }
     throw new Error(`Select one specialization for "${target.name}" before saving.`);
@@ -317,11 +317,11 @@ function requireMutationSpecialization(
     if (operation === 'remove') {
       throw new Error(
         `The stored specialization of "${target.name}" has no identifying branch value, ` +
-          'so it cannot be removed.'
+          'so it cannot be removed.',
       );
     }
     throw new Error(
-      `Enter a value in at least one field unique to "${selected.label}" before saving.`
+      `Enter a value in at least one field unique to "${selected.label}" before saving.`,
     );
   }
   if (!original) {
@@ -332,12 +332,12 @@ function requireMutationSpecialization(
   if (!loaded) {
     throw new Error(
       `The stored specialization of "${target.name}" cannot be identified, ` +
-        `so it cannot be ${action}.`
+        `so it cannot be ${action}.`,
     );
   }
   if (loaded.specializationIri !== selected.specializationIri) {
     throw new Error(
-      `The specialization of "${target.name}" cannot be changed after the entity has been saved.`
+      `The specialization of "${target.name}" cannot be changed after the entity has been saved.`,
     );
   }
   return loaded.specializationIri;

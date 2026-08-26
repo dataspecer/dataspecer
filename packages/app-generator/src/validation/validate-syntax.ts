@@ -35,15 +35,20 @@ export function validateGraphSyntax(input: unknown): SyntaxValidationResult {
         input.datasources,
         ViolationCode.GraphDuplicateDatasourceId,
         'datasources',
-        'Datasource'
+        'Datasource',
       ),
       ...findDuplicateIdViolations(
         input.nodes,
         ViolationCode.GraphDuplicateNodeId,
         'nodes',
-        'Node'
+        'Node',
       ),
-      ...findDuplicateIdViolations(input.edges, ViolationCode.GraphDuplicateEdgeId, 'edges', 'Edge')
+      ...findDuplicateIdViolations(
+        input.edges,
+        ViolationCode.GraphDuplicateEdgeId,
+        'edges',
+        'Edge',
+      ),
     );
   }
 
@@ -89,7 +94,7 @@ function findDuplicateIdViolations(
   items: unknown[],
   code: ViolationCode,
   collectionPath: string,
-  itemLabel: string
+  itemLabel: string,
 ): Violation[] {
   const seen = new Map<string, number>();
   const violations: Violation[] = [];

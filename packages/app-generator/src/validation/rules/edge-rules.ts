@@ -52,7 +52,7 @@ export function requiresSameClassTransition(source: Operation, target: Operation
 
 export function requiresSameClassOrAssociationTransition(
   source: Operation,
-  target: Operation
+  target: Operation,
 ): boolean {
   return (
     (source === OperationValue.ReadList && target === OperationValue.ReadDetail) ||

@@ -1,5 +1,5 @@
-import type { Viewport, XYPosition } from "@xyflow/react";
-import { NODE_SIZE } from "./node-size.ts";
+import type { Viewport, XYPosition } from '@xyflow/react';
+import { NODE_SIZE } from './node-size.ts';
 
 /**
  * Turns a point measured inside the pane into a graph position.

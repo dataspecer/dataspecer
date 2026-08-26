@@ -11,7 +11,7 @@ export function validateDatasource(context: StructuralValidationContext): Violat
       semanticViolation(
         ViolationCode.SemanticUnsupportedDatasourceCount,
         'Exactly one datasource (RDF) is supported by the current version.',
-        '/datasources'
+        '/datasources',
       ),
     ];
   }
@@ -21,7 +21,7 @@ export function validateDatasource(context: StructuralValidationContext): Violat
       semanticViolation(
         ViolationCode.SemanticUnsupportedDatasourceType,
         `Datasource type "${String(graph.datasources[0].type)}" is not supported by the current version.`,
-        '/datasources/0/type'
+        '/datasources/0/type',
       ),
     ];
   }

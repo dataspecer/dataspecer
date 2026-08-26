@@ -1,5 +1,5 @@
-import { findNodeAtLocation, parseTree, type JSONPath } from "jsonc-parser";
-import type { Violation } from "@dataspecer/app-generator/graph";
+import { findNodeAtLocation, parseTree, type JSONPath } from 'jsonc-parser';
+import type { Violation } from '@dataspecer/app-generator/graph';
 
 export interface ViolationRange {
   start: number;
@@ -10,8 +10,8 @@ export interface ViolationRange {
 
 function toJsonPath(path: string): JSONPath {
   return path
-    .split("/")
-    .filter((segment) => segment !== "")
+    .split('/')
+    .filter((segment) => segment !== '')
     .map((segment) => (/^\d+$/.test(segment) ? Number(segment) : segment));
 }
 

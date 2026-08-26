@@ -1,6 +1,6 @@
-import * as Dialog from "@radix-ui/react-dialog";
-import { AlertTriangle } from "lucide-react";
-import { useEditorStore } from "@/store.ts";
+import * as Dialog from '@radix-ui/react-dialog';
+import { AlertTriangle } from 'lucide-react';
+import { useEditorStore } from '@/store.ts';
 
 /** Answers the pending confirmation request, if there is one. */
 export function ConfirmDialog() {
@@ -41,7 +41,7 @@ export function ConfirmDialog() {
               className="cursor-pointer rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700"
               onClick={() => answer(true)}
             >
-              {request?.confirmLabel ?? "Continue"}
+              {request?.confirmLabel ?? 'Continue'}
             </button>
           </div>
         </Dialog.Content>

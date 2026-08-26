@@ -1,13 +1,13 @@
-import { useEffect, useMemo } from "react";
-import { debounce } from "es-toolkit";
-import type { Violation } from "@dataspecer/app-generator/graph";
-import { useEditorStore } from "@/store.ts";
+import { useEffect, useMemo } from 'react';
+import { debounce } from 'es-toolkit';
+import type { Violation } from '@dataspecer/app-generator/graph';
+import { useEditorStore } from '@/store.ts';
 import {
   bySeverity,
   combinedViolations,
   type ValidationSnapshot,
   type ViolationsBySeverity,
-} from "@/validation/violations.ts";
+} from '@/validation/violations.ts';
 
 const VALIDATION_DELAY_MS = 250;
 

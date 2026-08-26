@@ -3,6 +3,8 @@
 
 !.env.example
 !.gitignore
+!.prettierrc.yaml
+!.prettierignore
 
 # Logs
 logs

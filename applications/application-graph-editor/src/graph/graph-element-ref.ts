@@ -1,1 +1,1 @@
-export type GraphElementRef = { kind: "node" | "edge"; id: string } | null;
+export type GraphElementRef = { kind: 'node' | 'edge'; id: string } | null;

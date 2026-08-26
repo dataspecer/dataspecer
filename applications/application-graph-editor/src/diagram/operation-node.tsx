@@ -1,13 +1,13 @@
-import type { CSSProperties } from "react";
-import { Handle, Position, type NodeProps } from "@xyflow/react";
-import { useEditorStore } from "@/store.ts";
-import { OPERATION_BADGE, OPERATION_LABELS } from "./operation-style.ts";
-import type { OperationFlowNode } from "./graph-to-flow.ts";
-import { NODE_SIZE } from "./node-size.ts";
+import type { CSSProperties } from 'react';
+import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { useEditorStore } from '@/store.ts';
+import { OPERATION_BADGE, OPERATION_LABELS } from './operation-style.ts';
+import type { OperationFlowNode } from './graph-to-flow.ts';
+import { NODE_SIZE } from './node-size.ts';
 
 const VIOLATION_BORDER = {
-  error: "border-red-500 bg-red-50",
-  warning: "border-amber-500 bg-amber-50",
+  error: 'border-red-500 bg-red-50',
+  warning: 'border-amber-500 bg-amber-50',
 };
 
 /**
@@ -16,8 +16,7 @@ const VIOLATION_BORDER = {
 export function OperationNode(props: NodeProps<OperationFlowNode>) {
   const { node, violation, highlighted, dimmed } = props.data;
   const aggregateName = useEditorStore(
-    (state) =>
-      state.metadata?.aggregates.find((entry) => entry.iri === node.aggregateIri)?.name,
+    (state) => state.metadata?.aggregates.find((entry) => entry.iri === node.aggregateIri)?.name,
   );
   const title = aggregateName ?? node.config?.pageTitle ?? node.id;
   const subtitle = node.config?.pageTitle;
@@ -26,9 +25,9 @@ export function OperationNode(props: NodeProps<OperationFlowNode>) {
     <div
       style={{ width: NODE_SIZE.width }}
       className={`rounded-md border px-3 py-2 shadow-sm transition-opacity ${
-        violation ? VIOLATION_BORDER[violation] : "border-sky-300 bg-sky-50"
-      } ${props.selected || highlighted ? "ring-2 ring-blue-500" : ""} ${
-        dimmed ? "opacity-25" : ""
+        violation ? VIOLATION_BORDER[violation] : 'border-sky-300 bg-sky-50'
+      } ${props.selected || highlighted ? 'ring-2 ring-blue-500' : ''} ${
+        dimmed ? 'opacity-25' : ''
       }`}
     >
       {BORDER_HANDLES.map(({ id, position }) => (
@@ -49,24 +48,24 @@ export function OperationNode(props: NodeProps<OperationFlowNode>) {
 }
 
 const BORDER_HANDLES = [
-  { id: "top", position: Position.Top },
-  { id: "right", position: Position.Right },
-  { id: "bottom", position: Position.Bottom },
-  { id: "left", position: Position.Left },
+  { id: 'top', position: Position.Top },
+  { id: 'right', position: Position.Right },
+  { id: 'bottom', position: Position.Bottom },
+  { id: 'left', position: Position.Left },
 ] as const;
 
 const BORDER_HANDLE_THICKNESS = 10;
 
-function borderHandleStyle(side: (typeof BORDER_HANDLES)[number]["id"]): CSSProperties {
-  const horizontal = side === "top" || side === "bottom";
+function borderHandleStyle(side: (typeof BORDER_HANDLES)[number]['id']): CSSProperties {
+  const horizontal = side === 'top' || side === 'bottom';
   return {
     [side]: 0,
-    ...(horizontal ? { left: 0, width: "100%", height: BORDER_HANDLE_THICKNESS } : {}),
-    ...(horizontal ? {} : { top: 0, height: "100%", width: BORDER_HANDLE_THICKNESS }),
-    transform: "none",
+    ...(horizontal ? { left: 0, width: '100%', height: BORDER_HANDLE_THICKNESS } : {}),
+    ...(horizontal ? {} : { top: 0, height: '100%', width: BORDER_HANDLE_THICKNESS }),
+    transform: 'none',
     borderRadius: 0,
-    border: "none",
-    background: "transparent",
+    border: 'none',
+    background: 'transparent',
     minWidth: 0,
     minHeight: 0,
   };

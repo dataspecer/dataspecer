@@ -24,7 +24,7 @@ function formatDate(value: Date, field?: FieldDescriptor): string {
 export function formatFieldValue(
   field: FieldDescriptor,
   value: unknown,
-  preferredLanguages: readonly string[] = []
+  preferredLanguages: readonly string[] = [],
 ): string {
   if (value === null || value === undefined) {
     return '';
@@ -44,11 +44,11 @@ export function formatFieldValue(
 function formatObjectValue(
   field: FieldDescriptor,
   value: Record<string, unknown>,
-  preferredLanguages: readonly string[]
+  preferredLanguages: readonly string[],
 ): string {
   // List columns summarize an object with its first primitive nested field.
   const firstPrimitive = (field.fields ?? []).find(
-    (nested) => nested.kind === 'primitive' && value[nested.propertyName] != null
+    (nested) => nested.kind === 'primitive' && value[nested.propertyName] != null,
   );
   if (firstPrimitive) {
     return formatFieldValue(firstPrimitive, value[firstPrimitive.propertyName], preferredLanguages);
@@ -63,7 +63,7 @@ function formatObjectValue(
 export function formatPrimitiveValue(
   value: unknown,
   field?: FieldDescriptor,
-  preferredLanguages: readonly string[] = []
+  preferredLanguages: readonly string[] = [],
 ): string {
   if (value === null || value === undefined) {
     return '';

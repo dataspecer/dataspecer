@@ -28,7 +28,7 @@ export function FormBreadcrumbs(props: FormBreadcrumbsProps) {
     props.root,
     props.rootTarget,
     props.path,
-    props.aggregateRegistry
+    props.aggregateRegistry,
   );
 
   const crumbLimit = { maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis' } as const;
@@ -68,7 +68,7 @@ export function FormBreadcrumbs(props: FormBreadcrumbsProps) {
           >
             {entry.label}
           </Link>
-        )
+        ),
       )}
     </Breadcrumbs>
   );

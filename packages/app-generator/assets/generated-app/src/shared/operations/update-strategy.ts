@@ -34,7 +34,7 @@ export class DefaultUpdateStrategy<TModel extends EntityModel> implements Operat
       ctx.aggregate,
       ctx.aggregateRegistry,
       ctx.payload,
-      ctx.originalPayload
+      ctx.originalPayload,
     );
     return { ok: true, data };
   }

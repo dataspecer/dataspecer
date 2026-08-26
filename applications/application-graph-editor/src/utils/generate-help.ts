@@ -1,4 +1,4 @@
-const STORAGE_KEY = "graph-editor.hide-generate-help";
+const STORAGE_KEY = 'graph-editor.hide-generate-help';
 
 /** True unless the user asked not to show the generate help again. */
 export function shouldShowGenerateHelp(): boolean {
@@ -6,5 +6,5 @@ export function shouldShowGenerateHelp(): boolean {
 }
 
 export function hideGenerateHelp(): void {
-  localStorage.setItem(STORAGE_KEY, "1");
+  localStorage.setItem(STORAGE_KEY, '1');
 }

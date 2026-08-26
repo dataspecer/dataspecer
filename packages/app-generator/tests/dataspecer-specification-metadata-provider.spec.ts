@@ -29,7 +29,7 @@ describe('mapDataspecerSpecificationToMetadata', () => {
     const metadata = mapDataspecerSpecificationToMetadata(specificationIri, dataspecerFixture());
 
     const book = metadata.aggregates.find(
-      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail'
+      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail',
     );
 
     expect(metadata.dataSpecificationIri).toBe(specificationIri);
@@ -82,14 +82,14 @@ describe('mapDataspecerSpecificationToMetadata', () => {
   it('maps primitive and reference value constraints from the semantic model', () => {
     const fixture = dataspecerFixture();
     const title = fixture.aggregatedSemanticModel.find(
-      (entity) => entity.id === 'relationship-title'
+      (entity) => entity.id === 'relationship-title',
     ) as SemanticModelRelationship;
     Object.assign(title.ends[1], {
       regex: '^Book .+$',
       example: ['Book one'],
     });
     const author = fixture.aggregatedSemanticModel.find(
-      (entity) => entity.id === 'class-author'
+      (entity) => entity.id === 'class-author',
     ) as SemanticModelClass;
     Object.assign(author, {
       regex: '^https://example\\.org/author/.+$',
@@ -98,7 +98,7 @@ describe('mapDataspecerSpecificationToMetadata', () => {
 
     const metadata = mapDataspecerSpecificationToMetadata(specificationIri, fixture);
     const book = metadata.aggregates.find(
-      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail'
+      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail',
     );
 
     expect(book?.fields.find((field) => field.path === 'title')).toMatchObject({
@@ -120,18 +120,18 @@ describe('mapDataspecerSpecificationToMetadata', () => {
         'Publisher',
         'class-book',
         'class-publisher',
-        [0, 1]
+        [0, 1],
       ),
       semanticRelationship(
         'relationship-publisher-name',
         'Publisher name',
         'class-publisher',
         'http://www.w3.org/2001/XMLSchema#string',
-        [1, 1]
-      )
+        [1, 1],
+      ),
     );
     const bookClass = fixture.structureModels[0].find(
-      (resource) => resource.iri === 'https://example.org/psm/book'
+      (resource) => resource.iri === 'https://example.org/psm/book',
     ) as DataPsmClass;
     bookClass.dataPsmParts = [...bookClass.dataPsmParts, 'https://example.org/psm/book-publisher'];
     fixture.structureModels[0].push(
@@ -140,7 +140,7 @@ describe('mapDataspecerSpecificationToMetadata', () => {
         'publisher',
         'relationship-publisher',
         'https://example.org/psm/publisher',
-        [0, 1]
+        [0, 1],
       ),
       psmClass('https://example.org/psm/publisher', 'class-publisher', [
         'https://example.org/psm/publisher-name',
@@ -149,13 +149,13 @@ describe('mapDataspecerSpecificationToMetadata', () => {
         'https://example.org/psm/publisher-name',
         'name',
         'relationship-publisher-name',
-        [1, 1]
-      )
+        [1, 1],
+      ),
     );
 
     const metadata = mapDataspecerSpecificationToMetadata(specificationIri, fixture);
     const book = metadata.aggregates.find(
-      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail'
+      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail',
     );
     const publisher = book?.fields.find((field) => field.path === 'publisher');
 
@@ -181,11 +181,11 @@ describe('mapDataspecerSpecificationToMetadata', () => {
         'Subtitle',
         'class-book',
         'http://www.w3.org/2001/XMLSchema#string',
-        [0, 1]
-      )
+        [0, 1],
+      ),
     );
     const bookClass = fixture.structureModels[0].find(
-      (resource) => resource.iri === 'https://example.org/psm/book'
+      (resource) => resource.iri === 'https://example.org/psm/book',
     ) as DataPsmClass;
     bookClass.dataPsmParts = [
       'https://example.org/psm/title',
@@ -195,17 +195,17 @@ describe('mapDataspecerSpecificationToMetadata', () => {
     fixture.structureModels[0].push(
       include(
         'https://example.org/psm/include-common',
-        'https://example.org/psm/common-book-fields'
+        'https://example.org/psm/common-book-fields',
       ),
       psmClass('https://example.org/psm/common-book-fields', 'class-book', [
         'https://example.org/psm/subtitle',
       ]),
-      attribute('https://example.org/psm/subtitle', 'subtitle', 'relationship-subtitle', [0, 1])
+      attribute('https://example.org/psm/subtitle', 'subtitle', 'relationship-subtitle', [0, 1]),
     );
 
     const metadata = mapDataspecerSpecificationToMetadata(specificationIri, fixture);
     const book = metadata.aggregates.find(
-      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail'
+      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail',
     );
 
     expect(book?.fields.map((field) => field.path)).toEqual(['title', 'subtitle', 'chapters']);
@@ -214,27 +214,27 @@ describe('mapDataspecerSpecificationToMetadata', () => {
   it('reports missing and circular Include targets', () => {
     const missingFixture = dataspecerFixture();
     const missingBook = missingFixture.structureModels[0].find(
-      (resource) => resource.iri === 'https://example.org/psm/book'
+      (resource) => resource.iri === 'https://example.org/psm/book',
     ) as DataPsmClass;
     missingBook.dataPsmParts = ['https://example.org/psm/include-missing'];
     missingFixture.structureModels[0].push(
-      include('https://example.org/psm/include-missing', 'https://example.org/psm/not-found')
+      include('https://example.org/psm/include-missing', 'https://example.org/psm/not-found'),
     );
 
     const circularFixture = dataspecerFixture();
     const circularBook = circularFixture.structureModels[0].find(
-      (resource) => resource.iri === 'https://example.org/psm/book'
+      (resource) => resource.iri === 'https://example.org/psm/book',
     ) as DataPsmClass;
     circularBook.dataPsmParts = ['https://example.org/psm/include-common'];
     circularFixture.structureModels[0].push(
       include(
         'https://example.org/psm/include-common',
-        'https://example.org/psm/common-book-fields'
+        'https://example.org/psm/common-book-fields',
       ),
       psmClass('https://example.org/psm/common-book-fields', 'class-book', [
         'https://example.org/psm/include-book',
       ]),
-      include('https://example.org/psm/include-book', 'https://example.org/psm/book')
+      include('https://example.org/psm/include-book', 'https://example.org/psm/book'),
     );
 
     expectMappingIssue(missingFixture, DataspecerMetadataMappingIssueCode.MissingIncludeTarget);
@@ -256,17 +256,17 @@ describe('mapDataspecerSpecificationToMetadata', () => {
         'Contact name',
         'class-contact',
         'http://www.w3.org/2001/XMLSchema#string',
-        [1, 1]
-      )
+        [1, 1],
+      ),
     );
     const bookClass = fixture.structureModels[0].find(
-      (resource) => resource.iri === 'https://example.org/psm/book'
+      (resource) => resource.iri === 'https://example.org/psm/book',
     ) as DataPsmClass;
     bookClass.dataPsmParts.push('https://example.org/psm/book-contact');
     const organization = psmClass(
       'https://example.org/psm/contact-organization',
       'class-organization',
-      ['https://example.org/psm/include-contact-organization']
+      ['https://example.org/psm/include-contact-organization'],
     );
     organization.dataPsmTechnicalLabel = 'Organization';
     organization.instancesHaveIdentity = 'NEVER';
@@ -281,23 +281,28 @@ describe('mapDataspecerSpecificationToMetadata', () => {
         'contacts',
         'relationship-contact',
         'https://example.org/psm/contact-or',
-        [0, null]
+        [0, null],
       ),
       specializationOr('https://example.org/psm/contact-or', [organization.iri!, individual.iri!]),
       organization,
       individual,
       include(
         'https://example.org/psm/include-contact-organization',
-        'https://example.org/psm/contact-common'
+        'https://example.org/psm/contact-common',
       ),
       include(
         'https://example.org/psm/include-contact-individual',
-        'https://example.org/psm/contact-common'
+        'https://example.org/psm/contact-common',
       ),
       psmClass('https://example.org/psm/contact-common', 'class-contact', [
         'https://example.org/psm/contact-name',
       ]),
-      attribute('https://example.org/psm/contact-name', 'name', 'relationship-contact-name', [1, 1])
+      attribute(
+        'https://example.org/psm/contact-name',
+        'name',
+        'relationship-contact-name',
+        [1, 1],
+      ),
     );
 
     const metadata = mapDataspecerSpecificationToMetadata(specificationIri, fixture);
@@ -360,7 +365,7 @@ describe('mapDataspecerSpecificationToMetadata', () => {
   it('does not deduplicate separate PSM fields only because their RDF shapes match', () => {
     const fixture = distributionSpecializationFixture();
     const accessRelationship = fixture.aggregatedSemanticModel.find(
-      (entity) => entity.id === 'relationship-access-service'
+      (entity) => entity.id === 'relationship-access-service',
     ) as SemanticModelRelationship;
     accessRelationship.ends[1].iri = 'https://example.org/property/relationship-download-url';
 
@@ -379,11 +384,11 @@ describe('mapDataspecerSpecificationToMetadata', () => {
   it('allows same-predicate specialization fields with different validation cardinalities', () => {
     const fixture = distributionSpecializationFixture();
     const accessRelationship = fixture.aggregatedSemanticModel.find(
-      (entity) => entity.id === 'relationship-access-service'
+      (entity) => entity.id === 'relationship-access-service',
     ) as SemanticModelRelationship;
     accessRelationship.ends[1].iri = 'https://example.org/property/relationship-download-url';
     const accessAttribute = fixture.structureModels[0].find(
-      (resource) => resource.iri === 'https://example.org/psm/access-service'
+      (resource) => resource.iri === 'https://example.org/psm/access-service',
     ) as DataPsmAttribute;
     accessAttribute.dataPsmCardinality = [1, 1];
 
@@ -402,46 +407,46 @@ describe('mapDataspecerSpecificationToMetadata', () => {
   it('rejects incompatible field shapes for the same predicate across Or branches', () => {
     const fixture = distributionSpecializationFixture();
     const accessRelationship = fixture.aggregatedSemanticModel.find(
-      (entity) => entity.id === 'relationship-access-service'
+      (entity) => entity.id === 'relationship-access-service',
     ) as SemanticModelRelationship;
     accessRelationship.ends[1].iri = 'https://example.org/property/relationship-download-url';
     const accessAttribute = fixture.structureModels[0].find(
-      (resource) => resource.iri === 'https://example.org/psm/access-service'
+      (resource) => resource.iri === 'https://example.org/psm/access-service',
     ) as DataPsmAttribute;
     accessAttribute.dataPsmDatatype = 'http://www.w3.org/2001/XMLSchema#integer';
 
     expectMappingIssue(
       fixture,
       DataspecerMetadataMappingIssueCode.ConflictingSpecializationFieldShape,
-      'Align their datatype, scalar or repeated cardinality, direction, target, and nested fields'
+      'Align their datatype, scalar or repeated cardinality, direction, target, and nested fields',
     );
   });
 
   it('rejects root Or and non-class choices with actionable guidance', () => {
     const rootFixture = dataspecerFixture();
     const bookSchema = rootFixture.structureModels[0].find((resource) =>
-      DataPsmSchema.is(resource)
+      DataPsmSchema.is(resource),
     ) as DataPsmSchema;
     bookSchema.dataPsmRoots = ['https://example.org/psm/root-or'];
     rootFixture.structureModels[0].push(
-      specializationOr('https://example.org/psm/root-or', ['https://example.org/psm/book'])
+      specializationOr('https://example.org/psm/root-or', ['https://example.org/psm/book']),
     );
 
     const nestedFixture = distributionSpecializationFixture();
     const distributionOr = nestedFixture.structureModels[0].find(
-      (resource) => resource.iri === 'https://example.org/psm/distribution-or'
+      (resource) => resource.iri === 'https://example.org/psm/distribution-or',
     ) as DataPsmOr;
     distributionOr.dataPsmChoices[0] = 'https://example.org/psm/author-ref';
 
     expectMappingIssue(
       rootFixture,
       DataspecerMetadataMappingIssueCode.UnsupportedStructureRoot,
-      'Create a separate data structure for each root or specialization.'
+      'Create a separate data structure for each root or specialization.',
     );
     expectMappingIssue(
       nestedFixture,
       DataspecerMetadataMappingIssueCode.UnsupportedSpecializationChoice,
-      'must be a class'
+      'must be a class',
     );
   });
 
@@ -454,18 +459,18 @@ describe('mapDataspecerSpecificationToMetadata', () => {
         'Publisher',
         'class-book',
         'class-publisher',
-        [0, 1]
+        [0, 1],
       ),
       semanticRelationship(
         'relationship-parent',
         'Parent',
         'class-publisher',
         'class-publisher',
-        [0, 1]
-      )
+        [0, 1],
+      ),
     );
     const bookClass = fixture.structureModels[0].find(
-      (resource) => resource.iri === 'https://example.org/psm/book'
+      (resource) => resource.iri === 'https://example.org/psm/book',
     ) as DataPsmClass;
     bookClass.dataPsmParts = [...bookClass.dataPsmParts, 'https://example.org/psm/book-publisher'];
     fixture.structureModels[0].push(
@@ -474,7 +479,7 @@ describe('mapDataspecerSpecificationToMetadata', () => {
         'publisher',
         'relationship-publisher',
         'https://example.org/psm/publisher',
-        [0, 1]
+        [0, 1],
       ),
       psmClass('https://example.org/psm/publisher', 'class-publisher', [
         'https://example.org/psm/publisher-parent',
@@ -484,8 +489,8 @@ describe('mapDataspecerSpecificationToMetadata', () => {
         'parent',
         'relationship-parent',
         'https://example.org/psm/publisher',
-        [0, 1]
-      )
+        [0, 1],
+      ),
     );
 
     expectMappingIssue(fixture, DataspecerMetadataMappingIssueCode.CircularStructure);
@@ -495,8 +500,8 @@ describe('mapDataspecerSpecificationToMetadata', () => {
     const source = JSON.parse(
       readFileSync(
         new URL('./fixtures/metadata/real-specification-source.json', import.meta.url),
-        'utf8'
-      )
+        'utf8',
+      ),
     ) as SpecificationSource;
 
     const metadata = mapDataspecerSpecificationToMetadata(specificationIri, source);
@@ -507,7 +512,7 @@ describe('mapDataspecerSpecificationToMetadata', () => {
     ]);
 
     const destination = metadata.aggregates.find(
-      (aggregate) => aggregate.iri === 'd32203ad-189d-4a1c-ab53-3741edca0b0a'
+      (aggregate) => aggregate.iri === 'd32203ad-189d-4a1c-ab53-3741edca0b0a',
     );
     const inlineContact = destination?.fields.find((field) => field.path === 'kontakt_non_ref_0_N');
     const referencedContact = destination?.fields.find((field) => field.path === 'kontakt_ref_0_1');
@@ -528,17 +533,17 @@ describe('mapDataspecerSpecificationToMetadata', () => {
   it('defaults missing cardinality to zero to many', () => {
     const fixture = dataspecerFixture();
     const titleAttribute = fixture.structureModels[0].find(
-      (resource) => resource.iri === 'https://example.org/psm/title'
+      (resource) => resource.iri === 'https://example.org/psm/title',
     ) as DataPsmAttribute;
     delete (titleAttribute as { dataPsmCardinality?: unknown }).dataPsmCardinality;
     const titleRelationship = fixture.aggregatedSemanticModel.find(
-      (entity) => entity.id === 'relationship-title'
+      (entity) => entity.id === 'relationship-title',
     ) as SemanticModelRelationship;
     delete (titleRelationship.ends[1] as { cardinality?: unknown }).cardinality;
 
     const metadata = mapDataspecerSpecificationToMetadata(specificationIri, fixture);
     const book = metadata.aggregates.find(
-      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail'
+      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail',
     );
 
     expect(book?.fields.find((field) => field.path === 'title')).toMatchObject({
@@ -552,35 +557,35 @@ describe('mapDataspecerSpecificationToMetadata', () => {
   it('prefers a nonempty structure description and otherwise uses the semantic description', () => {
     const fixture = dataspecerFixture();
     const titleAttribute = fixture.structureModels[0].find(
-      (resource) => resource.iri === 'https://example.org/psm/title'
+      (resource) => resource.iri === 'https://example.org/psm/title',
     ) as DataPsmAttribute;
     titleAttribute.dataPsmHumanDescription = { en: '', cs: 'Popis ze struktury.' };
     const chaptersAssociation = fixture.structureModels[0].find(
-      (resource) => resource.iri === 'https://example.org/psm/chapters'
+      (resource) => resource.iri === 'https://example.org/psm/chapters',
     ) as DataPsmAssociationEnd;
     chaptersAssociation.dataPsmHumanDescription = {};
     const chaptersRelationship = fixture.aggregatedSemanticModel.find(
-      (entity) => entity.id === 'relationship-chapters'
+      (entity) => entity.id === 'relationship-chapters',
     ) as SemanticModelRelationship;
     chaptersRelationship.ends[1].description = { en: 'Description from the semantic model.' };
 
     const metadata = mapDataspecerSpecificationToMetadata(specificationIri, fixture);
     const fields = metadata.aggregates.find(
-      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail'
+      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail',
     )?.fields;
 
     expect(fields?.find((field) => field.path === 'title')?.description).toBe(
-      'Popis ze struktury.'
+      'Popis ze struktury.',
     );
     expect(fields?.find((field) => field.path === 'chapters')?.description).toBe(
-      'Description from the semantic model.'
+      'Description from the semantic model.',
     );
   });
 
   it('carries the identity policy of a direct association target', () => {
     const fixture = dataspecerFixture();
     const chapterClass = fixture.structureModels[1].find(
-      (resource) => resource.iri === 'https://example.org/psm/chapter'
+      (resource) => resource.iri === 'https://example.org/psm/chapter',
     ) as DataPsmClass;
     chapterClass.instancesHaveIdentity = 'NEVER';
 
@@ -595,13 +600,13 @@ describe('mapDataspecerSpecificationToMetadata', () => {
   it('preserves cardinality bounds above one', () => {
     const fixture = dataspecerFixture();
     const titleAttribute = fixture.structureModels[0].find(
-      (resource) => resource.iri === 'https://example.org/psm/title'
+      (resource) => resource.iri === 'https://example.org/psm/title',
     ) as DataPsmAttribute;
     titleAttribute.dataPsmCardinality = [2, 5];
 
     const metadata = mapDataspecerSpecificationToMetadata(specificationIri, fixture);
     const book = metadata.aggregates.find(
-      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail'
+      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail',
     );
 
     expect(book?.fields.find((field) => field.path === 'title')).toMatchObject({
@@ -615,7 +620,7 @@ describe('mapDataspecerSpecificationToMetadata', () => {
   it('surfaces multi-root schemas as mapping issues', () => {
     const fixture = dataspecerFixture();
     const bookSchema = fixture.structureModels[0].find((resource) =>
-      DataPsmSchema.is(resource)
+      DataPsmSchema.is(resource),
     ) as DataPsmSchema;
     bookSchema.dataPsmRoots = [...bookSchema.dataPsmRoots, 'https://example.org/psm/chapter'];
 
@@ -625,7 +630,7 @@ describe('mapDataspecerSpecificationToMetadata', () => {
   it('surfaces missing association targets as mapping issues', () => {
     const fixture = dataspecerFixture();
     fixture.structureModels[0] = fixture.structureModels[0].filter(
-      (resource) => resource.iri !== 'https://example.org/psm/author-ref'
+      (resource) => resource.iri !== 'https://example.org/psm/author-ref',
     );
 
     expectMappingIssue(fixture, DataspecerMetadataMappingIssueCode.MissingAssociationTarget);
@@ -635,10 +640,10 @@ describe('mapDataspecerSpecificationToMetadata', () => {
     const fixture = dataspecerFixture();
     const bookClass = fixture.aggregatedSemanticModel.find((entity) => entity.id === 'class-book');
     const authorClass = fixture.aggregatedSemanticModel.find(
-      (entity) => entity.id === 'class-author'
+      (entity) => entity.id === 'class-author',
     );
     const titleRelationship = fixture.aggregatedSemanticModel.find(
-      (entity) => entity.id === 'relationship-title'
+      (entity) => entity.id === 'relationship-title',
     ) as SemanticModelRelationship | undefined;
 
     if (!bookClass || !authorClass || !titleRelationship) {
@@ -667,12 +672,12 @@ describe('mapDataspecerSpecificationToMetadata', () => {
 
     const metadata = mapDataspecerSpecificationToMetadata(specificationIri, fixture);
     const book = metadata.aggregates.find(
-      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail'
+      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail',
     );
 
     expect(book?.classIri).toBe('https://example.org/class/book');
     expect(book?.fields.find((field) => field.path === 'title')?.propertyIri).toBe(
-      'https://example.org/property/book-title'
+      'https://example.org/property/book-title',
     );
     expect(book?.fields.find((field) => field.path === 'title')).toMatchObject({
       patterns: ['^Book .+$'],
@@ -689,7 +694,7 @@ describe('mapDataspecerSpecificationToMetadata', () => {
     const fixture = dataspecerFixture();
     const bookClass = fixture.aggregatedSemanticModel.find((entity) => entity.id === 'class-book');
     const titleRelationship = fixture.aggregatedSemanticModel.find(
-      (entity) => entity.id === 'relationship-title'
+      (entity) => entity.id === 'relationship-title',
     ) as SemanticModelRelationship | undefined;
 
     if (!bookClass || !titleRelationship) {
@@ -711,12 +716,12 @@ describe('mapDataspecerSpecificationToMetadata', () => {
 
     const metadata = mapDataspecerSpecificationToMetadata(specificationIri, fixture);
     const book = metadata.aggregates.find(
-      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail'
+      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail',
     );
 
     expect(book?.classIri).toBe('https://example.org/class/book');
     expect(book?.fields.find((field) => field.path === 'title')?.propertyIri).toBe(
-      'https://example.org/property/book-title'
+      'https://example.org/property/book-title',
     );
   });
 
@@ -724,7 +729,7 @@ describe('mapDataspecerSpecificationToMetadata', () => {
     const fixture = dataspecerFixture();
     const bookClass = fixture.aggregatedSemanticModel.find((entity) => entity.id === 'class-book');
     const titleRelationship = fixture.aggregatedSemanticModel.find(
-      (entity) => entity.id === 'relationship-title'
+      (entity) => entity.id === 'relationship-title',
     ) as SemanticModelRelationship | undefined;
 
     if (!bookClass || !titleRelationship) {
@@ -751,10 +756,10 @@ describe('mapDataspecerSpecificationToMetadata', () => {
       expect(error).toBeInstanceOf(DataspecerMetadataMappingError);
       const issues = (error as DataspecerMetadataMappingError).issues;
       expect(issues).toContainEqual(
-        expect.objectContaining({ code: DataspecerMetadataMappingIssueCode.MissingClassIri })
+        expect.objectContaining({ code: DataspecerMetadataMappingIssueCode.MissingClassIri }),
       );
       expect(issues).toContainEqual(
-        expect.objectContaining({ code: DataspecerMetadataMappingIssueCode.MissingFieldIri })
+        expect.objectContaining({ code: DataspecerMetadataMappingIssueCode.MissingFieldIri }),
       );
     }
   });
@@ -766,7 +771,7 @@ describe('mapDataspecerSpecificationToMetadata', () => {
   ])('rejects a used profile whose canonical relationship IRI is %s', (_case, conceptIris) => {
     const fixture = dataspecerFixture();
     const titleRelationship = fixture.aggregatedSemanticModel.find(
-      (entity) => entity.id === 'relationship-title'
+      (entity) => entity.id === 'relationship-title',
     ) as SemanticModelRelationship | undefined;
 
     if (!titleRelationship) {
@@ -787,7 +792,7 @@ describe('mapDataspecerSpecificationToMetadata', () => {
       expect((error as DataspecerMetadataMappingError).issues).toContainEqual(
         expect.objectContaining({
           code: DataspecerMetadataMappingIssueCode.MissingFieldIri,
-        })
+        }),
       );
     }
   });
@@ -817,7 +822,7 @@ describe('mapDataspecerSpecificationToMetadata', () => {
       expect((error as DataspecerMetadataMappingError).issues).toContainEqual(
         expect.objectContaining({
           code: DataspecerMetadataMappingIssueCode.MissingClassIri,
-        })
+        }),
       );
     }
   });
@@ -852,7 +857,7 @@ function dataspecerFixture(): SpecificationSource {
         'Title',
         'class-book',
         'http://www.w3.org/2001/XMLSchema#string',
-        [1, 1]
+        [1, 1],
       ),
       semanticRelationship('relationship-chapters', 'Chapters', 'class-book', 'class-chapter', [
         0,
@@ -874,19 +879,19 @@ function dataspecerFixture(): SpecificationSource {
           'chapters',
           'relationship-chapters',
           'https://example.org/psm/chapter',
-          [0, null]
+          [0, null],
         ),
         association(
           'https://example.org/psm/book-author',
           'author',
           'relationship-author',
           'https://example.org/psm/author-ref',
-          [0, 1]
+          [0, 1],
         ),
         classReference(
           'https://example.org/psm/author-ref',
           'https://example.org/aggregate/author-detail',
-          'https://example.org/psm/author'
+          'https://example.org/psm/author',
         ),
       ],
       [
@@ -907,23 +912,23 @@ function distributionSpecializationFixture(): SpecificationSource {
     semanticClass(
       'class-download-distribution',
       'https://example.org/profile/download-distribution',
-      'Download distribution'
+      'Download distribution',
     ),
     {
       profiling: ['class-distribution'],
       conceptIris: ['https://example.org/class/distribution'],
-    }
+    },
   );
   const serviceClass = Object.assign(
     semanticClass(
       'class-service-distribution',
       'https://example.org/profile/service-distribution',
-      'Service distribution'
+      'Service distribution',
     ),
     {
       profiling: ['class-distribution'],
       conceptIris: ['https://example.org/class/distribution'],
-    }
+    },
   );
   fixture.aggregatedSemanticModel.push(
     semanticClass('class-distribution', 'https://example.org/class/distribution', 'Distribution'),
@@ -934,46 +939,46 @@ function distributionSpecializationFixture(): SpecificationSource {
       'Distributions',
       'class-book',
       'class-distribution',
-      [0, null]
+      [0, null],
     ),
     semanticRelationship(
       'relationship-distribution-title',
       'Distribution title',
       'class-distribution',
       'http://www.w3.org/2001/XMLSchema#string',
-      [1, 1]
+      [1, 1],
     ),
     semanticRelationship(
       'relationship-download-url',
       'Download URL',
       'class-download-distribution',
       'http://www.w3.org/2001/XMLSchema#string',
-      [0, 1]
+      [0, 1],
     ),
     semanticRelationship(
       'relationship-access-service',
       'Access service',
       'class-service-distribution',
       'http://www.w3.org/2001/XMLSchema#string',
-      [0, 1]
-    )
+      [0, 1],
+    ),
   );
 
   const bookClass = fixture.structureModels[0].find(
-    (resource) => resource.iri === 'https://example.org/psm/book'
+    (resource) => resource.iri === 'https://example.org/psm/book',
   ) as DataPsmClass;
   bookClass.dataPsmParts.push('https://example.org/psm/book-distributions');
 
   const download = psmClass(
     'https://example.org/psm/download-distribution',
     'class-download-distribution',
-    ['https://example.org/psm/include-download-common', 'https://example.org/psm/download-url']
+    ['https://example.org/psm/include-download-common', 'https://example.org/psm/download-url'],
   );
   download.dataPsmTechnicalLabel = 'Download distribution';
   const service = psmClass(
     'https://example.org/psm/service-distribution',
     'class-service-distribution',
-    ['https://example.org/psm/include-service-common', 'https://example.org/psm/access-service']
+    ['https://example.org/psm/include-service-common', 'https://example.org/psm/access-service'],
   );
   service.dataPsmTechnicalLabel = 'Service distribution';
 
@@ -983,18 +988,18 @@ function distributionSpecializationFixture(): SpecificationSource {
       'distributions',
       'relationship-distributions',
       'https://example.org/psm/distribution-or',
-      [0, null]
+      [0, null],
     ),
     specializationOr('https://example.org/psm/distribution-or', [download.iri!, service.iri!]),
     download,
     service,
     include(
       'https://example.org/psm/include-download-common',
-      'https://example.org/psm/distribution-common'
+      'https://example.org/psm/distribution-common',
     ),
     include(
       'https://example.org/psm/include-service-common',
-      'https://example.org/psm/distribution-common'
+      'https://example.org/psm/distribution-common',
     ),
     psmClass('https://example.org/psm/distribution-common', 'class-distribution', [
       'https://example.org/psm/distribution-title',
@@ -1003,20 +1008,20 @@ function distributionSpecializationFixture(): SpecificationSource {
       'https://example.org/psm/distribution-title',
       'title',
       'relationship-distribution-title',
-      [1, 1]
+      [1, 1],
     ),
     attribute(
       'https://example.org/psm/download-url',
       'downloadUrl',
       'relationship-download-url',
-      [0, 1]
+      [0, 1],
     ),
     attribute(
       'https://example.org/psm/access-service',
       'accessService',
       'relationship-access-service',
-      [0, 1]
-    )
+      [0, 1],
+    ),
   );
 
   return fixture;
@@ -1025,7 +1030,7 @@ function distributionSpecializationFixture(): SpecificationSource {
 function expectMappingIssue(
   fixture: SpecificationSource,
   code: DataspecerMetadataMappingIssueCode,
-  expectedMessage?: string
+  expectedMessage?: string,
 ): void {
   try {
     mapDataspecerSpecificationToMetadata(specificationIri, fixture);
@@ -1033,7 +1038,7 @@ function expectMappingIssue(
   } catch (error) {
     expect(error).toBeInstanceOf(DataspecerMetadataMappingError);
     const issue = (error as DataspecerMetadataMappingError).issues.find(
-      (candidate) => candidate.code === code
+      (candidate) => candidate.code === code,
     );
     expect(issue).toBeDefined();
     if (expectedMessage) {
@@ -1057,7 +1062,7 @@ function semanticRelationship(
   label: string,
   sourceConcept: string,
   targetConcept: string,
-  targetCardinality: [number, number | null]
+  targetCardinality: [number, number | null],
 ): SemanticModelRelationship {
   return {
     id,
@@ -1101,7 +1106,7 @@ function attribute(
   iri: string,
   technicalLabel: string,
   interpretation: string,
-  cardinality: [number, number | null]
+  cardinality: [number, number | null],
 ): DataPsmAttribute {
   const resource = new DataPsmAttribute(iri);
   resource.dataPsmTechnicalLabel = technicalLabel;
@@ -1117,7 +1122,7 @@ function association(
   technicalLabel: string,
   interpretation: string,
   target: string,
-  cardinality: [number, number | null]
+  cardinality: [number, number | null],
 ): DataPsmAssociationEnd {
   const resource = new DataPsmAssociationEnd(iri);
   resource.dataPsmTechnicalLabel = technicalLabel;
@@ -1131,7 +1136,7 @@ function association(
 function classReference(
   iri: string,
   specification: string,
-  psmClassIri: string
+  psmClassIri: string,
 ): DataPsmClassReference {
   const resource = new DataPsmClassReference(iri);
   resource.dataPsmSpecification = specification;

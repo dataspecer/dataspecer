@@ -1,5 +1,5 @@
-import * as Tooltip from "@radix-ui/react-tooltip";
-import { Info } from "lucide-react";
+import * as Tooltip from '@radix-ui/react-tooltip';
+import { Info } from 'lucide-react';
 
 /** An info icon explaining the field it sits next to. */
 export function Hint({ text }: { text: string }) {

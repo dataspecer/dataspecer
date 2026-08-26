@@ -2,14 +2,14 @@ import {
   Operation,
   type ApplicationNode,
   type ApplicationNodeConfig,
-} from "@dataspecer/app-generator/graph";
-import { isGeneratedNodeId, nextNodeId } from "@/graph/mutations.ts";
-import { useEditorStore } from "@/store.ts";
-import { aggregateLink } from "@/utils/specification-links.ts";
-import { ExternalLink } from "@/components/external-link.tsx";
-import { AssociationEditor, CascadeEditor } from "./config-editors.tsx";
-import { ElementViolations } from "./element-violations.tsx";
-import { FormField, inputClass } from "./form-field.tsx";
+} from '@dataspecer/app-generator/graph';
+import { isGeneratedNodeId, nextNodeId } from '@/graph/mutations.ts';
+import { useEditorStore } from '@/store.ts';
+import { aggregateLink } from '@/utils/specification-links.ts';
+import { ExternalLink } from '@/components/external-link.tsx';
+import { AssociationEditor, CascadeEditor } from './config-editors.tsx';
+import { ElementViolations } from './element-violations.tsx';
+import { FormField, inputClass } from './form-field.tsx';
 
 const OPERATIONS = [
   Operation.ReadList,
@@ -58,7 +58,7 @@ export function NodeForm({ node }: { node: ApplicationNode }) {
   const generatedId =
     aggregateName !== undefined && isGeneratedNodeId(node.id, aggregateName, node.operation);
 
-  const applyWithId = (patch: Partial<Omit<ApplicationNode, "id">>) => {
+  const applyWithId = (patch: Partial<Omit<ApplicationNode, 'id'>>) => {
     const { graph } = useEditorStore.getState();
     const aggregateIri = patch.aggregateIri ?? node.aggregateIri;
     const operation = patch.operation ?? node.operation;
@@ -92,12 +92,13 @@ export function NodeForm({ node }: { node: ApplicationNode }) {
 
   return (
     <div className="flex flex-col gap-3 p-3">
-
       <FormField
         label="Data structure"
         hint="Data structure this page works with."
         action={
-          link && <ExternalLink href={link} label="Open the data structure in the specification editor" />
+          link && (
+            <ExternalLink href={link} label="Open the data structure in the specification editor" />
+          )
         }
       >
         {metadata ? (
@@ -106,7 +107,7 @@ export function NodeForm({ node }: { node: ApplicationNode }) {
             value={node.aggregateIri}
             onChange={(event) => changeAggregate(event.target.value)}
           >
-            {!aggregate && <option value={node.aggregateIri}>{node.aggregateIri || "..."}</option>}
+            {!aggregate && <option value={node.aggregateIri}>{node.aggregateIri || '...'}</option>}
             {metadata.aggregates.map((entry) => (
               <option key={entry.iri} value={entry.iri}>
                 {entry.name}
@@ -136,7 +137,7 @@ export function NodeForm({ node }: { node: ApplicationNode }) {
       <FormField label="Page title" hint="Heading of the generated page.">
         <input
           className={inputClass}
-          value={node.config?.pageTitle ?? ""}
+          value={node.config?.pageTitle ?? ''}
           onChange={(event) => patchConfig({ pageTitle: event.target.value })}
         />
       </FormField>

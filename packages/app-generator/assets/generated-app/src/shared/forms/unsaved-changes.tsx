@@ -30,8 +30,8 @@ export function useUnsavedChanges(): UnsavedChanges {
     useCallback<BlockerFunction>(
       ({ currentLocation, nextLocation }) =>
         dirty.current && currentLocation.pathname !== nextLocation.pathname,
-      []
-    )
+      [],
+    ),
   );
 
   const markDirty = useCallback(() => {

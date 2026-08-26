@@ -1,6 +1,6 @@
-import type { ConnectionLineComponentProps } from "@xyflow/react";
+import type { ConnectionLineComponentProps } from '@xyflow/react';
 
-const STROKE = "#94a3b8";
+const STROKE = '#94a3b8';
 
 /**
  * The line shown while dragging a new connection.

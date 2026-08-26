@@ -13,10 +13,10 @@ const TEMPLATE_SUFFIX = '.eta';
 // these templates produce one file per aggregate or route, so they are rendered separately
 const MODULE_TEMPLATE = 'src/modules/{module}';
 const PER_AGGREGATE = ['model.ts', 'descriptor.ts', 'ldkit-schema.ts'].map(
-  (name) => `${MODULE_TEMPLATE}/${name}${TEMPLATE_SUFFIX}`
+  (name) => `${MODULE_TEMPLATE}/${name}${TEMPLATE_SUFFIX}`,
 );
 const PER_PAGE = ['{route}-operation.ts', '{route}-page.tsx'].map(
-  (name) => `${MODULE_TEMPLATE}/${name}${TEMPLATE_SUFFIX}`
+  (name) => `${MODULE_TEMPLATE}/${name}${TEMPLATE_SUFFIX}`,
 );
 const REPEATED_TEMPLATES = new Set([...PER_AGGREGATE, ...PER_PAGE]);
 
@@ -40,7 +40,7 @@ export function renderGeneratedApp(model: GenerationModel): FileTree {
     PER_AGGREGATE.forEach((template) => {
       tree.set(
         outputPath(template, { module: aggregate.moduleName }),
-        renderTemplate(template, { ...context, aggregate })
+        renderTemplate(template, { ...context, aggregate }),
       );
     });
   });
@@ -49,7 +49,7 @@ export function renderGeneratedApp(model: GenerationModel): FileTree {
     PER_PAGE.forEach((template) => {
       tree.set(
         outputPath(template, { module: page.moduleName, route: page.operation.routeId }),
-        renderTemplate(template, { ...context, page })
+        renderTemplate(template, { ...context, page }),
       );
     });
   });

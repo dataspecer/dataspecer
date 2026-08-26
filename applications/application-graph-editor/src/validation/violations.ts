@@ -1,4 +1,4 @@
-import { differenceBy, partition } from "es-toolkit";
+import { differenceBy, partition } from 'es-toolkit';
 import {
   analyzeGraphSemantics,
   validateGraphStructure,
@@ -8,9 +8,9 @@ import {
   type ApplicationNode,
   type SpecificationMetadata,
   type Violation,
-} from "@dataspecer/app-generator/graph";
-import type { GraphElementRef } from "@/graph/graph-element-ref.ts";
-import { connectionEdge } from "@/graph/mutations.ts";
+} from '@dataspecer/app-generator/graph';
+import type { GraphElementRef } from '@/graph/graph-element-ref.ts';
+import { connectionEdge } from '@/graph/mutations.ts';
 
 /**
  * Every violation the editor can find on its own. Syntax comes first, because the later rules
@@ -114,19 +114,19 @@ export function violationTarget(graph: ApplicationGraph, violation: Violation): 
     return null;
   }
   const index = Number(match[2]);
-  if (match[1] === "nodes") {
+  if (match[1] === 'nodes') {
     const node = graph.nodes[index];
-    return node ? { kind: "node", id: node.id } : null;
+    return node ? { kind: 'node', id: node.id } : null;
   }
   const edge = graph.edges[index];
-  return edge ? { kind: "edge", id: edge.id } : null;
+  return edge ? { kind: 'edge', id: edge.id } : null;
 }
 
 /** The violations pointing at one node or edge, for its form. */
 export function violationsFor(
   graph: ApplicationGraph,
   violations: Violation[],
-  kind: "node" | "edge",
+  kind: 'node' | 'edge',
   id: string,
 ): Violation[] {
   return violations.filter((violation) => {
@@ -135,7 +135,7 @@ export function violationsFor(
   });
 }
 
-export type ViolationLevel = "error" | "warning";
+export type ViolationLevel = 'error' | 'warning';
 
 export interface FlaggedIds {
   nodes: Map<string, ViolationLevel>;
@@ -153,9 +153,9 @@ export function flaggedIds(graph: ApplicationGraph, violations: Violation[]): Fl
     if (target === null) {
       continue;
     }
-    const into = target.kind === "node" ? result.nodes : result.edges;
-    const level = violation.severity === ViolationSeverity.Error ? "error" : "warning";
-    if (level === "error" || !into.has(target.id)) {
+    const into = target.kind === 'node' ? result.nodes : result.edges;
+    const level = violation.severity === ViolationSeverity.Error ? 'error' : 'warning';
+    if (level === 'error' || !into.has(target.id)) {
       into.set(target.id, level);
     }
   }

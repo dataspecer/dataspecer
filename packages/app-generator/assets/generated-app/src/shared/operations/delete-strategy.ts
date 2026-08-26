@@ -23,7 +23,7 @@ export class DefaultDeleteStrategy<TModel extends EntityModel> implements Operat
         ctx.aggregate,
         ctx.aggregateRegistry,
         ctx.payload,
-        cascadePaths
+        cascadePaths,
       );
       return { ok: true, data: undefined };
     }

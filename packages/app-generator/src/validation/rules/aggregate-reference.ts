@@ -13,7 +13,7 @@ export function validateAggregateReferences(context: SemanticValidationContext):
         ViolationCode.SemanticUnknownAggregate,
         `Node "${node.id}" references unknown aggregate "${node.aggregateIri}". ` +
           'Select an existing data structure.',
-        `/nodes/${index}/aggregateIri`
+        `/nodes/${index}/aggregateIri`,
       ),
     ];
   });

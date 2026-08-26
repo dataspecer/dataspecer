@@ -18,7 +18,7 @@ export async function createComposite<TModel extends EntityModel>(
   dataSource: DataSource,
   aggregate: AggregateDescriptor<TModel>,
   aggregateRegistry: AggregateDescriptorMap,
-  payload: TModel
+  payload: TModel,
 ): Promise<TModel> {
   const steps = buildCompositeCreatePlan(aggregate, aggregateRegistry, payload as EntityRecord);
   await executePlan(dataSource, steps);
@@ -30,13 +30,13 @@ export async function updateComposite<TModel extends EntityModel>(
   aggregate: AggregateDescriptor<TModel>,
   aggregateRegistry: AggregateDescriptorMap,
   payload: TModel,
-  original: TModel
+  original: TModel,
 ): Promise<TModel> {
   const steps = buildCompositeUpdatePlan(
     aggregate,
     aggregateRegistry,
     payload as EntityRecord,
-    original as EntityRecord
+    original as EntityRecord,
   );
   await executePlan(dataSource, steps);
   return payload;
@@ -47,14 +47,14 @@ export async function deleteComposite<TModel extends EntityModel>(
   aggregate: AggregateDescriptor<TModel>,
   aggregateRegistry: AggregateDescriptorMap,
   payload: TModel,
-  cascadePaths: readonly string[]
+  cascadePaths: readonly string[],
 ): Promise<void> {
   const hydrated = await hydrateCompositionTree(
     payload as EntityRecord,
     rootEntityTarget(aggregate),
     aggregateRegistry,
     dataSource,
-    cascadePaths
+    cascadePaths,
   );
   const steps = buildCompositeDeletePlan(aggregate, aggregateRegistry, hydrated, cascadePaths);
   await executePlan(dataSource, steps);
@@ -62,7 +62,7 @@ export async function deleteComposite<TModel extends EntityModel>(
 
 async function executePlan(
   dataSource: DataSource,
-  steps: readonly CompositeMutationStep[]
+  steps: readonly CompositeMutationStep[],
 ): Promise<void> {
   // The steps have a dependency order, so they cannot run concurrently. Endpoint writes completed
   // before a failure cannot be rolled back.

@@ -72,7 +72,7 @@ function captureRequestBodies(requests: string[]) {
 
 function sparqlResultsResponse(
   vars: string[],
-  bindings: Record<string, { type: string; value: string }>[]
+  bindings: Record<string, { type: string; value: string }>[],
 ): Response {
   return new Response(JSON.stringify({ head: { vars }, results: { bindings } }), {
     status: 200,
@@ -143,13 +143,13 @@ describe('generated RDF runtime IRI boundaries', () => {
     const unsafeId = 'https://example.org/> } ; DROP ALL; #';
 
     await expect(dataSource.readDetail({ aggregate: listAggregate, id: unsafeId })).rejects.toThrow(
-      'Entity IRI must be a safe absolute IRI.'
+      'Entity IRI must be a safe absolute IRI.',
     );
     await expect(
-      dataSource.update({ aggregate: listAggregate, id: unsafeId, payload: {} })
+      dataSource.update({ aggregate: listAggregate, id: unsafeId, payload: {} }),
     ).rejects.toThrow('Entity IRI must be a safe absolute IRI.');
     await expect(dataSource.delete({ aggregate: listAggregate, id: unsafeId })).rejects.toThrow(
-      'Entity IRI must be a safe absolute IRI.'
+      'Entity IRI must be a safe absolute IRI.',
     );
   });
 
@@ -157,16 +157,16 @@ describe('generated RDF runtime IRI boundaries', () => {
     const factory = new DataFactory();
 
     expect(
-      toSafeNamedNodeValue(factory.namedNode('https://example.org/book/1'), 'List result IRI')
+      toSafeNamedNodeValue(factory.namedNode('https://example.org/book/1'), 'List result IRI'),
     ).toBe('https://example.org/book/1');
     expect(() => toSafeNamedNodeValue(factory.blankNode('book-1'), 'List result IRI')).toThrow(
-      'List result IRI must be a safe absolute named-node IRI.'
+      'List result IRI must be a safe absolute named-node IRI.',
     );
     expect(() =>
       toSafeNamedNodeValue(
         factory.namedNode('https://example.org/> } ; DROP ALL; #'),
-        'List result IRI'
-      )
+        'List result IRI',
+      ),
     ).toThrow('List result IRI must be a safe absolute IRI.');
   });
 });
@@ -182,7 +182,7 @@ describe('generated RDF inverse relation queries', () => {
     const remove = buildInverseDeleteQuery([inverseField], payload.id);
 
     expect(
-      insert.map((quad) => [quad.subject.value, quad.predicate.value, quad.object.value])
+      insert.map((quad) => [quad.subject.value, quad.predicate.value, quad.object.value]),
     ).toEqual([
       [
         'https://example.org/book/1',
@@ -198,13 +198,13 @@ describe('generated RDF inverse relation queries', () => {
   it('rejects relative and query-breaking IRIs', () => {
     expect(() => toSparqlNamedNode('/relative', 'Test IRI')).toThrow('safe absolute IRI');
     expect(() => toSparqlNamedNode('https://example.org/> } ; DROP ALL; #', 'Test IRI')).toThrow(
-      'safe absolute IRI'
+      'safe absolute IRI',
     );
   });
 
   it('rejects inverse writes without an entity identifier', () => {
     expect(() => buildInverseInsertQuads([inverseField], {})).toThrow(
-      'Entity IRI must be a safe absolute IRI.'
+      'Entity IRI must be a safe absolute IRI.',
     );
   });
 });
@@ -221,7 +221,7 @@ describe('generated RDF incoming reference query', () => {
 
   it('rejects an unsafe entity IRI', () => {
     expect(() => buildIncomingReferencesQuery('https://example.org/> } ASK {} #')).toThrow(
-      'Entity IRI must be a safe absolute IRI.'
+      'Entity IRI must be a safe absolute IRI.',
     );
   });
 
@@ -231,7 +231,7 @@ describe('generated RDF incoming reference query', () => {
     const dataSource = new RdfLdkitDataSource('https://example.org/sparql', {});
 
     await expect(dataSource.listIncomingReferences('https://example.org/book/1')).resolves.toEqual(
-      []
+      [],
     );
   });
 
@@ -244,8 +244,8 @@ describe('generated RDF incoming reference query', () => {
             subject: { type: 'uri', value: 'https://example.org/review/1' },
             predicate: { type: 'uri', value: 'https://example.org/property/book' },
           },
-        ]
-      )
+        ],
+      ),
     );
 
     const dataSource = new RdfLdkitDataSource('https://example.org/sparql', {});
@@ -292,8 +292,8 @@ describe('generated RDF reference options', () => {
           {
             iri: { type: 'uri', value: 'https://example.org/person/2' },
           },
-        ]
-      )
+        ],
+      ),
     );
 
     const dataSource = new RdfLdkitDataSource('https://example.org/sparql', {});
@@ -326,13 +326,13 @@ describe('generated RDF reference options', () => {
             iri: { type: 'uri', value: 'https://example.org/person/1' },
             value2: { type: 'literal', value: 'Alice' },
           },
-        ]
-      )
+        ],
+      ),
     );
 
     const dataSource = new RdfLdkitDataSource('https://example.org/sparql', {});
     await expect(
-      dataSource.listByType({ classIri: args.classIri, displayProperties: [] })
+      dataSource.listByType({ classIri: args.classIri, displayProperties: [] }),
     ).resolves.toEqual([{ id: 'https://example.org/person/1', label: 'Alice' }]);
   });
 });
@@ -367,7 +367,7 @@ describe('generated RDF list queries', () => {
         kind: 'field',
         fieldPath: 'tags',
         direction: 'asc',
-      })
+      }),
     ).toThrow('cannot be used for list sorting');
   });
 
@@ -377,7 +377,7 @@ describe('generated RDF list queries', () => {
         kind: 'field',
         fieldPath: 'title',
         direction: 'asc',
-      })
+      }),
     ).toThrow('cannot be used for list sorting');
   });
 });
@@ -392,12 +392,12 @@ describe('generated RDF mutation payloads', () => {
             id: 'https://example.org/> } ; DROP ALL; #',
           },
         },
-        'update'
-      )
+        'update',
+      ),
     ).toThrow('Payload id must be a safe absolute IRI.');
 
     expect(() => toLdkitEntity({ id: 42 }, 'create')).toThrow(
-      'Payload id must be a safe absolute IRI.'
+      'Payload id must be a safe absolute IRI.',
     );
   });
 
@@ -410,8 +410,8 @@ describe('generated RDF mutation payloads', () => {
           authors: [],
           emptyReference: { id: '' },
         },
-        'update'
-      )
+        'update',
+      ),
     ).toEqual({
       $id: 'https://example.org/book/1',
       title: null,
@@ -427,8 +427,8 @@ describe('generated RDF mutation payloads', () => {
           title: null,
           authors: [],
         },
-        'create'
-      )
+        'create',
+      ),
     ).toEqual({
       $id: 'https://example.org/book/1',
     });
@@ -445,8 +445,8 @@ describe('generated RDF mutation payloads', () => {
           __rdfTypes: ['https://example.org/class/book'],
         },
         'update',
-        [scalarReference, repeatedReference]
-      )
+        [scalarReference, repeatedReference],
+      ),
     ).toEqual({
       $id: 'https://example.org/book/1',
       publisher: 'https://example.org/publisher/1',
@@ -463,8 +463,8 @@ describe('generated RDF mutation payloads', () => {
           related: [],
         },
         'update',
-        [scalarReference, repeatedReference]
-      )
+        [scalarReference, repeatedReference],
+      ),
     ).toEqual({
       $id: 'https://example.org/book/1',
       publisher: null,
@@ -481,21 +481,25 @@ describe('generated RDF mutation payloads', () => {
           keywords: { cs: ['jedna', 'dvě'], '': ['untagged'], de: ['unconfigured'] },
         },
         'update',
-        [scalarMultilingual, repeatedMultilingual]
-      )
+        [scalarMultilingual, repeatedMultilingual],
+      ),
     ).toEqual({
       $id: 'https://example.org/book/1',
       title: { cs: ['Název'], en: ['Title'] },
       keywords: { cs: ['jedna', 'dvě'], '': ['untagged'], de: ['unconfigured'] },
     });
     expect(
-      toLdkitEntity({ id: 'https://example.org/book/1', title: {} }, 'update', [scalarMultilingual])
+      toLdkitEntity({ id: 'https://example.org/book/1', title: {} }, 'update', [
+        scalarMultilingual,
+      ]),
     ).toEqual({ $id: 'https://example.org/book/1', title: null });
     expect(
-      toLdkitEntity({ id: 'https://example.org/book/1' }, 'update', [scalarMultilingual])
+      toLdkitEntity({ id: 'https://example.org/book/1' }, 'update', [scalarMultilingual]),
     ).toEqual({ $id: 'https://example.org/book/1' });
     expect(
-      toLdkitEntity({ id: 'https://example.org/book/1', title: {} }, 'create', [scalarMultilingual])
+      toLdkitEntity({ id: 'https://example.org/book/1', title: {} }, 'create', [
+        scalarMultilingual,
+      ]),
     ).toEqual({ $id: 'https://example.org/book/1' });
   });
 });
@@ -538,8 +542,8 @@ describe('generated RDF read normalization', () => {
             },
           ],
         },
-        [scalarReference, repeatedReference, children]
-      )
+        [scalarReference, repeatedReference, children],
+      ),
     ).toEqual({
       id: 'https://example.org/book/1',
       publisher: { id: 'https://example.org/publisher/1' },
@@ -569,7 +573,7 @@ describe('generated RDF read normalization', () => {
     };
 
     expect(
-      normalizeLdkitEntity({ child: { $id: 'https://example.org/child/1' } }, [emptyChild])
+      normalizeLdkitEntity({ child: { $id: 'https://example.org/child/1' } }, [emptyChild]),
     ).toEqual({ child: { id: 'https://example.org/child/1' } });
   });
 
@@ -581,8 +585,8 @@ describe('generated RDF read normalization', () => {
           title: { cs: 'Název', en: ['Title'] },
           keywords: { cs: ['jedna', 'dvě'], '': ['untagged'], de: ['unconfigured'] },
         },
-        [scalarMultilingual, repeatedMultilingual]
-      )
+        [scalarMultilingual, repeatedMultilingual],
+      ),
     ).toEqual({
       id: 'https://example.org/book/1',
       title: { cs: ['Název'], en: ['Title'] },
@@ -597,8 +601,8 @@ describe('generated RDF read normalization', () => {
       new Response(
         `<${entityIri}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ldkit.io/ontology/Resource> .\n` +
           `<${entityIri}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <${classIri}> .`,
-        { status: 200, headers: { 'content-type': 'application/n-triples' } }
-      )
+        { status: 200, headers: { 'content-type': 'application/n-triples' } },
+      ),
     );
     const aggregate: AggregateDescriptor<EntityModel> = {
       ...listAggregate,
@@ -631,7 +635,7 @@ describe('generated RDF read normalization', () => {
 
   it('does not accept a populated array as a multilingual language map', () => {
     expect(() => normalizeMultilingualValue(['invalid'])).toThrow(
-      'must contain values grouped by language'
+      'must contain values grouped by language',
     );
   });
 
@@ -642,8 +646,8 @@ describe('generated RDF read normalization', () => {
           id: 'https://example.org/book/1',
           children: [{ id: 'blank1', name: 'Anonymous' }],
         },
-        [children]
-      )
+        [children],
+      ),
     ).toThrow('Blank-node compositions are not editable');
   });
 });
@@ -834,7 +838,7 @@ describe('generated RDF write schema selection', () => {
         aggregate,
         fieldPath: ['contacts'],
         payload: { id: 'https://example.org/contact/2' },
-      })
+      }),
     ).rejects.toThrow('requires a specialization');
   });
 });

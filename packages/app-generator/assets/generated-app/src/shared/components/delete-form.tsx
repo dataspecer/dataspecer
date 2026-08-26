@@ -102,7 +102,7 @@ export function DeleteForm<TModel extends EntityModel>(props: DeleteFormProps<TM
               aggregate,
               aggregateRegistry,
               dataSource,
-              cascadePaths
+              cascadePaths,
             ).then((preview) => {
               if (active) {
                 setCascade(preview);
@@ -323,7 +323,7 @@ async function previewCascade(
   aggregate: AggregateDescriptor,
   aggregateRegistry: AggregateDescriptorMap,
   dataSource: DataSource,
-  cascadePaths: readonly string[]
+  cascadePaths: readonly string[],
 ): Promise<CascadePreview> {
   try {
     const hydrated = await hydrateCompositionTree(
@@ -331,7 +331,7 @@ async function previewCascade(
       rootEntityTarget(aggregate),
       aggregateRegistry,
       dataSource,
-      cascadePaths
+      cascadePaths,
     );
     const steps = buildCompositeDeletePlan(aggregate, aggregateRegistry, hydrated, cascadePaths);
     return {

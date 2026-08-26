@@ -1,6 +1,6 @@
-import type { GraphElementRef } from "./graph-element-ref.ts";
+import type { GraphElementRef } from './graph-element-ref.ts';
 
-import { findNodeAtLocation, findNodeAtOffset, getNodePath, parseTree } from "jsonc-parser";
+import { findNodeAtLocation, findNodeAtOffset, getNodePath, parseTree } from 'jsonc-parser';
 
 /**
  * Resolves a text offset in serialized graph JSON to the node or edge whose section contains
@@ -18,12 +18,12 @@ export function graphElementAtOffset(text: string, offset: number): GraphElement
   }
 
   const path = getNodePath(leaf);
-  if ((path[0] !== "nodes" && path[0] !== "edges") || typeof path[1] !== "number") {
+  if ((path[0] !== 'nodes' && path[0] !== 'edges') || typeof path[1] !== 'number') {
     return null;
   }
-  const idNode = findNodeAtLocation(tree, [path[0], path[1], "id"]);
-  if (!idNode || typeof idNode.value !== "string") {
+  const idNode = findNodeAtLocation(tree, [path[0], path[1], 'id']);
+  if (!idNode || typeof idNode.value !== 'string') {
     return null;
   }
-  return { kind: path[0] === "nodes" ? "node" : "edge", id: idNode.value };
+  return { kind: path[0] === 'nodes' ? 'node' : 'edge', id: idNode.value };
 }

@@ -5,9 +5,9 @@ import {
   type AggregateMetadata,
   type ApplicationGraph,
   type ApplicationNode,
-} from "@dataspecer/app-generator/graph";
-import { groupBy, maxBy, minBy } from "es-toolkit";
-import { addEdge, addNode, connectionEdge, nextNodeId } from "./mutations.ts";
+} from '@dataspecer/app-generator/graph';
+import { groupBy, maxBy, minBy } from 'es-toolkit';
+import { addEdge, addNode, connectionEdge, nextNodeId } from './mutations.ts';
 
 /** The order nodes are generated in, which also orders them inside each class. */
 export const SKELETON_OPERATIONS: readonly Operation[] = [
@@ -121,20 +121,18 @@ function classOwners(aggregates: readonly AggregateMetadata[]): Map<string, Clas
     if (!detail) {
       continue;
     }
-    const list = minBy(
-      members.filter((member) => member !== detail),
-      (member) => fieldCount(member.fields),
-    ) ?? detail;
+    const list =
+      minBy(
+        members.filter((member) => member !== detail),
+        (member) => fieldCount(member.fields),
+      ) ?? detail;
     owners.set(classIri, { list, detail, members });
   }
   return owners;
 }
 
 function fieldCount(fields: readonly AggregateFieldMetadata[]): number {
-  return fields.reduce(
-    (sum, field) => sum + 1 + (field.fields ? fieldCount(field.fields) : 0),
-    0,
-  );
+  return fields.reduce((sum, field) => sum + 1 + (field.fields ? fieldCount(field.fields) : 0), 0);
 }
 
 /** Whether the fields reference the class, by its IRI or by any of its structures. */

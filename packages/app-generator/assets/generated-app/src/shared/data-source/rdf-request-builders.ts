@@ -27,7 +27,7 @@ export function buildPageIriQuery(
   aggregate: Pick<AggregateDescriptor, 'name' | 'classIri' | 'fields'>,
   take: number,
   skip: number,
-  sort: ReadListSort = DEFAULT_READ_LIST_SORT
+  sort: ReadListSort = DEFAULT_READ_LIST_SORT,
 ): string {
   const classNode = toSparqlNamedNode(aggregate.classIri, 'Aggregate class IRI');
   if (sort.kind === 'iri') {
@@ -68,7 +68,7 @@ export function buildReferenceOptionsQuery(args: ReferenceListArgs): string {
   const valueVariables = displayProperties.map((_, index) => `?value${index}`);
   // limit the entities before joining labels so multiple label values do not consume the limit
   const pageQuery = SELECT.DISTINCT`?iri`.WHERE`?iri a ${classNode} .`.ORDER_BY`STR(?iri)`.LIMIT(
-    200
+    200,
   );
   const optionalPatterns = displayProperties.map((propertyIri, index) => {
     const predicate = toSparqlNamedNode(propertyIri, 'Reference display property IRI');
@@ -86,7 +86,7 @@ export function referenceDisplayProperties(args: ReferenceListArgs): readonly st
 /** Builds reversed triples that LDKit cannot write through an @inverse schema property. */
 export function buildInverseInsertQuads<TModel extends EntityModel>(
   fields: readonly FieldDescriptor[],
-  payload: TModel
+  payload: TModel,
 ): RDF.Quad[] {
   if (fields.length === 0) {
     return [];
@@ -100,18 +100,18 @@ export function buildInverseInsertQuads<TModel extends EntityModel>(
       dataFactory.quad(
         toSparqlNamedNode(targetId, 'Inverse relation target IRI'),
         predicate,
-        entityNode
-      )
+        entityNode,
+      ),
     );
   });
 }
 
 export function buildInverseDeleteQuery(
   fields: readonly FieldDescriptor[],
-  entityId: string
+  entityId: string,
 ): string | null {
   const predicates = fields.map((field) =>
-    toSparqlNamedNode(field.propertyIri as string, 'Inverse predicate IRI')
+    toSparqlNamedNode(field.propertyIri as string, 'Inverse predicate IRI'),
   );
   if (predicates.length === 0) {
     return null;

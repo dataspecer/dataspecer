@@ -41,7 +41,7 @@ function toEntityPath(routePath: string, id: string): string {
 
 export function hrefForAction(
   action: RoutableActionDescriptor | undefined,
-  entityId?: string
+  entityId?: string,
 ): string | undefined {
   if (!action) {
     return undefined;

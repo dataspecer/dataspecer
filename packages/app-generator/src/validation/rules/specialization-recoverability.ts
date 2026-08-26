@@ -18,7 +18,7 @@ import { ViolationCode } from '../violation-codes.ts';
  * If the fields between specializations are not unique, it cannot be derived.
  */
 export function validateSpecializationRecoverability(
-  context: SemanticValidationContext
+  context: SemanticValidationContext,
 ): Violation[] {
   const violations: Violation[] = [];
   for (const aggregate of context.aggregates.values()) {
@@ -31,7 +31,7 @@ function visitFields(
   aggregateName: string,
   fields: readonly AggregateFieldMetadata[],
   pathPrefix: string,
-  violations: Violation[]
+  violations: Violation[],
 ): void {
   for (const field of fields) {
     const fieldPath = joinFieldPath(pathPrefix, field.path);
@@ -48,7 +48,7 @@ function validateChoices(
   aggregateName: string,
   fieldPath: string,
   field: AggregateFieldMetadata,
-  violations: Violation[]
+  violations: Violation[],
 ): void {
   const specializations = field.specializations ?? [];
   const memberships = fieldMemberships(specializations);
@@ -74,15 +74,15 @@ function validateChoices(
             `"${aggregateName}" shares RDF class "${specialization.classIri}" with another ` +
             'choice but has no editable field unique to it. Add a branch-specific field or use ' +
             'a distinct RDF class.',
-          '/dataSpecificationIri'
-        )
+          '/dataSpecificationIri',
+        ),
       );
     }
   }
 }
 
 function fieldMemberships(
-  specializations: readonly SpecializationMetadata[]
+  specializations: readonly SpecializationMetadata[],
 ): ReadonlyMap<string, SpecializationMetadata[]> {
   const result = new Map<string, SpecializationMetadata[]>();
   for (const specialization of specializations) {
@@ -97,6 +97,6 @@ function isEditable(field: AggregateFieldMetadata): boolean {
   return Boolean(
     field.propertyIri &&
     (field.kind === FieldKind.Primitive ||
-      (field.kind === FieldKind.Association && field.targetClassIri))
+      (field.kind === FieldKind.Association && field.targetClassIri)),
   );
 }

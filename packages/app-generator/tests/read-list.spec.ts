@@ -73,7 +73,7 @@ describe('DefaultReadListStrategy', () => {
 
 function context(
   datasource: Pick<DataSource, 'readList'>,
-  params: Record<string, unknown>
+  params: Record<string, unknown>,
 ): OperationContext<TestModel> {
   return {
     aggregate,

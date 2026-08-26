@@ -35,7 +35,7 @@ export function validateTransitionClasses(context: SemanticValidationContext): V
           ViolationCode.SemanticTransitionRequiresSameClass,
           `Transition "${edge.id}" connects operations over different RDF classes. ` +
             'Use operations representing the same class or remove the edge.',
-          `/edges/${index}`
+          `/edges/${index}`,
         ),
       ];
     }
@@ -47,7 +47,7 @@ export function validateTransitionClasses(context: SemanticValidationContext): V
         sourceNode,
         targetNode,
         context.aggregates,
-        sourceNode.operation === Operation.ReadDetail
+        sourceNode.operation === Operation.ReadDetail,
       )
     ) {
       return [
@@ -56,7 +56,7 @@ export function validateTransitionClasses(context: SemanticValidationContext): V
           `Transition "${edge.id}" cannot generate navigation because its aggregates use ` +
             'different RDF classes and the source has no association to the target. ' +
             'Use matching aggregates or add an association.',
-          `/edges/${index}`
+          `/edges/${index}`,
         ),
       ];
     }

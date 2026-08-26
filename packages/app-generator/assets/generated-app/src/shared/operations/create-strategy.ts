@@ -21,7 +21,7 @@ export class DefaultCreateStrategy<TModel extends EntityModel> implements Operat
       ctx.datasource,
       ctx.aggregate,
       ctx.aggregateRegistry,
-      ctx.payload
+      ctx.payload,
     );
     return { ok: true, data };
   }

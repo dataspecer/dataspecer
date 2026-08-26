@@ -26,14 +26,14 @@ export interface SemanticAnalysisResult extends ValidationResult {
  */
 export function analyzeGraphSemantics(
   graph: ApplicationGraph,
-  metadata: SpecificationMetadata
+  metadata: SpecificationMetadata,
 ): SemanticAnalysisResult {
   const structure = validateGraphStructure(graph);
   const enrichment = enrichMetadata(graph, metadata);
   // validate only aggregates that rendering emits, unused structures must not block generation
   const reachableAggregateIris = collectReachableAggregateIris(
     graph.nodes.map((node) => node.aggregateIri),
-    enrichment.metadata.aggregates
+    enrichment.metadata.aggregates,
   );
   const constraints = normalizeValueConstraints(enrichment.metadata, reachableAggregateIris);
   const aliases = coalesceRdfPropertyAliases(graph, constraints.metadata, reachableAggregateIris);
@@ -42,7 +42,7 @@ export function analyzeGraphSemantics(
     aggregates: new Map(
       aliases.metadata.aggregates
         .filter((aggregate) => reachableAggregateIris.has(aggregate.iri))
-        .map((aggregate) => [aggregate.iri, aggregate])
+        .map((aggregate) => [aggregate.iri, aggregate]),
     ),
     nodes: new Map(graph.nodes.map((node) => [node.id, node])),
   };

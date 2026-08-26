@@ -1,10 +1,14 @@
-import { MarkerType, type Edge, type Node } from "@xyflow/react";
-import { isEqual } from "es-toolkit";
-import { EdgeType, type ApplicationGraph, type ApplicationNode } from "@dataspecer/app-generator/graph";
-import type { GraphElementRef } from "@/graph/graph-element-ref.ts";
-import type { NodePositions } from "@/store.ts";
-import type { FlaggedIds, ViolationLevel } from "@/validation/violations.ts";
-import { parallelEdgeOffsets } from "./edge-geometry.ts";
+import { MarkerType, type Edge, type Node } from '@xyflow/react';
+import { isEqual } from 'es-toolkit';
+import {
+  EdgeType,
+  type ApplicationGraph,
+  type ApplicationNode,
+} from '@dataspecer/app-generator/graph';
+import type { GraphElementRef } from '@/graph/graph-element-ref.ts';
+import type { NodePositions } from '@/store.ts';
+import type { FlaggedIds, ViolationLevel } from '@/validation/violations.ts';
+import { parallelEdgeOffsets } from './edge-geometry.ts';
 
 export type OperationFlowNode = Node<
   {
@@ -13,19 +17,19 @@ export type OperationFlowNode = Node<
     highlighted: boolean;
     dimmed: boolean;
   },
-  "operation"
+  'operation'
 >;
 
 const VIOLATION_STROKE: Record<ViolationLevel, string> = {
-  error: "#dc2626",
-  warning: "#d97706",
+  error: '#dc2626',
+  warning: '#d97706',
 };
 
-const SELECTED_STROKE = "#3b82f6";
+const SELECTED_STROKE = '#3b82f6';
 
 const EMPHASIZED_STROKE_WIDTH = 2.5;
 
-const REDIRECT_DASH = "6 4";
+const REDIRECT_DASH = '6 4';
 
 function byId<Element extends { id: string }>(elements: Element[]): Map<string, Element> {
   return new Map(elements.map((element) => [element.id, element]));
@@ -57,14 +61,14 @@ export function projectNodes(
     const known = previous.get(node.id);
     return reuse(known, {
       id: node.id,
-      type: "operation",
+      type: 'operation',
       position: positions[node.id] ?? { x: 0, y: 0 },
       selected: known?.selected,
       measured: known?.measured,
       data: {
         node,
         violation: flagged.nodes.get(node.id) ?? null,
-        highlighted: highlight?.kind === "node" && highlight.id === node.id,
+        highlighted: highlight?.kind === 'node' && highlight.id === node.id,
         dimmed: dimmed.has(node.id),
       },
     });
@@ -96,7 +100,7 @@ export function projectEdges(
       selected.edges.has(edge.id) ||
       selected.nodes.has(edge.source) ||
       selected.nodes.has(edge.target) ||
-      (highlight?.kind === "edge" && highlight.id === edge.id);
+      (highlight?.kind === 'edge' && highlight.id === edge.id);
 
     const stroke = emphasized
       ? SELECTED_STROKE
@@ -107,7 +111,7 @@ export function projectEdges(
       id: edge.id,
       source: edge.source,
       target: edge.target,
-      type: "floating",
+      type: 'floating',
       selected: known?.selected,
       data: { offset: offsets[edge.id] },
       markerEnd: {

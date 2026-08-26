@@ -44,7 +44,7 @@ describe('validateGraphSyntax', () => {
       expect.objectContaining({
         code: ViolationCode.GraphSyntaxInvalid,
         path: '/',
-      })
+      }),
     );
   });
 
@@ -59,7 +59,7 @@ describe('validateGraphSyntax', () => {
       expect.objectContaining({
         code: ViolationCode.GraphSyntaxInvalid,
         path: '/nodes/0/operation',
-      })
+      }),
     );
   });
 
@@ -74,7 +74,7 @@ describe('validateGraphSyntax', () => {
       expect.objectContaining({
         code: ViolationCode.GraphSyntaxInvalid,
         path: '/edges/0/type',
-      })
+      }),
     );
   });
 
@@ -94,7 +94,7 @@ describe('validateGraphSyntax', () => {
         expect.objectContaining({
           code: ViolationCode.GraphDuplicateDatasourceId,
         }),
-      ])
+      ]),
     );
   });
 
@@ -112,7 +112,7 @@ describe('validateGraphSyntax', () => {
             path: '/nodes/2',
           }),
         ]),
-      })
+      }),
     );
   });
 
@@ -127,7 +127,7 @@ describe('validateGraphSyntax', () => {
       expect.objectContaining({
         code: ViolationCode.GraphSyntaxInvalid,
         path: '/datasources/0/type',
-      })
+      }),
     );
   });
 
@@ -142,7 +142,7 @@ describe('validateGraphSyntax', () => {
       expect.objectContaining({
         code: ViolationCode.GraphSyntaxInvalid,
         path: '/datasources/0/endpoint',
-      })
+      }),
     );
   });
 
@@ -157,7 +157,7 @@ describe('validateGraphSyntax', () => {
       expect.objectContaining({
         code: ViolationCode.GraphSyntaxInvalid,
         path: '/nodes/0/config',
-      })
+      }),
     );
   });
 
@@ -194,7 +194,7 @@ describe('application graph schema', () => {
     expect(properties.nodes.items.properties.operation.enum).toEqual(Object.values(Operation));
     expect(properties.edges.items.properties.type.enum).toEqual(Object.values(EdgeType));
     expect(properties.datasources.items.properties.type.enum).toEqual(
-      Object.values(DatasourceType)
+      Object.values(DatasourceType),
     );
     expect(config.associations.additionalProperties.enum).toEqual(Object.values(AssociationKind));
     expect(config.delete.additionalProperties.enum).toEqual(Object.values(DeletePolicy));

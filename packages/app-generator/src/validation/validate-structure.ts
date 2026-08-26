@@ -27,7 +27,7 @@ export function validateGraphStructure(graph: ApplicationGraph): ValidationResul
           semanticViolation(
             ViolationCode.SemanticNoNodes,
             'The application graph must contain at least one operation node.',
-            '/nodes'
+            '/nodes',
           ),
         ]
       : []),

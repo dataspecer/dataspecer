@@ -38,7 +38,7 @@ describe('validateGraphStructure', () => {
       expect.objectContaining({
         code: ViolationCode.SemanticInvalidTransition,
         severity: ViolationSeverity.Error,
-      })
+      }),
     );
   });
 
@@ -58,7 +58,7 @@ describe('validateGraphStructure', () => {
       expect.objectContaining({
         code: ViolationCode.SemanticDuplicateRouteId,
         path: '/nodes/1/id',
-      })
+      }),
     );
   });
 
@@ -70,7 +70,7 @@ describe('validateGraphStructure', () => {
       expect.objectContaining({
         code: ViolationCode.SemanticNoNodes,
         path: '/nodes',
-      })
+      }),
     );
   });
 
@@ -87,7 +87,7 @@ describe('validateGraphStructure', () => {
             type: EdgeType.Transition,
           },
         ],
-      })
+      }),
     );
 
     expect(result.valid).toBe(true);
@@ -96,7 +96,7 @@ describe('validateGraphStructure', () => {
         code: ViolationCode.SemanticDuplicateEdge,
         path: '/edges/1',
         severity: ViolationSeverity.Warning,
-      })
+      }),
     );
   });
 
@@ -113,11 +113,11 @@ describe('validateGraphStructure', () => {
           { id: 'first', source: 'a b', target: 'c', type: EdgeType.Transition },
           { id: 'second', source: 'a', target: 'b c', type: EdgeType.Transition },
         ],
-      })
+      }),
     );
 
     expect(result.violations).not.toContainEqual(
-      expect.objectContaining({ code: ViolationCode.SemanticDuplicateEdge })
+      expect.objectContaining({ code: ViolationCode.SemanticDuplicateEdge }),
     );
   });
 
@@ -134,11 +134,11 @@ describe('validateGraphStructure', () => {
             type: EdgeType.Redirect,
           },
         ],
-      })
+      }),
     );
 
     expect(result.violations).not.toContainEqual(
-      expect.objectContaining({ code: ViolationCode.SemanticDuplicateEdge })
+      expect.objectContaining({ code: ViolationCode.SemanticDuplicateEdge }),
     );
   });
 });
@@ -173,7 +173,7 @@ function validGraph(overrides: Partial<ApplicationGraph> = {}): ApplicationGraph
 function node(
   id: string,
   aggregateIri: string,
-  operation: ApplicationNode['operation']
+  operation: ApplicationNode['operation'],
 ): ApplicationNode {
   return {
     id,

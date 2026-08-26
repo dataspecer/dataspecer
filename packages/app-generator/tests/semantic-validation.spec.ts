@@ -90,7 +90,7 @@ describe('analyzeGraphSemantics', () => {
         expect.objectContaining({
           code: ViolationCode.SemanticUnknownEdgeTarget,
         }),
-      ])
+      ]),
     );
   });
 
@@ -98,7 +98,7 @@ describe('analyzeGraphSemantics', () => {
     const createNode = node(
       'Book.Create',
       'https://example.org/aggregate/book-form',
-      Operation.Create
+      Operation.Create,
     );
     const graph = validGraph({
       nodes: [...validGraph().nodes, createNode],
@@ -125,12 +125,12 @@ describe('analyzeGraphSemantics', () => {
     const createBook = node(
       'Book.Create',
       'https://example.org/aggregate/book-form',
-      Operation.Create
+      Operation.Create,
     );
     const authorDetail = node(
       'Author.ReadDetail',
       'https://example.org/aggregate/author-detail',
-      Operation.ReadDetail
+      Operation.ReadDetail,
     );
     const invalidPair = validGraph({
       edges: [
@@ -162,12 +162,12 @@ describe('analyzeGraphSemantics', () => {
     const authorDetail = node(
       'Author.ReadDetail',
       'https://example.org/aggregate/author-detail',
-      Operation.ReadDetail
+      Operation.ReadDetail,
     );
     const updateAuthor = node(
       'Author.Update',
       'https://example.org/aggregate/author-detail',
-      Operation.Update
+      Operation.Update,
     );
     const invalidPair = validGraph({
       edges: [
@@ -199,7 +199,7 @@ describe('analyzeGraphSemantics', () => {
     const authorDetail = node(
       'Author.ReadDetail',
       'https://example.org/aggregate/author-detail',
-      Operation.ReadDetail
+      Operation.ReadDetail,
     );
     const graph = validGraph({
       nodes: [...validGraph().nodes, authorDetail],
@@ -222,7 +222,7 @@ describe('analyzeGraphSemantics', () => {
     const footnoteDetail = node(
       'Footnote.ReadDetail',
       'https://example.org/aggregate/footnote-detail',
-      Operation.ReadDetail
+      Operation.ReadDetail,
     );
     const detailGraph = validGraph({
       nodes: [validGraph().nodes[1], footnoteDetail],
@@ -258,7 +258,7 @@ describe('analyzeGraphSemantics', () => {
     const chapterDetail = node(
       'Chapter.ReadDetail',
       'https://example.org/aggregate/chapter-detail',
-      Operation.ReadDetail
+      Operation.ReadDetail,
     );
     const graph = validGraph({
       nodes: [validGraph().nodes[0], chapterDetail],
@@ -282,7 +282,7 @@ describe('analyzeGraphSemantics', () => {
       Operation.Delete,
       {
         delete: { chapters: DeletePolicy.Cascade },
-      }
+      },
     );
     const graph = validGraph({
       nodes: [deleteBook],
@@ -293,13 +293,13 @@ describe('analyzeGraphSemantics', () => {
 
     expect(result.valid).toBe(false);
     expect(result.violations).toContainEqual(
-      expect.objectContaining({ code: ViolationCode.SemanticCannotCascadeAggregation })
+      expect.objectContaining({ code: ViolationCode.SemanticCannotCascadeAggregation }),
     );
     const book = result.enrichedMetadata.aggregates.find(
-      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail'
+      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail',
     );
     expect(book?.fields.find((field) => field.path === 'chapters')?.associationKind).toBe(
-      AssociationKind.Aggregation
+      AssociationKind.Aggregation,
     );
   });
 
@@ -307,7 +307,7 @@ describe('analyzeGraphSemantics', () => {
     const createBook = node(
       'Book.Create',
       'https://example.org/aggregate/book-form',
-      Operation.Create
+      Operation.Create,
     );
     const deleteBook = node(
       'Book.Delete',
@@ -315,7 +315,7 @@ describe('analyzeGraphSemantics', () => {
       Operation.Delete,
       {
         delete: { chapters: DeletePolicy.Cascade },
-      }
+      },
     );
     const graph = validGraph({
       nodes: [createBook, deleteBook],
@@ -332,7 +332,7 @@ describe('analyzeGraphSemantics', () => {
       Operation.Update,
       {
         associations: { author: AssociationKind.Aggregation },
-      }
+      },
     );
     const deleteBook = node(
       'Book.Delete',
@@ -340,7 +340,7 @@ describe('analyzeGraphSemantics', () => {
       Operation.Delete,
       {
         delete: { author: DeletePolicy.Cascade },
-      }
+      },
     );
     const graph = validGraph({
       nodes: [updateBook, deleteBook],
@@ -354,7 +354,7 @@ describe('analyzeGraphSemantics', () => {
     const updateBook = node(
       'Book.Update',
       'https://example.org/aggregate/book-detail',
-      Operation.Update
+      Operation.Update,
     );
     const deleteBook = node(
       'Book.Delete',
@@ -362,7 +362,7 @@ describe('analyzeGraphSemantics', () => {
       Operation.Delete,
       {
         delete: { chapters: DeletePolicy.Cascade },
-      }
+      },
     );
     const graph = validGraph({
       nodes: [updateBook, deleteBook],
@@ -390,10 +390,10 @@ describe('analyzeGraphSemantics', () => {
 
     expect(result.valid).toBe(true);
     const book = result.enrichedMetadata.aggregates.find(
-      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail'
+      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-detail',
     );
     expect(book?.fields.find((field) => field.path === 'chapters')?.associationKind).toBe(
-      AssociationKind.Composition
+      AssociationKind.Composition,
     );
   });
 
@@ -401,11 +401,11 @@ describe('analyzeGraphSemantics', () => {
     const metadata = testMetadata();
     const detailAuthor = requiredField(
       requiredAggregate(metadata, 'https://example.org/aggregate/book-detail').fields,
-      'author'
+      'author',
     );
     const listAuthor = requiredField(
       requiredAggregate(metadata, 'https://example.org/aggregate/book-list').fields,
-      'author'
+      'author',
     );
     detailAuthor.propertyIri = 'https://example.org/property/author';
     listAuthor.path = 'writer';
@@ -428,10 +428,10 @@ describe('analyzeGraphSemantics', () => {
 
     expect(result.valid).toBe(true);
     const bookList = result.enrichedMetadata.aggregates.find(
-      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-list'
+      (aggregate) => aggregate.iri === 'https://example.org/aggregate/book-list',
     );
     expect(bookList?.fields.find((field) => field.path === 'writer')?.associationKind).toBe(
-      AssociationKind.Composition
+      AssociationKind.Composition,
     );
   });
 
@@ -439,12 +439,12 @@ describe('analyzeGraphSemantics', () => {
     const metadata = testMetadata();
     const bookChapters = requiredField(
       requiredAggregate(metadata, 'https://example.org/aggregate/book-detail').fields,
-      'chapters'
+      'chapters',
     );
     const nestedFootnotes = requiredField(bookChapters.fields ?? [], 'footnotes');
     const chapterFootnotes = requiredField(
       requiredAggregate(metadata, 'https://example.org/aggregate/chapter-detail').fields,
-      'footnotes'
+      'footnotes',
     );
     nestedFootnotes.propertyIri = 'https://example.org/property/footnotes';
     chapterFootnotes.propertyIri = nestedFootnotes.propertyIri;
@@ -469,10 +469,10 @@ describe('analyzeGraphSemantics', () => {
 
     expect(result.valid).toBe(true);
     const chapter = result.enrichedMetadata.aggregates.find(
-      (aggregate) => aggregate.iri === 'https://example.org/aggregate/chapter-detail'
+      (aggregate) => aggregate.iri === 'https://example.org/aggregate/chapter-detail',
     );
     expect(chapter?.fields.find((field) => field.path === 'footnotes')?.associationKind).toBe(
-      AssociationKind.Composition
+      AssociationKind.Composition,
     );
   });
 
@@ -486,7 +486,7 @@ describe('analyzeGraphSemantics', () => {
           chapters: AssociationKind.Composition,
           'chapters.footnotes': AssociationKind.Composition,
         },
-      }
+      },
     );
     const deleteBook = node(
       'Book.Delete',
@@ -497,7 +497,7 @@ describe('analyzeGraphSemantics', () => {
           chapters: DeletePolicy.Cascade,
           'chapters.footnotes': DeletePolicy.Cascade,
         },
-      }
+      },
     );
     const graph = validGraph({
       nodes: [updateBook, deleteBook],
@@ -519,7 +519,7 @@ describe('analyzeGraphSemantics', () => {
           chapters: AssociationKind.Composition,
           'chapters.footnotes': AssociationKind.Composition,
         },
-      }
+      },
     );
     const deleteBook = node(
       'Book.Delete',
@@ -527,7 +527,7 @@ describe('analyzeGraphSemantics', () => {
       Operation.Delete,
       {
         delete: { 'chapters.footnotes': DeletePolicy.Cascade },
-      }
+      },
     );
     const graph = validGraph({
       nodes: [updateBook, deleteBook],
@@ -567,7 +567,7 @@ describe('analyzeGraphSemantics', () => {
 
     expect(result.valid).toBe(false);
     expect(result.violations).toContainEqual(
-      expect.objectContaining({ code: ViolationCode.SemanticDuplicateAggregateName })
+      expect.objectContaining({ code: ViolationCode.SemanticDuplicateAggregateName }),
     );
   });
 
@@ -623,7 +623,7 @@ describe('analyzeGraphSemantics', () => {
       expect.objectContaining({
         code: ViolationCode.SemanticDuplicateGeneratedFieldName,
         message: expect.stringContaining('property name "aB"'),
-      })
+      }),
     );
   });
 
@@ -638,14 +638,14 @@ describe('analyzeGraphSemantics', () => {
         label: 'Specialization',
         kind: FieldKind.Primitive,
       },
-      { path: '__rdfTypes', label: 'Types', kind: FieldKind.Primitive }
+      { path: '__rdfTypes', label: 'Types', kind: FieldKind.Primitive },
     );
 
     const result = analyzeGraphSemantics(graph, metadata);
     const reservedNameViolations = result.violations.filter(
       (violation) =>
         violation.code === ViolationCode.SemanticDuplicateGeneratedFieldName &&
-        violation.message.includes('reserved property name')
+        violation.message.includes('reserved property name'),
     );
 
     expect(result.valid).toBe(false);
@@ -721,7 +721,7 @@ describe('analyzeGraphSemantics', () => {
       expect.objectContaining({
         code: ViolationCode.SemanticDuplicateGeneratedFieldName,
         message: expect.stringContaining('Field "child.id"'),
-      })
+      }),
     );
   });
 
@@ -773,7 +773,7 @@ describe('analyzeGraphSemantics', () => {
 
     const result = analyzeGraphSemantics(graph, metadata);
     const identityWarnings = result.violations.filter(
-      (violation) => violation.code === ViolationCode.SemanticNamedNodeIdentityOverride
+      (violation) => violation.code === ViolationCode.SemanticNamedNodeIdentityOverride,
     );
 
     expect(result.valid).toBe(true);
@@ -782,13 +782,13 @@ describe('analyzeGraphSemantics', () => {
       expect.arrayContaining([
         expect.stringContaining('Composition "chapters"'),
         expect.stringContaining('Composition "contacts"'),
-      ])
+      ]),
     );
     expect(identityWarnings.map((warning) => warning.message).join(' ')).toContain(
-      'Affected specializations: "Organization", "Individual".'
+      'Affected specializations: "Organization", "Individual".',
     );
     expect(identityWarnings.map((warning) => warning.message).join(' ')).not.toMatch(
-      /prototype|instancesHaveIdentity/
+      /prototype|instancesHaveIdentity/,
     );
   });
 
@@ -837,7 +837,7 @@ describe('analyzeGraphSemantics', () => {
 
     const result = analyzeGraphSemantics(graph, metadata);
     const errors = result.violations.filter(
-      (violation) => violation.code === ViolationCode.SemanticUnrecoverableSpecialization
+      (violation) => violation.code === ViolationCode.SemanticUnrecoverableSpecialization,
     );
 
     expect(result.valid).toBe(false);
@@ -898,7 +898,7 @@ describe('analyzeGraphSemantics', () => {
 
     expect(result.valid).toBe(true);
     expect(result.violations).not.toContainEqual(
-      expect.objectContaining({ code: ViolationCode.SemanticUnrecoverableSpecialization })
+      expect.objectContaining({ code: ViolationCode.SemanticUnrecoverableSpecialization }),
     );
   });
 
@@ -958,7 +958,7 @@ describe('analyzeGraphSemantics', () => {
       expect.objectContaining({
         code: ViolationCode.SemanticDuplicateGeneratedFieldName,
         message: expect.stringContaining('aggregate "Child"'),
-      })
+      }),
     );
   });
 
@@ -969,7 +969,7 @@ describe('analyzeGraphSemantics', () => {
       Operation.Create,
       {
         associations: { author: AssociationKind.Composition },
-      }
+      },
     );
     const createAuthor = node(
       'Author.Create',
@@ -977,7 +977,7 @@ describe('analyzeGraphSemantics', () => {
       Operation.Create,
       {
         associations: { books: AssociationKind.Composition },
-      }
+      },
     );
     const graph = validGraph({
       nodes: [createBook, createAuthor],
@@ -1024,7 +1024,7 @@ describe('analyzeGraphSemantics', () => {
           chapters: AssociationKind.Composition,
           'chapters.editor': AssociationKind.Aggregation,
         },
-      }
+      },
     );
     const deleteBook = node(
       'Book.Delete',
@@ -1035,7 +1035,7 @@ describe('analyzeGraphSemantics', () => {
           chapters: DeletePolicy.Cascade,
           'chapters.editor': DeletePolicy.Cascade,
         },
-      }
+      },
     );
     const graph = validGraph({
       nodes: [updateBook, deleteBook],
@@ -1190,7 +1190,7 @@ function expectViolations(graph: ApplicationGraph, code: ViolationCode) {
 
   expect(result.valid).toBe(false);
   expect(result.violations).toContainEqual(
-    expect.objectContaining({ code, severity: ViolationSeverity.Error })
+    expect.objectContaining({ code, severity: ViolationSeverity.Error }),
   );
 }
 
@@ -1200,7 +1200,7 @@ function expectWarnings(graph: ApplicationGraph, code: ViolationCode) {
 
   expect(result.valid).toBe(true);
   expect(result.violations).toContainEqual(
-    expect.objectContaining({ code, severity: ViolationSeverity.Warning })
+    expect.objectContaining({ code, severity: ViolationSeverity.Warning }),
   );
 }
 
@@ -1259,7 +1259,7 @@ function node(
   id: string,
   aggregateIri: string,
   operation: ApplicationNode['operation'],
-  config?: ApplicationNodeConfig
+  config?: ApplicationNodeConfig,
 ): ApplicationNode {
   return {
     id,

@@ -202,14 +202,14 @@ describe('generated recursive form model', () => {
     const draft = createEntityDraft(
       rootEntityTarget(localizedAggregate),
       { [localizedAggregate.iri]: localizedAggregate },
-      'urn:test'
+      'urn:test',
     );
 
     expect(resolveControl(localizedTitle)).toBe('multilingual');
     expect(draft.title).toEqual({});
     expect(draft.keywords).toEqual({});
     expect(() => fieldValues({ cs: ['one', 'two'] }, localizedKeywords)).toThrow(
-      'Keywords must contain a list of values.'
+      'Keywords must contain a list of values.',
     );
   });
 
@@ -238,19 +238,19 @@ describe('generated recursive form model', () => {
       validateModel(model, rootEntityTarget(localizedAggregate), registry);
 
     expect(validate({ id: 'urn:localized', title: {} })).toContainEqual(
-      expect.objectContaining({ code: ValidationIssueCode.MinCount, path: 'title' })
+      expect.objectContaining({ code: ValidationIssueCode.MinCount, path: 'title' }),
     );
     expect(validate({ id: 'urn:localized', title: { cs: ['A', 'B'] } })).toContainEqual(
-      expect.objectContaining({ code: ValidationIssueCode.MaxCount, path: 'title' })
+      expect.objectContaining({ code: ValidationIssueCode.MaxCount, path: 'title' }),
     );
     expect(
       validate({
         id: 'urn:localized',
         title: { cs: ['Název'], en: ['Title'] },
         keywords: { cs: ['stejné', 'stejné'] },
-      })
+      }),
     ).toContainEqual(
-      expect.objectContaining({ code: ValidationIssueCode.Duplicate, path: 'keywords' })
+      expect.objectContaining({ code: ValidationIssueCode.Duplicate, path: 'keywords' }),
     );
     expect(validate({ id: 'urn:localized', title: { cs: ['Název'], en: ['Title'] } })).toEqual([]);
   });
@@ -284,7 +284,7 @@ describe('generated recursive form model', () => {
     };
 
     expect(
-      referenceDisplayFields({ ...ownerField, fields: [nameField, nameAlias] }, aggregateRegistry)
+      referenceDisplayFields({ ...ownerField, fields: [nameField, nameAlias] }, aggregateRegistry),
     ).toEqual([nameField]);
   });
 
@@ -299,7 +299,7 @@ describe('generated recursive form model', () => {
         formControl: 'text',
         many: false,
         required: false,
-      })
+      }),
     );
     const fallbackAggregate: AggregateDescriptor = {
       iri: 'https://example.org/aggregate/owner',
@@ -312,8 +312,8 @@ describe('generated recursive form model', () => {
     expect(
       referenceDisplayFields(
         { ...ownerField, fields: [] },
-        { ...aggregateRegistry, [fallbackAggregate.iri]: fallbackAggregate }
-      )
+        { ...aggregateRegistry, [fallbackAggregate.iri]: fallbackAggregate },
+      ),
     ).toEqual([fallbackFields[2]]);
   });
 
@@ -367,7 +367,7 @@ describe('generated recursive form model', () => {
         expect.objectContaining({ code: ValidationIssueCode.Duplicate, path: 'tags' }),
         expect.objectContaining({ code: ValidationIssueCode.MaxCount, path: 'children' }),
         expect.objectContaining({ code: ValidationIssueCode.MinCount, path: 'children[0].name' }),
-      ])
+      ]),
     );
   });
 
@@ -388,7 +388,7 @@ describe('generated recursive form model', () => {
         expect.objectContaining({ code: ValidationIssueCode.InvalidIri, path: 'id' }),
         expect.objectContaining({ code: ValidationIssueCode.InvalidIri, path: 'owner' }),
         expect.objectContaining({ code: ValidationIssueCode.InvalidIri, path: 'children[1].id' }),
-      ])
+      ]),
     );
   });
 
@@ -406,8 +406,8 @@ describe('generated recursive form model', () => {
 
     expect(
       validateModel(model, rootEntityTarget(rootAggregate), aggregateRegistry).filter(
-        (issue) => issue.code === ValidationIssueCode.InvalidIri
-      )
+        (issue) => issue.code === ValidationIssueCode.InvalidIri,
+      ),
     ).toEqual([]);
   });
 
@@ -444,7 +444,7 @@ describe('generated recursive form model', () => {
         title: { cs: ['lowercase'] },
       },
       target,
-      registry
+      registry,
     );
     expect(issues).toEqual(
       expect.arrayContaining([
@@ -455,7 +455,7 @@ describe('generated recursive form model', () => {
         }),
         expect.objectContaining({ code: ValidationIssueCode.PatternMismatch, path: 'owner' }),
         expect.objectContaining({ code: ValidationIssueCode.PatternMismatch, path: 'title' }),
-      ])
+      ]),
     );
     const ownerIssue = issues.find((issue) => issue.path === 'owner');
     expect(ownerIssue?.message).toContain('^urn:owner:');
@@ -473,8 +473,8 @@ describe('generated recursive form model', () => {
           title: { cs: ['Title'] },
         },
         target,
-        registry
-      )
+        registry,
+      ),
     ).toEqual([]);
   });
 
@@ -496,7 +496,7 @@ describe('generated recursive form model', () => {
       source,
       rootEntityTarget(rootAggregate),
       aggregateRegistry,
-      dataSource
+      dataSource,
     );
     const child = (hydrated.children as EntityRecord[])[0];
     child.name = 'Edited';

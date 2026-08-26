@@ -29,7 +29,7 @@ export function validateDeleteCascade(context: SemanticValidationContext): Viola
     const cascadePaths = new Set(
       Object.entries(deleteConfig)
         .filter(([, policy]) => policy === DeletePolicy.Cascade)
-        .map(([path]) => splitFieldPath(path).join('.'))
+        .map(([path]) => splitFieldPath(path).join('.')),
     );
 
     Object.entries(deleteConfig).forEach(([path, policy]) => {
@@ -39,8 +39,8 @@ export function validateDeleteCascade(context: SemanticValidationContext): Viola
             ViolationCode.SemanticInvalidDeletePolicy,
             `Delete path "${path}" has unsupported policy "${String(policy)}". ` +
               'Use "cascade" or remove the setting.',
-            `/nodes/${nodeIndex}/config/delete/${path}`
-          )
+            `/nodes/${nodeIndex}/config/delete/${path}`,
+          ),
         );
         return;
       }
@@ -52,8 +52,8 @@ export function validateDeleteCascade(context: SemanticValidationContext): Viola
             ViolationCode.SemanticDeletePathNotAssociation,
             `Delete path "${path}" in "${aggregate.name}" is not an association, so no ` +
               'cascade is generated for it. Correct the path or remove the setting.',
-            `/nodes/${nodeIndex}/config/delete/${path}`
-          )
+            `/nodes/${nodeIndex}/config/delete/${path}`,
+          ),
         );
         return;
       }
@@ -64,8 +64,8 @@ export function validateDeleteCascade(context: SemanticValidationContext): Viola
             ViolationCode.SemanticCannotCascadeAggregation,
             `Delete path "${path}" is an aggregation and cannot be cascade-deleted. ` +
               'Configure it as a composition or remove the cascade setting.',
-            `/nodes/${nodeIndex}/config/delete/${path}`
-          )
+            `/nodes/${nodeIndex}/config/delete/${path}`,
+          ),
         );
         return;
       }
@@ -78,8 +78,8 @@ export function validateDeleteCascade(context: SemanticValidationContext): Viola
             `Delete cascade path "${path}" requires its parent composition "${segments
               .slice(0, -1)
               .join('.')}" to cascade as well.`,
-            `/nodes/${nodeIndex}/config/delete/${path}`
-          )
+            `/nodes/${nodeIndex}/config/delete/${path}`,
+          ),
         );
       }
     });

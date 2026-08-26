@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useRef } from "react";
-import { debounce } from "es-toolkit";
-import type { ApplicationGraph } from "@dataspecer/app-generator/graph";
-import { useEditorStore, type NodePositions, type SaveState } from "@/store.ts";
-import { saveGraph } from "@/backend/client.ts";
-import { hasValidSyntax } from "@/validation/violations.ts";
+import { useCallback, useEffect, useRef } from 'react';
+import { debounce } from 'es-toolkit';
+import type { ApplicationGraph } from '@dataspecer/app-generator/graph';
+import { useEditorStore, type NodePositions, type SaveState } from '@/store.ts';
+import { saveGraph } from '@/backend/client.ts';
+import { hasValidSyntax } from '@/validation/violations.ts';
 
 const SAVE_DEBOUNCE_MS = 800;
 
@@ -45,16 +45,16 @@ export function createAutosaveQueue(
       }
 
       if (!hasValidSyntax(snapshot.graph)) {
-        setSaveState("invalid");
+        setSaveState('invalid');
         return;
       }
 
-      setSaveState("saving");
+      setSaveState('saving');
       try {
         await persist(snapshot);
-        setSaveState("saved");
+        setSaveState('saved');
       } catch (caught) {
-        setSaveState("error");
+        setSaveState('error');
         throw caught;
       }
     });
@@ -104,11 +104,7 @@ export function useAutosave(): () => Promise<void> {
 
   useEffect(() => {
     const initial = useEditorStore.getState();
-    if (
-      initial.loadState !== "ready" ||
-      initial.resourceIri === null ||
-      initial.graph === null
-    ) {
+    if (initial.loadState !== 'ready' || initial.resourceIri === null || initial.graph === null) {
       return;
     }
 
@@ -123,7 +119,7 @@ export function useAutosave(): () => Promise<void> {
     let observedPositions = initial.positions;
     const unsubscribe = useEditorStore.subscribe((state) => {
       if (
-        state.loadState !== "ready" ||
+        state.loadState !== 'ready' ||
         state.resourceIri === null ||
         state.graph === null ||
         (state.graph === observedGraph && state.positions === observedPositions)
@@ -154,19 +150,19 @@ export function useAutosave(): () => Promise<void> {
       });
     };
     const onVisibilityChange = () => {
-      if (document.visibilityState === "hidden") {
+      if (document.visibilityState === 'hidden') {
         flushBeforeLeaving();
       }
     };
-    document.addEventListener("visibilitychange", onVisibilityChange);
-    window.addEventListener("pagehide", flushBeforeLeaving);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('pagehide', flushBeforeLeaving);
 
     return () => {
       if (queueRef.current === queue) {
         queueRef.current = null;
       }
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-      window.removeEventListener("pagehide", flushBeforeLeaving);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('pagehide', flushBeforeLeaving);
       queue.dispose();
       unsubscribe();
     };
@@ -180,7 +176,7 @@ export function useAutosave(): () => Promise<void> {
 
     const queue = queueRef.current;
     if (queue === null) {
-      throw new Error("Autosave is not ready.");
+      throw new Error('Autosave is not ready.');
     }
     await queue.flush({ resourceIri, graph, positions });
   }, []);

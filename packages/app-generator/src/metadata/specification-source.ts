@@ -21,5 +21,5 @@ export interface SpecificationSource {
 }
 
 export type SpecificationSourceLoader = (
-  dataSpecificationIri: string
+  dataSpecificationIri: string,
 ) => Promise<SpecificationSource>;

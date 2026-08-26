@@ -78,7 +78,7 @@ export interface DataSource {
 }
 
 export function isListFieldSortable(
-  field: FieldDescriptor
+  field: FieldDescriptor,
 ): field is FieldDescriptor & { propertyIri: string } {
   return (
     field.kind === 'primitive' &&

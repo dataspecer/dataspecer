@@ -1,10 +1,5 @@
-import { BaseEdge, useInternalNode, type EdgeProps } from "@xyflow/react";
-import {
-  curveControlPoint,
-  rectBorderTowards,
-  rectCenter,
-  type Rect,
-} from "./edge-geometry.ts";
+import { BaseEdge, useInternalNode, type EdgeProps } from '@xyflow/react';
+import { curveControlPoint, rectBorderTowards, rectCenter, type Rect } from './edge-geometry.ts';
 
 /**
  * An edge attaching to the nearest border point of its nodes instead of fixed handles.
@@ -18,7 +13,7 @@ export function FloatingEdge(props: EdgeProps) {
 
   const sourceRect = nodeRect(sourceNode);
   const targetRect = nodeRect(targetNode);
-  const offset = typeof props.data?.offset === "number" ? props.data.offset : 0;
+  const offset = typeof props.data?.offset === 'number' ? props.data.offset : 0;
 
   let path: string;
   if (props.source === props.target) {
@@ -57,7 +52,6 @@ function selfLoopPath(rect: Rect): string {
   const endY = rect.y + rect.height * 0.25;
   const rightX = rect.x + rect.width;
   return (
-    `M ${startX},${rect.y} ` +
-    `C ${startX},${rect.y - 45} ${rightX + 55},${endY} ${rightX},${endY}`
+    `M ${startX},${rect.y} ` + `C ${startX},${rect.y - 45} ${rightX + 55},${endY} ${rightX},${endY}`
   );
 }

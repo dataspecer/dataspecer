@@ -80,7 +80,7 @@ describe('immutable specialization selection', () => {
       });
 
       expect(loaded.__specializationIri).toBe(specializationIri);
-    }
+    },
   );
 
   it('rejects RDF types that identify different specializations', () => {
@@ -114,12 +114,12 @@ describe('immutable specialization selection', () => {
   it('shows shared fields before selection, the selected branch, and the union for unresolved loaded data', () => {
     expect(effectiveFields(distributionTarget, {}).map((field) => field.path)).toEqual(['name']);
     expect(
-      effectiveFields(distributionTarget, { __specializationIri: WEB }).map((field) => field.path)
+      effectiveFields(distributionTarget, { __specializationIri: WEB }).map((field) => field.path),
     ).toEqual(['name', 'accessUrl']);
     expect(
       effectiveFields(distributionTarget, { __rdfTypes: [DISTRIBUTION_CLASS] }).map(
-        (field) => field.path
-      )
+        (field) => field.path,
+      ),
     ).toEqual(['name', 'accessUrl', 'endpointUrl']);
   });
 
@@ -128,12 +128,12 @@ describe('immutable specialization selection', () => {
     const missing = validateModel(
       { id: 'https://example.org/distribution/1' },
       distributionTarget,
-      registry
+      registry,
     );
     const noEvidence = validateModel(
       { id: 'https://example.org/distribution/1', __specializationIri: WEB },
       distributionTarget,
-      registry
+      registry,
     );
     const valid = validateModel(
       {
@@ -142,14 +142,14 @@ describe('immutable specialization selection', () => {
         accessUrl: 'https://example.org/download',
       },
       distributionTarget,
-      registry
+      registry,
     );
 
     expect(missing).toContainEqual(
-      expect.objectContaining({ code: ValidationIssueCode.SpecializationRequired })
+      expect.objectContaining({ code: ValidationIssueCode.SpecializationRequired }),
     );
     expect(noEvidence).toContainEqual(
-      expect.objectContaining({ code: ValidationIssueCode.SpecializationEvidenceRequired })
+      expect.objectContaining({ code: ValidationIssueCode.SpecializationEvidenceRequired }),
     );
     expect(valid).toEqual([]);
   });
@@ -164,14 +164,14 @@ describe('immutable specialization selection', () => {
       distributionTarget,
       registry,
       'https://example.org/id',
-      WEB
+      WEB,
     );
     const service = selectEntitySpecialization(
       { ...web, accessUrl: 'https://example.org/download' },
       distributionTarget,
       registry,
       'https://example.org/id',
-      SERVICE
+      SERVICE,
     );
 
     expect(unselected).not.toHaveProperty('accessUrl');
@@ -206,7 +206,7 @@ describe('immutable specialization selection', () => {
           },
         ],
       },
-      [distributions]
+      [distributions],
     ) as EntityRecord;
 
     expect((normalized.distributions as EntityRecord[])[0]).toMatchObject({
@@ -238,7 +238,7 @@ function contactTarget(): EntityTarget {
         'https://example.org/psm/organization',
         'Organization',
         'https://example.org/Organization',
-        ['name', 'registrationNumber']
+        ['name', 'registrationNumber'],
       ),
       specialization('https://example.org/psm/person', 'Person', 'https://example.org/Person', [
         'name',
@@ -265,7 +265,7 @@ function specialization(
   specializationIri: string,
   label: string,
   classIri: string,
-  fieldPaths: string[]
+  fieldPaths: string[],
 ): SpecializationDescriptor {
   return { specializationIri, label, classIri, fieldPaths };
 }

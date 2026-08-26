@@ -43,7 +43,7 @@ export function CreateForm<TModel extends EntityModel>(props: CreateFormProps<TM
   const dataSource = useDataSource();
   const { title, aggregate, aggregateRegistry, strategy, navigation, instanceBaseIri } = props;
   const [model, setModel] = useState<EntityRecord>(() =>
-    createEntityDraft(rootEntityTarget(aggregate), aggregateRegistry, instanceBaseIri)
+    createEntityDraft(rootEntityTarget(aggregate), aggregateRegistry, instanceBaseIri),
   );
   const navigate = useNavigate();
   const { notify } = useSnackbar();

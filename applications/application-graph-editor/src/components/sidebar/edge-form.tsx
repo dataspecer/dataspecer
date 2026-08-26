@@ -1,8 +1,8 @@
-import { ArrowRight } from "lucide-react";
-import { EdgeType, type ApplicationEdge } from "@dataspecer/app-generator/graph";
-import { useEditorStore } from "@/store.ts";
-import { ElementViolations } from "./element-violations.tsx";
-import { FormField, inputClass } from "./form-field.tsx";
+import { ArrowRight } from 'lucide-react';
+import { EdgeType, type ApplicationEdge } from '@dataspecer/app-generator/graph';
+import { useEditorStore } from '@/store.ts';
+import { ElementViolations } from './element-violations.tsx';
+import { FormField, inputClass } from './form-field.tsx';
 
 function NodeLink({ id }: { id: string }) {
   const select = () => {

@@ -28,7 +28,7 @@ const tempDirectories: string[] = [];
 
 afterEach(async () => {
   await Promise.all(
-    tempDirectories.splice(0).map((directory) => rm(directory, { recursive: true, force: true }))
+    tempDirectories.splice(0).map((directory) => rm(directory, { recursive: true, force: true })),
   );
 });
 
@@ -46,7 +46,7 @@ describe('generateApp', { timeout: 30_000 }, () => {
 
     expect(result.success).toBe(false);
     expect(result.violations).toContainEqual(
-      expect.objectContaining({ code: ViolationCode.GraphSyntaxInvalid })
+      expect.objectContaining({ code: ViolationCode.GraphSyntaxInvalid }),
     );
     expect(result.files).toEqual({});
     expect(result.writtenFiles).toEqual([]);
@@ -67,7 +67,7 @@ describe('generateApp', { timeout: 30_000 }, () => {
     expect(result.violations).toContainEqual(
       expect.objectContaining({
         code: ViolationCode.SemanticUnsupportedDatasourceCount,
-      })
+      }),
     );
     expect(result.files).toEqual({});
   });
@@ -82,10 +82,10 @@ describe('generateApp', { timeout: 30_000 }, () => {
 
     expect(result.success).toBe(false);
     expect(result.violations).toContainEqual(
-      expect.objectContaining({ code: ViolationCode.SemanticNoNodes })
+      expect.objectContaining({ code: ViolationCode.SemanticNoNodes }),
     );
     expect(result.violations).not.toContainEqual(
-      expect.objectContaining({ code: ViolationCode.MetadataResolutionFailed })
+      expect.objectContaining({ code: ViolationCode.MetadataResolutionFailed }),
     );
   });
 
@@ -102,7 +102,7 @@ describe('generateApp', { timeout: 30_000 }, () => {
                   'Data structure "example" does not have a root class that can be resolved.',
                 path: 'structureModels[0]',
               },
-            ])
+            ]),
           ),
       },
     });
@@ -152,10 +152,10 @@ describe('generateApp', { timeout: 30_000 }, () => {
 
     expect(result.success).toBe(false);
     expect(result.violations).toContainEqual(
-      expect.objectContaining({ code: ViolationCode.SemanticDuplicateRouteId })
+      expect.objectContaining({ code: ViolationCode.SemanticDuplicateRouteId }),
     );
     expect(result.violations).not.toContainEqual(
-      expect.objectContaining({ code: ViolationCode.MetadataResolutionFailed })
+      expect.objectContaining({ code: ViolationCode.MetadataResolutionFailed }),
     );
   });
 
@@ -186,7 +186,7 @@ describe('generateApp', { timeout: 30_000 }, () => {
       expect.objectContaining({
         code: ViolationCode.SemanticDuplicateEdge,
         severity: ViolationSeverity.Warning,
-      })
+      }),
     );
   });
   it('generates files in memory without an output directory', async () => {
@@ -200,10 +200,10 @@ describe('generateApp', { timeout: 30_000 }, () => {
     expect(Object.keys(result.files)).toContain('src/routes.tsx');
     // navigation is emitted into the page it belongs to, as source rather than quoted JSON
     expect(result.files['src/modules/book-list/book-read-list-page.tsx']).toContain(
-      "targetPath: '/book-read-detail'"
+      "targetPath: '/book-read-detail'",
     );
     expect(result.files['src/modules/book-list/book-read-list-page.tsx']).not.toContain(
-      '"targetPath":'
+      '"targetPath":',
     );
     expect(result.files['src/modules/book-detail/descriptor.ts']).toContain("path: 'chapters'");
     expect(result.files['src/modules/book-detail/descriptor.ts']).not.toContain('"path":');
@@ -234,10 +234,10 @@ describe('generateApp', { timeout: 30_000 }, () => {
 
     expect(result.success).toBe(true);
     expect(result.files['src/modules/123-books/model.ts']).toContain(
-      'export interface _123BooksModel'
+      'export interface _123BooksModel',
     );
     expect(result.files['src/modules/123-books/123-books-read-list-page.tsx']).toContain(
-      'export function _123BooksReadListPage()'
+      'export function _123BooksReadListPage()',
     );
   });
 
@@ -253,7 +253,7 @@ describe('generateApp', { timeout: 30_000 }, () => {
     expect(result.success).toBe(true);
     expect(result.writtenFiles).toContain('package.json');
     await expect(readFile(join(outputDirectory, 'src/routes.tsx'), 'utf8')).resolves.toContain(
-      'BookReadListPage'
+      'BookReadListPage',
     );
   });
 
@@ -395,7 +395,7 @@ describe('generateApp', { timeout: 30_000 }, () => {
     expect(result.success).toBe(true);
     const schema = await readFile(
       join(outputDirectory, 'src/modules/link/ldkit-schema.ts'),
-      'utf8'
+      'utf8',
     );
     expect(schema).toContain("import { ldkit, xsd } from 'ldkit/namespaces';");
     expect(schema).toContain('xsd.base64Binary');
@@ -419,7 +419,7 @@ describe('generateApp', { timeout: 30_000 }, () => {
           } else {
             resolvePromise();
           }
-        }
+        },
       );
     });
   });
@@ -442,7 +442,7 @@ describe('generateApp', { timeout: 30_000 }, () => {
 
     expect(rejected.success).toBe(false);
     expect(rejected.violations).toContainEqual(
-      expect.objectContaining({ code: ViolationCode.GenerateWriteFailed })
+      expect.objectContaining({ code: ViolationCode.GenerateWriteFailed }),
     );
     expect(allowed.success).toBe(true);
     await expect(readFile(join(outputDirectory, 'existing.txt'), 'utf8')).resolves.toBe('keep me');
@@ -485,7 +485,7 @@ function graphFixture(overrides: Partial<ApplicationGraph> = {}): ApplicationGra
 function node(
   id: string,
   aggregateIri: string,
-  operation: ApplicationNode['operation']
+  operation: ApplicationNode['operation'],
 ): ApplicationNode {
   return {
     id,

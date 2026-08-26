@@ -27,7 +27,7 @@ export interface ValidateApplicationGraphResult {
  * Runs the full validation pipeline: syntax, structural rules, metadata resolution, and semantic analysis.
  */
 export async function validateApplicationGraph(
-  input: ValidateApplicationGraphInput
+  input: ValidateApplicationGraphInput,
 ): Promise<ValidateApplicationGraphResult> {
   const syntaxResult = validateGraphSyntax(input.graph);
   if (!syntaxResult.valid || !syntaxResult.graph) {

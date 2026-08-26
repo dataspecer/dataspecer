@@ -175,7 +175,7 @@ describe('composite mutation planning', () => {
     });
 
     expect(plan.find((step) => step.id === 'urn:department')?.specializationIri).toBe(
-      'urn:psm:research'
+      'urn:psm:research',
     );
   });
 
@@ -256,15 +256,15 @@ describe('composite mutation planning', () => {
     };
 
     expect(() =>
-      buildCompositeUpdatePlan(aggregate, aggregateRegistry, switched, storedOrganization)
+      buildCompositeUpdatePlan(aggregate, aggregateRegistry, switched, storedOrganization),
     ).toThrow('cannot be changed after the entity has been saved');
     expect(() =>
       buildCompositeUpdatePlan(
         aggregate,
         aggregateRegistry,
         { id: 'urn:company', departments: [] },
-        unresolved
-      )
+        unresolved,
+      ),
     ).toThrow('cannot be removed');
   });
 
@@ -314,7 +314,7 @@ describe('composite mutation planning', () => {
     };
 
     await expect(
-      createComposite(dataSource, companyAggregate, aggregateRegistry, payload)
+      createComposite(dataSource, companyAggregate, aggregateRegistry, payload),
     ).rejects.toThrow('office failed');
     expect(calls).toEqual(['urn:office']);
   });
@@ -342,7 +342,7 @@ describe('composite mutation planning', () => {
       aggregate,
       { [aggregate.iri]: aggregate },
       { id: 'urn:localized', labels },
-      { id: 'urn:localized', labels }
+      { id: 'urn:localized', labels },
     );
 
     expect(plan[0].payload).not.toHaveProperty('labels');
@@ -372,19 +372,19 @@ describe('composite mutation planning', () => {
       aggregate,
       registry,
       { id: 'urn:localized', labels: { cs: ['Název'], en: ['Name'] } },
-      { id: 'urn:localized', labels: { cs: ['Starý název'] } }
+      { id: 'urn:localized', labels: { cs: ['Starý název'] } },
     );
     const clear = buildCompositeUpdatePlan(
       aggregate,
       registry,
       { id: 'urn:localized', labels: {} },
-      { id: 'urn:localized', labels: { cs: ['Starý název'] } }
+      { id: 'urn:localized', labels: { cs: ['Starý název'] } },
     );
     const untouched = buildCompositeUpdatePlan(
       aggregate,
       registry,
       { id: 'urn:localized' },
-      { id: 'urn:localized', labels: { cs: ['Starý název'] } }
+      { id: 'urn:localized', labels: { cs: ['Starý název'] } },
     );
 
     expect(update[0].payload?.labels).toEqual({ cs: ['Název'], en: ['Name'] });
@@ -398,8 +398,8 @@ describe('composite mutation planning', () => {
         companyAggregate,
         aggregateRegistry,
         { id: 'urn:company', partners: { id: 'urn:partner' }, departments: [] },
-        { id: 'urn:company', partners: [], departments: [] }
-      )
+        { id: 'urn:company', partners: [], departments: [] },
+      ),
     ).toThrow('Partners must contain a list of values.');
 
     expect(() =>
@@ -407,8 +407,8 @@ describe('composite mutation planning', () => {
         companyAggregate,
         aggregateRegistry,
         { id: 'urn:company', partners: [{ id: 42 }], departments: [] },
-        { id: 'urn:company', partners: [], departments: [] }
-      )
+        { id: 'urn:company', partners: [], departments: [] },
+      ),
     ).toThrow('Partners must contain a reference.');
   });
 
@@ -473,8 +473,8 @@ describe('composite mutation planning', () => {
           id: 'urn:company',
           departments: [{ id: 'urn:department', offices: [{ id: 'urn:office' }] }],
         },
-        ['departments', 'departments.offices']
-      )
+        ['departments', 'departments.offices'],
+      ),
     ).rejects.toThrow('office delete failed');
     expect(deleted).toEqual(['urn:office']);
   });
@@ -502,7 +502,7 @@ describe('composite mutation planning', () => {
       companyAggregate,
       aggregateRegistry,
       { id: 'urn:company', departments: [{ id: 'urn:department' }] },
-      ['departments', 'departments.offices']
+      ['departments', 'departments.offices'],
     );
 
     expect(readIds).toEqual(['urn:department']);
@@ -538,7 +538,7 @@ describe('composite mutation planning', () => {
         departments: [{ id: 'urn:department:active' }],
         archivedDepartments: [{ id: 'urn:department:archived' }],
       },
-      ['departments']
+      ['departments'],
     );
 
     expect(readIds).toEqual(['urn:department:active']);

@@ -18,8 +18,8 @@ export function validateRedirects(context: StructuralValidationContext): Violati
         semanticViolation(
           ViolationCode.SemanticMultipleRedirects,
           `Node "${edge.source}" has more than one redirect. Keep only one redirect from this node.`,
-          `/edges/${index}/source`
-        )
+          `/edges/${index}/source`,
+        ),
       );
     }
     redirectSources.add(edge.source);
@@ -37,8 +37,8 @@ export function validateRedirects(context: StructuralValidationContext): Violati
           `Redirect "${edge.id}" cannot connect ${sourceNode.operation} to ` +
             `${targetNode.operation}. Redirect Create or Update to ReadList or ReadDetail, ` +
             'and Delete to ReadList.',
-          `/edges/${index}`
-        )
+          `/edges/${index}`,
+        ),
       );
     }
   });

@@ -3,7 +3,7 @@ import type { GeneratedNavigationDescriptor, GeneratedOperationDescriptor } from
 
 export function buildEdgeDescriptor(
   edge: ApplicationEdge,
-  operationByNodeId: ReadonlyMap<string, GeneratedOperationDescriptor>
+  operationByNodeId: ReadonlyMap<string, GeneratedOperationDescriptor>,
 ): GeneratedNavigationDescriptor {
   return {
     id: edge.id,
@@ -14,7 +14,7 @@ export function buildEdgeDescriptor(
 
 function requireOperation(
   operationByNodeId: ReadonlyMap<string, GeneratedOperationDescriptor>,
-  nodeId: string
+  nodeId: string,
 ): GeneratedOperationDescriptor {
   const operation = operationByNodeId.get(nodeId);
   if (!operation) {

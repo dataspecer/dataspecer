@@ -1,11 +1,11 @@
-import { BackendPackageService } from "@dataspecer/core-v2/project";
+import { BackendPackageService } from '@dataspecer/core-v2/project';
 import type {
   ApplicationGraph,
   SpecificationMetadata,
   Violation,
-} from "@dataspecer/app-generator/graph";
-import { checkGraph } from "@/graph/parse-graph.ts";
-import type { NodePositions } from "@/store.ts";
+} from '@dataspecer/app-generator/graph';
+import { checkGraph } from '@/graph/parse-graph.ts';
+import type { NodePositions } from '@/store.ts';
 
 const backendUrl = import.meta.env.VITE_BACKEND as string;
 
@@ -21,7 +21,7 @@ async function checkedFetch(...args: Parameters<typeof fetch>): Promise<Response
 const packageService = new BackendPackageService(backendUrl, checkedFetch);
 
 // Node positions live in a second blob next to the graph.
-const POSITIONS_BLOB = "visual";
+const POSITIONS_BLOB = 'visual';
 
 export async function loadGraph(iri: string): Promise<ApplicationGraph> {
   const data = await packageService.getResourceJsonData(iri);
@@ -30,7 +30,7 @@ export async function loadGraph(iri: string): Promise<ApplicationGraph> {
   }
 
   const result = checkGraph(data);
-  if ("error" in result) {
+  if ('error' in result) {
     throw new Error(result.error);
   }
   return result.graph;
@@ -50,9 +50,7 @@ export async function saveGraph(
   await packageService.setResourceJsonData(iri, positions, POSITIONS_BLOB);
 }
 
-export type GenerateResult =
-  | { ok: true; archive: Blob }
-  | { ok: false; violations: Violation[] };
+export type GenerateResult = { ok: true; archive: Blob } | { ok: false; violations: Violation[] };
 
 export async function generateApplication(iri: string): Promise<GenerateResult> {
   const response = await fetch(

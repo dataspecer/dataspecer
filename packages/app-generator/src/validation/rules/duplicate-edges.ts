@@ -18,8 +18,8 @@ export function validateDuplicateEdges(context: StructuralValidationContext): Vi
       semanticWarning(
         ViolationCode.SemanticDuplicateEdge,
         `Edges "${firstId}" and "${edge.id}" both connect "${edge.source}" to "${edge.target}" as ${edge.type}.`,
-        `/edges/${index}`
-      )
+        `/edges/${index}`,
+      ),
     );
   });
 

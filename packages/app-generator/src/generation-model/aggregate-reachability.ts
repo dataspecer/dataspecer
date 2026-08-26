@@ -18,11 +18,11 @@ interface AggregateReferenceSource {
 /** Returns aggregates used directly by operations or transitively by their field descriptors. */
 export function collectReachableAggregateIris(
   startingIris: Iterable<string>,
-  aggregates: Iterable<AggregateReferenceSource>
+  aggregates: Iterable<AggregateReferenceSource>,
 ): Set<string> {
   const reachable = new Set(startingIris);
   const aggregateByIri = new Map(
-    [...aggregates].map((aggregate) => [aggregate.iri, aggregate] as const)
+    [...aggregates].map((aggregate) => [aggregate.iri, aggregate] as const),
   );
   const pending = [...reachable];
 

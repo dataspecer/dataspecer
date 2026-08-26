@@ -30,7 +30,7 @@ export function ReferenceSelect(props: ReferenceSelectProps) {
   const classIri = field.targetClassIri;
   const displayFields = useMemo(
     () => referenceDisplayFields(field, aggregateRegistry),
-    [aggregateRegistry, field]
+    [aggregateRegistry, field],
   );
   const [options, setOptions] = useState<ReferenceOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,7 +55,7 @@ export function ReferenceSelect(props: ReferenceSelectProps) {
       .listByType({
         classIri,
         displayProperties: displayFields.flatMap((displayField) =>
-          displayField.propertyIri ? [displayField.propertyIri] : []
+          displayField.propertyIri ? [displayField.propertyIri] : [],
         ),
       })
       .then((result) => {
@@ -228,7 +228,7 @@ function ReferenceRow(props: ReferenceRowProps) {
         stringify: (option) => `${labelOf(option)} ${option}`,
         trim: true,
       }),
-    [labelOf]
+    [labelOf],
   );
 
   return (

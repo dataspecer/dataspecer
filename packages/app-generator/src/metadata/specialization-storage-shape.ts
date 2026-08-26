@@ -2,7 +2,7 @@ import type { SpecializationMetadata } from './types.ts';
 
 /** Returns the specialization properties that affect a generated LDKit storage shape. */
 export function specializationStorageShapes(
-  specializations: readonly SpecializationMetadata[] | undefined
+  specializations: readonly SpecializationMetadata[] | undefined,
 ): unknown[] | null {
   return (
     specializations

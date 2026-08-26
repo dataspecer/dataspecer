@@ -25,8 +25,8 @@ export function validateRouteIds(context: StructuralValidationContext): Violatio
         ViolationCode.SemanticDuplicateRouteId,
         `Nodes "${first.id}" and "${node.id}" both produce route "${routeId}". ` +
           'Rename one node so the generated route IDs differ.',
-        `/nodes/${index}/id`
-      )
+        `/nodes/${index}/id`,
+      ),
     );
   });
 

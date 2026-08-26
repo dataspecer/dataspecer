@@ -1,7 +1,7 @@
-import { useState } from "react";
-import * as Dialog from "@radix-ui/react-dialog";
-import { CheckCircle2 } from "lucide-react";
-import { hideGenerateHelp } from "@/utils/generate-help.ts";
+import { useState } from 'react';
+import * as Dialog from '@radix-ui/react-dialog';
+import { CheckCircle2 } from 'lucide-react';
+import { hideGenerateHelp } from '@/utils/generate-help.ts';
 
 /** Explains how to run the downloaded application archive. */
 export function GenerateHelpDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -31,12 +31,15 @@ export function GenerateHelpDialog({ open, onClose }: { open: boolean; onClose: 
           <ol className="mt-2 list-decimal pl-5 text-sm text-slate-700">
             <li className="mb-1">Unzip the archive and open terminal in that folder.</li>
             <li className="mb-1">
-              Run <code className="rounded bg-slate-100 px-1 py-0.5 text-xs">npm install && npm run dev</code> (requires
-              Node.js with npm).
+              Run{' '}
+              <code className="rounded bg-slate-100 px-1 py-0.5 text-xs">
+                npm install && npm run dev
+              </code>{' '}
+              (requires Node.js with npm).
             </li>
             <li>
-              The application talks to the datasource configured in the graph. See the README
-              inside the archive for details.
+              The application talks to the datasource configured in the graph. See the README inside
+              the archive for details.
             </li>
           </ol>
           <div className="mt-4 flex items-center justify-between gap-2">

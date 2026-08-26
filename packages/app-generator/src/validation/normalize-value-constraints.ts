@@ -18,13 +18,13 @@ interface ValueConstraintNormalizationResult {
 /** Removes regex patterns that the generated application cannot compile. */
 export function normalizeValueConstraints(
   metadata: SpecificationMetadata,
-  aggregateIris: ReadonlySet<string>
+  aggregateIris: ReadonlySet<string>,
 ): ValueConstraintNormalizationResult {
   const violations: Violation[] = [];
   const aggregates = metadata.aggregates.map((aggregate) =>
     aggregateIris.has(aggregate.iri)
       ? { ...aggregate, fields: normalizeFields(aggregate, aggregate.fields, '', violations) }
-      : aggregate
+      : aggregate,
   );
   return { metadata: { ...metadata, aggregates }, violations };
 }
@@ -33,7 +33,7 @@ function normalizeFields(
   aggregate: AggregateMetadata,
   fields: AggregateFieldMetadata[],
   pathPrefix: string,
-  violations: Violation[]
+  violations: Violation[],
 ): AggregateFieldMetadata[] {
   return fields.map((field) => {
     const fieldPath = joinFieldPath(pathPrefix, field.path);
@@ -47,8 +47,8 @@ function normalizeFields(
             ViolationCode.SemanticInvalidRegexPattern,
             `Regex "${pattern}" on field "${fieldPath}" in aggregate "${aggregate.name}" ` +
               'is invalid in JavaScript and is not enforced. Correct it in Dataspecer.',
-            '/dataSpecificationIri'
-          )
+            '/dataSpecificationIri',
+          ),
         );
         return false;
       }

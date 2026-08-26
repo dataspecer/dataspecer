@@ -31,7 +31,7 @@ export interface OperationStrategy<TModel extends EntityModel = EntityModel, TRe
   execute(ctx: OperationContext<TModel>): Promise<OperationResult<TResult>>;
   postprocess?(
     ctx: OperationContext<TModel>,
-    result: OperationResult<TResult>
+    result: OperationResult<TResult>,
   ): Promise<OperationResult<TResult>>;
 }
 
@@ -41,7 +41,7 @@ export interface OperationStrategy<TModel extends EntityModel = EntityModel, TRe
  */
 export async function invokeOperation<TModel extends EntityModel, TResult = unknown>(
   strategy: OperationStrategy<TModel, TResult>,
-  context: OperationContext<TModel>
+  context: OperationContext<TModel>,
 ): Promise<OperationResult<TResult>> {
   const validation = await strategy.validateRequest?.(context);
   if (validation && !validation.ok) {

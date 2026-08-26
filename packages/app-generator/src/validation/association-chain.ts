@@ -13,14 +13,14 @@ import { splitFieldPath } from '../utils/field-path.ts';
  */
 export function resolveAssociationChain(
   aggregate: AggregateMetadata,
-  path: string
+  path: string,
 ): AggregateFieldMetadata[] | undefined {
   let fields = aggregate.fields;
   const chain: AggregateFieldMetadata[] = [];
 
   for (const segment of splitFieldPath(path)) {
     const field = fields.find(
-      (candidate) => candidate.path === segment && candidate.kind === FieldKind.Association
+      (candidate) => candidate.path === segment && candidate.kind === FieldKind.Association,
     );
     if (!field) {
       return undefined;
@@ -45,6 +45,6 @@ export function chainIdentity(classIri: string, chain: AggregateFieldMetadata[])
   return compositeKey(
     ownerClassIri,
     field.isReverse ? 'reverse' : 'forward',
-    field.propertyIri ?? field.path
+    field.propertyIri ?? field.path,
   );
 }

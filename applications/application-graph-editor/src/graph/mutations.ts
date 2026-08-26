@@ -1,4 +1,4 @@
-import { deburr, kebabCase } from "es-toolkit";
+import { deburr, kebabCase } from 'es-toolkit';
 import {
   EdgeType,
   isValidRedirectOperation,
@@ -6,18 +6,18 @@ import {
   type ApplicationEdge,
   type ApplicationGraph,
   type ApplicationNode,
-} from "@dataspecer/app-generator/graph";
+} from '@dataspecer/app-generator/graph';
 
 const OPERATION_SUFFIXES: Record<Operation, string> = {
-  [Operation.Create]: "create",
-  [Operation.ReadList]: "list",
-  [Operation.ReadDetail]: "detail",
-  [Operation.Update]: "update",
-  [Operation.Delete]: "delete",
+  [Operation.Create]: 'create',
+  [Operation.ReadList]: 'list',
+  [Operation.ReadDetail]: 'detail',
+  [Operation.Update]: 'update',
+  [Operation.Delete]: 'delete',
 };
 
 function nodeIdBase(aggregateName: string, operation: Operation): string {
-  return `${kebabCase(deburr(aggregateName)) || "node"}.${OPERATION_SUFFIXES[operation]}`;
+  return `${kebabCase(deburr(aggregateName)) || 'node'}.${OPERATION_SUFFIXES[operation]}`;
 }
 
 function edgeIdBase(source: string, target: string): string {
@@ -84,7 +84,9 @@ export function renameNode(
     const regenerateId = (source !== edge.source || target !== edge.target) && hasDerivedId(edge);
     return { edge: { ...edge, source, target }, regenerateId };
   });
-  const used = new Set(rewritten.filter((entry) => !entry.regenerateId).map((entry) => entry.edge.id));
+  const used = new Set(
+    rewritten.filter((entry) => !entry.regenerateId).map((entry) => entry.edge.id),
+  );
   const edges = rewritten.map(({ edge, regenerateId }) => {
     if (!regenerateId) {
       return edge;
@@ -141,7 +143,7 @@ export function removeNode(graph: ApplicationGraph, nodeId: string): Application
 export function updateNode(
   graph: ApplicationGraph,
   nodeId: string,
-  patch: Partial<Omit<ApplicationNode, "id">>,
+  patch: Partial<Omit<ApplicationNode, 'id'>>,
 ): ApplicationGraph {
   return {
     ...graph,
@@ -156,7 +158,7 @@ export function addEdge(graph: ApplicationGraph, edge: ApplicationEdge): Applica
 export function updateEdge(
   graph: ApplicationGraph,
   edgeId: string,
-  patch: Partial<Omit<ApplicationEdge, "id">>,
+  patch: Partial<Omit<ApplicationEdge, 'id'>>,
 ): ApplicationGraph {
   return {
     ...graph,

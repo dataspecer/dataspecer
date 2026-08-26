@@ -5,7 +5,7 @@ import { type AggregateMetadata, FieldKind } from '../../metadata/types.ts';
 export function haveSameClass(
   sourceNode: ApplicationNode,
   targetNode: ApplicationNode,
-  aggregates: Map<string, AggregateMetadata>
+  aggregates: Map<string, AggregateMetadata>,
 ): boolean {
   const sourceAggregate = aggregates.get(sourceNode.aggregateIri);
   const targetAggregate = aggregates.get(targetNode.aggregateIri);
@@ -18,7 +18,7 @@ export function hasAssociationToTarget(
   sourceNode: ApplicationNode,
   targetNode: ApplicationNode,
   aggregates: Map<string, AggregateMetadata>,
-  recursive = false
+  recursive = false,
 ): boolean {
   const sourceAggregate = aggregates.get(sourceNode.aggregateIri);
   const targetAggregate = aggregates.get(targetNode.aggregateIri);
@@ -32,7 +32,7 @@ export function hasAssociationToTarget(
 function hasAssociation(
   fields: AggregateMetadata['fields'],
   targetAggregate: AggregateMetadata,
-  recursive: boolean
+  recursive: boolean,
 ): boolean {
   return fields.some(
     (field) =>
@@ -41,6 +41,6 @@ function hasAssociation(
           field.targetClassIri === targetAggregate.classIri)) ||
       (recursive && hasNestedModel(field)
         ? hasAssociation(field.fields, targetAggregate, recursive)
-        : false)
+        : false),
   );
 }

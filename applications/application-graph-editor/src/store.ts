@@ -1,25 +1,25 @@
-import { create } from "zustand";
-import { temporal } from "zundo";
-import { debounce, mapKeys, omit } from "es-toolkit";
+import { create } from 'zustand';
+import { temporal } from 'zundo';
+import { debounce, mapKeys, omit } from 'es-toolkit';
 import type {
   ApplicationEdge,
   ApplicationGraph,
   ApplicationNode,
   SpecificationMetadata,
   Violation,
-} from "@dataspecer/app-generator/graph";
-import * as mutations from "./graph/mutations.ts";
-import type { GraphElementRef } from "./graph/graph-element-ref.ts";
-import type { ValidationSnapshot } from "./validation/violations.ts";
+} from '@dataspecer/app-generator/graph';
+import * as mutations from './graph/mutations.ts';
+import type { GraphElementRef } from './graph/graph-element-ref.ts';
+import type { ValidationSnapshot } from './validation/violations.ts';
 
 export type NodePositions = Record<string, { x: number; y: number }>;
 
 /** The sidebar view when nothing is selected. Null collapses the sidebar. */
-export type SidebarTab = "problems" | "json" | null;
+export type SidebarTab = 'problems' | 'json' | null;
 
-export type SaveState = "saved" | "saving" | "error" | "invalid";
+export type SaveState = 'saved' | 'saving' | 'error' | 'invalid';
 
-export type CanvasTool = "select" | "pan";
+export type CanvasTool = 'select' | 'pan';
 
 /** One-shot request about one element. The seq makes repeats distinct. */
 export interface ElementRequest {
@@ -41,7 +41,7 @@ interface UndoableState {
 
 interface EditorState extends UndoableState {
   resourceIri: string | null;
-  loadState: "loading" | "ready" | "error";
+  loadState: 'loading' | 'ready' | 'error';
   loadError: string | null;
   /** Selected sidebar element. */
   selection: GraphElementRef;
@@ -108,18 +108,20 @@ interface EditorState extends UndoableState {
     position: { x: number; y: number },
     edge: ApplicationEdge,
   ) => void;
-  updateNode: (nodeId: string, patch: Partial<Omit<ApplicationNode, "id">>) => void;
+  updateNode: (nodeId: string, patch: Partial<Omit<ApplicationNode, 'id'>>) => void;
   /** Renames a node, optionally applying a patch in the same undoable step. */
   renameNode: (
     currentId: string,
     newId: string,
-    patch?: Partial<Omit<ApplicationNode, "id">>,
+    patch?: Partial<Omit<ApplicationNode, 'id'>>,
   ) => void;
   removeNode: (nodeId: string) => void;
   addEdge: (edge: ApplicationEdge) => void;
-  updateEdge: (edgeId: string, patch: Partial<Omit<ApplicationEdge, "id">>) => void;
+  updateEdge: (edgeId: string, patch: Partial<Omit<ApplicationEdge, 'id'>>) => void;
   removeEdge: (edgeId: string) => void;
-  updateGraphMeta: (patch: Partial<Pick<ApplicationGraph, "name" | "dataSpecificationIri" | "datasources">>) => void;
+  updateGraphMeta: (
+    patch: Partial<Pick<ApplicationGraph, 'name' | 'dataSpecificationIri' | 'datasources'>>,
+  ) => void;
   /** Replaces the whole graph, for imports and JSON panel edits. Undo restores the old one. */
   replaceGraph: (graph: ApplicationGraph, positions: NodePositions) => void;
   /** Stores the positions React Flow reports, from a drag of one node or of a whole selection. */
@@ -175,15 +177,15 @@ export const useEditorStore = create<EditorState>()(
       graph: null,
       positions: {},
       resourceIri: null,
-      loadState: "loading",
+      loadState: 'loading',
       loadError: null,
       metadata: null,
       metadataError: null,
-      saveState: "saved",
+      saveState: 'saved',
       selection: null,
       highlight: null,
-      sidebarTab: "json",
-      canvasTool: "pan",
+      sidebarTab: 'json',
+      canvasTool: 'pan',
       jsonDraft: null,
       settingsOpen: false,
       actionError: null,
@@ -201,12 +203,12 @@ export const useEditorStore = create<EditorState>()(
           resourceIri,
           graph,
           positions,
-          loadState: "ready",
+          loadState: 'ready',
           loadError: null,
           metadata: null,
           metadataError: null,
         }),
-      failLoad: (message) => set({ loadState: "error", loadError: message }),
+      failLoad: (message) => set({ loadState: 'error', loadError: message }),
       setMetadata: (metadata) =>
         set({
           metadata:
@@ -258,17 +260,15 @@ export const useEditorStore = create<EditorState>()(
         set((state) => ({
           ...withGraph(state, (graph) => mutations.addNode(graph, node)),
           positions: { ...state.positions, [node.id]: position },
-          selection: { kind: "node", id: node.id },
+          selection: { kind: 'node', id: node.id },
           selectRequest: selectRequestFor(state, node.id),
           settingsOpen: false,
         })),
       addConnectedNode: (node, position, edge) =>
         set((state) => ({
-          ...withGraph(state, (graph) =>
-            mutations.addEdge(mutations.addNode(graph, node), edge),
-          ),
+          ...withGraph(state, (graph) => mutations.addEdge(mutations.addNode(graph, node), edge)),
           positions: { ...state.positions, [node.id]: position },
-          selection: { kind: "node", id: node.id },
+          selection: { kind: 'node', id: node.id },
           selectRequest: selectRequestFor(state, node.id),
           settingsOpen: false,
         })),
@@ -286,7 +286,7 @@ export const useEditorStore = create<EditorState>()(
           // the canvas keys its selection by ID, so the node has to be re-selected under the new one
           ...(state.selection?.id === currentId
             ? {
-                selection: { kind: "node", id: newId } as const,
+                selection: { kind: 'node', id: newId } as const,
                 selectRequest: selectRequestFor(state, newId),
               }
             : {}),
@@ -300,7 +300,7 @@ export const useEditorStore = create<EditorState>()(
       addEdge: (edge) =>
         set((state) => ({
           ...withGraph(state, (graph) => mutations.addEdge(graph, edge)),
-          selection: { kind: "edge", id: edge.id },
+          selection: { kind: 'edge', id: edge.id },
           selectRequest: selectRequestFor(state, edge.id),
           settingsOpen: false,
         })),
@@ -335,7 +335,7 @@ export const useEditorStore = create<EditorState>()(
         // loading the graph is not a step, so the first edit is not merged into it
         a.graph === null,
       handleSet: (record) => {
-        const debounced = debounce(record, HISTORY_MERGE_MS, { edges: ["leading"] });
+        const debounced = debounce(record, HISTORY_MERGE_MS, { edges: ['leading'] });
         recordStep = debounced;
         return debounced;
       },
@@ -344,7 +344,7 @@ export const useEditorStore = create<EditorState>()(
   ),
 );
 
-if (import.meta.env.DEV && typeof window !== "undefined") {
+if (import.meta.env.DEV && typeof window !== 'undefined') {
   (window as unknown as Record<string, unknown>).__appGraphEditorStore = useEditorStore;
 }
 

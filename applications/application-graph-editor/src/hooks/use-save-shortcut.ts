@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect } from 'react';
 
 /**
  * Binds Ctrl/Cmd+S to an immediate save.
@@ -6,7 +6,7 @@ import { useEffect } from "react";
 export function useSaveShortcut(saveAction: () => Promise<void>): void {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "s") {
+      if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 's') {
         return;
       }
       event.preventDefault();
@@ -14,7 +14,7 @@ export function useSaveShortcut(saveAction: () => Promise<void>): void {
         console.error(caught);
       });
     };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
   }, [saveAction]);
 }

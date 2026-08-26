@@ -30,7 +30,7 @@ function validateFields(
   fields: AggregateFieldMetadata[],
   pathPrefix: string,
   nestedModelPaths: Map<string, string>,
-  violations: Violation[]
+  violations: Violation[],
 ): void {
   const firstPathByPropertyName = new Map<string, string>();
 
@@ -42,14 +42,14 @@ function validateFields(
         semanticViolation(
           ViolationCode.SemanticDuplicateGeneratedFieldName,
           `Field "${fieldPath}" in aggregate "${aggregate.name}" produces reserved property name "${propertyName}". Rename the field in Dataspecer.`,
-          '/dataSpecificationIri'
-        )
+          '/dataSpecificationIri',
+        ),
       );
     }
     const firstPath = firstPathByPropertyName.get(propertyName);
     if (firstPath !== undefined) {
       violations.push(
-        collisionViolation(aggregate, firstPath, fieldPath, `property name "${propertyName}"`)
+        collisionViolation(aggregate, firstPath, fieldPath, `property name "${propertyName}"`),
       );
     } else {
       firstPathByPropertyName.set(propertyName, fieldPath);
@@ -64,8 +64,8 @@ function validateFields(
             aggregate,
             firstNestedPath,
             fieldPath,
-            `nested model name "${nestedModelName}"`
-          )
+            `nested model name "${nestedModelName}"`,
+          ),
         );
       } else {
         nestedModelPaths.set(nestedModelName, fieldPath);
@@ -79,11 +79,11 @@ function collisionViolation(
   aggregate: AggregateMetadata,
   firstPath: string,
   secondPath: string,
-  generatedName: string
+  generatedName: string,
 ): Violation {
   return semanticViolation(
     ViolationCode.SemanticDuplicateGeneratedFieldName,
     `Fields "${firstPath}" and "${secondPath}" in aggregate "${aggregate.name}" both produce ${generatedName}. Rename one of the fields in Dataspecer.`,
-    '/dataSpecificationIri'
+    '/dataSpecificationIri',
   );
 }

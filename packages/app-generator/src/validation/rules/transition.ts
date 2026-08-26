@@ -23,7 +23,7 @@ export function validateTransitions(context: StructuralValidationContext): Viola
           `Transition "${edge.id}" cannot connect ${sourceNode.operation} to ` +
             `${targetNode.operation}. Transitions must start from ReadList or ReadDetail. ` +
             'Use a redirect after a write operation.',
-          `/edges/${index}`
+          `/edges/${index}`,
         ),
       ];
     }

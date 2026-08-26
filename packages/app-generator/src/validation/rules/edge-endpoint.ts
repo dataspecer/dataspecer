@@ -10,8 +10,8 @@ export function validateEdgeEndpoints(context: StructuralValidationContext): Vio
         semanticViolation(
           ViolationCode.SemanticUnknownEdgeSource,
           `Edge "${edge.id}" references unknown source node "${edge.source}".`,
-          `/edges/${index}/source`
-        )
+          `/edges/${index}/source`,
+        ),
       );
     }
 
@@ -20,8 +20,8 @@ export function validateEdgeEndpoints(context: StructuralValidationContext): Vio
         semanticViolation(
           ViolationCode.SemanticUnknownEdgeTarget,
           `Edge "${edge.id}" references unknown target node "${edge.target}".`,
-          `/edges/${index}/target`
-        )
+          `/edges/${index}/target`,
+        ),
       );
     }
 

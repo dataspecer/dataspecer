@@ -51,12 +51,12 @@ describe('RDF property aliases', () => {
           patterns: ['^https://example\\.org/eurovoc/'],
           examples: ['https://example.org/eurovoc/1001'],
         },
-      ])
+      ]),
     );
 
     expect(result.valid).toBe(true);
     const warnings = result.violations.filter(
-      (violation) => violation.code === ViolationCode.SemanticRdfPropertyAliasesCoalesced
+      (violation) => violation.code === ViolationCode.SemanticRdfPropertyAliasesCoalesced,
     );
     expect(warnings).toHaveLength(2);
     expect(warnings.map((warning) => warning.message).join(' ')).toContain('prvek_rúian');
@@ -106,7 +106,7 @@ describe('RDF property aliases', () => {
       graph(Operation.Update, {
         associations: { contact: AssociationKind.Composition },
       }),
-      metadata([contact])
+      metadata([contact]),
     );
 
     expect(result.valid).toBe(true);
@@ -120,7 +120,7 @@ describe('RDF property aliases', () => {
       expect.objectContaining({
         code: ViolationCode.SemanticRdfPropertyAliasesCoalesced,
         severity: ViolationSeverity.Warning,
-      })
+      }),
     );
   });
 
@@ -130,7 +130,7 @@ describe('RDF property aliases', () => {
       metadata([
         association('spatial', SPATIAL, LOCATION, 0, null),
         association('spatial_concept', SPATIAL, CONCEPT, 0, null),
-      ])
+      ]),
     );
 
     expect(result.valid).toBe(false);
@@ -138,7 +138,7 @@ describe('RDF property aliases', () => {
       expect.objectContaining({
         code: ViolationCode.SemanticConflictingRdfPropertyAlias,
         severity: ViolationSeverity.Error,
-      })
+      }),
     );
   });
 
@@ -154,7 +154,7 @@ describe('RDF property aliases', () => {
         'https://example.org/reference',
         'https://example.org/Reference',
         0,
-        1
+        1,
       ),
       fields: [first, second],
     };
@@ -162,13 +162,13 @@ describe('RDF property aliases', () => {
       graph(Operation.ReadDetail, {
         associations: { reference: AssociationKind.Aggregation },
       }),
-      metadata([reference])
+      metadata([reference]),
     );
 
     expect(result.valid).toBe(true);
     expect(requiredAggregate(result.enrichedMetadata).fields[0].fields).toEqual([first, second]);
     expect(result.violations).not.toContainEqual(
-      expect.objectContaining({ code: ViolationCode.SemanticConflictingRdfPropertyAlias })
+      expect.objectContaining({ code: ViolationCode.SemanticConflictingRdfPropertyAlias }),
     );
   });
 
@@ -190,7 +190,7 @@ describe('RDF property aliases', () => {
       'first',
     ]);
     expect(result.violations).toContainEqual(
-      expect.objectContaining({ code: ViolationCode.SemanticRdfPropertyAliasesCoalesced })
+      expect.objectContaining({ code: ViolationCode.SemanticRdfPropertyAliasesCoalesced }),
     );
   });
 
@@ -202,7 +202,7 @@ describe('RDF property aliases', () => {
       metadata([
         association('geografické_území', SPATIAL, LOCATION, 0, null),
         association('prvek_rúian', SPATIAL, LOCATION, 0, null),
-      ])
+      ]),
     );
 
     expect(result.valid).toBe(false);
@@ -211,7 +211,7 @@ describe('RDF property aliases', () => {
         code: ViolationCode.SemanticRdfPropertyAliasConfigPath,
         message: expect.stringContaining('geografické_území'),
         severity: ViolationSeverity.Error,
-      })
+      }),
     );
   });
 
@@ -221,7 +221,7 @@ describe('RDF property aliases', () => {
       metadata([
         primitive('primary_code', 'https://example.org/code'),
         primitive('secondary_code', 'https://example.org/code'),
-      ])
+      ]),
     );
 
     const code = requiredAggregate(result.enrichedMetadata).fields[0];
@@ -238,7 +238,7 @@ describe('RDF property aliases', () => {
           patterns: ['['],
           examples: ['ABC'],
         },
-      ])
+      ]),
     );
 
     expect(result.valid).toBe(true);
@@ -246,7 +246,7 @@ describe('RDF property aliases', () => {
       expect.objectContaining({
         code: ViolationCode.SemanticInvalidRegexPattern,
         severity: ViolationSeverity.Warning,
-      })
+      }),
     );
     expect(requiredAggregate(result.enrichedMetadata).fields[0]).toMatchObject({
       examples: ['ABC'],
@@ -257,7 +257,7 @@ describe('RDF property aliases', () => {
 
 function graph(
   operation: Operation = Operation.ReadDetail,
-  config?: ApplicationNodeConfig
+  config?: ApplicationNodeConfig,
 ): ApplicationGraph {
   return {
     name: 'Dataset editor',
@@ -300,7 +300,7 @@ function association(
   propertyIri: string,
   targetClassIri: string,
   minCount: number,
-  maxCount: number | null
+  maxCount: number | null,
 ): AggregateFieldMetadata {
   return {
     path,

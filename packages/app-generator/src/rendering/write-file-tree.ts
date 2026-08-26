@@ -14,7 +14,7 @@ export interface WriteFileTreeResult {
 
 export async function writeFileTree(
   fileTree: FileTree,
-  options: WriteFileTreeOptions
+  options: WriteFileTreeOptions,
 ): Promise<WriteFileTreeResult> {
   await ensureWritableOutputDirectory(options);
 
@@ -35,7 +35,7 @@ async function ensureWritableOutputDirectory(options: WriteFileTreeOptions): Pro
 
   if (!options.allowOverwrite && entries.length > 0) {
     throw new Error(
-      `Output directory "${options.outputDirectory}" is not empty. Set allowOverwrite to write into it.`
+      `Output directory "${options.outputDirectory}" is not empty. Set allowOverwrite to write into it.`,
     );
   }
 }

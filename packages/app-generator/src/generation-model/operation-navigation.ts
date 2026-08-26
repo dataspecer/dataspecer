@@ -21,7 +21,7 @@ export function buildOperationNavigation(
   transitions: readonly GeneratedNavigationDescriptor[],
   redirects: readonly GeneratedRedirectDescriptor[],
   operationById: ReadonlyMap<string, GeneratedOperationDescriptor>,
-  aggregateByIri: ReadonlyMap<string, GeneratedAggregateDescriptor>
+  aggregateByIri: ReadonlyMap<string, GeneratedAggregateDescriptor>,
 ): GeneratedOperationNavigation {
   const sourceAggregate = requireAggregate(aggregateByIri, sourceOperation.aggregateIri);
   const pageActions: GeneratedNavigationActionDescriptor[] = [];
@@ -50,7 +50,7 @@ export function buildOperationNavigation(
           rowActions.push(action);
         }
         associationActions.push(
-          ...associationActionsFor(sourceAggregate.fields, targetAggregate, action, false)
+          ...associationActionsFor(sourceAggregate.fields, targetAggregate, action, false),
         );
       }
     }
@@ -64,7 +64,7 @@ export function buildOperationNavigation(
         pageActions.push(action);
       } else if (targetOperation.operation === Operation.ReadDetail) {
         associationActions.push(
-          ...associationActionsFor(sourceAggregate.fields, targetAggregate, action, true)
+          ...associationActionsFor(sourceAggregate.fields, targetAggregate, action, true),
         );
       }
     }
@@ -75,7 +75,7 @@ export function buildOperationNavigation(
     sourceAggregate,
     redirects,
     operationById,
-    aggregateByIri
+    aggregateByIri,
   );
 
   const cancelTarget = isWriteOperation(sourceOperation.operation)
@@ -96,14 +96,14 @@ function buildSuccessRedirect(
   sourceAggregate: GeneratedAggregateDescriptor,
   redirects: readonly GeneratedRedirectDescriptor[],
   operationById: ReadonlyMap<string, GeneratedOperationDescriptor>,
-  aggregateByIri: ReadonlyMap<string, GeneratedAggregateDescriptor>
+  aggregateByIri: ReadonlyMap<string, GeneratedAggregateDescriptor>,
 ): GeneratedNavigationActionDescriptor | undefined {
   if (!isWriteOperation(sourceOperation.operation)) {
     return undefined;
   }
 
   const configured = redirects.find(
-    (redirect) => redirect.sourceOperationId === sourceOperation.id
+    (redirect) => redirect.sourceOperationId === sourceOperation.id,
   );
   if (configured) {
     const targetOperation = requireOperationById(operationById, configured.targetOperationId);
@@ -115,7 +115,7 @@ function buildSuccessRedirect(
     `${sourceOperation.id}:success`,
     sourceAggregate,
     operationById,
-    aggregateByIri
+    aggregateByIri,
   );
 }
 
@@ -123,14 +123,14 @@ function listAction(
   idPrefix: string,
   sourceAggregate: GeneratedAggregateDescriptor,
   operationById: ReadonlyMap<string, GeneratedOperationDescriptor>,
-  aggregateByIri: ReadonlyMap<string, GeneratedAggregateDescriptor>
+  aggregateByIri: ReadonlyMap<string, GeneratedAggregateDescriptor>,
 ): GeneratedNavigationActionDescriptor | undefined {
   const listOperation = operationById
     .values()
     .find(
       (candidate) =>
         candidate.operation === Operation.ReadList &&
-        aggregateByIri.get(candidate.aggregateIri)?.classIri === sourceAggregate.classIri
+        aggregateByIri.get(candidate.aggregateIri)?.classIri === sourceAggregate.classIri,
     );
   if (!listOperation) {
     return undefined;
@@ -163,7 +163,7 @@ const ACTION_ORDER: readonly Operation[] = [
 ];
 
 function byOperation(
-  actions: GeneratedNavigationActionDescriptor[]
+  actions: GeneratedNavigationActionDescriptor[],
 ): GeneratedNavigationActionDescriptor[] {
   return sortBy(actions, [
     (action) => ACTION_ORDER.indexOf(action.operation),
@@ -173,7 +173,7 @@ function byOperation(
 
 function buildNavigationAction(
   id: string,
-  targetOperation: GeneratedOperationDescriptor
+  targetOperation: GeneratedOperationDescriptor,
 ): GeneratedNavigationActionDescriptor {
   return {
     id,
@@ -190,7 +190,7 @@ function associationActionsFor(
   targetAggregate: GeneratedAggregateDescriptor,
   action: GeneratedNavigationActionDescriptor,
   recursive: boolean,
-  pathPrefix = ''
+  pathPrefix = '',
 ): GeneratedAssociationNavigationActionDescriptor[] {
   // detail reads contain inline compositions, while list rows contain only root fields
   return fields.flatMap((field) => {
@@ -237,7 +237,7 @@ function operationActionLabel(operation: Operation): string {
 
 function requireAggregate(
   aggregateByIri: ReadonlyMap<string, GeneratedAggregateDescriptor>,
-  aggregateIri: string
+  aggregateIri: string,
 ): GeneratedAggregateDescriptor {
   const aggregate = aggregateByIri.get(aggregateIri);
   if (!aggregate) {
@@ -249,7 +249,7 @@ function requireAggregate(
 
 function requireOperationById(
   operationById: ReadonlyMap<string, GeneratedOperationDescriptor>,
-  operationId: string
+  operationId: string,
 ): GeneratedOperationDescriptor {
   const operation = operationById.get(operationId);
   if (!operation) {

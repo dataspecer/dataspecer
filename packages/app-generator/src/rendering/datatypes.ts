@@ -41,7 +41,7 @@ export interface DatatypeMapping {
 function literal(
   ldkitType: LdkitDatatype,
   tsType: string,
-  formControl: FormControl
+  formControl: FormControl,
 ): DatatypeMapping {
   return { ldkitType, tsType, formControl };
 }

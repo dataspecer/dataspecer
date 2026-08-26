@@ -27,7 +27,7 @@ export interface MetadataEnrichment {
  */
 export function enrichMetadata(
   graph: ApplicationGraph,
-  metadata: SpecificationMetadata
+  metadata: SpecificationMetadata,
 ): MetadataEnrichment {
   const violations: Violation[] = [];
   const aggregates = new Map(metadata.aggregates.map((aggregate) => [aggregate.iri, aggregate]));
@@ -60,8 +60,8 @@ export function enrichMetadata(
             `Association "${path}" has invalid kind "${String(value)}". This setting is ` +
               'ignored. Use "composition" or "aggregation". Associations without a valid ' +
               'setting default to aggregation.',
-            violationPath
-          )
+            violationPath,
+          ),
         );
         continue;
       }
@@ -76,7 +76,7 @@ export function enrichMetadata(
         path,
         violationPath,
         nodeKinds,
-        violations
+        violations,
       );
       if (!chain) {
         continue;
@@ -94,8 +94,8 @@ export function enrichMetadata(
             `Association "${path}" is configured as both "${previous}" and "${kind}" on ` +
               `nodes representing class "${aggregate.classIri}". Use the same kind on every ` +
               'Create and Update node for that class.',
-            violationPath
-          )
+            violationPath,
+          ),
         );
         continue;
       }
@@ -113,7 +113,7 @@ export function enrichMetadata(
           aggregate.fields,
           aggregate.classIri,
           [],
-          kindsByClassChain
+          kindsByClassChain,
         ),
       })),
     },
@@ -125,7 +125,7 @@ function withResolvedAssociationKinds(
   fields: AggregateFieldMetadata[],
   classIri: string,
   parentChain: AggregateFieldMetadata[],
-  kindsByClassChain: Map<string, AssociationKind>
+  kindsByClassChain: Map<string, AssociationKind>,
 ): AggregateFieldMetadata[] {
   return fields.map((field) => {
     if (field.kind !== FieldKind.Association) {
@@ -156,7 +156,7 @@ function resolveConfiguredAssociationChain(
   path: string,
   violationPath: string,
   nodeKinds: Map<string, AssociationKind>,
-  violations: Violation[]
+  violations: Violation[],
 ): AggregateFieldMetadata[] | undefined {
   const segments = splitFieldPath(path);
   if (segments.length === 0) {
@@ -186,10 +186,10 @@ function resolveConfiguredAssociationChain(
         semanticViolation(
           ViolationCode.SemanticNestedAssociationRequiresComposition,
           `Nested association config path "${path}" requires "${resolvedSegments.join(
-            '.'
+            '.',
           )}" to be configured as a composition in the same node config.`,
-          violationPath
-        )
+          violationPath,
+        ),
       );
       return undefined;
     }
@@ -203,13 +203,13 @@ function resolveConfiguredAssociationChain(
 function notAssociationViolation(
   aggregate: AggregateMetadata,
   path: string,
-  violationPath: string
+  violationPath: string,
 ): Violation {
   return semanticWarning(
     ViolationCode.SemanticAssociationPathNotAssociation,
     `Association setting "${path}" in "${aggregate.name}" does not point to an association ` +
       'field, so it is ignored. Correct the path or remove the setting.',
-    violationPath
+    violationPath,
   );
 }
 

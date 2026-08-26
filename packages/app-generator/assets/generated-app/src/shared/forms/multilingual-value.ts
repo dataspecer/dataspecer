@@ -7,7 +7,7 @@ export function isMultilingualField(field: FieldDescriptor): boolean {
 /** Normalizes both LDKit multilingual shapes to arrays without losing repeated literals. */
 export function normalizeMultilingualValue(
   value: unknown,
-  fieldLabel = 'Multilingual value'
+  fieldLabel = 'Multilingual value',
 ): MultilingualValue {
   if (value === null || value === undefined) {
     return {};
@@ -42,7 +42,7 @@ export function compactMultilingualValue(value: unknown, fieldLabel?: string): M
     Object.entries(normalizeMultilingualValue(value, fieldLabel)).flatMap(([language, values]) => {
       const present = values.filter((entry) => entry.trim() !== '');
       return present.length > 0 ? [[language, present]] : [];
-    })
+    }),
   );
 }
 
@@ -53,33 +53,33 @@ export function multilingualValuesForLanguage(value: unknown, language: string):
 export function withMultilingualLanguage(
   value: unknown,
   language: string,
-  values: string[]
+  values: string[],
 ): MultilingualValue {
   return { ...normalizeMultilingualValue(value), [language]: values };
 }
 
 export function multilingualLanguageTags(value: unknown): string[] {
   return Object.entries(normalizeMultilingualValue(value)).flatMap(([language, values]) =>
-    values.some((entry) => entry.trim() !== '') ? [language] : []
+    values.some((entry) => entry.trim() !== '') ? [language] : [],
   );
 }
 
 export function hasDuplicateMultilingualValues(value: unknown): boolean {
   return Object.values(compactMultilingualValue(value)).some(
-    (values) => new Set(values).size !== values.length
+    (values) => new Set(values).size !== values.length,
   );
 }
 
 export function multilingualLanguagesOverLimit(value: unknown, maximum: number): string[] {
   return Object.entries(compactMultilingualValue(value)).flatMap(([language, values]) =>
-    values.length > maximum ? [language] : []
+    values.length > maximum ? [language] : [],
   );
 }
 
 /** Chooses one language in preference order, then falls back predictably. */
 export function selectMultilingualValues(
   value: unknown,
-  preferredLanguages: readonly string[]
+  preferredLanguages: readonly string[],
 ): { language: string; values: string[] } | null {
   const multilingual = compactMultilingualValue(value);
   const available = Object.keys(multilingual);
@@ -94,7 +94,7 @@ export function selectMultilingualValues(
     }
     const primary = preferred.split('-')[0]?.toLowerCase();
     const compatible = available.find(
-      (language) => language.split('-')[0]?.toLowerCase() === primary
+      (language) => language.split('-')[0]?.toLowerCase() === primary,
     );
     if (compatible !== undefined) {
       return { language: compatible, values: multilingual[compatible] };

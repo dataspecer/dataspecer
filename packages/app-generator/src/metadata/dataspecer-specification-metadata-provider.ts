@@ -73,7 +73,7 @@ export class DataspecerMetadataMappingError extends Error {
     super(
       `Unable to map Dataspecer specification metadata: ${issues
         .map((issue) => issue.message)
-        .join('; ')}`
+        .join('; ')}`,
     );
     this.name = 'DataspecerMetadataMappingError';
   }
@@ -119,11 +119,11 @@ export class DataspecerSpecificationMetadataProvider implements DataspecerMetada
 /** Maps every data structure and reports all discovered mapping problems together. */
 export function mapDataspecerSpecificationToMetadata(
   dataSpecificationIri: string,
-  specification: SpecificationSource
+  specification: SpecificationSource,
 ): SpecificationMetadata {
   const context = buildMappingContext(specification);
   const aggregates = specification.structureModels.flatMap((structureModel, index) =>
-    mapStructureModel(structureModel, index, context)
+    mapStructureModel(structureModel, index, context),
   );
 
   if (specification.structureModels.length === 0) {
@@ -189,7 +189,7 @@ function buildSemanticEntityIndex(entities: Entity[]): Map<string, Entity> {
 function mapStructureModel(
   structureModel: StructureModelResource[],
   structureModelIndex: number,
-  context: MappingContext
+  context: MappingContext,
 ): AggregateMetadata[] {
   const schema = structureModel.find((resource) => DataPsmSchema.is(resource));
   const path = `structureModels[${structureModelIndex}]`;
@@ -274,7 +274,7 @@ function mapStructureModel(
         localName(schema.iri),
       classIri: classIri ?? '',
       fields: toFieldMetadata(
-        mapClassFields(rootClass, context, `${path}.root`, withClassOnPath(rootClass))
+        mapClassFields(rootClass, context, `${path}.root`, withClassOnPath(rootClass)),
       ),
     },
   ];
@@ -285,7 +285,7 @@ function mapClassFields(
   psmClass: DataPsmClass,
   context: MappingContext,
   path: string,
-  classPath: ReadonlySet<string>
+  classPath: ReadonlySet<string>,
 ): MappedField[] {
   return psmClass.dataPsmParts.flatMap((partIri, index) => {
     const part = context.resourcesByIri.get(partIri);
@@ -333,7 +333,7 @@ function expandInclude(
   include: DataPsmInclude,
   context: MappingContext,
   path: string,
-  classPath: ReadonlySet<string>
+  classPath: ReadonlySet<string>,
 ): MappedField[] {
   const targetIri = include.dataPsmIncludes;
   const target = targetIri ? context.resourcesByIri.get(targetIri) : undefined;
@@ -373,7 +373,7 @@ function expandInclude(
 function mapAttributeField(
   attribute: DataPsmAttribute,
   context: MappingContext,
-  path: string
+  path: string,
 ): AggregateFieldMetadata {
   const relationship = getSemanticRelationship(attribute.dataPsmInterpretation, context);
   const valueEnd = relationship?.ends[1];
@@ -421,7 +421,7 @@ function mapAssociationField(
   association: DataPsmAssociationEnd,
   context: MappingContext,
   path: string,
-  classPath: ReadonlySet<string>
+  classPath: ReadonlySet<string>,
 ): AggregateFieldMetadata | null {
   const relationship = getSemanticRelationship(association.dataPsmInterpretation, context);
   const targetEnd = association.dataPsmIsReverse ? relationship?.ends[0] : relationship?.ends[1];
@@ -473,7 +473,7 @@ function mapAssociationField(
     targetResource,
     fieldPath,
     context,
-    classPath
+    classPath,
   );
 
   if (!targetClassIri) {
@@ -522,7 +522,7 @@ function resolveAssociationTarget(
   targetResource: DataPsmClass | DataPsmClassReference | DataPsmOr,
   fieldPath: string,
   context: MappingContext,
-  classPath: ReadonlySet<string>
+  classPath: ReadonlySet<string>,
 ): ResolvedAssociationTarget {
   if (DataPsmOr.is(targetResource)) {
     return resolveSpecializationTarget(targetResource, fieldPath, context, classPath);
@@ -576,8 +576,8 @@ function resolveAssociationTarget(
         targetResource,
         context,
         `${fieldPath}.target`,
-        withClassOnPath(targetResource, classPath)
-      )
+        withClassOnPath(targetResource, classPath),
+      ),
     ),
     targetIdentityPolicy: identityPolicyFrom(targetResource),
   };
@@ -599,7 +599,7 @@ function resolveSpecializationTarget(
   specializationOr: DataPsmOr,
   fieldPath: string,
   context: MappingContext,
-  classPath: ReadonlySet<string>
+  classPath: ReadonlySet<string>,
 ): ResolvedAssociationTarget {
   if (specializationOr.dataPsmChoices.length === 0) {
     addIssue(context, {
@@ -621,7 +621,7 @@ function resolveSpecializationTarget(
       fieldPath,
       context,
       classPath,
-      seenChoices
+      seenChoices,
     );
     return choice ? [choice] : [];
   });
@@ -631,7 +631,7 @@ function resolveSpecializationTarget(
   const unionFields = uniqBy(
     specializations.flatMap((specialization) => specialization.fields),
     (mappedField) =>
-      compositeKey(mappedField.sourceFieldIri, fieldStorageShapeKey(mappedField.field))
+      compositeKey(mappedField.sourceFieldIri, fieldStorageShapeKey(mappedField.field)),
   );
 
   return {
@@ -650,7 +650,7 @@ function mapSpecializationChoice(
   fieldPath: string,
   context: MappingContext,
   classPath: ReadonlySet<string>,
-  seenChoices: Set<string>
+  seenChoices: Set<string>,
 ): MappedSpecialization | null {
   const choicePath = `${fieldPath}.target.dataPsmChoices[${index}]`;
   const choice = context.resourcesByIri.get(choiceIri);
@@ -725,7 +725,7 @@ function mapSpecializationChoice(
       choice,
       context,
       `${choicePath}.target`,
-      withClassOnPath(choice, classPath)
+      withClassOnPath(choice, classPath),
     ),
   };
 }
@@ -738,7 +738,7 @@ function mapSpecializationChoice(
 function reportConflictingSpecializationFieldShapes(
   specializations: MappedSpecialization[],
   path: string,
-  context: MappingContext
+  context: MappingContext,
 ): void {
   const firstByPredicate = new Map<string, { specializationIndex: number; shape: string }>();
   const reportedPredicates = new Set<string>();
@@ -816,7 +816,7 @@ function identityPolicyFrom(psmClass: DataPsmClass): InstanceIdentityPolicy {
 
 function classReferenceIdentityPolicy(
   reference: DataPsmClassReference,
-  context: MappingContext
+  context: MappingContext,
 ): InstanceIdentityPolicy {
   const target = reference.dataPsmClass
     ? context.resourcesByIri.get(reference.dataPsmClass)
@@ -827,7 +827,7 @@ function classReferenceIdentityPolicy(
 function targetSemanticClassFrom(
   targetResource: DataPsmClass | DataPsmClassReference | DataPsmOr,
   targetEnd: SemanticModelRelationshipEnd | undefined,
-  context: MappingContext
+  context: MappingContext,
 ): SemanticModelClass | undefined {
   return (
     getSemanticClass(targetEnd?.concept, context) ??
@@ -838,7 +838,7 @@ function targetSemanticClassFrom(
 }
 
 function valueConstraintsFrom(
-  source: SemanticValueConstraintSource | undefined
+  source: SemanticValueConstraintSource | undefined,
 ): Pick<AggregateFieldMetadata, 'patterns' | 'examples'> {
   const patterns = typeof source?.regex === 'string' && source.regex !== '' ? [source.regex] : [];
   const examples = Array.isArray(source?.example)
@@ -852,7 +852,7 @@ function valueConstraintsFrom(
 
 function getSemanticClass(
   key: string | null | undefined,
-  context: MappingContext
+  context: MappingContext,
 ): SemanticModelClass | undefined {
   const entity = key ? context.semanticEntities.get(key) : undefined;
   return entity && isSemanticModelClass(entity) ? entity : undefined;
@@ -860,7 +860,7 @@ function getSemanticClass(
 
 function getSemanticRelationship(
   key: string | null | undefined,
-  context: MappingContext
+  context: MappingContext,
 ): SemanticModelRelationship | undefined {
   const entity = key ? context.semanticEntities.get(key) : undefined;
   return entity && isSemanticModelRelationship(entity) ? entity : undefined;
@@ -868,7 +868,7 @@ function getSemanticRelationship(
 
 function fieldPathFrom(
   resource: DataPsmAttribute | DataPsmAssociationEnd,
-  relationship: SemanticModelRelationship | undefined
+  relationship: SemanticModelRelationship | undefined,
 ): string {
   return (
     resource.dataPsmTechnicalLabel ??
@@ -883,7 +883,7 @@ function fieldLabelFrom(
   resource: DataPsmAttribute | DataPsmAssociationEnd,
   relationship: SemanticModelRelationship | undefined,
   end: SemanticModelRelationshipEnd | undefined,
-  fallback: string
+  fallback: string,
 ): string {
   return (
     labelFrom(resource.dataPsmHumanLabel) ??
@@ -897,7 +897,7 @@ function fieldLabelFrom(
 function fieldDescriptionFrom(
   resource: DataPsmAttribute | DataPsmAssociationEnd,
   relationship: SemanticModelRelationship | undefined,
-  end: SemanticModelRelationshipEnd | undefined
+  end: SemanticModelRelationshipEnd | undefined,
 ): string | undefined {
   return (
     labelFrom(resource.dataPsmHumanDescription) ??
@@ -925,7 +925,7 @@ function cardinalityFlags(cardinality: Cardinality | null | undefined): {
 }
 
 function isAssociationTargetResource(
-  resource: StructureModelResource
+  resource: StructureModelResource,
 ): resource is DataPsmClass | DataPsmClassReference | DataPsmOr {
   return DataPsmClass.is(resource) || DataPsmClassReference.is(resource) || DataPsmOr.is(resource);
 }
@@ -952,7 +952,7 @@ function canonicalClassIri(entity: SemanticModelClass): string | undefined {
 }
 
 function relationshipPropertyIri(
-  relationship: SemanticModelRelationship | undefined
+  relationship: SemanticModelRelationship | undefined,
 ): string | undefined {
   if (!relationship) {
     return undefined;
@@ -965,7 +965,7 @@ function relationshipPropertyIri(
 
 function canonicalRelationshipEndIri(
   end: SemanticModelRelationshipEnd,
-  relationshipIsProfile: boolean
+  relationshipIsProfile: boolean,
 ): string | undefined {
   const profile = end as ProfileIriMetadata;
   if (relationshipIsProfile || profile.profiling?.length) {
@@ -995,7 +995,7 @@ function labelFrom(value: LanguageString | string | null | undefined): string | 
     return value.length > 0 ? value : undefined;
   }
   return [value.en, value.cs, ...Object.values(value)].find(
-    (candidate): candidate is string => typeof candidate === 'string' && candidate.length > 0
+    (candidate): candidate is string => typeof candidate === 'string' && candidate.length > 0,
   );
 }
 

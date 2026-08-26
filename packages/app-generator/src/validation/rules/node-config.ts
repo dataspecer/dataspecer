@@ -20,8 +20,8 @@ export function validateNodeConfig(context: StructuralValidationContext): Violat
           ViolationCode.SemanticAssociationConfigNotAllowed,
           `Node "${node.id}" uses ${node.operation}, but association settings apply only to ` +
             'Create and Update nodes. This setting is ignored. Remove it or configure a write node.',
-          `/nodes/${index}/config/associations`
-        )
+          `/nodes/${index}/config/associations`,
+        ),
       );
     }
 
@@ -31,8 +31,8 @@ export function validateNodeConfig(context: StructuralValidationContext): Violat
           ViolationCode.SemanticDeleteConfigNotAllowed,
           `Node "${node.id}" uses ${node.operation}, but delete settings apply only to Delete ` +
             'nodes. This setting is ignored. Remove it or configure a Delete node.',
-          `/nodes/${index}/config/delete`
-        )
+          `/nodes/${index}/config/delete`,
+        ),
       );
     }
 

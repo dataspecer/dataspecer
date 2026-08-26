@@ -1,8 +1,8 @@
-import type { ReactNode } from "react";
-import { Hint } from "@/components/hint.tsx";
+import type { ReactNode } from 'react';
+import { Hint } from '@/components/hint.tsx';
 
 export const inputClass =
-  "w-full rounded border border-slate-300 bg-white px-2 py-1 text-sm text-slate-800 disabled:bg-slate-50 disabled:text-slate-500";
+  'w-full rounded border border-slate-300 bg-white px-2 py-1 text-sm text-slate-800 disabled:bg-slate-50 disabled:text-slate-500';
 
 export function FormField({
   label,
@@ -18,7 +18,7 @@ export function FormField({
   asLabel?: boolean;
   children: ReactNode;
 }) {
-  const Wrapper = asLabel ? "label" : "div";
+  const Wrapper = asLabel ? 'label' : 'div';
 
   return (
     <Wrapper className="block">

@@ -67,16 +67,16 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
   const rootTarget = useMemo(() => rootEntityTarget(props.aggregate), [props.aggregate]);
   const existingIds = useMemo(
     () => collectEntityIds(props.originalModel, rootTarget, props.aggregateRegistry),
-    [props.originalModel, rootTarget, props.aggregateRegistry]
+    [props.originalModel, rootTarget, props.aggregateRegistry],
   );
   const navigable = useMemo(
     () => navigablePanes(props.model, rootTarget, props.aggregateRegistry, []),
-    [props.model, rootTarget, props.aggregateRegistry]
+    [props.model, rootTarget, props.aggregateRegistry],
   );
   // assign each issue to one pane so nested issues are not counted more than once
   const issueCounts = useMemo(
     () => issuesByPane(rootTarget, props.aggregateRegistry, props.issues),
-    [rootTarget, props.aggregateRegistry, props.issues]
+    [rootTarget, props.aggregateRegistry, props.issues],
   );
 
   // a path from the address bar can point at a child that no longer exists
@@ -86,7 +86,7 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
     rootTarget,
     props.model,
     selection,
-    props.aggregateRegistry
+    props.aggregateRegistry,
   );
   const entity = entityAtPath(props.model, selection);
   const fields = effectiveFields(target, entity);
@@ -94,11 +94,11 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
   // one language selector for every pane, so it offers and keeps the whole form's languages
   const hasMultilingualFields = useMemo(
     () => containsMultilingualFields(rootTarget, props.aggregateRegistry),
-    [rootTarget, props.aggregateRegistry]
+    [rootTarget, props.aggregateRegistry],
   );
   const storedLanguages = useMemo(
     () => collectMultilingualLanguages(props.model, rootTarget, props.aggregateRegistry),
-    [props.model, rootTarget, props.aggregateRegistry]
+    [props.model, rootTarget, props.aggregateRegistry],
   );
   const languageOptions = [...new Set([...props.languages, ...storedLanguages, selectedLanguage])];
   const persisted = typeof entity.id === 'string' && existingIds.has(entity.id);
@@ -198,8 +198,8 @@ export function EntityFormEditor(props: EntityFormEditorProps) {
               target,
               props.aggregateRegistry,
               props.instanceBaseIri,
-              specializationIri
-            )
+              specializationIri,
+            ),
           )
         }
       />

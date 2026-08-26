@@ -1,18 +1,12 @@
-import { ViolationSeverity } from "@dataspecer/app-generator/graph";
-import { useValidation } from "@/hooks/use-validation.ts";
-import { violationsFor } from "@/validation/violations.ts";
-import { ViolationItem } from "./violation-item.tsx";
+import { ViolationSeverity } from '@dataspecer/app-generator/graph';
+import { useValidation } from '@/hooks/use-validation.ts';
+import { violationsFor } from '@/validation/violations.ts';
+import { ViolationItem } from './violation-item.tsx';
 
 /**
  * Problems of one node or edge.
  */
-export function ElementViolations({
-  kind,
-  id,
-}: {
-  kind: "node" | "edge";
-  id: string;
-}) {
+export function ElementViolations({ kind, id }: { kind: 'node' | 'edge'; id: string }) {
   const validation = useValidation();
   const violations = validation
     ? violationsFor(validation.graph, validation.violations, kind, id)
@@ -28,8 +22,8 @@ export function ElementViolations({
           key={index}
           className={`rounded border px-2 py-1 text-sm ${
             violation.severity === ViolationSeverity.Error
-              ? "border-red-200 bg-red-50"
-              : "border-amber-200 bg-amber-50"
+              ? 'border-red-200 bg-red-50'
+              : 'border-amber-200 bg-amber-50'
           }`}
         >
           <ViolationItem violation={violation} />

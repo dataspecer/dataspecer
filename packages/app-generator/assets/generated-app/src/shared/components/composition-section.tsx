@@ -97,7 +97,7 @@ export function CompositionSection(props: CompositionSectionProps) {
 
   const removeAt = (index: number) => {
     props.onChange(
-      props.field.many ? values.filter((_, candidate) => candidate !== index) : undefined
+      props.field.many ? values.filter((_, candidate) => candidate !== index) : undefined,
     );
   };
 

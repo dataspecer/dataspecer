@@ -1,14 +1,14 @@
-@import "tailwindcss";
-@import "@xyflow/react/dist/style.css";
+@import 'tailwindcss';
+@import '@xyflow/react/dist/style.css';
 
 html {
-  color-scheme: light;
+    color-scheme: light;
 }
 
 html,
 body,
 #root {
-  height: 100%;
-  margin: 0;
-  background: #f8fafc;
+    height: 100%;
+    margin: 0;
+    background: #f8fafc;
 }

@@ -1,14 +1,14 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import MonacoEditor, { type Monaco, type OnMount } from "@monaco-editor/react";
-import type * as monaco from "monaco-editor";
-import { applicationGraphSchema, type ApplicationGraph } from "@dataspecer/app-generator/graph";
-import { applyGraphJson } from "@/graph/apply-json.ts";
-import { graphElementAtOffset } from "@/graph/json-cursor.ts";
-import { useEditorStore } from "@/store.ts";
-import { useValidation } from "@/hooks/use-validation.ts";
-import { violationRanges } from "@/validation/violation-ranges.ts";
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import MonacoEditor, { type Monaco, type OnMount } from '@monaco-editor/react';
+import type * as monaco from 'monaco-editor';
+import { applicationGraphSchema, type ApplicationGraph } from '@dataspecer/app-generator/graph';
+import { applyGraphJson } from '@/graph/apply-json.ts';
+import { graphElementAtOffset } from '@/graph/json-cursor.ts';
+import { useEditorStore } from '@/store.ts';
+import { useValidation } from '@/hooks/use-validation.ts';
+import { violationRanges } from '@/validation/violation-ranges.ts';
 
-const VIOLATION_MARKER_OWNER = "application-graph-violations";
+const VIOLATION_MARKER_OWNER = 'application-graph-violations';
 
 function configureJsonLanguage(instance: Monaco) {
   instance.languages.json.jsonDefaults.setDiagnosticsOptions({
@@ -18,7 +18,7 @@ function configureJsonLanguage(instance: Monaco) {
         // registering under the real $id also resolves an inline "$schema" reference in a
         // pasted graph, which would otherwise fail because schema requests are disabled
         uri: applicationGraphSchema.$id,
-        fileMatch: ["*"],
+        fileMatch: ['*'],
         schema: applicationGraphSchema,
       },
     ],
@@ -84,7 +84,7 @@ export function JsonPanel({ graph }: { graph: ApplicationGraph }) {
     }
     const { graph: current } = useEditorStore.getState();
     const exists =
-      target.kind === "node"
+      target.kind === 'node'
         ? current?.nodes.some((node) => node.id === target.id)
         : current?.edges.some((edge) => edge.id === target.id);
     return exists ? target : null;
@@ -124,7 +124,7 @@ export function JsonPanel({ graph }: { graph: ApplicationGraph }) {
       const target = elementAtCursor(model.getValue(), model.getOffsetAt(event.position));
       const store = useEditorStore.getState();
       store.setHighlight(target);
-      if (target !== null && event.source === "mouse") {
+      if (target !== null && event.source === 'mouse') {
         store.requestFocus(target.id);
       }
     });
@@ -136,11 +136,11 @@ export function JsonPanel({ graph }: { graph: ApplicationGraph }) {
         <MonacoEditor
           language="json"
           value={draft}
-          onChange={(value) => setDraft({ text: value ?? "", base: editing?.base ?? json })}
+          onChange={(value) => setDraft({ text: value ?? '', base: editing?.base ?? json })}
           beforeMount={configureJsonLanguage}
           onMount={onMount}
           options={{
-            wordWrap: "on",
+            wordWrap: 'on',
             minimap: { enabled: false },
             insertSpaces: true,
             automaticLayout: true,
@@ -149,9 +149,7 @@ export function JsonPanel({ graph }: { graph: ApplicationGraph }) {
           }}
         />
       </div>
-      {error && (
-        <p className="border-t border-slate-200 px-3 py-1 text-sm text-red-700">{error}</p>
-      )}
+      {error && <p className="border-t border-slate-200 px-3 py-1 text-sm text-red-700">{error}</p>}
       {dirty && stale && (
         <p className="border-t border-amber-200 bg-amber-50 px-3 py-1 text-sm text-amber-800">
           The graph changed since this draft was last modified. Applying it drops those changes.

@@ -1,16 +1,16 @@
-import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from "react";
-import { clamp } from "es-toolkit";
-import { AlertTriangle, ChevronsLeft, X, XCircle } from "lucide-react";
-import type { ApplicationGraph } from "@dataspecer/app-generator/graph";
-import { useEditorStore, type SidebarTab } from "@/store.ts";
-import { useValidation, useViolationsBySeverity } from "@/hooks/use-validation.ts";
-import { bySeverity, violationsFor, type ValidationSnapshot } from "@/validation/violations.ts";
-import { EdgeForm } from "./edge-form.tsx";
-import { JsonPanel } from "./json-panel.tsx";
-import { NodeIdReset } from "./node-id-reset.tsx";
-import { NodeForm } from "./node-form.tsx";
-import { ProblemsPanel } from "./problems-panel.tsx";
-import { SettingsForm } from "./settings-form.tsx";
+import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from 'react';
+import { clamp } from 'es-toolkit';
+import { AlertTriangle, ChevronsLeft, X, XCircle } from 'lucide-react';
+import type { ApplicationGraph } from '@dataspecer/app-generator/graph';
+import { useEditorStore, type SidebarTab } from '@/store.ts';
+import { useValidation, useViolationsBySeverity } from '@/hooks/use-validation.ts';
+import { bySeverity, violationsFor, type ValidationSnapshot } from '@/validation/violations.ts';
+import { EdgeForm } from './edge-form.tsx';
+import { JsonPanel } from './json-panel.tsx';
+import { NodeIdReset } from './node-id-reset.tsx';
+import { NodeForm } from './node-form.tsx';
+import { ProblemsPanel } from './problems-panel.tsx';
+import { SettingsForm } from './settings-form.tsx';
 
 const MIN_WIDTH = 280;
 
@@ -31,7 +31,7 @@ export function Sidebar({ graph }: { graph: ApplicationGraph }) {
   const sidebarTab = useEditorStore((state) => state.sidebarTab);
   const [width, setWidth] = useState(defaultWidth);
 
-  const lastTab = useRef<Exclude<SidebarTab, null>>("json");
+  const lastTab = useRef<Exclude<SidebarTab, null>>('json');
   useEffect(() => {
     if (sidebarTab) {
       lastTab.current = sidebarTab;
@@ -42,11 +42,11 @@ export function Sidebar({ graph }: { graph: ApplicationGraph }) {
   const { errors, warnings } = useViolationsBySeverity();
 
   const node =
-    selection?.kind === "node"
+    selection?.kind === 'node'
       ? graph.nodes.find((candidate) => candidate.id === selection.id)
       : undefined;
   const edge =
-    selection?.kind === "edge"
+    selection?.kind === 'edge'
       ? graph.edges.find((candidate) => candidate.id === selection.id)
       : undefined;
 
@@ -57,7 +57,7 @@ export function Sidebar({ graph }: { graph: ApplicationGraph }) {
       <PanelTitle
         title="Node"
         subtitle={node.id}
-        level={violationLevel(validation, "node", node.id)}
+        level={violationLevel(validation, 'node', node.id)}
         action={<NodeIdReset node={node} />}
         onClose={() => useEditorStore.getState().requestSelect(null)}
       />
@@ -68,7 +68,7 @@ export function Sidebar({ graph }: { graph: ApplicationGraph }) {
       <PanelTitle
         title="Edge"
         subtitle={edge.id}
-        level={violationLevel(validation, "edge", edge.id)}
+        level={violationLevel(validation, 'edge', edge.id)}
         onClose={() => useEditorStore.getState().requestSelect(null)}
       />
     );
@@ -103,14 +103,16 @@ export function Sidebar({ graph }: { graph: ApplicationGraph }) {
           JSON
         </Tab>
         <div className="grow" />
-        <CloseButton label="Collapse sidebar" onClick={() => useEditorStore.getState().setSidebarTab(null)} />
+        <CloseButton
+          label="Collapse sidebar"
+          onClick={() => useEditorStore.getState().setSidebarTab(null)}
+        />
       </div>
     );
-    content = sidebarTab === "problems" ? <ProblemsPanel graph={graph} /> : <JsonPanel graph={graph} />;
+    content =
+      sidebarTab === 'problems' ? <ProblemsPanel graph={graph} /> : <JsonPanel graph={graph} />;
   } else {
-    return (
-      <ExpandButton onOpen={() => useEditorStore.getState().setSidebarTab(lastTab.current)} />
-    );
+    return <ExpandButton onOpen={() => useEditorStore.getState().setSidebarTab(lastTab.current)} />;
   }
 
   return (
@@ -142,13 +144,13 @@ function ResizeHandle({
       onWidthChange(clamp(startWidth + (startX - move.clientX), MIN_WIDTH, maximumWidth()));
     };
     const onUp = () => {
-      handle.removeEventListener("pointermove", onMove);
-      handle.removeEventListener("pointerup", onUp);
-      handle.removeEventListener("pointercancel", onUp);
+      handle.removeEventListener('pointermove', onMove);
+      handle.removeEventListener('pointerup', onUp);
+      handle.removeEventListener('pointercancel', onUp);
     };
-    handle.addEventListener("pointermove", onMove);
-    handle.addEventListener("pointerup", onUp);
-    handle.addEventListener("pointercancel", onUp);
+    handle.addEventListener('pointermove', onMove);
+    handle.addEventListener('pointerup', onUp);
+    handle.addEventListener('pointercancel', onUp);
   };
 
   return (
@@ -187,8 +189,8 @@ function Tab({
       type="button"
       className={`inline-flex cursor-pointer items-center gap-1 rounded px-2 py-0.5 text-sm ${
         active === tab
-          ? "bg-slate-200 font-medium text-slate-800"
-          : "text-slate-500 hover:bg-slate-100"
+          ? 'bg-slate-200 font-medium text-slate-800'
+          : 'text-slate-500 hover:bg-slate-100'
       }`}
       onClick={() => useEditorStore.getState().setSidebarTab(tab)}
     >
@@ -200,9 +202,9 @@ function Tab({
 /** The worse level among the element's violations, null when it has none. */
 function violationLevel(
   validation: ValidationSnapshot | null,
-  kind: "node" | "edge",
+  kind: 'node' | 'edge',
   id: string,
-): "error" | "warning" | null {
+): 'error' | 'warning' | null {
   if (validation === null) {
     return null;
   }
@@ -210,9 +212,9 @@ function violationLevel(
     violationsFor(validation.graph, validation.violations, kind, id),
   );
   if (errors.length > 0) {
-    return "error";
+    return 'error';
   }
-  return warnings.length > 0 ? "warning" : null;
+  return warnings.length > 0 ? 'warning' : null;
 }
 
 function PanelTitle({
@@ -224,7 +226,7 @@ function PanelTitle({
 }: {
   title: string;
   subtitle?: string;
-  level?: "error" | "warning" | null;
+  level?: 'error' | 'warning' | null;
   action?: ReactNode;
   onClose: () => void;
 }) {
@@ -236,8 +238,8 @@ function PanelTitle({
           {subtitle}
         </span>
       )}
-      {level === "error" && <XCircle size={13} className="shrink-0 text-red-600" />}
-      {level === "warning" && <AlertTriangle size={13} className="shrink-0 text-amber-600" />}
+      {level === 'error' && <XCircle size={13} className="shrink-0 text-red-600" />}
+      {level === 'warning' && <AlertTriangle size={13} className="shrink-0 text-amber-600" />}
       {action}
       <div className="grow" />
       <CloseButton label={`Close ${title.toLowerCase()} panel`} onClick={onClose} />

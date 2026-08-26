@@ -24,7 +24,7 @@ export type SpecializationResolution =
  */
 export function effectiveFields(
   shape: SpecializableEntityShape,
-  entity: EntityRecord
+  entity: EntityRecord,
 ): FieldDescriptor[] {
   const { fields, specializations } = shape;
   if (!specializations?.length) {
@@ -32,7 +32,7 @@ export function effectiveFields(
   }
 
   const selected = specializations.find(
-    (specialization) => specialization.specializationIri === entity.__specializationIri
+    (specialization) => specialization.specializationIri === entity.__specializationIri,
   );
   if (selected) {
     const selectedPaths = new Set(selected.fieldPaths);
@@ -50,7 +50,7 @@ export function effectiveFields(
 /** Resolves a loaded specialization from RDF types and branch-exclusive populated fields. */
 export function resolveSpecialization(
   shape: SpecializableEntityShape,
-  entity: EntityRecord
+  entity: EntityRecord,
 ): SpecializationResolution {
   const specializations = shape.specializations ?? [];
   if (specializations.length === 0) {
@@ -59,7 +59,7 @@ export function resolveSpecialization(
 
   const rdfTypes = normalizedRdfTypes(entity.__rdfTypes);
   const matchedByType = specializations.filter((specialization) =>
-    rdfTypes.includes(specialization.classIri)
+    rdfTypes.includes(specialization.classIri),
   );
   const exclusiveFieldEvidence = new Set<string>();
   const matchedClasses = new Set(matchedByType.map((specialization) => specialization.classIri));
@@ -101,7 +101,7 @@ export function resolveSpecialization(
 /** Records the RDF type evidence and the specialization it identifies on a loaded entity. */
 export function resolveLoadedSpecialization(
   shape: SpecializableEntityShape,
-  entity: EntityRecord
+  entity: EntityRecord,
 ): EntityRecord {
   if (!shape.specializations?.length) {
     return entity;
@@ -122,7 +122,7 @@ export function resolveLoadedSpecialization(
 export function hasSelectedBranchEvidence(
   shape: SpecializableEntityShape,
   entity: EntityRecord,
-  specialization: SpecializationDescriptor
+  specialization: SpecializationDescriptor,
 ): boolean {
   const specializations = shape.specializations ?? [];
   if (
@@ -143,15 +143,15 @@ export function hasSelectedBranchEvidence(
 
 export function selectedSpecialization(
   shape: SpecializableEntityShape,
-  entity: EntityRecord
+  entity: EntityRecord,
 ): SpecializationDescriptor | undefined {
   return shape.specializations?.find(
-    (specialization) => specialization.specializationIri === entity.__specializationIri
+    (specialization) => specialization.specializationIri === entity.__specializationIri,
   );
 }
 
 function sharedFieldPaths(
-  specializations: readonly SpecializationDescriptor[]
+  specializations: readonly SpecializationDescriptor[],
 ): ReadonlySet<string> {
   const [first, ...rest] = specializations;
   if (!first) {
@@ -159,13 +159,13 @@ function sharedFieldPaths(
   }
   return new Set(
     first.fieldPaths.filter((path) =>
-      rest.every((specialization) => specialization.fieldPaths.includes(path))
-    )
+      rest.every((specialization) => specialization.fieldPaths.includes(path)),
+    ),
   );
 }
 
 function fieldMemberships(
-  specializations: readonly SpecializationDescriptor[]
+  specializations: readonly SpecializationDescriptor[],
 ): Map<string, SpecializationDescriptor[]> {
   const result = new Map<string, SpecializationDescriptor[]>();
   for (const specialization of specializations) {
@@ -177,7 +177,7 @@ function fieldMemberships(
 }
 
 function countByClass(
-  specializations: readonly SpecializationDescriptor[]
+  specializations: readonly SpecializationDescriptor[],
 ): ReadonlyMap<string, number> {
   const result = new Map<string, number>();
   for (const specialization of specializations) {

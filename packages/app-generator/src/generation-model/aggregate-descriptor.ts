@@ -8,7 +8,7 @@ import type {
 import { toAggregateTypeName } from '../utils/naming.ts';
 
 export function buildAggregateDescriptor(
-  aggregate: AggregateMetadata
+  aggregate: AggregateMetadata,
 ): GeneratedAggregateDescriptor {
   return {
     iri: aggregate.iri,
@@ -50,7 +50,7 @@ interface FieldProjectionSource {
 
 /** Copies only properties that belong to a generated field descriptor. */
 export function projectGeneratedField(
-  field: FieldProjectionSource
+  field: FieldProjectionSource,
 ): Omit<GeneratedFieldDescriptor, 'fields'> {
   return {
     path: field.path,
@@ -71,7 +71,7 @@ export function projectGeneratedField(
       ? {
           // identity policy is needed while validating the specification, not by generated apps
           specializations: field.specializations.map(
-            ({ identityPolicy: _identityPolicy, ...specialization }) => specialization
+            ({ identityPolicy: _identityPolicy, ...specialization }) => specialization,
           ),
         }
       : {}),

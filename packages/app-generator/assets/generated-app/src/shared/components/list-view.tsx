@@ -65,7 +65,7 @@ export function ListView<TModel extends EntityModel>(props: ListViewProps<TModel
   const [error, setError] = useState<string | null>(null);
   const preferredLanguages = useMemo(
     () => displayLanguagePreferences(props.languages),
-    [props.languages]
+    [props.languages],
   );
   const columns = useMemo(
     () =>
@@ -73,9 +73,9 @@ export function ListView<TModel extends EntityModel>(props: ListViewProps<TModel
         aggregate.fields,
         navigation.rowActions,
         navigation.associationActions,
-        preferredLanguages
+        preferredLanguages,
       ),
-    [aggregate.fields, navigation.rowActions, navigation.associationActions, preferredLanguages]
+    [aggregate.fields, navigation.rowActions, navigation.associationActions, preferredLanguages],
   );
   const gridSortModel = useMemo(() => toGridSortModel(sort), [sort]);
 
@@ -189,7 +189,7 @@ function hasSelectedTextWithin(element: HTMLElement): boolean {
   }
   return Boolean(
     (selection.anchorNode && element.contains(selection.anchorNode)) ||
-    (selection.focusNode && element.contains(selection.focusNode))
+    (selection.focusNode && element.contains(selection.focusNode)),
   );
 }
 
@@ -197,7 +197,7 @@ function buildColumns<TModel extends EntityModel>(
   fields: FieldDescriptor[],
   rowActions: readonly NavigationActionDescriptor[],
   associationActions: readonly AssociationNavigationActionDescriptor[],
-  languages: readonly string[]
+  languages: readonly string[],
 ): GridColDef<TModel>[] {
   const columns: GridColDef<TModel>[] = fields
     .filter((field) => !isCompositionField(field))

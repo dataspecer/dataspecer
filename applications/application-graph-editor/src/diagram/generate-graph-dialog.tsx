@@ -1,10 +1,10 @@
-import { useRef, useState } from "react";
-import * as Dialog from "@radix-ui/react-dialog";
-import type { Operation } from "@dataspecer/app-generator/graph";
-import { skeletonGraph, SKELETON_OPERATIONS } from "@/graph/generate-graph.ts";
-import { useEditorStore } from "@/store.ts";
-import { autoLayout } from "./auto-layout.ts";
-import { OPERATION_LABELS } from "./operation-style.ts";
+import { useRef, useState } from 'react';
+import * as Dialog from '@radix-ui/react-dialog';
+import type { Operation } from '@dataspecer/app-generator/graph';
+import { skeletonGraph, SKELETON_OPERATIONS } from '@/graph/generate-graph.ts';
+import { useEditorStore } from '@/store.ts';
+import { autoLayout } from './auto-layout.ts';
+import { OPERATION_LABELS } from './operation-style.ts';
 
 const DEFAULT_OPERATIONS: ReadonlySet<Operation> = new Set(SKELETON_OPERATIONS);
 
@@ -35,9 +35,9 @@ export function GenerateGraphDialog({ open, onClose }: { open: boolean; onClose:
     }
     if (graph.nodes.length > 0) {
       const confirmed = await requestConfirm({
-        title: "Replace the graph?",
+        title: 'Replace the graph?',
         message: `The generated graph replaces the current ${graph.nodes.length} node(s) and ${graph.edges.length} edge(s).`,
-        confirmLabel: "Replace",
+        confirmLabel: 'Replace',
       });
       if (!confirmed) {
         return;
@@ -76,8 +76,8 @@ export function GenerateGraphDialog({ open, onClose }: { open: boolean; onClose:
             Generate graph
           </Dialog.Title>
           <Dialog.Description className="mt-2 text-sm text-slate-600">
-            Creates a node for every selected data structure and operation, then connects them using transitions
-            and redirects.
+            Creates a node for every selected data structure and operation, then connects them using
+            transitions and redirects.
           </Dialog.Description>
 
           <fieldset className="mt-4">
@@ -158,7 +158,7 @@ export function GenerateGraphDialog({ open, onClose }: { open: boolean; onClose:
               onClick={() => void generate()}
               disabled={building || operations.size === 0 || selectedAggregates.length === 0}
             >
-              {building ? "Generating..." : "Generate"}
+              {building ? 'Generating...' : 'Generate'}
             </button>
           </div>
         </Dialog.Content>

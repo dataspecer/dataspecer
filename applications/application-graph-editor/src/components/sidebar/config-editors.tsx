@@ -6,9 +6,9 @@ import {
   type AggregateMetadata,
   type ApplicationNode,
   type ApplicationNodeConfig,
-} from "@dataspecer/app-generator/graph";
-import { omit } from "es-toolkit";
-import { Hint } from "@/components/hint.tsx";
+} from '@dataspecer/app-generator/graph';
+import { omit } from 'es-toolkit';
+import { Hint } from '@/components/hint.tsx';
 
 interface ConfigEditorProps {
   node: ApplicationNode;
@@ -17,12 +17,12 @@ interface ConfigEditorProps {
 }
 
 /** Flattens the aggregate's association fields into dotted paths. */
-function associationPaths(fields: AggregateFieldMetadata[], prefix = ""): string[] {
+function associationPaths(fields: AggregateFieldMetadata[], prefix = ''): string[] {
   return fields.flatMap((field) => {
     if (field.kind !== FieldKind.Association) {
       return [];
     }
-    const path = prefix === "" ? field.path : `${prefix}.${field.path}`;
+    const path = prefix === '' ? field.path : `${prefix}.${field.path}`;
     return [path, ...associationPaths(field.fields ?? [], path)];
   });
 }
@@ -37,9 +37,9 @@ export function AssociationEditor({ node, aggregate, onPatch }: ConfigEditorProp
   return (
     <fieldset className="min-w-0">
       <legend className="mb-1 flex items-center gap-1 text-sm font-medium text-slate-500">
-          Association kinds
-          <Hint text="A composition is part of this entity: it is created, edited and deleted with it. An aggregation exists on its own and is only referenced." />
-        </legend>
+        Association kinds
+        <Hint text="A composition is part of this entity: it is created, edited and deleted with it. An aggregation exists on its own and is only referenced." />
+      </legend>
       <div className="flex flex-col gap-1">
         {paths.map((path) => (
           <div key={path} className="flex items-center gap-2">
@@ -48,11 +48,11 @@ export function AssociationEditor({ node, aggregate, onPatch }: ConfigEditorProp
             </span>
             <select
               className="rounded border border-slate-300 bg-white px-1 py-0.5 text-sm"
-              value={current[path] ?? ""}
+              value={current[path] ?? ''}
               onChange={(event) => {
                 onPatch({
                   associations:
-                    event.target.value === ""
+                    event.target.value === ''
                       ? omit(current, [path])
                       : { ...current, [path]: event.target.value as AssociationKind },
                 });

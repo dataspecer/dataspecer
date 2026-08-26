@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { useEditorStore } from "@/store.ts";
+import { useEffect } from 'react';
+import { useEditorStore } from '@/store.ts';
 
 /**
  * Warns before the tab closes while there is work that would be erased: unsaved JSON draft or graph changes autosave
@@ -10,12 +10,12 @@ export function useUnloadWarning(): void {
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
       const { jsonDraft, saveState } = useEditorStore.getState();
       const editedDraft = jsonDraft !== null && jsonDraft.text !== jsonDraft.base;
-      const brokenSave = saveState === "invalid" || saveState === "error";
+      const brokenSave = saveState === 'invalid' || saveState === 'error';
       if (editedDraft || brokenSave) {
         event.preventDefault();
       }
     };
-    window.addEventListener("beforeunload", onBeforeUnload);
-    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
   }, []);
 }

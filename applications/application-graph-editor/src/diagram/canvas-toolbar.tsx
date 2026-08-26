@@ -1,17 +1,27 @@
-import { useRef, useState, type ReactNode } from "react";
-import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { Panel, useReactFlow, useStore as useFlowStore } from "@xyflow/react";
-import { ChevronDown, Hand, Menu, MousePointer2, Network, Plus, Redo2, Sparkles, Undo2 } from "lucide-react";
-import { useStore } from "zustand";
-import { downloadBlob } from "@/utils/download-blob.ts";
-import { applyGraphJson } from "@/graph/apply-json.ts";
-import { exportFileName } from "@/graph/file-names.ts";
-import { newNode, nodeBlockedReason } from "@/graph/new-node.ts";
-import { useEditorStore } from "@/store.ts";
-import { autoLayout, type LayoutOptions } from "./auto-layout.ts";
-import { centeredOn, paneToGraph } from "./pane-position.ts";
-import { GenerateGraphDialog } from "./generate-graph-dialog.tsx";
-import { ShortcutsDialog } from "./shortcuts-dialog.tsx";
+import { useRef, useState, type ReactNode } from 'react';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import { Panel, useReactFlow, useStore as useFlowStore } from '@xyflow/react';
+import {
+  ChevronDown,
+  Hand,
+  Menu,
+  MousePointer2,
+  Network,
+  Plus,
+  Redo2,
+  Sparkles,
+  Undo2,
+} from 'lucide-react';
+import { useStore } from 'zustand';
+import { downloadBlob } from '@/utils/download-blob.ts';
+import { applyGraphJson } from '@/graph/apply-json.ts';
+import { exportFileName } from '@/graph/file-names.ts';
+import { newNode, nodeBlockedReason } from '@/graph/new-node.ts';
+import { useEditorStore } from '@/store.ts';
+import { autoLayout, type LayoutOptions } from './auto-layout.ts';
+import { centeredOn, paneToGraph } from './pane-position.ts';
+import { GenerateGraphDialog } from './generate-graph-dialog.tsx';
+import { ShortcutsDialog } from './shortcuts-dialog.tsx';
 
 export function CanvasToolbar() {
   const undo = useStore(useEditorStore.temporal, (state) => state.undo);
@@ -46,7 +56,7 @@ export function CanvasToolbar() {
     if (graph === null) {
       return;
     }
-    const blob = new Blob([JSON.stringify(graph, null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(graph, null, 2)], { type: 'application/json' });
     downloadBlob(blob, exportFileName(graph));
   };
 
@@ -56,7 +66,9 @@ export function CanvasToolbar() {
       return;
     }
     // put it where the user is looking
-    const center = centeredOn(paneToGraph(flow.getViewport(), { x: paneWidth / 2, y: paneHeight / 2 }));
+    const center = centeredOn(
+      paneToGraph(flow.getViewport(), { x: paneWidth / 2, y: paneHeight / 2 }),
+    );
     // keep freshly added nodes from covering each other
     const offset = (graph.nodes.length % 6) * 36;
     const node = newNode(graph, metadata, aggregateIri);
@@ -82,7 +94,7 @@ export function CanvasToolbar() {
       label="Add node"
       showLabel
       disabled={cannotAddNode !== null}
-      title={cannotAddNode ?? "Add a page for a data structure"}
+      title={cannotAddNode ?? 'Add a page for a data structure'}
     >
       <DropdownMenu.Label className="px-3 py-1 text-xs font-medium text-slate-400">
         Select data structure
@@ -110,95 +122,95 @@ export function CanvasToolbar() {
 
   return (
     <>
-    <Panel position="top-left" className="flex gap-1">
-      <Dropdown icon={<Menu size={14} />} label="Menu">
-        <MenuItem onSelect={() => importInput.current?.click()}>Import</MenuItem>
-        <MenuItem onSelect={exportGraph}>Export</MenuItem>
-        <DropdownMenu.Separator className="my-1 border-t border-slate-100" />
-        <MenuItem onSelect={() => useEditorStore.getState().setSettingsOpen(true)}>
-          Settings
-        </MenuItem>
-        <DropdownMenu.Separator className="my-1 border-t border-slate-100" />
-        <MenuItem onSelect={() => setShortcutsOpen(true)}>Shortcuts</MenuItem>
-      </Dropdown>
-      <ButtonGroup>
-        <GroupButton
-          onClick={() => setCanvasTool("pan")}
-          active={canvasTool === "pan"}
-          title="Drag to pan"
-          aria-label="Pan tool"
-        >
-          <Hand size={14} />
-        </GroupButton>
-        <GroupButton
-          onClick={() => setCanvasTool("select")}
-          active={canvasTool === "select"}
-          title="Drag to select"
-          aria-label="Select tool"
-        >
-          <MousePointer2 size={14} />
-        </GroupButton>
-      </ButtonGroup>
-      {addNodeMenu}
-      {generateButton}
-      <Dropdown icon={<Network size={14} />} label="Layout" showLabel>
-        <MenuItem onSelect={() => void relayout({ algorithm: "stress" })}>Organic</MenuItem>
-        <DropdownMenu.Separator className="my-1 border-t border-slate-100" />
-        <MenuItem onSelect={() => void relayout({ algorithm: "layered", direction: "DOWN" })}>
-          Top to bottom
-        </MenuItem>
-        <MenuItem onSelect={() => void relayout({ algorithm: "layered", direction: "RIGHT" })}>
-          Left to right
-        </MenuItem>
-      </Dropdown>
-      <ButtonGroup>
-        <GroupButton
-          onClick={() => undo()}
-          disabled={!canUndo}
-          title="Undo (Ctrl+Z)"
-          aria-label="Undo"
-        >
-          <Undo2 size={14} />
-        </GroupButton>
-        <GroupButton
-          onClick={() => redo()}
-          disabled={!canRedo}
-          title="Redo (Ctrl+Shift+Z)"
-          aria-label="Redo"
-        >
-          <Redo2 size={14} />
-        </GroupButton>
-      </ButtonGroup>
-      <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
-      <GenerateGraphDialog open={generateOpen} onClose={() => setGenerateOpen(false)} />
-      <input
-        ref={importInput}
-        type="file"
-        accept=".json,application/json"
-        className="hidden"
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          // the same file can be picked again after an undo
-          event.target.value = "";
-          if (file) {
-            void importFile(file);
-          }
-        }}
-      />
-    </Panel>
-    {empty && (
-      <Panel position="top-center" style={{ top: "38%" }}>
-        <div className="flex flex-col items-center gap-3">
-          <p className="text-sm text-slate-500">
-            This graph has no nodes yet. Add one, or generate the whole graph.
-          </p>
-          <div className="flex gap-2">
-            {addNodeMenu}
-            {generateButton}
-          </div>
-        </div>
+      <Panel position="top-left" className="flex gap-1">
+        <Dropdown icon={<Menu size={14} />} label="Menu">
+          <MenuItem onSelect={() => importInput.current?.click()}>Import</MenuItem>
+          <MenuItem onSelect={exportGraph}>Export</MenuItem>
+          <DropdownMenu.Separator className="my-1 border-t border-slate-100" />
+          <MenuItem onSelect={() => useEditorStore.getState().setSettingsOpen(true)}>
+            Settings
+          </MenuItem>
+          <DropdownMenu.Separator className="my-1 border-t border-slate-100" />
+          <MenuItem onSelect={() => setShortcutsOpen(true)}>Shortcuts</MenuItem>
+        </Dropdown>
+        <ButtonGroup>
+          <GroupButton
+            onClick={() => setCanvasTool('pan')}
+            active={canvasTool === 'pan'}
+            title="Drag to pan"
+            aria-label="Pan tool"
+          >
+            <Hand size={14} />
+          </GroupButton>
+          <GroupButton
+            onClick={() => setCanvasTool('select')}
+            active={canvasTool === 'select'}
+            title="Drag to select"
+            aria-label="Select tool"
+          >
+            <MousePointer2 size={14} />
+          </GroupButton>
+        </ButtonGroup>
+        {addNodeMenu}
+        {generateButton}
+        <Dropdown icon={<Network size={14} />} label="Layout" showLabel>
+          <MenuItem onSelect={() => void relayout({ algorithm: 'stress' })}>Organic</MenuItem>
+          <DropdownMenu.Separator className="my-1 border-t border-slate-100" />
+          <MenuItem onSelect={() => void relayout({ algorithm: 'layered', direction: 'DOWN' })}>
+            Top to bottom
+          </MenuItem>
+          <MenuItem onSelect={() => void relayout({ algorithm: 'layered', direction: 'RIGHT' })}>
+            Left to right
+          </MenuItem>
+        </Dropdown>
+        <ButtonGroup>
+          <GroupButton
+            onClick={() => undo()}
+            disabled={!canUndo}
+            title="Undo (Ctrl+Z)"
+            aria-label="Undo"
+          >
+            <Undo2 size={14} />
+          </GroupButton>
+          <GroupButton
+            onClick={() => redo()}
+            disabled={!canRedo}
+            title="Redo (Ctrl+Shift+Z)"
+            aria-label="Redo"
+          >
+            <Redo2 size={14} />
+          </GroupButton>
+        </ButtonGroup>
+        <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+        <GenerateGraphDialog open={generateOpen} onClose={() => setGenerateOpen(false)} />
+        <input
+          ref={importInput}
+          type="file"
+          accept=".json,application/json"
+          className="hidden"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            // the same file can be picked again after an undo
+            event.target.value = '';
+            if (file) {
+              void importFile(file);
+            }
+          }}
+        />
       </Panel>
-    )}
+      {empty && (
+        <Panel position="top-center" style={{ top: '38%' }}>
+          <div className="flex flex-col items-center gap-3">
+            <p className="text-sm text-slate-500">
+              This graph has no nodes yet. Add one, or generate the whole graph.
+            </p>
+            <div className="flex gap-2">
+              {addNodeMenu}
+              {generateButton}
+            </div>
+          </div>
+        </Panel>
+      )}
     </>
   );
 }
@@ -260,20 +272,20 @@ function GroupButton({
   disabled,
   active,
   title,
-  "aria-label": ariaLabel,
+  'aria-label': ariaLabel,
 }: {
   children: ReactNode;
   onClick: () => void;
   disabled?: boolean;
   active?: boolean;
   title: string;
-  "aria-label": string;
+  'aria-label': string;
 }) {
   return (
     <button
       type="button"
       className={`px-2 py-1 disabled:opacity-40 ${
-        active ? "bg-slate-200 text-slate-800" : "text-slate-600 hover:bg-slate-100"
+        active ? 'bg-slate-200 text-slate-800' : 'text-slate-600 hover:bg-slate-100'
       }`}
       onClick={onClick}
       disabled={disabled}

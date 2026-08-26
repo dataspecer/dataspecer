@@ -94,7 +94,7 @@ export function UpdateForm<TModel extends EntityModel>(props: UpdateFormProps<TM
           item as EntityRecord,
           rootEntityTarget(aggregate),
           aggregateRegistry,
-          dataSource
+          dataSource,
         );
         if (active) {
           setModel(hydrated);
