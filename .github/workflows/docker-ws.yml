@@ -128,6 +128,7 @@ jobs:
 
   notify-deploy-webhook:
     name: Notify deploy webhook
+    continue-on-error: true
     needs: create_manifest
     if: ${{ needs.create_manifest.result == 'success' }}
     runs-on: ubuntu-latest
@@ -150,12 +151,9 @@ jobs:
             exit 1
           fi
 
-          IMAGE="${{ env.IMAGE_NAME }}"
-          IMAGE="${IMAGE##*/}"
-          RAW_TAG="${{ matrix.tag }}"
-          TAG="${RAW_TAG##*:}"
+          IMAGE="${{ matrix.tag }}"
 
           curl -fsS -X POST "$DEPLOY_WEBHOOK_URL" \
             -H "Authorization: Bearer $DEPLOY_WEBHOOK_TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{\"image\":\"$IMAGE\",\"tag\":\"$TAG\"}"
+            -d "{\"image\":\"$IMAGE\"}"
