@@ -19,6 +19,7 @@
     "@dataspecer/core-v2": "*",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
+    "asynciterator": "^3.10.0",
     "es-toolkit": "^1.49.0",
     "eta": "^4.6.0",
     "ldkit": "^2.7.2",

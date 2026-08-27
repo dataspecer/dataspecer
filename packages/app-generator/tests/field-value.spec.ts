@@ -80,6 +80,8 @@ describe('formatFieldValue', () => {
 
     expect(formatFieldValue(reference, { id, alias: [], name: 'Argo' })).toBe('Argo');
     expect(formatFieldValue(reference, { id, alias: '', name: 'Argo' })).toBe('Argo');
-    expect(formatFieldValue(reference, { id, alias: [], name: '' })).toBe(id);
+    expect(formatFieldValue(reference, { id, alias: [], name: '' })).toBe(
+      `${id} (details unavailable)`,
+    );
   });
 });

@@ -187,6 +187,14 @@ describe('LDKit schema generation', () => {
         '@type': `${XSD}string`,
         '@optional': true,
       },
+      // A composed child whose own fields are all empty still needs a node in the constructed
+      // graph, otherwise LDKit refuses to decode the entity that owns it.
+      [RDF_TYPES_PROPERTY]: {
+        '@id': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+        '@type': ldkit.IRI,
+        '@array': true,
+        '@optional': true,
+      },
     });
   });
 
@@ -317,7 +325,14 @@ describe('LDKit schema generation', () => {
     ]);
     const bundle = buildLdkitSchemaBundle(aggregate.classIri, aggregate.fields);
 
-    expect((bundle.detail.child as Record<string, unknown>)['@schema']).toEqual({});
+    expect((bundle.detail.child as Record<string, unknown>)['@schema']).toEqual({
+      [RDF_TYPES_PROPERTY]: {
+        '@id': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+        '@type': ldkit.IRI,
+        '@array': true,
+        '@optional': true,
+      },
+    });
     expect(bundle.writes['["child"]']).toEqual({
       '@type': 'https://example.org/class/child',
     });

@@ -1,4 +1,4 @@
-import type { Lens, QueryContext, Schema } from 'ldkit';
+import type { Lens, Options, QueryContext, Schema } from 'ldkit';
 import { createLens, QueryEngine } from 'ldkit';
 import type { RDF } from 'ldkit/rdf';
 
@@ -11,6 +11,7 @@ import {
 import { requireSafeAbsoluteIri } from '../forms/iri.ts';
 import { isInlineCompositionField } from '../forms/entity-target.ts';
 import { effectiveFields } from '../forms/specialization.ts';
+import { referencePreservingEngine } from './reference-preserving-engine.ts';
 import type {
   DataSource,
   DeleteArgs,
@@ -65,7 +66,7 @@ export class RdfLdkitDataSource implements DataSource {
     args: ReadListArgs<TModel>,
   ): Promise<ReadListResult<TModel>> {
     const schemas = this.requireSchemas(args.aggregate);
-    const lens = createLens(schemas.list, this.context());
+    const lens = createLens(schemas.list, this.readContext(args.aggregate.fields, schemas.list));
     const skip = (args.page - 1) * args.pageSize;
     const iriQuery = buildPageIriQuery(args.aggregate, args.pageSize, skip, args.sort);
     // page distinct entity IRIs before loading fields, otherwise one entity can produce multiple
@@ -99,7 +100,11 @@ export class RdfLdkitDataSource implements DataSource {
     args: ReadDetailArgs<TModel>,
   ): Promise<TModel | null> {
     requireSafeAbsoluteIri(args.id, 'Entity IRI');
-    const lens = createLens(this.requireSchemas(args.aggregate).detail, this.context());
+    const schemas = this.requireSchemas(args.aggregate);
+    const lens = createLens(
+      schemas.detail,
+      this.readContext(args.aggregate.fields, schemas.detail),
+    );
     const result = await lens.findByIri(args.id);
     if (!result) {
       return null;
@@ -308,6 +313,11 @@ export class RdfLdkitDataSource implements DataSource {
       fetch: throwOnFailedRequest,
     };
   }
+
+  private readContext(fields: readonly FieldDescriptor[], schema: Schema): Options {
+    const engine = referencePreservingEngine(fields, schema);
+    return engine ? { ...this.context(), engine } : this.context();
+  }
 }
 
 function inverseWritableFields(fields: readonly FieldDescriptor[]): FieldDescriptor[] {
@@ -334,11 +344,7 @@ function readBindings(stream: RDF.ResultStream<RDF.Bindings>): RDF.Bindings[] {
   return bindings;
 }
 
-/**
- * LDKit checks the response of a query but not of an update, so an endpoint that rejects a write
- * would resolve as a success and the application would report data as saved that never was. Every
- * request the engine makes goes through here instead.
- */
+/** Rejects failed query and update responses, including writes that LDKit does not check itself. */
 const throwOnFailedRequest: typeof fetch = async (input, init) => {
   const response = await fetch(input, init);
   if (!response.ok) {

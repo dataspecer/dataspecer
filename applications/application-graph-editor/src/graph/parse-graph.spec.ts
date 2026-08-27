@@ -15,16 +15,16 @@ function graphFixture(): ApplicationGraph {
 describe('parseGraph', () => {
   it('accepts a syntactically valid graph', () => {
     const result = parseGraph(JSON.stringify(graphFixture()));
-    expect('graph' in result && result.graph.name).toBe('Katalog knih');
+    expect(result).toMatchObject({ graph: { name: 'Katalog knih' } });
   });
 
   it('rejects malformed JSON with a parse error', () => {
     const result = parseGraph('{ not json');
-    expect('error' in result && result.error).toContain('Not valid JSON');
+    expect(result).toMatchObject({ error: expect.stringContaining('Not valid JSON') });
   });
 
   it('rejects JSON that is not an application graph', () => {
     const result = parseGraph(JSON.stringify({ nodes: [] }));
-    expect('error' in result && result.error).toContain('syntax violation');
+    expect(result).toMatchObject({ error: expect.stringContaining('syntax violation') });
   });
 });

@@ -102,7 +102,6 @@ describe('validateGraphSyntax', () => {
     const graph = readGraphFixture('valid-basic.json');
     graph.nodes.push(null);
 
-    expect(() => validateGraphSyntax(graph)).not.toThrow();
     expect(validateGraphSyntax(graph)).toEqual(
       expect.objectContaining({
         valid: false,

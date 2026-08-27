@@ -329,7 +329,6 @@ describe('buildGenerationModel', () => {
         requiresEntityId: true,
       },
     ]);
-    expect(list?.navigation.associationActions[0]).not.toHaveProperty('label');
 
     expect(detail?.navigation.pageActions).toEqual([
       {

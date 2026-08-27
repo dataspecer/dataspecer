@@ -80,8 +80,23 @@ function sparqlResultsResponse(
   });
 }
 
-function stubFetchResponse(response: Response): void {
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response));
+function stubFetchResponse(response: Response, requests?: string[]): void {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn((_input: string | URL | Request, init?: RequestInit) => {
+      if (requests && typeof init?.body === 'string') {
+        requests.push(init.body);
+      }
+      return Promise.resolve(response);
+    }),
+  );
+}
+
+function nTriplesResponse(triples: string[]): Response {
+  return new Response(triples.join('\n'), {
+    status: 200,
+    headers: { 'Content-Type': 'application/n-triples' },
+  });
 }
 
 const inverseField: AggregateDescriptor<EntityModel>['fields'][number] = {
@@ -526,6 +541,133 @@ describe('generated RDF read normalization', () => {
     many: true,
     required: false,
   };
+
+  const genrePropertyIri = 'https://example.org/genre';
+  const childPropertyIri = 'https://example.org/child';
+  const namePropertyIri = 'https://example.org/name';
+  const renderedReadAggregate = toRenderedAggregate({
+    iri: listAggregate.iri,
+    name: listAggregate.name,
+    safeName: 'Book',
+    classIri: listAggregate.classIri,
+    fields: [
+      {
+        path: 'genres',
+        label: 'Genres',
+        kind: FieldKind.Association,
+        propertyIri: genrePropertyIri,
+        targetClassIri: 'https://example.org/class/genre',
+        associationKind: AssociationKind.Aggregation,
+        fields: [
+          {
+            path: 'name',
+            label: 'Name',
+            kind: FieldKind.Primitive,
+            propertyIri: namePropertyIri,
+            datatype: 'http://www.w3.org/2001/XMLSchema#string',
+            many: false,
+            required: false,
+          },
+        ],
+        many: true,
+        required: false,
+      },
+      {
+        path: 'children',
+        label: 'Children',
+        kind: FieldKind.Association,
+        propertyIri: childPropertyIri,
+        targetClassIri: 'https://example.org/class/child',
+        targetAggregateIri: 'https://example.org/aggregate/child',
+        associationKind: AssociationKind.Composition,
+        fields: [
+          {
+            path: 'name',
+            label: 'Name',
+            kind: FieldKind.Primitive,
+            propertyIri: namePropertyIri,
+            datatype: 'http://www.w3.org/2001/XMLSchema#string',
+            many: false,
+            required: false,
+          },
+        ],
+        many: true,
+        required: false,
+      },
+    ],
+  });
+  const readAggregate: AggregateDescriptor<EntityModel> = {
+    ...listAggregate,
+    fields: renderedReadAggregate.descriptorFields,
+  };
+  const readSchemas = buildLdkitSchemaBundle(
+    renderedReadAggregate.classIri,
+    renderedReadAggregate.fields,
+  );
+
+  it('keeps existing reference labels when another target has no details', async () => {
+    const bookIri = 'https://example.org/book/1';
+    const fictionIri = 'https://example.org/genre/fiction';
+    const deletedIri = 'https://example.org/genre/deleted';
+    const requests: string[] = [];
+    stubFetchResponse(
+      nTriplesResponse([
+        `<${bookIri}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ldkit.io/ontology/Resource> .`,
+        `<${bookIri}> <${genrePropertyIri}> <${fictionIri}> .`,
+        `<${bookIri}> <${genrePropertyIri}> <${deletedIri}> .`,
+        `<${fictionIri}> <${namePropertyIri}> "Fiction" .`,
+      ]),
+      requests,
+    );
+    const dataSource = new RdfLdkitDataSource('https://example.org/sparql', {
+      [readAggregate.iri]: readSchemas,
+    });
+
+    await expect(dataSource.readDetail({ aggregate: readAggregate, id: bookIri })).resolves.toEqual(
+      {
+        id: bookIri,
+        genres: [
+          { id: fictionIri, name: 'Fiction' },
+          { id: deletedIri, name: null },
+        ],
+        children: [],
+      },
+    );
+    expect(fetch).toHaveBeenCalledOnce();
+    expect(requests).toHaveLength(1);
+    expect(requests[0]).not.toContain('urn:dataspecer:generated-app:referenced-node');
+  });
+
+  // The engine buffers quads and replays them. A result with none of its own must still reach the
+  // consumer's end event, otherwise a missing entity never resolves and the page loads forever.
+  it('resolves to null when the entity does not exist', async () => {
+    stubFetchResponse(nTriplesResponse([]));
+    const dataSource = new RdfLdkitDataSource('https://example.org/sparql', {
+      [readAggregate.iri]: readSchemas,
+    });
+
+    await expect(
+      dataSource.readDetail({ aggregate: readAggregate, id: 'https://example.org/book/missing' }),
+    ).resolves.toBeNull();
+  });
+
+  it('does not turn a dangling composition into an empty child', async () => {
+    const bookIri = 'https://example.org/book/1';
+    const childIri = 'https://example.org/child/deleted';
+    stubFetchResponse(
+      nTriplesResponse([
+        `<${bookIri}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ldkit.io/ontology/Resource> .`,
+        `<${bookIri}> <${childPropertyIri}> <${childIri}> .`,
+      ]),
+    );
+    const dataSource = new RdfLdkitDataSource('https://example.org/sparql', {
+      [readAggregate.iri]: readSchemas,
+    });
+
+    await expect(dataSource.readDetail({ aggregate: readAggregate, id: bookIri })).rejects.toThrow(
+      childIri,
+    );
+  });
 
   it('normalizes IRI pointers while keeping inline compositions expanded', () => {
     expect(

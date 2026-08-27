@@ -87,15 +87,14 @@ function buildReadProperty(field: LdkitSchemaField): Property {
   if (field.kind === FieldKind.Association) {
     if (hasNestedModel(field)) {
       const nestedSchema = buildReadSchema(undefined, field.fields, true);
-      if (field.specializations?.length) {
-        // because LDKit returns only declared properties, expose rdf:type for specialization selection
-        nestedSchema[RDF_TYPES_PROPERTY] = {
-          '@id': RDF_TYPE,
-          '@type': ldkit.IRI,
-          '@array': true,
-          '@optional': true,
-        };
-      }
+      // A type triple keeps an otherwise empty composition decodable and provides specialization
+      // evidence when the field has specialized shapes.
+      nestedSchema[RDF_TYPES_PROPERTY] = {
+        '@id': RDF_TYPE,
+        '@type': ldkit.IRI,
+        '@array': true,
+        '@optional': true,
+      };
       property['@schema'] = nestedSchema;
     } else {
       const displaySchema = referenceDisplaySchema(field);
@@ -112,10 +111,8 @@ function buildReadProperty(field: LdkitSchemaField): Property {
 }
 
 /**
- * Reads a reference together with the primitive fields the structure selected on its target, so a
- * list or detail page can show a name instead of an IRI. Without them LDKit returns the IRI alone
- * and there is nothing to display. Nested associations of the target are left out to keep the
- * join shallow.
+ * Reads a reference with the primitive fields its structure selected on the target, so a list or
+ * detail can show a name instead of an IRI. Associations of the target are left out.
  */
 function referenceDisplaySchema(field: LdkitSchemaField): Schema | undefined {
   if (!field.targetClassIri) {
@@ -200,9 +197,8 @@ function baseProperty(field: LdkitSchemaField, mode: 'read' | 'write'): Property
   if (field.isReverse) {
     property['@inverse'] = true;
   }
-  // A multilingual read returns several literals per language, so it is always an array. A write
-  // must not be, because LDKit requires an array or an $add/$set/$remove object to update an array
-  // property, and a multilingual value is keyed by language instead.
+  // a multilingual read is always an array, a write must not be: LDKit updates an array property
+  // through an array or an $add/$set/$remove object, and a multilingual value is keyed by language
   const multilingual = datatypeMapping(field.datatype).multilingual === true;
   if ((mode === 'read' && multilingual) || (field.many && !multilingual)) {
     property['@array'] = true;

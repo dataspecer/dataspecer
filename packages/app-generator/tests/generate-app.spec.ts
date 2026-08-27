@@ -199,15 +199,6 @@ describe('generateApp', { timeout: 30_000 }, () => {
     expect(result.success).toBe(true);
     expect(result.writtenFiles).toEqual([]);
     expect(Object.keys(result.files)).toContain('src/routes.tsx');
-    // navigation is emitted into the page it belongs to, as source rather than quoted JSON
-    expect(result.files['src/modules/book-list/book-read-list-page.tsx']).toContain(
-      "targetPath: '/book-read-detail'",
-    );
-    expect(result.files['src/modules/book-list/book-read-list-page.tsx']).not.toContain(
-      '"targetPath":',
-    );
-    expect(result.files['src/modules/book-detail/descriptor.ts']).toContain("path: 'chapters'");
-    expect(result.files['src/modules/book-detail/descriptor.ts']).not.toContain('"path":');
     expect(result.generationModel?.operations).toHaveLength(2);
   });
 

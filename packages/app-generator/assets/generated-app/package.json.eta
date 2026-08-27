@@ -19,6 +19,7 @@
     "@mui/material": "^9.3.1",
     "@mui/x-date-pickers": "^9.11.0",
     "@mui/x-data-grid": "^9.11.0",
+    "asynciterator": "^3.10.0",
     "ldkit": "^2.7.2",
     "luxon": "^3.7.2",
     "react": "^19.2.8",

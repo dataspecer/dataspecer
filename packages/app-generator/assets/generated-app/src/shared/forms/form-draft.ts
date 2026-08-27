@@ -55,6 +55,12 @@ export function createEntityDraft(
       entity[field.propertyName] = values;
       continue;
     }
+    // a checkbox cannot tell the difference between unset and false, so a required boolean starts
+    // at false rather than reporting itself as missing
+    if (count > 0 && field.formControl === 'checkbox' && entity[field.propertyName] === undefined) {
+      entity[field.propertyName] = false;
+      continue;
+    }
     if (count > 0 && isCompositionField(field)) {
       const value = createFieldValue(field, target, aggregateRegistry, instanceBaseIri);
       if (value !== undefined) {

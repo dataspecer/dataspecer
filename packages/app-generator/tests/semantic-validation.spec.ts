@@ -1194,7 +1194,6 @@ function expectViolations(graph: ApplicationGraph, code: ViolationCode) {
   );
 }
 
-/** The graph still generates, but the reported part does not do what the graph asks for. */
 function expectWarnings(graph: ApplicationGraph, code: ViolationCode) {
   const result = validatePreparedGraph(graph);
 

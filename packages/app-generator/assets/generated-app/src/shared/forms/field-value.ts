@@ -58,7 +58,13 @@ function formatObjectValue(
   }
   const id = referenceIdOf(value);
   if (id !== undefined) {
-    return id;
+    const expectedDisplayDetails =
+      field.kind === 'association' &&
+      field.associationKind !== 'composition' &&
+      field.fields?.some(
+        (nested) => nested.kind === 'primitive' && Object.hasOwn(value, nested.propertyName),
+      );
+    return expectedDisplayDetails ? `${id} (details unavailable)` : id;
   }
   return JSON.stringify(value);
 }

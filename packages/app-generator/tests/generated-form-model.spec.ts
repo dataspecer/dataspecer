@@ -345,7 +345,7 @@ describe('generated recursive form model', () => {
 
     expect(draft.tags).toEqual([]);
     expect(draft.scores).toEqual([undefined, undefined]);
-    expect(draft).not.toHaveProperty('active');
+    expect(draft.active).toBe(false);
     expect(draft).not.toHaveProperty('owner');
     expect((draft.children as EntityRecord[])[0]).not.toHaveProperty('name');
   });

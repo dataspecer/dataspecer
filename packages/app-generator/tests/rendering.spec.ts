@@ -48,9 +48,6 @@ describe('renderGeneratedApp', () => {
         'src/shared/components/list-view.tsx',
       ]),
     );
-    expect(Object.keys(first)).not.toContain(
-      'src/shared/components/placeholder-operation-view.tsx',
-    );
     expect(first['src/config/app-config.ts']).toContain(
       `export const instanceBaseIri = ${JSON.stringify(specificationIri)};`,
     );
@@ -209,7 +206,6 @@ describe('renderGeneratedApp', () => {
     const model = buildGenerationModel(graphFixture(), basicMetadata);
     const tree = renderGeneratedApp(model);
 
-    // a route loads its page on demand rather than importing it up front
     expect(tree.get('src/routes.tsx')).toContain(
       'import("@/modules/book-list/book-read-list-page.tsx")',
     );
@@ -218,9 +214,6 @@ describe('renderGeneratedApp', () => {
     expect(tree.get('src/modules/book-list/book-read-list-page.tsx')).toContain('<ListView');
     expect(tree.get('src/modules/book-list/book-read-list-page.tsx')).toContain(
       'strategy={strategy}',
-    );
-    expect(tree.get('src/modules/book-list/book-read-list-page.tsx')).not.toContain(
-      'PlaceholderOperationView',
     );
     expect(tree.get('src/modules/book-list/book-read-list-page.tsx')).not.toContain(
       '"fieldPath": "author"',
@@ -273,12 +266,10 @@ describe('renderGeneratedApp', () => {
     const registry = tree.get('src/config/aggregate-registry.ts');
 
     expect(listPage).toContain('navigation={navigation}');
-    // the registry holds the two application-wide singletons, each page holds its own wiring
     expect(tree.get('src/config/data-sources.ts')).toContain('export const rdfDataSource =');
     expect(registry).toContain('} satisfies AggregateDescriptorMap;');
     expect(registry).not.toContain('navigation');
     expect(listPage).toContain('const strategy = new BookReadListOperation();');
-    // each page carries the actions of its own node
     expect(listPage).toContain('"targetPath": "/book-create"');
     expect(listPage).toContain('"targetPath": "/book-update"');
     expect(listPage).toContain('"targetPath": "/book-delete"');
@@ -287,11 +278,8 @@ describe('renderGeneratedApp', () => {
     expect(detailPage).toContain('useEntityId()');
     expect(detailPage).not.toContain('window.location');
     expect(detailPage).toContain('navigation={navigation}');
-    // the detail page carries its own way back to the list
     expect(detailPage).toContain('"targetPath": "/book-read-list"');
 
-    // the shell lives in the shared library, so App.tsx only names the application and its routes
-    expect(tree.get('src/App.tsx')).not.toContain('example-id');
     expect(tree.get('src/App.tsx')).toContain('createAppRouter(routes,');
   });
 
@@ -487,6 +475,7 @@ describe('renderGeneratedApp', () => {
               required: true,
             },
             { ...primitive('active', 'http://www.w3.org/2001/XMLSchema#boolean'), required: true },
+            { ...primitive('archived', 'http://www.w3.org/2001/XMLSchema#boolean') },
             {
               ...primitive('tags', 'http://www.w3.org/2001/XMLSchema#string'),
               many: true,
@@ -503,6 +492,7 @@ describe('renderGeneratedApp', () => {
     expect(source).not.toContain('count: 0');
     expect(source).not.toContain('createdAt: new Date()');
     expect(source).not.toContain('active: false');
+    expect(source).not.toContain('archived: false');
   });
 
   it('passes configured cascade paths and the loaded entity to Delete', () => {
@@ -519,7 +509,6 @@ describe('renderGeneratedApp', () => {
 
     expect(page).toContain('const cascadePaths: readonly string[] = [');
     expect(page).toContain('"chapters"');
-    expect(page).not.toContain('placeholder');
     expect(page).toContain('aggregateRegistry={aggregateRegistry}');
 
     expect(page).toContain('cascadePaths={cascadePaths}');

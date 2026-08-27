@@ -22,7 +22,6 @@ import type {
 } from '../assets/generated-app/src/shared/types/aggregate.ts';
 import type { CompositeMutationStep } from '../assets/generated-app/src/shared/operations/composite-mutation-plan.ts';
 
-/** Narrows a plan step to the upsert member, which carries payload and specializationIri. */
 function upsert(step: CompositeMutationStep | undefined) {
   return step && step.kind !== 'delete' ? step : undefined;
 }
