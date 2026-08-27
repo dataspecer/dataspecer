@@ -1,0 +1,451 @@
+# Instance data for the book library example specification.
+
+@prefix lib:  <https://example.org/vocabulary/library#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix book: <https://example.org/library/book/> .
+@prefix a:    <https://example.org/library/author/> .
+@prefix pub:  <https://example.org/library/publisher/> .
+@prefix addr: <https://example.org/library/address/> .
+@prefix cov:  <https://example.org/library/cover/> .
+@prefix ed:   <https://example.org/library/edition/> .
+@prefix g:    <https://example.org/library/genre/> .
+@prefix col:  <https://example.org/library/collection/> .
+@prefix ent:  <https://example.org/library/collection-entry/> .
+@prefix con:  <https://example.org/library/contributor/> .
+@prefix ag:   <https://example.org/library/agent/> .
+
+
+g:fiction a lib:Genre ;
+  lib:genreName "Fiction"@en, "Beletrie"@cs ;
+  lib:genreCode "FIC" .
+
+g:science-fiction a lib:Genre ;
+  lib:genreName "Science fiction"@en, "Sci-fi"@cs ;
+  lib:genreCode "SCIFI" ;
+  lib:broaderGenre g:fiction .
+
+g:fantasy a lib:Genre ;
+  lib:genreName "Fantasy"@en, "Fantasy"@cs ;
+  lib:genreCode "FAN" ;
+  lib:broaderGenre g:fiction .
+
+g:detective a lib:Genre ;
+  lib:genreName "Detective story"@en, "Detektivka"@cs ;
+  lib:genreCode "DET" ;
+  lib:broaderGenre g:fiction .
+
+g:non-fiction a lib:Genre ;
+  lib:genreName "Non-fiction"@en, "Literatura faktu"@cs ;
+  lib:genreCode "NON" .
+
+g:history a lib:Genre ;
+  lib:genreName "History"@en, "Historie"@cs ;
+  lib:genreCode "HIS" ;
+  lib:broaderGenre g:non-fiction .
+
+
+pub:argo a lib:Publisher ;
+  lib:publisherName "Argo" ;
+  lib:homepage "https://argo.cz"^^xsd:anyURI ;
+  lib:address addr:argo .
+
+addr:argo a lib:PublisherAddress ;
+  lib:street "Milíčova 13" ;
+  lib:city "Praha" ;
+  lib:country "Česko" .
+
+pub:academia a lib:Publisher ;
+  lib:publisherName "Academia" ;
+  lib:homepage "https://www.academia.cz"^^xsd:anyURI ;
+  lib:address addr:academia .
+
+addr:academia a lib:PublisherAddress ;
+  lib:street "Vodičkova 40" ;
+  lib:city "Praha" ;
+  lib:country "Česko" .
+
+pub:gollancz a lib:Publisher ;
+  lib:publisherName "Gollancz" ;
+  lib:address addr:gollancz .
+
+addr:gollancz a lib:PublisherAddress ;
+  lib:street "Carmelite House, 50 Victoria Embankment" ;
+  lib:city "London" ;
+  lib:country "United Kingdom" .
+
+
+a:capek a lib:Author ;
+  lib:authorName "Karel Čapek" ;
+  lib:birthDate "1890-01-09"^^xsd:date ;
+  lib:deathDate "1938-12-25"^^xsd:date .
+
+a:hasek a lib:Author ;
+  lib:authorName "Jaroslav Hašek" ;
+  lib:alias "Josef Vaněk" ;
+  lib:birthDate "1883-04-30"^^xsd:date ;
+  lib:deathDate "1923-01-03"^^xsd:date .
+
+a:le-guin a lib:Author ;
+  lib:authorName "Ursula K. Le Guin" ;
+  lib:birthDate "1929-10-21"^^xsd:date ;
+  lib:deathDate "2018-01-22"^^xsd:date .
+
+a:pratchett a lib:Author ;
+  lib:authorName "Terry Pratchett" ;
+  lib:birthDate "1948-04-28"^^xsd:date ;
+  lib:deathDate "2015-03-12"^^xsd:date .
+
+a:gaiman a lib:Author ;
+  lib:authorName "Neil Gaiman" ;
+  lib:alias "Neil Richard Gaiman" ;
+  lib:birthDate "1960-11-10"^^xsd:date .
+
+a:stingl a lib:Author ;
+  lib:authorName "Miloslav Stingl" ;
+  lib:alias "Cestovatel Stingl", "Okima" ;
+  lib:birthDate "1930-12-19"^^xsd:date ;
+  lib:deathDate "2020-05-11"^^xsd:date .
+
+
+book:valka-s-mloky a lib:Book ;
+  lib:title "Válka s mloky" ;
+  lib:description "Satirický román o objevu inteligentních mloků."@cs,
+                  "A satirical novel about the discovery of intelligent newts."@en ;
+  lib:isbn "978-80-257-1234-5" ;
+  lib:numberOfPages 272 ;
+  lib:price 349.00 ;
+  lib:inPrint true ;
+  lib:internalCode "ARG-1936-001" ;
+  lib:keyword "satira", "mloci", "dystopie" ;
+  lib:author a:capek ;
+  lib:publisher pub:argo ;
+  lib:genre g:science-fiction, g:fiction ;
+  lib:coverInfo cov:valka-s-mloky ;
+  lib:edition ed:valka-s-mloky-1, ed:valka-s-mloky-2 .
+
+cov:valka-s-mloky a lib:CoverInfo ;
+  lib:imageUrl "https://example.org/covers/valka-s-mloky.jpg"^^xsd:anyURI ;
+  lib:dominantColor "#1f3a5f" .
+
+ed:valka-s-mloky-1 a lib:Edition ;
+  lib:editionNumber 1 ;
+  lib:publishedYear 1936 ;
+  lib:editionFormat "hardcover" .
+
+ed:valka-s-mloky-2 a lib:Edition ;
+  lib:editionNumber 2 ;
+  lib:publishedYear 2018 ;
+  lib:editionFormat "paperback" ;
+  lib:contributor con:valka-illustrator, con:valka-editor .
+
+con:valka-illustrator a lib:Contributor ;
+  lib:role "illustrator" ;
+  lib:agent ag:josef-capek .
+
+con:valka-editor a lib:Contributor ;
+  lib:role "editor" ;
+  lib:agent ag:argo-redakce .
+
+ag:josef-capek a lib:Person ;
+  lib:agentName "Josef Čapek" ;
+  lib:birthYear 1887 .
+
+ag:argo-redakce a lib:Organization ;
+  lib:agentName "Argo, redakce" ;
+  lib:country "Česko" .
+
+book:rur a lib:Book ;
+  lib:title "R.U.R." ;
+  lib:description "Divadelní hra, která světu dala slovo robot."@cs,
+                  "The play that gave the world the word robot."@en ;
+  lib:isbn "978-80-257-2234-2" ;
+  lib:numberOfPages 96 ;
+  lib:price 199.00 ;
+  lib:inPrint true ;
+  lib:keyword "roboti", "drama" ;
+  lib:author a:capek ;
+  lib:publisher pub:argo ;
+  lib:genre g:science-fiction ;
+  lib:coverInfo cov:rur ;
+  lib:edition ed:rur-1 .
+
+cov:rur a lib:CoverInfo ;
+  lib:dominantColor "#8b1a1a" .
+
+ed:rur-1 a lib:Edition ;
+  lib:editionNumber 1 ;
+  lib:publishedYear 1920 ;
+  lib:editionFormat "paperback" .
+
+book:svejk a lib:Book ;
+  lib:title "Osudy dobrého vojáka Švejka" ;
+  lib:description "Nedokončený satirický román z první světové války."@cs,
+                  "An unfinished satirical novel set in the First World War."@en ;
+  lib:isbn "978-80-200-1234-9" ;
+  lib:numberOfPages 752 ;
+  lib:price 599.00 ;
+  lib:inPrint true ;
+  lib:internalCode "ACA-1923-014" ;
+  lib:keyword "satira", "válka", "humor" ;
+  lib:author a:hasek ;
+  lib:publisher pub:academia ;
+  lib:genre g:fiction ;
+  lib:coverInfo cov:svejk ;
+  lib:edition ed:svejk-1 .
+
+cov:svejk a lib:CoverInfo ;
+  lib:imageUrl "https://example.org/covers/svejk.jpg"^^xsd:anyURI ;
+  lib:dominantColor "#c9a227" .
+
+ed:svejk-1 a lib:Edition ;
+  lib:editionNumber 1 ;
+  lib:publishedYear 1923 ;
+  lib:editionFormat "hardcover" .
+
+book:levice-tmy a lib:Book ;
+  lib:title "Levá ruka tmy" ;
+  lib:description "Vyslanec na planetě, kde pohlaví není stálé."@cs,
+                  "An envoy on a world where gender is not fixed."@en ;
+  lib:isbn "978-0-441-00731-4" ;
+  lib:numberOfPages 304 ;
+  lib:price 429.50 ;
+  lib:inPrint false ;
+  lib:keyword "gender", "první kontakt" ;
+  lib:author a:le-guin ;
+  lib:publisher pub:gollancz ;
+  lib:genre g:science-fiction ;
+  lib:coverInfo cov:levice-tmy ;
+  lib:edition ed:levice-tmy-1 .
+
+cov:levice-tmy a lib:CoverInfo ;
+  lib:dominantColor "#2b2b2b" .
+
+ed:levice-tmy-1 a lib:Edition ;
+  lib:editionNumber 1 ;
+  lib:publishedYear 1969 ;
+  lib:contributor con:levice-translator .
+
+con:levice-translator a lib:Contributor ;
+  lib:role "translator" ;
+  lib:agent ag:petr-kotrle .
+
+ag:petr-kotrle a lib:Person ;
+  lib:agentName "Petr Kotrle" ;
+  lib:birthYear 1965 .
+
+book:zememori a lib:Book ;
+  lib:title "Čaroděj Zeměmoří" ;
+  lib:isbn "978-0-553-38304-1" ;
+  lib:numberOfPages 208 ;
+  lib:inPrint true ;
+  lib:keyword "magie", "škola" ;
+  lib:author a:le-guin ;
+  lib:publisher pub:gollancz ;
+  lib:genre g:fantasy ;
+  lib:coverInfo cov:zememori ;
+  lib:edition ed:zememori-1 .
+
+cov:zememori a lib:CoverInfo ;
+  lib:dominantColor "#0f5132" .
+
+ed:zememori-1 a lib:Edition ;
+  lib:editionNumber 1 ;
+  lib:publishedYear 1968 ;
+  lib:editionFormat "paperback" .
+
+book:barva-kouzel a lib:Book ;
+  lib:title "Barva kouzel" ;
+  lib:description "První kniha ze Zeměplochy."@cs,
+                  "The first Discworld novel."@en ;
+  lib:isbn "978-0-06-222567-3" ;
+  lib:numberOfPages 288 ;
+  lib:price 299.00 ;
+  lib:inPrint true ;
+  lib:keyword "humor", "zeměplocha" ;
+  lib:author a:pratchett ;
+  lib:publisher pub:gollancz ;
+  lib:genre g:fantasy ;
+  lib:coverInfo cov:barva-kouzel ;
+  lib:edition ed:barva-kouzel-1, ed:barva-kouzel-2 .
+
+cov:barva-kouzel a lib:CoverInfo ;
+  lib:imageUrl "https://example.org/covers/barva-kouzel.jpg"^^xsd:anyURI ;
+  lib:dominantColor "#6a0dad" .
+
+ed:barva-kouzel-1 a lib:Edition ;
+  lib:editionNumber 1 ;
+  lib:publishedYear 1983 ;
+  lib:editionFormat "paperback" ;
+  lib:contributor con:barva-translator .
+
+con:barva-translator a lib:Contributor ;
+  lib:role "translator" ;
+  lib:agent ag:jan-kanturek .
+
+ag:jan-kanturek a lib:Person ;
+  lib:agentName "Jan Kantůrek" ;
+  lib:birthYear 1948 .
+
+ed:barva-kouzel-2 a lib:Edition ;
+  lib:editionNumber 2 ;
+  lib:publishedYear 2005 ;
+  lib:editionFormat "hardcover" .
+
+book:dobra-znameni a lib:Book ;
+  lib:title "Dobrá znamení" ;
+  lib:description "Anděl a démon se snaží zabránit apokalypse."@cs,
+                  "An angel and a demon try to stop the apocalypse."@en ;
+  lib:isbn "978-0-06-085398-3" ;
+  lib:numberOfPages 400 ;
+  lib:price 379.00 ;
+  lib:inPrint true ;
+  lib:keyword "humor", "apokalypsa" ;
+  lib:author a:pratchett, a:gaiman ;
+  lib:publisher pub:gollancz ;
+  lib:genre g:fantasy, g:fiction ;
+  lib:coverInfo cov:dobra-znameni ;
+  lib:edition ed:dobra-znameni-1 .
+
+cov:dobra-znameni a lib:CoverInfo ;
+  lib:dominantColor "#e63946" .
+
+ed:dobra-znameni-1 a lib:Edition ;
+  lib:editionNumber 1 ;
+  lib:publishedYear 1990 ;
+  lib:editionFormat "paperback" .
+
+book:americti-bohove a lib:Book ;
+  lib:title "Američtí bohové" ;
+  lib:isbn "978-0-380-97365-8" ;
+  lib:numberOfPages 635 ;
+  lib:price 499.00 ;
+  lib:inPrint true ;
+  lib:internalCode "GOL-2001-077" ;
+  lib:keyword "mytologie", "road trip", "bohové" ;
+  lib:author a:gaiman ;
+  lib:publisher pub:gollancz ;
+  lib:genre g:fantasy ;
+  lib:coverInfo cov:americti-bohove ;
+  lib:edition ed:americti-bohove-1 .
+
+cov:americti-bohove a lib:CoverInfo ;
+  lib:dominantColor "#264653" .
+
+ed:americti-bohove-1 a lib:Edition ;
+  lib:editionNumber 1 ;
+  lib:publishedYear 2001 ;
+  lib:editionFormat "hardcover" .
+
+book:indiani a lib:Book ;
+  lib:title "Indiáni bez tomahavků" ;
+  lib:description "Populárně naučná kniha o indiánských kulturách."@cs ;
+  lib:isbn "978-80-200-0987-5" ;
+  lib:numberOfPages 480 ;
+  lib:price 549.00 ;
+  lib:inPrint false ;
+  lib:keyword "etnografie", "amerika" ;
+  lib:author a:stingl ;
+  lib:publisher pub:academia ;
+  lib:genre g:non-fiction ;
+  lib:coverInfo cov:indiani ;
+  lib:edition ed:indiani-1 .
+
+cov:indiani a lib:CoverInfo ;
+  lib:dominantColor "#a0522d" .
+
+ed:indiani-1 a lib:Edition ;
+  lib:editionNumber 1 ;
+  lib:publishedYear 1966 ;
+  lib:editionFormat "hardcover" .
+
+book:sifra a lib:Book ;
+  lib:title "Zahrada písmen" ;
+  lib:isbn "978-80-257-3311-1" ;
+  lib:numberOfPages 224 ;
+  lib:inPrint true ;
+  lib:keyword "detektivka" ;
+  lib:author a:capek ;
+  lib:publisher pub:argo ;
+  lib:genre g:detective ;
+  lib:coverInfo cov:sifra ;
+  lib:edition ed:sifra-1 .
+
+cov:sifra a lib:CoverInfo ;
+  lib:dominantColor "#4a4e69" .
+
+ed:sifra-1 a lib:Edition ;
+  lib:editionNumber 1 ;
+  lib:publishedYear 1929 .
+
+book:dejiny-ceska a lib:Book ;
+  lib:title "Stručné dějiny Česka" ;
+  lib:description "Přehled českých dějin pro školy."@cs,
+                  "A short history of the Czech lands."@en ;
+  lib:isbn "978-80-200-2211-9" ;
+  lib:numberOfPages 320 ;
+  lib:price 389.00 ;
+  lib:inPrint true ;
+  lib:keyword "dějiny", "česko" ;
+  lib:author a:stingl ;
+  lib:genre g:history ;
+  lib:coverInfo cov:dejiny-ceska ;
+  lib:edition ed:dejiny-ceska-1 .
+
+cov:dejiny-ceska a lib:CoverInfo ;
+  lib:dominantColor "#7f5539" .
+
+ed:dejiny-ceska-1 a lib:Edition ;
+  lib:editionNumber 1 ;
+  lib:publishedYear 2011 ;
+  lib:editionFormat "paperback" .
+
+book:vlastnimi-slovy a lib:Book ;
+  lib:title "Hovory s T. G. Masarykem" ;
+  lib:isbn "978-80-257-0455-5" ;
+  lib:numberOfPages 368 ;
+  lib:price 459.00 ;
+  lib:inPrint true ;
+  lib:keyword "rozhovory", "dějiny" ;
+  lib:author a:capek ;
+  lib:publisher pub:argo ;
+  lib:genre g:non-fiction, g:history ;
+  lib:coverInfo cov:vlastnimi-slovy ;
+  lib:edition ed:vlastnimi-slovy-1 .
+
+cov:vlastnimi-slovy a lib:CoverInfo ;
+  lib:dominantColor "#3d405b" .
+
+ed:vlastnimi-slovy-1 a lib:Edition ;
+  lib:editionNumber 1 ;
+  lib:publishedYear 1935 ;
+  lib:editionFormat "hardcover" .
+
+
+col:czech-classics a lib:BookCollection ;
+  lib:collectionName "Czech classics" ;
+  lib:lastUpdated "2026-03-14T10:15:00"^^xsd:dateTime ;
+  lib:entry ent:czech-1, ent:czech-2, ent:czech-3 .
+
+ent:czech-1 a lib:CollectionEntry ;
+  lib:position 1 ;
+  lib:entryBook book:valka-s-mloky .
+
+ent:czech-2 a lib:CollectionEntry ;
+  lib:position 2 ;
+  lib:entryBook book:svejk .
+
+ent:czech-3 a lib:CollectionEntry ;
+  lib:position 3 ;
+  lib:entryBook book:rur .
+
+col:weekend-reading a lib:BookCollection ;
+  lib:collectionName "Weekend reading" ;
+  lib:entry ent:weekend-1, ent:weekend-2 .
+
+ent:weekend-1 a lib:CollectionEntry ;
+  lib:position 1 ;
+  lib:entryBook book:barva-kouzel .
+
+ent:weekend-2 a lib:CollectionEntry ;
+  lib:position 2 ;
+  lib:entryBook book:dobra-znameni .

@@ -1,6 +1,6 @@
-# NKOD sample data for the NKOD demo specification, flattened into the default graph.
-# Source: dump-small.trig (one named graph per dataset in the original). Generated apps query
-# the default graph, so the graph structure is intentionally dropped here.
+# NKOD sample data for the NKOD dump. The original has one named graph per dataset, generated
+# applications only query the default graph, so everything is flattened into it here.
+
 <https://data.gov.cz/zdroj/datové-sady/00282651/1015286509> a <http://www.w3.org/ns/dcat#Dataset> , <https://data.gov.cz/slovník/nkod/typ-datové-sady-dle-zdroje/Formulář> ;
 	<http://purl.org/dc/terms/title> "Úřední deska města Šlapanice"@cs , "Official bulletin board"@en ;
 	<http://purl.org/dc/terms/description> "Tato datová sada obsahuje data z úředních desek dle Otevřené formální normy Úřední desky (https://ofn.gov.cz/úřední-desky/2021-07-20/)."@cs , "This dataset contains information from official bulletin boards according to the formal open standard."@en ;

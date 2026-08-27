@@ -1,0 +1,264 @@
+# Instance data for the application graph meta example.
+#
+# The first graph is the meta application itself: the graph that generates the application which
+# displays this data.
+
+@prefix ag:   <https://dataspecer.com/vocabulary/application-graph#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix g:    <https://dataspecer.com/data/application-graph/> .
+@prefix n:    <https://dataspecer.com/data/node/> .
+@prefix e:    <https://dataspecer.com/data/edge/> .
+@prefix ds:   <https://dataspecer.com/data/datasource/> .
+@prefix cfg:  <https://dataspecer.com/data/node-configuration/> .
+@prefix as:   <https://dataspecer.com/data/association-setting/> .
+@prefix del:  <https://dataspecer.com/data/delete-setting/> .
+@prefix op:   <https://dataspecer.com/vocabulary/application-graph/operation/> .
+@prefix et:   <https://dataspecer.com/vocabulary/application-graph/edge-type/> .
+@prefix dt:   <https://dataspecer.com/vocabulary/application-graph/data-source-type/> .
+@prefix ak:   <https://dataspecer.com/vocabulary/application-graph/association-kind/> .
+@prefix dp:   <https://dataspecer.com/vocabulary/application-graph/delete-policy/> .
+
+op:Create a ag:Operation ; ag:operationCode "Create" ; ag:operationLabel "Create"@en, "Vytvořit"@cs .
+op:ReadList a ag:Operation ; ag:operationCode "ReadList" ; ag:operationLabel "List"@en, "Seznam"@cs .
+op:ReadDetail a ag:Operation ; ag:operationCode "ReadDetail" ; ag:operationLabel "Detail"@en, "Detail"@cs .
+op:Update a ag:Operation ; ag:operationCode "Update" ; ag:operationLabel "Update"@en, "Upravit"@cs .
+op:Delete a ag:Operation ; ag:operationCode "Delete" ; ag:operationLabel "Delete"@en, "Smazat"@cs .
+
+et:transition a ag:EdgeType ; ag:edgeTypeCode "transition" ; ag:edgeTypeLabel "Transition"@en, "Přechod"@cs .
+et:redirect a ag:EdgeType ; ag:edgeTypeCode "redirect" ; ag:edgeTypeLabel "Redirect"@en, "Přesměrování"@cs .
+
+dt:rdf a ag:DataSourceType ; ag:dataSourceTypeCode "rdf" ; ag:dataSourceTypeLabel "RDF"@en, "RDF"@cs .
+
+ak:composition a ag:AssociationKind ; ag:associationKindCode "composition" ;
+  ag:associationKindLabel "Composition"@en, "Kompozice"@cs .
+ak:aggregation a ag:AssociationKind ; ag:associationKindCode "aggregation" ;
+  ag:associationKindLabel "Aggregation"@en, "Agregace"@cs .
+
+dp:cascade a ag:DeletePolicy ; ag:deletePolicyCode "cascade" ; ag:deletePolicyLabel "Cascade"@en, "Kaskáda"@cs .
+
+g:meta a ag:ApplicationGraph ;
+  ag:name "Application graph manager" ;
+  ag:dataSpecificationIri "6bde0d57-a210-4c4a-977b-0f7bec28b506" ;
+  ag:datasources ds:local ;
+  ag:nodes n:graphs-list, n:graphs-detail, n:graphs-create, n:graphs-update, n:graphs-delete, n:datasources-list, n:datasources-detail, n:datasources-create, n:datasources-update, n:datasources-delete, n:nodes-detail, n:nodes-update, n:edges-detail, n:edges-update ;
+  ag:edges e:graphs-list-transition-graphs-detail, e:graphs-list-transition-graphs-create, e:graphs-list-transition-graphs-update, e:graphs-list-transition-graphs-delete, e:graphs-detail-transition-graphs-update, e:graphs-detail-transition-graphs-delete, e:graphs-create-redirect-graphs-detail, e:graphs-update-redirect-graphs-detail, e:graphs-delete-redirect-graphs-list, e:datasources-list-transition-datasources-detail, e:datasources-list-transition-datasources-create, e:datasources-list-transition-datasources-update, e:datasources-list-transition-datasources-delete, e:datasources-detail-transition-datasources-update, e:datasources-detail-transition-datasources-delete, e:datasources-create-redirect-datasources-detail, e:datasources-update-redirect-datasources-detail, e:datasources-delete-redirect-datasources-list, e:nodes-detail-transition-nodes-update, e:nodes-update-redirect-nodes-detail, e:edges-detail-transition-edges-update, e:edges-update-redirect-edges-detail, e:graphs-detail-transition-datasources-detail, e:graphs-detail-transition-nodes-detail, e:graphs-detail-transition-edges-detail .
+
+ds:local a ag:DataSource ;
+  ag:datasourceIdentifier "local-fuseki" ;
+  ag:datasourceType dt:rdf ;
+  ag:endpoint "http://localhost:3030/app"^^xsd:anyURI .
+
+n:graphs-list a ag:Node ;
+  ag:nodeIdentifier "graphs.list" ;
+  ag:aggregateIri "85155348-08f2-48b8-95d6-b1d378ebbcf2" ;
+  ag:operation op:ReadList ;
+  ag:config cfg:graphs-list .
+
+cfg:graphs-list a ag:NodeConfiguration ;
+  ag:pageTitle "Application graphs" .
+
+n:graphs-detail a ag:Node ;
+  ag:nodeIdentifier "graphs.detail" ;
+  ag:aggregateIri "9c879ccb-9481-4041-9586-e3262402c3cb" ;
+  ag:operation op:ReadDetail ;
+  ag:config cfg:graphs-detail .
+
+cfg:graphs-detail a ag:NodeConfiguration ;
+  ag:pageTitle "Application graph" .
+
+n:graphs-create a ag:Node ;
+  ag:nodeIdentifier "graphs.create" ;
+  ag:aggregateIri "9c879ccb-9481-4041-9586-e3262402c3cb" ;
+  ag:operation op:Create ;
+  ag:config cfg:graphs-create .
+
+cfg:graphs-create a ag:NodeConfiguration ;
+  ag:pageTitle "New application graph" ;
+  ag:associations as:datasources-aggregation, as:nodes-composition, as:nodes-operation-aggregation, as:nodes-config-composition, as:nodes-config-associations-composition, as:nodes-config-associations-kind-aggregation, as:nodes-config-deleteRules-composition, as:nodes-config-deleteRules-policy-aggregation, as:edges-composition, as:edges-source-aggregation, as:edges-target-aggregation, as:edges-type-aggregation .
+
+n:graphs-update a ag:Node ;
+  ag:nodeIdentifier "graphs.update" ;
+  ag:aggregateIri "9c879ccb-9481-4041-9586-e3262402c3cb" ;
+  ag:operation op:Update ;
+  ag:config cfg:graphs-update .
+
+cfg:graphs-update a ag:NodeConfiguration ;
+  ag:pageTitle "Edit application graph" ;
+  ag:associations as:datasources-aggregation, as:nodes-composition, as:nodes-operation-aggregation, as:nodes-config-composition, as:nodes-config-associations-composition, as:nodes-config-associations-kind-aggregation, as:nodes-config-deleteRules-composition, as:nodes-config-deleteRules-policy-aggregation, as:edges-composition, as:edges-source-aggregation, as:edges-target-aggregation, as:edges-type-aggregation .
+
+n:graphs-delete a ag:Node ;
+  ag:nodeIdentifier "graphs.delete" ;
+  ag:aggregateIri "9c879ccb-9481-4041-9586-e3262402c3cb" ;
+  ag:operation op:Delete ;
+  ag:config cfg:graphs-delete .
+
+cfg:graphs-delete a ag:NodeConfiguration ;
+  ag:pageTitle "Delete application graph" ;
+  ag:deleteRules del:nodes-cascade, del:nodes-config-cascade, del:nodes-config-associations-cascade, del:nodes-config-deleteRules-cascade, del:edges-cascade .
+
+n:datasources-list a ag:Node ;
+  ag:nodeIdentifier "datasources.list" ;
+  ag:aggregateIri "8012c9ef-f253-46c3-92e7-ae93a34fecfc" ;
+  ag:operation op:ReadList ;
+  ag:config cfg:datasources-list .
+
+cfg:datasources-list a ag:NodeConfiguration ;
+  ag:pageTitle "Data sources" .
+
+n:datasources-detail a ag:Node ;
+  ag:nodeIdentifier "datasources.detail" ;
+  ag:aggregateIri "8012c9ef-f253-46c3-92e7-ae93a34fecfc" ;
+  ag:operation op:ReadDetail ;
+  ag:config cfg:datasources-detail .
+
+cfg:datasources-detail a ag:NodeConfiguration ;
+  ag:pageTitle "Data source" .
+
+n:datasources-create a ag:Node ;
+  ag:nodeIdentifier "datasources.create" ;
+  ag:aggregateIri "8012c9ef-f253-46c3-92e7-ae93a34fecfc" ;
+  ag:operation op:Create ;
+  ag:config cfg:datasources-create .
+
+cfg:datasources-create a ag:NodeConfiguration ;
+  ag:pageTitle "New data source" ;
+  ag:associations as:type-aggregation .
+
+n:datasources-update a ag:Node ;
+  ag:nodeIdentifier "datasources.update" ;
+  ag:aggregateIri "8012c9ef-f253-46c3-92e7-ae93a34fecfc" ;
+  ag:operation op:Update ;
+  ag:config cfg:datasources-update .
+
+cfg:datasources-update a ag:NodeConfiguration ;
+  ag:pageTitle "Edit data source" ;
+  ag:associations as:type-aggregation .
+
+n:datasources-delete a ag:Node ;
+  ag:nodeIdentifier "datasources.delete" ;
+  ag:aggregateIri "8012c9ef-f253-46c3-92e7-ae93a34fecfc" ;
+  ag:operation op:Delete ;
+  ag:config cfg:datasources-delete .
+
+cfg:datasources-delete a ag:NodeConfiguration ;
+  ag:pageTitle "Delete data source" .
+
+n:nodes-detail a ag:Node ;
+  ag:nodeIdentifier "nodes.detail" ;
+  ag:aggregateIri "0b6b64c1-5b64-439b-8bae-27637248e866" ;
+  ag:operation op:ReadDetail ;
+  ag:config cfg:nodes-detail .
+
+cfg:nodes-detail a ag:NodeConfiguration ;
+  ag:pageTitle "Node" .
+
+n:nodes-update a ag:Node ;
+  ag:nodeIdentifier "nodes.update" ;
+  ag:aggregateIri "0b6b64c1-5b64-439b-8bae-27637248e866" ;
+  ag:operation op:Update ;
+  ag:config cfg:nodes-update .
+
+cfg:nodes-update a ag:NodeConfiguration ;
+  ag:pageTitle "Edit node" ;
+  ag:associations as:operation-aggregation, as:config-composition, as:config-associations-composition, as:config-associations-kind-aggregation, as:config-deleteRules-composition, as:config-deleteRules-policy-aggregation, as:incomingEdges-aggregation .
+
+n:edges-detail a ag:Node ;
+  ag:nodeIdentifier "edges.detail" ;
+  ag:aggregateIri "c3cde8de-64b3-4212-a549-adbbf22923f8" ;
+  ag:operation op:ReadDetail ;
+  ag:config cfg:edges-detail .
+
+cfg:edges-detail a ag:NodeConfiguration ;
+  ag:pageTitle "Edge" .
+
+n:edges-update a ag:Node ;
+  ag:nodeIdentifier "edges.update" ;
+  ag:aggregateIri "c3cde8de-64b3-4212-a549-adbbf22923f8" ;
+  ag:operation op:Update ;
+  ag:config cfg:edges-update .
+
+cfg:edges-update a ag:NodeConfiguration ;
+  ag:pageTitle "Edit edge" ;
+  ag:associations as:source-aggregation, as:target-aggregation, as:type-aggregation .
+
+as:datasources-aggregation a ag:AssociationSetting ; ag:associationPath "datasources" ; ag:associationKind ak:aggregation .
+as:nodes-composition a ag:AssociationSetting ; ag:associationPath "nodes" ; ag:associationKind ak:composition .
+as:nodes-operation-aggregation a ag:AssociationSetting ; ag:associationPath "nodes.operation" ; ag:associationKind ak:aggregation .
+as:nodes-config-composition a ag:AssociationSetting ; ag:associationPath "nodes.config" ; ag:associationKind ak:composition .
+as:nodes-config-associations-composition a ag:AssociationSetting ; ag:associationPath "nodes.config.associations" ; ag:associationKind ak:composition .
+as:nodes-config-associations-kind-aggregation a ag:AssociationSetting ; ag:associationPath "nodes.config.associations.kind" ; ag:associationKind ak:aggregation .
+as:nodes-config-deleteRules-composition a ag:AssociationSetting ; ag:associationPath "nodes.config.deleteRules" ; ag:associationKind ak:composition .
+as:nodes-config-deleteRules-policy-aggregation a ag:AssociationSetting ; ag:associationPath "nodes.config.deleteRules.policy" ; ag:associationKind ak:aggregation .
+as:edges-composition a ag:AssociationSetting ; ag:associationPath "edges" ; ag:associationKind ak:composition .
+as:edges-source-aggregation a ag:AssociationSetting ; ag:associationPath "edges.source" ; ag:associationKind ak:aggregation .
+as:edges-target-aggregation a ag:AssociationSetting ; ag:associationPath "edges.target" ; ag:associationKind ak:aggregation .
+as:edges-type-aggregation a ag:AssociationSetting ; ag:associationPath "edges.type" ; ag:associationKind ak:aggregation .
+del:nodes-cascade a ag:DeleteSetting ; ag:deletePath "nodes" ; ag:deletePolicy dp:cascade .
+del:nodes-config-cascade a ag:DeleteSetting ; ag:deletePath "nodes.config" ; ag:deletePolicy dp:cascade .
+del:nodes-config-associations-cascade a ag:DeleteSetting ; ag:deletePath "nodes.config.associations" ; ag:deletePolicy dp:cascade .
+del:nodes-config-deleteRules-cascade a ag:DeleteSetting ; ag:deletePath "nodes.config.deleteRules" ; ag:deletePolicy dp:cascade .
+del:edges-cascade a ag:DeleteSetting ; ag:deletePath "edges" ; ag:deletePolicy dp:cascade .
+as:type-aggregation a ag:AssociationSetting ; ag:associationPath "type" ; ag:associationKind ak:aggregation .
+as:operation-aggregation a ag:AssociationSetting ; ag:associationPath "operation" ; ag:associationKind ak:aggregation .
+as:config-composition a ag:AssociationSetting ; ag:associationPath "config" ; ag:associationKind ak:composition .
+as:config-associations-composition a ag:AssociationSetting ; ag:associationPath "config.associations" ; ag:associationKind ak:composition .
+as:config-associations-kind-aggregation a ag:AssociationSetting ; ag:associationPath "config.associations.kind" ; ag:associationKind ak:aggregation .
+as:config-deleteRules-composition a ag:AssociationSetting ; ag:associationPath "config.deleteRules" ; ag:associationKind ak:composition .
+as:config-deleteRules-policy-aggregation a ag:AssociationSetting ; ag:associationPath "config.deleteRules.policy" ; ag:associationKind ak:aggregation .
+as:incomingEdges-aggregation a ag:AssociationSetting ; ag:associationPath "incomingEdges" ; ag:associationKind ak:aggregation .
+as:source-aggregation a ag:AssociationSetting ; ag:associationPath "source" ; ag:associationKind ak:aggregation .
+as:target-aggregation a ag:AssociationSetting ; ag:associationPath "target" ; ag:associationKind ak:aggregation .
+
+e:graphs-list-transition-graphs-detail a ag:Edge ; ag:edgeIdentifier "graphs.list-transition-graphs.detail" ; ag:source n:graphs-list ; ag:target n:graphs-detail ; ag:edgeType et:transition .
+e:graphs-list-transition-graphs-create a ag:Edge ; ag:edgeIdentifier "graphs.list-transition-graphs.create" ; ag:source n:graphs-list ; ag:target n:graphs-create ; ag:edgeType et:transition .
+e:graphs-list-transition-graphs-update a ag:Edge ; ag:edgeIdentifier "graphs.list-transition-graphs.update" ; ag:source n:graphs-list ; ag:target n:graphs-update ; ag:edgeType et:transition .
+e:graphs-list-transition-graphs-delete a ag:Edge ; ag:edgeIdentifier "graphs.list-transition-graphs.delete" ; ag:source n:graphs-list ; ag:target n:graphs-delete ; ag:edgeType et:transition .
+e:graphs-detail-transition-graphs-update a ag:Edge ; ag:edgeIdentifier "graphs.detail-transition-graphs.update" ; ag:source n:graphs-detail ; ag:target n:graphs-update ; ag:edgeType et:transition .
+e:graphs-detail-transition-graphs-delete a ag:Edge ; ag:edgeIdentifier "graphs.detail-transition-graphs.delete" ; ag:source n:graphs-detail ; ag:target n:graphs-delete ; ag:edgeType et:transition .
+e:graphs-create-redirect-graphs-detail a ag:Edge ; ag:edgeIdentifier "graphs.create-redirect-graphs.detail" ; ag:source n:graphs-create ; ag:target n:graphs-detail ; ag:edgeType et:redirect .
+e:graphs-update-redirect-graphs-detail a ag:Edge ; ag:edgeIdentifier "graphs.update-redirect-graphs.detail" ; ag:source n:graphs-update ; ag:target n:graphs-detail ; ag:edgeType et:redirect .
+e:graphs-delete-redirect-graphs-list a ag:Edge ; ag:edgeIdentifier "graphs.delete-redirect-graphs.list" ; ag:source n:graphs-delete ; ag:target n:graphs-list ; ag:edgeType et:redirect .
+e:datasources-list-transition-datasources-detail a ag:Edge ; ag:edgeIdentifier "datasources.list-transition-datasources.detail" ; ag:source n:datasources-list ; ag:target n:datasources-detail ; ag:edgeType et:transition .
+e:datasources-list-transition-datasources-create a ag:Edge ; ag:edgeIdentifier "datasources.list-transition-datasources.create" ; ag:source n:datasources-list ; ag:target n:datasources-create ; ag:edgeType et:transition .
+e:datasources-list-transition-datasources-update a ag:Edge ; ag:edgeIdentifier "datasources.list-transition-datasources.update" ; ag:source n:datasources-list ; ag:target n:datasources-update ; ag:edgeType et:transition .
+e:datasources-list-transition-datasources-delete a ag:Edge ; ag:edgeIdentifier "datasources.list-transition-datasources.delete" ; ag:source n:datasources-list ; ag:target n:datasources-delete ; ag:edgeType et:transition .
+e:datasources-detail-transition-datasources-update a ag:Edge ; ag:edgeIdentifier "datasources.detail-transition-datasources.update" ; ag:source n:datasources-detail ; ag:target n:datasources-update ; ag:edgeType et:transition .
+e:datasources-detail-transition-datasources-delete a ag:Edge ; ag:edgeIdentifier "datasources.detail-transition-datasources.delete" ; ag:source n:datasources-detail ; ag:target n:datasources-delete ; ag:edgeType et:transition .
+e:datasources-create-redirect-datasources-detail a ag:Edge ; ag:edgeIdentifier "datasources.create-redirect-datasources.detail" ; ag:source n:datasources-create ; ag:target n:datasources-detail ; ag:edgeType et:redirect .
+e:datasources-update-redirect-datasources-detail a ag:Edge ; ag:edgeIdentifier "datasources.update-redirect-datasources.detail" ; ag:source n:datasources-update ; ag:target n:datasources-detail ; ag:edgeType et:redirect .
+e:datasources-delete-redirect-datasources-list a ag:Edge ; ag:edgeIdentifier "datasources.delete-redirect-datasources.list" ; ag:source n:datasources-delete ; ag:target n:datasources-list ; ag:edgeType et:redirect .
+e:nodes-detail-transition-nodes-update a ag:Edge ; ag:edgeIdentifier "nodes.detail-transition-nodes.update" ; ag:source n:nodes-detail ; ag:target n:nodes-update ; ag:edgeType et:transition .
+e:nodes-update-redirect-nodes-detail a ag:Edge ; ag:edgeIdentifier "nodes.update-redirect-nodes.detail" ; ag:source n:nodes-update ; ag:target n:nodes-detail ; ag:edgeType et:redirect .
+e:edges-detail-transition-edges-update a ag:Edge ; ag:edgeIdentifier "edges.detail-transition-edges.update" ; ag:source n:edges-detail ; ag:target n:edges-update ; ag:edgeType et:transition .
+e:edges-update-redirect-edges-detail a ag:Edge ; ag:edgeIdentifier "edges.update-redirect-edges.detail" ; ag:source n:edges-update ; ag:target n:edges-detail ; ag:edgeType et:redirect .
+e:graphs-detail-transition-datasources-detail a ag:Edge ; ag:edgeIdentifier "graphs.detail-transition-datasources.detail" ; ag:source n:graphs-detail ; ag:target n:datasources-detail ; ag:edgeType et:transition .
+e:graphs-detail-transition-nodes-detail a ag:Edge ; ag:edgeIdentifier "graphs.detail-transition-nodes.detail" ; ag:source n:graphs-detail ; ag:target n:nodes-detail ; ag:edgeType et:transition .
+e:graphs-detail-transition-edges-detail a ag:Edge ; ag:edgeIdentifier "graphs.detail-transition-edges.detail" ; ag:source n:graphs-detail ; ag:target n:edges-detail ; ag:edgeType et:transition .
+
+g:books a ag:ApplicationGraph ;
+  ag:name "Book library" ;
+  ag:dataSpecificationIri "5dafc08e-fab8-4c84-9631-9e5ab8e3b3a5" ;
+  ag:datasources ds:local ;
+  ag:nodes n:books-list, n:books-detail ;
+  ag:edges e:books-list-to-detail .
+
+ds:staging a ag:DataSource ;
+  ag:datasourceIdentifier "staging" ;
+  ag:datasourceType dt:rdf ;
+  ag:endpoint "https://staging.example.org/sparql"^^xsd:anyURI .
+
+n:books-list a ag:Node ;
+  ag:nodeIdentifier "books.list" ;
+  ag:aggregateIri "d4b5b211-d440-42b6-b82c-97fa7d14628b" ;
+  ag:operation op:ReadList ;
+  ag:config cfg:books-list .
+
+cfg:books-list a ag:NodeConfiguration ; ag:pageTitle "Books" .
+
+n:books-detail a ag:Node ;
+  ag:nodeIdentifier "books.detail" ;
+  ag:aggregateIri "0cb8193e-6dc1-4365-8318-074b4e0fb97c" ;
+  ag:operation op:ReadDetail .
+
+e:books-list-to-detail a ag:Edge ; ag:edgeIdentifier "books-list-to-detail" ;
+  ag:source n:books-list ; ag:target n:books-detail ; ag:edgeType et:transition .
