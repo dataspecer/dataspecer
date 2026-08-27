@@ -3,7 +3,7 @@ import type { GeneratedOperationDescriptor, GenerationModel } from '../generatio
 import type { RenderedAggregate } from './rendered-aggregate.ts';
 
 import { collectReachableAggregateIris } from '../generation-model/aggregate-reachability.ts';
-import { toOperationClassName } from '../utils/naming.ts';
+import { toOperationClassName, toPageActionsComponentName } from '../utils/naming.ts';
 import { toRenderedAggregate } from './rendered-aggregate.ts';
 
 export interface GeneratedAppRenderContext {
@@ -22,6 +22,7 @@ export interface RenderedPage {
   modelName: string;
   descriptorName: string;
   operationClassName: string;
+  pageActionsComponentName: string;
   strategyBaseName: string;
   strategyModuleName: string;
   resultTypeName: string;
@@ -75,6 +76,7 @@ export function buildRenderContext(model: GenerationModel): GeneratedAppRenderCo
         modelName: aggregate.modelName,
         descriptorName: aggregate.descriptorName,
         operationClassName: toOperationClassName(operation.id),
+        pageActionsComponentName: toPageActionsComponentName(operation.id),
         strategyBaseName: STRATEGY[operation.operation].className,
         strategyModuleName: STRATEGY[operation.operation].moduleName,
         resultTypeName: resultTypeName(operation.operation, aggregate.modelName),

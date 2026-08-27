@@ -52,10 +52,12 @@ export async function saveGraph(
 
 export type GenerateResult = { ok: true; archive: Blob } | { ok: false; violations: Violation[] };
 
-export async function generateApplication(iri: string): Promise<GenerateResult> {
-  const response = await fetch(
-    `${backendUrl}/app-generator/generate?iri=${encodeURIComponent(iri)}`,
-  );
+export async function generateApplication(graph: ApplicationGraph): Promise<GenerateResult> {
+  const response = await fetch(`${backendUrl}/app-generator/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(graph),
+  });
   if (response.status === 400) {
     const body = (await response.json().catch(() => null)) as { violations?: Violation[] } | null;
     const violations = body?.violations;

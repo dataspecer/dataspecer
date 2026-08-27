@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ComponentType } from 'react';
 import Accordion from '@mui/material/Accordion';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import AccordionSummary from '@mui/material/AccordionSummary';
@@ -62,12 +62,18 @@ export interface DetailViewProps<TModel extends EntityModel> {
   navigation: OperationNavigationDescriptor;
   id: string;
   languages: readonly string[];
+  additionalPageActions?: ComponentType<DetailPageActionsProps<TModel>>;
+}
+
+export interface DetailPageActionsProps<TModel extends EntityModel> {
+  item: TModel;
 }
 
 /** Reads one entity through its operation and shows its fields. */
 export function DetailView<TModel extends EntityModel>(props: DetailViewProps<TModel>) {
   const dataSource = useDataSource();
   const { title, aggregate, aggregateRegistry, strategy, navigation, id } = props;
+  const AdditionalPageActions = props.additionalPageActions;
   const [item, setItem] = useState<TModel | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -142,7 +148,12 @@ export function DetailView<TModel extends EntityModel>(props: DetailViewProps<TM
         <Typography variant="h5" component="h2" noWrap>
           {title}
         </Typography>
-        {item ? <ActionLinks actions={pageActions} entityId={item.id} /> : null}
+        {item ? (
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+            {AdditionalPageActions ? <AdditionalPageActions item={item} /> : null}
+            <ActionLinks actions={pageActions} entityId={item.id} />
+          </Stack>
+        ) : null}
       </Stack>
 
       {error !== null ? <Alert severity="error">{error}</Alert> : null}

@@ -30,13 +30,12 @@ export function EditorHeader({
     // the previous attempt says nothing about this one
     setGenerationViolations(null);
     try {
-      // the endpoint reads the saved blob, so flush pending writes before requesting generation
-      const { resourceIri, graph: current } = useEditorStore.getState();
-      if (resourceIri === null || current === null) {
+      const { graph: current } = useEditorStore.getState();
+      if (current === null) {
         return;
       }
       await flushAutosave();
-      const result = await generateApplication(resourceIri);
+      const result = await generateApplication(current);
       if (result.ok) {
         downloadBlob(result.archive, archiveFileName(current));
         if (shouldShowGenerateHelp()) {

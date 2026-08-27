@@ -39,6 +39,11 @@ export function toPageComponentName(nodeId: string): string {
   return `${toPascalIdentifier(nodeId, 'Operation')}Page`;
 }
 
+/** Names the component that holds the hand-written actions for a graph node's page. */
+export function toPageActionsComponentName(nodeId: string): string {
+  return `${toPascalIdentifier(nodeId, 'Operation')}PageActions`;
+}
+
 /** Names the operation strategy class generated for a graph node. */
 export function toOperationClassName(nodeId: string): string {
   return `${toPascalIdentifier(nodeId, 'Generated')}Operation`;

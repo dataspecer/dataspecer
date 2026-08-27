@@ -1,8 +1,10 @@
 <% if (it.page.operation.operation === "ReadList") { -%>
 import { ListView } from "@/shared/components/list-view.tsx";
+import { <%= it.page.pageActionsComponentName %>, additionalRowActions } from "./<%= it.page.operation.routeId %>-actions.tsx";
 <% } else if (it.page.operation.operation === "ReadDetail") { -%>
 import { DetailView } from "@/shared/components/detail-view.tsx";
 import { useEntityId } from "@/shared/navigation/use-location.ts";
+import { <%= it.page.pageActionsComponentName %> } from "./<%= it.page.operation.routeId %>-actions.tsx";
 <% } else if (it.page.operation.operation === "Create") { -%>
 import { CreateForm } from "@/shared/components/create-form.tsx";
 <% } else if (it.page.operation.operation === "Update") { -%>
@@ -43,6 +45,8 @@ export function <%= it.page.componentName %>() {
       strategy={strategy}
       navigation={navigation}
       languages={languages}
+      additionalPageActions={<%= it.page.pageActionsComponentName %>}
+      additionalRowActions={additionalRowActions}
     />
   );
 <% } else if (it.page.operation.operation === "ReadDetail") { -%>
@@ -57,6 +61,7 @@ export function <%= it.page.componentName %>() {
       navigation={navigation}
       id={id}
       languages={languages}
+      additionalPageActions={<%= it.page.pageActionsComponentName %>}
     />
   );
 <% } else if (it.page.operation.operation === "Create") { -%>

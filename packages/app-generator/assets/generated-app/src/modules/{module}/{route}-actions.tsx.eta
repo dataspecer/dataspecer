@@ -1,0 +1,35 @@
+import type { ReactNode } from "react";
+
+<% if (it.page.operation.operation === "ReadList") { -%>
+import type { ListRowActionComponent } from "@/shared/components/list-view.tsx";
+<% } else { -%>
+import type { DetailPageActionsProps } from "@/shared/components/detail-view.tsx";
+<% } -%>
+import type { <%= it.page.modelName %> } from "./model.ts";
+
+<% if (it.page.operation.operation === "ReadList") { -%>
+/**
+ * Adds custom controls to the list page's action bar.
+ *
+ * Replace `null` with buttons or other React elements.
+ */
+<% } else { -%>
+/**
+ * Adds custom controls to the detail page's action bar.
+ *
+ * Replace `null` with controls. The loaded entity is available as `_props.item`.
+ */
+<% } -%>
+export function <%= it.page.pageActionsComponentName %>(<% if (it.page.operation.operation === "ReadDetail") { %>
+  _props: DetailPageActionsProps<<%= it.page.modelName %>>,
+<% } %>): ReactNode {
+  return null;
+}
+<% if (it.page.operation.operation === "ReadList") { -%>
+
+/**
+ * Add row action components to this array. Each receives the row entity as `item` and a `tabIndex`
+ * for its interactive control.
+ */
+export const additionalRowActions: readonly ListRowActionComponent<<%= it.page.modelName %>>[] = [];
+<% } -%>

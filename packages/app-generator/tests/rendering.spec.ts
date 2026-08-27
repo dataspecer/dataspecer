@@ -38,7 +38,9 @@ describe('renderGeneratedApp', () => {
         'src/modules/book-list/model.ts',
         'src/modules/book-list/descriptor.ts',
         'src/modules/book-list/book-read-list-operation.ts',
+        'src/modules/book-list/book-read-list-actions.tsx',
         'src/modules/book-detail/book-read-detail-operation.ts',
+        'src/modules/book-detail/book-read-detail-actions.tsx',
         'src/modules/book-form/book-create-page.tsx',
         'src/modules/book-detail/book-read-detail-page.tsx',
         'src/modules/book-list/book-read-list-page.tsx',
@@ -215,6 +217,22 @@ describe('renderGeneratedApp', () => {
     expect(tree.get('src/modules/book-list/book-read-list-page.tsx')).toContain(
       'strategy={strategy}',
     );
+    expect(tree.get('src/modules/book-list/book-read-list-page.tsx')).toContain(
+      'additionalPageActions={BookReadListPageActions}',
+    );
+    expect(tree.get('src/modules/book-list/book-read-list-page.tsx')).toContain(
+      'additionalRowActions={additionalRowActions}',
+    );
+    expect(tree.get('src/modules/book-list/book-read-list-actions.tsx')).toContain(
+      'export function BookReadListPageActions(): ReactNode',
+    );
+    expect(tree.get('src/modules/book-list/book-read-list-actions.tsx')).toContain(
+      'export const additionalRowActions:',
+    );
+    expect(tree.get('src/modules/book-detail/book-read-detail-actions.tsx')).toContain(
+      'export function BookReadDetailPageActions(',
+    );
+    expect(tree.paths()).not.toContain('src/modules/book-form/book-create-actions.tsx');
     expect(tree.get('src/modules/book-list/book-read-list-page.tsx')).not.toContain(
       '"fieldPath": "author"',
     );
@@ -230,6 +248,7 @@ describe('renderGeneratedApp', () => {
     expect(readme).toContain('# Library application');
     expect(readme).toContain(specificationIri);
     expect(readme).toContain('src/config/data-sources.ts');
+    expect(readme).toContain('<route>-actions.tsx');
   });
 
   it('renders graph transitions as page, row, and association navigation actions', () => {

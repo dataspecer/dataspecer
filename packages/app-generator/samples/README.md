@@ -7,6 +7,7 @@ without modeling it first.
 specifications/   data to be imported into Dataspecer
 rdf/              sample RDF data
 fuseki/           local SPARQL store that serves data from rdf/
+customizations/   optional code used by a particular example
 ```
 
 | Example             | Data                     | Description                                                                                                                |
@@ -14,6 +15,12 @@ fuseki/           local SPARQL store that serves data from rdf/
 | `book-library`      | `book-library.ttl`       | Showcases primitive fields, references, compositions, and specializations.                                                 |
 | `application-graph` | `application-graphs.ttl` | The application graph model itself. The generated app edits application graphs stored as RDF, including a copy of its own. |
 | `nkod`              | `nkod-dump-small.ttl`    | An example of a real specification over Czech open data.                                                                   |
+
+Optional customizations show how the generated action slots are used:
+
+- [Book Library](customizations/book-library/README.md) logs data from list, row, and detail actions.
+- [Application graph](customizations/application-graph/README.md) exports the stored graph or
+  generates its application.
 
 ## 1. Start the store
 
@@ -23,7 +30,7 @@ Run in this folder (`packages/app-generator/samples/`):
 docker compose -f fuseki/docker-compose.yml up -d
 ```
 
-Fuseki comes up on port 3030 and loads every `*.ttl` in `rdf/`. You can inspect and query the data 
+Fuseki comes up on port 3030 and loads every `*.ttl` in `rdf/`. You can inspect and query the data
 at http://localhost:3030/#/dataset/app/query (admin password `admin`).
 
 The dataset is in memory. To restore the data, run `docker compose -f fuseki/docker-compose.yml restart`.

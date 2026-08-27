@@ -1,4 +1,5 @@
 import type { GenerationModel } from '../generation-model/types.ts';
+import { Operation } from '../graph/types.ts';
 import { FileTree } from './file-tree.ts';
 import { buildRenderContext } from './render-context.ts';
 import { Eta } from 'eta';
@@ -18,7 +19,8 @@ const PER_AGGREGATE = ['model.ts', 'descriptor.ts', 'ldkit-schema.ts'].map(
 const PER_PAGE = ['{route}-operation.ts', '{route}-page.tsx'].map(
   (name) => `${MODULE_TEMPLATE}/${name}${TEMPLATE_SUFFIX}`,
 );
-const REPEATED_TEMPLATES = new Set([...PER_AGGREGATE, ...PER_PAGE]);
+const READ_PAGE_ACTIONS_TEMPLATE = `${MODULE_TEMPLATE}/{route}-actions.tsx${TEMPLATE_SUFFIX}`;
+const REPEATED_TEMPLATES = new Set([...PER_AGGREGATE, ...PER_PAGE, READ_PAGE_ACTIONS_TEMPLATE]);
 
 export function renderGeneratedApp(model: GenerationModel): FileTree {
   const tree = new FileTree();
@@ -52,6 +54,18 @@ export function renderGeneratedApp(model: GenerationModel): FileTree {
         renderTemplate(template, { ...context, page }),
       );
     });
+    if (
+      page.operation.operation === Operation.ReadList ||
+      page.operation.operation === Operation.ReadDetail
+    ) {
+      tree.set(
+        outputPath(READ_PAGE_ACTIONS_TEMPLATE, {
+          module: page.moduleName,
+          route: page.operation.routeId,
+        }),
+        renderTemplate(READ_PAGE_ACTIONS_TEMPLATE, { ...context, page }),
+      );
+    }
   });
 
   return tree;

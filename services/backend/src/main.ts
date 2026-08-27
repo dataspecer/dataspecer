@@ -28,7 +28,7 @@ import {
 import { getSimplifiedSemanticModel, setSimplifiedSemanticModel } from "./routes/simplified-semantic-model.ts";
 import { getSystemData } from "./routes/system.ts";
 import { useStaticSpaHandler } from "./static.ts";
-import { generateApplicationByModelId, getSpecificationMetadataForEditor } from "./routes/app-generator.js";
+import { generateApplication, getSpecificationMetadataForEditor } from "./routes/app-generator.js";
 import { newApplicationProfile } from "./routes/new.ts";
 import { applyTransactions, deleteEvolutionBranch, getTransactionsDiff, listBranches } from "./routes/transaction.ts";
 
@@ -139,7 +139,7 @@ application.get(apiBasename + "/generate", getZip);
 application.get(apiBasename + "/experimental/output.zip", getZip);
 application.get(apiBasename + "/preview/{*splat}", getSingleFile);
 
-application.get(apiBasename + "/app-generator/generate", generateApplicationByModelId);
+application.post(apiBasename + "/app-generator/generate", generateApplication);
 application.get(apiBasename + "/app-generator/metadata", getSpecificationMetadataForEditor);
 
 

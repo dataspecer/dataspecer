@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ComponentType } from 'react';
 import Alert from '@mui/material/Alert';
 import Chip from '@mui/material/Chip';
 import Link from '@mui/material/Link';
@@ -48,12 +48,24 @@ export interface ListViewProps<TModel extends EntityModel> {
   strategy: OperationStrategy<TModel, ReadListResult<TModel>>;
   navigation: OperationNavigationDescriptor;
   languages: readonly string[];
+  additionalPageActions?: ComponentType;
+  additionalRowActions?: readonly ListRowActionComponent<TModel>[];
 }
+
+export interface ListRowActionProps<TModel extends EntityModel> {
+  item: TModel;
+  tabIndex: number;
+}
+
+export type ListRowActionComponent<TModel extends EntityModel> = ComponentType<
+  ListRowActionProps<TModel>
+>;
 
 export function ListView<TModel extends EntityModel>(props: ListViewProps<TModel>) {
   const dataSource = useDataSource();
   const navigate = useNavigate();
   const { title, aggregate, aggregateRegistry, strategy, navigation } = props;
+  const AdditionalPageActions = props.additionalPageActions;
   const detailAction = navigation.rowActions.find((action) => action.operation === 'ReadDetail');
   const [items, setItems] = useState<TModel[]>([]);
   const [total, setTotal] = useState(0);
@@ -73,10 +85,17 @@ export function ListView<TModel extends EntityModel>(props: ListViewProps<TModel
       buildColumns<TModel>(
         aggregate.fields,
         navigation.rowActions,
+        props.additionalRowActions ?? [],
         navigation.associationActions,
         preferredLanguages,
       ),
-    [aggregate.fields, navigation.rowActions, navigation.associationActions, preferredLanguages],
+    [
+      aggregate.fields,
+      navigation.rowActions,
+      navigation.associationActions,
+      preferredLanguages,
+      props.additionalRowActions,
+    ],
   );
   const gridSortModel = useMemo(() => toGridSortModel(sort), [sort]);
 
@@ -134,7 +153,10 @@ export function ListView<TModel extends EntityModel>(props: ListViewProps<TModel
         <Typography variant="h5" component="h2" noWrap>
           {title}
         </Typography>
-        <ActionLinks actions={navigation.pageActions} />
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+          {AdditionalPageActions ? <AdditionalPageActions /> : null}
+          <ActionLinks actions={navigation.pageActions} />
+        </Stack>
       </Stack>
       {error !== null ? (
         <Alert severity="error">{error}</Alert>
@@ -197,6 +219,7 @@ function hasSelectedTextWithin(element: HTMLElement): boolean {
 function buildColumns<TModel extends EntityModel>(
   fields: FieldDescriptor[],
   rowActions: readonly NavigationActionDescriptor[],
+  additionalRowActions: readonly ListRowActionComponent<TModel>[],
   associationActions: readonly AssociationNavigationActionDescriptor[],
   languages: readonly string[],
 ): GridColDef<TModel>[] {
@@ -220,7 +243,7 @@ function buildColumns<TModel extends EntityModel>(
       ),
     }));
 
-  if (rowActions.length > 0) {
+  if (rowActions.length > 0 || additionalRowActions.length > 0) {
     columns.push({
       field: '__actions',
       headerName: 'Actions',
@@ -228,12 +251,17 @@ function buildColumns<TModel extends EntityModel>(
       sortable: false,
       disableColumnMenu: true,
       renderCell: (params) => (
-        <ActionLinks
-          actions={rowActions}
-          entityId={params.row.id}
-          compact
-          tabIndex={params.tabIndex}
-        />
+        <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
+          <ActionLinks
+            actions={rowActions}
+            entityId={params.row.id}
+            compact
+            tabIndex={params.tabIndex}
+          />
+          {additionalRowActions.map((AdditionalAction, index) => (
+            <AdditionalAction key={index} item={params.row} tabIndex={params.tabIndex} />
+          ))}
+        </Stack>
       ),
     });
   }
