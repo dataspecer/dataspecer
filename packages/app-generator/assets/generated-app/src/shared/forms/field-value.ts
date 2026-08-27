@@ -46,12 +46,15 @@ function formatObjectValue(
   value: Record<string, unknown>,
   preferredLanguages: readonly string[],
 ): string {
-  // List columns summarize an object with its first primitive nested field.
-  const firstPrimitive = (field.fields ?? []).find(
-    (nested) => nested.kind === 'primitive' && value[nested.propertyName] != null,
-  );
-  if (firstPrimitive) {
-    return formatFieldValue(firstPrimitive, value[firstPrimitive.propertyName], preferredLanguages);
+  // an object is summarized by its first primitive nested field that has something to show
+  for (const nested of field.fields ?? []) {
+    if (nested.kind !== 'primitive') {
+      continue;
+    }
+    const formatted = formatFieldValue(nested, value[nested.propertyName], preferredLanguages);
+    if (formatted !== '') {
+      return formatted;
+    }
   }
   const id = referenceIdOf(value);
   if (id !== undefined) {
@@ -71,7 +74,10 @@ export function formatPrimitiveValue(
   if (typeof value === 'string') {
     return value;
   }
-  if (typeof value === 'number' || typeof value === 'boolean') {
+  if (typeof value === 'boolean') {
+    return value ? 'Yes' : 'No';
+  }
+  if (typeof value === 'number') {
     return String(value);
   }
   if (value instanceof Date) {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { OFN } from '@dataspecer/core/well-known';
+import { createLens, type Property } from 'ldkit';
 import { ldkit } from 'ldkit/namespaces';
 
 import { AssociationKind } from '../src/graph/types.ts';
@@ -207,6 +208,97 @@ describe('LDKit schema generation', () => {
       '@type': ldkit.IRI,
       '@optional': true,
     });
+  });
+
+  it('reads the display fields a structure selected on a reference target', () => {
+    const aggregate = renderedAggregate([
+      {
+        path: 'author',
+        label: 'Author',
+        kind: FieldKind.Association,
+        propertyIri: 'https://example.org/p/author',
+        targetClassIri: 'https://example.org/class/author',
+        associationKind: AssociationKind.Aggregation,
+        many: false,
+        required: true,
+        fields: [
+          {
+            path: 'name',
+            label: 'Name',
+            kind: FieldKind.Primitive,
+            propertyIri: 'https://example.org/p/name',
+            datatype: `${XSD}string`,
+            many: false,
+            required: true,
+          },
+        ],
+      },
+    ]);
+    const bundle = buildLdkitSchemaBundle(aggregate.classIri, aggregate.fields) as Record<
+      string,
+      any
+    >;
+
+    // The display fields make a link readable. Without them the value is only an IRI.
+    expect(bundle.detail.author['@schema']).toEqual({
+      name: {
+        '@id': 'https://example.org/p/name',
+        '@type': `${XSD}string`,
+        '@optional': true,
+      },
+    });
+    expect(bundle.detail.author['@type']).toBeUndefined();
+    // A reference is still written as a plain IRI, because the target is saved on its own page.
+    expect(bundle.writes['[]'].author).toEqual({
+      '@id': 'https://example.org/p/author',
+      '@type': ldkit.IRI,
+      '@optional': true,
+    });
+  });
+
+  // Display fields may share one RDF predicate, which the alias rules keep rather than coalesce.
+  // LDKit rejects a schema that repeats an @id, so this has to collapse to a single property.
+  it('reads a display predicate once when two display fields share it', () => {
+    const aggregate = renderedAggregate([
+      {
+        path: 'reference',
+        label: 'Reference',
+        kind: FieldKind.Association,
+        propertyIri: 'https://example.org/reference',
+        targetClassIri: 'https://example.org/Reference',
+        associationKind: AssociationKind.Aggregation,
+        many: false,
+        required: false,
+        fields: [
+          {
+            path: 'name',
+            label: 'Name',
+            kind: FieldKind.Primitive,
+            propertyIri: 'https://example.org/name',
+            datatype: `${XSD}string`,
+            many: false,
+            required: false,
+          },
+          {
+            path: 'number',
+            label: 'Number',
+            kind: FieldKind.Primitive,
+            propertyIri: 'https://example.org/name',
+            datatype: `${XSD}integer`,
+            many: false,
+            required: false,
+          },
+        ],
+      },
+    ]);
+    const bundle = buildLdkitSchemaBundle(aggregate.classIri, aggregate.fields);
+    const reference = bundle.detail.reference as Property;
+
+    expect(Object.keys(reference['@schema'] ?? {})).toEqual(['name']);
+    // Inspecting the object is not enough, the duplicate only fails when LDKit reads the schema.
+    expect(() =>
+      createLens(bundle.detail, { sources: ['https://example.org/sparql'] }),
+    ).not.toThrow();
   });
 
   it('keeps an empty composition as a nested entity with its own write schema', () => {

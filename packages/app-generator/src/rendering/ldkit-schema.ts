@@ -98,12 +98,44 @@ function buildReadProperty(field: LdkitSchemaField): Property {
       }
       property['@schema'] = nestedSchema;
     } else {
-      property['@type'] = ldkit.IRI;
+      const displaySchema = referenceDisplaySchema(field);
+      if (displaySchema) {
+        property['@schema'] = displaySchema;
+      } else {
+        property['@type'] = ldkit.IRI;
+      }
     }
   } else {
     setPrimitiveType(property, field);
   }
   return property;
+}
+
+/**
+ * Reads a reference together with the primitive fields the structure selected on its target, so a
+ * list or detail page can show a name instead of an IRI. Without them LDKit returns the IRI alone
+ * and there is nothing to display. Nested associations of the target are left out to keep the
+ * join shallow.
+ */
+function referenceDisplaySchema(field: LdkitSchemaField): Schema | undefined {
+  if (!field.targetClassIri) {
+    return undefined;
+  }
+  const schema: Schema = {};
+  // two display fields may share one RDF predicate, but LDKit rejects a schema with a repeated @id, so only the first
+  // field for a predicate is read
+  const takenPropertyIris = new Set<string>();
+  for (const displayField of field.fields ?? []) {
+    if (displayField.kind !== FieldKind.Primitive || !displayField.propertyIri) {
+      continue;
+    }
+    if (takenPropertyIris.has(displayField.propertyIri)) {
+      continue;
+    }
+    takenPropertyIris.add(displayField.propertyIri);
+    schema[displayField.propertyName] = buildReadProperty(displayField);
+  }
+  return takenPropertyIris.size > 0 ? schema : undefined;
 }
 
 function buildWriteSchema(classIri: string, fields: readonly LdkitSchemaField[]): Schema {
@@ -168,6 +200,9 @@ function baseProperty(field: LdkitSchemaField, mode: 'read' | 'write'): Property
   if (field.isReverse) {
     property['@inverse'] = true;
   }
+  // A multilingual read returns several literals per language, so it is always an array. A write
+  // must not be, because LDKit requires an array or an $add/$set/$remove object to update an array
+  // property, and a multilingual value is keyed by language instead.
   const multilingual = datatypeMapping(field.datatype).multilingual === true;
   if ((mode === 'read' && multilingual) || (field.many && !multilingual)) {
     property['@array'] = true;

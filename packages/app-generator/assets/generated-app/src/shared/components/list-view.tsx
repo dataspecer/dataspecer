@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import Alert from '@mui/material/Alert';
+import Chip from '@mui/material/Chip';
 import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
@@ -260,6 +261,15 @@ interface FieldCellProps {
 }
 
 function FieldCell(props: FieldCellProps) {
+  if (typeof props.value === 'boolean') {
+    return (
+      <Chip
+        size="small"
+        label={props.value ? 'Yes' : 'No'}
+        color={props.value ? 'success' : 'default'}
+      />
+    );
+  }
   if (!props.action) {
     return <>{formatFieldValue(props.field, props.value, props.languages)}</>;
   }

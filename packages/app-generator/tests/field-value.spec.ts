@@ -59,4 +59,27 @@ describe('formatFieldValue', () => {
     expect(formatFieldValue(multilingualField, value, ['de-DE'])).toBe('Name, Alternative');
     expect(formatFieldValue(multilingualField, value, ['fr'])).toBe('Untagged');
   });
+
+  // A reference is summarized by the display fields its structure selected. An empty one must not
+  // hide the rest, otherwise the reference reads as a blank cell instead of a name or an IRI.
+  it('summarizes a reference by its first display field that has a value', () => {
+    const reference: FieldDescriptor = {
+      path: 'publisher',
+      propertyName: 'publisher',
+      label: 'Publisher',
+      kind: 'association',
+      many: false,
+      required: false,
+      targetClassIri: 'https://example.org/Publisher',
+      fields: [
+        { ...primitiveField, path: 'alias', propertyName: 'alias', many: true },
+        { ...primitiveField, path: 'name', propertyName: 'name' },
+      ],
+    };
+    const id = 'https://example.org/library/publisher/argo';
+
+    expect(formatFieldValue(reference, { id, alias: [], name: 'Argo' })).toBe('Argo');
+    expect(formatFieldValue(reference, { id, alias: '', name: 'Argo' })).toBe('Argo');
+    expect(formatFieldValue(reference, { id, alias: [], name: '' })).toBe(id);
+  });
 });

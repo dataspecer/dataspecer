@@ -38,7 +38,7 @@ import type {
   SpecializationDescriptor,
 } from '../types/aggregate.ts';
 import { ActionLinks } from './action-links.tsx';
-import { formatPrimitiveValue } from '../forms/field-value.ts';
+import { formatFieldValue, formatPrimitiveValue } from '../forms/field-value.ts';
 import { joinFieldPath } from '../forms/field-path.ts';
 import { isCompositionField } from '../forms/entity-target.ts';
 import { isSafeHttpIri } from '../forms/iri.ts';
@@ -346,7 +346,7 @@ function LeafValue(props: LeafValueProps) {
 
   if (Array.isArray(value)) {
     return (
-      <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 0.5 }}>
+      <Stack direction="column" sx={{ gap: 0.25, alignItems: 'flex-start' }}>
         {(value as unknown[]).map((entry, index) => (
           <LeafValue
             key={index}
@@ -395,7 +395,7 @@ function LeafValue(props: LeafValueProps) {
     return <Chip label={value ? 'Yes' : 'No'} color={value ? 'success' : 'default'} />;
   }
 
-  const text = formatPrimitiveValue(value, field, props.languages);
+  const text = formatFieldValue(field, value, props.languages);
   const entityId = action ? entityIdFromValue(value) : undefined;
   const href = entityId ? hrefForAction(action, entityId) : undefined;
   if (href) {

@@ -75,10 +75,19 @@ function normalizeReference(value: unknown, field: FieldDescriptor): unknown {
   if (value === null || value === undefined) {
     return value;
   }
-  if (typeof value !== 'string') {
-    throw new Error(`${field.label} must contain an IRI reference.`);
+  if (typeof value === 'string') {
+    return { id: requireSafeAbsoluteIri(value, `${field.label} reference IRI`) };
   }
-  return { id: requireSafeAbsoluteIri(value, `${field.label} reference IRI`) };
+  // reference whose target has display fields is read as an entity, so views can label the link
+  if (typeof value === 'object') {
+    const entity = normalizeEntity(value, field.fields ?? []) as Record<string, unknown>;
+    if (typeof entity.id !== 'string') {
+      throw new Error(`${field.label} must contain an IRI reference.`);
+    }
+    entity.id = requireSafeAbsoluteIri(entity.id, `${field.label} reference IRI`);
+    return entity;
+  }
+  throw new Error(`${field.label} must contain an IRI reference.`);
 }
 
 function normalizeUnknown(value: unknown): unknown {
