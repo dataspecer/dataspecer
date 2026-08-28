@@ -3,6 +3,9 @@
 Example specifications and the RDF data they describe, so a working application can be generated
 without modeling it first.
 
+Run the Dataspecer backend, manager, and [application graph editor](../../../applications/application-graph-editor)
+before starting. Docker is required for the local RDF store.
+
 ```
 specifications/   data to be imported into Dataspecer
 rdf/              sample RDF data
@@ -38,9 +41,9 @@ The dataset is in memory. To restore the data, run `docker compose -f fuseki/doc
 ## 2. Import an example
 
 In the Dataspecer manager, import one of the zips from `specifications/`. Each ZIP contains the
-corresponding vocabulary, data structures, and application graph
+corresponding vocabulary, data structures, and application graph.
 
 ## 3. Generate
 
-Open the package's application graph in the application graph editor and press **Generate application**.
-The editor downloads the app and tells you how to run it.
+Open the package's application graph in the application graph editor and press **Generate
+application**. The editor downloads the app and tells you how to run it.
