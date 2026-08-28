@@ -251,6 +251,18 @@ describe('renderGeneratedApp', () => {
     expect(readme).toContain('<route>-actions.tsx');
   });
 
+  it('pins generated dependency versions', () => {
+    const tree = renderGeneratedApp(buildGenerationModel(graphFixture(), basicMetadata));
+    const packageJson = JSON.parse(tree.get('package.json')!) as {
+      dependencies: Record<string, string>;
+      devDependencies: Record<string, string>;
+    };
+
+    Object.values({ ...packageJson.dependencies, ...packageJson.devDependencies }).forEach(
+      (version) => expect(version).toMatch(/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/),
+    );
+  });
+
   it('renders graph transitions as page, row, and association navigation actions', () => {
     const graph = graphFixture();
     graph.nodes = [

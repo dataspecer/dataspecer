@@ -48,9 +48,15 @@ export function GraphsDetailPageActions(
       body: JSON.stringify(graph),
     });
     if (!response.ok) {
-      const details = await response.text();
-      console.error('Application generation failed:', details);
-      throw new Error(`Application generation failed with status ${response.status}.`);
+      const details = (await response.json().catch(() => null)) as {
+        violations?: Array<{ message: string }>;
+      } | null;
+      const messages = details?.violations?.map((violation) => violation.message) ?? [];
+      throw new Error(
+        messages.length > 0
+          ? messages.join(' ')
+          : `Application generation failed with status ${response.status}.`,
+      );
     }
     downloadBlob(await response.blob(), `${toFileNameBase(graph.name)}.zip`);
   };
