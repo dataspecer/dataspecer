@@ -169,7 +169,12 @@ export function serializeModelEntities(modelId: string, modelType: string, entit
     return support.serialize(modelId, entities, previousSerialization);
   }
   // Blob model is a single entity with the whole blob as its data.
-  return entities[modelId] ?? {};
+  const entity = entities[modelId];
+  if (entity === undefined) {
+    return {};
+  }
+  const { id: _id, type: _type, ...blob } = entity;
+  return blob;
 }
 
 /**
