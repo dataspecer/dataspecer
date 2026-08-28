@@ -66,7 +66,7 @@ WORKDIR /usr/src/app
 
 # Makes directory accessible for the user
 # Instals prisma for migrations and cleans install cache
-RUN apk add --no-cache openssl && \
+RUN apk add --no-cache openssl tini && \
   rm -rf /var/lib/apt/lists/* && \
   rm -rf /var/cache/apk/* && \
   chmod a+rwx /usr/src/app && \
@@ -90,4 +90,4 @@ USER 1000:1000
 VOLUME /usr/src/app/database
 EXPOSE 80
 HEALTHCHECK CMD ./docker-healthcheck.sh
-ENTRYPOINT ["./docker-entrypoint.sh"]
+ENTRYPOINT ["/sbin/tini", "--", "./docker-entrypoint.sh"]
