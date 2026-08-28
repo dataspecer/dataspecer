@@ -70,8 +70,7 @@ src/
   theme.ts                   MUI theme
 ```
 
-`src/shared` is ordinary source copied into every generated application. Generated modules call it
-through descriptors and operation strategies.
+`src/shared` is ordinary source copied into every generated application.
 
 ## Runtime behavior
 
@@ -94,6 +93,11 @@ Forms use field metadata from each module's `descriptor.ts`:
 - Multilingual fields retain every loaded language tag. The empty tag represents untagged text, and
   configured languages are offered for new values.
 
+Reference selectors and read views use available primitive fields (as configured for the data
+structure in Dataspecer) to label referenced entities. If no label can be read, they show the entity
+IRI. In list and detail views, `<IRI> (details unavailable)` means that the target is missing or has
+no values for the expected display fields.
+
 Delete pages show the composed entities selected for cascade and up to ten incoming RDF references.
 Incoming references are a warning and do not block the delete.
 
@@ -110,9 +114,8 @@ Choose the file that owns the behavior:
 5. Edit a page file when the generated title or wiring needs a local change.
 6. Edit `src/shared` when behavior must change across several pages.
 
-Detail and row action components receive the loaded entity through typed props. The operation
-lifecycle is defined in `src/shared/operations/operation-strategy.ts`. Generated action files
-include comments showing how to customize their components.
+Detail and row action components receive the loaded entity through typed props. Generated action
+files include comments showing how to customize their components.
 
 ## Regeneration
 
@@ -124,10 +127,14 @@ directory, compare the trees, and carry compatible changes into the new output. 
 structure can change model and descriptor types, so operation overrides may need to be adapted
 rather than copied unchanged.
 
+## Production hosting
+
+`npm run build` writes the static application to `dist/`. The web server must fall back to
+`index.html` for application routes. Hosting under a URL subpath also requires matching Vite and
+router base settings.
+
 ## Limitations
 
 - The default application uses one RDF data source.
 - Composite writes and deletes are not transactional: if a later request fails, earlier successful requests are not rolled back.
 - The application does not enforce referential integrity for the RDF store, but it warns about affected entities during deletes.
-- A record that still points to a deleted entity remains readable, but the reference is shown as `<IRI> (details unavailable)`.
-  The same text can mean that the entity exists but none of its configured display fields has a value.

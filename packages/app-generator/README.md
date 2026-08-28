@@ -41,9 +41,8 @@ data specification.
 
 ## Public entry points
 
-The package root exports generation, full validation, Dataspecer metadata mapping, metadata
-provider contracts, graph types, generation-model result types, and violation types. Given a graph
-and a metadata provider, generation looks like this:
+The package root exposes generation and full validation. Given a graph and a metadata provider,
+generation looks like this:
 
 ```ts
 import { generateApp } from '@dataspecer/app-generator';
@@ -63,7 +62,8 @@ if (!result.success) {
 
 On success, `result.files` contains the rendered source. Pass `outputDirectory` to write the same
 files to disk. `allowOverwrite` must be true when that directory is not empty. Validation,
-formatting, and output failures are returned as violations.
+formatting, and output errors produce an unsuccessful result and are returned as violations. A
+successful result may still contain warning violations.
 
 Use the separate browser-safe entry point for graph authoring tools:
 
@@ -76,7 +76,7 @@ import {
 ```
 
 It contains graph contracts and validation that does not require the filesystem or a concrete
-metadata loader. Keep rendering and backend-only imports out of this entry point.
+metadata loader.
 
 ## Application graph schema
 
