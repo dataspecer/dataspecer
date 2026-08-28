@@ -134,7 +134,7 @@ export const createModelInstructions = {
     createHook: getHookForStandardModel(APPLICATION_GRAPH, (_iri, context) => ({
       "name": context.label?.cs ?? context.label?.en ?? "Application",
       "dataSpecificationIri": context.parentIri,
-      "datasources": [{ "id": "local", "type": "rdf", "endpoint": "http://localhost:3030" }],
+      "datasources": [{ "id": "local", "type": "rdf", "endpoint": "http://localhost:3030/app" }],
       "nodes": [],
       "edges": [],
     })),
