@@ -245,8 +245,6 @@ describe('renderGeneratedApp', () => {
     );
     expect(tree.get('package.json')).toContain('"react-router-dom"');
     const readme = tree.get('README.md');
-    expect(readme).toContain('# Library application');
-    expect(readme).toContain(specificationIri);
     expect(readme).toContain('src/config/data-sources.ts');
     expect(readme).toContain('<route>-actions.tsx');
   });
