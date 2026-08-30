@@ -84,5 +84,7 @@ else
 
   prepareDatabase
 
-  env PORT=80 BASE_NAME=$NORMALIZED_URL STATIC_FILES_PATH=/usr/src/app/html/ DOCKER=1 bun dist/main.js
+  # Replace this shell with Bun so Tini can forward Docker signals directly
+  # to the server process.
+  exec env PORT=80 BASE_NAME=$NORMALIZED_URL STATIC_FILES_PATH=/usr/src/app/html/ DOCKER=1 bun dist/main.js
 fi
