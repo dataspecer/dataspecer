@@ -173,10 +173,7 @@ export class RdfLdkitDataSource implements DataSource {
 
   async delete<TModel extends EntityModel>(args: DeleteArgs<TModel>): Promise<void> {
     requireSafeAbsoluteIri(args.id, 'Entity IRI');
-    const { fields } = this.resolveEntityTarget(args.aggregate, args.fieldPath);
-    const inverseDeleteQuery = buildInverseDeleteQuery(inverseWritableFields(fields), args.id);
-    await this.executeUpdate(inverseDeleteQuery);
-    // delete through LDKit removes every subject triple without inspecting the schema
+    // Reverse fields are stored on other subjects and must survive deletion of this entity.
     await createLens({ '@type': args.aggregate.classIri }, this.context()).delete(args.id);
   }
 

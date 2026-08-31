@@ -1,7 +1,8 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { type ApplicationGraph } from '@dataspecer/app-generator/graph';
 import { loadGraph, loadMetadata, loadPositions } from './backend/client.ts';
 import { ConfirmDialog } from './components/confirm-dialog.tsx';
+import { GraphRepairEditor } from './components/graph-repair-editor.tsx';
 import { EditorHeader } from './components/header.tsx';
 import { Sidebar } from './components/sidebar/sidebar.tsx';
 import { StatusBar } from './components/status-bar.tsx';
@@ -16,23 +17,30 @@ import { useEditorStore, type NodePositions } from './store.ts';
 import { errorMessage } from '@/utils/error-message.ts';
 
 export function App() {
+  const resourceIri = new URLSearchParams(window.location.search).get('iri');
   const loadState = useEditorStore((state) => state.loadState);
   const loadError = useEditorStore((state) => state.loadError);
   const graph = useEditorStore((state) => state.graph);
+  const [repairValue, setRepairValue] = useState<unknown>();
 
   useEffect(() => {
-    const iri = new URLSearchParams(window.location.search).get('iri');
-    if (!iri) {
+    if (!resourceIri) {
       useEditorStore.getState().failLoad('Missing the ?iri query parameter.');
       return;
     }
 
     let active = true;
     (async () => {
-      const loaded = await loadGraph(iri);
-      const positions = (await loadPositions(iri)) ?? (await initialLayout(loaded));
+      const loaded = await loadGraph(resourceIri);
+      if (loaded.kind === 'invalid') {
+        if (active) {
+          setRepairValue(loaded.invalidValue);
+        }
+        return;
+      }
+      const positions = (await loadPositions(resourceIri)) ?? (await initialLayout(loaded.graph));
       if (active) {
-        useEditorStore.getState().initialize(iri, loaded, positions);
+        useEditorStore.getState().initialize(resourceIri, loaded.graph, positions);
         // loading is not undoable
         useEditorStore.temporal.getState().clear();
       }
@@ -45,7 +53,7 @@ export function App() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [resourceIri]);
 
   const dataSpecificationIri = graph?.dataSpecificationIri;
   useEffect(() => {
@@ -74,6 +82,9 @@ export function App() {
     };
   }, [dataSpecificationIri]);
 
+  if (repairValue !== undefined && resourceIri !== null) {
+    return <GraphRepairEditor resourceIri={resourceIri} storedValue={repairValue} />;
+  }
   if (loadState === 'loading') {
     return <Centered>Loading application graph...</Centered>;
   }

@@ -5,7 +5,7 @@ import {
   Operation,
   type ApplicationGraph,
 } from '@dataspecer/app-generator/graph';
-import { autoLayout } from './auto-layout.ts';
+import { autoLayout, completeNodePositions } from './auto-layout.ts';
 
 function graph(edges: ApplicationGraph['edges']): ApplicationGraph {
   return {
@@ -51,5 +51,18 @@ describe('autoLayout', () => {
       direction: 'RIGHT',
     });
     expect(Object.keys(positions)).toHaveLength(2);
+  });
+});
+
+describe('completeNodePositions', () => {
+  it('preserves existing positions and lays out missing nodes', async () => {
+    const positions = await completeNodePositions(graph([]), {
+      'books.list': { x: 10, y: 20 },
+      stale: { x: 30, y: 40 },
+    });
+
+    expect(positions['books.list']).toEqual({ x: 10, y: 20 });
+    expect(positions['books.detail']).toBeDefined();
+    expect(positions.stale).toBeUndefined();
   });
 });

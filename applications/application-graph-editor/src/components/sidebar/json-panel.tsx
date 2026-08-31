@@ -1,30 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import MonacoEditor, { type Monaco, type OnMount } from '@monaco-editor/react';
+import { type Monaco, type OnMount } from '@monaco-editor/react';
 import type * as monaco from 'monaco-editor';
-import { applicationGraphSchema, type ApplicationGraph } from '@dataspecer/app-generator/graph';
+import type { ApplicationGraph } from '@dataspecer/app-generator/graph';
 import { applyGraphJson } from '@/graph/apply-json.ts';
 import { graphElementAtOffset } from '@/graph/json-cursor.ts';
 import { useEditorStore } from '@/store.ts';
 import { useValidation } from '@/hooks/use-validation.ts';
 import { violationRanges } from '@/validation/violation-ranges.ts';
 import { errorMessage } from '@/utils/error-message.ts';
+import { GraphJsonEditor } from '@/components/graph-json-editor.tsx';
 
 const VIOLATION_MARKER_OWNER = 'application-graph-violations';
-
-function configureJsonLanguage(instance: Monaco) {
-  instance.languages.json.jsonDefaults.setDiagnosticsOptions({
-    validate: true,
-    schemas: [
-      {
-        // registering under the real $id also resolves an inline "$schema" reference in a
-        // pasted graph, which would otherwise fail because schema requests are disabled
-        uri: applicationGraphSchema.$id,
-        fileMatch: ['*'],
-        schema: applicationGraphSchema,
-      },
-    ],
-  });
-}
 
 /**
  * Synchronized JSON view of the edited graph.
@@ -134,20 +120,10 @@ export function JsonPanel({ graph }: { graph: ApplicationGraph }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="min-h-0 flex-1">
-        <MonacoEditor
-          language="json"
+        <GraphJsonEditor
           value={draft}
           onChange={(value) => setDraft({ text: value ?? '', base: editing?.base ?? json })}
-          beforeMount={configureJsonLanguage}
           onMount={onMount}
-          options={{
-            wordWrap: 'on',
-            minimap: { enabled: false },
-            insertSpaces: true,
-            automaticLayout: true,
-            scrollBeyondLastLine: false,
-            fontSize: 13,
-          }}
         />
       </div>
       {error && <p className="border-t border-slate-200 px-3 py-1 text-sm text-red-700">{error}</p>}

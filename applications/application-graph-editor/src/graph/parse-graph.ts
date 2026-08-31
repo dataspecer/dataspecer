@@ -2,7 +2,7 @@ import { validateGraphSyntax, type ApplicationGraph } from '@dataspecer/app-gene
 import { errorMessage } from '@/utils/error-message.ts';
 import { countNoun } from '@/utils/count-noun.ts';
 
-export type GraphCheckResult = { graph: ApplicationGraph } | { error: string };
+export type GraphCheckResult = { ok: true; graph: ApplicationGraph } | { ok: false; error: string };
 
 /**
  * Checks that already parsed JSON is a syntactically valid graph. Every way a graph enters the
@@ -13,13 +13,17 @@ export function checkGraph(data: unknown): GraphCheckResult {
   const syntax = validateGraphSyntax(data);
   if (!syntax.valid || !syntax.graph) {
     const first = syntax.violations[0];
+    const firstDescription = first?.path
+      ? `${first.path}: ${first.message}`
+      : (first?.message ?? 'unknown syntax violation');
     return {
+      ok: false,
       error:
         `Not a valid application graph ` +
-        `(${countNoun(syntax.violations.length, 'syntax violation')}, first: ${first.message})`,
+        `(${countNoun(syntax.violations.length, 'syntax violation')}, first: ${firstDescription})`,
     };
   }
-  return { graph: syntax.graph };
+  return { ok: true, graph: syntax.graph };
 }
 
 /** Parses graph JSON from an import or the JSON panel. */
@@ -28,6 +32,7 @@ export function parseGraph(text: string): GraphCheckResult {
     return checkGraph(JSON.parse(text));
   } catch (caught) {
     return {
+      ok: false,
       error: `Not valid JSON: ${errorMessage(caught)}`,
     };
   }

@@ -1,4 +1,4 @@
-import { autoLayout } from '@/diagram/auto-layout.ts';
+import { completeNodePositions } from '@/diagram/auto-layout.ts';
 import { useEditorStore } from '@/store.ts';
 import { parseGraph } from './parse-graph.ts';
 
@@ -15,7 +15,7 @@ export interface ApplyGraphResult {
  */
 export async function applyGraphJson(jsonText: string): Promise<ApplyGraphResult> {
   const parsed = parseGraph(jsonText);
-  if ('error' in parsed) {
+  if (!parsed.ok) {
     return { applied: false, error: parsed.error };
   }
 
@@ -38,11 +38,7 @@ export async function applyGraphJson(jsonText: string): Promise<ApplyGraphResult
 
   // read again after the answer, because the canvas may have moved on while the dialog was open
   const { positions, replaceGraph } = useEditorStore.getState();
-  const needsLayout = parsed.graph.nodes.some((node) => !positions[node.id]);
-  const layout = needsLayout ? await autoLayout(parsed.graph) : {};
-  const merged = Object.fromEntries(
-    parsed.graph.nodes.map((node) => [node.id, positions[node.id] ?? layout[node.id]]),
-  );
-  replaceGraph(parsed.graph, merged);
+  const completedPositions = await completeNodePositions(parsed.graph, positions);
+  replaceGraph(parsed.graph, completedPositions);
   return { applied: true, error: null };
 }

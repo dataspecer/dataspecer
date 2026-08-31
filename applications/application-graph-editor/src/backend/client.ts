@@ -23,17 +23,20 @@ const packageService = new BackendPackageService(backendUrl, checkedFetch);
 // Node positions live in a second blob next to the graph.
 const POSITIONS_BLOB = 'visual';
 
-export async function loadGraph(iri: string): Promise<ApplicationGraph> {
+export type LoadGraphResult =
+  | { kind: 'valid'; graph: ApplicationGraph }
+  | { kind: 'invalid'; invalidValue: unknown };
+
+export async function loadGraph(iri: string): Promise<LoadGraphResult> {
   const data = await packageService.getResourceJsonData(iri);
   if (data === null) {
     throw new Error(`No application graph found for resource "${iri}".`);
   }
 
-  const result = checkGraph(data);
-  if ('error' in result) {
-    throw new Error(result.error);
-  }
-  return result.graph;
+  const checked = checkGraph(data);
+  return checked.ok
+    ? { kind: 'valid', graph: checked.graph }
+    : { kind: 'invalid', invalidValue: data };
 }
 
 export async function loadPositions(iri: string): Promise<NodePositions | null> {
@@ -41,7 +44,7 @@ export async function loadPositions(iri: string): Promise<NodePositions | null> 
   return data as NodePositions | null;
 }
 
-export async function saveGraph(
+export async function saveGraphAndPositions(
   iri: string,
   graph: ApplicationGraph,
   positions: NodePositions,

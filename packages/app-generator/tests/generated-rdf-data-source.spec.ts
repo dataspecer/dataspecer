@@ -795,19 +795,20 @@ describe('generated RDF read normalization', () => {
 });
 
 describe('generated RDF write schema selection', () => {
-  it('deletes all subject triples without requiring a target write schema', async () => {
+  it('deletes only subject triples, leaving reverse-field triples on other entities', async () => {
     const requests: string[] = [];
     vi.stubGlobal('fetch', captureRequestBodies(requests));
     const dataSource = new RdfLdkitDataSource('https://example.org/sparql', {});
 
     await dataSource.delete({
-      aggregate: listAggregate,
+      aggregate: { ...listAggregate, fields: [inverseField] },
       id: 'https://example.org/book/1',
     });
 
     expect(requests).toHaveLength(1);
     expect(requests[0]).toContain('?s ?p ?o');
     expect(requests[0]).toContain('VALUES ?s { <https://example.org/book/1> }');
+    expect(requests[0]).not.toContain(inverseField.propertyIri);
   });
 
   it('updates and clears scalar and repeated IRI pointers through LDKit', async () => {

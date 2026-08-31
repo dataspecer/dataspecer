@@ -62,3 +62,15 @@ export async function autoLayout(
   }
   return positions;
 }
+
+/** Keeps positions for existing nodes and computes positions for nodes that do not have one. */
+export async function completeNodePositions(
+  graph: ApplicationGraph,
+  current: NodePositions,
+): Promise<NodePositions> {
+  const missingPosition = graph.nodes.some((node) => current[node.id] === undefined);
+  const layout = missingPosition ? await autoLayout(graph) : {};
+  return Object.fromEntries(
+    graph.nodes.map((node) => [node.id, current[node.id] ?? layout[node.id]]),
+  );
+}

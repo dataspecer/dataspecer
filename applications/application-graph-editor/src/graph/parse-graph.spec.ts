@@ -27,4 +27,12 @@ describe('parseGraph', () => {
     const result = parseGraph(JSON.stringify({ nodes: [] }));
     expect(result).toMatchObject({ error: expect.stringContaining('syntax violation') });
   });
+
+  it('names the path of the first syntax violation', () => {
+    const graph = graphFixture();
+    graph.nodes[0].operation = 'Frobnicate' as Operation;
+    expect(parseGraph(JSON.stringify(graph))).toMatchObject({
+      error: expect.stringContaining('/nodes/0/operation'),
+    });
+  });
 });

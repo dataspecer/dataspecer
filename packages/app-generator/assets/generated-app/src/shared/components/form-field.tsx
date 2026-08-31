@@ -204,9 +204,20 @@ function PrimitiveControl(props: PrimitiveControlProps) {
     // The models hold native Date objects, the pickers work in Luxon values.
     const current =
       value instanceof Date && !Number.isNaN(value.getTime()) ? DateTime.fromJSDate(value) : null;
-    const Picker = control === 'date' ? DatePicker : DateTimePicker;
+    if (control === 'date') {
+      return (
+        <DatePicker
+          label={props.label}
+          value={current}
+          onChange={(next: DateTime | null) => onChange(next?.toJSDate() ?? undefined)}
+          slotProps={{
+            textField: { id: props.id, 'aria-label': props.ariaLabel, ...shared },
+          }}
+        />
+      );
+    }
     return (
-      <Picker
+      <DateTimePicker
         label={props.label}
         ampm={false}
         value={current}
