@@ -22,6 +22,7 @@
     "@dataspecer/specification": "*",
     "@dataspecer/structure-model": "*",
     "@dataspecer/utilities": "*",
+    "@dataspecer/visual-model": "*",
     "@prisma/client": "^6.19.2",
     "@types/cli-progress": "^3.11.5",
     "@types/n3": "^1.26.1",
