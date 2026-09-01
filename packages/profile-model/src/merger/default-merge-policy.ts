@@ -27,6 +27,10 @@ class DefaultMergePolicy implements ProfileModelMergePolicy {
       // Here the order does not matter.
       profiling: [...new Set(...left.profiling, ...right.profiling)],
       tags: [...new Set(...left.tags, ...right.tags)],
+      // Concatenates ids of ControlledVocabularyAssignment entities from
+      // both sides without copying the entities themselves - same
+      // "reference without the referent" caveat as elsewhere in this
+      // package (see profile-model-flattener.ts).
       controlledVocabularies: left.controlledVocabularies === undefined && right.controlledVocabularies === undefined
         ? undefined
         : [...(left.controlledVocabularies ?? []), ...(right.controlledVocabularies ?? [])]
