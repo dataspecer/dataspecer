@@ -38,7 +38,7 @@ describe("hasControlledVocabularyConflict", () => {
   test("No conflict when one MUST vocabulary alone.", () => {
     const state: SelectControlledVocabulariesState = {
       items: [
-        { id: "1", vocabulary: V1, qualifier: "MUST", inherited: null },
+        { key: "1", id: "1", vocabulary: V1, qualifier: "MUST", inherited: null },
       ],
       availableVocabularies: [V1, V2],
       addForm: null,
@@ -49,8 +49,8 @@ describe("hasControlledVocabularyConflict", () => {
   test("Conflict when two vocabularies with one MUST.", () => {
     const state: SelectControlledVocabulariesState = {
       items: [
-        { id: "1", vocabulary: V1, qualifier: "MUST", inherited: null },
-        { id: "2", vocabulary: V2, qualifier: "MAY", inherited: null },
+        { key: "1", id: "1", vocabulary: V1, qualifier: "MUST", inherited: null },
+        { key: "2", id: "2", vocabulary: V2, qualifier: "MAY", inherited: null },
       ],
       availableVocabularies: [V1, V2],
       addForm: null,
@@ -61,8 +61,8 @@ describe("hasControlledVocabularyConflict", () => {
   test("No conflict when multiple vocabularies with no MUST.", () => {
     const state: SelectControlledVocabulariesState = {
       items: [
-        { id: "1", vocabulary: V1, qualifier: "RECOMMENDED", inherited: null },
-        { id: "2", vocabulary: V2, qualifier: "MAY", inherited: null },
+        { key: "1", id: "1", vocabulary: V1, qualifier: "RECOMMENDED", inherited: null },
+        { key: "2", id: "2", vocabulary: V2, qualifier: "MAY", inherited: null },
       ],
       availableVocabularies: [V1, V2],
       addForm: null,
@@ -73,8 +73,8 @@ describe("hasControlledVocabularyConflict", () => {
   test("Conflict when two MUST vocabularies.", () => {
     const state: SelectControlledVocabulariesState = {
       items: [
-        { id: "1", vocabulary: V1, qualifier: "MUST", inherited: null },
-        { id: "2", vocabulary: V2, qualifier: "MUST", inherited: null },
+        { key: "1", id: "1", vocabulary: V1, qualifier: "MUST", inherited: null },
+        { key: "2", id: "2", vocabulary: V2, qualifier: "MUST", inherited: null },
       ],
       availableVocabularies: [V1, V2],
       addForm: null,
@@ -86,12 +86,13 @@ describe("hasControlledVocabularyConflict", () => {
     const state: SelectControlledVocabulariesState = {
       items: [
         {
-          id: "1",
+          key: "1",
+          id: "own-1",
           vocabulary: V1,
           qualifier: "MUST",
-          inherited: { qualifier: "RECOMMENDED", overrideEnabled: true },
+          inherited: { assignmentId: "cv-1", qualifier: "RECOMMENDED", overrideEnabled: true },
         },
-        { id: "2", vocabulary: V2, qualifier: "MAY", inherited: null },
+        { key: "2", id: "2", vocabulary: V2, qualifier: "MAY", inherited: null },
       ],
       availableVocabularies: [V1, V2],
       addForm: null,

@@ -12,12 +12,12 @@ import { SelectControlledVocabulariesState } from "./select-controlled-vocabular
 
 export interface SelectControlledVocabulariesPresenter {
 
-  getItemPresenter(itemId: string): VocabularyItemPresenter;
+  getItemPresenter(itemKey: string): VocabularyItemPresenter;
 
   /**
    * No-op when the target item is inherited rather than directly added
    */
-  onRemove(itemId: string): void;
+  onRemove(itemKey: string): void;
 
   onOpenAddForm(): void;
 
@@ -40,24 +40,24 @@ export function createSelectControlledVocabulariesPresenter(
     => SelectControlledVocabulariesState) => void,
 ): SelectControlledVocabulariesPresenter {
   return {
-    getItemPresenter(itemId) {
+    getItemPresenter(itemKey) {
       return createVocabularyItemPresenter(next => {
         setState(state => ({
           ...state,
           items: state.items.map(item =>
-            item.id === itemId ? next(item) : item),
+            item.key === itemKey ? next(item) : item),
         }));
       });
     },
-    onRemove(itemId) {
+    onRemove(itemKey) {
       setState(state => {
-        const target = state.items.find(item => item.id === itemId);
+        const target = state.items.find(item => item.key === itemKey);
         if (target === undefined || target.inherited !== null) {
           return state;
         }
         return {
           ...state,
-          items: state.items.filter(item => item.id !== itemId),
+          items: state.items.filter(item => item.key !== itemKey),
         };
       });
     },
@@ -86,7 +86,7 @@ export function createSelectControlledVocabulariesPresenter(
           ...state,
           items: [
             ...state.items,
-            { id: crypto.randomUUID(), vocabulary, qualifier: addForm.qualifier, inherited: null },
+            { key: crypto.randomUUID(), id: null, vocabulary, qualifier: addForm.qualifier, inherited: null },
           ],
           addForm: null,
         };
