@@ -3,10 +3,12 @@ import { type FieldKind } from '../metadata/types.ts';
 
 export const SPECIALIZATION_IRI_PROPERTY = '__specializationIri';
 export const RDF_TYPES_PROPERTY = '__rdfTypes';
+export const MISSING_ENTITY_PROPERTY = '__missingEntity';
 export const RESERVED_ENTITY_PROPERTY_NAMES: readonly string[] = [
   'id',
   SPECIALIZATION_IRI_PROPERTY,
   RDF_TYPES_PROPERTY,
+  MISSING_ENTITY_PROPERTY,
 ];
 
 export interface GenerationModel {

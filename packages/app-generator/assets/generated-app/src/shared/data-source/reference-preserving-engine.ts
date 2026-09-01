@@ -3,53 +3,50 @@ import type { QueryContext, Schema } from 'ldkit';
 import { QueryEngine } from 'ldkit';
 import { DataFactory, type RDF } from 'ldkit/rdf';
 
-import type { FieldDescriptor } from '../types/aggregate.ts';
-import { isCompositionField, isInlineCompositionField } from '../forms/entity-target.ts';
-
-// only ever added to a parsed response, never sent to the endpoint
+// This predicate is added only to parsed responses and is never sent to the endpoint.
 const REFERENCED_NODE_MARKER = 'urn:dataspecer:generated-app:referenced-node';
 
 /**
- * Creates an LDKit engine that keeps reads working when an aggregation target is missing or has no
- * returned details.
+ * Creates an LDKit engine that keeps reads working when a referenced target has no subject data.
  *
  * LDKit cannot decode a nested reference unless the referenced IRI appears as a subject in the
  * query result. This engine adds a temporary marker triple when necessary, allowing LDKit to return
  * an ID-only reference. The marker exists only in memory and is never stored in the RDF endpoint.
  *
- * Compositions are not changed and missing owned entities still cause the read to fail. Returns
- * undefined when the schema has no aggregation references with display fields.
+ * The engine records which IRIs it had to synthesize, so a composed child that is missing can be
+ * told apart from one that is stored but empty. Returns undefined when the schema expands no
+ * references.
  */
 export function referencePreservingEngine(
-  fields: readonly FieldDescriptor[],
   schema: Schema,
-): QueryEngine | undefined {
-  const predicates = referenceDisplayPredicates(fields, schema);
+): ReferencePreservingQueryEngine | undefined {
+  const predicates = expandedReferencePredicates(schema);
   return predicates.size === 0 ? undefined : new ReferencePreservingQueryEngine(predicates);
 }
 
-function referenceDisplayPredicates(
-  fields: readonly FieldDescriptor[],
+/** Predicates whose targets LDKit expands, and therefore expects to find as subjects. */
+function expandedReferencePredicates(
   schema: Schema,
   predicates = new Set<string>(),
 ): ReadonlySet<string> {
-  for (const field of fields) {
-    const property = schema[field.propertyName];
-    // only property objects can define @id and @schema
-    if (typeof property !== 'object' || !('@id' in property) || !property['@schema']) {
+  for (const property of Object.values(schema)) {
+    if (
+      typeof property !== 'object' ||
+      !('@id' in property) ||
+      !('@schema' in property) ||
+      !property['@schema']
+    ) {
       continue;
     }
-    if (isInlineCompositionField(field)) {
-      referenceDisplayPredicates(field.fields, property['@schema'], predicates);
-    } else if (!isCompositionField(field)) {
-      predicates.add(property['@id']);
-    }
+    predicates.add(property['@id']);
+    expandedReferencePredicates(property['@schema'], predicates);
   }
   return predicates;
 }
 
-class ReferencePreservingQueryEngine extends QueryEngine {
+export class ReferencePreservingQueryEngine extends QueryEngine {
   private readonly factory = new DataFactory();
+  readonly missingNodeIds = new Set<string>();
 
   constructor(private readonly referencePropertyIris: ReadonlySet<string>) {
     super();
@@ -61,7 +58,7 @@ class ReferencePreservingQueryEngine extends QueryEngine {
   ): Promise<RDF.ResultStream<RDF.Quad>> {
     const quads = await this.collect(await super.queryQuads(query, context));
     this.preserveReferencedNodes(quads);
-    // autoStart would end an empty iterator before LDKit listens, leaving the read unresolved
+    // delay startup so LDKit can attach listeners before an empty iterator ends
     return new ArrayIterator(quads, { autoStart: false });
   }
 
@@ -91,6 +88,7 @@ class ReferencePreservingQueryEngine extends QueryEngine {
         continue;
       }
       subjects.add(node.value);
+      this.missingNodeIds.add(node.value);
       quads.push(this.factory.quad(node, marker, node));
     }
   }

@@ -4,6 +4,7 @@ export type AssociationKind = 'composition' | 'aggregation';
 
 export const SPECIALIZATION_IRI_PROPERTY = '__specializationIri';
 export const RDF_TYPES_PROPERTY = '__rdfTypes';
+export const MISSING_ENTITY_PROPERTY = '__missingEntity';
 
 /** A selectable concrete shape for a specialized association. */
 export interface SpecializationDescriptor {
@@ -95,6 +96,8 @@ export interface EntityRuntimeState {
   [SPECIALIZATION_IRI_PROPERTY]?: string;
   /** RDF types retained as evidence when resolving the specialization of a loaded entity. */
   [RDF_TYPES_PROPERTY]?: string[];
+  /** Marks an IRI that is referenced but has no subject data in the RDF response. */
+  [MISSING_ENTITY_PROPERTY]?: boolean;
 }
 
 export type EntityRecord = EntityModel & EntityRuntimeState & Record<string, unknown>;
@@ -123,6 +126,11 @@ export function isEntityRecord(value: unknown): value is EntityRecord {
   }
   const id = (value as { id?: unknown }).id;
   return id === undefined || typeof id === 'string';
+}
+
+/** Returns whether a referenced composition had no subject data in the read response. */
+export function isMissingEntity(value: EntityRecord): boolean {
+  return value[MISSING_ENTITY_PROPERTY] === true;
 }
 
 /** Returns an IRI-shaped identifier from a reference string or object. */

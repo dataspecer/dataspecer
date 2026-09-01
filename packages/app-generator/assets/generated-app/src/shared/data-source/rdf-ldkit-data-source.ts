@@ -66,7 +66,8 @@ export class RdfLdkitDataSource implements DataSource {
     args: ReadListArgs<TModel>,
   ): Promise<ReadListResult<TModel>> {
     const schemas = this.requireSchemas(args.aggregate);
-    const lens = createLens(schemas.list, this.readContext(args.aggregate.fields, schemas.list));
+    const engine = referencePreservingEngine(schemas.list);
+    const lens = createLens(schemas.list, this.readContext(engine));
     const skip = (args.page - 1) * args.pageSize;
     const iriQuery = buildPageIriQuery(args.aggregate, args.pageSize, skip, args.sort);
     // page distinct entity IRIs before loading fields, otherwise one entity can produce multiple
@@ -83,7 +84,8 @@ export class RdfLdkitDataSource implements DataSource {
     }
 
     const items = (await lens.findByIris(iris)).map(
-      (entity) => normalizeLdkitEntity(entity, args.aggregate.fields) as TModel,
+      (entity) =>
+        normalizeLdkitEntity(entity, args.aggregate.fields, engine?.missingNodeIds) as TModel,
     );
     const itemById = new Map(items.map((item) => [item.id, item]));
     return {
@@ -101,15 +103,17 @@ export class RdfLdkitDataSource implements DataSource {
   ): Promise<TModel | null> {
     requireSafeAbsoluteIri(args.id, 'Entity IRI');
     const schemas = this.requireSchemas(args.aggregate);
-    const lens = createLens(
-      schemas.detail,
-      this.readContext(args.aggregate.fields, schemas.detail),
-    );
+    const engine = referencePreservingEngine(schemas.detail);
+    const lens = createLens(schemas.detail, this.readContext(engine));
     const result = await lens.findByIri(args.id);
     if (!result) {
       return null;
     }
-    const model = normalizeLdkitEntity(result, args.aggregate.fields) as TModel;
+    const model = normalizeLdkitEntity(
+      result,
+      args.aggregate.fields,
+      engine?.missingNodeIds,
+    ) as TModel;
     requireNamedCompositionIris(model as EntityRecord, args.aggregate.fields);
     return model;
   }
@@ -311,8 +315,7 @@ export class RdfLdkitDataSource implements DataSource {
     };
   }
 
-  private readContext(fields: readonly FieldDescriptor[], schema: Schema): Options {
-    const engine = referencePreservingEngine(fields, schema);
+  private readContext(engine: QueryEngine | undefined): Options {
     return engine ? { ...this.context(), engine } : this.context();
   }
 }

@@ -2,6 +2,8 @@ import type { DataSource } from '../data-source/data-source.ts';
 import {
   fieldValues,
   isEntityRecord,
+  MISSING_ENTITY_PROPERTY,
+  RDF_TYPES_PROPERTY,
   type AggregateDescriptorMap,
   type EntityRecord,
   type FieldDescriptor,
@@ -208,7 +210,11 @@ async function hydrateCompositionEntry(
       id,
     });
     if (!loaded) {
-      throw new Error(`Composed ${field.label} "${id}" was not found.`);
+      return {
+        ...entity,
+        [RDF_TYPES_PROPERTY]: [],
+        [MISSING_ENTITY_PROPERTY]: true,
+      };
     }
     entity = structuredClone(loaded) as EntityRecord;
   }

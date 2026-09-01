@@ -23,6 +23,8 @@ import { isSafeHttpIri } from '../assets/generated-app/src/shared/forms/iri.ts';
 import { ValidationIssueCode } from '../assets/generated-app/src/shared/operations/operation-result.ts';
 import {
   fieldValues,
+  isMissingEntity,
+  RDF_TYPES_PROPERTY,
   type AggregateDescriptor,
   type AggregateDescriptorMap,
   type EntityRecord,
@@ -505,5 +507,23 @@ describe('generated recursive form model', () => {
     expect(child).toMatchObject({ id: 'urn:child:1', name: 'Edited' });
     expect(loadedChild.name).toBe('Loaded child');
     expect((source.children as EntityRecord[])[0]).toEqual({ id: 'urn:child:1' });
+  });
+
+  it('marks a cross-aggregate composition when its detail read finds nothing', async () => {
+    const dataSource = {
+      readDetail: () => Promise.resolve(null),
+    } as unknown as DataSource;
+
+    const hydrated = await hydrateCompositionTree(
+      { id: 'urn:root', children: [{ id: 'urn:child:missing' }] },
+      rootEntityTarget(rootAggregate),
+      aggregateRegistry,
+      dataSource,
+    );
+    const child = (hydrated.children as EntityRecord[])[0];
+
+    expect(child.id).toBe('urn:child:missing');
+    expect(isMissingEntity(child)).toBe(true);
+    expect(child[RDF_TYPES_PROPERTY]).toEqual([]);
   });
 });

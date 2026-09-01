@@ -639,6 +639,7 @@ describe('analyzeGraphSemantics', () => {
         kind: FieldKind.Primitive,
       },
       { path: '__rdfTypes', label: 'Types', kind: FieldKind.Primitive },
+      { path: '__missingEntity', label: 'Missing entity', kind: FieldKind.Primitive },
     );
 
     const result = analyzeGraphSemantics(graph, metadata);
@@ -649,7 +650,7 @@ describe('analyzeGraphSemantics', () => {
     );
 
     expect(result.valid).toBe(false);
-    expect(reservedNameViolations).toHaveLength(3);
+    expect(reservedNameViolations).toHaveLength(4);
   });
 
   it('does not validate display-only fields inside an aggregation as model properties', () => {

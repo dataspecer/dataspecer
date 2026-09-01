@@ -13,12 +13,13 @@ import {
 import { DefaultDeleteStrategy } from '../assets/generated-app/src/shared/operations/delete-strategy.ts';
 import { ValidationIssueCode } from '../assets/generated-app/src/shared/operations/operation-result.ts';
 import { DefaultUpdateStrategy } from '../assets/generated-app/src/shared/operations/update-strategy.ts';
-import type {
-  EntityModel,
-  AggregateDescriptor,
-  AggregateDescriptorMap,
-  EntityRecord,
-  FieldDescriptor,
+import {
+  MISSING_ENTITY_PROPERTY,
+  type EntityModel,
+  type AggregateDescriptor,
+  type AggregateDescriptorMap,
+  type EntityRecord,
+  type FieldDescriptor,
 } from '../assets/generated-app/src/shared/types/aggregate.ts';
 import type { CompositeMutationStep } from '../assets/generated-app/src/shared/operations/composite-mutation-plan.ts';
 
@@ -295,6 +296,137 @@ describe('composite mutation planning', () => {
       ['delete', 'urn:department:old'],
     ]);
     expect(upsert(plan[1])?.payload.departments).toEqual([{ id: 'urn:department:new' }]);
+  });
+
+  it('creates a repaired missing child at its existing IRI', () => {
+    const stored: EntityRecord = {
+      id: 'urn:company',
+      departments: [{ id: 'urn:department', [MISSING_ENTITY_PROPERTY]: true }],
+    };
+    const payload: EntityRecord = {
+      id: 'urn:company',
+      departments: [{ id: 'urn:department', name: 'Repaired', offices: [] }],
+    };
+
+    const plan = buildCompositeUpdatePlan(companyAggregate, aggregateRegistry, payload, stored);
+
+    expect(plan.find((step) => step.id === 'urn:department')).toMatchObject({
+      kind: 'create',
+      payload: { id: 'urn:department' },
+    });
+    expect(plan.find((step) => step.id === 'urn:company')?.kind).toBe('update');
+  });
+
+  it('creates only the missing entry of a repeated composition', () => {
+    const department = (id: string, missing = false): EntityRecord => ({
+      id,
+      name: id,
+      offices: [],
+      ...(missing ? { [MISSING_ENTITY_PROPERTY]: true } : {}),
+    });
+    const ids = ['urn:department:0', 'urn:department:1', 'urn:department:2'];
+    const stored: EntityRecord = {
+      id: 'urn:company',
+      departments: ids.map((id, index) => department(id, index === 1)),
+    };
+    const payload: EntityRecord = {
+      id: 'urn:company',
+      departments: ids.map((id) => department(id)),
+    };
+
+    const plan = buildCompositeUpdatePlan(companyAggregate, aggregateRegistry, payload, stored);
+    const childKinds = new Map(
+      plan.filter((step) => step.id !== 'urn:company').map((step) => [step.id, step.kind]),
+    );
+
+    expect(childKinds).toEqual(
+      new Map([
+        ['urn:department:0', 'update'],
+        ['urn:department:1', 'create'],
+        ['urn:department:2', 'update'],
+      ]),
+    );
+  });
+
+  it('does not delete a missing child removed by an update', () => {
+    const plan = buildCompositeUpdatePlan(
+      companyAggregate,
+      aggregateRegistry,
+      { id: 'urn:company', departments: [] },
+      {
+        id: 'urn:company',
+        departments: [{ id: 'urn:department', [MISSING_ENTITY_PROPERTY]: true }],
+      },
+    );
+
+    expect(plan.some((step) => step.kind === 'delete' && step.id === 'urn:department')).toBe(false);
+  });
+
+  it('skips a missing descendant in a nested cascade', () => {
+    const plan = buildCompositeDeletePlan(
+      inlineCompanyAggregate,
+      aggregateRegistry,
+      {
+        id: 'urn:company',
+        departments: [
+          {
+            id: 'urn:department',
+            offices: [{ id: 'urn:office', [MISSING_ENTITY_PROPERTY]: true }],
+          },
+        ],
+      },
+      ['departments', 'departments.offices'],
+    );
+
+    expect(plan.map((step) => step.id)).toEqual(['urn:department', 'urn:company']);
+  });
+
+  it('creates a repaired missing specialized child after a branch is selected', () => {
+    const aggregate: AggregateDescriptor = {
+      ...companyAggregate,
+      fields: [specializedDepartments()],
+    };
+    const plan = buildCompositeUpdatePlan(
+      aggregate,
+      aggregateRegistry,
+      {
+        id: 'urn:company',
+        departments: [
+          {
+            id: 'urn:department',
+            __specializationIri: 'urn:psm:organization',
+            organizationCode: 'new-code',
+          },
+        ],
+      },
+      {
+        id: 'urn:company',
+        departments: [{ id: 'urn:department', [MISSING_ENTITY_PROPERTY]: true }],
+      },
+    );
+
+    expect(plan.find((step) => step.id === 'urn:department')).toMatchObject({
+      kind: 'create',
+      specializationIri: 'urn:psm:organization',
+    });
+  });
+
+  it('skips a missing specialized child without requiring branch evidence', () => {
+    const aggregate: AggregateDescriptor = {
+      ...companyAggregate,
+      fields: [specializedDepartments()],
+    };
+    const plan = buildCompositeDeletePlan(
+      aggregate,
+      aggregateRegistry,
+      {
+        id: 'urn:company',
+        departments: [{ id: 'urn:department', [MISSING_ENTITY_PROPERTY]: true }],
+      },
+      ['departments'],
+    );
+
+    expect(plan.map((step) => step.id)).toEqual(['urn:company']);
   });
 
   it('stops before creating an ancestor when a child write fails', async () => {

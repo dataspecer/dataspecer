@@ -17,9 +17,11 @@ import {
   toSafeNamedNodeValue,
   toSparqlNamedNode,
 } from '../assets/generated-app/src/shared/data-source/rdf-request-builders.ts';
-import type {
-  AggregateDescriptor,
-  EntityModel,
+import {
+  MISSING_ENTITY_PROPERTY,
+  RDF_TYPES_PROPERTY,
+  type AggregateDescriptor,
+  type EntityModel,
 } from '../assets/generated-app/src/shared/types/aggregate.ts';
 import { normalizeMultilingualValue } from '../assets/generated-app/src/shared/forms/multilingual-value.ts';
 import { AssociationKind } from '../src/graph/types.ts';
@@ -449,7 +451,7 @@ describe('generated RDF mutation payloads', () => {
     });
   });
 
-  it('converts public reference objects to scalar and repeated LDKit IRI values', () => {
+  it('converts reference objects and excludes runtime state from RDF payloads', () => {
     expect(
       toLdkitEntity(
         {
@@ -458,6 +460,7 @@ describe('generated RDF mutation payloads', () => {
           related: [{ id: 'https://example.org/book/2' }, { id: 'https://example.org/book/3' }],
           __specializationIri: 'https://example.org/psm/book',
           __rdfTypes: ['https://example.org/class/book'],
+          [MISSING_ENTITY_PROPERTY]: true,
         },
         'update',
         [scalarReference, repeatedReference],
@@ -651,7 +654,7 @@ describe('generated RDF read normalization', () => {
     ).resolves.toBeNull();
   });
 
-  it('does not turn a dangling composition into an empty child', async () => {
+  it('keeps a dangling cross-aggregate composition as an ID-only child', async () => {
     const bookIri = 'https://example.org/book/1';
     const childIri = 'https://example.org/child/deleted';
     stubFetchResponse(
@@ -664,9 +667,140 @@ describe('generated RDF read normalization', () => {
       [readAggregate.iri]: readSchemas,
     });
 
-    await expect(dataSource.readDetail({ aggregate: readAggregate, id: bookIri })).rejects.toThrow(
-      childIri,
+    await expect(dataSource.readDetail({ aggregate: readAggregate, id: bookIri })).resolves.toEqual(
+      {
+        id: bookIri,
+        genres: [],
+        children: [{ id: childIri, name: null }],
+      },
     );
+  });
+
+  it('preserves missing compositions and aggregations throughout an inline composition tree', async () => {
+    const rootIri = 'https://example.org/root/1';
+    const availableChildIri = 'https://example.org/child/available';
+    const missingChildIri = 'https://example.org/child/missing';
+    const missingGrandchildIri = 'https://example.org/grandchild/missing';
+    const missingReferenceIri = 'https://example.org/reference/missing';
+    const rootToChild = 'https://example.org/has-child';
+    const childToGrandchild = 'https://example.org/has-grandchild';
+    const childToReference = 'https://example.org/has-reference';
+    const label = 'https://example.org/label';
+    const rendered = toRenderedAggregate({
+      iri: 'https://example.org/aggregate/root',
+      name: 'Root',
+      safeName: 'Root',
+      classIri: 'https://example.org/class/root',
+      fields: [
+        {
+          path: 'children',
+          label: 'Children',
+          kind: FieldKind.Association,
+          propertyIri: rootToChild,
+          targetClassIri: 'https://example.org/class/child',
+          associationKind: AssociationKind.Composition,
+          fields: [
+            {
+              path: 'label',
+              label: 'Label',
+              kind: FieldKind.Primitive,
+              propertyIri: label,
+              many: false,
+              required: false,
+            },
+            {
+              path: 'grandchild',
+              label: 'Grandchild',
+              kind: FieldKind.Association,
+              propertyIri: childToGrandchild,
+              targetClassIri: 'https://example.org/class/grandchild',
+              associationKind: AssociationKind.Composition,
+              fields: [
+                {
+                  path: 'label',
+                  label: 'Label',
+                  kind: FieldKind.Primitive,
+                  propertyIri: label,
+                  many: false,
+                  required: false,
+                },
+              ],
+              many: false,
+              required: false,
+            },
+            {
+              path: 'reference',
+              label: 'Reference',
+              kind: FieldKind.Association,
+              propertyIri: childToReference,
+              targetClassIri: 'https://example.org/class/reference',
+              associationKind: AssociationKind.Aggregation,
+              fields: [
+                {
+                  path: 'label',
+                  label: 'Label',
+                  kind: FieldKind.Primitive,
+                  propertyIri: label,
+                  many: false,
+                  required: false,
+                },
+              ],
+              many: false,
+              required: false,
+            },
+          ],
+          many: true,
+          required: false,
+        },
+      ],
+    });
+    const aggregate: AggregateDescriptor<EntityModel> = {
+      iri: rendered.iri,
+      name: rendered.name,
+      classIri: rendered.classIri,
+      fields: rendered.descriptorFields,
+      createEmpty: () => ({}),
+    };
+    stubFetchResponse(
+      nTriplesResponse([
+        `<${rootIri}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ldkit.io/ontology/Resource> .`,
+        `<${rootIri}> <${rootToChild}> <${availableChildIri}> .`,
+        `<${rootIri}> <${rootToChild}> <${missingChildIri}> .`,
+        `<${availableChildIri}> <${label}> "Available" .`,
+        `<${availableChildIri}> <${childToGrandchild}> <${missingGrandchildIri}> .`,
+        `<${availableChildIri}> <${childToReference}> <${missingReferenceIri}> .`,
+      ]),
+    );
+    const dataSource = new RdfLdkitDataSource('https://example.org/sparql', {
+      [aggregate.iri]: buildLdkitSchemaBundle(rendered.classIri, rendered.fields),
+    });
+
+    await expect(dataSource.readDetail({ aggregate, id: rootIri })).resolves.toEqual({
+      id: rootIri,
+      children: [
+        {
+          id: availableChildIri,
+          label: 'Available',
+          // composed children carry their RDF types, aggregation targets do not
+          [RDF_TYPES_PROPERTY]: [],
+          grandchild: {
+            id: missingGrandchildIri,
+            label: null,
+            [RDF_TYPES_PROPERTY]: [],
+            [MISSING_ENTITY_PROPERTY]: true,
+          },
+          reference: { id: missingReferenceIri, label: null },
+        },
+        {
+          id: missingChildIri,
+          label: null,
+          grandchild: null,
+          reference: null,
+          [RDF_TYPES_PROPERTY]: [],
+          [MISSING_ENTITY_PROPERTY]: true,
+        },
+      ],
+    });
   });
 
   it('normalizes IRI pointers while keeping inline compositions expanded', () => {

@@ -1,6 +1,7 @@
 import {
   fieldValues,
   isEntityRecord,
+  MISSING_ENTITY_PROPERTY,
   referenceIdOf,
   RDF_TYPES_PROPERTY,
   SPECIALIZATION_IRI_PROPERTY,
@@ -20,74 +21,86 @@ import { effectiveFields, resolveLoadedSpecialization } from '../forms/specializ
 
 type LdkitMutationMode = 'create' | 'update';
 
-/** Converts an LDKit entity to the model shape used by generated forms. */
-export function normalizeLdkitEntity(value: unknown, fields: readonly FieldDescriptor[]): unknown {
-  return normalizeEntity(value, fields);
-}
-
-function normalizeEntity(
+/**
+ * Converts an LDKit entity to the model shape used by generated forms. Composed children synthesized
+ * by the read are marked so they can be distinguished from stored children with empty fields.
+ */
+export function normalizeLdkitEntity(
   value: unknown,
   fields: readonly FieldDescriptor[],
-  specializations?: readonly SpecializationDescriptor[],
+  missingNodeIds: ReadonlySet<string> = new Set(),
 ): unknown {
-  if (Array.isArray(value)) {
-    return value.map((entry) => normalizeEntity(entry, fields, specializations));
-  }
-  if (value === null || typeof value !== 'object' || value instanceof Date) {
-    return value;
+  function normalizeEntity(
+    value: unknown,
+    fields: readonly FieldDescriptor[],
+    specializations?: readonly SpecializationDescriptor[],
+    composed = false,
+  ): unknown {
+    if (Array.isArray(value)) {
+      return value.map((entry) => normalizeEntity(entry, fields, specializations, composed));
+    }
+    if (value === null || typeof value !== 'object' || value instanceof Date) {
+      return value;
+    }
+
+    const source = value as Record<string, unknown>;
+    const fieldByProperty = new Map(fields.map((field) => [field.propertyName, field]));
+    const result: Record<string, unknown> = {};
+    for (const [key, nested] of Object.entries(source)) {
+      if (key === '$id') {
+        continue;
+      }
+      const field = fieldByProperty.get(key);
+      if (field && isMultilingualField(field)) {
+        result[key] =
+          nested === null || nested === undefined
+            ? nested
+            : normalizeMultilingualValue(nested, field.label);
+      } else if (field?.kind === 'association') {
+        result[key] = isInlineCompositionField(field)
+          ? normalizeEntity(nested, field.fields ?? [], field.specializations, true)
+          : normalizeReference(nested, field);
+      } else {
+        result[key] = normalizeUnknown(nested);
+      }
+    }
+    if (typeof source.$id === 'string') {
+      result.id = source.$id;
+    }
+    // only owned children have the flag because only they are written back
+    if (composed && typeof result.id === 'string' && missingNodeIds.has(result.id)) {
+      result[MISSING_ENTITY_PROPERTY] = true;
+    }
+    if (!specializations?.length) {
+      return result;
+    }
+    const shape = { fields, specializations };
+    return resolveLoadedSpecialization(shape, result);
   }
 
-  const source = value as Record<string, unknown>;
-  const fieldByProperty = new Map(fields.map((field) => [field.propertyName, field]));
-  const result: Record<string, unknown> = {};
-  for (const [key, nested] of Object.entries(source)) {
-    if (key === '$id') {
-      continue;
+  function normalizeReference(value: unknown, field: FieldDescriptor): unknown {
+    if (Array.isArray(value)) {
+      return value.map((entry) => normalizeReference(entry, field));
     }
-    const field = fieldByProperty.get(key);
-    if (field && isMultilingualField(field)) {
-      result[key] =
-        nested === null || nested === undefined
-          ? nested
-          : normalizeMultilingualValue(nested, field.label);
-    } else if (field?.kind === 'association') {
-      result[key] = isInlineCompositionField(field)
-        ? normalizeEntity(nested, field.fields ?? [], field.specializations)
-        : normalizeReference(nested, field);
-    } else {
-      result[key] = normalizeUnknown(nested);
+    if (value === null || value === undefined) {
+      return value;
     }
+    if (typeof value === 'string') {
+      return { id: requireSafeAbsoluteIri(value, `${field.label} reference IRI`) };
+    }
+    // reference whose target has display fields is read as an entity, so views can label the link
+    if (typeof value === 'object') {
+      const entity = normalizeEntity(value, field.fields ?? []) as Record<string, unknown>;
+      if (typeof entity.id !== 'string') {
+        throw new Error(`${field.label} must contain an IRI reference.`);
+      }
+      entity.id = requireSafeAbsoluteIri(entity.id, `${field.label} reference IRI`);
+      return entity;
+    }
+    throw new Error(`${field.label} must contain an IRI reference.`);
   }
-  if (typeof source.$id === 'string') {
-    result.id = source.$id;
-  }
-  if (!specializations?.length) {
-    return result;
-  }
-  const shape = { fields, specializations };
-  return resolveLoadedSpecialization(shape, result);
-}
 
-function normalizeReference(value: unknown, field: FieldDescriptor): unknown {
-  if (Array.isArray(value)) {
-    return value.map((entry) => normalizeReference(entry, field));
-  }
-  if (value === null || value === undefined) {
-    return value;
-  }
-  if (typeof value === 'string') {
-    return { id: requireSafeAbsoluteIri(value, `${field.label} reference IRI`) };
-  }
-  // reference whose target has display fields is read as an entity, so views can label the link
-  if (typeof value === 'object') {
-    const entity = normalizeEntity(value, field.fields ?? []) as Record<string, unknown>;
-    if (typeof entity.id !== 'string') {
-      throw new Error(`${field.label} must contain an IRI reference.`);
-    }
-    entity.id = requireSafeAbsoluteIri(entity.id, `${field.label} reference IRI`);
-    return entity;
-  }
-  throw new Error(`${field.label} must contain an IRI reference.`);
+  return normalizeEntity(value, fields);
 }
 
 function normalizeUnknown(value: unknown): unknown {
@@ -175,8 +188,12 @@ export function toLdkitEntity(
       }
       continue;
     }
-    if (key === SPECIALIZATION_IRI_PROPERTY || key === RDF_TYPES_PROPERTY) {
-      // runtime specialization state selects schemas but must never become RDF data
+    if (
+      key === SPECIALIZATION_IRI_PROPERTY ||
+      key === RDF_TYPES_PROPERTY ||
+      key === MISSING_ENTITY_PROPERTY
+    ) {
+      // runtime state must never become RDF data
       continue;
     }
     const field = fieldByProperty.get(key);

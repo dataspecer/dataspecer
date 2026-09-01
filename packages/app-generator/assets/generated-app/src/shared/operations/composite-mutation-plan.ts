@@ -17,6 +17,7 @@ import {
   fieldValues,
   isEntityRecord,
   isEmptyValue,
+  isMissingEntity,
   type AggregateDescriptor,
   type AggregateDescriptorMap,
   type EntityRecord,
@@ -118,14 +119,16 @@ function collectUpdateSteps(
   upserts: CompositeMutationStep[],
   removals: CompositeMutationStep[],
 ): void {
-  const specializationIri = requireMutationSpecialization(entity, target, original);
+  // child absent from the read response cannot be updated, so recreate it at the referenced IRI
+  const stored = original && isMissingEntity(original) ? undefined : original;
+  const specializationIri = requireMutationSpecialization(entity, target, stored);
   for (const field of effectiveFields(target, entity)) {
     if (!isCompositionField(field)) {
       continue;
     }
     const childTarget = requireCompositionTarget(target, field, aggregateRegistry);
     const currentChildren = compositionEntities(entity[field.propertyName], field);
-    const originalChildren = compositionEntities(original?.[field.propertyName], field);
+    const originalChildren = compositionEntities(stored?.[field.propertyName], field);
     const originalById = new Map(
       originalChildren
         .map((child) => [entityId(child), child] as const)
@@ -156,7 +159,7 @@ function collectUpdateSteps(
     }
   }
 
-  const kind = original ? 'update' : 'create';
+  const kind = stored ? 'update' : 'create';
   upserts.push({
     kind,
     target,
@@ -172,6 +175,9 @@ function collectDeleteSteps(
   aggregateRegistry: AggregateDescriptorMap,
   removals: CompositeMutationStep[],
 ): void {
+  if (isMissingEntity(entity)) {
+    return;
+  }
   requireMutationSpecialization(entity, target, entity, 'remove');
   visitCompositionChildren(entity, target, aggregateRegistry, (child, childTarget) => {
     collectDeleteSteps(child, childTarget, aggregateRegistry, removals);
@@ -190,6 +196,9 @@ function collectCascadeDeleteSteps(
   pathPrefix: string,
   removals: CompositeMutationStep[],
 ): void {
+  if (isMissingEntity(entity)) {
+    return;
+  }
   requireMutationSpecialization(entity, target, entity, 'remove');
   for (const field of effectiveFields(target, entity)) {
     const fieldPath = joinFieldPath(pathPrefix, field.path);
