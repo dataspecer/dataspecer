@@ -1,7 +1,11 @@
 import { referenceIdOf, type FieldDescriptor } from '../types/aggregate.ts';
 import { isMultilingualField, selectMultilingualValues } from './multilingual-value.ts';
 
-const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' });
+// Date-only values use UTC midnight and must also be formatted in UTC.
+const dateFormat = new Intl.DateTimeFormat(undefined, {
+  dateStyle: 'medium',
+  timeZone: 'UTC',
+});
 const dateTimeFormat = new Intl.DateTimeFormat(undefined, {
   dateStyle: 'medium',
   timeStyle: 'short',

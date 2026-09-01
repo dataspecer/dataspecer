@@ -42,9 +42,12 @@ describe('formatFieldValue', () => {
   });
 
   it('leaves the time out of a date-only field', () => {
-    const formatted = formatFieldValue(dateField, new Date('2024-05-01T09:30:00.000Z'));
+    const value = new Date('2024-05-01T23:30:00.000Z');
+    const formatted = formatFieldValue(dateField, value);
 
-    expect(formatted).toContain('2024');
+    expect(formatted).toBe(
+      new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeZone: 'UTC' }).format(value),
+    );
     expect(formatted).not.toMatch(/\d{1,2}:\d{2}/);
   });
 

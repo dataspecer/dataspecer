@@ -63,6 +63,24 @@ export function coerceValue(control: FieldControl, raw: string, checked: boolean
   }
 }
 
+/** Returns the calendar date represented by a date-only model value. */
+export function dateOnlyParts(value: Date): { year: number; month: number; day: number } {
+  return {
+    year: value.getUTCFullYear(),
+    month: value.getUTCMonth() + 1,
+    day: value.getUTCDate(),
+  };
+}
+
+/** Creates a date-only model value at UTC midnight. */
+export function dateOnlyFromParts(year: number, month: number, day: number): Date {
+  const value = new Date(0);
+  // Date.UTC treats years 0 to 99 as 1900 to 1999.
+  value.setUTCFullYear(year, month - 1, day);
+  value.setUTCHours(0, 0, 0, 0);
+  return value;
+}
+
 // Formats a model value for display in the control's input element.
 export function toInputValue(control: FieldControl, value: unknown): string {
   if (value === null || value === undefined) {

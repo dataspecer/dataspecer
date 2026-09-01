@@ -15,6 +15,8 @@ import {
 } from '../assets/generated-app/src/shared/forms/entity-target.ts';
 import {
   coerceValue,
+  dateOnlyFromParts,
+  dateOnlyParts,
   resolveControl,
   toInputValue,
   validateModel,
@@ -323,6 +325,13 @@ describe('generated recursive form model', () => {
     const value = coerceValue('datetime', '2026-07-27T12:34', false);
 
     expect(toInputValue('datetime', value)).toBe('2026-07-27T12:34');
+  });
+
+  it('represents date-only picker values at UTC midnight', () => {
+    const value = dateOnlyFromParts(2022, 3, 15);
+
+    expect(value.toISOString()).toBe('2022-03-15T00:00:00.000Z');
+    expect(dateOnlyParts(value)).toEqual({ year: 2022, month: 3, day: 15 });
   });
 
   it('coerces integer controls to numbers', () => {

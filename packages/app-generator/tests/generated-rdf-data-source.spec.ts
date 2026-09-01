@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ldkit } from 'ldkit/namespaces';
+import { ldkit, xsd } from 'ldkit/namespaces';
 import { DataFactory } from 'ldkit/rdf';
 
 import {
@@ -24,6 +24,7 @@ import {
   type EntityModel,
 } from '../assets/generated-app/src/shared/types/aggregate.ts';
 import { normalizeMultilingualValue } from '../assets/generated-app/src/shared/forms/multilingual-value.ts';
+import { dateOnlyFromParts } from '../assets/generated-app/src/shared/forms/form-model.ts';
 import { AssociationKind } from '../src/graph/types.ts';
 import { FieldKind } from '../src/metadata/types.ts';
 import { buildLdkitSchemaBundle } from '../src/rendering/ldkit-schema.ts';
@@ -929,6 +930,53 @@ describe('generated RDF read normalization', () => {
 });
 
 describe('generated RDF write schema selection', () => {
+  it('writes a UTC-normalized date-only value unchanged', async () => {
+    const requests: string[] = [];
+    vi.stubGlobal('fetch', captureRequestBodies(requests));
+    const publishedIri = 'https://example.org/published';
+    const dateField: AggregateDescriptor<EntityModel>['fields'][number] = {
+      path: 'published',
+      propertyName: 'published',
+      label: 'Published',
+      kind: 'primitive',
+      propertyIri: publishedIri,
+      datatype: 'http://www.w3.org/2001/XMLSchema#date',
+      formControl: 'date',
+      many: false,
+      required: false,
+    };
+    const aggregate: AggregateDescriptor<EntityModel> = {
+      ...listAggregate,
+      fields: [dateField],
+    };
+    const schema = {
+      '@type': aggregate.classIri,
+      published: {
+        '@id': publishedIri,
+        '@type': xsd.date,
+        '@optional': true as const,
+      },
+    };
+    const dataSource = new RdfLdkitDataSource('https://example.org/sparql', {
+      [aggregate.iri]: {
+        detail: schema,
+        list: schema,
+        writes: { '[]': schema },
+        specializationWrites: {},
+      },
+    });
+
+    await dataSource.create({
+      aggregate,
+      payload: {
+        id: 'https://example.org/book/1',
+        published: dateOnlyFromParts(2022, 3, 15),
+      } as EntityModel,
+    });
+
+    expect(requests.join('\n')).toContain('"2022-03-15"');
+  });
+
   it('deletes only subject triples, leaving reverse-field triples on other entities', async () => {
     const requests: string[] = [];
     vi.stubGlobal('fetch', captureRequestBodies(requests));

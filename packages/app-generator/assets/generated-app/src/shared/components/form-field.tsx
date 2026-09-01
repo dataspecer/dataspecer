@@ -22,6 +22,8 @@ import {
 } from '../types/aggregate.ts';
 import {
   coerceValue,
+  dateOnlyParts,
+  dateOnlyFromParts,
   resolveControl,
   toInputValue,
   type FieldControl,
@@ -201,15 +203,17 @@ function PrimitiveControl(props: PrimitiveControlProps) {
   }
 
   if (control === 'date' || control === 'datetime') {
-    // The models hold native Date objects, the pickers work in Luxon values.
-    const current =
-      value instanceof Date && !Number.isNaN(value.getTime()) ? DateTime.fromJSDate(value) : null;
+    // Date-only values use UTC midnight so serialization cannot change the calendar day.
+    const modelValue = value instanceof Date && !Number.isNaN(value.getTime()) ? value : undefined;
     if (control === 'date') {
+      const current = modelValue ? DateTime.fromObject(dateOnlyParts(modelValue)) : null;
       return (
         <DatePicker
           label={props.label}
           value={current}
-          onChange={(next: DateTime | null) => onChange(next?.toJSDate() ?? undefined)}
+          onChange={(next: DateTime | null) =>
+            onChange(next ? dateOnlyFromParts(next.year, next.month, next.day) : undefined)
+          }
           slotProps={{
             textField: { id: props.id, 'aria-label': props.ariaLabel, ...shared },
           }}
@@ -220,7 +224,7 @@ function PrimitiveControl(props: PrimitiveControlProps) {
       <DateTimePicker
         label={props.label}
         ampm={false}
-        value={current}
+        value={modelValue ? DateTime.fromJSDate(modelValue) : null}
         onChange={(next: DateTime | null) => onChange(next?.toJSDate() ?? undefined)}
         slotProps={{
           textField: { id: props.id, 'aria-label': props.ariaLabel, ...shared },
