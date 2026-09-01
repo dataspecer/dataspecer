@@ -5,7 +5,6 @@ import { ControlledVocabularyAssignment } from "@dataspecer/core-v2/semantic-mod
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
 import { DataspecerError } from "../../dataspecer-error";
 import { CmeReference } from "../model";
-import { EntityDsIdentifier } from "../../entity-model";
 
 const factory = createDefaultSemanticModelProfileOperationFactory();
 
@@ -14,12 +13,11 @@ const factory = createDefaultSemanticModelProfileOperationFactory();
  */
 export function modifyCmeControlledVocabularyAssignment(
   model: InMemorySemanticModel,
-  classProfile: CmeReference,
-  controlledVocabularyIdentifier: EntityDsIdentifier,
-  changes: Partial<Pick<ControlledVocabularyAssignment, "qualifier" | "override">>,
+  assignment: CmeReference,
+  changes: Partial<Pick<ControlledVocabularyAssignment, "qualifier" | "replaces">>,
 ) {
   const operation = factory.modifyControlledVocabularyAssignment(
-    classProfile.identifier, controlledVocabularyIdentifier, changes);
+    assignment.identifier, changes);
 
   const result = model.executeOperation(operation);
   if (result.success === false) {
