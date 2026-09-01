@@ -65,16 +65,29 @@ export function isAggregatedProfiledSemanticModelClass(
 }
 
 interface AggregatedNamedThingProfile {
+  /**
+   * This is computed value based on the nameProperty of the profiled entity
+   * from which the name is inherited.
+   */
+  nameFromProperty: string | null;
 
   /**
-   * IRI of an RDF property to hold name.
-   * Inherit based on {@link NamedThingProfile.nameFromProfiled};
+   * IRI of an RDF property to hold name. For vocabulary entities, this might be
+   * non-null, for profiled entities, this is always null since we do not
+   * support "changing" these properties.
    */
   nameProperty: string | null;
 
   /**
-   * IRI of an RDF property to hold description.
-   * Inherit based on {@link NamedThingProfile.descriptionFromProfiled};
+   * This is computed value based on the descriptionProperty of the profiled entity
+   * from which the description is inherited.
+   */
+  descriptionFromProperty: string | null;
+
+  /**
+   * IRI of an RDF property to hold description. For vocabulary entities, this
+   * might be non-null, for profiled entities, this is always null since we do
+   * not support "changing" these properties.
    */
   descriptionProperty: string | null;
 

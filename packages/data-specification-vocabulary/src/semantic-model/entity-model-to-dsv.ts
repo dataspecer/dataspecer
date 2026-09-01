@@ -133,6 +133,7 @@ export function createContext(
     if (entity === null) {
       return null;
     }
+
     // Relationships, and their profiles, store the values in the range end.
     const source = (
       isSemanticModelRelationship(entity)
@@ -140,51 +141,18 @@ export function createContext(
         ? entity.ends[1] : entity
     ) as {
       nameProperty?: string | null,
-      nameFromProfiled?: string | null,
       descriptionProperty?: string | null,
-      descriptionFromProfiled?: string | null,
     } | undefined;
     const property = type === "name"
       ? source?.nameProperty : source?.descriptionProperty;
     if (property !== undefined && property !== null) {
       return property;
     }
-    const fromProfiled = type === "name"
-      ? source?.nameFromProfiled : source?.descriptionFromProfiled;
-    return getPropertyFor(
-      fromProfiled ?? null, type, [...visited, entityIdentifier]);
+
+    // We do not go deeper because the name property is not inherited.
+    return null;
   };
 
-  const getPropertyForName = (entityIdentifier: string | null): string | null =>
-    getPropertyFor(entityIdentifier, "name");
-
-  const getPropertyForDescription = (
-    entityIdentifier: string | null,
-    visited: string[] = [],
-  ): string | null => {
-    if (entityIdentifier === null || visited.includes(entityIdentifier)) {
-      return null;
-    }
-    const entity = identifierToEntity(entityIdentifier);
-    if (entity === null) {
-      return null;
-    }
-    if (isSemanticModelClass(entity)) {
-      return entity.descriptionProperty ?? null;
-    } else if (isSemanticModelRelationship(entity)) {
-      const [_, range] = entity.ends;
-      return range.descriptionProperty ?? null
-    } else if (isSemanticModelClassProfile(entity)) {
-      return getPropertyForDescription(
-        entity.descriptionFromProfiled, [...visited, entityIdentifier]);
-    } else if (isSemanticModelRelationshipProfile(entity)) {
-      const [_, range] = entity.ends;
-      return getPropertyForDescription(
-        range.descriptionFromProfiled, [...visited, entityIdentifier]);
-    } else {
-      return null;
-    }
-  };
 
   const languageFilter = (value: LanguageString | null | undefined) =>
     value ?? null;
@@ -193,8 +161,8 @@ export function createContext(
     identifierToEntity,
     entityToIri,
     languageFilter,
-    getPropertyForName,
-    getPropertyForDescription,
+    getPropertyForName: (entityIdentifier: string | null) => getPropertyFor(entityIdentifier, "name"),
+    getPropertyForDescription: (entityIdentifier: string | null) => getPropertyFor(entityIdentifier, "description"),
   };
 }
 

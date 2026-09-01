@@ -58,13 +58,13 @@ function aggregateSemanticModelRelationshipProfile(
       const nameProfiled = getProfiled(end.nameFromProfiled);
       const name = nameProfiled?.ends[index]?.name ?? end.name;
       // We inherit the property only for vocabulary entities and already aggregated entities.
-      const nameProperty = (nameProfiled as SemanticModelRelationship | AggregatedProfiledSemanticModelRelationship)?.ends[index]?.nameProperty ?? null;
+      const nameFromProperty = (nameProfiled as SemanticModelRelationship | AggregatedProfiledSemanticModelRelationship)?.ends[index]?.nameProperty ?? null;
 
       // Description is similar to name in processing.
       const descriptionProfiled = getProfiled(end.descriptionFromProfiled);
       const description = descriptionProfiled?.ends[index]?.description ?? end.description;
       // We inherit the property only for vocabulary entities and already aggregated entities.
-      const descriptionProperty = (descriptionProfiled as SemanticModelRelationship | AggregatedProfiledSemanticModelRelationship)?.ends[index]?.descriptionProperty ?? null;
+      const descriptionFromProperty = (descriptionProfiled as SemanticModelRelationship | AggregatedProfiledSemanticModelRelationship)?.ends[index]?.descriptionProperty ?? null;
 
       // Unlike name and description usage note does not exists on a class.
       // As a result we type check before reading it.
@@ -143,10 +143,12 @@ function aggregateSemanticModelRelationshipProfile(
         iri: end.iri,
         name: name,
         nameFromProfiled: end.nameFromProfiled,
-        nameProperty: nameProperty,
+        nameFromProperty: nameFromProperty,
+        nameProperty: null,
         description: description,
         descriptionFromProfiled: end.descriptionFromProfiled,
-        descriptionProperty: descriptionProperty,
+        descriptionFromProperty: descriptionFromProperty,
+        descriptionProperty: null,
         profiling: end.profiling,
         usageNote: usageNote,
         usageNoteFromProfiled: end.usageNoteFromProfiled,
