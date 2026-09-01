@@ -4,8 +4,7 @@ import { type ProjectModelEntity } from "@dataspecer/core/project-model";
 import { useModelStoreEntity } from "@dataspecer/model-store/react";
 import { DefaultArtifactBuilder, GenerateReport } from "@dataspecer/specification/v1";
 import AddIcon from "@mui/icons-material/Add";
-import LoadingButton from "@mui/lab/LoadingButton";
-import { Box, Button, Fab, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from "@mui/material";
+import { Box, Button, CircularProgress, Fab, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from "@mui/material";
 import { saveAs } from "file-saver";
 import { Magnet } from "lucide-react";
 import React, { memo, useCallback, useContext, useState } from "react";
@@ -64,6 +63,7 @@ export const DocumentationSpecification = memo(() => {
   const profileStructureDialog = useDialog(ProfileStructureDialog, ["dataSpecificationId"]);
 
   const [zipLoading, setZipLoading] = React.useState<false | "stores-loading" | "generating">(false);
+  const isZipLoading = zipLoading !== false;
   const [generateDialogOpen, setGenerateDialogOpen] = React.useState<boolean>(false);
   const [generateState, setGenerateState] = React.useState<GenerateReport>([]);
   const generateZip = async (configurationId: string, overrideBasePathsToNull: boolean = false) => {
@@ -182,7 +182,7 @@ export const DocumentationSpecification = memo(() => {
       <Typography variant="h5" component="div" gutterBottom sx={{ mt: 5 }}>
         {t("generate artifacts")}
       </Typography>
-      <GeneratingDialog isOpen={generateDialogOpen} close={() => setGenerateDialogOpen(false)} inProgress={!!zipLoading} generateReport={generateState} />
+      <GeneratingDialog isOpen={generateDialogOpen} close={() => setGenerateDialogOpen(false)} inProgress={isZipLoading} generateReport={generateState} />
       {specification &&
         specification.artifactConfigurations.map((configuration) => (
           <Box
@@ -196,12 +196,14 @@ export const DocumentationSpecification = memo(() => {
             }}
           >
             {dataSpecificationIri && <ConfigureArtifacts dataSpecificationId={dataSpecificationIri} configurationId={configuration.id} />}
-            <LoadingButton variant="contained" onClick={() => generateZip(configuration.id, false)} loading={zipLoading !== false}>
-              {t("generate zip file")}
-            </LoadingButton>
-            <LoadingButton onClick={() => generateZip(configuration.id, true)} loading={zipLoading !== false}>
-              {t("generate zip file with relative paths")}
-            </LoadingButton>
+            <Button variant="contained" onClick={() => generateZip(configuration.id, false)} disabled={isZipLoading} aria-busy={isZipLoading} sx={{ position: "relative" }}>
+              <span style={{ opacity: isZipLoading ? 0 : 1 }}>{t("generate zip file")}</span>
+              {isZipLoading && <CircularProgress aria-hidden size={16} color="inherit" sx={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%)" }} />}
+            </Button>
+            <Button onClick={() => generateZip(configuration.id, true)} disabled={isZipLoading} aria-busy={isZipLoading} sx={{ position: "relative" }}>
+              <span style={{ opacity: isZipLoading ? 0 : 1 }}>{t("generate zip file with relative paths")}</span>
+              {isZipLoading && <CircularProgress aria-hidden size={16} color="inherit" sx={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%)" }} />}
+            </Button>
           </Box>
         ))}
 
