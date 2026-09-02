@@ -691,6 +691,26 @@ test("Create controlled vocabulary assignment.", () => {
   });
 });
 
+test("Create controlled vocabulary assignment, a stored iri is preserved.", () => {
+  const actual: ChangeEntry[] = [];
+  const classProfile = classProfileFixture();
+  const executor = createDefaultSemanticModelProfileOperationExecutor(
+    tableReader({ "1": classProfile }),
+    { change: (updated, removed) => actual.push({ updated, removed }) },
+  );
+  //
+  const result = executor.executeOperation(factory.createControlledVocabularyAssignment(
+    {
+      id: "cv-1", classProfile: "1", vocabulary: "voc-1", qualifier: "MUST",
+      iri: "http://example.com/imported-assignment",
+    }));
+  //
+  expect(result).toStrictEqual({ success: true, created: ["cv-1"] });
+  expect(actual.length).toBe(1);
+  expect((actual[0]!.updated["cv-1"] as ControlledVocabularyAssignment).iri)
+    .toBe("http://example.com/imported-assignment");
+});
+
 test("Create controlled vocabulary assignment, same vocabulary with a different qualifier is allowed.", () => {
   const actual: ChangeEntry[] = [];
   const cv1: ControlledVocabularyAssignment = {
@@ -822,6 +842,33 @@ test("Modify controlled vocabulary assignment.", () => {
         ...cv1,
         qualifier: "RECOMMENDED",
         replaces: { kind: "local", target: "cv-0" },
+      } as ControlledVocabularyAssignment,
+    },
+    removed: [],
+  });
+});
+
+test("Modify controlled vocabulary assignment, an imported replaces is stored.", () => {
+  const actual: ChangeEntry[] = [];
+  const cv1: ControlledVocabularyAssignment = {
+    id: "cv-1", type: [CONTROLLED_VOCABULARY_ASSIGNMENT],
+    classProfile: "1", vocabulary: "voc-1", qualifier: "MUST", replaces: null, iri: null,
+  };
+  const executor = createDefaultSemanticModelProfileOperationExecutor(
+    tableReader({ "cv-1": cv1 }),
+    { change: (updated, removed) => actual.push({ updated, removed }) },
+  );
+  //
+  const result = executor.executeOperation(factory.modifyControlledVocabularyAssignment(
+    "cv-1", { replaces: { kind: "imported", iri: "http://foreign.example.com/some-assignment" } }));
+  //
+  expect(result).toStrictEqual({ success: true, created: [] });
+  expect(actual.length).toBe(1);
+  expect(actual[0]).toStrictEqual({
+    updated: {
+      "cv-1": {
+        ...cv1,
+        replaces: { kind: "imported", iri: "http://foreign.example.com/some-assignment" },
       } as ControlledVocabularyAssignment,
     },
     removed: [],
