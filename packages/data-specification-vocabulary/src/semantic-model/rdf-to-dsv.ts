@@ -5,6 +5,7 @@ import {
   ApplicationProfile,
   ClassProfile,
   ClassProfileType,
+  ControlledVocabularyAssignmentProfile,
   PropertyProfile,
   ObjectPropertyProfile,
   ObjectPropertyProfileType,
@@ -21,7 +22,7 @@ import {
 } from "./n3-reader.ts";
 
 import {
-  RDF, DSV, SKOS, VANN, DCT, DSV_CLASS_ROLE, DSV_MANDATORY_LEVEL,
+  RDF, DSV, DSV_DAP, SKOS, VANN, DCT, DSV_CLASS_ROLE, DSV_MANDATORY_LEVEL,
 } from "./vocabulary.ts";
 
 export async function rdfToDsv(
@@ -204,9 +205,28 @@ class ProfileLoader {
       type: [ClassProfileType],
       profiledClassIri: reader.iris(DSV.class),
       classRole: iriToClassRole(reader.iri(DSV.classRole)),
-      controlledVocabularyAssignments: [],
+      controlledVocabularyAssignments: this.loadControlledVocabularyAssignments(reader),
     };
     this.addToApplicationProfile(reader, item => item.classProfiles, profile);
+  }
+
+  /**
+   * Reads this class profile's own controlled vocabulary assignments,
+   * discovered via the forward edge from the class profile - same
+   * approach as reusesPropertyValue, just with IRI-identified subjects
+   * instead of blank nodes (irisAsSubjects handles both the same way).
+   */
+  private loadControlledVocabularyAssignments(
+    reader: RdfPropertyReader,
+  ): ControlledVocabularyAssignmentProfile[] {
+    const result: ControlledVocabularyAssignmentProfile[] = [];
+    for (const node of reader.irisAsSubjects(DSV_DAP.controlledVocabularyAssignment)) {
+      const assignment = loadControlledVocabularyAssignment(this.context, node);
+      if (assignment !== null) {
+        result.push(assignment);
+      }
+    }
+    return result;
   }
 
   private loadTermProfile(
@@ -345,6 +365,29 @@ function loadReusesPropertyValue(
     reusedAsPropertyIri: reusedAsProperty,
     propertyReusedFromResourceIri: reusedFrom,
   });
+}
+
+function loadControlledVocabularyAssignment(
+  context: RdfLoaderContext,
+  subject: N3.Quad_Subject,
+): ControlledVocabularyAssignmentProfile | null {
+  const reader = new RdfPropertyReader(context, subject);
+  const controlledVocabularyIri = reader.iri(DSV_DAP.controlledVocabulary);
+  const usageExpectationIri = reader.iri(DSV_DAP.usageExpectation);
+  if (controlledVocabularyIri === null || usageExpectationIri === null) {
+    console.warn("Invalid dsv-dap:ControlledVocabularyAssignment, missing controlledVocabulary or usageExpectation.", {
+      subject: subject.value,
+      controlledVocabularyIri,
+      usageExpectationIri,
+    });
+    return null;
+  }
+  return {
+    iri: subject.value,
+    controlledVocabularyIri,
+    usageExpectationIri,
+    replacesIri: reader.iri(DSV_DAP.replaces),
+  };
 }
 
 /**
