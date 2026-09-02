@@ -283,6 +283,7 @@ class EntityListContainerToDsv {
       profiledClassIri: [],
       specializationOfIri: generalizations[item.id] ?? [],
       classRole: ClassRole.undefined,
+      controlledVocabularyAssignments: [],
     };
 
     for (const tag of (item.tags ?? [])) {

@@ -204,6 +204,7 @@ class ProfileLoader {
       type: [ClassProfileType],
       profiledClassIri: reader.iris(DSV.class),
       classRole: iriToClassRole(reader.iri(DSV.classRole)),
+      controlledVocabularyAssignments: [],
     };
     this.addToApplicationProfile(reader, item => item.classProfiles, profile);
   }

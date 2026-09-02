@@ -137,6 +137,7 @@ test("Regression test.", async () => {
       "externalDocumentationUrl": "http://documentation",
       "classRole": ClassRole.main,
       "specializationOfIri": [],
+      "controlledVocabularyAssignments": [],
     }, {
       "iri": "https://dcat-ap-cz/#Dataset",
       "prefLabel": {},
@@ -149,6 +150,7 @@ test("Regression test.", async () => {
       "specializationOfIri": [],
       "externalDocumentationUrl": null,
       "classRole": ClassRole.main,
+      "controlledVocabularyAssignments": [],
     }, {
       "iri": "http://dcat-ap/ns/dcat#Distribution",
       "prefLabel": {},
@@ -161,6 +163,7 @@ test("Regression test.", async () => {
       "specializationOfIri": [],
       "externalDocumentationUrl": null,
       "classRole": ClassRole.supportive,
+      "controlledVocabularyAssignments": [],
     }],
     "datatypePropertyProfiles": [],
     "objectPropertyProfiles": [{

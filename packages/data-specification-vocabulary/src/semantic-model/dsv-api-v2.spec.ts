@@ -66,6 +66,7 @@ describe("createDataSpecificationVocabulary", () => {
       classProfiles: [{
         type: ["class-profile"],
         classRole: ClassRole.undefined,
+        controlledVocabularyAssignments: [],
         definition: {},
         externalDocumentationUrl: null,
         iri: "http://example.com/profile#person",

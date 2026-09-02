@@ -94,6 +94,7 @@ test("Issue #608", () => {
             "specializationOfIri": [],
             "classRole": ClassRole.undefined,
             "externalDocumentationUrl": "http://documenation-1",
+            "controlledVocabularyAssignments": [],
         }],
         "datatypePropertyProfiles": [{
             "iri": "http://dcat/model/terms-title-profile",
@@ -191,6 +192,7 @@ test("Issue #1005", () => {
             "specializationOfIri": [],
             "externalDocumentationUrl": null,
             "classRole": ClassRole.undefined,
+            "controlledVocabularyAssignments": [],
         } as ClassProfile, {
             "iri": "http://dcat/model/bulkyForce",
             "prefLabel": {},
@@ -211,6 +213,7 @@ test("Issue #1005", () => {
             "specializationOfIri": ["http://dcat/model/juicyBusiness"],
             "externalDocumentationUrl": null,
             "classRole": ClassRole.undefined,
+            "controlledVocabularyAssignments": [],
         } as ClassProfile],
         "datatypePropertyProfiles": [],
         "objectPropertyProfiles": [{
