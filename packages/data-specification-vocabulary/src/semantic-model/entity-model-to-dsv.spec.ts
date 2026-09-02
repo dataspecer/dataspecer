@@ -12,6 +12,30 @@ import {
     entityListContainerToDsvModel,
 } from "./entity-model-to-dsv.ts";
 import { mergeEntityListContainers, toEntityListContainer } from "./entity-list-container-builder.ts";
+import { EntityListContainer } from "./entity-model.ts";
+import { CONTROLLED_VOCABULARY_ASSIGNMENT } from "@dataspecer/core-v2/semantic-model/profile/concepts";
+import { CONTROLLED_VOCABULARY_TYPE } from "@dataspecer/controlled-vocabulary-model";
+
+/**
+ * The profile-model builder used elsewhere in this file has no support
+ * for controlled vocabularies or their assignments, so these two are
+ * built by hand and merged into a builder-produced container instead.
+ * TODO: use builder after support for CVs is added
+ */
+const CONTROLLED_VOCABULARY = {
+    id: "voc-1", type: [CONTROLLED_VOCABULARY_TYPE],
+    title: "Test Vocab", pattern: "", references: "http://vocab.example.com/scheme",
+    documentation: "", distribution: { downloadUrl: "", accessUrl: "" },
+} as any;
+
+function controlledVocabularyAssignmentEntity(overrides: Record<string, unknown>) {
+    return {
+        id: "cv-1", type: [CONTROLLED_VOCABULARY_ASSIGNMENT],
+        classProfile: "class-1", vocabulary: "voc-1", qualifier: "MUST",
+        replaces: null, iri: null,
+        ...overrides,
+    } as any;
+}
 
 test("Issue #608", () => {
 
@@ -726,4 +750,140 @@ test("Resolves a relative IRI against an empty string when the container has no 
         "http://dcat/model/", container, context);
 
     expect(actual.classProfiles[0]?.iri).toBe("relativeClass");
+});
+
+test("Controlled vocabulary assignment: no stored iri, generated iri references the vocabulary's iri.", () => {
+    const profile = createDefaultProfileModelBuilder({ baseIdentifier: "p#", baseIri: null });
+    profile.class({ id: "class-1", iri: "http://example.com/class-1", controlledVocabularies: ["cv-1"] });
+    const container = mergeEntityListContainers(
+        toEntityListContainer(profile.build()),
+        { baseIri: null, entities: [CONTROLLED_VOCABULARY, controlledVocabularyAssignmentEntity({})] },
+    );
+
+    const context = createContext([container]);
+    const actual = entityListContainerToDsvModel("http://example.com/", container, context);
+
+    const assignments = actual.classProfiles[0]!.controlledVocabularyAssignments;
+    expect(assignments).toHaveLength(1);
+    expect(assignments[0]!.controlledVocabularyIri).toBe("http://vocab.example.com/scheme");
+    expect(assignments[0]!.usageExpectationIri).toContain("must");
+    expect(assignments[0]!.replacesIri).toBeNull();
+    expect(assignments[0]!.iri).toContain("http://example.com/class-1/controlled-vocabulary-assignment");
+});
+
+test("Controlled vocabulary assignment: a stored iri is reused verbatim.", () => {
+    const profile = createDefaultProfileModelBuilder({ baseIdentifier: "p#", baseIri: null });
+    profile.class({ id: "class-1", iri: "http://example.com/class-1", controlledVocabularies: ["cv-1"] });
+    const container = mergeEntityListContainers(
+        toEntityListContainer(profile.build()),
+        {
+            baseIri: null,
+            entities: [
+                CONTROLLED_VOCABULARY,
+                controlledVocabularyAssignmentEntity({ iri: "http://stored.example.com/my-iri" }),
+            ],
+        },
+    );
+
+    const context = createContext([container]);
+    const actual = entityListContainerToDsvModel("http://example.com/", container, context);
+
+    expect(actual.classProfiles[0]!.controlledVocabularyAssignments[0]!.iri)
+        .toBe("http://stored.example.com/my-iri");
+});
+
+test("Controlled vocabulary assignment: a local replaces resolves to the target's iri, even across a different class profile.", () => {
+    const profile = createDefaultProfileModelBuilder({ baseIdentifier: "p#", baseIri: null });
+    const ancestor = profile.class({ id: "ancestor", iri: "http://example.com/ancestor", controlledVocabularies: ["cv-ancestor"] });
+    profile.class({ id: "child", iri: "http://example.com/child", controlledVocabularies: ["cv-child"] })
+        .profile(ancestor);
+    const container = mergeEntityListContainers(
+        toEntityListContainer(profile.build()),
+        {
+            baseIri: null,
+            entities: [
+                CONTROLLED_VOCABULARY,
+                controlledVocabularyAssignmentEntity({
+                    id: "cv-ancestor", classProfile: "ancestor", qualifier: "RECOMMENDED",
+                }),
+                controlledVocabularyAssignmentEntity({
+                    id: "cv-child", classProfile: "child", qualifier: "MUST",
+                    replaces: { kind: "local", target: "cv-ancestor" },
+                }),
+            ],
+        },
+    );
+
+    const context = createContext([container]);
+    const actual = entityListContainerToDsvModel("http://example.com/", container, context);
+
+    const child = actual.classProfiles.find(item => item.iri === "http://example.com/child")!;
+    expect(child.controlledVocabularyAssignments[0]!.replacesIri)
+        .toContain("http://example.com/ancestor/controlled-vocabulary-assignment");
+});
+
+test("Controlled vocabulary assignment: an imported replaces passes through unresolved.", () => {
+    const profile = createDefaultProfileModelBuilder({ baseIdentifier: "p#", baseIri: null });
+    profile.class({ id: "class-1", iri: "http://example.com/class-1", controlledVocabularies: ["cv-1"] });
+    const container = mergeEntityListContainers(
+        toEntityListContainer(profile.build()),
+        {
+            baseIri: null,
+            entities: [
+                CONTROLLED_VOCABULARY,
+                controlledVocabularyAssignmentEntity({
+                    replaces: { kind: "imported", iri: "http://foreign.example.com/some-assignment" },
+                }),
+            ],
+        },
+    );
+
+    const context = createContext([container]);
+    const actual = entityListContainerToDsvModel("http://example.com/", container, context);
+
+    expect(actual.classProfiles[0]!.controlledVocabularyAssignments[0]!.replacesIri)
+        .toBe("http://foreign.example.com/some-assignment");
+});
+
+test("Controlled vocabulary assignment: a dangling local replaces target degrades to null.", () => {
+    const profile = createDefaultProfileModelBuilder({ baseIdentifier: "p#", baseIri: null });
+    profile.class({ id: "class-1", iri: "http://example.com/class-1", controlledVocabularies: ["cv-1"] });
+    const container = mergeEntityListContainers(
+        toEntityListContainer(profile.build()),
+        {
+            baseIri: null,
+            entities: [
+                controlledVocabularyAssignmentEntity({
+                    vocabulary: "voc-missing",
+                    replaces: { kind: "local", target: "does-not-exist" },
+                }),
+            ],
+        },
+    );
+
+    const context = createContext([container]);
+    const actual = entityListContainerToDsvModel("http://example.com/", container, context);
+
+    const assignment = actual.classProfiles[0]!.controlledVocabularyAssignments[0]!;
+    expect(assignment.replacesIri).toBeNull();
+    // Vocabulary entity missing from the container - degrades to the raw id.
+    expect(assignment.controlledVocabularyIri).toBe("voc-missing");
+});
+
+test("Controlled vocabulary assignment: an id that does not resolve to an assignment entity is skipped.", () => {
+    const profile = createDefaultProfileModelBuilder({ baseIdentifier: "p#", baseIri: null });
+    profile.class({ id: "class-1", iri: "http://example.com/class-1", controlledVocabularies: ["does-not-exist"] });
+    const container = toEntityListContainer(profile.build());
+
+    const context = createContext([container]);
+    const actual = entityListContainerToDsvModel("http://example.com/", container, context);
+
+    expect(actual.classProfiles[0]!.controlledVocabularyAssignments).toStrictEqual([]);
+});
+
+test("entityToIri resolves a ControlledVocabulary entity via its references field.", () => {
+    const container: EntityListContainer = { baseIri: null, entities: [CONTROLLED_VOCABULARY] };
+    const context = createContext([container]);
+
+    expect(context.entityToIri(container.entities[0]!)).toBe("http://vocab.example.com/scheme");
 });
