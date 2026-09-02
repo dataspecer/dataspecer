@@ -680,6 +680,7 @@ test("Create controlled vocabulary assignment.", () => {
         vocabulary: "voc-1",
         qualifier: "MUST",
         replaces: null,
+        iri: null,
       } as ControlledVocabularyAssignment,
       "1": {
         ...classProfile,
@@ -694,7 +695,7 @@ test("Create controlled vocabulary assignment, same vocabulary with a different 
   const actual: ChangeEntry[] = [];
   const cv1: ControlledVocabularyAssignment = {
     id: "cv-1", type: [CONTROLLED_VOCABULARY_ASSIGNMENT],
-    classProfile: "1", vocabulary: "voc-1", qualifier: "MUST", replaces: null,
+    classProfile: "1", vocabulary: "voc-1", qualifier: "MUST", replaces: null, iri: null,
   };
   const classProfile = classProfileFixture({ controlledVocabularies: ["cv-1"] });
   const executor = createDefaultSemanticModelProfileOperationExecutor(
@@ -716,6 +717,7 @@ test("Create controlled vocabulary assignment, same vocabulary with a different 
         vocabulary: "voc-1",
         qualifier: "MAY",
         replaces: null,
+        iri: null,
       } as ControlledVocabularyAssignment,
       "1": {
         ...classProfile,
@@ -730,7 +732,7 @@ test("Create controlled vocabulary assignment, exact (vocabulary, qualifier) dup
   const actual: ChangeEntry[] = [];
   const cv1: ControlledVocabularyAssignment = {
     id: "cv-1", type: [CONTROLLED_VOCABULARY_ASSIGNMENT],
-    classProfile: "1", vocabulary: "voc-1", qualifier: "MUST", replaces: null,
+    classProfile: "1", vocabulary: "voc-1", qualifier: "MUST", replaces: null, iri: null,
   };
   const classProfile = classProfileFixture({ controlledVocabularies: ["cv-1"] });
   const executor = createDefaultSemanticModelProfileOperationExecutor(
@@ -763,7 +765,7 @@ test("Remove controlled vocabulary assignment.", () => {
   const actual: ChangeEntry[] = [];
   const cv1: ControlledVocabularyAssignment = {
     id: "cv-1", type: [CONTROLLED_VOCABULARY_ASSIGNMENT],
-    classProfile: "1", vocabulary: "voc-1", qualifier: "MUST", replaces: null,
+    classProfile: "1", vocabulary: "voc-1", qualifier: "MUST", replaces: null, iri: null,
   };
   const classProfile = classProfileFixture({ controlledVocabularies: ["cv-1"] });
   const executor = createDefaultSemanticModelProfileOperationExecutor(
@@ -802,7 +804,7 @@ test("Modify controlled vocabulary assignment.", () => {
   const actual: ChangeEntry[] = [];
   const cv1: ControlledVocabularyAssignment = {
     id: "cv-1", type: [CONTROLLED_VOCABULARY_ASSIGNMENT],
-    classProfile: "1", vocabulary: "voc-1", qualifier: "MUST", replaces: null,
+    classProfile: "1", vocabulary: "voc-1", qualifier: "MUST", replaces: null, iri: null,
   };
   const executor = createDefaultSemanticModelProfileOperationExecutor(
     tableReader({ "cv-1": cv1 }),

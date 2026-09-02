@@ -286,6 +286,7 @@ function executeCreateControlledVocabularyAssignment(
   const identifier = entity.id;
   const newEntity: ControlledVocabularyAssignment = {
     replaces: null,
+    iri: null,
     ...entity,
     id: identifier,
     type: [CONTROLLED_VOCABULARY_ASSIGNMENT],

@@ -40,6 +40,7 @@ function assignmentFixture(
     vocabulary: "voc-1",
     qualifier: "MUST",
     replaces: null,
+    iri: null,
     ...overrides,
   };
 }

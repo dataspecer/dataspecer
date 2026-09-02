@@ -44,6 +44,7 @@ function assignmentFixture(
     classProfile: "ancestor",
     vocabulary: "voc-1",
     qualifier: "MUST",
+    iri: null,
     replaces: null,
     ...overrides,
   };
