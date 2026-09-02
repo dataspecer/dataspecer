@@ -124,6 +124,32 @@ export interface PropertyValueReuse {
 }
 
 /**
+ * @lc-resource dsv-dap:ControlledVocabularyAssignment
+ */
+export interface ControlledVocabularyAssignmentProfile {
+
+  iri: string;
+
+  /**
+   * @lc-property dsv-dap:controlledVocabulary
+   */
+  controlledVocabularyIri: string;
+
+  /**
+   * @lc-property dsv-dap:usageExpectation
+   */
+  usageExpectationIri: string;
+
+  /**
+   * IRI of the ControlledVocabularyAssignment this one overrides, or null.
+   *
+   * @lc-property dsv-dap:replaces
+   */
+  replacesIri: string | null;
+
+}
+
+/**
  * @lc-resource dsv:InvalidTermProfile
  */
 export interface InvalidTermProfile extends TermProfile {
@@ -152,6 +178,11 @@ export interface ClassProfile extends TermProfile {
    * @lc-property dsv:classRole
    */
   classRole: ClassRole;
+
+  /**
+   * @lc-property dsv-dap:controlledVocabularyAssignment
+   */
+  controlledVocabularyAssignments: ControlledVocabularyAssignmentProfile[];
 
 }
 
