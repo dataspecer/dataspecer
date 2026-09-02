@@ -6,6 +6,9 @@ import {
   isSemanticModelRelationship,
 } from "@dataspecer/core-v2/semantic-model/concepts";
 import {
+  ControlledVocabularyAssignment,
+  ControlledVocabularyAssignmentReplaces,
+  isControlledVocabularyAssignment,
   isSemanticModelClassProfile,
   isSemanticModelRelationshipProfile,
   SemanticModelClassProfile,
@@ -13,6 +16,7 @@ import {
   SemanticModelRelationshipProfile,
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { isPrimitiveType } from "@dataspecer/core-v2/semantic-model/datatypes";
+import { isControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 
 import { EntityListContainer } from "./entity-model.ts";
 import {
@@ -21,6 +25,7 @@ import {
   Cardinality,
   ClassProfile,
   ClassProfileType,
+  ControlledVocabularyAssignmentProfile,
   PropertyProfile,
   ObjectPropertyProfile,
   ObjectPropertyProfileType,
@@ -32,7 +37,7 @@ import {
   isDatatypePropertyProfile,
   isObjectPropertyProfile,
 } from "./dsv-model.ts";
-import { DSV_CLASS_ROLE, DSV_MANDATORY_LEVEL, SKOS } from "./vocabulary.ts";
+import { DSV_CLASS_ROLE, DSV_DAP_USAGE_EXPECTATION, DSV_MANDATORY_LEVEL, SKOS } from "./vocabulary.ts";
 
 interface EntityListContainerToDsvContext {
 
@@ -99,6 +104,8 @@ export function createContext(
       || isSemanticModelRelationshipProfile(entity)) {
       const [_, range] = entity.ends;
       iri = range?.iri ?? iri;
+    } else if (isControlledVocabulary(entity)) {
+      iri = entity.references;
     } else {
       // This can by anything, we just try to graph the IRI.
       iri = (entity as any).iri;
@@ -283,7 +290,7 @@ class EntityListContainerToDsv {
       profiledClassIri: [],
       specializationOfIri: generalizations[item.id] ?? [],
       classRole: ClassRole.undefined,
-      controlledVocabularyAssignments: [],
+      controlledVocabularyAssignments: this.loadControlledVocabularyAssignments(item),
     };
 
     for (const tag of (item.tags ?? [])) {
@@ -333,6 +340,85 @@ class EntityListContainerToDsv {
 
   private entityToIri(entity: Entity) {
     return this.context.entityToIri(entity);
+  }
+
+  /**
+   * Loads this class profile's own controlled vocabulary assignments.
+   * Inherited assignments are not resolved here - only what this profile
+   * directly owns (aggregation across the profiling chain is a separate,
+   * out-of-scope concern for DSV export).
+   */
+  private loadControlledVocabularyAssignments(
+    item: SemanticModelClassProfile,
+  ): ControlledVocabularyAssignmentProfile[] {
+    const result: ControlledVocabularyAssignmentProfile[] = [];
+    for (const id of item.controlledVocabularies ?? []) {
+      const assignment = this.identifierToEntity(id);
+      if (!isControlledVocabularyAssignment(assignment)) {
+        continue;
+      }
+      result.push(this.loadControlledVocabularyAssignment(assignment));
+    }
+    return result;
+  }
+
+  private loadControlledVocabularyAssignment(
+    assignment: ControlledVocabularyAssignment,
+  ): ControlledVocabularyAssignmentProfile {
+    const iri = assignment.iri
+      ?? this.generateControlledVocabularyAssignmentIri(assignment);
+    const vocabularyEntity = this.identifierToEntity(assignment.vocabulary);
+    const controlledVocabularyIri = vocabularyEntity !== null
+      ? this.entityToIri(vocabularyEntity)
+      : assignment.vocabulary;
+    return {
+      iri,
+      controlledVocabularyIri,
+      usageExpectationIri: DSV_DAP_USAGE_EXPECTATION[assignment.qualifier],
+      replacesIri: this.resolveControlledVocabularyAssignmentReplaces(assignment.replaces),
+    };
+  }
+
+  /**
+   * If replaces is null - no override
+   * `imported` - for referenced imported assignments that we might not have as entities
+   * `local` - should resolve to an assignment entity
+   */
+  private resolveControlledVocabularyAssignmentReplaces(
+    replaces: ControlledVocabularyAssignmentReplaces,
+  ): string | null {
+    if (replaces === null) {
+      return null;
+    }
+    if (replaces.kind === "imported") {
+      return replaces.iri;
+    }
+    if (replaces.kind === "local") {
+      const target = this.identifierToEntity(replaces.target);
+      if (!isControlledVocabularyAssignment(target)) {
+        return null;
+      }
+      return target.iri ?? this.generateControlledVocabularyAssignmentIri(target);
+    }
+    // Exhaustiveness guard: if ControlledVocabularyAssignmentReplaces
+    // ever gains a third variant, this must fail loudly 
+    const unhandled: never = replaces;
+    throw new Error(`Not implemented controlled vocabulary assignment replaces kind: '${(unhandled as { kind: string }).kind}'.`);
+  }
+
+  private generateControlledVocabularyAssignmentIri(
+    assignment: ControlledVocabularyAssignment,
+  ): string {
+    const classProfileEntity = this.identifierToEntity(assignment.classProfile);
+    const classProfileIri = classProfileEntity !== null
+      ? this.entityToIri(classProfileEntity)
+      : assignment.classProfile;
+    const vocabularyEntity = this.identifierToEntity(assignment.vocabulary);
+    const vocabularyInfo = vocabularyEntity !== null
+      ? this.entityToIri(vocabularyEntity)
+      : assignment.vocabulary;
+    return `${classProfileIri}/controlled-vocabulary-assignment` +
+      `?vocabulary=${encodeURIComponent(vocabularyInfo)}&qualifier=${assignment.qualifier}`;
   }
 
   private identifierToIri(identifier: string): string {
