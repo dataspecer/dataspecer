@@ -11,7 +11,7 @@ export const DataPsmXmlBoundingShapeType = "http://www.opengis.net/gml/3.2#Bound
 export const DataPsmXmlEnvelopeType = "http://www.opengis.net/gml/3.2#EnvelopeType" as const;
 export const DataPsmXmlGeometryPropertyType = "http://www.opengis.net/gml/3.2#GeometryPropertyType" as const;
 
-const RDF_GEOSPARQL_GML_LITERAL = "http://www.opengis.net/ont/geosparql#gmlLiteral";
+export const RDF_GEOSPARQL_GML_LITERAL = "http://www.opengis.net/ont/geosparql#gmlLiteral";
 const RDF_GEOSPARQL_WKT_LITERAL = "http://www.opengis.net/ont/geosparql#wktLiteral";
 export const XML_GML_NAMESPACE = "http://www.opengis.net/gml/3.2";
 const XML_GML_NAMESPACE_PREFIX = "gml";

@@ -36,7 +36,7 @@ import { collectProfilingChain, GEO_SPARQL_WKT_LITERAL } from "../xml-schema/xml
 import { structureModelAddXmlProperties } from "../xml-structure-model/add-xml-properties.ts";
 import { XSLT_LIFTING, XSLT_LOWERING } from "./xslt-vocabulary.ts";
 import { DataSpecificationConfigurator, DefaultDataSpecificationConfiguration, type DataSpecificationConfiguration } from "@dataspecer/core/data-specification/configuration";
-import { DataPsmXmlEnvelopeType, isGmlLiteral, XML_GML_NAMESPACE } from "../xml-schema/gml-support.ts";
+import { DataPsmXmlEnvelopeType, isGmlLiteral, RDF_GEOSPARQL_GML_LITERAL, XML_GML_NAMESPACE } from "../xml-schema/gml-support.ts";
 
 /**
  * Converts a {@link StructureModel} to an {@link XmlTransformation}.
@@ -503,7 +503,7 @@ class XsltAdapter {
         isReverse: propertyData.isReverse,
         isAttribute: propertyData.xmlIsAttribute,
         minCardinality: propertyData.cardinalityMin ?? 1,
-        dataTypeIri,
+        dataTypeIri: RDF_GEOSPARQL_GML_LITERAL,
         wrappingElementName,
       };
       return {
@@ -598,11 +598,12 @@ class XsltAdapter {
     // This wont be used because GML literals are not represented as primitive types anymore due to transformation
     if (this.isTypeGmlLiteral(dataTypes[0])) {
       this.usesGmlLiterals = true;
-      const dataTypeIri = this.primitiveToIri(dataTypes[0]);
+      const xmlDataTypeIri = this.primitiveToIri(dataTypes[0]);
       return {
         ...baseMatch,
+        dataTypeIri: RDF_GEOSPARQL_GML_LITERAL,
         isGmlLiteral: true,
-        wrappingElementName: dataTypeIri === DataPsmXmlEnvelopeType ? (["gml", "Envelope"] as QName) : null,
+        wrappingElementName: xmlDataTypeIri === DataPsmXmlEnvelopeType ? (["gml", "Envelope"] as QName) : null,
       } as XmlGmlLiteralMatch;
     }
 
