@@ -1017,6 +1017,26 @@ class XmlSchemaAdapter {
         item: item,
       } satisfies XmlSchemaComplexContentItem;
     } else {
+      const cardinalityMin = property.cardinalityMin ?? 0;
+      let cardinalityMax = property.cardinalityMax ?? null;
+      const dataType = property.dataTypes.length === 1 && property.dataTypes[0].isAttribute()
+        ? property.dataTypes[0].dataType
+        : null;
+
+      // A text value is serialized as one element for each language. For XSLT
+      // transformations, the rule with OFN.text is not needed as multiple
+      // entires will simply be serialized as multiple elements
+      //
+      // This however does not support OFN.text with cardinality more than 1 as
+      // we would need a wrapping element.
+      if (dataType === OFN.text) {
+        if (cardinalityMax === 1) {
+          cardinalityMax = null;
+        } else {
+          console.warn(`XSD generator does not support text data type with cardinality more than 1. You can use a language string instead.`);
+        }
+      }
+
       // Determine which adapter should define this element
       const hasProfilingChain = this.profilingLevelInfos.length > 1;
       const targetAdapter = hasProfilingChain ? this.getAdapterForEntity(property) : this;
@@ -1039,10 +1059,10 @@ class XmlSchemaAdapter {
         } satisfies XmlSchemaElement;
 
         return {
-          cardinalityMin: property.cardinalityMin ?? 0,
-          cardinalityMax: property.cardinalityMax ?? null,
-          effectiveCardinalityMin: property.cardinalityMin ?? 0,
-          effectiveCardinalityMax: property.cardinalityMax ?? null,
+          cardinalityMin,
+          cardinalityMax,
+          effectiveCardinalityMin: cardinalityMin,
+          effectiveCardinalityMax: cardinalityMax,
           semanticRelationToParentElement: property.semanticPath ?? [],
           element: refElement,
         } satisfies XmlSchemaComplexContentElement;
@@ -1052,10 +1072,10 @@ class XmlSchemaAdapter {
       const element = await this.getElementForNormalProperty(property);
 
       return {
-        cardinalityMin: property.cardinalityMin ?? 0,
-        cardinalityMax: property.cardinalityMax ?? null,
-        effectiveCardinalityMin: property.cardinalityMin ?? 0,
-        effectiveCardinalityMax: property.cardinalityMax ?? null,
+        cardinalityMin,
+        cardinalityMax,
+        effectiveCardinalityMin: cardinalityMin,
+        effectiveCardinalityMax: cardinalityMax,
         semanticRelationToParentElement: property.semanticPath ?? [],
         element: element,
       } satisfies XmlSchemaComplexContentElement;
