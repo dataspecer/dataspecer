@@ -3,8 +3,7 @@ import { ExtendedSemanticModelRelationship, isSemanticModelRelationship } from "
 import {CoreResourceReader} from "../../core/index.ts";
 import {DataPsmAssociationEnd, DataPsmAttribute, DataPsmClass, DataPsmClassReference, DataPsmContainer, DataPsmExternalRoot, DataPsmInclude, DataPsmOr, DataPsmSchema,} from "../../data-psm/model/index.ts";
 import {StructureModel, StructureModelClass, StructureModelComplexType, StructureModelPrimitiveType, StructureModelProperty, StructureModelSchemaRoot} from "../model/index.ts";
-// @ts-ignore
-import { Entity } from "@dataspecer/core-v2";
+import type { Entity } from "../../entity-model/entity.ts";
 import { DataPsmXmlPropertyExtension } from "../../data-psm/xml-extension/model/index.ts";
 import { DataPsmJsonPropertyExtension } from "../../data-psm/json-extension/model/index.ts";
 

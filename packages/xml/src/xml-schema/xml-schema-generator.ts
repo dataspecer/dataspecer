@@ -11,7 +11,7 @@ import { structureModelAddXmlProperties } from "../xml-structure-model/add-xml-p
 import { structureModelToXmlSchema } from "./xml-schema-model-adapter.ts";
 import { XML_SCHEMA } from "./xml-schema-vocabulary.ts";
 import { writeXmlSchema } from "./xml-schema-writer.ts";
-import { HandlebarsAdapter } from "../../../handlebars-adapter/lib/interface.js";
+import { HandlebarsAdapter } from "@dataspecer/handlebars-adapter";
 import { XmlSchemaDocumentationGenerator } from "../documentation/xml-schema-documentation.ts";
 import { structureModelMarkGmlLiteralAsReferencing, structureModelPopulateSfGeometry } from "./gml-support.ts";
 

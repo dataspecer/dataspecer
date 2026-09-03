@@ -87,6 +87,7 @@
     "./pim/model/pim-class": "./lib/pim/model/pim-class.js",
     "./pim/pim-vocabulary": "./lib/pim/pim-vocabulary.js",
     "./project-model": "./lib/project-model/index.js",
+    "./project-model/legacy": "./lib/project-model/legacy/index.js",
     "./structure-model/helper/is-recursive": "./lib/structure-model/helper/is-recursive.js",
     "./structure-model": "./lib/structure-model/index.js",
     "./structure-model/model": "./lib/structure-model/model/index.js",

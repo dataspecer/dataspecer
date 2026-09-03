@@ -1,5 +1,4 @@
-// @ts-ignore cyclic dependency
-import type { PackageService } from "@dataspecer/core-v2/project";
+import type { PackageService } from "./legacy/package-service.ts";
 import type { ModelIdentifier } from "../model/model.ts";
 import { PACKAGE_MODEL, PROJECT_MODEL_MODEL_ENTITY, type PackageEntity, type ProjectModelEntity } from "./model.ts";
 

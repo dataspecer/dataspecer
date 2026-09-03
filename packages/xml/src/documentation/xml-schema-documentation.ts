@@ -18,7 +18,7 @@ import { ArtefactGeneratorContext } from "@dataspecer/core/generator/artefact-ge
 import { pathRelative } from "@dataspecer/core/core/utilities/path-relative";
 import { NEW_DOC_GENERATOR } from "../xml-schema/xml-schema-generator.ts";
 import { getMustacheView } from "@dataspecer/documentation";
-import { HandlebarsAdapter } from "../../../handlebars-adapter/lib/interface.js";
+import { HandlebarsAdapter } from "@dataspecer/handlebars-adapter";
 import { MAIN_XML_PARTIAL } from "./index.ts";
 import { StructureModelClass } from "@dataspecer/core/structure-model/model/structure-model-class";
 

@@ -1,5 +1,8 @@
-import { LanguageString } from "@dataspecer/core/core/core-resource";
+import type { LanguageString } from "../../core/core-resource.ts";
 
+/**
+ * @deprecated Use `@dataspecer/core/project-model` instead.
+ */
 export interface BaseResource {
     /**
      * Unique identifier of the resource.
@@ -30,6 +33,9 @@ export interface BaseResource {
     };
 }
 
+/**
+ * @deprecated Use `@dataspecer/core/project-model` instead.
+ */
 export interface Package extends BaseResource {
     /**
      * List of sub-resources that are contained in this package.
@@ -48,4 +54,7 @@ export interface Package extends BaseResource {
     hasPendingEvolution?: boolean;
 }
 
+/**
+ * @deprecated Use `@dataspecer/core/project-model` instead.
+ */
 export type ResourceEditable = Pick<BaseResource, "iri" | "userMetadata">;

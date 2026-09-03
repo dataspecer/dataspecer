@@ -19,7 +19,8 @@
   },
   "dependencies": {
     "@dataspecer/core": "*",
-    "@dataspecer/documentation": "*"
+    "@dataspecer/documentation": "*",
+    "@dataspecer/handlebars-adapter": "*"
   },
   "devDependencies": {
     "@types/node": "^25.5.2",
