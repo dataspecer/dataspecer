@@ -16,8 +16,6 @@
     "@shexjs/neighborhood-rdfjs": "^1.0.0-alpha.29",
     "@shexjs/parser": "^1.0.0-alpha.28",
     "@shexjs/validator": "^1.0.0-alpha.29",
-    "json-schema-faker": "^0.5.3",
-    "jsonld": "^8.3.1",
     "md5": "^2.3.0",
     "n3": "^1.25.1",
     "rdf-ext": "^2.2.0"

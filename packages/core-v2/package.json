@@ -43,7 +43,6 @@
     "@dataspecer/sgov-adapter": "*",
     "@dataspecer/utilities": "*",
     "@dataspecer/visual-model": "*",
-    "n3": "~1.25.1",
     "uuid": "^14.0.0"
   },
   "devDependencies": {

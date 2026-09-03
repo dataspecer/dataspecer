@@ -41,11 +41,9 @@
     "@dataspecer/structure-model": "*",
     "@dataspecer/visual-model": "*",
     "@dataspecer/wikidata-experimental-adapter": "*",
-    "@dataspecer/xml": "*",
-    "pako": "^2.1.0"
+    "@dataspecer/xml": "*"
   },
   "devDependencies": {
-    "@types/pako": "^2.0.0",
     "typescript": "^7.0.2"
   }
 }

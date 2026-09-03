@@ -15,7 +15,6 @@
     "./resource": "./lib/resource.js"
   },
   "devDependencies": {
-    "@types/lodash": "^4.14.192",
     "@types/node": "^25.5.2",
     "typescript": "^7.0.2",
     "vitest": "^4.1.7"
