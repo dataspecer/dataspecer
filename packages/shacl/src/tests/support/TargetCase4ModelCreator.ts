@@ -5,8 +5,8 @@ import {
   StructureModelProperty,
   StructureModelPrimitiveType,
   StructureModelSchemaRoot,
-} from "@dataspecer/core/structure-model/model";
-import { ArtefactGeneratorContext } from "@dataspecer/core/generator";
+} from "@dataspecer/generators/structure-model/model";
+import { ArtefactGeneratorContext } from "@dataspecer/generators/generator";
 import { DataSpecificationArtefact } from "@dataspecer/core/data-specification/model";
 import ModelCreator from "./ModelCreatorInterface.ts";
 
@@ -59,7 +59,7 @@ createModel(): StructureModel{
     datumVzniku.psmIri = "https://example.com/mojePsmIriCisloPopisne";
     datumVzniku.technicalLabel = "cislo-popisne-popisek";
 
-    
+
 
     var city : StructureModelProperty;
     city = new StructureModelProperty();
@@ -168,7 +168,7 @@ createModel(): StructureModel{
     classLink.technicalLabel = "uzemi-mestskeho-obvodu";
     classLink.instancesSpecifyTypes = "ALWAYS";
 
-    
+
 
     var complexType1 : StructureModelComplexType;
     complexType1 = new StructureModelComplexType();
@@ -178,7 +178,7 @@ createModel(): StructureModel{
     complexType2 = new StructureModelComplexType();
     complexType2.dataType = classLink;
 
-    
+
 
     var property1 : StructureModelProperty;
     property1 = new StructureModelProperty();
@@ -229,7 +229,7 @@ createModel(): StructureModel{
 
     model.roots = [root1];
     model.psmIri = "https://example.com/class1/mojePsmIri";
-    
+
 
   return model;
 }

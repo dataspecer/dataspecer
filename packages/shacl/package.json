@@ -11,6 +11,7 @@
   "main": "lib/index.js",
   "dependencies": {
     "@dataspecer/core": "*",
+    "@dataspecer/generators": "^0.0.0",
     "@rdfjs/parser-n3": "^2.0.1",
     "json-schema-faker": "^0.5.3",
     "jsonld": "^8.3.1",

@@ -3,7 +3,7 @@ import {
   DataSpecificationArtefact,
 } from "@dataspecer/core/data-specification/model";
 import { StreamDictionary } from "@dataspecer/core/io/stream/stream-dictionary";
-import { ArtefactGenerator, ArtefactGeneratorContext } from "@dataspecer/core/generator";
+import { ArtefactGenerator, ArtefactGeneratorContext } from "@dataspecer/generators/generator";
 
 export const XML_COMMON_SCHEMA_GENERATOR = "http://example.com/generator/xml-common-schema" as const;
 

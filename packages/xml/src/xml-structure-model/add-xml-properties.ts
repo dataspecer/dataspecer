@@ -1,4 +1,4 @@
-import {StructureModel} from "@dataspecer/core/structure-model/model";
+import {StructureModel} from "@dataspecer/generators/structure-model/model";
 import {XmlStructureModel} from "./model/xml-structure-model.ts";
 import {CoreResourceReader} from "@dataspecer/core/core";
 import {DataPsmSchema} from "@dataspecer/core/data-psm/model";

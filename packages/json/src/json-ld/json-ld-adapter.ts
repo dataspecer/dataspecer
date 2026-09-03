@@ -1,8 +1,8 @@
 import { assertNot, LanguageString } from "@dataspecer/core/core";
 import { pathRelative } from "@dataspecer/core/core/utilities/path-relative";
 import { DataSpecificationArtefact, DataSpecificationSchema } from "@dataspecer/core/data-specification/model";
-import { ArtefactGeneratorContext } from "@dataspecer/core/generator";
-import { StructureModel, StructureModelClass, StructureModelComplexType, StructureModelProperty } from "@dataspecer/core/structure-model/model";
+import { ArtefactGeneratorContext } from "@dataspecer/generators/generator";
+import { StructureModel, StructureModelClass, StructureModelComplexType, StructureModelProperty } from "@dataspecer/generators/structure-model/model";
 import { OFN } from "@dataspecer/core/well-known";
 import { DefaultJsonConfiguration, JsonConfiguration, JsonConfigurator } from "../configuration.ts";
 import { JSON_LD_GENERATOR } from "./json-ld-generator.ts";

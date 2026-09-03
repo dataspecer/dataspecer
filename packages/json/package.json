@@ -17,7 +17,8 @@
   },
   "dependencies": {
     "@dataspecer/core": "*",
-    "@dataspecer/core-v2": "*"
+    "@dataspecer/core-v2": "*",
+    "@dataspecer/generators": "^0.0.0"
   },
   "devDependencies": {
     "@types/node": "^25.5.2",

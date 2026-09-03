@@ -1,5 +1,5 @@
 import { DataSpecification, DataSpecificationArtefact, DataSpecificationSchema } from "@dataspecer/core/data-specification/model";
-import { ArtefactGenerator, ArtefactGeneratorContext } from "@dataspecer/core/generator";
+import { ArtefactGenerator, ArtefactGeneratorContext } from "@dataspecer/generators/generator";
 import { MemoryStreamDictionary } from "@dataspecer/core/io/stream/memory-stream-dictionary.js";
 import { StreamDictionary } from "@dataspecer/core/io/stream/stream-dictionary.js";
 import { DefaultJsonConfiguration, JsonConfiguration, JsonConfigurator } from "@dataspecer/json/configuration";

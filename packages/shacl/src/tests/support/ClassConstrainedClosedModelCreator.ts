@@ -5,14 +5,14 @@ import {
     StructureModelProperty,
     StructureModelPrimitiveType,
     StructureModelSchemaRoot,
-  } from "@dataspecer/core/structure-model/model";
+  } from "@dataspecer/generators/structure-model/model";
 import ModelCreator from "./ModelCreatorInterface.ts";
 
 class ClassConstrainedClosedModelCreator implements ModelCreator{
 
   createModel(): StructureModel{
     var model = new StructureModel();
-  
+
       //zipType.regex = "^\d{3}(?:[-\s]\d{2}){1}$";
 
       var dateType : StructureModelPrimitiveType;
@@ -154,13 +154,13 @@ class ClassConstrainedClosedModelCreator implements ModelCreator{
       class1.structureSchema = null;
       class1.technicalLabel = "osoba";
       class1.instancesSpecifyTypes = "ALWAYS";
-  
+
       var root1 : StructureModelSchemaRoot;
       root1 = new StructureModelSchemaRoot();
       root1.classes = [class1];
-  
+
       model.roots = [root1];
-  
+
     return model;
   }
 }

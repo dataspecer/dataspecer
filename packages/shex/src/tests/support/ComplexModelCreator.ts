@@ -5,8 +5,8 @@ import {
   StructureModelProperty,
   StructureModelPrimitiveType,
   StructureModelSchemaRoot,
-} from "@dataspecer/core/structure-model/model";
-import { ArtefactGeneratorContext } from "@dataspecer/core/generator";
+} from "@dataspecer/generators/structure-model/model";
+import { ArtefactGeneratorContext } from "@dataspecer/generators/generator";
 import { DataSpecificationArtefact } from "@dataspecer/core/data-specification/model";
 import ModelCreator from "./ModelCreatorInterface.ts";
 
@@ -153,7 +153,7 @@ class ComplexModelCreator  implements ModelCreator{
       area.psmIri = "https://example.com/mojePsmIriStat";
       area.technicalLabel = "rozloha-popisek";
 
-     
+
 
 
       var birthdate : StructureModelProperty;
@@ -357,7 +357,7 @@ class ComplexModelCreator  implements ModelCreator{
       class2.structureSchema = null;
       class2.technicalLabel = "adresa";
 
-      
+
       var complexType1 : StructureModelComplexType;
       complexType1 = new StructureModelComplexType();
       complexType1.dataType = class2;
@@ -393,13 +393,13 @@ class ComplexModelCreator  implements ModelCreator{
       class1.structureSchema = null;
       class1.technicalLabel = "osoba";
       class1.instancesSpecifyTypes = "ALWAYS";
-  
+
       var root1 : StructureModelSchemaRoot;
       root1 = new StructureModelSchemaRoot();
       root1.classes = [class1];
-  
+
       model.roots = [root1];
-  
+
     return model;
   }
 }

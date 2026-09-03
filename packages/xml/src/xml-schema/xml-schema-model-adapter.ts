@@ -1,7 +1,7 @@
 import { pathRelative } from "@dataspecer/core/core/utilities/path-relative";
 import { DataSpecificationConfiguration, DataSpecificationConfigurator, DefaultDataSpecificationConfiguration } from "@dataspecer/core/data-specification/configuration";
 import { DataSpecificationArtefact, DataSpecificationSchema } from "@dataspecer/core/data-specification/model";
-import { ArtefactGeneratorContext } from "@dataspecer/core/generator";
+import { ArtefactGeneratorContext } from "@dataspecer/generators/generator";
 import {
   StructureModelClass,
   StructureModelComplexType,
@@ -9,8 +9,8 @@ import {
   StructureModelProperty,
   StructureModelSchemaRoot,
   type StructureModel,
-} from "@dataspecer/core/structure-model/model";
-import { structureModelAddDefaultValues } from "@dataspecer/core/structure-model/transformation/add-default-values";
+} from "@dataspecer/generators/structure-model/model";
+import { structureModelAddDefaultValues } from "@dataspecer/generators/structure-model/transformation/add-default-values";
 import { OFN, XSD, XSD_PREFIX } from "@dataspecer/core/well-known";
 import { DefaultXmlConfiguration, XmlConfiguration, XmlConfigurator } from "../configuration.ts";
 import { commonXmlNamespace, commonXmlPrefix, iriElementName, langStringName, QName, simpleTypeMapQName } from "../conventions.ts";

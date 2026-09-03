@@ -28,6 +28,7 @@
     "@dataspecer/federated-observable-store": "*",
     "@dataspecer/json": "*",
     "@dataspecer/json-example": "*",
+    "@dataspecer/generators": "^0.0.0",
     "@dataspecer/lightweight-owl": "*",
     "@dataspecer/model-store": "*",
     "@dataspecer/openapi": "*",

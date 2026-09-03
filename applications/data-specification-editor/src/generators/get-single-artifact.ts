@@ -1,5 +1,5 @@
 import { DataSpecification as CoreDataSpecification, DataSpecificationArtefact } from "@dataspecer/core/data-specification/model";
-import { Generator } from "@dataspecer/core/generator";
+import { Generator } from "@dataspecer/generators/generator";
 import { MemoryStreamDictionary } from "@dataspecer/core/io/stream/memory-stream-dictionary";
 import { FederatedObservableStore } from "@dataspecer/federated-observable-store/federated-observable-store";
 import type { DataSpecification } from "@dataspecer/specification/specification";

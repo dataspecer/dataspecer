@@ -5,7 +5,7 @@ import {
   StructureModelProperty,
   StructureModelSchemaRoot,
   StructureModelType,
-} from "@dataspecer/core/structure-model/model";
+} from "@dataspecer/generators/structure-model/model";
 
 import { XmlStructureModel as StructureModel } from "../xml-structure-model/model/xml-structure-model.ts";
 
@@ -27,7 +27,7 @@ import {
 import { DataSpecification, DataSpecificationArtefact, DataSpecificationSchema } from "@dataspecer/core/data-specification/model";
 
 import { pathRelative } from "@dataspecer/core/core/utilities/path-relative";
-import { ArtefactGeneratorContext } from "@dataspecer/core/generator";
+import { ArtefactGeneratorContext } from "@dataspecer/generators/generator";
 import { OFN } from "@dataspecer/core/well-known";
 import { DefaultXmlConfiguration, XmlConfiguration, XmlConfigurator } from "../configuration.ts";
 import { iriElementName, namespaceFromIri, QName, simpleTypeMapIri } from "../conventions.ts";

@@ -1,11 +1,11 @@
 import { clone } from "@dataspecer/core/core";
-import { StructureModelClass } from "@dataspecer/core/structure-model/model/structure-model-class";
-import { StructureModelComplexType, StructureModelPrimitiveType } from "@dataspecer/core/structure-model/model/structure-model-type";
+import { StructureModelClass } from "@dataspecer/generators/structure-model/model/structure-model-class";
+import { StructureModelComplexType, StructureModelPrimitiveType } from "@dataspecer/generators/structure-model/model/structure-model-type";
 import type { XmlStructureModel } from "../xml-structure-model/model/xml-structure-model.ts";
 import type { GetReferencedSchema } from "./xml-schema-model-adapter.ts";
-import { StructureModelProperty } from "@dataspecer/core/structure-model/model/structure-model-property";
+import { StructureModelProperty } from "@dataspecer/generators/structure-model/model/structure-model-property";
 import { getDataPsmXmlGmlType } from "@dataspecer/core/data-psm/xml-extension/model/data-psm-property-extension";
-import type { StructureModel } from "@dataspecer/core/structure-model/model";
+import type { StructureModel } from "@dataspecer/generators/structure-model/model";
 
 export const DataPsmXmlBoundingShapeType = "http://www.opengis.net/gml/3.2#BoundingShapeType" as const;
 export const DataPsmXmlEnvelopeType = "http://www.opengis.net/gml/3.2#EnvelopeType" as const;

@@ -11,6 +11,7 @@
   "main": "lib/index.js",
   "dependencies": {
     "@dataspecer/core": "*",
+    "@dataspecer/generators": "^0.0.0",
     "@rdfjs/parser-n3": "^2.0.1",
     "@shexjs/neighborhood-rdfjs": "^1.0.0-alpha.29",
     "@shexjs/parser": "^1.0.0-alpha.28",

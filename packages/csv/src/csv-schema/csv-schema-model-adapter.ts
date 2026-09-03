@@ -17,7 +17,7 @@ import {
     StructureModelPrimitiveType,
     StructureModelProperty,
     StructureModelClass
-} from "@dataspecer/core/structure-model/model";
+} from "@dataspecer/generators/structure-model/model";
 import {
     assert,
     assertFailed,

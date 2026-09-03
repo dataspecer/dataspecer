@@ -1,7 +1,7 @@
-import type { ConceptualModel, ConceptualModelClass, ConceptualModelProperty } from "@dataspecer/core/conceptual-model";
-import type { StructureModel } from "@dataspecer/core/structure-model/model/structure-model";
-import type { StructureModelClass } from "@dataspecer/core/structure-model/model/structure-model-class";
-import type { StructureModelProperty } from "@dataspecer/core/structure-model/model/structure-model-property";
+import type { ConceptualModel, ConceptualModelClass, ConceptualModelProperty } from "@dataspecer/generators/conceptual-model";
+import type { StructureModel } from "@dataspecer/generators/structure-model/model/structure-model";
+import type { StructureModelClass } from "@dataspecer/generators/structure-model/model/structure-model-class";
+import type { StructureModelProperty } from "@dataspecer/generators/structure-model/model/structure-model-property";
 import type { JsonSchema, JsonSchemaArray, JsonSchemaDefinition, JsonSchemaObject } from "../json-schema/json-schema-model.ts";
 
 /**

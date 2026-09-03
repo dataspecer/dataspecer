@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@dataspecer/core": "*",
+    "@dataspecer/generators": "^0.0.0",
     "openapi-types": "^12.1.3"
   },
   "devDependencies": {

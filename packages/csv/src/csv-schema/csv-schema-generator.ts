@@ -1,7 +1,7 @@
 import {
     ArtefactGenerator,
     ArtefactGeneratorContext
-} from "@dataspecer/core/generator";
+} from "@dataspecer/generators/generator";
 import {
     DataSpecification,
     DataSpecificationArtefact,
@@ -13,7 +13,7 @@ import {
     assertFailed,
     assertNot
 } from "@dataspecer/core/core";
-import { transformStructureModel } from "@dataspecer/core/structure-model/transformation";
+import { transformStructureModel } from "@dataspecer/generators/structure-model/transformation";
 import { CsvSchema } from "./csv-schema-model.ts";
 import { structureModelToCsvSchema } from "./csv-schema-model-adapter.ts";
 import {
@@ -21,7 +21,7 @@ import {
     CsvConfigurator,
     DefaultCsvConfiguration
 } from "../configuration.ts";
-import { isRecursive } from "@dataspecer/core/structure-model/helper/is-recursive";
+import { isRecursive } from "@dataspecer/generators/structure-model/helper/is-recursive";
 
 export class CsvSchemaGenerator implements ArtefactGenerator {
 

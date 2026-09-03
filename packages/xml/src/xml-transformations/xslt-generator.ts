@@ -4,13 +4,13 @@ import {
   DataSpecificationSchema,
 } from "@dataspecer/core/data-specification/model";
 import { StreamDictionary } from "@dataspecer/core/io/stream/stream-dictionary";
-import { ArtefactGenerator, ArtefactGeneratorContext } from "@dataspecer/core/generator";
+import { ArtefactGenerator, ArtefactGeneratorContext } from "@dataspecer/generators/generator";
 import { XmlTransformation } from "./xslt-model.ts";
 import { writeXsltLifting } from "./xslt-lifting-writer.ts";
 import { writeXsltLowering } from "./xslt-lowering-writer.ts";
 import { structureModelToXslt } from "./xslt-model-adapter.ts";
 import { assertFailed, assertNot } from "@dataspecer/core/core";
-import { defaultStructureTransformations, structureModelDematerialize, structureModelTransformPrimitiveTypes, transformStructureModel } from "@dataspecer/core/structure-model/transformation";
+import { defaultStructureTransformations, structureModelDematerialize, structureModelTransformPrimitiveTypes, transformStructureModel } from "@dataspecer/generators/structure-model/transformation";
 import { XSLT_LIFTING, XSLT_LOWERING } from "./xslt-vocabulary.ts";
 import { structureModelAddXmlProperties } from "../xml-structure-model/add-xml-properties.ts";
 import { structureModelPopulateSfGeometry } from "../xml-schema/gml-support.ts";

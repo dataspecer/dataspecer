@@ -1,4 +1,4 @@
-import { ConceptualModel } from "@dataspecer/core/conceptual-model";
+import { ConceptualModel } from "@dataspecer/generators/conceptual-model";
 import {
   DataSpecification,
   DataSpecificationArtefact,
@@ -14,13 +14,13 @@ import {
   XmlSchemaType,
   xmlSchemaTypeIsComplex,
 } from "../xml-schema/xml-schema-model.ts";
-import { ArtefactGeneratorContext } from "@dataspecer/core/generator/artefact-generator-context";
+import { ArtefactGeneratorContext } from "@dataspecer/generators/generator/artefact-generator-context";
 import { pathRelative } from "@dataspecer/core/core/utilities/path-relative";
 import { NEW_DOC_GENERATOR } from "../xml-schema/xml-schema-generator.ts";
 import { getMustacheView } from "@dataspecer/documentation";
 import { HandlebarsAdapter } from "@dataspecer/handlebars-adapter";
 import { MAIN_XML_PARTIAL } from "./index.ts";
-import { StructureModelClass } from "@dataspecer/core/structure-model/model/structure-model-class";
+import { StructureModelClass } from "@dataspecer/generators/structure-model/model/structure-model-class";
 
 /**
  * Recursively traverses the complex content container and returns all elements.

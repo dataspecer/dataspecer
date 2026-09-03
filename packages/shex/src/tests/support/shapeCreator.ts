@@ -1,9 +1,9 @@
-import { StructureModel} from "@dataspecer/core/structure-model/model";
+import { StructureModel} from "@dataspecer/generators/structure-model/model";
 import { DataSpecificationArtefact } from "@dataspecer/core/data-specification/model";
 import { ShexAdapter } from "../../shex-adapter.ts";
 import { ShexMapAdapter } from "../../shex-map-adapter.ts";
 
-class ShapeCreator{   
+class ShapeCreator{
 
     async createShexShape(sm : StructureModel) : Promise<String> {
         var artefact = new DataSpecificationArtefact();

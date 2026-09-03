@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@dataspecer/core": "*",
+    "@dataspecer/generators": "^0.0.0",
     "@dataspecer/sparql-query": "*"
   },
   "devDependencies": {

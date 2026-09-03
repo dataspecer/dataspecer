@@ -4,14 +4,14 @@ import {
   DataSpecificationSchema,
 } from "@dataspecer/core/data-specification/model";
 import { StreamDictionary } from "@dataspecer/core/io/stream/stream-dictionary";
-import { ArtefactGenerator, ArtefactGeneratorContext } from "@dataspecer/core/generator";
+import { ArtefactGenerator, ArtefactGeneratorContext } from "@dataspecer/generators/generator";
 import { SparqlQuery } from "./sparql-model.ts";
 import { writeSparqlQuery } from "./sparql-writer.ts";
 import { structureModelToSparql } from "./sparql-model-adapter.ts";
 import { assertFailed, assertNot } from "@dataspecer/core/core";
-import { defaultStructureTransformations, structureModelDematerialize, transformStructureModel } from "@dataspecer/core/structure-model/transformation";
+import { defaultStructureTransformations, structureModelDematerialize, transformStructureModel } from "@dataspecer/generators/structure-model/transformation";
 import { SPARQL } from "./sparql-vocabulary.ts";
-import {isRecursive} from "@dataspecer/core/structure-model/helper/is-recursive";
+import {isRecursive} from "@dataspecer/generators/structure-model/helper/is-recursive";
 
 export class SparqlGenerator implements ArtefactGenerator {
   identifier(): string {

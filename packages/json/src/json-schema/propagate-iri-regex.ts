@@ -1,7 +1,7 @@
-import { ConceptualModel } from "@dataspecer/core/conceptual-model";
+import { ConceptualModel } from "@dataspecer/generators/conceptual-model";
 import { clone } from "@dataspecer/core/core";
-import { StructureModel } from "@dataspecer/core/structure-model/model/structure-model";
-import { StructureModelClass } from "@dataspecer/core/structure-model/model/structure-model-class";
+import { StructureModel } from "@dataspecer/generators/structure-model/model/structure-model";
+import { StructureModelClass } from "@dataspecer/generators/structure-model/model/structure-model-class";
 import { JsonStructureModelClass } from "../json-structure-model/structure-model-class.ts";
 
 /**

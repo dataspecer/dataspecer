@@ -5,8 +5,8 @@ import {
   StructureModelComplexType,
   StructureModelProperty,
   StructureModelPrimitiveType
-} from "@dataspecer/core/structure-model/model";
-import { ArtefactGeneratorContext } from "@dataspecer/core/generator";
+} from "@dataspecer/generators/structure-model/model";
+import { ArtefactGeneratorContext } from "@dataspecer/generators/generator";
 import {
   DataSpecificationArtefact
 } from "@dataspecer/core/data-specification/model";

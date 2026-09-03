@@ -3,10 +3,10 @@ import {
     DataSpecificationArtefact,
     DataSpecificationSchema,
 } from "@dataspecer/core/data-specification/model";
-import { ArtefactGenerator, ArtefactGeneratorContext } from "@dataspecer/core/generator";
+import { ArtefactGenerator, ArtefactGeneratorContext } from "@dataspecer/generators/generator";
 import { StreamDictionary } from "@dataspecer/core/io/stream/stream-dictionary";
-import { StructureModel } from "@dataspecer/core/structure-model/model/structure-model";
-import { transformStructureModel } from "@dataspecer/core/structure-model/transformation/default-transformation";
+import { StructureModel } from "@dataspecer/generators/structure-model/model/structure-model";
+import { transformStructureModel } from "@dataspecer/generators/structure-model/transformation/default-transformation";
 import { OpenAPIV3 } from "openapi-types";
 
 export class OpenapiGenerator implements ArtefactGenerator {
