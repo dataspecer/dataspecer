@@ -22,7 +22,7 @@ import { WikidataLoading } from "./helpers/wikidata-loading";
 import { WikidataLoadingError } from "./helpers/wikidata-loading-error";
 import { WdPropertySelectionContext } from "./contexts/wd-property-selection-context";
 import { useWdPropertySelection } from "./hooks/use-wd-property-selection";
-import { ReadOnlyMemoryStore } from "@dataspecer/core/core/index";
+import { ReadOnlyMemoryStore } from "@dataspecer/core/core";
 import { transformSelectedSurroundings } from "./property-selection-record/transform-selected-surroundings";
 import { WikidataPropertiesPanel } from "./wikidata-properties-panel/wikidata-properties-panel";
 import { SemanticModelClass, SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";

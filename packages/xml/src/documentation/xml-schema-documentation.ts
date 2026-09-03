@@ -1,4 +1,4 @@
-import { ConceptualModel } from "@dataspecer/core";
+import { ConceptualModel } from "@dataspecer/core/conceptual-model";
 import {
   DataSpecification,
   DataSpecificationArtefact,

@@ -1,4 +1,4 @@
-import { DataPsmSetUseKeyValueForLangString } from "@dataspecer/core/data-psm/json-extension/operation/index";
+import { DataPsmSetUseKeyValueForLangString } from "@dataspecer/core/data-psm/json-extension/operation";
 import { ComplexOperation } from "@dataspecer/federated-observable-store/complex-operation";
 import { FederatedObservableStore } from "@dataspecer/federated-observable-store/federated-observable-store";
 

@@ -1,4 +1,4 @@
-import type { ConceptualModel, ConceptualModelClass, ConceptualModelProperty } from "@dataspecer/core";
+import type { ConceptualModel, ConceptualModelClass, ConceptualModelProperty } from "@dataspecer/core/conceptual-model";
 import type { StructureModel } from "@dataspecer/core/structure-model/model/structure-model";
 import type { StructureModelClass } from "@dataspecer/core/structure-model/model/structure-model-class";
 import type { StructureModelProperty } from "@dataspecer/core/structure-model/model/structure-model-property";
