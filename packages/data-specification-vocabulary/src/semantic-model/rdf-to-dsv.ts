@@ -53,6 +53,8 @@ class RdfLoaderContext {
 
   readonly datatypePropertyProfiles: N3.Quad_Subject[] = [];
 
+  readonly controlledVocabularyAssignments: N3.Quad_Subject[] = [];
+
   constructor(quads: N3.Quad[]) {
     for (const quad of quads) {
       this.addToQuadsBySubject(quad);
@@ -82,6 +84,8 @@ class RdfLoaderContext {
       this.objectPropertyProfiles.push(subject);
     } else if (DSV.DatatypePropertyProfile.equals(type)) {
       this.datatypePropertyProfiles.push(subject);
+    } else if (DSV.ControlledVocabularyAssignment.equals(type)) {
+      this.controlledVocabularyAssignments.push(subject);
     }
   }
 
@@ -205,22 +209,24 @@ class ProfileLoader {
       type: [ClassProfileType],
       profiledClassIri: reader.iris(DSV.class),
       classRole: iriToClassRole(reader.iri(DSV.classRole)),
-      controlledVocabularyAssignments: this.loadControlledVocabularyAssignments(reader),
+      controlledVocabularyAssignments: this.loadControlledVocabularyAssignments(subject),
     };
     this.addToApplicationProfile(reader, item => item.classProfiles, profile);
   }
 
   /**
    * Reads this class profile's own controlled vocabulary assignments,
-   * discovered via the forward edge from the class profile - same
-   * approach as reusesPropertyValue, just with IRI-identified subjects
-   * instead of blank nodes (irisAsSubjects handles both the same way).
+   * discovered via the backward edge on each assignment (dsv:classProfile)
    */
   private loadControlledVocabularyAssignments(
-    reader: RdfPropertyReader,
+    classProfile: N3.Quad_Subject,
   ): ControlledVocabularyAssignmentProfile[] {
     const result: ControlledVocabularyAssignmentProfile[] = [];
-    for (const node of reader.irisAsSubjects(DSV.controlledVocabularyAssignment)) {
+    for (const node of this.context.controlledVocabularyAssignments) {
+      const owner = new RdfPropertyReader(this.context, node).iri(DSV.classProfile);
+      if (owner !== classProfile.value) {
+        continue;
+      }
       const assignment = loadControlledVocabularyAssignment(this.context, node);
       if (assignment !== null) {
         result.push(assignment);

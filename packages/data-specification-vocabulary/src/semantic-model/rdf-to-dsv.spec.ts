@@ -576,7 +576,7 @@ test("Round-trips every controlled vocabulary assignment usage expectation value
   expect(parsedModels[0]).toStrictEqual(model);
 });
 
-test("Reads a controlled vocabulary assignment as its own IRI-identified resource, discovered via the class profile's forward edge.", async () => {
+test("Reads a controlled vocabulary assignment as its own IRI-identified resource, discovered via the assignment's backward edge to its class profile.", async () => {
   const inputRdf = `@prefix dct: <http://purl.org/dc/terms/>.
 @prefix dsv: <https://w3id.org/dsv#>.
 @prefix prof: <http://www.w3.org/ns/dx/prof/>.
@@ -584,10 +584,10 @@ test("Reads a controlled vocabulary assignment as its own IRI-identified resourc
 <http://example.com/model> a prof:Profile, dsv:ApplicationProfile.
 
 <http://example.com/class-1> a dsv:TermProfile, dsv:ClassProfile;
-    dct:isPartOf <http://example.com/model>;
-    dsv:controlledVocabularyAssignment <http://example.com/assignment-1>.
+    dct:isPartOf <http://example.com/model>.
 
 <http://example.com/assignment-1> a dsv:ControlledVocabularyAssignment;
+    dsv:classProfile <http://example.com/class-1>;
     dsv:controlledVocabulary <http://vocab.example.com/scheme>;
     dsv:usageExpectation <https://w3id.org/dsv/usage-expectation#must>;
     dsv:replaces <http://example.com/assignment-0>.
@@ -611,13 +611,14 @@ test("Warns and skips a controlled vocabulary assignment missing controlledVocab
 <http://example.com/model> a prof:Profile, dsv:ApplicationProfile.
 
 <http://example.com/class-1> a dsv:TermProfile, dsv:ClassProfile;
-    dct:isPartOf <http://example.com/model>;
-    dsv:controlledVocabularyAssignment <http://example.com/missing-vocab>, <http://example.com/missing-expectation>.
+    dct:isPartOf <http://example.com/model>.
 
 <http://example.com/missing-vocab> a dsv:ControlledVocabularyAssignment;
+    dsv:classProfile <http://example.com/class-1>;
     dsv:usageExpectation <https://w3id.org/dsv/usage-expectation#must>.
 
 <http://example.com/missing-expectation> a dsv:ControlledVocabularyAssignment;
+    dsv:classProfile <http://example.com/class-1>;
     dsv:controlledVocabulary <http://vocab.example.com/scheme>.
 `;
 

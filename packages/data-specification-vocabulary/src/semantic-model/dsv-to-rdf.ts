@@ -153,8 +153,8 @@ export class DsvWriter {
    */
   private writeControlledVocabularyAssignments(profile: ClassProfile) {
     for (const assignment of profile.controlledVocabularyAssignments) {
-      this.addIri(profile.iri, DSV.controlledVocabularyAssignment, assignment.iri);
       this.addType(assignment.iri, DSV.ControlledVocabularyAssignment);
+      this.addIri(assignment.iri, DSV.classProfile, profile.iri);
       this.addIri(assignment.iri, DSV.controlledVocabulary, assignment.controlledVocabularyIri);
       this.addIri(assignment.iri, DSV.usageExpectation, assignment.usageExpectationIri);
       this.addIri(assignment.iri, DSV.replaces, assignment.replacesIri);

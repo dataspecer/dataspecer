@@ -82,8 +82,7 @@ export const DSV = {
   // Controlled vocabulary assignment - placeholders, not yet part of the
   // published dsv namespace, to be swapped once agreed.
   "ControlledVocabularyAssignment": IRI(DSV_PREFIX + "ControlledVocabularyAssignment"),
-  // Class profile -> assignment forward edge (this class profile's own assignments).
-  "controlledVocabularyAssignment": IRI(DSV_PREFIX + "controlledVocabularyAssignment"),
+  "classProfile": IRI(DSV_PREFIX + "classProfile"),
   "controlledVocabulary": IRI(DSV_PREFIX + "controlledVocabulary"),
   "usageExpectation": IRI(DSV_PREFIX + "usageExpectation"),
   "replaces": IRI(DSV_PREFIX + "replaces"),
