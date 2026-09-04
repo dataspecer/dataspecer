@@ -12,7 +12,7 @@ import { conceptualModelToEntityListContainer } from "./dsv-to-entity-model.ts";
 import { EntityListContainer } from "./entity-model.ts";
 import { entityListContainerToDsvModel, createContext } from "./entity-model-to-dsv.ts";
 import { toEntityListContainer } from "./entity-list-container-builder.ts";
-import { DSV_CLASS_ROLE, DSV_DAP_USAGE_EXPECTATION, DSV_MANDATORY_LEVEL, SKOS } from "./vocabulary.ts";
+import { DSV_CLASS_ROLE, DSV_USAGE_EXPECTATION, DSV_MANDATORY_LEVEL, SKOS } from "./vocabulary.ts";
 
 test("From DSV to entity model and back.", async () => {
 
@@ -440,7 +440,7 @@ test("Creates a ControlledVocabularyAssignment entity for a class profile's own 
     controlledVocabularyAssignments: [{
       iri: "http://dcat/model/class-1/assignment-1",
       controlledVocabularyIri: "http://vocab.example.com/scheme",
-      usageExpectationIri: DSV_DAP_USAGE_EXPECTATION.MUST,
+      usageExpectationIri: DSV_USAGE_EXPECTATION.MUST,
       replacesIri: "http://foreign.example.com/some-assignment",
     }],
   });
@@ -475,7 +475,7 @@ test("A controlled vocabulary assignment with no replaces created with replaces:
     controlledVocabularyAssignments: [{
       iri: "http://dcat/model/class-1/assignment-1",
       controlledVocabularyIri: "http://vocab.example.com/scheme",
-      usageExpectationIri: DSV_DAP_USAGE_EXPECTATION.RECOMMENDED,
+      usageExpectationIri: DSV_USAGE_EXPECTATION.RECOMMENDED,
       replacesIri: null,
     }],
   });

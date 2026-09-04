@@ -365,7 +365,6 @@ test("Issue #1005", async () => {
 @prefix requirement: <https://w3id.org/dsv/requirement-level#>.
 @prefix role: <https://w3id.org/dsv/class-role#>.
 @prefix prof: <http://www.w3.org/ns/dx/prof/>.
-@prefix dap: <https://w3id.org/dsv/dap#>.
 
 
 <http://dcat/model/> a prof:Profile, dsv:ApplicationProfile.

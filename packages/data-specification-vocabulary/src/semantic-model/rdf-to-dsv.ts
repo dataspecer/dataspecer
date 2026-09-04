@@ -22,7 +22,7 @@ import {
 } from "./n3-reader.ts";
 
 import {
-  RDF, DSV, DSV_DAP, SKOS, VANN, DCT, DSV_CLASS_ROLE, DSV_MANDATORY_LEVEL,
+  RDF, DSV, SKOS, VANN, DCT, DSV_CLASS_ROLE, DSV_MANDATORY_LEVEL,
 } from "./vocabulary.ts";
 
 export async function rdfToDsv(
@@ -220,7 +220,7 @@ class ProfileLoader {
     reader: RdfPropertyReader,
   ): ControlledVocabularyAssignmentProfile[] {
     const result: ControlledVocabularyAssignmentProfile[] = [];
-    for (const node of reader.irisAsSubjects(DSV_DAP.controlledVocabularyAssignment)) {
+    for (const node of reader.irisAsSubjects(DSV.controlledVocabularyAssignment)) {
       const assignment = loadControlledVocabularyAssignment(this.context, node);
       if (assignment !== null) {
         result.push(assignment);
@@ -372,10 +372,10 @@ function loadControlledVocabularyAssignment(
   subject: N3.Quad_Subject,
 ): ControlledVocabularyAssignmentProfile | null {
   const reader = new RdfPropertyReader(context, subject);
-  const controlledVocabularyIri = reader.iri(DSV_DAP.controlledVocabulary);
-  const usageExpectationIri = reader.iri(DSV_DAP.usageExpectation);
+  const controlledVocabularyIri = reader.iri(DSV.controlledVocabulary);
+  const usageExpectationIri = reader.iri(DSV.usageExpectation);
   if (controlledVocabularyIri === null || usageExpectationIri === null) {
-    console.warn("Invalid dsv-dap:ControlledVocabularyAssignment, missing controlledVocabulary or usageExpectation.", {
+    console.warn("Invalid dsv:ControlledVocabularyAssignment, missing controlledVocabulary or usageExpectation.", {
       subject: subject.value,
       controlledVocabularyIri,
       usageExpectationIri,
@@ -386,7 +386,7 @@ function loadControlledVocabularyAssignment(
     iri: subject.value,
     controlledVocabularyIri,
     usageExpectationIri,
-    replacesIri: reader.iri(DSV_DAP.replaces),
+    replacesIri: reader.iri(DSV.replaces),
   };
 }
 

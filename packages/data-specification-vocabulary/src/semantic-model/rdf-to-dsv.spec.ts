@@ -8,7 +8,7 @@ import { conceptualModelToEntityListContainer } from "./dsv-to-entity-model.ts";
 import { DataTypeURIs, isPrimitiveType } from "@dataspecer/core-v2/semantic-model/datatypes";
 import { isSemanticModelClass, isSemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
 import type { Qualifier } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { DSV_DAP_USAGE_EXPECTATION } from "./vocabulary.ts";
+import { DSV_USAGE_EXPECTATION } from "./vocabulary.ts";
 
 test("Round-trips every Cardinality, ClassRole, and RequirementLevel value through RDF.", async () => {
 
@@ -564,7 +564,7 @@ test("Round-trips every controlled vocabulary assignment usage expectation value
     controlledVocabularyAssignments: usageExpectations.map((qualifier, index) => ({
       iri: `http://example.com/class-1/assignment-${index}`,
       controlledVocabularyIri: "http://vocab.example.com/scheme",
-      usageExpectationIri: DSV_DAP_USAGE_EXPECTATION[qualifier],
+      usageExpectationIri: DSV_USAGE_EXPECTATION[qualifier],
       replacesIri: index === 0 ? null : `http://example.com/class-1/assignment-${index - 1}`,
     })),
   });
@@ -579,19 +579,18 @@ test("Round-trips every controlled vocabulary assignment usage expectation value
 test("Reads a controlled vocabulary assignment as its own IRI-identified resource, discovered via the class profile's forward edge.", async () => {
   const inputRdf = `@prefix dct: <http://purl.org/dc/terms/>.
 @prefix dsv: <https://w3id.org/dsv#>.
-@prefix dap: <https://w3id.org/dsv/dap#>.
 @prefix prof: <http://www.w3.org/ns/dx/prof/>.
 
 <http://example.com/model> a prof:Profile, dsv:ApplicationProfile.
 
 <http://example.com/class-1> a dsv:TermProfile, dsv:ClassProfile;
     dct:isPartOf <http://example.com/model>;
-    dap:controlledVocabularyAssignment <http://example.com/assignment-1>.
+    dsv:controlledVocabularyAssignment <http://example.com/assignment-1>.
 
-<http://example.com/assignment-1> a dap:ControlledVocabularyAssignment;
-    dap:controlledVocabulary <http://vocab.example.com/scheme>;
-    dap:usageExpectation <https://w3id.org/dsv/dap/usage-expectation#must>;
-    dap:replaces <http://example.com/assignment-0>.
+<http://example.com/assignment-1> a dsv:ControlledVocabularyAssignment;
+    dsv:controlledVocabulary <http://vocab.example.com/scheme>;
+    dsv:usageExpectation <https://w3id.org/dsv/usage-expectation#must>;
+    dsv:replaces <http://example.com/assignment-0>.
 `;
 
   const actualModels = await rdfToDsv(inputRdf);
@@ -599,7 +598,7 @@ test("Reads a controlled vocabulary assignment as its own IRI-identified resourc
   expect(assignments).toStrictEqual([{
     iri: "http://example.com/assignment-1",
     controlledVocabularyIri: "http://vocab.example.com/scheme",
-    usageExpectationIri: "https://w3id.org/dsv/dap/usage-expectation#must",
+    usageExpectationIri: "https://w3id.org/dsv/usage-expectation#must",
     replacesIri: "http://example.com/assignment-0",
   }]);
 });
@@ -607,20 +606,19 @@ test("Reads a controlled vocabulary assignment as its own IRI-identified resourc
 test("Warns and skips a controlled vocabulary assignment missing controlledVocabulary or usageExpectation.", async () => {
   const inputRdf = `@prefix dct: <http://purl.org/dc/terms/>.
 @prefix dsv: <https://w3id.org/dsv#>.
-@prefix dap: <https://w3id.org/dsv/dap#>.
 @prefix prof: <http://www.w3.org/ns/dx/prof/>.
 
 <http://example.com/model> a prof:Profile, dsv:ApplicationProfile.
 
 <http://example.com/class-1> a dsv:TermProfile, dsv:ClassProfile;
     dct:isPartOf <http://example.com/model>;
-    dap:controlledVocabularyAssignment <http://example.com/missing-vocab>, <http://example.com/missing-expectation>.
+    dsv:controlledVocabularyAssignment <http://example.com/missing-vocab>, <http://example.com/missing-expectation>.
 
-<http://example.com/missing-vocab> a dap:ControlledVocabularyAssignment;
-    dap:usageExpectation <https://w3id.org/dsv/dap/usage-expectation#must>.
+<http://example.com/missing-vocab> a dsv:ControlledVocabularyAssignment;
+    dsv:usageExpectation <https://w3id.org/dsv/usage-expectation#must>.
 
-<http://example.com/missing-expectation> a dap:ControlledVocabularyAssignment;
-    dap:controlledVocabulary <http://vocab.example.com/scheme>.
+<http://example.com/missing-expectation> a dsv:ControlledVocabularyAssignment;
+    dsv:controlledVocabulary <http://vocab.example.com/scheme>.
 `;
 
   const actualModels = await rdfToDsv(inputRdf);

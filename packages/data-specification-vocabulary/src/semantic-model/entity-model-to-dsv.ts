@@ -37,7 +37,7 @@ import {
   isDatatypePropertyProfile,
   isObjectPropertyProfile,
 } from "./dsv-model.ts";
-import { DSV_CLASS_ROLE, DSV_DAP_USAGE_EXPECTATION, DSV_MANDATORY_LEVEL, SKOS } from "./vocabulary.ts";
+import { DSV_CLASS_ROLE, DSV_USAGE_EXPECTATION, DSV_MANDATORY_LEVEL, SKOS } from "./vocabulary.ts";
 
 interface EntityListContainerToDsvContext {
 
@@ -374,7 +374,7 @@ class EntityListContainerToDsv {
     return {
       iri,
       controlledVocabularyIri,
-      usageExpectationIri: DSV_DAP_USAGE_EXPECTATION[assignment.qualifier],
+      usageExpectationIri: DSV_USAGE_EXPECTATION[assignment.qualifier],
       replacesIri: this.resolveControlledVocabularyAssignmentReplaces(assignment.replaces),
     };
   }

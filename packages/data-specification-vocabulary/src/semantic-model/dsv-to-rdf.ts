@@ -18,7 +18,7 @@ import {
 } from "./dsv-model.ts";
 
 import {
-  RDF, DSV, DSV_DAP, DCT, SKOS, DSV_CLASS_ROLE, DSV_MANDATORY_LEVEL, PROF,
+  RDF, DSV, DCT, SKOS, DSV_CLASS_ROLE, DSV_MANDATORY_LEVEL, PROF,
 } from "./vocabulary.ts";
 
 const IRI = DataFactory.namedNode;
@@ -87,7 +87,6 @@ function createDefaultConfiguration(): DsvToRdfConfiguration {
       "requirement": "https://w3id.org/dsv/requirement-level#",
       "role": "https://w3id.org/dsv/class-role#",
       "prof": "http://www.w3.org/ns/dx/prof/",
-      "dap": "https://w3id.org/dsv/dap#",
     },
     "prettyPrint": true,
   };
@@ -154,11 +153,11 @@ export class DsvWriter {
    */
   private writeControlledVocabularyAssignments(profile: ClassProfile) {
     for (const assignment of profile.controlledVocabularyAssignments) {
-      this.addIri(profile.iri, DSV_DAP.controlledVocabularyAssignment, assignment.iri);
-      this.addType(assignment.iri, DSV_DAP.ControlledVocabularyAssignment);
-      this.addIri(assignment.iri, DSV_DAP.controlledVocabulary, assignment.controlledVocabularyIri);
-      this.addIri(assignment.iri, DSV_DAP.usageExpectation, assignment.usageExpectationIri);
-      this.addIri(assignment.iri, DSV_DAP.replaces, assignment.replacesIri);
+      this.addIri(profile.iri, DSV.controlledVocabularyAssignment, assignment.iri);
+      this.addType(assignment.iri, DSV.ControlledVocabularyAssignment);
+      this.addIri(assignment.iri, DSV.controlledVocabulary, assignment.controlledVocabularyIri);
+      this.addIri(assignment.iri, DSV.usageExpectation, assignment.usageExpectationIri);
+      this.addIri(assignment.iri, DSV.replaces, assignment.replacesIri);
     }
   }
 

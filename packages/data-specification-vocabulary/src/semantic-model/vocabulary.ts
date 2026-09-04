@@ -79,6 +79,14 @@ export const DSV = {
   "classRole": IRI(DSV_PREFIX + "classRole"),
   "requirementLevel": IRI(DSV_PREFIX + "requirementLevel"),
   "externalDocumentation": IRI(DSV_PREFIX + "externalDocumentation"),
+  // Controlled vocabulary assignment - placeholders, not yet part of the
+  // published dsv namespace, to be swapped once agreed.
+  "ControlledVocabularyAssignment": IRI(DSV_PREFIX + "ControlledVocabularyAssignment"),
+  // Class profile -> assignment forward edge (this class profile's own assignments).
+  "controlledVocabularyAssignment": IRI(DSV_PREFIX + "controlledVocabularyAssignment"),
+  "controlledVocabulary": IRI(DSV_PREFIX + "controlledVocabulary"),
+  "usageExpectation": IRI(DSV_PREFIX + "usageExpectation"),
+  "replaces": IRI(DSV_PREFIX + "replaces"),
 };
 
 export const DSV_CLASS_ROLE = {
@@ -93,34 +101,19 @@ export const DSV_MANDATORY_LEVEL = {
 };
 
 /**
- * The dsv-dap (data specification vocabulary - data application profile)
- * namespace is not yet published - all IRIs below are placeholders,
- * to be swapped once the real namespace is agreed.
+ * The four usage expectation individuals, placeholders - not yet part of the
+ * published dsv namespace, to be swapped once agreed.
  */
-const DSV_DAP_PREFIX = "https://w3id.org/dsv/dap#";
-
-export const DSV_DAP = {
-  "ControlledVocabularyAssignment": IRI(DSV_DAP_PREFIX + "ControlledVocabularyAssignment"),
-  // Class profile -> assignment forward edge (this class profile's own assignments).
-  "controlledVocabularyAssignment": IRI(DSV_DAP_PREFIX + "controlledVocabularyAssignment"),
-  "controlledVocabulary": IRI(DSV_DAP_PREFIX + "controlledVocabulary"),
-  "usageExpectation": IRI(DSV_DAP_PREFIX + "usageExpectation"),
-  "replaces": IRI(DSV_DAP_PREFIX + "replaces"),
+export const DSV_USAGE_EXPECTATION: Record<Qualifier, string> = {
+  "MUST": "https://w3id.org/dsv/usage-expectation#must",
+  "AT_LEAST_1": "https://w3id.org/dsv/usage-expectation#at-least-1",
+  "RECOMMENDED": "https://w3id.org/dsv/usage-expectation#recommended",
+  "MAY": "https://w3id.org/dsv/usage-expectation#may",
 };
 
-/**
- * The four usage expectation individuals, placeholders (see DSV_DAP above).
- */
-export const DSV_DAP_USAGE_EXPECTATION: Record<Qualifier, string> = {
-  "MUST": "https://w3id.org/dsv/dap/usage-expectation#must",
-  "AT_LEAST_1": "https://w3id.org/dsv/dap/usage-expectation#at-least-1",
-  "RECOMMENDED": "https://w3id.org/dsv/dap/usage-expectation#recommended",
-  "MAY": "https://w3id.org/dsv/dap/usage-expectation#may",
-};
-
-const DSV_DAP_USAGE_EXPECTATION_REVERSE: Record<string, Qualifier> =
+const DSV_USAGE_EXPECTATION_REVERSE: Record<string, Qualifier> =
   Object.fromEntries(
-    Object.entries(DSV_DAP_USAGE_EXPECTATION).map(([qualifier, iri]) => [iri, qualifier]),
+    Object.entries(DSV_USAGE_EXPECTATION).map(([qualifier, iri]) => [iri, qualifier]),
   ) as Record<string, Qualifier>;
 
 /**
@@ -131,7 +124,7 @@ export function iriToUsageExpectation(iri: string | null): Qualifier | null {
   if (iri === null) {
     return null;
   }
-  return DSV_DAP_USAGE_EXPECTATION_REVERSE[iri] ?? null;
+  return DSV_USAGE_EXPECTATION_REVERSE[iri] ?? null;
 }
 
 const OWL_PREFIX = "http://www.w3.org/2002/07/owl#";
