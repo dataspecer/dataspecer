@@ -5,6 +5,7 @@ import {
 } from "../../concepts/index.ts";
 import {
   ControlledVocabularyAssignment,
+  isControlledVocabularyAssignment,
   isSemanticModelClassProfile,
   isSemanticModelGeneralizationProfile,
   isSemanticModelRelationshipProfile,
@@ -81,6 +82,9 @@ class DefaultProfileEntityAggregator implements SemanticProfileAggregator {
     }
     if (isSemanticModelGeneralizationProfile(entity)) {
       return SemanticGeneralizationProfileAggregator.dependencies(entity);
+    }
+    if (isControlledVocabularyAssignment(entity)) {
+      return entity.replaces?.kind === "local" ? [entity.replaces.target] : [];
     }
     return null;
   }
