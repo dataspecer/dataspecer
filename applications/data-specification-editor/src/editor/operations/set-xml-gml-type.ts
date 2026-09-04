@@ -1,4 +1,4 @@
-import { DataPsmSetGmlTypeXmlExtension } from "@dataspecer/core/data-psm/xml-extension/operation/index";
+import { DataPsmSetGmlTypeXmlExtension } from "@dataspecer/core/data-psm/xml-extension/operation";
 import { ComplexOperation } from "@dataspecer/federated-observable-store/complex-operation";
 import { FederatedObservableStore } from "@dataspecer/federated-observable-store/federated-observable-store";
 

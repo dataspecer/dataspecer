@@ -1,4 +1,4 @@
-import { ArtefactGeneratorContext } from "@dataspecer/core/generator";
+import { ArtefactGeneratorContext } from "@dataspecer/generators/generator";
 import { DataSpecificationArtefact } from "@dataspecer/core/data-specification/model/data-specification-artefact.js";
 import { generate } from "json-schema-faker";
 

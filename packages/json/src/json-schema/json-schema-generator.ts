@@ -1,11 +1,11 @@
-import { ConceptualModel } from "@dataspecer/core/conceptual-model";
+import { ConceptualModel } from "@dataspecer/generators/conceptual-model";
 import { assertFailed, assertNot, createStringSelector, LanguageString } from "@dataspecer/core/core";
 import { DataSpecificationConfiguration, DataSpecificationConfigurator, DefaultDataSpecificationConfiguration } from "@dataspecer/core/data-specification/configuration";
 import { DataSpecification, DataSpecificationArtefact, DataSpecificationSchema } from "@dataspecer/core/data-specification/model";
-import { ArtefactGenerator, ArtefactGeneratorContext } from "@dataspecer/core/generator";
+import { ArtefactGenerator, ArtefactGeneratorContext } from "@dataspecer/generators/generator";
 import { StreamDictionary } from "@dataspecer/core/io/stream/stream-dictionary";
-import { StructureModel } from "@dataspecer/core/structure-model/model";
-import { structureModelAddDefaultValues, transformStructureModel } from "@dataspecer/core/structure-model/transformation";
+import { StructureModel } from "@dataspecer/generators/structure-model/model";
+import { structureModelAddDefaultValues, transformStructureModel } from "@dataspecer/generators/structure-model/transformation";
 import { DefaultJsonConfiguration, JsonConfiguration, JsonConfigurator } from "../configuration.ts";
 import { MAIN_JSON_PARTIAL } from "../documentation/configuration.ts";
 import { createJsonSchemaViewModel } from "../documentation/view-adapter.ts";

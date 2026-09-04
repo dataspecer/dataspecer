@@ -25,7 +25,7 @@ import {
   StructureModelPrimitiveType,
   StructureModelProperty,
   type StructureModelComplexType,
-} from "@dataspecer/core/structure-model/model";
+} from "@dataspecer/generators/structure-model/model";
 import { XSD, OFN, OFN_LABELS } from "@dataspecer/core/well-known";
 import {
   DataSpecification,

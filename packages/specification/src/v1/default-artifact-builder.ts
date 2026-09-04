@@ -2,7 +2,7 @@ import { Configurator } from "@dataspecer/core/configuration/configurator";
 import { CoreResourceReader } from "@dataspecer/core/core";
 import { DataSpecification as CoreDataSpecification } from "@dataspecer/core/data-specification/model";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
-import { Generator } from "@dataspecer/core/generator";
+import { Generator } from "@dataspecer/generators/generator";
 import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import { FederatedObservableStore } from "@dataspecer/federated-observable-store/federated-observable-store";
 import { GenerateReport } from "./generate-report.ts";

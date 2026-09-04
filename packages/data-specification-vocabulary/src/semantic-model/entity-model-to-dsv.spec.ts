@@ -320,110 +320,114 @@ test("Issue #1238 - export reusedAsProperty", () => {
     ]);
 });
 
-test("Resolves reused name/description property through a chain of class and relationship profiles.", () => {
+test("Correct propagation of nameProperty and descriptionProperty.", () => {
+    // dsv:reusedFromResource points to the actual reused resource, not necessarily the original vocabulary entity. So this might point to a profiled entity. You need to traverse the whole chain to get to the original vocabulary entity.
+    // dsv:reusedProperty should be equal to dsv:reusedAsProperty of entity identified by dsv:reusedFromResource (in case we profile profile and not vocabulary). Since we do not allow to set your own dsv:reusedProperty, this implies that for any profile of profile, dsv:reusedProperty will always be skos:prefLabel, skos:definition and skos:scopeNote for title, description and usage note respectively.
 
     const vocabulary = createDefaultSemanticModelBuilder({
         baseIdentifier: "v#",
-        baseIri: "http://dcat/model/",
+        baseIri: "http://example.com/",
     });
-    const c1 = vocabulary.class({
-        iri: "c1",
-        nameProperty: "ex:nameProp",
-        descriptionProperty: "ex:descProp",
+    const vocabularyClass = vocabulary.class({
+        iri: "VocabularyClass",
+        nameProperty: "http://example.com/vocabulary-name",
+        descriptionProperty: "http://example.com/vocabulary-description",
     });
-    const r1 = c1.property({
-        iri: "attribute",
+    const vocabularyProperty = vocabularyClass.property({
+        iri: "vocabulary-property",
         range: { identifier: "http://www.w3.org/2000/01/rdf-schema#Literal" },
-        nameProperty: "ex:relNameProp",
-        descriptionProperty: "ex:relDescProp",
+        nameProperty: "http://example.com/vocabulary-property-name",
+        descriptionProperty: "http://example.com/vocabulary-property-description",
     });
 
     const profile = createDefaultProfileModelBuilder({
         baseIdentifier: "p#",
-        baseIri: "http://dcat/model/",
+        baseIri: "http://example.com/",
     });
-    const p1 = profile.class({ iri: "p1" })
-        .reuseName(c1)
-        .reuseDescription(c1);
-    // nameProperty/descriptionProperty aren't part of SemanticModelClassProfile
-    // itself (aggregator-only concept), hence the cast.
-    const p2 = profile.class({
-        iri: "p2",
-        nameProperty: "ex:overrideName",
-        descriptionProperty: "ex:overrideDesc",
-    } as any)
-        .reuseName(p1)
-        .reuseDescription(p1);
+    const classProfile = profile.class({ iri: "ClassProfile" })
+        .reuseName(vocabularyClass)
+        .reuseDescription(vocabularyClass);
+    profile.class({ iri: "ClassProfileOfProfile" })
+        .reuseName(classProfile)
+        .reuseDescription(classProfile);
 
-    const rp1 = profile.property({ iri: "attribute-p1" })
-        .domain(p1)
+    const propertyProfile = profile.property({ iri: "property-profile" })
+        .domain(classProfile)
         .range("http://www.w3.org/2000/01/rdf-schema#Literal")
-        .reuseName(r1)
-        .reuseDescription(r1);
-    const rp2 = profile.property({ iri: "attribute-p2" })
-        .domain(p2)
+        .reuseName(vocabularyProperty)
+        .reuseDescription(vocabularyProperty);
+    profile.property({ iri: "property-profile-of-profile" })
+        .domain(classProfile)
         .range("http://www.w3.org/2000/01/rdf-schema#Literal")
-        .reuseName(rp1)
-        .reuseDescription(rp1);
-    // profile-model's builder doesn't yet forward nameProperty/
-    // descriptionProperty onto a property's range end; set the override
-    // directly on the underlying entity.
-    Object.assign((rp2 as any).entity.ends[1], {
-        nameProperty: "ex:overrideRelName",
-        descriptionProperty: "ex:overrideRelDesc",
-    });
+        .reuseName(propertyProfile)
+        .reuseDescription(propertyProfile);
 
     const container = mergeEntityListContainers(
         toEntityListContainer(vocabulary.build()),
         toEntityListContainer(profile.build()),
     );
-    const context = createContext([container]);
     const actual = entityListContainerToDsvModel(
-        "http://dcat/model/", container, context);
+        "http://example.com/",
+        container,
+        createContext([container]),
+    );
 
-    // Class profile one level from the vocabulary class.
-    expect(actual.classProfiles[0]?.reusesPropertyValue).toStrictEqual([{
-        "reusedPropertyIri": "ex:nameProp",
-        "reusedAsPropertyIri": "http://www.w3.org/2004/02/skos/core#prefLabel",
-        "propertyReusedFromResourceIri": "http://dcat/model/c1",
+    expect(actual.classProfiles).toMatchObject([{
+        iri: "http://example.com/ClassProfile",
+        profiledClassIri: ["http://example.com/VocabularyClass"],
+        profileOfIri: [],
+        reusesPropertyValue: [{
+            reusedPropertyIri: "http://example.com/vocabulary-name",
+            reusedAsPropertyIri: "http://www.w3.org/2004/02/skos/core#prefLabel",
+            propertyReusedFromResourceIri: "http://example.com/VocabularyClass",
+        }, {
+            reusedPropertyIri: "http://example.com/vocabulary-description",
+            reusedAsPropertyIri: "http://www.w3.org/2004/02/skos/core#definition",
+            propertyReusedFromResourceIri: "http://example.com/VocabularyClass",
+        }],
     }, {
-        "reusedPropertyIri": "ex:descProp",
-        "reusedAsPropertyIri": "http://www.w3.org/2004/02/skos/core#definition",
-        "propertyReusedFromResourceIri": "http://dcat/model/c1",
+        iri: "http://example.com/ClassProfileOfProfile",
+        profiledClassIri: [],
+        profileOfIri: ["http://example.com/ClassProfile"],
+        reusesPropertyValue: [{
+            reusedPropertyIri: "http://www.w3.org/2004/02/skos/core#prefLabel",
+            reusedAsPropertyIri: "http://www.w3.org/2004/02/skos/core#prefLabel",
+            propertyReusedFromResourceIri: "http://example.com/ClassProfile",
+        }, {
+            reusedPropertyIri: "http://www.w3.org/2004/02/skos/core#definition",
+            reusedAsPropertyIri: "http://www.w3.org/2004/02/skos/core#definition",
+            propertyReusedFromResourceIri: "http://example.com/ClassProfile",
+        }],
     }]);
 
-    // Class profile two levels away, through another class profile.
-    expect(actual.classProfiles[1]?.reusesPropertyValue).toStrictEqual([{
-        "reusedPropertyIri": "ex:nameProp",
-        "reusedAsPropertyIri": "ex:overrideName",
-        "propertyReusedFromResourceIri": "http://dcat/model/p1",
+    expect(actual.datatypePropertyProfiles).toMatchObject([{
+        iri: "http://example.com/property-profile",
+        profiledPropertyIri: ["http://example.com/vocabulary-property"],
+        profileOfIri: [],
+        reusesPropertyValue: [{
+            reusedPropertyIri: "http://example.com/vocabulary-property-name",
+            reusedAsPropertyIri: "http://www.w3.org/2004/02/skos/core#prefLabel",
+            propertyReusedFromResourceIri: "http://example.com/vocabulary-property",
+        }, {
+            reusedPropertyIri: "http://example.com/vocabulary-property-description",
+            reusedAsPropertyIri: "http://www.w3.org/2004/02/skos/core#definition",
+            propertyReusedFromResourceIri: "http://example.com/vocabulary-property",
+        }],
     }, {
-        "reusedPropertyIri": "ex:descProp",
-        "reusedAsPropertyIri": "ex:overrideDesc",
-        "propertyReusedFromResourceIri": "http://dcat/model/p1",
+        iri: "http://example.com/property-profile-of-profile",
+        profiledPropertyIri: [],
+        profileOfIri: ["http://example.com/property-profile"],
+        reusesPropertyValue: [{
+            reusedPropertyIri: "http://www.w3.org/2004/02/skos/core#prefLabel",
+            reusedAsPropertyIri: "http://www.w3.org/2004/02/skos/core#prefLabel",
+            propertyReusedFromResourceIri: "http://example.com/property-profile",
+        }, {
+            reusedPropertyIri: "http://www.w3.org/2004/02/skos/core#definition",
+            reusedAsPropertyIri: "http://www.w3.org/2004/02/skos/core#definition",
+            propertyReusedFromResourceIri: "http://example.com/property-profile",
+        }],
     }]);
 
-    // Property profile one level from the vocabulary relationship.
-    expect(actual.datatypePropertyProfiles[0]?.reusesPropertyValue).toStrictEqual([{
-        "reusedPropertyIri": "ex:relNameProp",
-        "reusedAsPropertyIri": "http://www.w3.org/2004/02/skos/core#prefLabel",
-        "propertyReusedFromResourceIri": "http://dcat/model/attribute",
-    }, {
-        "reusedPropertyIri": "ex:relDescProp",
-        "reusedAsPropertyIri": "http://www.w3.org/2004/02/skos/core#definition",
-        "propertyReusedFromResourceIri": "http://dcat/model/attribute",
-    }]);
-
-    // Property profile two levels away, through another property profile.
-    expect(actual.datatypePropertyProfiles[1]?.reusesPropertyValue).toStrictEqual([{
-        "reusedPropertyIri": "ex:relNameProp",
-        "reusedAsPropertyIri": "ex:overrideRelName",
-        "propertyReusedFromResourceIri": "http://dcat/model/attribute-p1",
-    }, {
-        "reusedPropertyIri": "ex:relDescProp",
-        "reusedAsPropertyIri": "ex:overrideRelDesc",
-        "propertyReusedFromResourceIri": "http://dcat/model/attribute-p1",
-    }]);
 });
 
 test("Ignores invalid or missing profileOf references, logging instead of throwing.", () => {

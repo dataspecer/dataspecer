@@ -47,13 +47,13 @@ function aggregateSemanticModelClassProfile(
   const nameProfiled = getProfiled(profile.nameFromProfiled);
   const name = nameProfiled?.name ?? profile.name;
   // We inherit the property only for vocabulary entities and already aggregated entities.
-  const nameProperty = (nameProfiled as SemanticModelClass | AggregatedProfiledSemanticModelClass | null)?.nameProperty ?? null;
+  const nameFromProperty = (nameProfiled as SemanticModelClass | AggregatedProfiledSemanticModelClass | null)?.nameProperty ?? null;
 
   // Description is similar to name in processing.
   const descriptionProfiled = getProfiled(profile.descriptionFromProfiled);
   const description = descriptionProfiled?.description ?? profile.description;
   // We inherit the property only for vocabulary entities and already aggregated entities.
-  const descriptionProperty = (descriptionProfiled  as SemanticModelClass | AggregatedProfiledSemanticModelClass | null)?.descriptionProperty ?? null;
+  const descriptionFromProperty = (descriptionProfiled  as SemanticModelClass | AggregatedProfiledSemanticModelClass | null)?.descriptionProperty ?? null;
 
   // Unlike name and description usage note does not exists on a class.
   // As a result we type check before reading it.
@@ -88,7 +88,7 @@ function aggregateSemanticModelClassProfile(
     if (isAggregatedProfiledSemanticModelClass(profiled)) {
       conceptIris.push(...profiled.conceptIris);
       conceptIdentifiers.push(...profiled.conceptIdentifiers);
-      // if multiple ancestors contain the same controlled vocabulary, only one is kept 
+      // if multiple ancestors contain the same controlled vocabulary, only one is kept
       // - this might be changed in the future to better resolve conflicts
       for (const assignment of profiled.controlledVocabularies ?? []) {
         if (!inheritedControlledVocabularyIdentifiers.has(assignment.identifier)) {
@@ -151,7 +151,10 @@ function aggregateSemanticModelClassProfile(
     // Aggregate entities.
     conceptIris: [...new Set(conceptIris)],
     conceptIdentifiers: [...new Set(conceptIdentifiers)],
-    nameProperty: nameProperty,
-    descriptionProperty: descriptionProperty,
+    // Name and description properties
+    nameFromProperty: nameFromProperty,
+    nameProperty: null, // We do not allow setting custom name property
+    descriptionFromProperty: descriptionFromProperty,
+    descriptionProperty: null, // We do not allow setting custom description property
   };
 }

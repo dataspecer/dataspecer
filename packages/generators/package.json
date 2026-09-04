@@ -1,0 +1,50 @@
+{
+  "name": "@dataspecer/generators",
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "prebuild": "node ./build/prebuild.mjs",
+    "dev": "tsc -w",
+    "lint": "eslint ./src",
+    "prettier": "prettier -w ./src",
+    "test": "vitest run --pass-with-no-tests"
+  },
+  "exports": {
+    ".": "./lib/index.js",
+    "./conceptual-model": "./lib/conceptual-model/index.js",
+    "./conceptual-model/model/conceptual-model-property": "./lib/conceptual-model/model/conceptual-model-property.js",
+    "./conceptual-model/model/conceptual-model-type": "./lib/conceptual-model/model/conceptual-model-type.js",
+    "./conceptual-model/model/conceptual-model": "./lib/conceptual-model/model/conceptual-model.js",
+    "./conceptual-model/model": "./lib/conceptual-model/model/index.js",
+    "./conceptual-model/transformation/filter-by-structural": "./lib/conceptual-model/transformation/filter-by-structural.js",
+    "./generator/artefact-generator-context": "./lib/generator/artefact-generator-context.js",
+    "./generator": "./lib/generator/index.js",
+    "./structure-model/helper/is-recursive": "./lib/structure-model/helper/is-recursive.js",
+    "./structure-model": "./lib/structure-model/index.js",
+    "./structure-model/model": "./lib/structure-model/model/index.js",
+    "./structure-model/model/structure-model-class": "./lib/structure-model/model/structure-model-class.js",
+    "./structure-model/model/structure-model-property": "./lib/structure-model/model/structure-model-property.js",
+    "./structure-model/model/structure-model-schema-root": "./lib/structure-model/model/structure-model-schema-root.js",
+    "./structure-model/model/structure-model-type": "./lib/structure-model/model/structure-model-type.js",
+    "./structure-model/model/structure-model": "./lib/structure-model/model/structure-model.js",
+    "./structure-model/transformation/add-default-values": "./lib/structure-model/transformation/add-default-values.js",
+    "./structure-model/transformation/default-transformation": "./lib/structure-model/transformation/default-transformation.js",
+    "./structure-model/transformation": "./lib/structure-model/transformation/index.js"
+  },
+  "dependencies": {
+    "@dataspecer/core": "*",
+    "@dataspecer/core-v2": "*"
+  },
+  "devDependencies": {
+    "eslint": "^8.37.0",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.7"
+  },
+  "browser": {
+    "buffer": false
+  },
+  "publishConfig": {
+    "directory": "lib"
+  }
+}

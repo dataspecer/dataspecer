@@ -22,6 +22,7 @@
     "n3": "^1.25.1"
   },
   "devDependencies": {
+    "@types/n3": "^1.24.2",
     "typescript": "^7.0.2",
     "vitest": "^4.1.7"
   }

@@ -46,8 +46,8 @@ import { DatatypeSelector, DatatypeSelectorValueType, getIriFromDatatypeSelector
 import { RegexField } from "../../helper/regex-field";
 import { useSaveHandler } from "../../helper/save-handler";
 import { StringExamplesField } from "../../helper/string-examples-field";
-import { DataPsmXmlPropertyExtension } from "@dataspecer/core/data-psm/xml-extension/model/index";
-import { DataPsmJsonPropertyExtension } from "@dataspecer/core/data-psm/json-extension/model/index";
+import { DataPsmXmlPropertyExtension } from "@dataspecer/core/data-psm/xml-extension/model";
+import { DataPsmJsonPropertyExtension } from "@dataspecer/core/data-psm/json-extension/model";
 import { SetXmlIsAttribute } from "../../../operations/set-xml-is-attribute";
 import { SetJsonKeyValueForLangString } from "../../../operations/set-json-key-value-for-lang-string";
 import { SetEmptyAsComplex } from "../../../operations/set-is-primitive";

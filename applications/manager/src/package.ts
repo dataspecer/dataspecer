@@ -2,7 +2,7 @@ import { LOCAL_SEMANTIC_MODEL, V1 } from "@dataspecer/core-v2/model/known-models
 import { BackendPackageService } from "@dataspecer/core-v2/project";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
 import { createContext, useRef, useState } from "react";
-import { Package } from "../../../packages/core-v2/lib/project/resource/resource";
+import { Package } from "@dataspecer/core/project-model/legacy";
 import { createModelInstructions } from "./known-models";
 import { StructureEditorBackendService } from "./structure-editor-backend-service";
 

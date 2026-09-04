@@ -478,6 +478,9 @@ async function writeLanguageStringType(
           );
           await writer.writeLocalAttributeValue("use", "required");
         });
+        await writer.writeElementFull("xs", "assert")(async writer => {
+          await writer.writeLocalAttributeValue("test", "@xml:lang != ''");
+        });
       });
     });
   });

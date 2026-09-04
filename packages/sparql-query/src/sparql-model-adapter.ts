@@ -2,7 +2,7 @@ import {
   StructureModelClass,
   StructureModelProperty,
   StructureModel,
-} from "@dataspecer/core/structure-model/model";
+} from "@dataspecer/generators/structure-model/model";
 import {
   SparqlConstructQuery,
   SparqlElement,
@@ -47,7 +47,7 @@ export function structureModelToSparql(
  */
 class SparqlAdapter {
   private variableCounter: number;
-  
+
   private namespaces: Record<string, string>;
   private namespacesIris: Record<string, string>;
   private namespaceCounter: number;
@@ -79,7 +79,7 @@ class SparqlAdapter {
     for (const cls of classes) {
       const rootSubject = this.newVariable();
       const elements = [];
-      this.classToTriples(rootSubject, cls, false, elements);   
+      this.classToTriples(rootSubject, cls, false, elements);
       patterns.push({
         elements: elements
       });
@@ -187,7 +187,7 @@ class SparqlAdapter {
       elements.push(optional);
       elements = optionalElements;
     }
-    
+
     const pred = this.nodeFromIri(propertyData.cimIri);
 
     /**
@@ -216,7 +216,7 @@ class SparqlAdapter {
     } else {
       const optionalType = dataTypes.length == 1;
       const patterns: SparqlPattern[] = [];
-  
+
       // Produce the pattern for each type of the property.
       for (const type of dataTypes) {
         const obj = this.newVariable();
@@ -230,7 +230,7 @@ class SparqlAdapter {
           elements: patternElements
         });
       }
-  
+
       // Add the union of patterns for each of the class.
       elements.push({
         unionPatterns: patterns

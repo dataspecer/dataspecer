@@ -15,7 +15,8 @@
   "dependencies": {
     "@dataspecer/core": "*",
     "@dataspecer/core-v2": "*",
-    "@dataspecer/handlebars-adapter": "*"
+    "@dataspecer/handlebars-adapter": "*",
+    "@dataspecer/generators": "^0.0.0"
   },
   "devDependencies": {
     "@types/node": "^25.5.2",

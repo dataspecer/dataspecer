@@ -6,7 +6,7 @@ import { LanguageString, SemanticModelClass, SemanticModelEntity, SemanticModelR
 import { isSemanticModelClassProfile, isSemanticModelRelationshipProfile, SemanticModelClassProfile, SemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { getTranslation } from "@dataspecer/core-v2/utils/language";
 import { createHandlebarsAdapter, HandlebarsAdapter } from "@dataspecer/handlebars-adapter";
-import { StructureModel } from '@dataspecer/core/structure-model/model/structure-model';
+import { StructureModel } from '@dataspecer/generators/structure-model/model/structure-model';
 
 export interface DocumentationGeneratorConfiguration {
   template: string;

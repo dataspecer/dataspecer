@@ -7,7 +7,7 @@ import { createInMemorySemanticModel } from "../../semantic-model/simplified/in-
 import { createVisualModel } from "../../semantic-model/simplified/visual-model.ts";
 import { PimStoreWrapper } from "../../semantic-model/v1-adapters/index.ts";
 import { VisualModel } from "@dataspecer/visual-model";
-import { BaseResource, Package, ResourceEditable } from "../resource/resource.ts";
+import { BaseResource, Package, ResourceEditable } from "@dataspecer/core/project-model/legacy";
 import { PackageService, SemanticModelPackageService } from "./package-service.ts";
 
 /**

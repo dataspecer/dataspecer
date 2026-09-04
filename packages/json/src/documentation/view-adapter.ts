@@ -1,4 +1,4 @@
-import type { StructureModel } from "@dataspecer/core/structure-model/model/structure-model";
+import type { StructureModel } from "@dataspecer/generators/structure-model/model/structure-model";
 import {
   JsonSchema,
   JsonSchemaAny,
@@ -27,13 +27,13 @@ import type {
   JsonSchemaStringViewModel,
   JsonSchemaViewModel,
 } from "./view-model.ts";
-import type { ConceptualModel } from "@dataspecer/core/conceptual-model/model/conceptual-model";
-import type { ConceptualModelProperty } from "@dataspecer/core/conceptual-model/model/conceptual-model-property";
+import type { ConceptualModel } from "@dataspecer/generators/conceptual-model/model/conceptual-model";
+import type { ConceptualModelProperty } from "@dataspecer/generators/conceptual-model/model/conceptual-model-property";
 import { selectLanguage } from "../json-schema/json-schema-generator.ts";
-import { StructureModelClass } from "@dataspecer/core/structure-model/model/structure-model-class";
-import { StructureModelProperty } from "@dataspecer/core/structure-model/model/structure-model-property";
+import { StructureModelClass } from "@dataspecer/generators/structure-model/model/structure-model-class";
+import { StructureModelProperty } from "@dataspecer/generators/structure-model/model/structure-model-property";
 import type { JsonConfiguration } from "../configuration.ts";
-import type { ArtefactGeneratorContext } from "@dataspecer/core/generator/artefact-generator-context";
+import type { ArtefactGeneratorContext } from "@dataspecer/generators/generator/artefact-generator-context";
 import { pathRelative } from "@dataspecer/core/core/utilities/path-relative";
 import type { DataSpecificationArtefact } from "@dataspecer/core/data-specification/model/data-specification-artefact";
 

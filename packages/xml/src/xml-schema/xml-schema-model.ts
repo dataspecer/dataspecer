@@ -1,7 +1,7 @@
-import { StructureModel } from "@dataspecer/core/structure-model/model/structure-model";
+import { StructureModel } from "@dataspecer/generators/structure-model/model/structure-model";
 import { QName } from "../conventions.ts";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
-import { SemanticPathStep } from "@dataspecer/core/structure-model/model";
+import { SemanticPathStep } from "@dataspecer/generators/structure-model/model";
 import { XmlConfiguration } from "../configuration.ts";
 
 /**
