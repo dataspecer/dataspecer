@@ -414,11 +414,14 @@ class EntityListContainerToDsv {
       ? this.entityToIri(classProfileEntity)
       : assignment.classProfile;
     const vocabularyEntity = this.identifierToEntity(assignment.vocabulary);
-    const vocabularyInfo = vocabularyEntity !== null
+    const vocabularyIri = vocabularyEntity !== null
       ? this.entityToIri(vocabularyEntity)
       : assignment.vocabulary;
-    return `${classProfileIri}/controlled-vocabulary-assignment` +
-      `?vocabulary=${encodeURIComponent(vocabularyInfo)}&qualifier=${assignment.qualifier}`;
+    // The vocabulary IRI is embedded as a path segment, so it must be
+    // URL-encoded - otherwise characters like "#" or "/" in it would
+    // corrupt the resulting IRI (e.g. producing a second "#").
+    return `${classProfileIri}/controlled-vocabulary-assignment/vocabulary/` +
+      encodeURIComponent(vocabularyIri);
   }
 
   private identifierToIri(identifier: string): string {
