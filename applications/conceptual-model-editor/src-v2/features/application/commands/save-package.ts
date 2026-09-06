@@ -1,6 +1,6 @@
 import {
   CmeCommandContext, cmeCommandRegistry, CommandReference,
-} from "../../core/cme-command";
+} from "../../../core/cme-command";
 
 const IDENTIFIER = "application/save";
 
@@ -12,8 +12,7 @@ cmeCommandRegistry.register({
   description: {
     en: "Save all data to backend.",
   },
-  handler: (context) =>
-    savePackageExecutor(context),
+  handler: (context) => savePackageExecutor(context),
 });
 
 export function savePackageCommand(

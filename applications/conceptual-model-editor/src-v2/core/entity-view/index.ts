@@ -1,1 +1,1 @@
-export * from "./entity-edit-registry";
+export * from "./entity-view-registry";

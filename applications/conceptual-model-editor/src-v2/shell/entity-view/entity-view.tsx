@@ -1,10 +1,14 @@
 import { useState } from "react";
-import { ArrowLeft, ChevronLeft, ChevronRight, MousePointerClick } from "lucide-react";
+import {
+  ArrowLeft, ChevronLeft, ChevronRight, MousePointerClick,
+} from "lucide-react";
 
 import { useApplicationState } from "../../core/application/application-react";
 import { SelectionApi } from "../../core/application/application-selection-api";
 import { SelectedEntity } from "../../core/application/application-state";
-import { entityViewPreviewRegistry } from "../../core/entity-view";
+import {
+  entityViewDetailRegistry, entityViewPreviewRegistry,
+} from "../../core/entity-view";
 
 export function EntityView() {
 
@@ -22,10 +26,11 @@ export function EntityView() {
   // Next we check for focus.
   if (focusedIndex !== null) {
     // We make sure index is in the bounds.
-    const index = focusedIndex & selection.length;
+    const count = selection.length;
+    const index = Math.min(Math.max(focusedIndex, 0), count - 1);
     const onBack = () => setFocusedIndex(null);
-    const onPrevious = () => setFocusedIndex(index - 1 % selection.length);
-    const onNext = () => setFocusedIndex(index - 1 % selection.length);
+    const onPrevious = () => setFocusedIndex((index - 1 + count) % count);
+    const onNext = () => setFocusedIndex((index + 1) % count);
     return (
       <>
         <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
@@ -54,8 +59,8 @@ export function EntityView() {
             </button>
           </div>
         </div>
-        <div>
-          FOCUSED: {index}
+        <div className="flex-1 overflow-y-auto">
+          {renderDetail(selection[index])}
         </div>
       </>
     )
@@ -64,7 +69,7 @@ export function EntityView() {
   // Not it is just about how many entities we have selected.
   if (selection.length === 1) {
     return (
-      <SingleEntitySelection />
+      <SingleEntitySelection selected={selection[0]} />
     );
   } else {
     return (
@@ -86,12 +91,31 @@ function EmptySelection() {
   );
 }
 
-function SingleEntitySelection() {
+function SingleEntitySelection(props: { selected: SelectedEntity }) {
+  return renderDetail(props.selected);
+}
+
+/**
+ * Pick the first entity-view detail contribution that can render the given
+ * selection and render it. The JSON fallback registered in the composition
+ * root means the "no view" branch should not be reached in practice.
+ */
+function renderDetail(selected: SelectedEntity) {
+  const { entity, model } = selected;
+
+  const contribution = entityViewDetailRegistry.list()
+    .find(item => item.canRenderDetail(entity, model)) ?? null;
+
+  if (contribution === null) {
+    return (
+      <div className="p-3 text-[12.5px] text-zinc-600">No view available.</div>
+    );
+  }
+
+  const DetailComponent = contribution.detailComponent;
   return (
-    <div>
-      ...
-    </div>
-  )
+    <DetailComponent entity={entity} model={model} />
+  );
 }
 
 function MultipleEntitiesSelection(props: {

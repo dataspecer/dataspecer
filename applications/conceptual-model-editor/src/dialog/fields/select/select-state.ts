@@ -12,7 +12,7 @@ export interface SelectItem {
   id: string;
 
   /**
-   * Label to be translated and show to the user.
+   * Display-ready label shown to the user (already localized by the caller).
    */
   label: string;
 

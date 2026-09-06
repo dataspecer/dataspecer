@@ -29,7 +29,7 @@ import { WithApplicationState } from "../core/application/application-react";
 import { EntityView } from "../shell/entity-view/entity-view";
 
 /**
- * The main application ro render.
+ * The main application entry point.
  */
 export function Application() {
   const infrastructure = useMemo(createInfrastructure, []);
@@ -37,43 +37,21 @@ export function Application() {
   const [query, setQuery] = useUrlQuery();
 
   const application = useMemo(
-    () => createCmeApplicationEnvironment(setQuery), []);
+    () => createCmeApplicationEnvironment(setQuery), [setQuery]);
 
   // Without a package there is nothing to do!
   if (query.packageId === null) {
     return <MissingPackageIdentifier />;
   }
 
-  // We have a package let us prepare the application context.
-
-  const dataspecer = useCmeDataspecerPackageApi(
-    infrastructure.logger,
-    query.packageId,
-    infrastructure.configuration.backend,
-    infrastructure.http,
-  );
-
   return (
-    <WithCmeApplicationProviders
+    <ApplicationWithPackage
       infrastructure={infrastructure}
       application={application}
-      dataspecer={dataspecer}
-    >
-      <ThemeProvider>
-        <div className="h-svh flex flex-col">
-          <Header activeVisualModel={query.viewId} />
-          <div className="flex flex-1">
-            <div className="w-100">
-              <Catalog />
-            </div>
-            <div className="flex content-center justify-center flex-1">
-              <EntityView />
-            </div>
-          </div>
-        </div>
-      </ThemeProvider>
-    </WithCmeApplicationProviders>
-  )
+      packageId={query.packageId}
+      viewId={query.viewId}
+    />
+  );
 };
 
 function createInfrastructure(): Infrastructure {
@@ -118,10 +96,51 @@ function MissingPackageIdentifier() {
 }
 
 /**
- * A wrap component to move the providers outside the main function
- * for improver readability.
+ * Everything that depends on a concrete package. Kept as a separate component
+ * so the package-scoped hooks below always run unconditionally.
  */
-function WithCmeApplicationProviders(props: {
+function ApplicationWithPackage(props: {
+  infrastructure: Infrastructure,
+  application: CmeApplicationEnvironment,
+  packageId: string,
+  viewId: string | null,
+}) {
+  const { infrastructure, application, packageId, viewId } = props;
+
+  const dataspecer = useCmeDataspecerPackageApi(
+    infrastructure.logger,
+    packageId,
+    infrastructure.configuration.backend,
+    infrastructure.http,
+  );
+
+  return (
+    <WithProviders
+      infrastructure={infrastructure}
+      application={application}
+      dataspecer={dataspecer}
+    >
+      <ThemeProvider>
+        <div className="h-svh flex flex-col">
+          <Header activeVisualModel={viewId} />
+          <div className="flex flex-1">
+            <div className="w-100">
+              <Catalog />
+            </div>
+            <div className="flex content-center justify-center flex-1">
+              <EntityView />
+            </div>
+          </div>
+        </div>
+      </ThemeProvider>
+    </WithProviders>
+  );
+}
+
+/**
+ * A wrap component to move the providers outside the main function.
+ */
+function WithProviders(props: {
   infrastructure: Infrastructure,
   application: CmeApplicationEnvironment,
   dataspecer: CmeDataspecerPackageApi,

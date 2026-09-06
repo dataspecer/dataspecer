@@ -1,8 +1,5 @@
-import { useMemo } from "react";
-
 import {
-  Save, LogOut, Check, Settings2,
-  FileDown, Sun, Moon, MoonStar, Monitor, Languages, ChevronDown,
+  Check, Sun, Moon, MoonStar, Monitor, Languages, ChevronDown,
 } from "lucide-react";
 import { Button } from "@user-interface/ui/button";
 import { Separator } from "@user-interface/ui/separator";
@@ -12,24 +9,20 @@ import {
 } from "@user-interface/ui/dropdown-menu";
 import { useTheme } from "@user-interface/theme-provider";
 import { useLabelSelector } from "../../infrastructure/i18n";
-import { createHeaderPresenter } from "./header-presenter";
-import { useCmeCommandExecutor } from "../../core/cme-command";
-import { headerRegionRegistry } from "../../core/header";
+import {
+  HeaderRegionContribution, HeaderRegionSlot, headerRegionRegistry,
+} from "../../core/header";
 
 export function Header(props: {
   activeVisualModel: string | null,
 }) {
   const labelSelector = useLabelSelector();
 
-  const commandExecutor = useCmeCommandExecutor();
-
   const { theme, setTheme } = useTheme();
 
-  const presenter = useMemo(
-    () => createHeaderPresenter(commandExecutor),
-    [commandExecutor]);
-
-  // Rendering section ...
+  const regions = headerRegionRegistry.list();
+  const startRegions = regionsForSlot(regions, "start");
+  const endRegions = regionsForSlot(regions, "end");
 
   return (
     <header className="flex h-14 w-full shrink-0 items-center gap-3 border-b bg-background px-4 text-sm">
@@ -44,8 +37,8 @@ export function Header(props: {
 
       <Separator orientation="vertical" />
 
-      {/* Feature-contributed header regions */}
-      {headerRegionRegistry.list().map(contribution => (
+      {/* Feature-contributed regions, next to the logo. */}
+      {startRegions.map(contribution => (
         <contribution.component
           key={contribution.id}
           activeVisualModel={props.activeVisualModel}
@@ -54,24 +47,13 @@ export function Header(props: {
 
       <Separator orientation="vertical" />
 
-      {/* Save actions */}
-      <div className="flex shrink-0 items-center gap-2">
-        <Button
-          variant="outline" size="sm"
-          className="gap-1.5"
-          onClick={presenter.onSave}
-        >
-          <Save className="h-3.5 w-3.5" />
-          Save
-        </Button>
-        <Button
-          variant="outline" size="sm"
-          onClick={presenter.onSaveAndClose}
-        >
-          <LogOut className="h-3.5 w-3.5" />
-          Save and leave
-        </Button>
-      </div>
+      {/* Feature-contributed action regions (save, export, ...). */}
+      {endRegions.map(contribution => (
+        <contribution.component
+          key={contribution.id}
+          activeVisualModel={props.activeVisualModel}
+        />
+      ))}
 
       <div className="flex-1" />
 
@@ -148,51 +130,15 @@ export function Header(props: {
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
-
-      {/* Export menu */}
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          render={
-            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" aria-label="Export" />
-          }
-        >
-          <Settings2 className="h-4 w-4" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuGroup>
-            <DropdownMenuLabel>Export</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="gap-2"
-              onClick={() => presenter.onExport("svg")}
-            >
-              <FileDown className="h-3.5 w-3.5 text-muted-foreground" />
-              Export SVG
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="gap-2"
-              onClick={() => presenter.onExport("rdfs/owl")}
-            >
-              <FileDown className="h-3.5 w-3.5 text-muted-foreground" />
-              Export RDFS/OWL
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="gap-2"
-              onClick={() => presenter.onExport("dsv")}
-            >
-              <FileDown className="h-3.5 w-3.5 text-muted-foreground" />
-              Export DSV
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="gap-2"
-              onClick={() => presenter.onExport("shacl")}
-            >
-              <FileDown className="h-3.5 w-3.5 text-muted-foreground" />
-              Export SHACL
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
     </header>
   );
+}
+
+function regionsForSlot(
+  regions: HeaderRegionContribution[],
+  slot: HeaderRegionSlot,
+): HeaderRegionContribution[] {
+  return regions
+    .filter(region => (region.slot ?? "start") === slot)
+    .sort((left, right) => (left.order ?? 0) - (right.order ?? 0));
 }

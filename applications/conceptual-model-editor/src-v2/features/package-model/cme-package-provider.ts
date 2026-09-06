@@ -114,7 +114,6 @@ class DefaultCmePackageProvider implements CmePackageProvider {
     // Notify listeners about a new state.
     this.state = update.state();
     this.state = this.updateLabelsFromVisualModel_WORKAROUND_(event);
-    console.log(this.state);
     this.subscribers.notifyAll(this.state);
   }
 

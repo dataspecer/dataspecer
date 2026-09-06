@@ -46,6 +46,7 @@ function createCmeCommandContext(
   const context: CmeCommandContext = {
     execute() {
       // This is just a placeholder we replace this method later.
+      // The reason is that we need to self-reference this object.
       return null as any;
     },
     application: application,

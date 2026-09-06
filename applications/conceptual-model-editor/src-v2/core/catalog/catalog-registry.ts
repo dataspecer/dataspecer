@@ -1,11 +1,14 @@
 import { Logger } from "../../infrastructure/logger";
-import { ArrayChange } from "../cme-provider";
+import { ArrayChange, CmeProviderEvent } from "../cme-provider";
 import { createRegistry } from "../shared/registry";
 import { CatalogItem } from "./catalog-model";
 
 export const catalogItemRegistry =
   createRegistry<CatalogItemContribution>();
 
+/**
+ * Contribute a source of items into the catalog component.
+ */
 export interface CatalogItemContribution {
 
   id: string;
@@ -17,9 +20,8 @@ export interface CatalogItemContribution {
 export interface CatalogItemSource {
 
   /**
-   * Called when there is change in a provider.
-   * Return a list of entities to show in the catalog.
+   * @returns Items to be part of the catalog.
    */
-  onProviderDidChange(event: { type: string }): ArrayChange<CatalogItem>;
+  onProviderDidChange(event: CmeProviderEvent): ArrayChange<CatalogItem>;
 
 }

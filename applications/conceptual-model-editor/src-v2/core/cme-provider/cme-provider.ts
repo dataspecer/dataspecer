@@ -7,7 +7,6 @@ export interface CmeProvider {
 
   /**
    * Called on every change from the Dataspecer.
-   * @param event
    */
   onEntitiesDidChange(event: EntitiesChangeEvent): void;
 
@@ -20,4 +19,16 @@ export interface CmeProvider {
 
 export interface CmeProviderEvent {
   type: string
+}
+
+/**
+ * Listener for {@link CmeProviderEvent}.
+ */
+export interface CmeListener {
+
+  /**
+   * Fired when any {@link CmeBridge} publish an event to its subscribers.
+   */
+  onProviderEvent(event: CmeProviderEvent): void;
+
 }

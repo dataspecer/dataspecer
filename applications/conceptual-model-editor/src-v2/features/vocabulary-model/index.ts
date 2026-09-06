@@ -5,4 +5,4 @@ export {
 } from "./cme-vocabulary-provider";
 export {
   createVocabularyCatalogItemSource,
-} from "./vocabulary-catalog-item-provider";
+} from "./vocabulary-model-catalog-item-source";

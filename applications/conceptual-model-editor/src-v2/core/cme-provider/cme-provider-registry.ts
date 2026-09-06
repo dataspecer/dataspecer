@@ -1,8 +1,9 @@
 import { Logger } from "../../infrastructure/logger";
 import { createRegistry } from "../shared/registry";
-import { CmeProvider } from "./cme-provider";
+import { CmeListener, CmeProvider } from "./cme-provider";
 
-export const cmeProvidersRegistry = createRegistry<CmeProviderContribution>();
+export const cmeProvidersRegistry =
+  createRegistry<CmeProviderContribution>();
 
 /**
  * A contribution of a provider what listen to changes from the Dataspecer
@@ -12,6 +13,20 @@ interface CmeProviderContribution {
 
   id: string;
 
-  create: (context: { logger: Logger }) => CmeProvider;
+  createCmeProvider: (context: { logger: Logger }) => CmeProvider;
+
+}
+
+export const cmeListenersRegistry =
+  createRegistry<CmeListenerSource>();
+
+/**
+ * A source of listener components for the CME events.
+ */
+export interface CmeListenerSource {
+
+  id: string;
+
+  listCmeListener(): CmeListener[];
 
 }

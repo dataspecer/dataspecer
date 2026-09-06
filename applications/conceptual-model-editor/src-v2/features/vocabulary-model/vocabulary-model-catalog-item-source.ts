@@ -1,18 +1,33 @@
-import {
-  CaseSensitive, CheckSquare, ChevronDown, ChevronRight, Copy, LucideIcon,
-  MoreHorizontal, Search, File, Tag, WholeWord, X,
-} from "lucide-react";
+import { File, Tag } from "lucide-react";
 
-import { CatalogItem, CatalogItemSource } from "../../core/catalog";
+import {
+  CatalogItem, CatalogItemContribution, CatalogItemSource,
+} from "../../core/catalog";
 import { CatalogItemType } from "../../core/catalog/catalog-model";
-import { ArrayChange, noChangeArray } from "../../core/cme-provider";
+import {
+  ArrayChange, CmeListenerSource, noChangeArray,
+} from "../../core/cme-provider";
 import {
   CmeVocabularyClass, CmeVocabularyGeneralization, CmeVocabularyRelation,
 } from "./cme-vocabulary-model";
 import {
   CmeVocabularyChangeEvent,
+  CmeVocabularyStateEvent,
   isCmeVocabularyChangeEvent,
+  isCmeVocabularyStateEvent,
 } from "./cme-vocabulary-provider";
+import { Registry } from "../../core/shared/registry";
+
+export function registerVocabularyCatalogItemSource(
+  catalogItemRegistry: Registry<CatalogItemContribution>,
+  cmeListenersRegistry: Registry<CmeListenerSource>,
+) {
+  catalogItemRegistry.register({
+    id: "vocabulary-catalog-item-source",
+    createCatalogItemSource: createVocabularyCatalogItemSource,
+  });
+
+}
 
 export function createVocabularyCatalogItemSource(): CatalogItemSource {
   return {
@@ -20,9 +35,28 @@ export function createVocabularyCatalogItemSource(): CatalogItemSource {
       if (isCmeVocabularyChangeEvent(event)) {
         return onCmeVocabularyChangeEvent(event)
       }
+      if (isCmeVocabularyStateEvent(event)) {
+        return onCmeVocabularyStateEvent(event)
+      }
       return noChangeArray;
     },
   };
+}
+
+/**
+ * A state event carries the full current vocabulary. We emit every item as
+ * "created"; the catalog deduplicates by identifier, so replaying this event
+ * onto a late-mounted catalog rebuilds the list without duplicating rows.
+ */
+function onCmeVocabularyStateEvent(
+  event: CmeVocabularyStateEvent,
+): ArrayChange<CatalogItem> {
+  const created: CatalogItem[] = [
+    ...event.classes.map(createClassCatalogItem),
+    ...event.relationships.map(createRelationshipCatalogItem),
+    ...event.generalizations.map(createGeneralizationCatalogItem),
+  ];
+  return { created, changed: [], removed: [] };
 }
 
 function onCmeVocabularyChangeEvent(
@@ -63,7 +97,7 @@ function createClassCatalogItem(
   }
 }
 
-const VocabularyClassCatalogItemType : CatalogItemType = {
+const VocabularyClassCatalogItemType: CatalogItemType = {
   identifier: "vocabulary-class",
   icon: File,
   iconColor: "#f2b84b",
@@ -85,7 +119,7 @@ function createRelationshipCatalogItem(
   }
 }
 
-const VocabularyRelationshipCatalogItemType : CatalogItemType = {
+const VocabularyRelationshipCatalogItemType: CatalogItemType = {
   identifier: "vocabulary-relationship",
   icon: Tag,
   iconColor: "#60a5fa",
@@ -106,7 +140,7 @@ function createGeneralizationCatalogItem(
   }
 }
 
-const VocabularyGeneralizationCatalogItemType : CatalogItemType = {
+const VocabularyGeneralizationCatalogItemType: CatalogItemType = {
   identifier: "vocabulary-generalization",
   icon: File,
   iconColor: "#c084fc",

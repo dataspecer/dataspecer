@@ -1,1 +1,1 @@
-export * from "./header-region-registry";
+export * from "./header-registry";

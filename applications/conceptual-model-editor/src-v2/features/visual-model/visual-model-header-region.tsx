@@ -16,8 +16,8 @@ import { HeaderRegionProps } from "../../core/header";
 import { LanguageString } from "../../shared/types";
 import {
   CmeModelMetadata, CmePackageStateEvent, isCmePackageStateEvent
-} from "./cme-package-provider";
-import { setActiveVisualModelCommand } from "../../application/commands";
+} from "../package-model/cme-package-provider";
+import { setActiveVisualModelCommand } from "../application/commands";
 
 /**
  * TODO : This needs to be refactored into model, view, presenter design pattern.

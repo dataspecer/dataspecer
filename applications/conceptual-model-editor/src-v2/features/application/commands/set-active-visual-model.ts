@@ -1,7 +1,7 @@
 import { ModelIdentifier } from "@dataspecer/core/model";
-import { CmeCommandContext } from "../../core/cme-command/cme-command-executor";
-import { cmeCommandRegistry } from "../../core/cme-command/cme-command-registry";
-import { CommandReference } from "../../core/cme-command/cme-command";
+import { CmeCommandContext } from "../../../core/cme-command/cme-command-executor";
+import { cmeCommandRegistry } from "../../../core/cme-command/cme-command-registry";
+import { CommandReference } from "../../../core/cme-command/cme-command";
 
 const IDENTIFIER = "core/set-active-visual-model";
 

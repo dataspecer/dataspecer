@@ -34,20 +34,22 @@ export function Catalog() {
   const updateState = useCallback((event: CmeProviderEvent) => {
     for (const provider of providers) {
       const { created, changed, removed } = provider.onProviderDidChange(event);
-      // TODO Temporary implementation by AI.
       if (created.length === 0 && changed.length === 0 && removed.length === 0) {
         continue;
       }
       setItems(previous => {
-        const updatedAndRemoved = new Set([
+        // Drop items that were removed, changed, or are being re-created; then
+        // append the fresh versions. Deduplicating "created" keeps a replayed
+        // state event from doubling rows that already exist.
+        const stale = new Set([
+          ...created.map(item => item.identifier),
           ...changed.map(item => item.identifier),
           ...removed,
         ]);
-        const items = previous.filter(item => !updatedAndRemoved.has(item.identifier));
-        items.push(...created, ...changed);
-        return items;
+        const next = previous.filter(item => !stale.has(item.identifier));
+        next.push(...created, ...changed);
+        return next;
       });
-      //
     }
   }, [providers, setItems]);
 

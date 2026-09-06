@@ -1,6 +1,6 @@
 import {
   CmeCommandContext, cmeCommandRegistry, CommandReference,
-} from "../../core/cme-command";
+} from "../../../core/cme-command";
 import { savePackageCommand } from "./save-package";
 
 const IDENTIFIER = "application/save-and-close";
@@ -13,8 +13,7 @@ cmeCommandRegistry.register({
   description: {
     en: "Save all data to backend and navigate back to manager.",
   },
-  handler: (context) =>
-    savePackageAndCloseExecutor(context),
+  handler: (context) => savePackageAndCloseExecutor(context),
 });
 
 export function savePackageAndCloseCommand(
