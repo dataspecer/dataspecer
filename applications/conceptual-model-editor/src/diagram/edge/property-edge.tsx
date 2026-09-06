@@ -68,6 +68,11 @@ export const PropertyEdge = (props: EdgeProps<Edge<ApiEdge>>) => {
     style.stroke = prepareColor(data);
   }
 
+  let missingLabel =
+    props.label === null;
+  let missingMandatoryLevel =
+    props.data === undefined || props.data.mandatoryLevelLabel === null;
+
   return (
     <>
       <g onClick={onPathClick}>
@@ -87,7 +92,7 @@ export const PropertyEdge = (props: EdgeProps<Edge<ApiEdge>>) => {
             {props.data.cardinalitySource}
           </div>
         )}
-        {props.selected || props.label === null ? null : (
+        {props.selected || (missingLabel && missingMandatoryLevel) ? null : (
           <div
             style={{
               position: "absolute",
@@ -105,7 +110,14 @@ export const PropertyEdge = (props: EdgeProps<Edge<ApiEdge>>) => {
               opacity: props.style?.opacity,
             }}
           >
-            {label}
+            {missingLabel ? null : (
+              <div>{label}</div>
+            )}
+            {missingMandatoryLevel ? null : (
+              <div style={{color: "#6B7280",}}>
+                {props.data?.mandatoryLevelLabel}
+              </div>
+            )}
           </div>
         )}
         {props.data === undefined || props.data.cardinalityTarget === null ? null : (
@@ -116,17 +128,6 @@ export const PropertyEdge = (props: EdgeProps<Edge<ApiEdge>>) => {
           }}
           >
             {props.data.cardinalityTarget}
-          </div>
-        )}
-        {props.data === undefined || props.data.mandatoryLevelLabel === null ? null : (
-          <div style={{
-            position: "absolute",
-            color: "#6B7280",
-            transform: `${targetShift} translate(${targetWaypoint.x}px,${targetWaypoint.y + 20}px)`,
-            fontSize: "0.85em"
-          }}
-          >
-            {props.data.mandatoryLevelLabel}
           </div>
         )}
       </EdgeLabelRenderer>
