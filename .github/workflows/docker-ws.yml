@@ -89,6 +89,7 @@ jobs:
     needs: build-and-push-image
     outputs:
       tags_json: ${{ steps.tags.outputs.tags_json }}
+      image_digest: ${{ steps.manifest.outputs.image_digest }}
     runs-on: ubuntu-latest
     steps:
       - name: Download digests
@@ -122,12 +123,70 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: dataspecer
           password: ${{ secrets.GHCR_DATASPECER }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
       - name: Create manifest list and push
+        id: manifest
         working-directory: /tmp/digests
         run: |
           TAGS=$(echo "${{ steps.meta.outputs.tags }}" | xargs -I {} echo "-t {}")
-          docker buildx imagetools create $TAGS \
+          docker buildx imagetools create $TAGS --metadata-file "$RUNNER_TEMP/manifest.json" \
             $(printf '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
+          digest=$(jq -er '."containerimage.descriptor".digest' "$RUNNER_TEMP/manifest.json")
+          echo "image_digest=$digest" >> "$GITHUB_OUTPUT"
+
+  notify-ci-specifications:
+    name: Notify CI specifications
+    needs: create_manifest
+    if: ${{ vars.CI_SPECIFICATIONS_REPOSITORY != '' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        tag: ${{ fromJSON(needs.create_manifest.outputs.tags_json) }}
+    steps:
+      - name: Checkout source revision
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Dispatch specification build
+        env:
+          # Requires Actions: Write on the target repository.
+          GH_TOKEN: ${{ secrets.SPECIFICATIONS_DISPATCH_TOKEN }}
+          CI_SPECIFICATIONS_REPOSITORY: ${{ vars.CI_SPECIFICATIONS_REPOSITORY }}
+          IMAGE_TAG: ${{ matrix.tag }}
+          IMAGE_DIGEST: ${{ needs.create_manifest.outputs.image_digest }}
+          SOURCE_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::SPECIFICATIONS_DISPATCH_TOKEN is not set"
+            exit 1
+          fi
+
+          jq -n \
+            --arg tag "${IMAGE_TAG##*:}" \
+            --arg image "$REGISTRY/$IMAGE_NAME@$IMAGE_DIGEST" \
+            --arg repository "$SOURCE_REPOSITORY" \
+            --arg commit "$(git rev-parse HEAD)" \
+            --arg title "$(git log -1 --format=%s)" \
+            --arg pr_number "$PR_NUMBER" \
+            --arg pr_title "$PR_TITLE" \
+            '{ref: "main", inputs: {
+              docker_tag: $tag,
+              docker_image: $image,
+              source_repository: $repository,
+              source_commit: $commit,
+              source_commit_title: $title,
+              pr_number: $pr_number,
+              pr_title: $pr_title
+            }}' | gh api --method POST \
+              "repos/$CI_SPECIFICATIONS_REPOSITORY/actions/workflows/build.yml/dispatches" \
+              --input -
 
   notify-deploy-webhook:
     name: Notify deploy webhook
