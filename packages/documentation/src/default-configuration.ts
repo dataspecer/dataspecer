@@ -38,6 +38,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
 <html {{#iflng "cs"}}lang="cs"{{lng}}lang="en"{{/iflng}}>
   <head>
     {{> html-head}}
+     <!-- test -->
   </head>
   <body>
     <p class="copyright"></p>
