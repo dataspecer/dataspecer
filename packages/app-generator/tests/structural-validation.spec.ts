@@ -42,6 +42,38 @@ describe('validateGraphStructure', () => {
     );
   });
 
+  it('explains why ReadDetail cannot transition to Create', () => {
+    expect(invalidEdgeMessage(Operation.ReadDetail, Operation.Create, EdgeType.Transition)).toBe(
+      'Transition "invalid-edge" cannot connect ReadDetail to Create. ' +
+        'Create can only be a transition target from ReadList.',
+    );
+  });
+
+  it('explains why Delete cannot redirect to ReadDetail', () => {
+    expect(invalidEdgeMessage(Operation.Delete, Operation.ReadDetail, EdgeType.Redirect)).toBe(
+      'Redirect "invalid-edge" cannot connect Delete to ReadDetail. ' +
+        'A redirect from Delete must target ReadList.',
+    );
+  });
+
+  it.each([
+    [EdgeType.Transition, Operation.ReadList, Operation.ReadList, 'must target Create'],
+    [EdgeType.Transition, Operation.Create, Operation.ReadList, 'redirect from Create to ReadList'],
+    [
+      EdgeType.Transition,
+      Operation.Update,
+      Operation.ReadDetail,
+      'redirect from Update to ReadList',
+    ],
+    [EdgeType.Transition, Operation.Delete, Operation.ReadList, 'redirect from Delete to ReadList'],
+    [EdgeType.Redirect, Operation.ReadList, Operation.ReadDetail, 'navigation from ReadList'],
+    [EdgeType.Redirect, Operation.ReadDetail, Operation.ReadList, 'navigation from ReadDetail'],
+    [EdgeType.Redirect, Operation.Create, Operation.Create, 'redirect from Create must target'],
+    [EdgeType.Redirect, Operation.Update, Operation.Delete, 'redirect from Update must target'],
+  ])('gives actionable guidance for an invalid %s from %s', (type, source, target, guidance) => {
+    expect(invalidEdgeMessage(source, target, type)).toContain(guidance);
+  });
+
   it('rejects node ids that produce the same route id', () => {
     const graph = validGraph({
       nodes: [
@@ -168,6 +200,27 @@ function validGraph(overrides: Partial<ApplicationGraph> = {}): ApplicationGraph
     ],
     ...overrides,
   };
+}
+
+function graphWithEdge(source: Operation, target: Operation, type: EdgeType): ApplicationGraph {
+  return validGraph({
+    nodes: [
+      node('source', 'https://example.org/aggregate/source', source),
+      node('target', 'https://example.org/aggregate/target', target),
+    ],
+    edges: [{ id: 'invalid-edge', source: 'source', target: 'target', type }],
+  });
+}
+
+function invalidEdgeMessage(source: Operation, target: Operation, type: EdgeType): string {
+  const result = validateGraphStructure(graphWithEdge(source, target, type));
+  const code =
+    type === EdgeType.Transition
+      ? ViolationCode.SemanticInvalidTransition
+      : ViolationCode.SemanticInvalidRedirect;
+  const violation = result.violations.find((candidate) => candidate.code === code);
+  expect(violation).toBeDefined();
+  return violation?.message ?? '';
 }
 
 function node(

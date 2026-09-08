@@ -335,6 +335,7 @@ describe('generated RDF reference options', () => {
     });
     expect(query).toContain('<http://purl.org/dc/terms/title> ?value0');
     expect(query).toContain('<http://www.w3.org/2000/01/rdf-schema#label> ?value2');
+    expect(query).toContain('<http://xmlns.com/foaf/0.1/name> ?value3');
 
     stubFetchResponse(
       sparqlResultsResponse(
@@ -349,6 +350,26 @@ describe('generated RDF reference options', () => {
     );
 
     const dataSource = new RdfLdkitDataSource('https://example.org/sparql', {});
+    await expect(
+      dataSource.listByType({ classIri: args.classIri, displayProperties: [] }),
+    ).resolves.toEqual([{ id: 'https://example.org/person/1', label: 'Alice' }]);
+  });
+
+  it('uses foaf:name when earlier fallback predicates have no value', async () => {
+    stubFetchResponse(
+      sparqlResultsResponse(
+        ['iri', 'value0', 'value1', 'value2', 'value3'],
+        [
+          {
+            iri: { type: 'uri', value: 'https://example.org/person/1' },
+            value3: { type: 'literal', value: 'Alice' },
+          },
+        ],
+      ),
+    );
+
+    const dataSource = new RdfLdkitDataSource('https://example.org/sparql', {});
+
     await expect(
       dataSource.listByType({ classIri: args.classIri, displayProperties: [] }),
     ).resolves.toEqual([{ id: 'https://example.org/person/1', label: 'Alice' }]);

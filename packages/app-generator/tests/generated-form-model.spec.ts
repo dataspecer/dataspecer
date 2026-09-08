@@ -21,7 +21,11 @@ import {
   toInputValue,
   validateModel,
 } from '../assets/generated-app/src/shared/forms/form-model.ts';
-import { isSafeHttpIri } from '../assets/generated-app/src/shared/forms/iri.ts';
+import {
+  iriLocalName,
+  isSafeHttpIri,
+  resolveReferenceInput,
+} from '../assets/generated-app/src/shared/forms/iri.ts';
 import { ValidationIssueCode } from '../assets/generated-app/src/shared/operations/operation-result.ts';
 import {
   fieldValues,
@@ -193,6 +197,46 @@ describe('generated IRI display', () => {
     expect(isSafeHttpIri('https://example.org/documentation is here')).toBe(false);
     expect(isSafeHttpIri('http://')).toBe(false);
     expect(isSafeHttpIri('urn:document:1')).toBe(false);
+  });
+
+  it('extracts a readable local name while leaving opaque IRIs unchanged', () => {
+    expect(iriLocalName('https://example.org/library#author')).toBe('author');
+    expect(iriLocalName('https://example.org/property/author')).toBe('author');
+    expect(iriLocalName('urn:property:author')).toBe('urn:property:author');
+  });
+
+  it('resolves normalized, unique reference labels', () => {
+    const labels = new Map([
+      ['https://example.org/book/war', 'War with the Newts'],
+      ['https://example.org/book/rur', 'R.U.R.'],
+    ]);
+    const optionIds = [...labels.keys()];
+    const labelOf = (id: string) => labels.get(id) ?? id;
+
+    expect(resolveReferenceInput('War with the Newts', optionIds, labelOf)).toBe(
+      'https://example.org/book/war',
+    );
+    expect(resolveReferenceInput('  war WITH   the newts  ', optionIds, labelOf)).toBe(
+      'https://example.org/book/war',
+    );
+    expect(resolveReferenceInput('War', optionIds, labelOf)).toBe('War');
+  });
+
+  it('does not guess between duplicate reference labels', () => {
+    const optionIds = ['https://example.org/book/1', 'https://example.org/book/2'];
+    const labels = new Map([
+      ['https://example.org/book/1', 'Collected Works'],
+      ['https://example.org/book/2', 'collected   works'],
+    ]);
+    const labelOf = (id: string) => labels.get(id) ?? id;
+
+    expect(resolveReferenceInput('Collected Works', optionIds, labelOf)).toBe('Collected Works');
+  });
+
+  it('preserves an absolute IRI even when it is also an option label', () => {
+    const iri = 'https://example.org/book/manual';
+
+    expect(resolveReferenceInput(iri, ['https://example.org/book/other'], () => iri)).toBe(iri);
   });
 });
 
