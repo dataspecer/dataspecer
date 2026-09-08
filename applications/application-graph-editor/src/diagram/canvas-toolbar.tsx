@@ -77,12 +77,13 @@ export function CanvasToolbar() {
   };
 
   const relayout = async (options: LayoutOptions) => {
-    const { graph, setAllPositions, setActionError } = useEditorStore.getState();
+    const { graph, setAllPositions, requestFitView, setActionError } = useEditorStore.getState();
     if (graph === null) {
       return;
     }
     try {
       setAllPositions(await autoLayout(graph, options));
+      requestFitView();
     } catch (caught) {
       console.error(caught);
       setActionError(`Layout failed: ${errorMessage(caught)}`);
