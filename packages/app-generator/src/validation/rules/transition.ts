@@ -40,9 +40,9 @@ function invalidTransitionHint(source: Operation): string {
     case Operation.Create:
       return 'Create cannot start a transition. Use a redirect from Create to ReadList or ReadDetail.';
     case Operation.Update:
-      return 'Update cannot start a transition. Use a redirect from Update to ReadList or ReadDetails.';
+      return 'Update cannot start a transition. Use a redirect from Update to ReadList or ReadDetail.';
     case Operation.Delete:
-      return 'Delete cannot start a transition. Use a redirect from Delete to ReadList';
+      return 'Delete cannot start a transition. Use a redirect from Delete to ReadList.';
     default:
       return 'This operation cannot start a transition.';
   }
