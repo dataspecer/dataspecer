@@ -102,12 +102,6 @@ interface EditorState extends UndoableState {
   setSelectedElements: (nodes: string[], edges: string[]) => void;
 
   addNode: (node: ApplicationNode, position: { x: number; y: number }) => void;
-  /** Adds a node and the edge reaching it in one undoable step. */
-  addConnectedNode: (
-    node: ApplicationNode,
-    position: { x: number; y: number },
-    edge: ApplicationEdge,
-  ) => void;
   updateNode: (nodeId: string, patch: Partial<Omit<ApplicationNode, 'id'>>) => void;
   /** Renames a node, optionally applying a patch in the same undoable step. */
   renameNode: (
@@ -259,14 +253,6 @@ export const useEditorStore = create<EditorState>()(
       addNode: (node, position) =>
         set((state) => ({
           ...withGraph(state, (graph) => mutations.addNode(graph, node)),
-          positions: { ...state.positions, [node.id]: position },
-          selection: { kind: 'node', id: node.id },
-          selectRequest: selectRequestFor(state, node.id),
-          settingsOpen: false,
-        })),
-      addConnectedNode: (node, position, edge) =>
-        set((state) => ({
-          ...withGraph(state, (graph) => mutations.addEdge(mutations.addNode(graph, node), edge)),
           positions: { ...state.positions, [node.id]: position },
           selection: { kind: 'node', id: node.id },
           selectRequest: selectRequestFor(state, node.id),

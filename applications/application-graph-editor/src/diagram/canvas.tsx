@@ -12,7 +12,6 @@ import {
   useStoreApi,
   type Connection,
   type Edge,
-  type FinalConnectionState,
   type Node,
   type NodeChange,
   type OnConnectStartParams,
@@ -21,7 +20,6 @@ import {
 import { isEqual } from 'es-toolkit';
 import { connectionEdge } from '@/graph/mutations.ts';
 import type { GraphElementRef } from '@/graph/graph-element-ref.ts';
-import { newNode, nodeBlockedReason } from '@/graph/new-node.ts';
 import { useEditorStore } from '@/store.ts';
 import { useValidation } from '@/hooks/use-validation.ts';
 import { connectableTargets, flaggedIds } from '@/validation/violations.ts';
@@ -32,7 +30,6 @@ import { FloatingEdge } from './floating-edge.tsx';
 import { projectEdges, projectNodes, type OperationFlowNode } from './graph-to-flow.ts';
 import { OperationNode } from './operation-node.tsx';
 import { OPERATION_FILL } from './operation-style.ts';
-import { centeredOn, paneToGraph } from './pane-position.ts';
 
 const NOTHING_DIMMED: ReadonlySet<string> = new Set();
 
@@ -150,44 +147,11 @@ function CanvasFlow() {
     addEdge(connectionEdge(current, source, target));
   }, []);
 
-  // a connection dropped on empty canvas becomes a new node with the edge to it
-  const onConnectEnd = useCallback(
-    (_event: unknown, connection: FinalConnectionState) => {
-      setDimmed(NOTHING_DIMMED);
-      // clear the flag here, otherwise the next connection would be dropped as well
-      const escaped = canceled.current;
-      canceled.current = false;
-      const source = connection.fromNode?.id;
-      if (escaped || connection.toNode !== null || !source || !connection.to) {
-        return;
-      }
-      const {
-        graph: current,
-        metadata,
-        addConnectedNode,
-        setActionError,
-      } = useEditorStore.getState();
-      if (current === null) {
-        return;
-      }
-      const blocked = nodeBlockedReason(metadata);
-      if (blocked !== null) {
-        setActionError(blocked);
-        return;
-      }
-      const sourceNode = current.nodes.find((node) => node.id === source);
-      if (sourceNode === undefined) {
-        return;
-      }
-      const created = newNode(current, metadata);
-      addConnectedNode(
-        created,
-        centeredOn(paneToGraph(flow.getViewport(), connection.to)),
-        connectionEdge(current, sourceNode, created),
-      );
-    },
-    [flow],
-  );
+  const onConnectEnd = useCallback(() => {
+    setDimmed(NOTHING_DIMMED);
+    // clear the flag here, otherwise the next connection would be dropped as well
+    canceled.current = false;
+  }, []);
 
   const onNodesDelete = useCallback((deleted: Node[]) => {
     const { removeNode } = useEditorStore.getState();
