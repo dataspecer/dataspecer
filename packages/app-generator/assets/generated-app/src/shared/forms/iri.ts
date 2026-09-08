@@ -25,3 +25,31 @@ export function requireSafeAbsoluteIri(value: unknown, label: string): string {
   }
   return value;
 }
+
+/** Returns a compact local name when an IRI has a fragment or path segment. */
+export function iriLocalName(iri: string): string {
+  const separator = Math.max(iri.lastIndexOf('#'), iri.lastIndexOf('/'));
+  return separator >= 0 && separator < iri.length - 1 ? iri.slice(separator + 1) : iri;
+}
+
+function normalizedReferenceLabel(value: string): string {
+  return value.trim().replace(/\s+/gu, ' ').toLowerCase();
+}
+
+/** Resolves a normalized, unique option label while preserving manually entered absolute IRIs. */
+export function resolveReferenceInput(
+  value: string,
+  optionIds: readonly string[],
+  labelOf: (id: string) => string,
+): string {
+  const candidate = value.trim();
+  if (isSafeAbsoluteIri(candidate)) {
+    return candidate;
+  }
+
+  const normalizedCandidate = normalizedReferenceLabel(candidate);
+  const matches = optionIds.filter(
+    (id) => normalizedReferenceLabel(labelOf(id)) === normalizedCandidate,
+  );
+  return matches.length === 1 ? matches[0] : candidate;
+}

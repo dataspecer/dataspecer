@@ -7,11 +7,13 @@ import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import AddIcon from '@mui/icons-material/Add';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import DeleteIcon from '@mui/icons-material/Delete';
 
 import type { ReferenceOption } from '../data-source/data-source.ts';
 import { useDataSource } from '../data-source/data-source-context.tsx';
 import { maximumCount, referenceDisplayFields } from '../forms/entity-target.ts';
+import { resolveReferenceInput } from '../forms/iri.ts';
 import type { AggregateDescriptorMap, FieldDescriptor } from '../types/aggregate.ts';
 
 interface ReferenceSelectProps {
@@ -215,7 +217,10 @@ interface ReferenceRowProps {
 /** One reference value, selectable from the store or entered as a free IRI. */
 function ReferenceRow(props: ReferenceRowProps) {
   const { value, labelOf, onCommit } = props;
-  const [inputText, setInputText] = useState(value ?? '');
+  const [editedText, setEditedText] = useState<string | null>(null);
+  const selectedText = value === null ? '' : labelOf(value);
+  const selectedFromOptions =
+    editedText === null && value !== null && props.options.some((option) => option.id === value);
 
   const selectable = useMemo(() => {
     const hidden = new Set(props.exclude);
@@ -232,56 +237,77 @@ function ReferenceRow(props: ReferenceRowProps) {
   );
 
   return (
-    <Autocomplete
-      fullWidth
-      freeSolo
-      autoSelect
-      clearOnBlur
-      handleHomeEndKeys
-      disableClearable={!props.clearable}
-      loading={props.loading}
-      options={selectable}
-      filterOptions={filterOptions}
-      slotProps={{ paper: { elevation: 8 } }}
-      value={value}
-      inputValue={inputText}
-      onInputChange={(_event, next) => {
-        setInputText(next);
-      }}
-      renderOption={(optionProps, option) => (
-        <li {...optionProps} key={option}>
-          <span>
-            <Typography variant="body2">{labelOf(option)}</Typography>
-            {labelOf(option) === option ? null : (
-              <Typography variant="caption" color="text.secondary">
-                {option}
-              </Typography>
-            )}
-          </span>
-        </li>
-      )}
-      onChange={(_event, next, reason) => {
-        if (next === null) {
-          onCommit(null);
-          return;
-        }
-        if (typeof next === 'string') {
-          onCommit(next, reason !== 'blur');
-          if (value === null) {
-            setInputText('');
+    <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center', width: '100%' }}>
+      <Autocomplete
+        fullWidth
+        sx={{ minWidth: 0 }}
+        freeSolo
+        autoSelect
+        clearOnBlur
+        handleHomeEndKeys
+        disableClearable={!props.clearable}
+        loading={props.loading}
+        options={selectable}
+        filterOptions={filterOptions}
+        getOptionLabel={labelOf}
+        slotProps={{ paper: { elevation: 8 } }}
+        value={value}
+        inputValue={editedText ?? selectedText}
+        onBlur={() => {
+          setEditedText(null);
+        }}
+        onInputChange={(_event, next, reason) => {
+          if (reason === 'input') {
+            setEditedText(next);
           }
-        }
-      }}
-      renderInput={(params) => (
-        <TextField
-          {...params}
-          id={props.id}
-          aria-label={props.ariaLabel}
-          autoFocus={props.autoFocus}
-          inputRef={props.inputRef}
-          placeholder={props.placeholder}
+        }}
+        renderOption={(optionProps, option) => (
+          <li {...optionProps} key={option}>
+            <span>
+              <Typography variant="body2">{labelOf(option)}</Typography>
+              {labelOf(option) === option ? null : (
+                <Typography variant="caption" color="text.secondary">
+                  {option}
+                </Typography>
+              )}
+            </span>
+          </li>
+        )}
+        onChange={(_event, next, reason) => {
+          setEditedText(null);
+          if (next === null) {
+            onCommit(null);
+            return;
+          }
+          if (typeof next === 'string') {
+            // MUI auto-selects free text on blur. Once the input shows a label, that label must not
+            // replace the selected IRI merely because the user left the field.
+            if (reason === 'blur' && next === selectedText) {
+              return;
+            }
+            onCommit(resolveReferenceInput(next, selectable, labelOf), reason !== 'blur');
+          }
+        }}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            id={props.id}
+            aria-label={props.ariaLabel}
+            autoFocus={props.autoFocus}
+            inputRef={props.inputRef}
+            placeholder={props.placeholder}
+          />
+        )}
+      />
+      <Tooltip title={selectedFromOptions ? 'Selected from available options' : ''}>
+        <CheckCircleIcon
+          color="success"
+          fontSize="small"
+          aria-label={selectedFromOptions ? 'Selected from available options' : undefined}
+          aria-hidden={!selectedFromOptions}
+          sx={{ visibility: selectedFromOptions ? 'visible' : 'hidden' }}
         />
-      )}
-    />
+      </Tooltip>
+    </Stack>
   );
 }

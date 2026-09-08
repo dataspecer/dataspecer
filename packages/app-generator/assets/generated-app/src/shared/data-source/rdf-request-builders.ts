@@ -16,11 +16,12 @@ import {
   isListFieldSortable,
 } from './data-source.ts';
 
-const FALLBACK_LABEL_PROPERTIES = [
+export const FALLBACK_LABEL_PROPERTIES = [
   'http://purl.org/dc/terms/title',
   'http://www.w3.org/2004/02/skos/core#prefLabel',
   'http://www.w3.org/2000/01/rdf-schema#label',
-];
+  'http://xmlns.com/foaf/0.1/name',
+] as const;
 const dataFactory = new DataFactory();
 
 export function buildPageIriQuery(
