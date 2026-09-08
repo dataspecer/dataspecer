@@ -9,6 +9,80 @@ button:not(:disabled) {
     cursor: pointer;
 }
 
+.operation-node-border-handle {
+    /* Border handles stay above the body target so native side snapping wins near the border. */
+    z-index: 2;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+}
+
+.operation-node-border-handle::after {
+    position: absolute;
+    content: '';
+    pointer-events: none;
+    width: 8px;
+    height: 8px;
+    border: 1px solid var(--xy-handle-border-color, var(--xy-handle-border-color-default));
+    border-radius: 100%;
+    background: var(--xy-handle-background-color, var(--xy-handle-background-color-default));
+    opacity: 0;
+}
+
+.operation-node-border-handle.react-flow__handle-top::after {
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.operation-node-border-handle.react-flow__handle-right::after {
+    top: 50%;
+    right: 0;
+    transform: translate(50%, -50%);
+}
+
+.operation-node-border-handle.react-flow__handle-bottom::after {
+    bottom: 0;
+    left: 50%;
+    transform: translate(-50%, 50%);
+}
+
+.operation-node-border-handle.react-flow__handle-left::after {
+    top: 50%;
+    left: 0;
+    transform: translate(-50%, -50%);
+}
+
+.react-flow__node:hover .operation-node-border-handle::after {
+    opacity: 1;
+}
+
+.react-flow__node:hover .operation-node-body-drop-enabled .operation-node-border-handle::after {
+    opacity: 0;
+}
+
+.operation-node-drop-target {
+    inset: 0;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    transform: none;
+    border: none;
+    border-radius: inherit;
+    background: transparent;
+    pointer-events: none;
+}
+
+.operation-node-drop-target.operation-node-drop-target-enabled {
+    pointer-events: all;
+}
+
+.operation-node-drop-target-highlighted {
+    background: rgb(14 165 233 / 12%);
+}
+
 html,
 body,
 #root {

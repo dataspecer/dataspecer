@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, useConnection, type NodeProps } from '@xyflow/react';
 import { useEditorStore } from '@/store.ts';
 import { OPERATION_BADGE, OPERATION_LABELS } from './operation-style.ts';
 import type { OperationFlowNode } from './graph-to-flow.ts';
@@ -10,11 +10,18 @@ const VIOLATION_BORDER = {
   warning: 'border-amber-500 bg-amber-50',
 };
 
+export const BODY_TARGET_HANDLE_ID = 'node-body';
+
 /**
  * One application graph node on the canvas.
  */
 export function OperationNode(props: NodeProps<OperationFlowNode>) {
   const { node, violation, highlighted, dimmed } = props.data;
+  const { acceptsBodyDrop, isCurrentDropTarget } = useConnection((connection) => ({
+    acceptsBodyDrop: connection.inProgress && connection.fromNode.id !== props.id,
+    isCurrentDropTarget:
+      connection.inProgress && connection.isValid === true && connection.toNode?.id === props.id,
+  }));
   const aggregateName = useEditorStore(
     (state) => state.metadata?.aggregates.find((entry) => entry.iri === node.aggregateIri)?.name,
   );
@@ -28,11 +35,28 @@ export function OperationNode(props: NodeProps<OperationFlowNode>) {
         violation ? VIOLATION_BORDER[violation] : 'border-sky-300 bg-sky-50'
       } ${props.selected || highlighted ? 'ring-2 ring-blue-500' : ''} ${
         dimmed ? 'opacity-25' : ''
-      }`}
+      } ${acceptsBodyDrop ? 'operation-node-body-drop-enabled' : ''}`}
     >
       {BORDER_HANDLES.map(({ id, position }) => (
-        <Handle key={id} id={id} type="source" position={position} style={borderHandleStyle(id)} />
+        <Handle
+          key={id}
+          id={id}
+          type="source"
+          position={position}
+          className="operation-node-border-handle"
+          style={borderHandleStyle(id)}
+        />
       ))}
+      <Handle
+        id={BODY_TARGET_HANDLE_ID}
+        type="target"
+        position={Position.Top}
+        isConnectable={acceptsBodyDrop}
+        isConnectableStart={false}
+        className={`operation-node-drop-target ${
+          acceptsBodyDrop ? 'operation-node-drop-target-enabled' : ''
+        } ${isCurrentDropTarget ? 'operation-node-drop-target-highlighted' : ''}`}
+      />
       <div className="truncate text-sm font-semibold text-slate-800">{title}</div>
       <div className="mt-1 flex items-center gap-2">
         <span
@@ -54,7 +78,7 @@ const BORDER_HANDLES = [
   { id: 'left', position: Position.Left },
 ] as const;
 
-const BORDER_HANDLE_THICKNESS = 10;
+const BORDER_HANDLE_THICKNESS = 14;
 
 function borderHandleStyle(side: (typeof BORDER_HANDLES)[number]['id']): CSSProperties {
   const horizontal = side === 'top' || side === 'bottom';
@@ -64,8 +88,6 @@ function borderHandleStyle(side: (typeof BORDER_HANDLES)[number]['id']): CSSProp
     ...(horizontal ? {} : { top: 0, height: '100%', width: BORDER_HANDLE_THICKNESS }),
     transform: 'none',
     borderRadius: 0,
-    border: 'none',
-    background: 'transparent',
     minWidth: 0,
     minHeight: 0,
   };
