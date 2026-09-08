@@ -1,6 +1,6 @@
 import { semanticViolation, type Violation } from '../types.ts';
 import { ViolationCode } from '../violation-codes.ts';
-import { EdgeType } from '../../graph/types.ts';
+import { EdgeType, Operation } from '../../graph/types.ts';
 import { isValidRedirectOperation } from './edge-rules.ts';
 import type { StructuralValidationContext } from '../semantic-validation-context.ts';
 
@@ -35,8 +35,7 @@ export function validateRedirects(context: StructuralValidationContext): Violati
         semanticViolation(
           ViolationCode.SemanticInvalidRedirect,
           `Redirect "${edge.id}" cannot connect ${sourceNode.operation} to ` +
-            `${targetNode.operation}. Redirect Create or Update to ReadList or ReadDetail, ` +
-            'and Delete to ReadList.',
+            `${targetNode.operation}. ${invalidRedirectHint(sourceNode.operation)}`,
           `/edges/${index}`,
         ),
       );
@@ -44,4 +43,21 @@ export function validateRedirects(context: StructuralValidationContext): Violati
   });
 
   return violations;
+}
+
+function invalidRedirectHint(source: Operation): string {
+  switch (source) {
+    case Operation.ReadList:
+      return 'ReadList cannot start a redirect. Use a transition for navigation from ReadList.';
+    case Operation.ReadDetail:
+      return 'ReadDetail cannot start a redirect. Use a transition for navigation from ReadDetail.';
+    case Operation.Create:
+      return 'A redirect from Create must target ReadList or ReadDetail.';
+    case Operation.Update:
+      return 'A redirect from Update must target ReadList or ReadDetail.';
+    case Operation.Delete:
+      return 'A redirect from Delete must target ReadList.';
+    default:
+      return 'This operation cannot start a redirect.';
+  }
 }

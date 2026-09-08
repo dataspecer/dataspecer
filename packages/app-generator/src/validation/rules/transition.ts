@@ -1,6 +1,6 @@
 import { semanticViolation, type Violation } from '../types.ts';
 import { ViolationCode } from '../violation-codes.ts';
-import { EdgeType } from '../../graph/types.ts';
+import { EdgeType, Operation } from '../../graph/types.ts';
 import { isValidTransitionOperation } from './edge-rules.ts';
 import type { StructuralValidationContext } from '../semantic-validation-context.ts';
 
@@ -21,8 +21,7 @@ export function validateTransitions(context: StructuralValidationContext): Viola
         semanticViolation(
           ViolationCode.SemanticInvalidTransition,
           `Transition "${edge.id}" cannot connect ${sourceNode.operation} to ` +
-            `${targetNode.operation}. Transitions must start from ReadList or ReadDetail. ` +
-            'Use a redirect after a write operation.',
+            `${targetNode.operation}. ${invalidTransitionHint(sourceNode.operation)}`,
           `/edges/${index}`,
         ),
       ];
@@ -30,4 +29,21 @@ export function validateTransitions(context: StructuralValidationContext): Viola
 
     return [];
   });
+}
+
+function invalidTransitionHint(source: Operation): string {
+  switch (source) {
+    case Operation.ReadList:
+      return 'A transition from ReadList must target Create, ReadDetail, Update, or Delete.';
+    case Operation.ReadDetail:
+      return 'Create can only be a transition target from ReadList.';
+    case Operation.Create:
+      return 'Create cannot start a transition. Use a redirect from Create to ReadList or ReadDetail.';
+    case Operation.Update:
+      return 'Update cannot start a transition. Use a redirect from Update to ReadList or ReadDetails.';
+    case Operation.Delete:
+      return 'Delete cannot start a transition. Use a redirect from Delete to ReadList';
+    default:
+      return 'This operation cannot start a transition.';
+  }
 }
