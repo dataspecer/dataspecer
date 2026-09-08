@@ -36,6 +36,7 @@ import type {
   EntityRecord,
 } from '../types/aggregate.ts';
 import { formatFieldValue } from '../forms/field-value.ts';
+import { iriLocalName } from '../forms/iri.ts';
 
 interface DeleteFormProps<TModel extends EntityModel> {
   title: string;
@@ -308,11 +309,26 @@ function IncomingReferenceWarning(props: { check: IncomingReferenceCheck | null 
     <Alert severity="warning">
       This entity is referenced elsewhere. Deleting it may leave broken references.
       <ul>
-        {props.check.references.map((reference, index) => (
-          <li key={index}>
-            <code>{reference.subject}</code> via <code>{reference.predicate}</code>
-          </li>
-        ))}
+        {props.check.references.map((reference, index) => {
+          const predicateLabel = iriLocalName(reference.predicate);
+          return (
+            <li key={index}>
+              <div>
+                <code>{reference.subject}</code>
+              </div>
+              <div>
+                via{' '}
+                {predicateLabel === reference.predicate ? (
+                  <code>{reference.predicate}</code>
+                ) : (
+                  <>
+                    {predicateLabel} (<code>{reference.predicate}</code>)
+                  </>
+                )}
+              </div>
+            </li>
+          );
+        })}
       </ul>
       Showing up to {INCOMING_REFERENCE_LIMIT} references.
     </Alert>
