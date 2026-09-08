@@ -44,7 +44,7 @@ RUN cd services/backend \
   && bunx prisma generate \
   && cp main.config.sample.js main.config.js \
   && bunx tsc --noEmit \
-  && bun build --target=bun --outdir=dist --sourcemap=linked --external ./main.config.js src/main.ts
+  && bun build --target=bun --outdir=dist --sourcemap=linked --external ./main.config.js src/docker-main.ts
 
 # Move backend
 RUN mv /usr/src/app/services/backend/dist/* /usr/src/final/dist/
@@ -52,7 +52,7 @@ RUN mv /usr/src/app/services/backend/prisma/* /usr/src/final/dist/
 RUN mkdir -p /usr/src/final/node_modules/ &&  mv /usr/src/app/node_modules/.prisma /usr/src/final/node_modules/.prisma
 COPY services/backend/main.config.sample.js /usr/src/final/main.config.js
 
-COPY --chmod=777 ./docker/ws/docker-entrypoint.sh ./docker/ws/docker-healthcheck.sh /usr/src/final/
+COPY --chmod=777 ./docker/ws/docker-healthcheck.sh /usr/src/final/
 
 # Swap final and app directories
 RUN mv /usr/src/app /usr/src/build && mv /usr/src/final /usr/src/app
@@ -89,5 +89,6 @@ COPY --from=builder --chmod=777 /usr/src/app /usr/src/app
 USER 1000:1000
 VOLUME /usr/src/app/database
 EXPOSE 80
+ENV PORT=80
 HEALTHCHECK CMD ./docker-healthcheck.sh
-ENTRYPOINT ["/sbin/tini", "--", "./docker-entrypoint.sh"]
+ENTRYPOINT ["/sbin/tini", "--", "bun", "dist/docker-main.js"]
