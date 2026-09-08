@@ -1,4 +1,4 @@
-import { LOCAL_SEMANTIC_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import {
   isSemanticModelClass,
   isSemanticModelRelationPrimitive,
@@ -99,7 +99,7 @@ async function deleteUntouchedChildren(repository: ModelRepositoryType, packageI
 }
 
 /**
- * Builds a map from importedFromUrl/documentBaseUrl to child IRI for matching during reload.
+ * Maps source URLs and package semantic model base IRIs to child IRIs for reload.
  */
 async function getExistingChildrenByUrl(repository: ModelRepositoryType, packageIri: string): Promise<Map<string, string>> {
   const pkg = await repository.getPackage(packageIri);
@@ -109,6 +109,19 @@ async function getExistingChildrenByUrl(repository: ModelRepositoryType, package
       const url = (child.userMetadata as any)?.importedFromUrl ?? (child.userMetadata as any)?.documentBaseUrl;
       if (url) {
         map.set(url, child.iri);
+      }
+      if (child.types.includes(LOCAL_PACKAGE)) {
+        const childPackage = await repository.getPackage(child.iri);
+        for (const model of childPackage?.subResources ?? []) {
+          if (!model.types.includes(LOCAL_SEMANTIC_MODEL)) {
+            continue;
+          }
+          const entities = await repository.getModelEntities(model.iri);
+          const baseIri = (entities?.[model.iri] as { baseIri?: unknown } | undefined)?.baseIri;
+          if (typeof baseIri === "string" && baseIri) {
+            map.set(baseIri, child.iri);
+          }
+        }
       }
     }
   }
@@ -568,7 +581,8 @@ async function dsvImport(repository: ModelRepositoryType, store: N3.Store, url: 
 
   const allEntitiesFromProfiled: SemanticModelEntity[] = [];
   for (const profile of mainSpecification.isProfileOf) {
-    const childExistingIri = existingChildrenByUrl?.get(profile.url);
+    const childExistingIri = existingChildrenByUrl?.get(profile.url)
+      ?? (profile.iri ? existingChildrenByUrl?.get(profile.iri) : undefined);
 
     if (childExistingIri || !isReload) {
       if (childExistingIri) {
