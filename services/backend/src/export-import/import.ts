@@ -1,7 +1,7 @@
 import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
 import type { LanguageString } from "@dataspecer/core/core/core-resource";
 import type { Entity } from "@dataspecer/core/entity-model";
-import { createSetEntityOperation, generateOperationId, type OperationInModel } from "@dataspecer/core/operation";
+import { createSetEntityOperation, generateOperationId, type OperationInModel, type Transaction } from "@dataspecer/core/operation";
 import {
   createCreateModelOperation,
   createCreateProjectOperation,
@@ -23,13 +23,14 @@ const PACKAGES_IN_PACKAGE_REGEX = /^([-0-9a-zA-Z]+\/)\.meta\.json$/;
  */
 interface ResourceMetadata {
   iri: string;
+  metadata?: { modificationDate?: string };
   types?: string[];
   userMetadata?: Record<string, unknown> & { label?: LanguageString; description?: LanguageString };
 }
 
 /**
  * Creates the projects stored in an exported zip. The export is a snapshot
- * without any history, so everything is created by a single transaction of
+ * without any history, so each project is created by a single transaction of
  * operations that build the project structure and set the entities of the
  * models as they were exported.
  */
@@ -53,11 +54,17 @@ export class PackageImporter {
       .filter((file) => file.endsWith("/.meta.json") && file.split("/").length === 2)
       .map((file) => file.split("/")[0] + "/");
 
-    const operations: OperationInModel[] = [];
+    const transactions: Transaction[] = [];
     for (const packagePath of rootPackagePaths) {
-      operations.push(...(await this.createResourceOperations(packagePath, null)));
+      const metadata = await this.readMetadata(packagePath);
+      transactions.push({
+        id: generateOperationId(),
+        time: metadata.metadata?.modificationDate,
+        operations: await this.createResourceOperations(packagePath, null),
+      });
     }
 
+    const operations = transactions.flatMap((transaction) => transaction.operations);
     const projectIds = operations.flatMap(({ operation }) => (isCreateProjectOperation(operation) ? [operation.projectId] : []));
     if (projectIds.length === 0) {
       return [];
@@ -68,7 +75,7 @@ export class PackageImporter {
     // Operations belonging to another project are routed to it by the
     // repository, so the project the transaction is sent to matters only as
     // the fallback for operations whose project cannot be resolved.
-    await this.modelRepository.applyTransactions(projectIds[0]!, [{ id: generateOperationId(), operations }]);
+    await this.modelRepository.applyTransactions(projectIds[0]!, transactions);
 
     return projectIds;
   }
