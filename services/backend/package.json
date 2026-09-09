@@ -5,9 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "prebuild": "prisma generate",
     "start": "node --enable-source-maps dist/main.js",
-    "update-database": "prisma migrate deploy",
     "load-lov": "./load-lov.sh",
     "test": "vitest run",
     "test:watch": "vitest"
@@ -23,12 +21,12 @@
     "@dataspecer/structure-model": "*",
     "@dataspecer/utilities": "*",
     "@dataspecer/visual-model": "*",
-    "@prisma/client": "^6.19.2",
     "@types/n3": "^1.26.1",
     "cors": "^2.8.5",
     "express": "^5.2.1",
     "jsonld": "^9.0.0",
     "jszip": "^3.10.1",
+    "kysely": "^0.29.5",
     "mime": "^4.1.0",
     "multer": "^2.1.1",
     "n3": "^2.0.3",
@@ -37,12 +35,12 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.13",
     "@types/cli-progress": "^3.11.5",
+    "@types/cors": "^2.8.13",
     "@types/express": "^5.0.6",
     "@types/jsonld": "^1.5.14",
     "@types/multer": "^2.1.0",
-    "prisma": "^6.19.2",
+    "@types/node": "^25.5.2",
     "typescript": "^7.0.2",
     "vitest": "^4.1.7"
   }

@@ -1,12 +1,8 @@
-FROM oven/bun:1.3.5-alpine AS base
+FROM oven/bun:1.4.2-alpine AS base
 
 FROM base AS builder
 WORKDIR /usr/src/app
 RUN mkdir -p /usr/src/final/ /usr/src/final/dist/
-
-# We need to install openssl for prisma to link paths correctly
-# Then we need to install it again later to have it in the final image
-RUN apk add --no-cache openssl
 
 COPY applications/ applications/
 COPY services/ services/
@@ -35,43 +31,29 @@ RUN BASE_PATH=/_BASE_PATH_DOCKER_REPLACE__ \
 RUN bunx turbo run build --cache=local: --concurrency 100% --filter=./applications/* --filter=!api-specification
 
 # Move frontend
-RUN sh ./docker-copy.sh
-RUN mv /usr/src/app/.dist /usr/src/final/html-template
+RUN sh ./docker-copy.sh \
+  && mv /usr/src/app/.dist /usr/src/final/html-template
 
 # Build backend
 RUN cd services/backend \
-  && sed -i "s|../database/database.db|/usr/src/app/database/database.db|" prisma/schema.prisma \
-  && bunx prisma generate \
   && cp main.config.sample.js main.config.js \
   && bunx tsc --noEmit \
-  && bun build --target=bun --outdir=dist --sourcemap=linked --external ./main.config.js src/docker-main.ts
+  && bun bun-build.mjs
 
 # Move backend
 RUN mv /usr/src/app/services/backend/dist/* /usr/src/final/dist/
-RUN mv /usr/src/app/services/backend/prisma/* /usr/src/final/dist/
-RUN mkdir -p /usr/src/final/node_modules/ &&  mv /usr/src/app/node_modules/.prisma /usr/src/final/node_modules/.prisma
 COPY services/backend/main.config.sample.js /usr/src/final/main.config.js
 
 COPY --chmod=777 ./docker/ws/docker-healthcheck.sh /usr/src/final/
 
-# Swap final and app directories
-RUN mv /usr/src/app /usr/src/build && mv /usr/src/final /usr/src/app
-
-RUN mkdir -p /usr/src/app/database
-RUN bunx prisma@6 migrate deploy --schema /usr/src/app/dist/schema.prisma
+RUN mkdir -p /usr/src/final/database
 
 # Final image for production
 FROM base AS final
 WORKDIR /usr/src/app
 
-# Makes directory accessible for the user
-# Instals prisma for migrations and cleans install cache
-RUN apk add --no-cache openssl tini && \
-  rm -rf /var/lib/apt/lists/* && \
-  rm -rf /var/cache/apk/* && \
-  chmod a+rwx /usr/src/app && \
-  bun install --no-cache prisma@6 && \
-  rm -rf ~/.bun ~/.cache
+RUN apk add --no-cache tini && \
+  chmod a+rwx /usr/src/app
 
 # Redeclare build args and expose them as runtime env so entrypoint can print metadata (prefixed to avoid collisions)
 ARG GIT_COMMIT
@@ -84,7 +66,7 @@ ENV DATASPECER_GIT_COMMIT=${GIT_COMMIT} \
   DATASPECER_GIT_COMMIT_NUMBER=${GIT_COMMIT_NUMBER}
 
 # Copy final files
-COPY --from=builder --chmod=777 /usr/src/app /usr/src/app
+COPY --from=builder --chmod=777 /usr/src/final /usr/src/app
 
 USER 1000:1000
 VOLUME /usr/src/app/database

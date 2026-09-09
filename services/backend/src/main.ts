@@ -1,9 +1,9 @@
-import { PrismaClient } from "@prisma/client";
+import { createDatabase } from "./database/database.ts";
 import cors from "cors";
 import express from "express";
 import multer from "multer";
 import configuration from "./configuration.ts";
-import { Migrate } from "./migrations/migrate.ts";
+import { migrateDatabase } from "./migration-utils/migrate-database.ts";
 import { LocalStoreModel } from "./models/local-store-model.ts";
 import { ModelRepository } from "./models/model-repository.ts";
 import { ResourceModel } from "./models/resource-model.ts";
@@ -34,11 +34,11 @@ import { applyTransactions, deleteEvolutionBranch, getTransactionsDiff, listBran
 // Create application models
 
 const storeModel = new LocalStoreModel("./database/stores");
-export const prismaClient = new PrismaClient();
-const resourceModel = new ResourceModel(storeModel, prismaClient);
-export const transactionModel = new TransactionModel(prismaClient);
+const databasePath = new URL("../database/database.db", import.meta.url);
+const database = createDatabase(databasePath);
+const resourceModel = new ResourceModel(storeModel, database);
+export const transactionModel = new TransactionModel(database);
 export const modelRepository = new ModelRepository(resourceModel, transactionModel);
-const migration = new Migrate(prismaClient);
 
 let apiBasename: string;
 let basename: string | null = null;
@@ -171,7 +171,7 @@ if (configuration.staticFilesPath) {
 
 (async () => {
   // Run migrations or throw
-  await migration.tryUp();
+  await migrateDatabase(databasePath);
 
   // Command-line arguments
   if (process.argv.length > 2) {

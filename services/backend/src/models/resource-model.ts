@@ -2,7 +2,7 @@ import { LOCAL_PACKAGE, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-m
 import { LanguageString } from "@dataspecer/core-v2/semantic-model/concepts";
 import { CoreResource } from "@dataspecer/core/core/core-resource";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
-import { PrismaClient, Resource as PrismaResource } from "@prisma/client";
+import { parseDatabaseTimestamp, type Database, type ResourceRow } from "../database/schema.ts";
 import { v4 as uuidv4 } from "uuid";
 import { LocalStoreModel } from "./local-store-model.ts";
 
@@ -55,21 +55,21 @@ export interface Package extends BaseResource {
 
 /**
  * Manages the tree of resources and their data stores: the current-state
- * snapshots of models. The resource metadata live in the database managed by
- * Prisma, the store contents in the {@link LocalStoreModel}.
+ * snapshots of models. Resource metadata live in SQLite and store contents
+ * in the {@link LocalStoreModel}.
  */
 export class ResourceModel {
   private readonly storeModel: LocalStoreModel;
-  private readonly prismaClient: PrismaClient;
+  private readonly database: Database;
 
-  constructor(storeModel: LocalStoreModel, prismaClient: PrismaClient) {
+  constructor(storeModel: LocalStoreModel, database: Database) {
     this.storeModel = storeModel;
-    this.prismaClient = prismaClient;
+    this.database = database;
   }
 
-  private async requireResource(iri: string): Promise<PrismaResource> {
-    const resource = await this.prismaClient.resource.findUnique({ where: { iri } });
-    if (resource === null) {
+  private async requireResource(iri: string): Promise<ResourceRow> {
+    const resource = await this.database.selectFrom("Resource").selectAll().where("iri", "=", iri).executeTakeFirst();
+    if (resource === undefined) {
       throw new Error(`Resource "${iri}" not found.`);
     }
     return resource;
@@ -78,31 +78,31 @@ export class ResourceModel {
   /**
    * Parses the mapping of store names to store ids of a resource.
    */
-  private parseDataStores(resource: PrismaResource): Record<string, string> {
+  private parseDataStores(resource: ResourceRow): Record<string, string> {
     return JSON.parse(resource.dataStoreId);
   }
 
   private async writeDataStores(resourceId: number, dataStores: Record<string, string>): Promise<void> {
-    await this.prismaClient.resource.update({
-      where: { id: resourceId },
-      data: { dataStoreId: JSON.stringify(dataStores) },
-    });
+    const now = Date.now();
+    await this.database.updateTable("Resource")
+      .set({ dataStoreId: JSON.stringify(dataStores), modifiedAt: now, subtreeModifiedAt: now })
+      .where("id", "=", resourceId).returning("id").executeTakeFirstOrThrow();
   }
 
   async getRootResources(): Promise<BaseResource[]> {
-    const resources = await this.prismaClient.resource.findMany({ where: { parentResourceId: null } });
-    return await Promise.all(resources.map((resource) => this.prismaResourceToResource(resource)));
+    const resources = await this.database.selectFrom("Resource").selectAll().where("parentResourceId", "is", null).execute();
+    return await Promise.all(resources.map((resource) => this.rowToResource(resource)));
   }
 
   /**
    * Returns a single resource or null if the resource does not exist.
    */
   async getResource(iri: string): Promise<BaseResource | null> {
-    const prismaResource = await this.prismaClient.resource.findUnique({ where: { iri } });
-    if (prismaResource === null) {
+    const row = await this.database.selectFrom("Resource").selectAll().where("iri", "=", iri).executeTakeFirst();
+    if (row === undefined) {
       return null;
     }
-    return await this.prismaResourceToResource(prismaResource);
+    return await this.rowToResource(row);
   }
 
   /**
@@ -114,10 +114,10 @@ export class ResourceModel {
       ...(JSON.parse(resource.userMetadata) as object),
       ...userMetadata,
     };
-    await this.prismaClient.resource.update({
-      where: { id: resource.id },
-      data: { userMetadata: JSON.stringify(merged) },
-    });
+    const now = Date.now();
+    await this.database.updateTable("Resource")
+      .set({ userMetadata: JSON.stringify(merged), modifiedAt: now, subtreeModifiedAt: now })
+      .where("id", "=", resource.id).returning("id").executeTakeFirstOrThrow();
     await this.updateModificationTime(resource.id);
   }
 
@@ -125,28 +125,28 @@ export class ResourceModel {
    * Deletes the resource and if the resource is a package, all sub-resources.
    */
   async deleteResource(iri: string): Promise<void> {
-    const deleteRecursively = async (resource: PrismaResource) => {
-      const subResources = await this.prismaClient.resource.findMany({ where: { parentResourceId: resource.id } });
+    const deleteRecursively = async (resource: ResourceRow) => {
+      const subResources = await this.database.selectFrom("Resource").selectAll().where("parentResourceId", "=", resource.id).execute();
       for (const subResource of subResources) {
         await deleteRecursively(subResource);
       }
 
-      await this.prismaClient.resource.delete({ where: { id: resource.id } });
+      await this.database.deleteFrom("Resource").where("id", "=", resource.id).returning("id").executeTakeFirstOrThrow();
       for (const storeId of Object.values(this.parseDataStores(resource))) {
         await this.storeModel.remove(storeId);
       }
     };
 
-    const prismaResource = await this.requireResource(iri);
-    await deleteRecursively(prismaResource);
-    if (prismaResource.parentResourceId !== null) {
-      await this.updateModificationTime(prismaResource.parentResourceId);
+    const row = await this.requireResource(iri);
+    await deleteRecursively(row);
+    if (row.parentResourceId !== null) {
+      await this.updateModificationTime(row.parentResourceId);
     }
   }
 
-  private async prismaResourceToResource(prismaResource: PrismaResource): Promise<BaseResource> {
-    const userMetadata = JSON.parse(prismaResource.userMetadata);
-    const dataStores = this.parseDataStores(prismaResource);
+  private async rowToResource(row: ResourceRow): Promise<BaseResource> {
+    const userMetadata = JSON.parse(row.userMetadata);
+    const dataStores = this.parseDataStores(row);
 
     /**
      * @todo There is this a long-term problem that the title is stored inside the model and also in the user metadata.
@@ -154,7 +154,7 @@ export class ResourceModel {
      * models that use the label from their main entity (see {@link ModelRepository.updateResource}).
      */
     try {
-      if (prismaResource.representationType === V1.PSM && dataStores.model) {
+      if (row.representationType === V1.PSM && dataStores.model) {
         // We must be careful here as the model may not be loaded yet.
         const model = await this.getStoreJson(dataStores.model);
         if (model) {
@@ -164,7 +164,7 @@ export class ResourceModel {
             userMetadata.description = schema.dataPsmHumanDescription;
           }
         }
-      } else if (prismaResource.representationType === RDFS_MODEL && dataStores.model) {
+      } else if (row.representationType === RDFS_MODEL && dataStores.model) {
         // We must be careful here as the model may not be loaded yet.
         const model = await this.getStoreJson(dataStores.model);
         if (model?.label) {
@@ -177,12 +177,12 @@ export class ResourceModel {
     }
 
     return {
-      iri: prismaResource.iri,
-      types: [prismaResource.representationType],
+      iri: row.iri,
+      types: [row.representationType],
       userMetadata,
       metadata: {
-        creationDate: prismaResource.createdAt,
-        modificationDate: prismaResource.modifiedAt,
+        creationDate: parseDatabaseTimestamp(row.createdAt),
+        modificationDate: parseDatabaseTimestamp(row.modifiedAt),
       },
       dataStores,
     };
@@ -195,18 +195,16 @@ export class ResourceModel {
    * resource or a direct child of one.
    */
   async getProjectIri(iri: string): Promise<string | null> {
-    type ResourceRow = { iri: string; parentResourceId: number | null };
-    let current: ResourceRow | null = await this.prismaClient.resource.findUnique({ select: { iri: true, parentResourceId: true }, where: { iri } });
-    if (current === null) {
+    let current = await this.database.selectFrom("Resource").select(["iri", "parentResourceId"]).where("iri", "=", iri).executeTakeFirst();
+    if (current === undefined) {
       return null;
     }
 
     while (current.parentResourceId !== null) {
-      const parent: ResourceRow | null = await this.prismaClient.resource.findUnique({
-        select: { iri: true, parentResourceId: true },
-        where: { id: current.parentResourceId },
-      });
-      if (parent === null || parent.parentResourceId === null) {
+      const parent: Pick<ResourceRow, "iri" | "parentResourceId"> | undefined = await this.database
+        .selectFrom("Resource").select(["iri", "parentResourceId"])
+        .where("id", "=", current.parentResourceId).executeTakeFirst();
+      if (parent === undefined || parent.parentResourceId === null) {
         return current.iri;
       }
       current = parent;
@@ -220,15 +218,16 @@ export class ResourceModel {
    * are always loaded.
    */
   async getPackage(iri: string) {
-    const prismaResource = await this.prismaClient.resource.findFirst({ where: { iri, representationType: LOCAL_PACKAGE } });
-    if (prismaResource === null) {
+    const row = await this.database.selectFrom("Resource").selectAll()
+      .where("iri", "=", iri).where("representationType", "=", LOCAL_PACKAGE).executeTakeFirst();
+    if (row === undefined) {
       return null;
     }
-    const subResources = await this.prismaClient.resource.findMany({ where: { parentResourceId: prismaResource.id } });
+    const subResources = await this.database.selectFrom("Resource").selectAll().where("parentResourceId", "=", row.id).execute();
 
     return {
-      ...(await this.prismaResourceToResource(prismaResource)),
-      subResources: await Promise.all(subResources.map((resource) => this.prismaResourceToResource(resource))),
+      ...(await this.rowToResource(row)),
+      subResources: await Promise.all(subResources.map((resource) => this.rowToResource(resource))),
     };
   }
 
@@ -247,27 +246,30 @@ export class ResourceModel {
     let parentResourceId: number | null = null;
 
     if (parentIri !== null) {
-      const parentRow = await this.prismaClient.resource.findFirst({ select: { id: true }, where: { iri: parentIri, representationType: LOCAL_PACKAGE } });
-      if (parentRow === null) {
+      const parentRow = await this.database.selectFrom("Resource").select("id")
+        .where("iri", "=", parentIri).where("representationType", "=", LOCAL_PACKAGE).executeTakeFirst();
+      if (parentRow === undefined) {
         throw new Error("Cannot create resource because the parent package was not found or is not a package.");
       }
 
       parentResourceId = parentRow.id;
     }
 
-    const existingResource = await this.prismaClient.resource.findUnique({ select: { id: true }, where: { iri } });
-    if (existingResource !== null) {
+    const existingResource = await this.database.selectFrom("Resource").select("id").where("iri", "=", iri).executeTakeFirst();
+    if (existingResource !== undefined) {
       throw new Error("Cannot create resource because it already exists.");
     }
 
-    await this.prismaClient.resource.create({
-      data: {
-        iri,
-        parentResourceId,
-        representationType: type,
-        userMetadata: JSON.stringify(userMetadata),
-      },
-    });
+    const now = Date.now();
+    await this.database.insertInto("Resource").values({
+      iri,
+      parentResourceId,
+      representationType: type,
+      userMetadata: JSON.stringify(userMetadata),
+      createdAt: now,
+      modifiedAt: now,
+      subtreeModifiedAt: now,
+    }).execute();
 
     if (parentResourceId !== null) {
       await this.updateModificationTime(parentResourceId);
@@ -342,11 +344,10 @@ export class ResourceModel {
   private async updateModificationTime(id: number): Promise<void> {
     let currentId: number | null = id;
     while (currentId !== null) {
-      const updated: { parentResourceId: number | null } = await this.prismaClient.resource.update({
-        select: { parentResourceId: true },
-        where: { id: currentId },
-        data: { modifiedAt: new Date() },
-      });
+      const now = Date.now();
+      const updated: { parentResourceId: number | null } = await this.database.updateTable("Resource")
+        .set({ modifiedAt: now, subtreeModifiedAt: now })
+        .where("id", "=", currentId).returning("parentResourceId").executeTakeFirstOrThrow();
       currentId = updated.parentResourceId;
     }
   }

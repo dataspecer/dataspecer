@@ -2,7 +2,6 @@
  * This file is an entry point for the Docker image.
  */
 
-import { spawnSync } from "node:child_process";
 import { cp, mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
@@ -23,15 +22,6 @@ export async function prepareDocker(): Promise<void> {
 
   process.env.DOCKER = "1";
   await mkdir("/usr/src/app/database/stores", { recursive: true });
-  const migration = spawnSync("bunx", ["prisma", "migrate", "deploy", "--schema", "dist/schema.prisma"], {
-    stdio: "inherit",
-  });
-  if (migration.error) {
-    throw migration.error;
-  }
-  if (migration.status !== 0) {
-    throw new Error(`Database migration failed (${migration.signal ?? migration.status}).`);
-  }
 }
 
 async function replaceBasePath(directory: string, basePath: string): Promise<void> {
