@@ -31,7 +31,7 @@ export function Sidebar({ graph }: { graph: ApplicationGraph }) {
   const sidebarTab = useEditorStore((state) => state.sidebarTab);
   const [width, setWidth] = useState(defaultWidth);
 
-  const lastTab = useRef<Exclude<SidebarTab, null>>('json');
+  const lastTab = useRef<Exclude<SidebarTab, null>>('problems');
   useEffect(() => {
     if (sidebarTab) {
       lastTab.current = sidebarTab;

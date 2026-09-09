@@ -178,7 +178,7 @@ export const useEditorStore = create<EditorState>()(
       saveState: 'saved',
       selection: null,
       highlight: null,
-      sidebarTab: 'json',
+      sidebarTab: 'problems',
       canvasTool: 'pan',
       jsonDraft: null,
       settingsOpen: false,
@@ -201,6 +201,9 @@ export const useEditorStore = create<EditorState>()(
           loadError: null,
           metadata: null,
           metadataError: null,
+          selection: null,
+          sidebarTab: 'problems',
+          settingsOpen: graph.nodes.length === 0,
         }),
       failLoad: (message) => set({ loadState: 'error', loadError: message }),
       setMetadata: (metadata) =>

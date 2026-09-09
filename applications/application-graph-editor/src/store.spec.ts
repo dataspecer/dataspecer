@@ -31,6 +31,24 @@ function type(text: string): void {
   }
 }
 
+describe('sidebar defaults', () => {
+  it('opens graph settings for an empty graph', () => {
+    useEditorStore.getState().initialize('urn:resource', { ...graphFixture(), nodes: [] }, {});
+
+    const state = useEditorStore.getState();
+    expect(state.settingsOpen).toBe(true);
+    expect(state.sidebarTab).toBe('problems');
+  });
+
+  it('opens problems for a graph with nodes', () => {
+    useEditorStore.getState().initialize('urn:resource', graphFixture(), {});
+
+    const state = useEditorStore.getState();
+    expect(state.settingsOpen).toBe(false);
+    expect(state.sidebarTab).toBe('problems');
+  });
+});
+
 describe('undo history', () => {
   beforeEach(() => {
     vi.useFakeTimers();
