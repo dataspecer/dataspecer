@@ -8,6 +8,8 @@
   "cardinality custom title": "Vlastní kardinalita",
   "cardinality infinity": "nekonečno",
   "cardinality unset": "bez změny",
+  "cardinality constraint": "Tato kardinalita není dostupná kvůli omezením z profilované entity. Profilovaná entita vyžaduje minimální kardinalitu {{min}} a maximální kardinalitu {{max}}.",
+  "cardinality constraint no max": "Tato kardinalita není dostupná kvůli omezením z profilované entity. Profilovaná entita vyžaduje minimální kardinalitu {{min}}.",
   "class-closed": {
     "help": "Určuje, zda v datech můžou být použity další vlastnosti, které nejsou v schématu definovány. Pokud ne, pak tyto nadbytečné nedefinované vlastnosti jsou zakázány.",
     "implicit": "výchozí hodnota",
