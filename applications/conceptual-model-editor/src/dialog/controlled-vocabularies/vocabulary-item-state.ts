@@ -6,11 +6,7 @@ export interface VocabularyItemState {
 
   /**
    * Stable per-instance UI identifier - not persisted, used to address a
-   * row for dialog interactions (React keys, presenter dispatch). A class
-   * profile can assign the same vocabulary more than once with different
-   * qualifiers, so vocabulary.id alone can not address a specific item,
-   * and this profile's own persisted assignment id (below) is null for
-   * unpersisted rows and thus not unique either.
+   * row for dialog interactions (React keys, presenter dispatch).
    */
   key: string;
 

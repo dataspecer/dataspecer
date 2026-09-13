@@ -49,6 +49,18 @@ describe("createSelectControlledVocabulariesPresenter", () => {
     expect(state.addForm?.availableVocabularies).toEqual([V1, V2]);
   });
 
+  test("onOpenAddForm excludes vocabularies already used by an inherited or added item.", () => {
+    const inherited: ControlledVocabularyUsage[] = [
+      { assignmentId: "cv-v1", vocabulary: V1, qualifier: "MUST" },
+    ];
+    let state = createSelectControlledVocabulariesState(inherited, [], [], [V1, V2]);
+    const presenter = createSelectControlledVocabulariesPresenter(
+      next => { state = next(state); });
+
+    presenter.onOpenAddForm();
+    expect(state.addForm?.availableVocabularies).toEqual([V2]);
+  });
+
   test("onCancelAddForm closes the add form.", () => {
     const inherited: ControlledVocabularyUsage[] = [
       { assignmentId: "cv-v1", vocabulary: V1, qualifier: "MUST" },

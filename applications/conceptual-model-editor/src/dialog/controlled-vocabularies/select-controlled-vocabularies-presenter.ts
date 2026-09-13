@@ -62,10 +62,15 @@ export function createSelectControlledVocabulariesPresenter(
       });
     },
     onOpenAddForm() {
-      setState(state => ({
-        ...state,
-        addForm: createAddVocabularyState(state.availableVocabularies),
-      }));
+      setState(state => {
+        const usedVocabularyIds = new Set(state.items.map(item => item.vocabulary.id));
+        const selectableVocabularies = state.availableVocabularies.filter(
+          vocabulary => !usedVocabularyIds.has(vocabulary.id));
+        return {
+          ...state,
+          addForm: createAddVocabularyState(selectableVocabularies),
+        };
+      });
     },
     onCancelAddForm() {
       setState(state => ({ ...state, addForm: null }));
