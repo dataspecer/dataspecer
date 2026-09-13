@@ -13,7 +13,8 @@
     ".": "./lib/index.js"
   },
   "dependencies": {
-    "@dataspecer/core": "*"
+    "@dataspecer/core": "*",
+    "n3": "^1.25.1"
   },
   "devDependencies": {
     "@types/node": "^25.5.2",
