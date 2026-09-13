@@ -15,21 +15,21 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { useVocabulariesContext } from "@/contexts/vocabularies-context"
-import type { CvmControlledVocabulary } from "@/types/controlled-vocabulary"
+import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model"
 
 interface VocabularyFormValues {
-  name: string
-  iri: string
-  regex: string
+  title: string
+  references: string
+  pattern: string
   downloadUrl: string
-  docsUrl: string
+  documentation: string
 }
 
 interface VocabularyFormProps {
-  initialValues?: CvmControlledVocabulary
+  initialValues?: ControlledVocabulary
   currentVocabularyId?: string
   onCancel: () => void
-  onConfirm: (vocabulary: CvmControlledVocabulary) => void
+  onConfirm: (vocabulary: Omit<ControlledVocabulary, 'id' | 'type'>) => void
 }
 
 export function VocabularyForm({
@@ -42,9 +42,9 @@ export function VocabularyForm({
   const { vocabularies } = useVocabulariesContext()
 
   const schema = useMemo(() => z.object({
-    name: z.string().min(1, t("form.validation.requiredField")),
-    iri: z.string().min(1, t("form.validation.requiredField")).url(t("form.validation.invalidUrl")),
-    regex: z.string().refine(
+    title: z.string().min(1, t("form.validation.requiredField")),
+    references: z.string().min(1, t("form.validation.requiredField")).url(t("form.validation.invalidUrl")),
+    pattern: z.string().refine(
       (val) => {
         if (!val) return true;
         try { new RegExp(val); return true; } catch { return false; }
@@ -52,37 +52,42 @@ export function VocabularyForm({
       { message: t("form.validation.invalidRegex") }
     ),
     downloadUrl: z.string().min(1, t("form.validation.requiredField")).url(t("form.validation.invalidUrl")),
-    docsUrl: z.union([z.literal(""), z.string().url(t("form.validation.invalidUrl"))]),
+    documentation: z.union([z.literal(""), z.string().url(t("form.validation.invalidUrl"))]),
   }), [t])
 
   const form = useForm<VocabularyFormValues>({
     resolver: zodResolver(schema),
     mode: "onTouched",
     defaultValues: {
-      name: initialValues?.name ?? "",
-      iri: initialValues?.iri ?? "",
-      regex: initialValues?.regex ?? "",
-      downloadUrl: initialValues?.downloadUrl ?? "",
-      docsUrl: initialValues?.docsUrl ?? "",
+      title: initialValues?.title ?? "",
+      references: initialValues?.references ?? "",
+      pattern: initialValues?.pattern ?? "",
+      downloadUrl: initialValues?.distribution.downloadUrl ?? "",
+      documentation: initialValues?.documentation ?? "",
     },
   })
 
   const handleSubmit = (values: VocabularyFormValues) => {
-    // Check if IRI already exists in other vocabularies
-    const existingVocab = vocabularies.find((v) => v.iri === values.iri)
+    // Check if the vocabulary's IRI already exists in other vocabularies
+    const existingVocab = vocabularies.find((v) => v.references === values.references)
     if (existingVocab && existingVocab.id !== currentVocabularyId) {
-      form.setError("iri", {
+      form.setError("references", {
         type: "manual",
         message: t("form.validation.duplicateIri"),
       })
       return
     }
 
-    // Transform form values to Vocabulary domain object
-    const vocabulary: CvmControlledVocabulary = {
-      id: values.iri,
-      source: initialValues?.source,
-      ...values,
+    // Transform form values to the controlled vocabulary domain object
+    const vocabulary: Omit<ControlledVocabulary, 'id' | 'type'> = {
+      title: values.title,
+      references: values.references,
+      pattern: values.pattern,
+      documentation: values.documentation,
+      distribution: {
+        downloadUrl: values.downloadUrl,
+        accessUrl: values.downloadUrl,
+      },
     }
     onConfirm(vocabulary)
   }
@@ -94,7 +99,7 @@ export function VocabularyForm({
           <CardContent className="p-5 space-y-4">
             <FormField
               control={form.control}
-              name="name"
+              name="title"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
@@ -110,7 +115,7 @@ export function VocabularyForm({
             />
             <FormField
               control={form.control}
-              name="iri"
+              name="references"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
@@ -126,7 +131,7 @@ export function VocabularyForm({
             />
             <FormField
               control={form.control}
-              name="regex"
+              name="pattern"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
@@ -157,7 +162,7 @@ export function VocabularyForm({
             />
             <FormField
               control={form.control}
-              name="docsUrl"
+              name="documentation"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>

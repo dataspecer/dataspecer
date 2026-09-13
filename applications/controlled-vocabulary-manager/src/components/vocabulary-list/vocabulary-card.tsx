@@ -1,9 +1,9 @@
 import { Pencil, Trash2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
-import type { CvmControlledVocabulary } from "@/types/controlled-vocabulary"
+import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model"
 
 interface VocabularyCardProps {
-  vocabulary: CvmControlledVocabulary
+  vocabulary: ControlledVocabulary
   onEdit: () => void
   onDelete: () => void
 }
@@ -14,13 +14,13 @@ export function VocabularyCard({ vocabulary, onEdit, onDelete }: VocabularyCardP
   return (
     <div className="px-4 py-3 flex items-center justify-between">
       <div className="flex-1">
-        <div className="font-medium">{vocabulary.name}</div>
-        <div className="text-caption text-muted-foreground font-mono">{vocabulary.iri}</div>
+        <div className="font-medium">{vocabulary.title}</div>
+        <div className="text-caption text-muted-foreground font-mono">{vocabulary.references}</div>
       </div>
       <div className="flex items-center gap-3 ml-4">
-        {vocabulary.source && (
+        {vocabulary.distribution.downloadUrl && (
           <span className="text-caption text-success-foreground bg-success px-2 py-0.5 rounded">
-            {vocabulary.source}
+            {vocabulary.distribution.downloadUrl}
           </span>
         )}
         <button

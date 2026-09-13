@@ -1,117 +1,101 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
-import type { EntityChange } from '@dataspecer/core/entity-model'
-import type { ControlledVocabulary } from '@dataspecer/controlled-vocabulary-model'
-import {
-  applyOperations,
-  createVocabulary,
-  modifyVocabulary,
-  deleteVocabulary,
-} from '@dataspecer/controlled-vocabulary-model'
-import type { CvmControlledVocabulary } from '../types/controlled-vocabulary'
-import {
-  isBackendConnected,
-  loadVocabularies,
-  saveVocabularies,
-} from '../services/backend-vocabulary-storage'
+import { useEffect, useState } from 'react'
+import { CONTROLLED_VOCABULARY_MODEL } from '@dataspecer/core-v2/model/known-models'
+import { httpFetch } from '@dataspecer/core/io/fetch/fetch-browser'
+import { generateEntityId } from '@dataspecer/core/entity-model'
+import { createSetEntityOperation } from '@dataspecer/core/operation'
+import { PROJECT_MODEL_ID, createCreateModelOperation, createRemoveModelOperation } from '@dataspecer/core/project-model'
+import { createControlledVocabularyManagerModelStore, type DefaultFrontendModelStore } from '@dataspecer/model-store/implementation'
+import { CONTROLLED_VOCABULARY_TYPE, type ControlledVocabulary } from '@dataspecer/controlled-vocabulary-model'
 import { useEventCallback } from './use-event-callback'
 import { useConfig } from '../contexts/config-context'
 
-function applyChanges(
-  model: Record<string, ControlledVocabulary>,
-  changes: EntityChange<ControlledVocabulary>[]
-): Record<string, ControlledVocabulary> {
-  const next = { ...model }
-  for (const change of changes) {
-    if (change.next) {
-      next[change.next.id] = change.next
-    } else {
-      delete next[change.previous.id]
+const packageIri = new URLSearchParams(window.location.search).get('package-iri')
+
+/**
+ * Reads all currently tracked controlled vocabulary models from the store -
+ * each model has exactly one entity, keyed by the model's own id.
+ */
+function readVocabularies(modelStore: DefaultFrontendModelStore): ControlledVocabulary[] {
+  const result: ControlledVocabulary[] = []
+  for (const [modelId, entities] of Object.entries(modelStore.getAllEntities())) {
+    const entity = entities[modelId] as ControlledVocabulary | undefined
+    if (entity) {
+      result.push(entity)
     }
   }
-  return next
-}
-
-function mapFromModel(cv: ControlledVocabulary): CvmControlledVocabulary {
-  return {
-    id: cv.id,
-    name: cv.title,
-    iri: cv.references,
-    regex: cv.pattern,
-    downloadUrl: cv.distribution.downloadUrl,
-    docsUrl: cv.documentation,
-  }
+  return result
 }
 
 export function useVocabularies() {
   const { backendUrl } = useConfig()
-  const [model, setModel] = useState<Record<string, ControlledVocabulary>>({})
-  const [loading, setLoading] = useState(isBackendConnected)
-  const isInitialMount = useRef(true)
+  const [modelStore, setModelStore] = useState<DefaultFrontendModelStore | null>(null)
+  const [vocabularies, setVocabularies] = useState<ControlledVocabulary[]>([])
+  const [loading, setLoading] = useState(!!packageIri)
 
   useEffect(() => {
-    if (!isBackendConnected) return
-    loadVocabularies(backendUrl)
-      .then(loaded => setModel(loaded))
-      .finally(() => setLoading(false))
+    if (!packageIri) return
+
+    const store = createControlledVocabularyManagerModelStore({
+      projectId: packageIri,
+      backendUrl,
+      httpFetch,
+    })
+
+    let cancelled = false
+
+    const unsubscribeEntityChanges = store.subscribeToEntityChanges(() => {
+      setVocabularies(readVocabularies(store))
+    })
+    const unsubscribeTransactionCommit = store.subscribeToTransactionCommit(() => {
+      store.saveByOverride()
+    })
+
+    store
+      .initialize()
+      .then(() => store.waitForModelsToLoad())
+      .then(() => {
+        if (cancelled) return
+        setVocabularies(readVocabularies(store))
+        setModelStore(store)
+        setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+      unsubscribeEntityChanges()
+      unsubscribeTransactionCommit()
+    }
   }, [backendUrl])
 
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false
-      return
-    }
-    if (isBackendConnected) {
-      saveVocabularies(backendUrl, model)
-    }
-  }, [model, backendUrl])
-
-  const addVocabulary = useEventCallback((vocabulary: CvmControlledVocabulary) => {
-    const changes = applyOperations(model, [
-      createVocabulary({
-        id: vocabulary.id,
-        title: vocabulary.name,
-        references: vocabulary.iri,
-        pattern: vocabulary.regex,
-        documentation: vocabulary.docsUrl,
-        distribution: {
-          downloadUrl: vocabulary.downloadUrl,
-          accessUrl: vocabulary.downloadUrl,
-        },
-      }),
-    ])
-    setModel(prev => applyChanges(prev, changes))
+  const addVocabulary = useEventCallback((vocabulary: Omit<ControlledVocabulary, 'id' | 'type'>) => {
+    if (!modelStore || !packageIri) return
+    const id = generateEntityId()
+    const entity: ControlledVocabulary = { ...vocabulary, id, type: [CONTROLLED_VOCABULARY_TYPE] }
+    modelStore.transaction(
+      [
+        { modelId: PROJECT_MODEL_ID, operation: createCreateModelOperation(packageIri, CONTROLLED_VOCABULARY_MODEL, id) },
+        { modelId: id, operation: createSetEntityOperation(entity) },
+      ],
+      {},
+    )
   })
 
-  const updateVocabulary = useEventCallback((vocabulary: CvmControlledVocabulary) => {
-    const changes = applyOperations(model, [
-      modifyVocabulary(vocabulary.id, {
-        title: vocabulary.name,
-        references: vocabulary.iri,
-        pattern: vocabulary.regex,
-        documentation: vocabulary.docsUrl,
-        distribution: {
-          downloadUrl: vocabulary.downloadUrl,
-          accessUrl: vocabulary.downloadUrl,
-        },
-      }),
-    ])
-    setModel(prev => applyChanges(prev, changes))
+  const updateVocabulary = useEventCallback((id: string, vocabulary: Omit<ControlledVocabulary, 'id' | 'type'>) => {
+    if (!modelStore) return
+    const entity: ControlledVocabulary = { ...vocabulary, id, type: [CONTROLLED_VOCABULARY_TYPE] }
+    modelStore.transaction([{ modelId: id, operation: createSetEntityOperation(entity) }], {})
   })
 
-  const deleteVocabularyById = useEventCallback((vocabulary: CvmControlledVocabulary) => {
-    const changes = applyOperations(model, [
-      deleteVocabulary(vocabulary.id),
-    ])
-    setModel(prev => applyChanges(prev, changes))
+  const deleteVocabulary = useEventCallback((id: string) => {
+    if (!modelStore) return
+    modelStore.transaction([{ modelId: PROJECT_MODEL_ID, operation: createRemoveModelOperation(id) }], {})
   })
-
-  const vocabularies = useMemo(() => Object.values(model).map(mapFromModel), [model])
 
   return {
     vocabularies,
     loading,
     addVocabulary,
     updateVocabulary,
-    deleteVocabulary: deleteVocabularyById,
+    deleteVocabulary,
   }
 }
