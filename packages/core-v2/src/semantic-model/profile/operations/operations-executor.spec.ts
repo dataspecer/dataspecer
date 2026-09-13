@@ -711,7 +711,7 @@ test("Create controlled vocabulary assignment, a stored iri is preserved.", () =
     .toBe("http://example.com/imported-assignment");
 });
 
-test("Create controlled vocabulary assignment, same vocabulary with a different qualifier is allowed.", () => {
+test("Create controlled vocabulary assignment, same vocabulary with a different qualifier is rejected.", () => {
   const actual: ChangeEntry[] = [];
   const cv1: ControlledVocabularyAssignment = {
     id: "cv-1", type: [CONTROLLED_VOCABULARY_ASSIGNMENT],
@@ -726,29 +726,11 @@ test("Create controlled vocabulary assignment, same vocabulary with a different 
   const result = executor.executeOperation(factory.createControlledVocabularyAssignment(
     { id: "cv-2", classProfile: "1", vocabulary: "voc-1", qualifier: "MAY" }));
   //
-  expect(result).toStrictEqual({ success: true, created: ["cv-2"] });
-  expect(actual.length).toBe(1);
-  expect(actual[0]).toStrictEqual({
-    updated: {
-      "cv-2": {
-        id: "cv-2",
-        type: [CONTROLLED_VOCABULARY_ASSIGNMENT],
-        classProfile: "1",
-        vocabulary: "voc-1",
-        qualifier: "MAY",
-        replaces: null,
-        iri: null,
-      } as ControlledVocabularyAssignment,
-      "1": {
-        ...classProfile,
-        controlledVocabularies: ["cv-1", "cv-2"],
-      } as SemanticModelClassProfile,
-    },
-    removed: [],
-  });
+  expect(result).toStrictEqual({ success: false, created: [] });
+  expect(actual.length).toBe(0);
 });
 
-test("Create controlled vocabulary assignment, exact (vocabulary, qualifier) duplicate is rejected.", () => {
+test("Create controlled vocabulary assignment, same vocabulary and qualifier duplicate is rejected.", () => {
   const actual: ChangeEntry[] = [];
   const cv1: ControlledVocabularyAssignment = {
     id: "cv-1", type: [CONTROLLED_VOCABULARY_ASSIGNMENT],

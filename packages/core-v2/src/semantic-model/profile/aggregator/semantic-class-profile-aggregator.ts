@@ -30,17 +30,6 @@ function getDependencies(
   return [...entity.profiling, ...(entity.controlledVocabularies ?? [])];
 }
 
-/**
- * Key for checking a controlled vocabulary assignment's uniqueness in a class profile -
- * two assignments with the same (vocabulary, qualifier) pair are
- * considered duplicates of each other for inheritance/override purposes.
- */
-function controlledVocabularyAssignmentKey(
-  assignment: ControlledVocabularyAssignment,
-): string {
-  return `${assignment.vocabulary}|${assignment.qualifier}`;
-}
-
 function aggregateSemanticModelClassProfile(
   profile: SemanticModelClassProfile,
   dependencies: (
@@ -107,9 +96,8 @@ function aggregateSemanticModelClassProfile(
       if (!isControlledVocabularyAssignment(assignment)) {
         continue;
       }
-      const key = controlledVocabularyAssignmentKey(assignment);
-      if (!inheritedControlledVocabularyKeys.has(key)) {
-        inheritedControlledVocabularyKeys.add(key);
+      if (!inheritedControlledVocabularyKeys.has(assignment.vocabulary)) {
+        inheritedControlledVocabularyKeys.add(assignment.vocabulary);
         inheritedControlledVocabularies.push(assignmentId);
       }
     }
@@ -142,17 +130,17 @@ function aggregateSemanticModelClassProfile(
   }
 
   // This profile's own assignments (additions/overrides) take precedence
-  // over anything inherited for the same (vocabulary, qualifier) pair.
+  // over anything inherited for the same vocabulary.
   const ownControlledVocabularyAssignments = (profile.controlledVocabularies ?? [])
     .map(id => getProfiled(id))
     .filter(isControlledVocabularyAssignment);
   const ownControlledVocabularyKeys = new Set(
-    ownControlledVocabularyAssignments.map(controlledVocabularyAssignmentKey));
+    ownControlledVocabularyAssignments.map(assignment => assignment.vocabulary));
   const controlledVocabularies: EntityIdentifier[] = [
     ...inheritedControlledVocabularies.filter(assignmentId => {
       const assignment = getProfiled(assignmentId);
       return isControlledVocabularyAssignment(assignment)
-        && !ownControlledVocabularyKeys.has(controlledVocabularyAssignmentKey(assignment));
+        && !ownControlledVocabularyKeys.has(assignment.vocabulary);
     }),
     ...(profile.controlledVocabularies ?? []),
   ];

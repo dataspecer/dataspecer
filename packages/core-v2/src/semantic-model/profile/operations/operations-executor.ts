@@ -270,16 +270,12 @@ function executeCreateControlledVocabularyAssignment(
     return { success: false, created: [] };
   }
   const existingOwn = classProfile.controlledVocabularies ?? [];
-  // The same vocabulary can be assigned more than once with different
-  // qualifiers, but assigning the exact same (vocabulary, qualifier) pair
-  // again, as this class profile's own assignment, is redundant and
-  // rejected.
+  // A class profile can only have one of its own assignments per vocabulary
   const existingSiblings = existingOwn
     .map(id => entityReader.entity(id))
     .filter(isControlledVocabularyAssignment);
-  if (existingSiblings.some(a => a.vocabulary === entity.vocabulary
-    && a.qualifier === entity.qualifier)) {
-    console.error("This exact controlled vocabulary assignment already exists on this class profile, create controlled vocabulary assignment is ignored.",
+  if (existingSiblings.some(a => a.vocabulary === entity.vocabulary)) {
+    console.error("This class profile already has an own controlled vocabulary assignment for this vocabulary, create controlled vocabulary assignment is ignored.",
       { entity });
     return { success: false, created: [] };
   }
