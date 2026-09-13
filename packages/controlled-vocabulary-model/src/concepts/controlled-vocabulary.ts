@@ -33,3 +33,19 @@ export interface ControlledVocabularyDistribution {
 export function isControlledVocabulary(entity: Entity): entity is ControlledVocabulary {
   return entity.type.includes(CONTROLLED_VOCABULARY_TYPE);
 }
+
+/**
+ * Default field values used when creating a controlled vocabulary entity
+ * with missing fields, or when a model has no stored data yet.
+ */
+export const DEFAULT_CONTROLLED_VOCABULARY: Omit<ControlledVocabulary, "id"> = {
+  type: [CONTROLLED_VOCABULARY_TYPE],
+  title: "",
+  pattern: "",
+  references: "",
+  documentation: "",
+  distribution: {
+    downloadUrl: "",
+    accessUrl: "",
+  },
+};
