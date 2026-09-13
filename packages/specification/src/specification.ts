@@ -1,4 +1,5 @@
-import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, V1, RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
+import { CONTROLLED_VOCABULARY_MODEL, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, V1, RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
+import { controlledVocabulariesToDcatCatalog, type ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 import { isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship, SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
 import { withAbsoluteIri } from "@dataspecer/core-v2/semantic-model/utils";
 import { LanguageString, type CoreResource } from "@dataspecer/core/core/core-resource";
@@ -124,6 +125,33 @@ export interface GenerateSpecificationOptions {
    * Must end with a slash.
    */
   subdirectory?: string;
+}
+
+/**
+ * Writes a DCAT catalog of every controlled vocabulary model found in
+ * `projectModel` to `fileName`. Returns whether anything was written - false
+ * when there are no controlled vocabularies in the project, in which case
+ * the caller should not register the file anywhere.
+ */
+async function writeDcatCatalog(
+  projectModel: Record<string, ProjectModelEntity>,
+  allModels: Record<string, EntityRecord>,
+  writeFile: (path: string, data: string) => Promise<void>,
+  fileName: string,
+  catalogIri: string,
+): Promise<boolean> {
+  const vocabularies = Object.values(projectModel)
+    .filter((entity) => entity.modelType === CONTROLLED_VOCABULARY_MODEL)
+    .map((entity) => allModels[entity.id]?.[entity.id] as ControlledVocabulary | undefined)
+    .filter((vocabulary): vocabulary is ControlledVocabulary => vocabulary !== undefined);
+
+  if (vocabularies.length === 0) {
+    return false;
+  }
+
+  const catalog = await controlledVocabulariesToDcatCatalog(catalogIri, vocabularies);
+  await writeFile(fileName, catalog);
+  return true;
 }
 
 /**
@@ -604,6 +632,35 @@ export async function generateSpecification(packageId: string, context: Generate
         URL: url,
       },
     ];
+  }
+
+  // Write a DCAT catalog of every controlled vocabulary in the project
+  {
+    const iri = baseIri + "controlled-vocabulary-catalog/" + encodeURIComponent(packageId);
+    const fileName = "controlled_vocabulary_catalog.ttl";
+    const url = baseUrl + fileName + queryParams;
+    const wrote = await writeDcatCatalog(projectModel, allModels, writeFile, fileName, iri);
+    if (wrote) {
+      const descriptor = {
+        iri: null,
+        url,
+
+        role: dsvMetadataWellKnown.role.vocabulary,
+        formatMime: dsvMetadataWellKnown.formatMime.turtle,
+        additionalRdfTypes: [],
+
+        conformsTo: [dsvMetadataWellKnown.conformsTo.dcat],
+      } satisfies ResourceDescriptor;
+      APHasResource?.push(descriptor);
+
+      externalArtifacts["catalog"] = [
+        ...(externalArtifacts["catalog"] ?? []),
+        {
+          type: fileName,
+          URL: url,
+        },
+      ];
+    }
   }
 
   // Process all SVGs. Because we do not know which svg belongs to which model,
