@@ -9,7 +9,18 @@ import { CONTROLLED_VOCABULARY_TYPE, type ControlledVocabulary } from '@dataspec
 import { useEventCallback } from './use-event-callback'
 import { useConfig } from '../contexts/config-context'
 
-const packageIri = new URLSearchParams(window.location.search).get('package-iri')
+/**
+ * The project's package iri is the last path segment of the URL 
+ * e.g. `/controlled-vocabulary-manager/<iri>`
+ */
+function getPackageIriFromPath(): string | null {
+  const segments = window.location.pathname.split('/').filter(Boolean)
+  const last = segments[segments.length - 1]
+  if (!last || last === 'controlled-vocabulary-manager') return null
+  return decodeURIComponent(last)
+}
+
+const packageIri = getPackageIriFromPath()
 
 /**
  * Reads all currently tracked controlled vocabulary models from the store -
@@ -26,11 +37,14 @@ function readVocabularies(modelStore: DefaultFrontendModelStore): ControlledVoca
   return result
 }
 
+export type VocabulariesError = 'missing-package' | 'load-failed'
+
 export function useVocabularies() {
   const { backendUrl } = useConfig()
   const [modelStore, setModelStore] = useState<DefaultFrontendModelStore | null>(null)
   const [vocabularies, setVocabularies] = useState<ControlledVocabulary[]>([])
   const [loading, setLoading] = useState(!!packageIri)
+  const [error, setError] = useState<VocabulariesError | null>(packageIri ? null : 'missing-package')
 
   useEffect(() => {
     if (!packageIri) return
@@ -57,6 +71,12 @@ export function useVocabularies() {
         if (cancelled) return
         setVocabularies(readVocabularies(store))
         setModelStore(store)
+        setLoading(false)
+      })
+      .catch((err) => {
+        if (cancelled) return
+        console.error('Failed to load controlled vocabularies model store', err)
+        setError('load-failed')
         setLoading(false)
       })
 
@@ -94,6 +114,7 @@ export function useVocabularies() {
   return {
     vocabularies,
     loading,
+    error,
     addVocabulary,
     updateVocabulary,
     deleteVocabulary,
