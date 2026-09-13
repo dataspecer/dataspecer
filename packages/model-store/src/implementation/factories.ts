@@ -1,8 +1,9 @@
-import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { CONTROLLED_VOCABULARY_MODEL, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { BackendPackageService } from "@dataspecer/core-v2/project";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import { createAsyncQueryableModel } from "./async-queryable-model.ts";
+import { createControlledVocabularyModel } from "./controlled-vocabulary-model.ts";
 import { DefaultFrontendModelStore, VISUAL_MODEL_SVG_BLOB_TYPE } from "./implementation.ts";
 import { createPimModel } from "./pim-model.ts";
 import { createProjectModel } from "./project-model.ts";
@@ -58,6 +59,27 @@ export function createManagerModelStore(params: {
       // todo: come up with a better way to create new PSM models without
       // needing to subscribe to the whole model.
       [V1.PSM]: createStructureModel,
+    },
+    packageService: packageService,
+    httpFetch: params.httpFetch,
+  });
+}
+
+/**
+ * Configures and creates a remote model store intended to be used by the
+ * controlled vocabulary manager.
+ */
+export function createControlledVocabularyManagerModelStore(params: {
+  projectId: ModelIdentifier;
+  backendUrl: string;
+  httpFetch: HttpFetch;
+}): DefaultFrontendModelStore {
+  const packageService = new BackendPackageService(params.backendUrl, params.httpFetch);
+  return new DefaultFrontendModelStore({
+    projectId: params.projectId,
+    projectModelBuilder: createProjectModel,
+    modelBuilders: {
+      [CONTROLLED_VOCABULARY_MODEL]: createControlledVocabularyModel,
     },
     packageService: packageService,
     httpFetch: params.httpFetch,
