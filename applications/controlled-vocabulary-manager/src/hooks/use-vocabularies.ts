@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { CONTROLLED_VOCABULARY_MODEL } from '@dataspecer/core-v2/model/known-models'
 import { httpFetch } from '@dataspecer/core/io/fetch/fetch-browser'
 import { generateEntityId } from '@dataspecer/core/entity-model'
-import { createSetEntityOperation } from '@dataspecer/core/operation'
+import { createSetEntityOperation, createUpdateEntityOperation } from '@dataspecer/core/operation'
 import { PROJECT_MODEL_ID, createCreateModelOperation, createRemoveModelOperation } from '@dataspecer/core/project-model'
 import { createControlledVocabularyManagerModelStore, type DefaultFrontendModelStore } from '@dataspecer/model-store/implementation'
 import { CONTROLLED_VOCABULARY_TYPE, type ControlledVocabulary } from '@dataspecer/controlled-vocabulary-model'
@@ -91,9 +91,12 @@ export function useVocabularies() {
     if (!modelStore || !packageIri) return
     const id = generateEntityId()
     const entity: ControlledVocabulary = { ...vocabulary, id, type: [CONTROLLED_VOCABULARY_TYPE] }
+    const createModel = createCreateModelOperation(packageIri, CONTROLLED_VOCABULARY_MODEL, id)
+    // set model label for package manager
+    createModel.label = { en: vocabulary.title }
     modelStore.transaction(
       [
-        { modelId: PROJECT_MODEL_ID, operation: createCreateModelOperation(packageIri, CONTROLLED_VOCABULARY_MODEL, id) },
+        { modelId: PROJECT_MODEL_ID, operation: createModel },
         { modelId: id, operation: createSetEntityOperation(entity) },
       ],
       {},
@@ -103,7 +106,16 @@ export function useVocabularies() {
   const updateVocabulary = useEventCallback((id: string, vocabulary: Omit<ControlledVocabulary, 'id' | 'type'>) => {
     if (!modelStore) return
     const entity: ControlledVocabulary = { ...vocabulary, id, type: [CONTROLLED_VOCABULARY_TYPE] }
-    modelStore.transaction([{ modelId: id, operation: createSetEntityOperation(entity) }], {})
+    modelStore.transaction(
+      [
+        { modelId: id, operation: createSetEntityOperation(entity) },
+        // Keeps the resource's own label (shown in the package manager) in
+        // sync with the vocabulary's title - the backend persists label
+        // changes on a model's project-model entity into its resource metadata 
+        { modelId: PROJECT_MODEL_ID, operation: createUpdateEntityOperation(id, { label: { en: vocabulary.title } }) },
+      ],
+      {},
+    )
   })
 
   const deleteVocabulary = useEventCallback((id: string) => {
