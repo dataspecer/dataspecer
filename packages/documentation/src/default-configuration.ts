@@ -487,6 +487,12 @@ export const defaultConfiguration: DocumentationConfiguration = {
           <td><a href="{{{relativePath URL}}}">{{relativePath URL}}</a></td>
         </tr>
       {{/each}}
+      {{#if externalArtifacts.catalog}}
+        <tr>
+          <td>{{#iflng "cs"}}Katalog řízených slovníků{{lng}}Controlled vocabulary catalog{{/iflng}}</td>
+          <td><a href="{{{relativePath externalArtifacts.catalog.[0].URL}}}">{{relativePath externalArtifacts.catalog.[0].URL}}</a></td>
+        </tr>
+      {{/if}}
       {{#each externalArtifacts.structure-model}}
         <tr>
           <td>{{#iflng "cs"}}Popis strukturálního modelu{{lng}}Description of structure model{{/iflng}}</td>
