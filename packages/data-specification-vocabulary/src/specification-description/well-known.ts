@@ -90,6 +90,11 @@ export const dsvMetadataWellKnown = {
      * Linked Data Event Streams specification URL.
      */
     ldes: "https://w3id.org/ldes/specification",
+
+    /**
+     * DCAT (Data Catalog Vocabulary) specification URL.
+     */
+    dcat: "https://www.w3.org/TR/vocab-dcat-3/",
   },
 
   /**
