@@ -1,13 +1,13 @@
 import { createContext, useContext, type ReactNode } from 'react'
+import type { ControlledVocabulary } from '@dataspecer/controlled-vocabulary-model'
 import { useVocabularies } from '../hooks/use-vocabularies'
-import type { CvmControlledVocabulary } from '../types/controlled-vocabulary'
 
 interface VocabulariesContextValue {
-  vocabularies: CvmControlledVocabulary[]
+  vocabularies: ControlledVocabulary[]
   loading: boolean
-  addVocabulary: (vocabulary: CvmControlledVocabulary) => void
-  updateVocabulary: (vocabulary: CvmControlledVocabulary) => void
-  deleteVocabulary: (vocabulary: CvmControlledVocabulary) => void
+  addVocabulary: (vocabulary: Omit<ControlledVocabulary, 'id' | 'type'>) => void
+  updateVocabulary: (id: string, vocabulary: Omit<ControlledVocabulary, 'id' | 'type'>) => void
+  deleteVocabulary: (id: string) => void
 }
 
 const VocabulariesContext = createContext<VocabulariesContextValue | null>(null)

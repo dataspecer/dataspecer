@@ -6,14 +6,14 @@ import { Button } from "@/components/ui/button"
 import { EmptyState } from "./empty-state"
 import { VocabularyCard } from "./vocabulary-card"
 import { useVocabulariesContext } from "@/contexts/vocabularies-context"
-import type { CvmControlledVocabulary } from "@/types/controlled-vocabulary"
+import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model"
 import { useConfig } from "@/contexts/config-context"
 
 interface VocabularyListPageProps {
   onNavigateSourceSelection: () => void
   onNavigateFormEmpty: () => void
-  onEdit: (vocabulary: CvmControlledVocabulary) => void
-  onDelete: (vocabulary: CvmControlledVocabulary) => void
+  onEdit: (vocabulary: ControlledVocabulary) => void
+  onDelete: (id: string) => void
 }
 
 export function VocabularyListPage({
@@ -53,7 +53,7 @@ export function VocabularyListPage({
               key={vocab.id}
               vocabulary={vocab}
               onEdit={() => onEdit(vocab)}
-              onDelete={() => onDelete(vocab)}
+              onDelete={() => onDelete(vocab.id)}
             />
           ))}
         </div>
