@@ -194,7 +194,12 @@ export function prepareProfileSemanticProfileClassOperations(
     usageNoteFromProfiled: item.id,
     externalDocumentationUrl: null,
     tags: item.tags,
-    controlledVocabularies: item.controlledVocabularies,
+    // controlledVocabularies holds ids of ControlledVocabularyAssignment
+    // entities owned by item, not values - copying them here would point
+    // the new profile at assignment entities it does not own. A new
+    // profile starts with none of its own, same as
+    // prepareProfileSemanticClassOperations above.
+    controlledVocabularies: [],
   }))
 }
 

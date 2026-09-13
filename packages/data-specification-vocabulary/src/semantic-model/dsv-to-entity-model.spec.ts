@@ -1,5 +1,10 @@
 import { SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
-import { SemanticModelClassProfile, SemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
+import {
+  isControlledVocabularyAssignment,
+  isSemanticModelClassProfile,
+  SemanticModelClassProfile,
+  SemanticModelRelationshipProfile,
+} from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { createDefaultSemanticModelBuilder } from "@dataspecer/semantic-model";
 import { Cardinality, ApplicationProfile, RequirementLevel } from "./dsv-model.ts";
 import { createDefaultApplicationProfileBuilder } from "./default-dsv-model-builder.ts";
@@ -7,7 +12,7 @@ import { conceptualModelToEntityListContainer } from "./dsv-to-entity-model.ts";
 import { EntityListContainer } from "./entity-model.ts";
 import { entityListContainerToDsvModel, createContext } from "./entity-model-to-dsv.ts";
 import { toEntityListContainer } from "./entity-list-container-builder.ts";
-import { DSV_CLASS_ROLE, DSV_MANDATORY_LEVEL, SKOS } from "./vocabulary.ts";
+import { DSV_CLASS_ROLE, DSV_USAGE_EXPECTATION, DSV_MANDATORY_LEVEL, SKOS } from "./vocabulary.ts";
 
 test("From DSV to entity model and back.", async () => {
 
@@ -425,4 +430,87 @@ test("Falls back to {} for a null prefLabel/definition/usageNote, and matches re
   // Falls back to matching by reusedPropertyIri since reusedAsPropertyIri
   // is missing on the reuse entry.
   expect(range.nameFromProfiled).toBe("http://dcat/model/source");
+});
+
+test("Creates a ControlledVocabularyAssignment entity for a class profile's own assignment.", () => {
+
+  const builder = createDefaultApplicationProfileBuilder({ iri: "http://dcat/model/" });
+  builder.classProfile({
+    iri: "http://dcat/model/class-1",
+    controlledVocabularyAssignments: [{
+      iri: "http://dcat/model/class-1/assignment-1",
+      controlledVocabularyIri: "http://vocab.example.com/scheme",
+      usageExpectationIri: DSV_USAGE_EXPECTATION.MUST,
+      replacesIri: "http://foreign.example.com/some-assignment",
+    }],
+  });
+  const dsv = builder.build();
+
+  const actual = conceptualModelToEntityListContainer(dsv, {
+    generalizationIdentifier: () => "gen",
+    iriToIdentifier: iri => iri,
+  });
+
+  const classProfile = actual.entities.find(isSemanticModelClassProfile)!;
+  const assignment = actual.entities.find(isControlledVocabularyAssignment)!;
+
+  expect(classProfile.controlledVocabularies).toStrictEqual([assignment.id]);
+  expect(assignment).toStrictEqual({
+    id: "http://dcat/model/class-1/assignment-1",
+    type: ["controlled-vocabulary-assignment"],
+    iri: "http://dcat/model/class-1/assignment-1",
+    classProfile: "http://dcat/model/class-1",
+    vocabulary: "http://vocab.example.com/scheme",
+    qualifier: "MUST",
+    // Imported replaces is stored verbatim - never resolved locally.
+    replaces: { kind: "imported", iri: "http://foreign.example.com/some-assignment" },
+  });
+});
+
+test("A controlled vocabulary assignment with no replaces created with replaces: null.", () => {
+
+  const builder = createDefaultApplicationProfileBuilder({ iri: "http://dcat/model/" });
+  builder.classProfile({
+    iri: "http://dcat/model/class-1",
+    controlledVocabularyAssignments: [{
+      iri: "http://dcat/model/class-1/assignment-1",
+      controlledVocabularyIri: "http://vocab.example.com/scheme",
+      usageExpectationIri: DSV_USAGE_EXPECTATION.RECOMMENDED,
+      replacesIri: null,
+    }],
+  });
+  const dsv = builder.build();
+
+  const actual = conceptualModelToEntityListContainer(dsv, {
+    generalizationIdentifier: () => "gen",
+    iriToIdentifier: iri => iri,
+  });
+
+  const assignment = actual.entities.find(isControlledVocabularyAssignment)!;
+  expect(assignment.replaces).toBeNull();
+  expect(assignment.qualifier).toBe("RECOMMENDED");
+});
+
+test("Warns and skips a controlled vocabulary assignment with an unknown usage expectation IRI.", () => {
+
+  const builder = createDefaultApplicationProfileBuilder({ iri: "http://dcat/model/" });
+  builder.classProfile({
+    iri: "http://dcat/model/class-1",
+    controlledVocabularyAssignments: [{
+      iri: "http://dcat/model/class-1/assignment-1",
+      controlledVocabularyIri: "http://vocab.example.com/scheme",
+      usageExpectationIri: "http://example.com/unknown-usage-expectation",
+      replacesIri: null,
+    }],
+  });
+  const dsv = builder.build();
+
+  const actual = conceptualModelToEntityListContainer(dsv, {
+    generalizationIdentifier: () => "gen",
+    iriToIdentifier: iri => iri,
+  });
+
+  expect(actual.entities.find(isControlledVocabularyAssignment)).toBeUndefined();
+  const classProfile = actual.entities.find(isSemanticModelClassProfile)!;
+  expect(classProfile.controlledVocabularies).toStrictEqual([]);
 });

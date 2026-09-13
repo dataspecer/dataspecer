@@ -145,6 +145,20 @@ export class DsvWriter {
       case ClassRole.undefined:
         break;
     }
+    this.writeControlledVocabularyAssignments(profile);
+  }
+
+  /**
+   * Writes this class profile's own controlled vocabulary assignments.
+   */
+  private writeControlledVocabularyAssignments(profile: ClassProfile) {
+    for (const assignment of profile.controlledVocabularyAssignments) {
+      this.addType(assignment.iri, DSV.ControlledVocabularyAssignment);
+      this.addIri(assignment.iri, DSV.classProfile, profile.iri);
+      this.addIri(assignment.iri, DSV.controlledVocabulary, assignment.controlledVocabularyIri);
+      this.addIri(assignment.iri, DSV.usageExpectation, assignment.usageExpectationIri);
+      this.addIri(assignment.iri, DSV.replaces, assignment.replacesIri);
+    }
   }
 
   private writeProfileBase(profile: TermProfile) {
