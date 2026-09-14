@@ -25,24 +25,18 @@ export class ArtifactConfigurator extends DefaultArtifactConfigurator {
     const dataSpecificationName = await this.getSpecificationDirectoryName(dataSpecificationIri);
 
     const dataSpecificationConfiguration = DataSpecificationConfigurator.getFromObject(configuration);
-    const generatorsEnabledByDefault = dataSpecificationConfiguration.generatorsEnabledByDefault!;
 
     const baseOutputPath = singleSpecificationOnly ? "" : `${dataSpecificationName}/`;
 
-    if ((dataSpecificationConfiguration.useGenerators?.["respec"] ?? generatorsEnabledByDefault) !== false) {
-      // Respec
-      const respec = new DataSpecificationDocumentation();
-      respec.iri = `${dataSpecificationIri}#respec`;
-      respec.generator = "https://schemas.dataspecer.com/generator/template-artifact";
-      const respecFileName = dataSpecificationConfiguration.renameArtifacts?.[respec.generator] ?? "en/index.html";
-      respec.outputPath = `${baseOutputPath}${respecFileName}`;
-      respec.publicUrl = `${this.baseURL}${respecFileName}${this.queryParams}`;
-      respec.artefacts = artifacts.map(a => a.iri!);
-      // @ts-ignore
-      respec.templateType = null;
-      respec.configuration = configuration;
-      artifacts.push(respec);
-    }
+    const htmlDoc = new DataSpecificationDocumentation();
+    htmlDoc.iri = `${dataSpecificationIri}#respec`;
+    htmlDoc.generator = "https://schemas.dataspecer.com/generator/template-artifact";
+    const respecFileName = dataSpecificationConfiguration.renameArtifacts?.[htmlDoc.generator] ?? "en/index.html";
+    htmlDoc.outputPath = `${baseOutputPath}${respecFileName}`;
+    htmlDoc.publicUrl = `${this.baseURL}${respecFileName}${this.queryParams}`;
+    htmlDoc.artefacts = artifacts.map(a => a.iri!);
+    htmlDoc.configuration = configuration;
+    artifacts.push(htmlDoc);
 
     return artifacts;
   }

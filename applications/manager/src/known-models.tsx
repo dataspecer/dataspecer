@@ -29,7 +29,6 @@ export interface createModelContext {
   description?: LanguageString;
   baseIri?: string;
   modelAlias?: string;
-  documentBaseUrl?: string;
   caches?: string[];
 }
 
@@ -47,7 +46,6 @@ function getHookForStandardModel(type: string, initialContent: (iri: string, con
         userMetadata: {
           label: context.label,
           description: context.description,
-          documentBaseUrl: context.documentBaseUrl,
         }
       }),
     });
@@ -73,8 +71,6 @@ export const createModelInstructions = {
         userMetadata: {
           label: context.label,
           description: context.description,
-          // @ts-ignore
-          documentBaseUrl: context.documentBaseUrl,
         }
       });
       await fetch(import.meta.env.VITE_BACKEND + "/resources/blob?iri=" + encodeURIComponent(iri), {

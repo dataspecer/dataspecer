@@ -3,8 +3,7 @@ import {
   isSemanticModelClass,
   isSemanticModelRelationPrimitive,
   isSemanticModelRelationship,
-  LanguageString,
-  SemanticModelEntity,
+  SemanticModelEntity
 } from "@dataspecer/core-v2/semantic-model/concepts";
 import { DataTypeURIs, isDataType } from "@dataspecer/core-v2/semantic-model/datatypes";
 import { createRdfsModel } from "@dataspecer/core-v2/semantic-model/simplified";
@@ -20,7 +19,7 @@ import { turtleStringToStructureModel } from "@dataspecer/data-specification-voc
 import { canonicalizeIds } from "@dataspecer/structure-model";
 import express from "express";
 import * as jsonld from "jsonld";
-import N3, { Quad_Object } from "n3";
+import N3 from "n3";
 import { parse } from "node-html-parser";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
@@ -32,19 +31,6 @@ import { BaseResource } from "../models/resource-model.ts";
 import { StagingModelRepository } from "../models/staging-model-repository.ts";
 import { getModelsForPackage } from "../utils/backend-model-store.ts";
 import { asyncHandler } from "./../utils/async-handler.ts";
-
-
-function jsonLdLiteralToLanguageString(literal: Quad_Object[]): LanguageString {
-  const result: LanguageString = {};
-  if (literal) {
-    for (const entry of literal) {
-      if (entry.termType === "Literal" && entry.language) {
-        result[entry.language] = entry.value;
-      }
-    }
-  }
-  return result;
-}
 
 /**
  * Fetches a URL (following redirects, as fetch does by default) and rejects
@@ -431,72 +417,6 @@ async function importRdfsAndDsv(repository: ModelRepositoryType, parentIri: stri
 }
 
 /**
- * @deprecated drop support anytime it would require changes
- */
-async function legacyDsvImport(repository: ModelRepositoryType, store: N3.Store, url: string, baseIri: string, parentIri: string): Promise<[BaseResource | null, SemanticModelEntity[]]> {
-  const name = jsonLdLiteralToLanguageString(store.getObjects(baseIri, "http://purl.org/dc/terms/title", null));
-  const description = jsonLdLiteralToLanguageString(store.getObjects(baseIri, "http://www.w3.org/2000/01/rdf-schema#comment", null));
-
-  // Create package
-  const newPackageIri = parentIri + "/" + uuidv4();
-  await repository.createPackage(parentIri, newPackageIri, {
-    label: name,
-    description,
-    importedFromUrl: url,
-    documentBaseUrl: url,
-  });
-
-  let rdfsUrl = null;
-  let dsvUrl = null;
-
-  const artefacts = [
-    ...store.getObjects(baseIri, "https://w3id.org/dsv#artefact", null), // TODO: remove when every known specification contains prof:hasResource
-    ...store.getObjects(baseIri, "http://www.w3.org/ns/dx/prof/hasResource", null),
-  ];
-
-  for (const artefact of artefacts) {
-    const artefactUrl = store.getObjects(artefact, "http://www.w3.org/ns/dx/prof/hasArtifact", null)[0].id;
-    const role = store.getObjects(artefact, "http://www.w3.org/ns/dx/prof/hasRole", null)[0].id;
-
-    if (role === "http://www.w3.org/ns/dx/prof/role/vocabulary") {
-      rdfsUrl = artefactUrl;
-    } else if (role === "http://www.w3.org/ns/dx/prof/role/schema") {
-      dsvUrl = artefactUrl;
-    }
-  }
-
-  const vocabularies = [
-    ...new Set([
-      ...store.getObjects(baseIri, "https://w3id.org/dsv#usedVocabularies", null).map((v) => v.id), // TODO: remove when every known specification contains prof:isProfileOF
-      ...store.getObjects(baseIri, "http://purl.org/dc/terms/references", null).map((v) => v.id), // TODO: remove when every known specification contains prof:isProfileOF
-      ...store.getObjects(baseIri, "http://www.w3.org/ns/dx/prof/isProfileOf", null).map((v) => v.id),
-    ]),
-  ];
-  const entities: SemanticModelEntity[] = [];
-  for (const vocabularyId of vocabularies) {
-    const urlToImport = vocabularyId;
-    const [, e] = await importFromUrl(newPackageIri, urlToImport, undefined, undefined, repository);
-    entities.push(...e);
-  }
-
-  await importRdfsAndDsv(
-    repository,
-    newPackageIri,
-    rdfsUrl,
-    dsvUrl,
-    {
-      label: {
-        en: name.en ?? name.cs,
-      },
-      documentBaseUrl: url,
-    },
-    entities,
-  );
-
-  return [(await repository.getResource(newPackageIri))!, entities];
-}
-
-/**
  * Performs import from DSV metadata document.
  */
 async function dsvImport(repository: ModelRepositoryType, store: N3.Store, url: string, baseIri: string, parentIri: string, existingPackageIri?: string, touchedModelIds?: Set<string>): Promise<[BaseResource | null, SemanticModelEntity[]]> {
@@ -689,12 +609,7 @@ export async function importFromUrl(
     const quads = (await jsonld.toRDF(jsonLd)) as N3.Quad[];
     const store = new N3.Store(quads);
 
-    if (store.getObjects(baseIri, "https://w3id.org/dsv#artefact", null).length > 0) {
-      // This is a legacy DSV model
-      return legacyDsvImport(repository, store, url, baseIri, parentIri);
-    } else {
-      return dsvImport(repository, store, url, baseIri, parentIri, existingIri, touchedModelIds);
-    }
+    return dsvImport(repository, store, url, baseIri, parentIri, existingIri, touchedModelIds);
   } else {
     const name = deriveNameFromUrl(url);
 

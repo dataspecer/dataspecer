@@ -178,7 +178,8 @@ export const DataSpecification: FC<{
             undefinedIs={generatorsEnabledByDefault}
         />
       </Grid>
-      <Grid item xs={12}>
+      {/* Currently it is not supported to turn of html documentation */}
+      {/* <Grid item xs={12}>
         <SwitchWithDefault
           label="Documentation"
           current={input.useGenerators ?? {}}
@@ -187,7 +188,7 @@ export const DataSpecification: FC<{
           default={defaultObject ? (defaultObject?.useGenerators ?? {}) : undefined}
           undefinedIs={generatorsEnabledByDefault}
         />
-      </Grid>
+      </Grid> */}
     </Grid>
 
     <Typography variant="body2" sx={{mt: 1}}>
