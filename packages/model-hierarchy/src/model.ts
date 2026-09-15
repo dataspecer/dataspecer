@@ -10,8 +10,8 @@ export interface ModelHierarchyChangeEvent {
 
 /**
  * Virtual model whose entities are {@link ModelHierarchyEntity}, one per
- * semantic model in the project, describing how the project's semantic models
- * relate to each other.
+ * semantic model and package, describing dependencies and the models each
+ * package exposes.
  *
  * Mirrors the `getAllEntities`/`subscribeToEntityChanges` naming used by
  * `@dataspecer/model-store` - there is no shared interface for this shape yet.

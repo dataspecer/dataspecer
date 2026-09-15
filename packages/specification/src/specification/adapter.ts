@@ -6,7 +6,8 @@ import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import { FederatedObservableStore } from "@dataspecer/federated-observable-store/federated-observable-store";
 import { isPackageEntity, type ProjectModelEntity, type PackageEntity } from "@dataspecer/core/project-model";
-import { build, isSemanticModelType } from "../model-hierarchy/semantic-model-aggregator-builder.ts";
+import { buildModelHierarchy, isSemanticModelType } from "@dataspecer/model-hierarchy";
+import { build } from "../model-hierarchy/semantic-model-aggregator-builder.ts";
 import { DataSpecification } from "./model.ts";
 import { TransactionMetadata } from "@dataspecer/model-store";
 import { OperationInModel } from "@dataspecer/core/operation";
@@ -118,7 +119,8 @@ function addSemanticModel(
   onChange: ((changeListener: (changes: Record<ModelIdentifier, EntityChange[]>) => void) => () => void) | undefined,
   executeOperation: (modelId: ModelIdentifier, operation: any) => void,
 ): SemanticModelAggregator {
-  const aggregator = build(specificationId, models, onChange, executeOperation);
+  const hierarchy = buildModelHierarchy(specificationId, models);
+  const aggregator = build(specificationId, hierarchy, models, onChange, executeOperation);
 
   // We need to add the model as the lowest level model because some operations
   // want to modify the profiled entities directly.

@@ -1,17 +1,15 @@
-import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
-import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
+import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import type { Entity, EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
-import type { ProjectModelEntity, PackageEntity } from "@dataspecer/core/project-model";
-import type { ModelCompositionConfiguration, ModelCompositionConfigurationApplicationProfile, ModelCompositionConfigurationMerge } from "@dataspecer/specification/model-hierarchy";
-import { MODEL_HIERARCHY_APPLICATION_PROFILE, MODEL_HIERARCHY_VOCABULARY, type ModelHierarchyEntity } from "./entities.ts";
-import { QUERYABLE_MODEL } from "@dataspecer/core-v2/model/known-models";
+import { PROJECT_MODEL_ID, type ProjectModelEntity, type PackageEntity } from "@dataspecer/core/project-model";
+import { MODEL_HIERARCHY_APPLICATION_PROFILE, MODEL_HIERARCHY_VOCABULARY, MODEL_HIERARCHY_SPECIFICATION, isSpecificationHierarchyEntity, type ModelHierarchyEntity } from "./entities.ts";
+import type { ModelCompositionConfiguration, ModelCompositionConfigurationApplicationProfile, ModelCompositionConfigurationMerge } from "./composition-configuration.ts";
 
-/**
- * Id of the virtual project model (within {@link DefaultFrontendModelStore})
- * that holds the {@link ProjectModelEntity}/{@link PackageEntity} entries describing
- * the project's structure.
- */
-export const PROJECT_MODEL_ID: ModelIdentifier = "_project_model";
+export { PROJECT_MODEL_ID } from "@dataspecer/core/project-model";
+
+export function isSemanticModelType(modelType: string): boolean {
+  return [LOCAL_SEMANTIC_MODEL, V1.CIM, V1.PIM, QUERYABLE_MODEL, RDFS_MODEL].includes(modelType);
+}
 
 /**
  * Model types for which there is no editing support at all, regardless of any
@@ -21,21 +19,22 @@ function isAlwaysReadOnlyModelType(modelType: string): boolean {
   return modelType === QUERYABLE_MODEL || modelType === RDFS_MODEL;
 }
 
-function isHierarchySemanticModelType(modelType: string): boolean {
-  return modelType === LOCAL_SEMANTIC_MODEL || modelType === QUERYABLE_MODEL || modelType === RDFS_MODEL;
-}
-
 /**
  * Builds the model hierarchy for a project: one {@link ModelHierarchyEntity}
- * per semantic model that is reachable from the root package's model
- * composition, describing its kind and how it links to other models.
+ * per reachable semantic model and package, describing dependencies and
+ * the models exposed by each package.
  *
  * @param mainProjectModelId ID of the root package of the project.
  * @param allModels Current state of every model in the project (as read from
  * the model store), including the virtual project model itself.
+ * @param forcePassThrough Enables pass-through for the root package's application profile.
  */
-export function buildModelHierarchy(mainProjectModelId: ModelIdentifier, allModels: Record<ModelIdentifier, EntityRecord>): EntityRecord<ModelHierarchyEntity> {
-  return new ModelHierarchyBuilder(mainProjectModelId, allModels).build();
+export function buildModelHierarchy(
+  mainProjectModelId: ModelIdentifier,
+  allModels: Record<ModelIdentifier, EntityRecord>,
+  forcePassThrough = false,
+): EntityRecord<ModelHierarchyEntity> {
+  return new ModelHierarchyBuilder(mainProjectModelId, allModels, forcePassThrough).build();
 }
 
 /**
@@ -75,15 +74,10 @@ class ModelHierarchyBuilder {
   private readonly rootChildIds: Set<ModelIdentifier>;
 
   private readonly result: EntityRecord<ModelHierarchyEntity> = {};
+  private readonly usedModels = new Set<ModelIdentifier>();
+  private readonly applicationProfileIds = new Set<ModelIdentifier>();
 
-  /**
-   * Ids of models already resolved somewhere in the tree, so that a "merge
-   * all" does not also pick up a model that was already explicitly
-   * referenced (e.g. an application profile's own model).
-   */
-  private readonly usedModels: Set<ModelIdentifier> = new Set();
-
-  constructor(mainProjectModelId: ModelIdentifier, allModels: Record<ModelIdentifier, EntityRecord>) {
+  constructor(mainProjectModelId: ModelIdentifier, allModels: Record<ModelIdentifier, EntityRecord>, private readonly forcePassThrough: boolean) {
     this.mainProjectModelId = mainProjectModelId;
     this.allModels = allModels;
 
@@ -112,10 +106,15 @@ class ModelHierarchyBuilder {
       throw new Error(`Package '${packageId}' not found in project model.`);
     }
 
-    const rootModel = this.allModels[packageId]?.[packageId] as unknown as Record<string, unknown> | undefined;
-    const explicitConfiguration = rootModel?.modelCompositionConfiguration as ModelCompositionConfiguration | undefined;
+    const rootModel = this.allModels[packageId]?.[packageId] as (Entity & {
+      modelCompositionConfiguration?: ModelCompositionConfiguration;
+    }) | undefined;
+    const explicitConfiguration = rootModel?.modelCompositionConfiguration;
 
     if (explicitConfiguration) {
+      if (typeof explicitConfiguration !== "string" && explicitConfiguration.modelType === "application-profile" && packageId === this.mainProjectModelId && this.forcePassThrough) {
+        return { ...explicitConfiguration, allowPassThrough: true } as ModelCompositionConfigurationApplicationProfile;
+      }
       return explicitConfiguration;
     }
 
@@ -125,12 +124,8 @@ class ModelHierarchyBuilder {
       return subModel && subModel.id.endsWith("/profile");
     });
 
-    /**
-     * Hack: We want profiled specification to be less strict regarding the
-     * passing of other non-profiled entities, therefore we use the (i) profile
-     * and its (ii) profiles in merge to allow (ii) profiles to pass.
-     */
-    const isSubSpecification = packageId !== this.mainProjectModelId;
+    // Nested packages also expose entities from their profiled models.
+    const allowPassThrough = packageId !== this.mainProjectModelId || this.forcePassThrough;
 
     if (hasProfile) {
       return {
@@ -140,8 +135,8 @@ class ModelHierarchyBuilder {
         canAddEntities: true,
         canModify: true,
 
-        allowPassThrough: isSubSpecification,
-      } as unknown as ModelCompositionConfigurationApplicationProfile;
+        allowPassThrough,
+      } as ModelCompositionConfigurationApplicationProfile;
     }
 
     return { modelType: "merge", models: null } as ModelCompositionConfigurationMerge;
@@ -165,7 +160,7 @@ class ModelHierarchyBuilder {
     for (const subModelId of packageEntity.subModels) {
       const subModel = this.projectModel[subModelId] as ProjectModelEntity | undefined;
       if (subModel) {
-        if (isHierarchySemanticModelType(subModel.modelType)) {
+        if (isSemanticModelType(subModel.modelType)) {
           semanticModels.push(subModel.id);
         } else if (subModel.modelType === LOCAL_PACKAGE) {
           subPackages.push(subModel.id);
@@ -176,82 +171,66 @@ class ModelHierarchyBuilder {
     return { semanticModels, subPackages };
   }
 
-  /**
-   * Resolves a single model/package reference to the flat list of semantic
-   * model ids it ultimately stands for, emitting a hierarchy entity for any
-   * semantic model encountered along the way.
-   */
   private resolveModelReference(modelId: ModelIdentifier): ModelIdentifier[] {
     this.usedModels.add(modelId);
-    const entity = this.projectModel[modelId] as ProjectModelEntity | undefined;
-
+    const entity = this.projectModel[modelId];
     if (entity?.modelType === LOCAL_PACKAGE) {
-      // It's a package, recurse
-      const configuration = this.getCompositionConfiguration(modelId);
-      return this.resolveConfiguration(modelId, configuration);
+      const specification = this.result[modelId];
+      if (isSpecificationHierarchyEntity(specification)) {
+        return specification.applicationProfile === null
+          ? specification.vocabularies
+          : [specification.applicationProfile, ...specification.vocabularies];
+      }
+      const roots = this.resolveConfiguration(modelId, this.getCompositionConfiguration(modelId));
+      const applicationProfiles = roots.filter((id) => this.applicationProfileIds.has(id));
+      this.result[modelId] = {
+        id: modelId,
+        type: [MODEL_HIERARCHY_SPECIFICATION],
+        modelType: entity.modelType,
+        label: entity.label,
+        projectId: entity.projectId,
+        vocabularies: [...new Set(roots.filter((id) => !this.applicationProfileIds.has(id)))],
+        applicationProfile: applicationProfiles[0] ?? null,
+      };
+      return roots;
     }
-
-    // It's a semantic model
     this.emitVocabulary(modelId);
     return [modelId];
   }
 
-  /**
-   * Resolves a composition configuration to the flat list of semantic model
-   * ids it ultimately stands for.
-   */
   private resolveConfiguration(packageId: ModelIdentifier, configuration: ModelCompositionConfiguration): ModelIdentifier[] {
     if (typeof configuration === "string") {
-      // Single model reference
       return this.resolveModelReference(configuration);
     } else if (configuration.modelType === "application-profile") {
-      // Application profile configuration
       const profileConfig = configuration as ModelCompositionConfigurationApplicationProfile;
-      const profileModelId = profileConfig.model as string;
+      const profileModelId = profileConfig.model as ModelIdentifier;
       this.usedModels.add(profileModelId);
-
+      this.applicationProfileIds.add(profileModelId);
       const profiles = this.resolveConfiguration(packageId, profileConfig.profiles);
-      const passThrough = profileConfig.allowPassThrough ?? false;
-
-      this.emitApplicationProfile(profileModelId, profiles, profileConfig.canModify ?? true, passThrough);
-
-      return passThrough ? [profileModelId, ...profiles] : [profileModelId];
+      this.emitApplicationProfile(profileModelId, profiles, profileConfig);
+      return [profileModelId];
     } else if (configuration.modelType === "merge") {
-      // Merge configuration
       const mergeConfig = configuration as ModelCompositionConfigurationMerge;
-
-      if (!mergeConfig.models) {
-        // Use all models in the package
-        return this.resolveMergeAllModels(packageId);
-      } else {
-        // Build from explicit model list
-        return mergeConfig.models.flatMap((modelRef) => this.resolveConfiguration(packageId, modelRef.model));
+      const models = !mergeConfig.models
+        ? this.resolveMergeAllModels(packageId)
+        : mergeConfig.models.flatMap((modelRef) => this.resolveConfiguration(packageId, modelRef.model));
+      const applicationProfiles = new Set(models.filter((id) => this.applicationProfileIds.has(id)));
+      if (applicationProfiles.size > 1) {
+        throw new Error(`Package '${packageId}' cannot merge multiple application profiles: ${[...applicationProfiles].join(", ")}.`);
       }
-    } else {
-      throw new Error(`Unsupported model composition type: ${(configuration as { modelType: string }).modelType}`);
+      return models;
     }
+    throw new Error(`Unsupported model composition type: ${configuration.modelType}`);
   }
 
-  /**
-   * Resolve merge from all models in a package (excluding already used models)
-   */
   private resolveMergeAllModels(packageId: ModelIdentifier): ModelIdentifier[] {
     const { semanticModels, subPackages } = this.getPackageContents(packageId);
-
     const resolved: ModelIdentifier[] = [];
-
-    for (const modelId of semanticModels) {
+    for (const modelId of [...semanticModels, ...subPackages]) {
       if (!this.usedModels.has(modelId)) {
         resolved.push(...this.resolveModelReference(modelId));
       }
     }
-
-    for (const subPackageId of subPackages) {
-      if (!this.usedModels.has(subPackageId)) {
-        resolved.push(...this.resolveModelReference(subPackageId));
-      }
-    }
-
     return resolved;
   }
 
@@ -288,7 +267,7 @@ class ModelHierarchyBuilder {
     };
   }
 
-  private emitApplicationProfile(modelId: ModelIdentifier, profiles: ModelIdentifier[], writable: boolean, passThrough: boolean): void {
+  private emitApplicationProfile(modelId: ModelIdentifier, profiles: ModelIdentifier[], configuration: ModelCompositionConfigurationApplicationProfile): void {
     if (this.result[modelId]) {
       return;
     }
@@ -306,9 +285,11 @@ class ModelHierarchyBuilder {
       modelType: modelEntity.modelType,
       label: modelEntity.label,
       projectId: modelEntity.projectId,
-      writable: writable && this.isOwnModel(modelEntity),
+      writable: (configuration.canModify ?? true) && this.isOwnModel(modelEntity),
+      canAddEntities: configuration.canAddEntities ?? true,
+      canModify: configuration.canModify ?? true,
       profiles,
-      passThrough,
+      passThrough: configuration.allowPassThrough ?? false,
     };
   }
 }

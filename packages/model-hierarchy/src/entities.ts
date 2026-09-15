@@ -4,17 +4,16 @@ import type { ModelIdentifier } from "@dataspecer/core/model";
 
 export const MODEL_HIERARCHY_VOCABULARY = "vocabulary";
 export const MODEL_HIERARCHY_APPLICATION_PROFILE = "application-profile";
+export const MODEL_HIERARCHY_SPECIFICATION = "specification";
 
 /**
- * A node in model hierarchy tree that represents a model. This model can be a
- * vocabulary, application profile or other helper models such as imported RDFS
- * Vocabulary.
+ * A hierarchy entity representing a semantic model or a package.
  *
  * ID of such entity matches ID of the represented model.
  */
 interface BaseModelHierarchyEntity extends Entity {
   /**
-   * Same id as the semantic model in the project that this entity represents.
+   * Identifier of the represented model or package.
    */
   id: ModelIdentifier;
 
@@ -85,8 +84,19 @@ export interface ApplicationProfileHierarchyEntity extends BaseModelHierarchyEnt
   writable: boolean;
 
   /**
+   * Whether the aggregator can create entities in this profile.
+   */
+  canAddEntities: boolean;
+
+  /**
+   * Whether the aggregator can modify entities in this profile.
+   */
+  canModify: boolean;
+
+  /**
    * IDs of the other models in the hierarchy that this application profile
-   * profiles/uses.
+   * profiles/uses, in merge order. Each referenced model applies its own
+   * pass-through setting; its dependencies are not expanded into this array.
    */
   profiles: ModelIdentifier[];
 
@@ -97,12 +107,37 @@ export interface ApplicationProfileHierarchyEntity extends BaseModelHierarchyEnt
   passThrough: boolean;
 }
 
-export type ModelHierarchyEntity = VocabularyHierarchyEntity | ApplicationProfileHierarchyEntity;
+/**
+ * This represents a specification - the end product that data modeller exposes
+ * to the world. Specification defines vocabularies, application profiles and
+ * structure models.
+ */
+export interface SpecificationHierarchyEntity extends BaseModelHierarchyEntity {
+  type: [typeof MODEL_HIERARCHY_SPECIFICATION];
 
-export function isVocabularyHierarchyEntity(entity: Entity | null | undefined): entity is ApplicationProfileHierarchyEntity {
+  /**
+   * Vocabulary identifiers in merge order, exposed alongside the profile.
+   */
+  vocabularies: ModelIdentifier[];
+
+  /**
+   * The exposed application profile, or null for a vocabulary-only package.
+   */
+  applicationProfile: ModelIdentifier | null;
+
+  // todo: list of structure models as a future work
+}
+
+export type ModelHierarchyEntity = VocabularyHierarchyEntity | ApplicationProfileHierarchyEntity | SpecificationHierarchyEntity;
+
+export function isVocabularyHierarchyEntity(entity: Entity | null | undefined): entity is VocabularyHierarchyEntity {
   return entity?.type.includes(MODEL_HIERARCHY_VOCABULARY) ?? false;
 }
 
 export function isApplicationProfileHierarchyEntity(entity: Entity | null | undefined): entity is ApplicationProfileHierarchyEntity {
   return entity?.type.includes(MODEL_HIERARCHY_APPLICATION_PROFILE) ?? false;
+}
+
+export function isSpecificationHierarchyEntity(entity: Entity | null | undefined): entity is SpecificationHierarchyEntity {
+  return entity?.type.includes(MODEL_HIERARCHY_SPECIFICATION) ?? false;
 }

@@ -5,7 +5,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc -w",
-    "prebuild": "node -e \"fs.rmSync('lib', { recursive: true, force: true })\""
+    "prebuild": "node -e \"fs.rmSync('lib', { recursive: true, force: true })\"",
+    "test": "vitest run src"
   },
   "exports": {
     ".": "./lib/index.js",
@@ -30,6 +31,7 @@
     "@dataspecer/json-example": "*",
     "@dataspecer/generators": "^0.0.0",
     "@dataspecer/lightweight-owl": "*",
+    "@dataspecer/model-hierarchy": "*",
     "@dataspecer/model-store": "*",
     "@dataspecer/openapi": "*",
     "@dataspecer/rdfs-adapter": "*",
@@ -44,6 +46,7 @@
     "@dataspecer/xml": "*"
   },
   "devDependencies": {
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
   }
 }

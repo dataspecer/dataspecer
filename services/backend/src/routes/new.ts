@@ -6,7 +6,7 @@ import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { createUpdateEntityOperation, type OperationInModel } from "@dataspecer/core/operation";
 import { createWritableInMemoryProfileModel, isSemanticModelClassProfile, isSemanticModelRelationshipProfile, SemanticProfileModelOperations } from "@dataspecer/profile-model";
 import { createCreateModelOperation, createCreateProjectOperation, createRemoveModelOperation, type ProjectModelEntity } from "@dataspecer/core/project-model";
-import { ModelCompositionConfigurationApplicationProfile, type ModelCompositionConfigurationMerge } from "@dataspecer/specification/model-hierarchy";
+import type { ModelCompositionConfigurationApplicationProfile, ModelCompositionConfigurationMerge } from "@dataspecer/model-hierarchy";
 import { createStructureProfile } from "@dataspecer/structure-model/profile";
 import { createSetLabelOperation } from "@dataspecer/visual-model";
 import { type Request, type Response } from "express";
