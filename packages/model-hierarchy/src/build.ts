@@ -1,3 +1,4 @@
+import { isModelProfile, isSemanticModelClassProfile, isSemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import type { Entity, EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
@@ -40,9 +41,8 @@ export function buildModelHierarchy(
 /**
  * Whether any of the given entity changes could affect the result of
  * {@link buildModelHierarchy}. Used to avoid recomputing the hierarchy for
- * every entity change in every model - only the project model's structure and
- * each model's own main entity (e.g. its `modelCompositionConfiguration`) are
- * ever actually read by the builder.
+ * every entity change. Package structure, composition settings and the presence
+ * of class or relationship profiles determine the hierarchy.
  */
 export function isModelHierarchyRelevantChange(entityChanges: Record<ModelIdentifier, EntityChange[]>): boolean {
   for (const [modelId, changes] of Object.entries(entityChanges)) {
@@ -52,10 +52,11 @@ export function isModelHierarchyRelevantChange(entityChanges: Record<ModelIdenti
     if (modelId === PROJECT_MODEL_ID) {
       return true;
     }
-    // Only a change to the model's own main entity (e.g. its
-    // modelCompositionConfiguration) can affect the hierarchy - changes to
-    // regular content entities (classes, relationships, ...) cannot.
     if (changes.some((change) => (change.next ?? change.previous)?.id === modelId)) {
+      return true;
+    }
+    if (changes.some((change) => [change.previous, change.next].some((entity) =>
+      entity && (isSemanticModelClassProfile(entity) || isSemanticModelRelationshipProfile(entity))))) {
       return true;
     }
   }
@@ -98,7 +99,7 @@ class ModelHierarchyBuilder {
 
   /**
    * Get the composition configuration for a package.
-   * If not explicitly defined, generates a default one based on presence of /profile model
+   * If not explicitly defined, derives it from the contained models.
    */
   private getCompositionConfiguration(packageId: ModelIdentifier): ModelCompositionConfiguration {
     const packageEntity = this.projectModel[packageId] as PackageEntity | undefined;
@@ -118,19 +119,23 @@ class ModelHierarchyBuilder {
       return explicitConfiguration;
     }
 
-    // Generate default configuration
-    const hasProfile = packageEntity.subModels.some((subModelId) => {
-      const subModel = this.projectModel[subModelId] as ProjectModelEntity | undefined;
-      return subModel && subModel.id.endsWith("/profile");
+    const profileModelIds = packageEntity.subModels.filter((modelId) => {
+      const model = this.projectModel[modelId];
+      const entities = this.allModels[modelId];
+      return model && isSemanticModelType(model.modelType) && entities && isModelProfile(entities);
     });
+    if (profileModelIds.length > 1) {
+      throw new Error(`Package '${packageId}' cannot merge multiple application profiles: ${profileModelIds.join(", ")}.`);
+    }
+    const profileModelId = profileModelIds[0];
 
     // Nested packages also expose entities from their profiled models.
     const allowPassThrough = packageId !== this.mainProjectModelId || this.forcePassThrough;
 
-    if (hasProfile) {
+    if (profileModelId !== undefined) {
       return {
         modelType: "application-profile",
-        model: packageId + "/profile",
+        model: profileModelId,
         profiles: { modelType: "merge", models: null },
         canAddEntities: true,
         canModify: true,

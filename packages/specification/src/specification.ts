@@ -1,3 +1,4 @@
+import { isModelProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, V1, RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship, SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
 import { withAbsoluteIri } from "@dataspecer/core-v2/semantic-model/utils";
@@ -31,7 +32,6 @@ import {
   generateLightweightOwl,
   generateShaclApplicationProfile,
   getIdToIriMapping,
-  isModelProfile,
   isModelVocabulary,
 } from "./utils.ts";
 import { artefactToDsv } from "./v1/artefact-to-dsv.ts";
