@@ -6,6 +6,7 @@ import {
   SemanticModelEntity
 } from "@dataspecer/core-v2/semantic-model/concepts";
 import { DataTypeURIs, isDataType } from "@dataspecer/core-v2/semantic-model/datatypes";
+import { isModelProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { createRdfsModel } from "@dataspecer/core-v2/semantic-model/simplified";
 import { PimStoreWrapper, serializationToPimModelEntities } from "@dataspecer/core-v2/semantic-model/v1-adapters";
 import type { CoreResource } from "@dataspecer/core/core/core-resource";
@@ -296,6 +297,21 @@ function splitIri(iri: string | null | undefined): [string, string] {
  * import.
  */
 async function importRdfsAndDsv(repository: ModelRepositoryType, parentIri: string, rdfsUrl: string | null, dsvUrl: string | null, userMetadata: any, allImportedEntities: SemanticModelEntity[], touchedModelIds?: Set<string>) {
+  const existingPackage = await repository.getPackage(parentIri);
+  let vocabularyModelId: string | undefined;
+  let profileModelId: string | undefined;
+  for (const model of existingPackage?.subResources ?? []) {
+    if (!model.types.includes(LOCAL_SEMANTIC_MODEL)) {
+      continue;
+    }
+    const entities = await repository.getModelEntities(model.iri);
+    if (isModelProfile(entities ?? {})) {
+      profileModelId ??= model.iri;
+    } else {
+      vocabularyModelId ??= model.iri;
+    }
+  }
+
   async function createModelFromEntities(entities: SemanticModelEntity[], id: string, userMetadata: any) {
     await ensureResource(repository, parentIri, id, LOCAL_SEMANTIC_MODEL, userMetadata);
     touchedModelIds?.add(id);
@@ -387,7 +403,7 @@ async function importRdfsAndDsv(repository: ModelRepositoryType, parentIri: stri
   }
   allImportedEntities.push(...vocabularyEntities.map((e) => ({ ...e }))); // We need to clone because the following function modifies iris
   if (vocabularyEntities.length > 0) {
-    await createModelFromEntities(vocabularyEntities, parentIri + "/" + "vocabulary", userMetadata);
+    await createModelFromEntities(vocabularyEntities, vocabularyModelId ?? uuidv4(), userMetadata);
   }
 
   // DSV
@@ -412,7 +428,7 @@ async function importRdfsAndDsv(repository: ModelRepositoryType, parentIri: stri
     profileEntities = dsvResult.entities as SemanticModelEntity[];
   }
   if (profileEntities.length > 0) {
-    await createModelFromEntities(profileEntities, parentIri + "/" + "profile", userMetadata);
+    await createModelFromEntities(profileEntities, profileModelId ?? uuidv4(), userMetadata);
   }
 }
 
@@ -427,7 +443,7 @@ async function dsvImport(repository: ModelRepositoryType, store: N3.Store, url: 
 
   // Create or reuse package
 
-  const rootPackageId = existingPackageIri ?? parentIri + "/" + uuidv4();
+  const rootPackageId = existingPackageIri ?? uuidv4();
   touchedModelIds?.add(rootPackageId);
 
   await ensurePackage(repository, parentIri, rootPackageId, {
@@ -455,13 +471,15 @@ async function dsvImport(repository: ModelRepositoryType, store: N3.Store, url: 
       rootHref = rootHref.substring(0, rootHref.length - 3);
     }
 
-    await ensureResource(repository, rootPackageId, rootPackageId + "/generator-configuration", V1.GENERATOR_CONFIGURATION, {});
-    touchedModelIds?.add(rootPackageId + "/generator-configuration");
+    const existingPackage = await repository.getPackage(rootPackageId);
+    const configurationModelId = existingPackage?.subResources?.find((model) => model.types.includes(V1.GENERATOR_CONFIGURATION))?.iri ?? uuidv4();
+    await ensureResource(repository, rootPackageId, configurationModelId, V1.GENERATOR_CONFIGURATION, {});
+    touchedModelIds?.add(configurationModelId);
     const configuration = DataSpecificationConfigurator.setToObject(configurationModel, {
       ...DataSpecificationConfigurator.getFromObject(configurationModel),
       publicBaseUrl: rootHref,
     });
-    await repository.setModelJson(rootPackageId + "/generator-configuration", configuration);
+    await repository.setModelJson(configurationModelId, configuration);
   }
 
   // Identify important resources to import
@@ -542,7 +560,7 @@ async function dsvImport(repository: ModelRepositoryType, store: N3.Store, url: 
       claimedExistingIris.add(existingMatchIri);
     }
 
-    const targetIri = existingMatchIri ?? rootPackageId + "/" + uuidv4();
+    const targetIri = existingMatchIri ?? uuidv4();
     touchedModelIds?.add(targetIri);
     const name = deriveNameFromUrl(profile.url);
     const e = await persistRdfsModel(repository, rootPackageId, wrapper, targetIri, {
@@ -613,7 +631,7 @@ export async function importFromUrl(
   } else {
     const name = deriveNameFromUrl(url);
 
-    const newIri = existingIri ?? parentIri + "/" + uuidv4();
+    const newIri = existingIri ?? uuidv4();
     touchedModelIds?.add(newIri);
     return [
       null,
