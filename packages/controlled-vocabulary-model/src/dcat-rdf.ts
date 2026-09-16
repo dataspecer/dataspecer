@@ -35,6 +35,15 @@ const SHACL = {
 };
 
 /**
+ * Mints the IRI of the DCAT catalog of controlled vocabularies owned by a
+ * given package, within a project whose specifications are published under
+ * `baseIri`.
+ */
+export function controlledVocabularyCatalogIri(baseIri: string, packageId: string): string {
+  return `${baseIri}controlled-vocabulary-catalog/${encodeURIComponent(packageId)}`;
+}
+
+/**
  * Mints a stable IRI for a vocabulary's DCAT dataset record within a given
  * catalog. Used as a fallback when the vocabulary has no `iri` of its own
  * yet (i.e. it has never been exported/imported before).
