@@ -53,16 +53,16 @@ export function controlledVocabularyDatasetIri(catalogIri: string, vocabularyId:
 }
 
 /**
- * Writes the dcat:Dataset triples (and their dcat:Distribution blank nodes)
- * for a set of vocabularies onto an existing writer - does not write the
- * catalog's own rdf:type triple or finalize the writer, so callers can merge
- * this into a larger document (e.g. dsv.ttl) before serializing.
+ * Writes controlled vocabulary models as DCAT datasets of the given DCAT catalog
+ * uses an existing writer - does not finalize the writer, so callers can merge this
+ * into a larger document (e.g. dsv.ttl) before serializing.
  */
 export function writeControlledVocabularyCatalogQuads(
   writer: N3.Writer,
   catalogIri: string,
   vocabularies: ControlledVocabulary[],
 ): void {
+  writer.addQuad(IRI(catalogIri), RDF.type, DCAT.Catalog);
   for (const vocabulary of vocabularies) {
     const datasetIri = IRI(vocabulary.iri ?? controlledVocabularyDatasetIri(catalogIri, vocabulary.id));
     writer.addQuad(IRI(catalogIri), DCAT.dataset, datasetIri);
@@ -112,7 +112,6 @@ export function controlledVocabulariesToDcatCatalog(
     },
   });
 
-  writer.addQuad(IRI(catalogIri), RDF.type, DCAT.Catalog);
   writeControlledVocabularyCatalogQuads(writer, catalogIri, vocabularies);
 
   return new Promise((resolve, reject) => {

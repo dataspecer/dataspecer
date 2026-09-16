@@ -9,6 +9,8 @@ import { DataTypeURIs, isPrimitiveType } from "@dataspecer/core-v2/semantic-mode
 import { isSemanticModelClass, isSemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
 import type { Qualifier } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { DSV_USAGE_EXPECTATION } from "./vocabulary.ts";
+import { parseControlledVocabularyCatalog, type ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
+import * as N3 from "n3";
 
 test("Round-trips every Cardinality, ClassRole, and RequirementLevel value through RDF.", async () => {
 
@@ -47,6 +49,43 @@ test("Round-trips every Cardinality, ClassRole, and RequirementLevel value throu
   const parsedModels = await rdfToDsv(rdf);
   expect(parsedModels).toHaveLength(1);
   expect(parsedModels[0]).toStrictEqual(model);
+});
+
+test("Embeds a DCAT catalog of controlled vocabularies in the output when given some, and it round-trips.", async () => {
+  const model = createDefaultApplicationProfileBuilder({ iri: "http://example.com/model" }).build();
+  const catalogIri = "http://example.com/model/controlled-vocabulary-catalog";
+  const vocabulary: ControlledVocabulary = {
+    id: "voc-1", type: ["controlled-vocabulary"],
+    title: "Dublin Core", pattern: "", references: "http://purl.org/dc/terms/",
+    documentation: "https://www.dublincore.org/terms/",
+    distribution: { downloadUrl: "https://www.dublincore.org/terms.rdf", accessUrl: "" },
+    iri: null,
+  };
+
+  const rdf = await dsvToRdf(model, {
+    controlledVocabularies: [vocabulary],
+    controlledVocabularyCatalogIri: catalogIri,
+  });
+
+  expect(rdf).toContain("dcat:Catalog");
+  expect(rdf).toContain("@prefix dcat:");
+  expect(rdf).toContain("@prefix sh:");
+
+  const quads = new N3.Parser().parse(rdf);
+  const parsedVocabularies = parseControlledVocabularyCatalog(quads);
+  expect(parsedVocabularies).toHaveLength(1);
+  expect(parsedVocabularies[0]!.title).toBe(vocabulary.title);
+  expect(parsedVocabularies[0]!.references).toBe(vocabulary.references);
+});
+
+test("Writes no catalog and no dcat/sh prefixes when there are no controlled vocabularies to embed.", async () => {
+  const model = createDefaultApplicationProfileBuilder({ iri: "http://example.com/model" }).build();
+
+  const rdf = await dsvToRdf(model, {});
+
+  expect(rdf).not.toContain("dcat:Catalog");
+  expect(rdf).not.toContain("@prefix dcat:");
+  expect(rdf).not.toContain("@prefix sh:");
 });
 
 test("Regression test.", async () => {

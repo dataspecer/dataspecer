@@ -373,6 +373,18 @@ export async function generateSpecification(packageId: string, context: Generate
     controlledVocabularyCatalogIris.set(cvModelId, controlledVocabularyCatalogIri(baseIri, ownerPackageId));
   }
 
+  // The catalog this specification's own dsv.ttl embeds - only the CVs it
+  // directly owns, mirroring how it never duplicates a nested specification's
+  // own class profiles either. Other CVs it references (owned by a nested
+  // specification) are resolved via controlledVocabularyCatalogIris above,
+  // but described in full only in that nested specification's own dsv.ttl -
+  // or, project-wide, in the standalone controlled_vocabulary_catalog.ttl.
+  const ownCatalogIri = controlledVocabularyCatalogIri(baseIri, packageId);
+  const vocabulariesToEmbed = Array.from(controlledVocabularyOwningPackage.entries())
+    .filter(([, ownerPackageId]) => ownerPackageId === packageId)
+    .map(([cvModelId]) => allModels[cvModelId]?.[cvModelId] as ControlledVocabulary | undefined)
+    .filter((vocabulary): vocabulary is ControlledVocabulary => vocabulary !== undefined);
+
   /**
    * Whether we are generating in the "production mode" or in the "preview
    * mode". In the production mode, we want to use relative IRIs in order to
@@ -523,7 +535,10 @@ export async function generateSpecification(packageId: string, context: Generate
 
       // Serialize the model in DSV
 
-      const dsv = await generateDsvApplicationProfile([model], modelDescriptions, modelIri, controlledVocabularyCatalogIris);
+      const dsv = await generateDsvApplicationProfile(
+        [model], modelDescriptions, modelIri,
+        controlledVocabularyCatalogIris, vocabulariesToEmbed, ownCatalogIri,
+      );
       idToIriMapping = {
         ...idToIriMapping,
         ...(await getIdToIriMapping([model])),
@@ -664,10 +679,9 @@ export async function generateSpecification(packageId: string, context: Generate
 
   // Write a DCAT catalog of every controlled vocabulary in the project
   {
-    const iri = controlledVocabularyCatalogIri(baseIri, packageId);
     const fileName = "controlled_vocabulary_catalog.ttl";
     const url = baseUrl + fileName + queryParams;
-    const wrote = await writeDcatCatalog(projectModel, allModels, writeFile, fileName, iri);
+    const wrote = await writeDcatCatalog(projectModel, allModels, writeFile, fileName, ownCatalogIri);
     if (wrote) {
       const descriptor = {
         iri: null,
