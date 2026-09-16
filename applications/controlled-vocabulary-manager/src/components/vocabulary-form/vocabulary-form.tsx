@@ -78,7 +78,10 @@ export function VocabularyForm({
       return
     }
 
-    // Transform form values to the controlled vocabulary domain object
+    // Transform form values to the controlled vocabulary domain object.
+    // Authoring/editing through this form always makes it a locally-authored
+    // vocabulary, so its iri (if it had one from an import) is reset to null -
+    // a fresh one is generated on the next DSV export.
     const vocabulary: Omit<ControlledVocabulary, 'id' | 'type'> = {
       title: values.title,
       references: values.references,
@@ -88,6 +91,7 @@ export function VocabularyForm({
         downloadUrl: values.downloadUrl,
         accessUrl: values.downloadUrl,
       },
+      iri: null,
     }
     onConfirm(vocabulary)
   }

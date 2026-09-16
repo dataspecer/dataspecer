@@ -17,6 +17,12 @@ export interface ControlledVocabulary extends Entity {
   references: string;
   documentation: string;
   distribution: ControlledVocabularyDistribution;
+
+  /**
+   * Stored/imported IRI of this CV's DCAT catalog dataset record, or null
+   * to generate one deterministically on DSV export.
+   */
+  iri: string | null;
 }
 
 /**
@@ -48,4 +54,5 @@ export const DEFAULT_CONTROLLED_VOCABULARY: Omit<ControlledVocabulary, "id"> = {
     downloadUrl: "",
     accessUrl: "",
   },
+  iri: null,
 };
