@@ -14,7 +14,7 @@ import {
 import { mergeEntityListContainers, toEntityListContainer } from "./entity-list-container-builder.ts";
 import { EntityListContainer } from "./entity-model.ts";
 import { CONTROLLED_VOCABULARY_ASSIGNMENT } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { CONTROLLED_VOCABULARY_TYPE } from "@dataspecer/controlled-vocabulary-model";
+import { CONTROLLED_VOCABULARY_TYPE, controlledVocabularyDatasetIri } from "@dataspecer/controlled-vocabulary-model";
 
 /**
  * The profile-model builder used elsewhere in this file has no support
@@ -25,8 +25,10 @@ import { CONTROLLED_VOCABULARY_TYPE } from "@dataspecer/controlled-vocabulary-mo
 const CONTROLLED_VOCABULARY = {
     id: "voc-1", type: [CONTROLLED_VOCABULARY_TYPE],
     title: "Test Vocab", pattern: "", references: "http://vocab.example.com/scheme",
-    documentation: "", distribution: { downloadUrl: "", accessUrl: "" },
+    documentation: "", distribution: { downloadUrl: "", accessUrl: "" }, iri: null,
 } as any;
+
+const CV_CATALOG_IRI = "http://example.com/catalog";
 
 function controlledVocabularyAssignmentEntity(overrides: Record<string, unknown>) {
     return {
@@ -752,7 +754,7 @@ test("Resolves a relative IRI against an empty string when the container has no 
     expect(actual.classProfiles[0]?.iri).toBe("relativeClass");
 });
 
-test("Controlled vocabulary assignment: no stored iri, generated iri references the vocabulary's iri.", () => {
+test("Controlled vocabulary assignment: no stored assignment iri, generated iri references the vocabulary's dataset iri.", () => {
     const profile = createDefaultProfileModelBuilder({ baseIdentifier: "p#", baseIri: null });
     profile.class({ id: "class-1", iri: "http://example.com/class-1", controlledVocabularies: ["cv-1"] });
     const container = mergeEntityListContainers(
@@ -760,12 +762,12 @@ test("Controlled vocabulary assignment: no stored iri, generated iri references 
         { baseIri: null, entities: [CONTROLLED_VOCABULARY, controlledVocabularyAssignmentEntity({})] },
     );
 
-    const context = createContext([container]);
+    const context = createContext([container], new Map([[CONTROLLED_VOCABULARY.id, CV_CATALOG_IRI]]));
     const actual = entityListContainerToDsvModel("http://example.com/", container, context);
 
     const assignments = actual.classProfiles[0]!.controlledVocabularyAssignments;
     expect(assignments).toHaveLength(1);
-    expect(assignments[0]!.controlledVocabularyIri).toBe("http://vocab.example.com/scheme");
+    expect(assignments[0]!.controlledVocabularyIri).toBe(controlledVocabularyDatasetIri(CV_CATALOG_IRI, CONTROLLED_VOCABULARY.id));
     expect(assignments[0]!.usageExpectationIri).toContain("must");
     expect(assignments[0]!.replacesIri).toBeNull();
     expect(assignments[0]!.iri).toContain("http://example.com/class-1/controlled-vocabulary-assignment");
@@ -881,9 +883,44 @@ test("Controlled vocabulary assignment: an id that does not resolve to an assign
     expect(actual.classProfiles[0]!.controlledVocabularyAssignments).toStrictEqual([]);
 });
 
-test("entityToIri resolves a ControlledVocabulary entity via its references field.", () => {
+test("entityToIri mints a ControlledVocabulary's dataset iri, scoped to the catalog it is a member of - not its references field.", () => {
     const container: EntityListContainer = { baseIri: null, entities: [CONTROLLED_VOCABULARY] };
-    const context = createContext([container]);
+    const context = createContext([container], new Map([[CONTROLLED_VOCABULARY.id, CV_CATALOG_IRI]]));
 
-    expect(context.entityToIri(container.entities[0]!)).toBe("http://vocab.example.com/scheme");
+    const iri = context.entityToIri(container.entities[0]!);
+    expect(iri).toBe(controlledVocabularyDatasetIri(CV_CATALOG_IRI, CONTROLLED_VOCABULARY.id));
+    expect(iri).not.toBe(CONTROLLED_VOCABULARY.references);
+});
+
+test("entityToIri reuses a ControlledVocabulary's own stored iri instead of minting one, even when a catalog iri is available.", () => {
+    const imported = { ...CONTROLLED_VOCABULARY, iri: "http://other-catalog.example.com/dataset/imported-cv" };
+    const container: EntityListContainer = { baseIri: null, entities: [imported] };
+    const context = createContext([container], new Map([[imported.id, CV_CATALOG_IRI]]));
+
+    expect(context.entityToIri(container.entities[0]!)).toBe(imported.iri);
+});
+
+test("entityToIri resolves a ControlledVocabulary owned by one package's catalog even when referenced from a different container's profile.", () => {
+    const nestedCatalogIri = "http://nested.example.com/catalog";
+    const cvContainer: EntityListContainer = { baseIri: "http://nested.example.com/", entities: [CONTROLLED_VOCABULARY] };
+
+    const profile = createDefaultProfileModelBuilder({ baseIdentifier: "p#", baseIri: "http://top-level.example.com/" });
+    profile.class({ id: "class-1", iri: "http://top-level.example.com/class-1", controlledVocabularies: ["cv-1"] });
+    const profileContainer = mergeEntityListContainers(
+        toEntityListContainer(profile.build()),
+        { baseIri: "http://top-level.example.com/", entities: [controlledVocabularyAssignmentEntity({})] },
+    );
+
+    // The CV is owned by (and its dataset iri scoped to) the nested package's
+    // own catalog - distinct from the top-level profile's own catalog -
+    // demonstrating that a reference crossing this boundary stays correct
+    // regardless of which container is doing the referencing.
+    const context = createContext(
+        [cvContainer, profileContainer],
+        new Map([[CONTROLLED_VOCABULARY.id, nestedCatalogIri]]),
+    );
+    const actual = entityListContainerToDsvModel("http://top-level.example.com/", profileContainer, context);
+
+    expect(actual.classProfiles[0]!.controlledVocabularyAssignments[0]!.controlledVocabularyIri)
+        .toBe(controlledVocabularyDatasetIri(nestedCatalogIri, CONTROLLED_VOCABULARY.id));
 });

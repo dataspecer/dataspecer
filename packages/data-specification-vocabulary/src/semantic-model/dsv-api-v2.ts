@@ -29,18 +29,27 @@ interface ProfileModel {
  * @param dependencies Semantic and semantic profiles models.
  *  They must provide connection from the second function argument to the semantic model.
  *  This is required to properly determine profile types.
+ * @param dependencies.controlledVocabularies Controlled vocabulary models -
+ *  each holds exactly one CV entity. Only used to resolve references to them
+ *  (via createContext); they do not affect profile type determination the
+ *  way semantics/profiles do.
  * @param profiles The top level semantic profile model to create the DSV representation for.
  *  This model must be connected to the semantic entities by dependencies.
  * @param configuration
+ * @param configuration.controlledVocabularyCatalogIris Maps a controlled
+ *  vocabulary's entity id to the IRI of the catalog it is a direct member of
+ *  - see createContext.
  */
 export function createDataSpecificationVocabulary(
   dependencies: {
     semantics: SemanticModel[],
     profiles: ProfileModel[],
+    controlledVocabularies?: SemanticModel[],
   },
   profiles: ProfileModel[],
   configuration: {
     iri: string,
+    controlledVocabularyCatalogIris?: Map<string, string>,
   }
 ): ApplicationProfile {
 
@@ -51,6 +60,11 @@ export function createDataSpecificationVocabulary(
   }));
 
   dependencies.profiles.forEach(item => containers.push({
+    baseIri: item.getBaseIri(),
+    entities: Object.values(item.getEntities()),
+  }));
+
+  (dependencies.controlledVocabularies ?? []).forEach(item => containers.push({
     baseIri: item.getBaseIri(),
     entities: Object.values(item.getEntities()),
   }));
@@ -68,7 +82,7 @@ export function createDataSpecificationVocabulary(
     }
   });
 
-  const context = createContext(containers);
+  const context = createContext(containers, configuration.controlledVocabularyCatalogIris);
   const result: ApplicationProfile = {
     iri: configuration.iri,
     externalDocumentationUrl: null,

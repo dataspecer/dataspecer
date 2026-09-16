@@ -1,5 +1,5 @@
 import { CONTROLLED_VOCABULARY_MODEL, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, V1, RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
-import { controlledVocabulariesToDcatCatalog, type ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
+import { controlledVocabulariesToDcatCatalog, controlledVocabularyCatalogIri, type ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 import { isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship, SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
 import { withAbsoluteIri } from "@dataspecer/core-v2/semantic-model/utils";
 import { LanguageString, type CoreResource } from "@dataspecer/core/core/core-resource";
@@ -365,6 +365,14 @@ export async function generateSpecification(packageId: string, context: Generate
     baseIri = baseUrl;
   }
 
+  // Each controlled vocabulary is referenced by the IRI of the catalog owned
+  // by its own package - not necessarily this specification's own catalog,
+  // e.g. when this specification profiles a nested one that owns the CV.
+  const controlledVocabularyCatalogIris = new Map<string, string>();
+  for (const [cvModelId, ownerPackageId] of controlledVocabularyOwningPackage) {
+    controlledVocabularyCatalogIris.set(cvModelId, controlledVocabularyCatalogIri(baseIri, ownerPackageId));
+  }
+
   /**
    * Whether we are generating in the "production mode" or in the "preview
    * mode". In the production mode, we want to use relative IRIs in order to
@@ -515,7 +523,7 @@ export async function generateSpecification(packageId: string, context: Generate
 
       // Serialize the model in DSV
 
-      const dsv = await generateDsvApplicationProfile([model], modelDescriptions, modelIri);
+      const dsv = await generateDsvApplicationProfile([model], modelDescriptions, modelIri, controlledVocabularyCatalogIris);
       idToIriMapping = {
         ...idToIriMapping,
         ...(await getIdToIriMapping([model])),
@@ -656,7 +664,7 @@ export async function generateSpecification(packageId: string, context: Generate
 
   // Write a DCAT catalog of every controlled vocabulary in the project
   {
-    const iri = baseIri + "controlled-vocabulary-catalog/" + encodeURIComponent(packageId);
+    const iri = controlledVocabularyCatalogIri(baseIri, packageId);
     const fileName = "controlled_vocabulary_catalog.ttl";
     const url = baseUrl + fileName + queryParams;
     const wrote = await writeDcatCatalog(projectModel, allModels, writeFile, fileName, iri);
