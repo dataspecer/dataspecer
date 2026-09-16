@@ -14,7 +14,8 @@
   },
   "dependencies": {
     "@dataspecer/core": "*",
-    "n3": "^1.25.1"
+    "n3": "^1.25.1",
+    "uuid": "^14.0.0"
   },
   "devDependencies": {
     "@types/node": "^25.5.2",
