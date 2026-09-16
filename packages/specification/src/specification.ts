@@ -198,7 +198,12 @@ export async function generateSpecification(packageId: string, context: Generate
   // In case of nested packages we want to serialize the CVs scoped to the directly owning package
   // Mapping allows matching references to the CVs across borders of nested packages
   const controlledVocabularyOwningPackage = new Map<string, string>();
+  const visitedPackages = new Set<string>();
   async function fillModels(packageIri: string, isRoot: boolean = false) {
+    if (visitedPackages.has(packageIri)) {
+      return;
+    }
+    visitedPackages.add(packageIri);
     const pckgEntity = projectModel[packageIri] as PackageEntity | undefined;
     if (!pckgEntity) {
       throw new Error("Package does not exist.");
