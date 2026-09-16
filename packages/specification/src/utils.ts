@@ -2,7 +2,7 @@ import type { Entity } from "@dataspecer/core-v2";
 import { createDefaultConfigurationModelFromJsonObject } from "@dataspecer/core-v2/configuration-model";
 import { isSemanticModelClass, isSemanticModelRelationship, SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
 import { isSemanticModelClassProfile, isSemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { isControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
+import { isControlledVocabulary, type ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 import type { LanguageString } from "@dataspecer/core/core/core-resource";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { createSetEntityOperation, generateOperationId, type Transaction } from "@dataspecer/core/operation";
@@ -44,12 +44,23 @@ export async function generateLightweightOwl(entities: Record<string, SemanticMo
 
 /**
  * Generates Application Profile DSV representation.
+ * @param controlledVocabularyCatalogIris Maps a controlled vocabulary's
+ *  entity id to the IRI of the catalog it is a direct member of - used to
+ *  resolve dsv:controlledVocabulary references. See createContext.
+ * @param controlledVocabulariesToEmbed Vocabularies to embed as a DCAT
+ *  catalog directly in the generated document, alongside the conceptual
+ *  model - only the ones directly owned by this specification's own
+ *  package, not the whole project. See embeddedCatalogIri.
+ * @param embeddedCatalogIri IRI of the catalog controlledVocabulariesToEmbed
+ *  are written as members of.
  */
 export async function generateDsvApplicationProfile(
   forExportModels: ModelDescription[],
   forContextModels: ModelDescription[],
   iri: string,
   controlledVocabularyCatalogIris?: Map<string, string>,
+  controlledVocabulariesToEmbed?: ControlledVocabulary[],
+  embeddedCatalogIri?: string,
 ) {
   // Step 1: Prepare models in the required format.
 
@@ -82,6 +93,8 @@ export async function generateDsvApplicationProfile(
   const dsvString = await DataSpecificationVocabulary.conceptualModelToRdf(applicationProfile, {
     prettyPrint: true,
     prefixes: undefined, // todo
+    controlledVocabularies: controlledVocabulariesToEmbed,
+    controlledVocabularyCatalogIri: embeddedCatalogIri,
   });
 
   return dsvString;
