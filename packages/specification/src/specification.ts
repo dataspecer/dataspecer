@@ -194,6 +194,10 @@ export async function generateSpecification(packageId: string, context: Generate
   // Find all models recursively and store them with their metadata
   const modelDescriptions = [] as ModelDescription[];
   const primaryStructureModels = [] as StructureModelDescription[];
+  // Maps each controlled vocabulary model to the package that is its direct parent
+  // In case of nested packages we want to serialize the CVs scoped to the directly owning package
+  // Mapping allows matching references to the CVs across borders of nested packages
+  const controlledVocabularyOwningPackage = new Map<string, string>();
   async function fillModels(packageIri: string, isRoot: boolean = false) {
     const pckgEntity = projectModel[packageIri] as PackageEntity | undefined;
     if (!pckgEntity) {
@@ -250,6 +254,22 @@ export async function generateSpecification(packageId: string, context: Generate
         baseIri: null,
         title: null,
       });
+    }
+    const controlledVocabularyModels = children.filter((r) => r.modelType === CONTROLLED_VOCABULARY_MODEL);
+    for (const cvModel of controlledVocabularyModels) {
+      // Unlike the model types above, a CV model's own self-entity 
+      // (keyed by its own id) is the CV itself, not separate bookkeeping metadata 
+      // - it must stay in
+      const modelEntities = (allModels[cvModel.id] ?? {}) as Record<string, SemanticModelEntity>;
+      modelDescriptions.push({
+        id: cvModel.id,
+        entities: modelEntities,
+        isPrimary: false,
+        documentationUrl: null,
+        baseIri: null,
+        title: null,
+      });
+      controlledVocabularyOwningPackage.set(cvModel.id, packageIri);
     }
     if (isRoot) {
       const structureModels = children.filter((r) => r.modelType === V1.PSM);
