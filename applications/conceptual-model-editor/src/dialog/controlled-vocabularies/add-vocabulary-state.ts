@@ -24,7 +24,7 @@ export function createAddVocabularyState(
       value: null,
       items: availableVocabularies.map(vocabulary => ({
         id: vocabulary.id,
-        label: vocabulary.name,
+        label: vocabulary.title,
       })),
     },
     qualifier: DEFAULT_QUALIFIER_OPTION,

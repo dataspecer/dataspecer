@@ -1,15 +1,8 @@
 import type { Qualifier } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import type { EntityDsIdentifier } from "../../dataspecer/entity-model";
+import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 
-export interface ControlledVocabulary {
-  id: string;
-  name: string;
-  iri: string;
-  regex: string;
-  downloadUrl: string;
-  docsUrl: string;
-  source?: string;
-}
+export type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 
 export interface ControlledVocabularyUsage {
 
