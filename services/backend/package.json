@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
+    "prebuild": "node -e \"fs.rmSync('dist', { recursive: true, force: true })\"",
     "start": "node --enable-source-maps dist/main.js",
     "load-lov": "./load-lov.sh",
     "test": "vitest run",
