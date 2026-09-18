@@ -29,6 +29,7 @@ import { isSemanticModelAttributeProfile } from "../dataspecer/semantic-model";
 import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
 import { DialogSemanticTracker } from "../dialog-v2/dialog-semantic-tracker";
 import { LabelResolver } from "../dependency-tracker";
+import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 
 const LOG = createLogger(import.meta.url);
 
@@ -43,6 +44,7 @@ export function openModifyDialogAction(
   identifier: string,
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
+  availableVocabularies: ControlledVocabulary[],
 ) {
   const aggregate = graph.aggregatorView.getEntities()?.[identifier];
 
@@ -67,7 +69,8 @@ export function openModifyDialogAction(
   } else if (isSemanticModelClassProfile(entity)) {
     openEditClassProfileDialogAction(
       cmeExecutor, options, dialogs, graph,
-      visualModel, model, entity, tracker, labelResolver);
+      visualModel, model, entity, tracker, labelResolver,
+      availableVocabularies);
     return;
   } else if (isSemanticModelAttribute(entity)) {
     openEditAttributeDialogAction(

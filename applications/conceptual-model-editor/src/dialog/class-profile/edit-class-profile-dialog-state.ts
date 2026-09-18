@@ -31,7 +31,6 @@ import {
   createSelectControlledVocabulariesState,
   SelectControlledVocabulariesState,
 } from "../controlled-vocabularies";
-import { MOCK_AVAILABLE_VOCABULARIES } from "../controlled-vocabularies/mock-available-vocabularies";
 import { CmeClassProfileRole } from "../../dataspecer/cme-model/model";
 
 export interface ClassProfileDialogState
@@ -59,16 +58,13 @@ export interface ClassProfileDialogState
  * "inherited" is resolved by reading each direct profiled ancestor's
  * aggregatedEntity, then resolving each of its assignment ids to the
  * actual ControlledVocabularyAssignment entity.
- *
- * availableVocabularies is mocked until controlled vocabularies are loaded
- * from the controlled vocabulary model.
  */
 function createClassProfileControlledVocabulariesState(
   graph: ModelGraphContextType,
   ancestorIdentifiers: EntityDsIdentifier[],
   ownAssignmentIds: EntityDsIdentifier[] | undefined,
+  availableVocabularies: ControlledVocabulary[],
 ): SelectControlledVocabulariesState {
-  const availableVocabularies = MOCK_AVAILABLE_VOCABULARIES;
   const entities = graph.aggregatorView.getEntities();
 
   const resolveAssignment = (
@@ -153,6 +149,7 @@ export function createNewProfileClassDialogState(
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
   graph: ModelGraphContextType,
+  availableVocabularies: ControlledVocabulary[],
 ): ClassProfileDialogState {
 
   const allModels = semanticModelTrackerToCmeSemanticModel(
@@ -179,7 +176,7 @@ export function createNewProfileClassDialogState(
     availableRoles: ROLES,
     role: ROLES[0].value,
     controlledVocabularies: createClassProfileControlledVocabulariesState(
-      graph, profilesIdentifiers, undefined),
+      graph, profilesIdentifiers, undefined, availableVocabularies),
   };
 }
 
@@ -195,6 +192,7 @@ export function createEditClassProfileDialogState(
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
   graph: ModelGraphContextType,
+  availableVocabularies: ControlledVocabulary[],
 ): ClassProfileDialogState {
 
   const allModels = semanticModelTrackerToCmeSemanticModel(
@@ -229,6 +227,6 @@ export function createEditClassProfileDialogState(
     role: ROLES.find(item => entity.tags?.includes(item.cme ?? ""))?.value
       ?? ROLES[0].value,
     controlledVocabularies: createClassProfileControlledVocabulariesState(
-      graph, entity.profiling, entity.controlledVocabularies),
+      graph, entity.profiling, entity.controlledVocabularies, availableVocabularies),
   };
 }
