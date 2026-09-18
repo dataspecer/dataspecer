@@ -6,23 +6,20 @@ import {
 } from "./select-controlled-vocabularies-state";
 import type { SelectControlledVocabulariesState } from "./select-controlled-vocabularies-state";
 import type { ControlledVocabularyUsage } from "./controlled-vocabulary-model";
+import { DEFAULT_CONTROLLED_VOCABULARY } from "@dataspecer/controlled-vocabulary-model";
 
 const V1 = {
+  ...DEFAULT_CONTROLLED_VOCABULARY,
   id: "v1",
-  name: "Vocabulary 1",
-  iri: "http://example.com/v1",
-  regex: "^.*$",
-  downloadUrl: "http://example.com/v1/download",
-  docsUrl: "http://example.com/v1/docs",
+  title: "Vocabulary 1",
+  references: "http://example.com/v1",
 };
 
 const V2 = {
+  ...DEFAULT_CONTROLLED_VOCABULARY,
   id: "v2",
-  name: "Vocabulary 2",
-  iri: "http://example.com/v2",
-  regex: "^.*$",
-  downloadUrl: "http://example.com/v2/download",
-  docsUrl: "http://example.com/v2/docs",
+  title: "Vocabulary 2",
+  references: "http://example.com/v2",
 };
 
 describe("hasControlledVocabularyConflict", () => {

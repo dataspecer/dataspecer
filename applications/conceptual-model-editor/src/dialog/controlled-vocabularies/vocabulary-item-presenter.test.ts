@@ -2,14 +2,13 @@ import { describe, test, expect } from "vitest";
 import { VocabularyItemState } from "./vocabulary-item-state";
 import { createVocabularyItemPresenter } from "./vocabulary-item-presenter";
 import { ControlledVocabulary } from "./controlled-vocabulary-model";
+import { DEFAULT_CONTROLLED_VOCABULARY } from "@dataspecer/controlled-vocabulary-model";
 
 const VOCABULARY: ControlledVocabulary = {
+  ...DEFAULT_CONTROLLED_VOCABULARY,
   id: "v1",
-  name: "Vocabulary",
-  iri: "http://example.com/v1",
-  regex: "^.*$",
-  downloadUrl: "http://example.com/v1/download",
-  docsUrl: "http://example.com/v1/docs",
+  title: "Vocabulary",
+  references: "http://example.com/v1",
 };
 
 describe("test createVocabularyItemPresenter", () => {
