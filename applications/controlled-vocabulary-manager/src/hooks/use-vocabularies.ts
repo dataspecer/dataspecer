@@ -3,7 +3,14 @@ import { CONTROLLED_VOCABULARY_MODEL } from '@dataspecer/core-v2/model/known-mod
 import { httpFetch } from '@dataspecer/core/io/fetch/fetch-browser'
 import { generateEntityId } from '@dataspecer/core/entity-model'
 import { createSetEntityOperation, createUpdateEntityOperation } from '@dataspecer/core/operation'
-import { PROJECT_MODEL_ID, createCreateModelOperation, createRemoveModelOperation } from '@dataspecer/core/project-model'
+import {
+  PROJECT_MODEL_ID,
+  createCreateModelOperation,
+  createRemoveModelOperation,
+  isPackageEntity,
+  type PackageEntity,
+} from '@dataspecer/core/project-model'
+import type { LanguageString } from '@dataspecer/core/core/core-resource'
 import { createControlledVocabularyManagerModelStore, type DefaultFrontendModelStore } from '@dataspecer/model-store/implementation'
 import { CONTROLLED_VOCABULARY_TYPE, type ControlledVocabulary } from '@dataspecer/controlled-vocabulary-model'
 import { useEventCallback } from './use-event-callback'
@@ -37,12 +44,78 @@ function readVocabularies(modelStore: DefaultFrontendModelStore): ControlledVoca
   return result
 }
 
+export interface NestedVocabularyPackage {
+  packageId: string
+  label: LanguageString
+  vocabularies: ControlledVocabulary[]
+}
+
+interface GroupedVocabularies {
+  own: ControlledVocabulary[]
+  nestedPackages: NestedVocabularyPackage[]
+}
+
+const EMPTY_GROUPED_VOCABULARIES: GroupedVocabularies = { own: [], nestedPackages: [] }
+
+/**
+ * Splits the tracked controlled vocabulary models into those directly owned
+ * by `rootPackageId` and those found in its descendant packages (grouped per
+ * descendant package, skipping descendants with no vocabularies of their own).
+ */
+function groupVocabulariesByPackage(
+  modelStore: DefaultFrontendModelStore,
+  rootPackageId: string,
+): GroupedVocabularies {
+  const entities = modelStore.getAllEntities()
+  const projectTree = entities[PROJECT_MODEL_ID] as Record<string, PackageEntity> | undefined
+  const rootPackage = projectTree?.[rootPackageId]
+  if (!projectTree || !rootPackage || !isPackageEntity(rootPackage)) {
+    return EMPTY_GROUPED_VOCABULARIES
+  }
+
+  function resolveVocabulary(modelId: string): ControlledVocabulary | undefined {
+    return entities[modelId]?.[modelId] as ControlledVocabulary | undefined
+  }
+
+  function collectOwnVocabularies(pkg: PackageEntity): ControlledVocabulary[] {
+    return pkg.subModels
+      .map(resolveVocabulary)
+      .filter((vocabulary): vocabulary is ControlledVocabulary => vocabulary !== undefined)
+  }
+
+  const own = collectOwnVocabularies(rootPackage)
+  const nestedPackages: NestedVocabularyPackage[] = []
+  const visited = new Set<string>([rootPackageId])
+
+  function walk(pkg: PackageEntity) {
+    for (const childId of pkg.subModels) {
+      const child = projectTree![childId]
+      if (!child || !isPackageEntity(child) || visited.has(child.id)) continue
+      visited.add(child.id)
+
+      const vocabularies = collectOwnVocabularies(child)
+      if (vocabularies.length > 0) {
+        nestedPackages.push({
+          packageId: child.id,
+          label: child.label,
+          vocabularies,
+        })
+      }
+      walk(child)
+    }
+  }
+  walk(rootPackage)
+
+  return { own, nestedPackages }
+}
+
 export type VocabulariesError = 'missing-package' | 'load-failed'
 
 export function useVocabularies() {
   const { backendUrl } = useConfig()
   const [modelStore, setModelStore] = useState<DefaultFrontendModelStore | null>(null)
   const [vocabularies, setVocabularies] = useState<ControlledVocabulary[]>([])
+  const [grouped, setGrouped] = useState<GroupedVocabularies>(EMPTY_GROUPED_VOCABULARIES)
   const [loading, setLoading] = useState(!!packageIri)
   const [error, setError] = useState<VocabulariesError | null>(packageIri ? null : 'missing-package')
 
@@ -57,9 +130,12 @@ export function useVocabularies() {
 
     let cancelled = false
 
-    const unsubscribeEntityChanges = store.subscribeToEntityChanges(() => {
+    const refresh = () => {
       setVocabularies(readVocabularies(store))
-    })
+      setGrouped(groupVocabulariesByPackage(store, packageIri))
+    }
+
+    const unsubscribeEntityChanges = store.subscribeToEntityChanges(refresh)
     const unsubscribeTransactionCommit = store.subscribeToTransactionCommit(() => {
       store.saveByOverride()
     })
@@ -69,7 +145,7 @@ export function useVocabularies() {
       .then(() => store.waitForModelsToLoad())
       .then(() => {
         if (cancelled) return
-        setVocabularies(readVocabularies(store))
+        refresh()
         setModelStore(store)
         setLoading(false)
       })
@@ -125,6 +201,8 @@ export function useVocabularies() {
 
   return {
     vocabularies,
+    own: grouped.own,
+    nestedPackages: grouped.nestedPackages,
     loading,
     error,
     addVocabulary,
