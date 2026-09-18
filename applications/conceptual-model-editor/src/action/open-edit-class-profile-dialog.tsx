@@ -24,6 +24,7 @@ import { InvalidState } from "../application/error";
 import { LabelResolver } from "../dependency-tracker";
 import { CmeReference } from "../dataspecer/cme-model/model";
 import { applyControlledVocabularySelection } from "./apply-controlled-vocabulary-selection";
+import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 
 const LOG = createLogger(import.meta.url);
 
@@ -37,6 +38,7 @@ export function openEditClassProfileDialogAction(
   entity: SemanticModelClassProfile,
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
+  availableVocabularies: ControlledVocabulary[],
 ) {
   const aggregate = graph.aggregatorView.getEntities()?.[entity.id];
   const rawEntity = aggregate?.rawEntity;
@@ -47,7 +49,7 @@ export function openEditClassProfileDialogAction(
 
   const initialState = createEditClassProfileDialogState(
     visualModel, options.language, model, rawEntity, graph.models, tracker,
-    labelResolver, graph);
+    labelResolver, graph, availableVocabularies);
 
   const onConfirm = (state: ClassProfileDialogState) => {
     const classProfile: CmeReference = { identifier: entity.id, model: model.getId() };

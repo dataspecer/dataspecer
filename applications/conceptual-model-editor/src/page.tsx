@@ -25,6 +25,7 @@ import {
 
 import { ClassesContext } from "./context/classes-context";
 import { ModelGraphContext } from "./context/model-context";
+import { AvailableControlledVocabulariesProvider } from "./dialog/controlled-vocabularies/available-controlled-vocabularies-context";
 import Header from "./header/header";
 import { useBackendConnection } from "./backend-connection";
 import { Catalog as CatalogV1 } from "./catalog/catalog";
@@ -233,27 +234,29 @@ const Page = () => {
     <ExplorationContextProvider>
       <OptionsContextProvider>
         <ModelGraphContext.Provider value={modelGraphContext}>
-          <ClassesContext.Provider value={classesContext}>
-            <LayoutConfigurationContext.Provider value={layoutConfigurationContext}>
-              <DialogContextProvider>
-                <ActionsContextProvider>
-                  <Header />
-                  <main className="w-full flex-grow bg-teal-50 md:h-[calc(100%-48px)]">
-                    <VerticalSplitter
-                      className="h-full"
-                      initialSize={preferences().pageSplitterValue}
-                      onSizeChange={value => updatePreferences({ pageSplitterValue: value })}
-                    >
-                      <Catalog />
-                      <Visualization />
-                    </VerticalSplitter>
-                  </main>
-                  <NotificationList />
-                  <DialogRenderer />
-                </ActionsContextProvider>
-              </DialogContextProvider>
-            </LayoutConfigurationContext.Provider>
-          </ClassesContext.Provider>
+          <AvailableControlledVocabulariesProvider packageId={packageId}>
+            <ClassesContext.Provider value={classesContext}>
+              <LayoutConfigurationContext.Provider value={layoutConfigurationContext}>
+                <DialogContextProvider>
+                  <ActionsContextProvider>
+                    <Header />
+                    <main className="w-full flex-grow bg-teal-50 md:h-[calc(100%-48px)]">
+                      <VerticalSplitter
+                        className="h-full"
+                        initialSize={preferences().pageSplitterValue}
+                        onSizeChange={value => updatePreferences({ pageSplitterValue: value })}
+                      >
+                        <Catalog />
+                        <Visualization />
+                      </VerticalSplitter>
+                    </main>
+                    <NotificationList />
+                    <DialogRenderer />
+                  </ActionsContextProvider>
+                </DialogContextProvider>
+              </LayoutConfigurationContext.Provider>
+            </ClassesContext.Provider>
+          </AvailableControlledVocabulariesProvider>
         </ModelGraphContext.Provider>
       </OptionsContextProvider >
     </ExplorationContextProvider >
