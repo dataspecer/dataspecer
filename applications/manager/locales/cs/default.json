@@ -14,7 +14,18 @@
     "warning": "Vložte URL specifikací, které chcete importovat."
   },
   "autolayout": "Automatický layout",
+  "search titles": "Hledat v názvech…",
+  "filter by tag": "Štítek",
+  "clear filters": "Zrušit filtry",
+  "filter results": "{{count}} z {{total}} položek",
+  "no search results": "Nic nenalezeno",
+  "no specifications": "Zatím žádné specifikace",
+  "create first specification": "Začněte vytvořením své první datové specifikace.",
+  "try other filters": "Zkuste jiné hledání nebo štítek.",
+  "all tags": "Všechny štítky",
   "changed": "Změněno {{val, datetime(dateStyle: short; timeStyle: short)}}",
+  "changed-relative": "Změněno {{val}}",
+  "created-relative": "Vytvořeno {{val}}",
   "close": "Zavřít",
   "create-new": {
     "description-prefix": "Vytvořit nový balíček/model pod",

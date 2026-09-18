@@ -14,7 +14,18 @@
     "warning": "Insert URLs to specifications you want to import."
   },
   "autolayout": "Auto layout",
+  "search titles": "Search titles…",
+  "filter by tag": "Tag",
+  "clear filters": "Clear filters",
+  "filter results": "{{count}} of {{total}} items",
+  "no search results": "No matches found",
+  "no specifications": "No specifications yet",
+  "create first specification": "Create your first data specification to get started.",
+  "try other filters": "Try another search or tag.",
+  "all tags": "All tags",
   "changed": "Changed on {{val, datetime(dateStyle: short; timeStyle: short)}}",
+  "changed-relative": "Changed {{val}}",
+  "created-relative": "Created {{val}}",
   "close": "Close",
   "create-new": {
     "description-prefix": "Create a new dataspec under",

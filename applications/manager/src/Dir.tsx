@@ -1,15 +1,18 @@
-import { Badge } from "@/components/ui/badge";
+import { TagBadge, TagName } from "@/components/tag";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
-import { BookOpen, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, EllipsisVertical, FileText, Folder, FolderDown, History, Import, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, Sparkles, Trash2, WandSparkles } from "lucide-react";
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { BookOpen, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, EllipsisVertical, FileText, Folder, FolderDown, History, Import, NotepadTextDashed, Pencil, Plus, RotateCw, Search, Shapes, Sparkles, Tag, Trash2, WandSparkles } from "lucide-react";
+import { useCallback, useContext, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "next-themes";
-import { getValidTime } from "./components/time";
+import { useLocalStorage } from "usehooks-ts";
+import { formatRelativeTime, getValidTime } from "./components/time";
 import { Translate } from "./components/translate";
 import { Button } from "./components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./components/ui/dropdown-menu";
 import { Skeleton } from "./components/ui/skeleton";
+import { Input } from "./components/ui/input";
 import { CreateNew } from "./dialog/create-new";
 import { DeleteResource } from "./dialog/delete-resource";
 import { ProjectWizard } from "./dialog/project-wizard/project-wizard";
@@ -60,7 +63,7 @@ const useSortIris = (iris: string[]) => {
   }, [iris, resources, selectedOption]);
 };
 
-const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
+const Row = ({ iri, parentIri, onTagSelect }: { iri: string, parentIri?: string, onTagSelect: (tag: string) => void }) => {
   const resources = useContext(ResourcesContext);
   const resource = resources[iri]!;
   const {t, i18n} = useTranslation();
@@ -78,6 +81,9 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
   const openModal = useBetterModal();
 
   const subResources = useSortIris(resource.subResourcesIri ?? []);
+  const creationDate = getValidTime(resource.metadata?.creationDate);
+  const modificationDate = getValidTime(resource.metadata?.modificationDate);
+  const fullDateFormat = new Intl.DateTimeFormat(i18n.language, { dateStyle: "full", timeStyle: "long" });
 
   return <li className="first:border-y last:border-none border-b">
     <div className="flex items-center space-x-4 hover:bg-accent">
@@ -92,17 +98,16 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
             match={(t, isMatch, language) => <>
               <span className={isMatch ? "" : "text-muted-foreground"}>{t}</span>
               {!isMatch && <span className="ml-1 ">@{language}</span>}
-              <span className="ml-5 text-gray-500 font-normal">{modelTypeToName[resource.types[0]]}</span>
             </>}
             fallback={modelTypeToName[resource.types[0]]}
           />
         </div>
         <div className="text-sm text-gray-500 flex">
-          <span className="truncate w-[4cm]">
-            {getValidTime(resource.metadata?.creationDate) && t("created", {val: new Date(resource.metadata?.creationDate!)})}
+          <span className="truncate w-[4cm]" title={creationDate ? fullDateFormat.format(creationDate) : undefined}>
+            {creationDate && t("created-relative", {val: formatRelativeTime(creationDate, i18n.language)})}
           </span>
-          <span className="truncate w-[6cm]">
-            {getValidTime(resource.metadata?.modificationDate) && t("changed", {val: new Date(resource.metadata?.modificationDate!)})}
+          <span className="truncate w-[6cm]" title={modificationDate ? fullDateFormat.format(modificationDate) : undefined}>
+            {modificationDate && t("changed-relative", {val: formatRelativeTime(modificationDate, i18n.language)})}
           </span>
           <span className="truncate">
             {resource.iri}
@@ -110,7 +115,7 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
         </div>
       </div>
 
-      {resource.userMetadata?.tags?.map(tag => <Badge variant="secondary" key={tag}>{tag}</Badge>)}
+      {resource.userMetadata?.tags?.toSorted((a, b) => a.localeCompare(b)).map(tag => <TagBadge key={tag} name={tag} onClick={() => onTagSelect(tag)} />)}
 
       {resource.types.includes(APPLICATION_GRAPH) &&
         <Button asChild variant={"ghost"} onClick={stopPropagation()}>
@@ -249,7 +254,7 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
       </DropdownMenu>
     </div>
     {subResources.length > 0 && isOpen && <ul className="pl-8">
-      {subResources.map(iri => <Row iri={iri} key={iri} parentIri={resource.iri} />)}
+      {subResources.map(iri => <Row iri={iri} key={iri} parentIri={resource.iri} onTagSelect={onTagSelect} />)}
     </ul>}
     <ResourceDetail isOpen={detailModalToggle.isOpen} close={detailModalToggle.close} iri={iri} />
   </li>
@@ -271,12 +276,39 @@ function RootPackage({iri, defaultToggle}: {iri: string, defaultToggle?: boolean
 
   // Whether the package is open or not
   const [isOpen, setIsOpen] = useState<boolean>(defaultToggle ?? true);
+  const [search, setSearch] = useState("");
+  const [selectedTag, setSelectedTag] = useLocalStorage("filter-by-tag", "");
+  const deferredTag = useDeferredValue(selectedTag);
+  const deferredSearch = useDeferredValue(search);
+  const searchPattern = useMemo(() => {
+    try {
+      return new RegExp(deferredSearch, "i");
+    } catch {
+      return null;
+    }
+  }, [deferredSearch]);
 
   useEffect(() => {
     requestLoadPackage(iri);
-  }, []);
+  }, [iri]);
 
   const subResources = useSortIris(pckg?.subResourcesIri ?? []);
+  const availableTags = useMemo(() => Array.from(new Set(
+    subResources.flatMap(resourceIri => resources[resourceIri]?.userMetadata?.tags ?? [])
+      .filter(tag => tag !== "")
+  )).sort((a, b) => a.localeCompare(b)), [subResources, resources]);
+  const matchingResources = useMemo(() => subResources.filter(resourceIri =>
+    (deferredTag === "" || resources[resourceIri]?.userMetadata?.tags?.includes(deferredTag)) &&
+    (deferredSearch === "" ||
+      Object.values(resources[resourceIri]?.userMetadata?.label ?? {})
+        .some(title => searchPattern ? searchPattern.test(title) :
+          title.toLocaleLowerCase().includes(deferredSearch.toLocaleLowerCase())))
+  ), [subResources, deferredSearch, deferredTag, searchPattern, resources]);
+  const hasFilters = search !== "" || selectedTag !== "";
+  const clearFilters = () => {
+    setSearch("");
+    setSelectedTag("");
+  };
 
   if (pckg === null) {
     return;
@@ -293,29 +325,85 @@ function RootPackage({iri, defaultToggle}: {iri: string, defaultToggle?: boolean
   }
 
   return <div className="mb-12">
-    <div className="flex flex-row">
-      <button onClick={() => setIsOpen(!isOpen)} className="cursor-pointer">
-        {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-      </button>
-      <h2 className="font-heading ml-3 scroll-m-20 pb-2 text-2xl font-semibold tracking-tight first:mt-0 grow">
-        <Translate
-          text={pckg.userMetadata?.label}
-          match={(t, isMatch, language) => <>
-            <span className={isMatch ? "" : "text-muted-foreground"}>{t}</span>
-            {!isMatch && <span className="ml-1 ">@{language}</span>}
-          </>}
-        />
-      </h2>
+    <div className="flex flex-row items-center pb-2">
+      <div className="flex items-baseline grow">
+        <h2 className="font-heading scroll-m-20 text-2xl font-semibold tracking-tight first:mt-0">
+          <Translate
+            text={pckg.userMetadata?.label}
+            match={(t, isMatch, language) => <>
+              <span className={isMatch ? "" : "text-muted-foreground"}>{t}</span>
+              {!isMatch && <span className="ml-1 ">@{language}</span>}
+            </>}
+          />
+        </h2>
+        <div aria-live="polite" aria-atomic="true" className="ml-5 mxtext-sm text-muted-foreground">
+          {hasFilters && t("filter results", {count: matchingResources.length, total: subResources.length})}
+        </div>
+      </div>
+      <div role="search" aria-label={t("search titles")} className="ml-8 flex min-w-0 items-center gap-2">
+        <div className="relative min-w-0 w-64">
+          <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-2 h-4 w-4 text-muted-foreground" />
+          <Input
+            className="h-8 pl-9"
+            type="search"
+            aria-label={t("search titles")}
+            placeholder={t("search titles")}
+            value={search}
+            onChange={event => setSearch(event.target.value)}
+          />
+        </div>
+        <Select
+          value={selectedTag === "" ? "all" : `tag:${selectedTag}`}
+          onValueChange={value => setSelectedTag(value === "all" ? "" : value.slice(4))}
+        >
+          <SelectTrigger aria-label={t("filter by tag")} className="h-8 w-auto min-w-40 shrink-0 gap-2 whitespace-nowrap">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">
+              <span className="inline-flex items-center gap-2">
+                <Tag aria-hidden="true" className="h-4 w-4 text-muted-foreground" />
+                {t("all tags")}
+              </span>
+            </SelectItem>
+            {selectedTag !== "" && !availableTags.includes(selectedTag) &&
+              <SelectItem value={`tag:${selectedTag}`} disabled textValue={selectedTag}>
+                <TagName name={selectedTag} />
+              </SelectItem>
+            }
+            {availableTags.map(tag => <SelectItem key={tag} value={`tag:${tag}`} textValue={tag}>
+              <TagName name={tag} />
+            </SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
       <Button variant="ghost" size="sm" className="shrink-0 ml-4"
         onClick={() => openModal(AddImported, {id: iri})}>
         <Import className="mr-2 h-4 w-4" /> {t("import")}
       </Button>
       <Button variant="default" size={"sm"} className="shrink-0 ml-4" onClick={() => openModal(ProjectWizard, {iri})}><WandSparkles className="mr-2 h-4 w-4" /> {t("project-wizard")}</Button>
     </div>
-    {isOpen &&
-      <ul>
-        {subResources.map(iri => <Row iri={iri} parentIri={pckg.iri} key={iri} />)}
-      </ul>
-    }
+    {isOpen && <>
+      {matchingResources.length > 0 ? <ul>
+        {matchingResources.map(resourceIri => <Row iri={resourceIri} parentIri={iri} key={resourceIri} onTagSelect={setSelectedTag} />)}
+      </ul> : subResources.length === 0 ? <div className="rounded-lg border border-dashed px-4 py-10 text-center">
+        <FileText aria-hidden="true" className="mx-auto mb-3 h-6 w-6 text-muted-foreground" />
+        <p className="font-medium">{t("no specifications")}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{t("create first specification")}</p>
+        <div className="mt-4 flex flex-wrap justify-center gap-2">
+          <Button variant="outline" onClick={() => openModal(AddImported, {id: iri})}>
+            <Import aria-hidden="true" className="mr-2 h-4 w-4" /> {t("import")}
+          </Button>
+          <Button onClick={() => openModal(ProjectWizard, {iri})}>
+            <WandSparkles aria-hidden="true" className="mr-2 h-4 w-4" /> {t("project-wizard")}
+          </Button>
+        </div>
+      </div> : hasFilters ? <div className="rounded-lg border border-dashed px-4 py-10 text-center">
+        <Search aria-hidden="true" className="mx-auto mb-3 h-6 w-6 text-muted-foreground" />
+        <p className="font-medium">{t("no search results")}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{t("try other filters")}</p>
+        <Button variant="outline" className="mt-4" onClick={clearFilters}>{t("clear filters")}</Button>
+      </div> : null}
+    </>}
   </div>;
 }
