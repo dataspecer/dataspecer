@@ -5,6 +5,7 @@
   "breadcrumb.addFromSourceEdit": "Přidat ze zdroje — Upravit metadata",
   "breadcrumb.addByUrl": "Přidat podle URL",
   "breadcrumb.edit": "Upravit",
+  "breadcrumb.view": "Zobrazit",
   "breadcrumb.search": "Hledat",
   "list.title": "Správce řízených slovníků",
   "list.addFromSource": "Přidat ze zdroje",
@@ -15,6 +16,7 @@
   "error.missing-package.description": "Tato stránka byla otevřena bez projektu ke správě. Otevřete Řízené slovníky z projektu ve Správci balíčků.",
   "error.load-failed.title": "Načtení selhalo",
   "error.load-failed.description": "Při načítání řízených slovníků tohoto projektu se něco pokazilo. Zkuste stránku znovu načíst.",
+  "actions.view": "Zobrazit podrobnosti",
   "actions.edit": "Upravit",
   "actions.remove": "Odstranit",
   "form.edit.title": "Upravit slovník",
@@ -37,5 +39,10 @@
   "form.validation.invalidRegex": "Zadejte prosím platný regulární výraz.",
   "form.validation.duplicateIri": "Slovník s tímto IRI již byl identifikován.",
   "form.cancel": "Zrušit",
-  "form.confirm": "Potvrdit"
+  "form.confirm": "Potvrdit",
+  "view.title": "Podrobnosti slovníku",
+  "view.subtitle": "Metadata slovníku pouze pro čtení.",
+  "view.field.datasetIri": "IRI datové sady DCAT",
+  "view.datasetIri.notAssigned": "Ještě nepřiděleno — vygeneruje se až při publikaci specifikace, která tento slovník obsahuje.",
+  "view.close": "Zavřít"
 }
