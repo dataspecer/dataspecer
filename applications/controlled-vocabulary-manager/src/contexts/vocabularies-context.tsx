@@ -1,9 +1,11 @@
 import { createContext, useContext, type ReactNode } from 'react'
 import type { ControlledVocabulary } from '@dataspecer/controlled-vocabulary-model'
-import { useVocabularies, type VocabulariesError } from '../hooks/use-vocabularies'
+import { useVocabularies, type NestedVocabularyPackage, type VocabulariesError } from '../hooks/use-vocabularies'
 
 interface VocabulariesContextValue {
   vocabularies: ControlledVocabulary[]
+  own: ControlledVocabulary[]
+  nestedPackages: NestedVocabularyPackage[]
   loading: boolean
   error: VocabulariesError | null
   addVocabulary: (vocabulary: Omit<ControlledVocabulary, 'id' | 'type'>) => void

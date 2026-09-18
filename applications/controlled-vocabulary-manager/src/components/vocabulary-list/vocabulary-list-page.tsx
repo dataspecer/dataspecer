@@ -7,6 +7,7 @@ import { EmptyState } from "./empty-state"
 import { VocabularyCard } from "./vocabulary-card"
 import { useVocabulariesContext } from "@/contexts/vocabularies-context"
 import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model"
+import { createStringSelector } from "@dataspecer/core/core/utilities/string-selector"
 import { useConfig } from "@/contexts/config-context"
 
 interface VocabularyListPageProps {
@@ -24,9 +25,10 @@ export function VocabularyListPage({
   onEdit,
   onDelete,
 }: VocabularyListPageProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { managerUrl } = useConfig()
-  const { vocabularies } = useVocabulariesContext()
+  const { own, nestedPackages } = useVocabulariesContext()
+  const selectPackageLabel = createStringSelector([i18n.language, 'en'])
 
   return (
     <>
@@ -46,11 +48,11 @@ export function VocabularyListPage({
           {t("list.addByUrl")}
         </Button>
       </PageHeader>
-      {vocabularies.length === 0 ? (
+      {own.length === 0 ? (
         <EmptyState />
       ) : (
         <div className="bg-card border border-border rounded-lg divide-y divide-border">
-          {vocabularies.map((vocab) => (
+          {own.map((vocab) => (
             <VocabularyCard
               key={vocab.id}
               vocabulary={vocab}
@@ -61,6 +63,22 @@ export function VocabularyListPage({
           ))}
         </div>
       )}
+      {nestedPackages.map((pkg) => (
+        <div key={pkg.packageId} className="mt-6">
+          <h2 className="text-sm font-medium text-muted-foreground mb-2">
+            {selectPackageLabel(pkg.label) ?? pkg.packageId}
+          </h2>
+          <div className="bg-card border border-border rounded-lg divide-y divide-border">
+            {pkg.vocabularies.map((vocab) => (
+              <VocabularyCard
+                key={vocab.id}
+                vocabulary={vocab}
+                onView={() => onView(vocab)}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
     </>
   )
 }
