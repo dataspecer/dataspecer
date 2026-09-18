@@ -12,6 +12,7 @@ import { useConfig } from "@/contexts/config-context"
 interface VocabularyListPageProps {
   onNavigateSourceSelection: () => void
   onNavigateFormEmpty: () => void
+  onView: (vocabulary: ControlledVocabulary) => void
   onEdit: (vocabulary: ControlledVocabulary) => void
   onDelete: (id: string) => void
 }
@@ -19,6 +20,7 @@ interface VocabularyListPageProps {
 export function VocabularyListPage({
   onNavigateSourceSelection,
   onNavigateFormEmpty,
+  onView,
   onEdit,
   onDelete,
 }: VocabularyListPageProps) {
@@ -52,6 +54,7 @@ export function VocabularyListPage({
             <VocabularyCard
               key={vocab.id}
               vocabulary={vocab}
+              onView={() => onView(vocab)}
               onEdit={() => onEdit(vocab)}
               onDelete={() => onDelete(vocab.id)}
             />

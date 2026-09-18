@@ -7,6 +7,7 @@ const HASH_TO_SCREEN: Record<string, Screen> = {
   "#/search": "search",
   "#/form-prefilled": "form-prefilled",
   "#/form-empty": "form-empty",
+  "#/view": "view",
 };
 
 const SCREEN_TO_HASH: Record<Screen, string> = {
@@ -15,6 +16,7 @@ const SCREEN_TO_HASH: Record<Screen, string> = {
   "search": "#/search",
   "form-prefilled": "#/form-prefilled",
   "form-empty": "#/form-empty",
+  "view": "#/view",
 };
 
 function hashToScreen(hash: string): Screen {

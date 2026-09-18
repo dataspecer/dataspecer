@@ -5,6 +5,7 @@
   "breadcrumb.addFromSourceEdit": "Add from source — Edit metadata",
   "breadcrumb.addByUrl": "Add by URL",
   "breadcrumb.edit": "Edit",
+  "breadcrumb.view": "View",
   "breadcrumb.search": "Search",
   "list.title": "Controlled Vocabularies Manager",
   "list.addFromSource": "Add from source",
@@ -15,6 +16,7 @@
   "error.missing-package.description": "This page was opened without a project to manage. Open Controlled Vocabularies from a project in the Package Manager instead.",
   "error.load-failed.title": "Failed to load",
   "error.load-failed.description": "Something went wrong while loading this project's controlled vocabularies. Try reloading the page.",
+  "actions.view": "View details",
   "actions.edit": "Edit",
   "actions.remove": "Remove",
   "form.edit.title": "Edit Vocabulary",
@@ -37,5 +39,10 @@
   "form.validation.invalidRegex": "Please enter a valid regular expression.",
   "form.validation.duplicateIri": "A vocabulary with this IRI was already identified.",
   "form.cancel": "Cancel",
-  "form.confirm": "Confirm"
+  "form.confirm": "Confirm",
+  "view.title": "Vocabulary Details",
+  "view.subtitle": "Read-only vocabulary metadata.",
+  "view.field.datasetIri": "DCAT dataset IRI",
+  "view.datasetIri.notAssigned": "Not yet assigned — this is minted once the containing specification is published.",
+  "view.close": "Close"
 }
