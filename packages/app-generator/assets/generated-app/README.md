@@ -14,11 +14,10 @@ npm run dev
 ```
 
 Vite prints the local URL. The configured RDF endpoint must support SPARQL query/update requests and
-allow browser requests from that URL through CORS.
-
-The application reads from and writes directly to that endpoint. Use a disposable or sample
-dataset when trying create, update, and delete operations. For a quick check, open a list page,
-inspect an existing entity, and perform one mutation supported by the generated routes.
+allow browser requests from that URL through CORS.  The application reads from and writes directly
+to that endpoint. Use a disposable or sample dataset when trying create, update, and delete
+operations. For a quick check, open a list page, inspect an existing entity, and perform one
+mutation supported by the generated routes.
 
 Other commands are:
 

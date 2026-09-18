@@ -1,13 +1,16 @@
 # Application generator
 
-Turns a Dataspecer data specification and an application graph into a runnable React/Vite CRUD
+Turns a Dataspecer data specification and an application graph into a runnable React CRUD
 application. The default generated runtime reads and writes one RDF data source through LDKit and a
 SPARQL endpoint.
 
 The package generates `Create`, `ReadList`, `ReadDetail`, `Update`, and `Delete` pages. It supports
 transitions, post-mutation redirects, repeating and nested forms, aggregation, composition,
 configured cascade deletes, multilingual values, and specialization choices. The [application
-graph editor](../../applications/application-graph-editor) is the normal authoring UI.
+graph editor](../../applications/application-graph-editor) is the graph authoring UI available from Dataspecer.
+
+See the [user guide](docs/user-guide.md) for the authoring workflow and the
+[technical documentation](docs/technical-documentation.md) for architecture and extension points.
 
 ## Development
 
@@ -24,8 +27,8 @@ Run the package commands from `packages/app-generator`:
 ```sh
 npm run build     # compile assets and TypeScript
 npm run dev       # compile assets, then watch TypeScript
-npm test          # typecheck and run Vitest
-npm run lint      # run ESLint and Prettier checks
+npm test          # run typecheck and unit tests
+npm run lint      # run linting and formatting checks
 npm run lint:fix  # apply supported lint and formatting fixes
 ```
 

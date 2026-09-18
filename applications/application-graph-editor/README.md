@@ -46,17 +46,18 @@ its own README with the remaining setup steps.
 
 ## Commands
 
-Run these from this directory:
+Description of the runnable commands:
 
 ```sh
-npm run dev       # start Vite
+npm run dev       # start dev server
 npm run build     # typecheck and create a production bundle
-npm test          # run Vitest once
-npm run lint      # run ESLint and check Prettier formatting
+npm test          # run unit tests once
+npm run lint      # run linting and formatting checks
 npm run lint:fix  # apply supported lint and formatting fixes
-npm run preview   # serve the production bundle locally
+npm run preview   # serve production bundle locally
 ```
 
-## Further reading
+## See also
 
+- [Application generator user guide](../../packages/app-generator/docs/user-guide.md)
 - [Application graph JSON Schema](../../packages/app-generator/src/graph/application-graph.schema.json)
