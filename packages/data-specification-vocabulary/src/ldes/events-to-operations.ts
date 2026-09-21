@@ -64,7 +64,8 @@ export interface LdesToTransactionsContext {
 
 /**
  * Translates published LDES events back to internal Dataspecer operations,
- * grouped into transactions the same way as in the stream. Snapshots become
+ * grouped by consecutive transaction identifiers. Missing identifiers share
+ * an empty-string fallback identifier. Snapshots become
  * generic set entity operations, tombstones become remove entity operations;
  * generalizations folded into the snapshots (dsv:specializes, rdfs:subClassOf)
  * are reconciled against the current state of the target model.
@@ -86,8 +87,9 @@ export function ldesToTransactions(stream: LdesEventStream, context: LdesToTrans
   const working = { ...context.entities };
 
   for (const event of events) {
-    if (current === null || current.id !== event.transactionId) {
-      current = { id: event.transactionId, operations: [] };
+    const transactionId = event.transactionId ?? "";
+    if (current === null || current.id !== transactionId) {
+      current = { id: transactionId, operations: [] };
       transactions.push(current);
     }
     const operations = eventToOperations(event, working, fullContext);
