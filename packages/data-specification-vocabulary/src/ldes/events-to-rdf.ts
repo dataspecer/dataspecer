@@ -143,7 +143,7 @@ class LdesWriter {
     this.writer.addQuad(IRI(this.stream.iri), DATASPECER_LDES.hasVersion, subject);
     this.writer.addQuad(subject, RDF.type, DATASPECER_LDES.Version);
     this.writer.addQuad(subject, DATASPECER_LDES.versionLabel, Literal(version.version));
-    this.writer.addQuad(subject, DATASPECER_LDES.transaction, Literal(version.transactionId));
+    // this.writer.addQuad(subject, DATASPECER_LDES.transaction, Literal(version.transactionId));
     this.writer.addQuad(subject, DCT.issued, Literal(version.issued, XSD.dateTime));
   }
 
@@ -165,7 +165,7 @@ class LdesWriter {
     this.writer.addQuad(member, DCT.created, Literal(event.created, XSD.dateTime));
     this.writer.addQuad(member, DCT.issued, Literal(event.issued, XSD.dateTime));
     this.writer.addQuad(member, DATASPECER_LDES.sequence, Literal(event.sequence));
-    this.writer.addQuad(member, DATASPECER_LDES.transaction, Literal(event.transactionId));
+    //this.writer.addQuad(member, DATASPECER_LDES.transaction, Literal(event.transactionId));
     if (event.version !== undefined) {
       this.writer.addQuad(member, DATASPECER_LDES.version, Literal(event.version));
     }
