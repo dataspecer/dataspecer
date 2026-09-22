@@ -8,7 +8,7 @@ import { join } from "node:path";
 export async function prepareDocker(): Promise<void> {
   printBanner();
 
-  if (process.argv.length === 2) {
+  if (process.argv.slice(2).every(argument => argument === "--in-memory-db")) {
     const baseUrl = (process.env.BASE_URL || "http://localhost").replace(/\/+$/, "");
     const basePath = new URL(baseUrl).pathname.replace(/\/+$/, "");
     const staticFilesPath = "/usr/src/app/html/";
@@ -21,7 +21,9 @@ export async function prepareDocker(): Promise<void> {
   }
 
   process.env.DOCKER = "1";
-  await mkdir("/usr/src/app/database/stores", { recursive: true });
+  if (!process.argv.includes("--in-memory-db")) {
+    await mkdir("/usr/src/app/database/stores", { recursive: true });
+  }
 }
 
 async function replaceBasePath(directory: string, basePath: string): Promise<void> {

@@ -25,12 +25,14 @@ function toSqliteParameter(value: unknown): SQLInputValue {
   throw new TypeError("Unsupported SQLite parameter type.");
 }
 
-/** Opens lazily so the migration runner can initialize the database first. */
-export function createDatabase(filename: string | URL): Database {
+/** Opens lazily or uses an existing connection, which Kysely will own. */
+export function createDatabase(filename: string | URL | DatabaseSync): Database {
   return new Kysely<DatabaseSchema>({
     dialect: new SqliteDialect({
       database: async () => {
-        const database = new DatabaseSync(filename, { enableForeignKeyConstraints: true });
+        const database = filename instanceof DatabaseSync
+          ? filename
+          : new DatabaseSync(filename, { enableForeignKeyConstraints: true });
         try {
           database.exec("PRAGMA busy_timeout = 5000");
           return adaptSqliteDatabase(database);

@@ -1,12 +1,13 @@
 import { readFile, rm, writeFile } from "fs/promises";
 import path from "path";
+import type { StoreModel } from "./store-model.ts";
 
 /**
  * Low level storage of string documents, each identified by an id, kept as
  * individual files in a single directory. Holds the contents of resource data
  * stores, see the ResourceModel.
  */
-export class LocalStoreModel {
+export class LocalStoreModel implements StoreModel {
   private readonly storage: string;
 
   constructor(storage: string) {

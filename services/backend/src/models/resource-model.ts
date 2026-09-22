@@ -4,7 +4,7 @@ import { CoreResource } from "@dataspecer/core/core/core-resource";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
 import { parseDatabaseTimestamp, type Database, type ResourceRow } from "../database/schema.ts";
 import { v4 as uuidv4 } from "uuid";
-import { LocalStoreModel } from "./local-store-model.ts";
+import type { StoreModel } from "./store-model.ts";
 
 /**
  * Base information every resource has or should have.
@@ -56,13 +56,13 @@ export interface Package extends BaseResource {
 /**
  * Manages the tree of resources and their data stores: the current-state
  * snapshots of models. Resource metadata live in SQLite and store contents
- * in the {@link LocalStoreModel}.
+ * in the {@link StoreModel}.
  */
 export class ResourceModel {
-  private readonly storeModel: LocalStoreModel;
+  private readonly storeModel: StoreModel;
   private readonly database: Database;
 
-  constructor(storeModel: LocalStoreModel, database: Database) {
+  constructor(storeModel: StoreModel, database: Database) {
     this.storeModel = storeModel;
     this.database = database;
   }
