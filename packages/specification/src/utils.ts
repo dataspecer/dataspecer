@@ -210,6 +210,7 @@ export async function generateShaclApplicationProfile(forExportModel: ModelDescr
     forContextModels.filter((model) => isModelProfile(model.entities)).map(mapModel),
     mapModel(forExportModel),
     configuration, { baseIri: iri, defaultPrefixes: prefixesForIriConstruction },
+    forContextModels.filter((model) => isModelControlledVocabulary(model.entities)).map(mapModel),
   );
 
   const rdf = await shaclToRdf(shacl, {});

@@ -158,8 +158,7 @@ export function semanticModelsToShacl(
     }
 
     // Controlled vocabulary constraints are emitted as separate node
-    // shapes (one per effective assignment), not merged into the
-    // primary shape above - see design notes on shaclControlledVocabularyShape.
+    // shapes (one per effective assignment), not merged into the primary shape above
     const controlledVocabularyAssignments =
       buildEffectiveControlledVocabularyAssignments(
         entity, parents, classMap);
