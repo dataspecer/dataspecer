@@ -268,14 +268,14 @@ export default function Component() {
   )
 }
 
-function RootPackage({iri, defaultToggle}: {iri: string, defaultToggle?: boolean}) {
+function RootPackage({iri}: {iri: string}) {
   const openModal = useBetterModal();
   const resources = useContext(ResourcesContext);
   const pckg = resources[iri];
   const {t} = useTranslation();
 
   // Whether the package is open or not
-  const [isOpen, setIsOpen] = useState<boolean>(defaultToggle ?? true);
+  const isOpen = true;
   const [search, setSearch] = useState("");
   const [selectedTag, setSelectedTag] = useLocalStorage("filter-by-tag", "");
   const deferredTag = useDeferredValue(selectedTag);
