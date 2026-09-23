@@ -255,9 +255,6 @@ function executeModifySemanticModelRelationshipProfile(
   }
 }
 
-// TODO: should we do validations here?
-// - only one CV with MUST on profile
-// - inherited qualifiers can be only changed to stricter
 function executeCreateControlledVocabularyAssignment(
   entityReader: EntityReader,
   entityWriter: EntityWriter,
