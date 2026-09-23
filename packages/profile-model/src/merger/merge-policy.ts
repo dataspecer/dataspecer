@@ -8,8 +8,7 @@ import {
 export interface ProfileModelMergePolicy {
 
   /**
-   * @param assignmentEntities All ControlledVocabularyAssignment entities
-   * being merged, keyed by id.
+   * @param assignmentEntities All ControlledVocabularyAssignment entities being merged.
    */
   mergeClassProfile(
     left: ProfileClass,
