@@ -4,6 +4,7 @@
  * easily used with 'n3'.
  */
 import { DataFactory } from "n3";
+import type { Qualifier } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 
 const IRI = DataFactory.namedNode;
 
@@ -78,6 +79,13 @@ export const DSV = {
   "classRole": IRI(DSV_PREFIX + "classRole"),
   "requirementLevel": IRI(DSV_PREFIX + "requirementLevel"),
   "externalDocumentation": IRI(DSV_PREFIX + "externalDocumentation"),
+  // Controlled vocabulary assignment - placeholders, not yet part of the
+  // published dsv namespace, to be swapped once agreed.
+  "ControlledVocabularyAssignment": IRI(DSV_PREFIX + "ControlledVocabularyAssignment"),
+  "classProfile": IRI(DSV_PREFIX + "classProfile"),
+  "controlledVocabulary": IRI(DSV_PREFIX + "controlledVocabulary"),
+  "usageExpectation": IRI(DSV_PREFIX + "usageExpectation"),
+  "replaces": IRI(DSV_PREFIX + "replaces"),
 };
 
 export const DSV_CLASS_ROLE = {
@@ -90,6 +98,33 @@ export const DSV_MANDATORY_LEVEL = {
   "optional": "https://w3id.org/dsv/requirement-level#optional",
   "recommended": "https://w3id.org/dsv/requirement-level#recommended",
 };
+
+/**
+ * The four usage expectation individuals, placeholders - not yet part of the
+ * published dsv namespace, to be swapped once agreed.
+ */
+export const DSV_USAGE_EXPECTATION: Record<Qualifier, string> = {
+  "MUST": "https://w3id.org/dsv/usage-expectation#must",
+  "AT_LEAST_1": "https://w3id.org/dsv/usage-expectation#at-least-1",
+  "RECOMMENDED": "https://w3id.org/dsv/usage-expectation#recommended",
+  "MAY": "https://w3id.org/dsv/usage-expectation#may",
+};
+
+const DSV_USAGE_EXPECTATION_REVERSE: Record<string, Qualifier> =
+  Object.fromEntries(
+    Object.entries(DSV_USAGE_EXPECTATION).map(([qualifier, iri]) => [iri, qualifier]),
+  ) as Record<string, Qualifier>;
+
+/**
+ * @returns The Qualifier for a known usage expectation IRI, or null if
+ * the IRI is missing or does not match any of the four known individuals.
+ */
+export function iriToUsageExpectation(iri: string | null): Qualifier | null {
+  if (iri === null) {
+    return null;
+  }
+  return DSV_USAGE_EXPECTATION_REVERSE[iri] ?? null;
+}
 
 const OWL_PREFIX = "http://www.w3.org/2002/07/owl#";
 

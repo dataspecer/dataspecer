@@ -4,6 +4,8 @@ import {
   SemanticModelRelationship,
 } from "../../concepts/index.ts";
 import {
+  ControlledVocabularyAssignment,
+  isControlledVocabularyAssignment,
   isSemanticModelClassProfile,
   isSemanticModelGeneralizationProfile,
   isSemanticModelRelationshipProfile,
@@ -46,7 +48,8 @@ export interface SemanticProfileAggregator {
     dependencies: (
       SemanticModelClass |
       SemanticModelClassProfile |
-      AggregatedProfiledSemanticModelClass
+      AggregatedProfiledSemanticModelClass |
+      ControlledVocabularyAssignment
     )[],
   ): AggregatedProfiledSemanticModelClass;
 
@@ -80,6 +83,9 @@ class DefaultProfileEntityAggregator implements SemanticProfileAggregator {
     if (isSemanticModelGeneralizationProfile(entity)) {
       return SemanticGeneralizationProfileAggregator.dependencies(entity);
     }
+    if (isControlledVocabularyAssignment(entity)) {
+      return entity.replaces?.kind === "local" ? [entity.replaces.target] : [];
+    }
     return null;
   }
 
@@ -88,7 +94,8 @@ class DefaultProfileEntityAggregator implements SemanticProfileAggregator {
     aggregatedProfiled: (
       SemanticModelClass |
       SemanticModelClassProfile |
-      AggregatedProfiledSemanticModelClass
+      AggregatedProfiledSemanticModelClass |
+      ControlledVocabularyAssignment
     )[],
   ): AggregatedProfiledSemanticModelClass {
     return SemanticClassProfileAggregator

@@ -1,14 +1,22 @@
 import type { Qualifier } from "@dataspecer/core-v2/semantic-model/profile/concepts";
+import type { EntityDsIdentifier } from "../../dataspecer/entity-model";
 import { ControlledVocabulary } from "./controlled-vocabulary-model";
 
 export interface VocabularyItemState {
 
   /**
-   * Stable per-instance identifier, independent of vocabulary.id - a class
-   * profile can assign the same vocabulary more than once with different
-   * qualifiers, so vocabulary.id alone can not address a specific item.
+   * Stable per-instance UI identifier - not persisted, used to address a
+   * row for dialog interactions (React keys, presenter dispatch).
    */
-  id: string;
+  key: string;
+
+  /**
+   * This class profile's own persisted ControlledVocabularyAssignment id,
+   * or null when this row does not (yet) have one - a plain inherited
+   * item that has not been overridden, or a row added/overridden during
+   * this dialog session that has not been saved yet.
+   */
+  id: EntityDsIdentifier | null;
 
   vocabulary: ControlledVocabulary;
 
@@ -27,6 +35,12 @@ export interface VocabularyItemState {
 export interface InheritedQualifierState {
 
   /**
+   * Id of the inherited ControlledVocabularyAssignment - becomes
+   * replaces.target when this item is overridden.
+   */
+  assignmentId: EntityDsIdentifier;
+
+  /**
    * Qualifier inherited from the profiled class
    */
   qualifier: Qualifier;
@@ -40,5 +54,5 @@ export function createVocabularyItemState(
   qualifier: Qualifier,
   inherited: InheritedQualifierState | null,
 ): VocabularyItemState {
-  return { id: crypto.randomUUID(), vocabulary, qualifier, inherited };
+  return { key: crypto.randomUUID(), id: null, vocabulary, qualifier, inherited };
 }

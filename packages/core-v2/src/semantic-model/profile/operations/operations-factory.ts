@@ -1,7 +1,7 @@
 import { generateEntityId } from "@dataspecer/core/entity-model";
 import { EntityIdentifier } from "../../../entity-model/entity.ts";
 import { ControlledVocabularyAssignment, SemanticModelClassProfile, SemanticModelRelationshipEndProfile, SemanticModelRelationshipProfile } from "../concepts/index.ts";
-import { ADD_CONTROLLED_VOCABULARY_ASSIGNMENT, AddControlledVocabularyAssignment, CREATE_SEMANTIC_MODEL_CLASS_PROFILE, CREATE_SEMANTIC_MODEL_RELATIONSHIP_PROFILE, CreateSemanticModelClassProfile, CreateSemanticModelRelationshipProfile, MODIFY_CONTROLLED_VOCABULARY_ASSIGNMENT, MODIFY_SEMANTIC_MODEL_CLASS_PROFILE, MODIFY_SEMANTIC_MODEL_RELATIONSHIP_END_PROFILE, MODIFY_SEMANTIC_MODEL_RELATIONSHIP_PROFILE, ModifyControlledVocabularyAssignment, ModifySemanticModelClassProfile, ModifySemanticModelRelationshipEndProfile, ModifySemanticModelRelationshipProfile, NewSemanticModelRelationshipEndProfile, REMOVE_CONTROLLED_VOCABULARY_ASSIGNMENT, RemoveControlledVocabularyAssignment } from "./operations.ts";
+import { CREATE_CONTROLLED_VOCABULARY_ASSIGNMENT, CreateControlledVocabularyAssignment, CREATE_SEMANTIC_MODEL_CLASS_PROFILE, CREATE_SEMANTIC_MODEL_RELATIONSHIP_PROFILE, CreateSemanticModelClassProfile, CreateSemanticModelRelationshipProfile, MODIFY_CONTROLLED_VOCABULARY_ASSIGNMENT, MODIFY_SEMANTIC_MODEL_CLASS_PROFILE, MODIFY_SEMANTIC_MODEL_RELATIONSHIP_END_PROFILE, MODIFY_SEMANTIC_MODEL_RELATIONSHIP_PROFILE, ModifyControlledVocabularyAssignment, ModifySemanticModelClassProfile, ModifySemanticModelRelationshipEndProfile, ModifySemanticModelRelationshipProfile, NewSemanticModelRelationshipEndProfile, REMOVE_CONTROLLED_VOCABULARY_ASSIGNMENT, RemoveControlledVocabularyAssignment } from "./operations.ts";
 import { generateOperationId } from "@dataspecer/core/operation";
 
 export interface SemanticModelProfileOperationFactory {
@@ -31,20 +31,18 @@ export interface SemanticModelProfileOperationFactory {
     end: Partial<SemanticModelRelationshipEndProfile>
   ): ModifySemanticModelRelationshipEndProfile;
 
-  addControlledVocabularyAssignment(
-    classProfileIdentifier: EntityIdentifier,
-    assignment: ControlledVocabularyAssignment,
-  ): AddControlledVocabularyAssignment;
+  createControlledVocabularyAssignment(
+    entity: Partial<Omit<ControlledVocabularyAssignment, "type">>
+      & Pick<ControlledVocabularyAssignment, "classProfile" | "vocabulary" | "qualifier">,
+  ): CreateControlledVocabularyAssignment;
 
   removeControlledVocabularyAssignment(
-    classProfileIdentifier: EntityIdentifier,
-    controlledVocabularyIdentifier: EntityIdentifier,
+    identifier: EntityIdentifier,
   ): RemoveControlledVocabularyAssignment;
 
   modifyControlledVocabularyAssignment(
-    classProfileIdentifier: EntityIdentifier,
-    controlledVocabularyIdentifier: EntityIdentifier,
-    changes: Partial<Pick<ControlledVocabularyAssignment, "qualifier" | "override">>,
+    identifier: EntityIdentifier,
+    changes: Partial<Pick<ControlledVocabularyAssignment, "qualifier" | "replaces">>,
   ): ModifyControlledVocabularyAssignment;
 
 }
@@ -110,40 +108,35 @@ class DefaultSemanticModelProfileOperationFactory
       };
   }
 
-  addControlledVocabularyAssignment(
-    classProfileIdentifier: EntityIdentifier,
-    assignment: ControlledVocabularyAssignment,
-  ): AddControlledVocabularyAssignment {
+  createControlledVocabularyAssignment(
+    entity: Partial<Omit<ControlledVocabularyAssignment, "type">>
+      & Pick<ControlledVocabularyAssignment, "classProfile" | "vocabulary" | "qualifier">,
+  ): CreateControlledVocabularyAssignment {
     return {
       id: generateOperationId(),
-      type: ADD_CONTROLLED_VOCABULARY_ASSIGNMENT,
-      classProfileIdentifier,
-      assignment,
+      type: CREATE_CONTROLLED_VOCABULARY_ASSIGNMENT,
+      entity: { ...entity, id: entity.id ?? generateEntityId() },
     };
   }
 
   removeControlledVocabularyAssignment(
-    classProfileIdentifier: EntityIdentifier,
-    controlledVocabularyIdentifier: EntityIdentifier,
+    identifier: EntityIdentifier,
   ): RemoveControlledVocabularyAssignment {
     return {
       id: generateOperationId(),
       type: REMOVE_CONTROLLED_VOCABULARY_ASSIGNMENT,
-      classProfileIdentifier,
-      controlledVocabularyIdentifier,
+      identifier,
     };
   }
 
   modifyControlledVocabularyAssignment(
-    classProfileIdentifier: EntityIdentifier,
-    controlledVocabularyIdentifier: EntityIdentifier,
-    changes: Partial<Pick<ControlledVocabularyAssignment, "qualifier" | "override">>,
+    identifier: EntityIdentifier,
+    changes: Partial<Pick<ControlledVocabularyAssignment, "qualifier" | "replaces">>,
   ): ModifyControlledVocabularyAssignment {
     return {
       id: generateOperationId(),
       type: MODIFY_CONTROLLED_VOCABULARY_ASSIGNMENT,
-      classProfileIdentifier,
-      controlledVocabularyIdentifier,
+      identifier,
       changes,
     };
   }
