@@ -87,7 +87,7 @@ export interface CmeModelOperationExecutor {
     assignment: {
       vocabulary: EntityDsIdentifier;
       qualifier: Qualifier;
-      replaces: ControlledVocabularyAssignmentReplaces;
+      replaces: ControlledVocabularyAssignmentReplaces | null;
     },
   ): CmeReference;
 
