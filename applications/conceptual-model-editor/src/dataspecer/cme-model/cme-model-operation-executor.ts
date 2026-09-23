@@ -41,9 +41,9 @@ import { updateCmeSpecialization } from "./operation/update-cme-entity-specializ
 import { updateCmeRelationship } from "./operation/update-cme-relationship";
 import { changeCmeClassProfile } from "./operation/change-cme-class-profile";
 import { updateCmeSemanticModel } from "./operation/update-semantic-model";
-import { createCmeControlledVocabularyAssignment } from "./operation/create-controlled-vocabulary-assignment";
-import { removeCmeControlledVocabularyAssignment } from "./operation/remove-controlled-vocabulary-assignment";
-import { modifyCmeControlledVocabularyAssignment } from "./operation/modify-controlled-vocabulary-assignment";
+import { createCmeControlledVocabularyAssignment } from "./operation/create-cme-controlled-vocabulary-assignment";
+import { deleteCmeControlledVocabularyAssignment } from "./operation/delete-cme-controlled-vocabulary-assignment";
+import { modifyCmeControlledVocabularyAssignment } from "./operation/modify-cme-controlled-vocabulary-assignment";
 
 const LOG = createLogger(import.meta.url);
 
@@ -263,7 +263,7 @@ class DefaultCmeModelOperationExecutor implements CmeModelOperationExecutor {
     assignment: CmeReference,
   ): void {
     const model = this.findModel(assignment.model);
-    removeCmeControlledVocabularyAssignment(model, assignment);
+    deleteCmeControlledVocabularyAssignment(model, assignment);
   }
 
   modifyControlledVocabularyAssignment(
