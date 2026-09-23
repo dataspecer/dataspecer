@@ -1,4 +1,5 @@
 import { RequirementLevel } from "@dataspecer/data-specification-vocabulary/semantic-model";
+import { Qualifier } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 
 type IRI = string;
 
@@ -43,6 +44,45 @@ export interface StructureClass extends StructureTerm {
   rdfTypes: IRI[];
 
   properties: StructureProperty[];
+
+  /**
+   * Controlled vocabulary assignments declared directly on this class.
+   * Does not include assignments inherited via {@link specializationOf} -
+   * inheritance is resolved later, during SHACL shape construction.
+   */
+  controlledVocabularyAssignments: StructureControlledVocabularyAssignment[];
+
+}
+
+export interface StructureControlledVocabularyAssignment {
+
+  /**
+   * This assignment's own IRI, used to match against another
+   * assignment's {@link replaces}.
+   */
+  iri: IRI;
+
+  /**
+   * Resolved IRI of the assigned controlled vocabulary.
+   */
+  controlledVocabularyIri: IRI;
+
+  /**
+   * Resolved {@link ControlledVocabulary.pattern} of the assigned
+   * vocabulary, or `null` if it could not be resolved.
+   */
+  pattern: string | null;
+
+  /**
+   * How strictly the vocabulary is expected to be used.
+   */
+  usageExpectation: Qualifier | null;
+
+  /**
+   * IRI of the assignment this one replaces, i.e. overrides when
+   * inherited via {@link StructureTerm.specializationOf}.
+   */
+  replaces: IRI | null;
 
 }
 

@@ -1,6 +1,8 @@
+import { Entity } from "@dataspecer/core-v2/entity-model";
 import {
   Cardinality,
   ClassProfile,
+  ControlledVocabularyAssignmentProfile,
   DSV_REUSE_DESCRIPTION,
   DSV_REUSE_LABEL,
   DSV_REUSE_USAGE_NOTE,
@@ -9,20 +11,39 @@ import {
   PropertyValueReuse,
   ObjectPropertyProfile,
   DatatypePropertyProfile,
+  iriToUsageExpectation,
+  resolveControlledVocabularyIri,
 } from "@dataspecer/data-specification-vocabulary/semantic-model";
 import {
   OwlClass,
   OwlOntology,
   OwlProperty,
 } from "@dataspecer/lightweight-owl";
+import {
+  ControlledVocabulary,
+  isControlledVocabulary,
+} from "@dataspecer/controlled-vocabulary-model";
 
 import {
   LanguageString,
   StructureClass,
+  StructureControlledVocabularyAssignment,
   StructureModel,
   StructureProperty,
   StructurePropertyType,
 } from "./structure-model.ts";
+
+/**
+ * A container of entities together with the IRI used to resolve any
+ * relative IRIs among them, as used by {@link resolveControlledVocabularyIri}.
+ */
+export interface EntityContainer {
+
+  baseIri: string | null;
+
+  entities: Entity[];
+
+}
 
 interface Context {
 
@@ -36,6 +57,8 @@ interface Context {
 
   dsvDatatypeProperties: { [iri: string]: DatatypePropertyProfile };
 
+  controlledVocabularies: { [iri: string]: ControlledVocabulary };
+
 }
 
 /**
@@ -44,8 +67,9 @@ interface Context {
  */
 export function createStructureModelForProfile(
   owl: OwlOntology, dsv: ApplicationProfile,
+  controlledVocabularies: EntityContainer[] = [],
 ): StructureModel {
-  const context = createContext(owl, dsv);
+  const context = createContext(owl, dsv, controlledVocabularies);
   // We know the output is defined by the ApplicationProfile.
   // We just need to pull the details.
   const classes: StructureClass[] = [];
@@ -78,7 +102,10 @@ export function createStructureModelForProfile(
   return { classes };
 }
 
-function createContext(owl: OwlOntology, dsv: ApplicationProfile): Context {
+function createContext(
+  owl: OwlOntology, dsv: ApplicationProfile,
+  controlledVocabularies: EntityContainer[],
+): Context {
 
   const addOrMerge = function <Type>(
     map: Record<string, Type>,
@@ -154,6 +181,7 @@ function createContext(owl: OwlOntology, dsv: ApplicationProfile): Context {
     dsvClasses: {},
     dsvDatatypeProperties: {},
     dsvObjectProperties: {},
+    controlledVocabularies: {},
   };
 
   // Convert OWL.
@@ -174,6 +202,12 @@ function createContext(owl: OwlOntology, dsv: ApplicationProfile): Context {
       result.dsvObjectProperties,
       mergeObjectPropertyProfile,
       item, item.iri));
+  // Convert controlled vocabularies.
+  controlledVocabularies.forEach(container =>
+    container.entities.filter(isControlledVocabulary).forEach(entity => {
+      const iri = resolveControlledVocabularyIri(entity, container.baseIri ?? "");
+      result.controlledVocabularies[iri] = entity;
+    }));
   return result;
 }
 
@@ -201,6 +235,10 @@ function classProfileToStructureClass(
     item => item.profileOfIri, item => item.profiledClassIri,
     context.dsvClasses, profile);
 
+  const controlledVocabularyAssignments = profile.controlledVocabularyAssignments
+    .map(assignment => controlledVocabularyAssignmentProfileToStructure(
+      context, assignment));
+
   return {
     iri: profile.iri,
     name,
@@ -215,6 +253,20 @@ function classProfileToStructureClass(
     specializationOf: profile.specializationOfIri,
     // We add properties later.
     properties: [],
+    controlledVocabularyAssignments,
+  };
+}
+
+function controlledVocabularyAssignmentProfileToStructure(
+  context: Context, assignment: ControlledVocabularyAssignmentProfile,
+): StructureControlledVocabularyAssignment {
+  return {
+    iri: assignment.iri,
+    controlledVocabularyIri: assignment.controlledVocabularyIri,
+    pattern: context.controlledVocabularies[assignment.controlledVocabularyIri]
+      ?.pattern ?? null,
+    usageExpectation: iriToUsageExpectation(assignment.usageExpectationIri),
+    replaces: assignment.replacesIri,
   };
 }
 
