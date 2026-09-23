@@ -262,19 +262,18 @@ describe("SemanticClassProfileAggregator", () => {
     expect(actual.conceptIdentifiers).toStrictEqual(["class-1"]);
   });
 
-  // TODO
   it("Two ancestors with the same vocabulary and qualifier collapse to one inherited assignment.", () => {
     const profile = classProfileFixture({ profiling: ["a", "b"] });
     const profileA = classProfileFixture({
       id: "a", controlledVocabularies: ["cv-a"] });
     const profileB = classProfileFixture({
       id: "b", controlledVocabularies: ["cv-b"] });
-    const cvA = assignmentFixture({
+    const controlledVocabularyA = assignmentFixture({
       id: "cv-a", classProfile: "a", vocabulary: "voc-1", qualifier: "MUST" });
-    const cvB = assignmentFixture({
+    const controlledVocabularyB = assignmentFixture({
       id: "cv-b", classProfile: "b", vocabulary: "voc-1", qualifier: "MUST" });
     const actual = SemanticClassProfileAggregator.aggregate(
-      profile, [profileA, profileB, cvA, cvB]);
+      profile, [profileA, profileB, controlledVocabularyA, controlledVocabularyB]);
     expect(actual.controlledVocabularies).toStrictEqual(["cv-a"]);
   });
 
@@ -284,12 +283,12 @@ describe("SemanticClassProfileAggregator", () => {
       id: "a", controlledVocabularies: ["cv-a"] });
     const profileB = classProfileFixture({
       id: "b", controlledVocabularies: ["cv-b"] });
-    const cvA = assignmentFixture({
+    const controlledVocabularyA = assignmentFixture({
       id: "cv-a", classProfile: "a", vocabulary: "voc-1", qualifier: "MUST" });
-    const cvB = assignmentFixture({
+    const controlledVocabularyB = assignmentFixture({
       id: "cv-b", classProfile: "b", vocabulary: "voc-1", qualifier: "RECOMMENDED" });
     const actual = SemanticClassProfileAggregator.aggregate(
-      profile, [profileA, profileB, cvA, cvB]);
+      profile, [profileA, profileB, controlledVocabularyA, controlledVocabularyB]);
     expect(actual.controlledVocabularies).toStrictEqual(["cv-a"]);
   });
 
@@ -298,12 +297,12 @@ describe("SemanticClassProfileAggregator", () => {
       profiling: ["a"], controlledVocabularies: ["cv-own"] });
     const profileA = classProfileFixture({
       id: "a", controlledVocabularies: ["cv-a"] });
-    const cvA = assignmentFixture({
+    const controlledVocabularyA = assignmentFixture({
       id: "cv-a", classProfile: "a", vocabulary: "voc-1", qualifier: "MUST" });
     const cvOwn = assignmentFixture({
       id: "cv-own", classProfile: "1", vocabulary: "voc-1", qualifier: "RECOMMENDED" });
     const actual = SemanticClassProfileAggregator.aggregate(
-      profile, [profileA, cvA, cvOwn]);
+      profile, [profileA, controlledVocabularyA, cvOwn]);
     expect(actual.controlledVocabularies).toStrictEqual(["cv-own"]);
   });
 

@@ -1,89 +1,46 @@
 import { describe, test, expect } from "vitest";
 import { createDefaultProfileModelBuilder } from "../index.ts";
 import { flattenProfileModels } from "./profile-model-flattener.ts";
-import {
-  CONTROLLED_VOCABULARY_ASSIGNMENT,
-  ControlledVocabularyAssignment,
-  ProfileModel,
-  SEMANTIC_MODEL_CLASS_PROFILE,
-  SemanticModelClassProfile,
-} from "../profile-model.ts";
-
-function classProfileFixture(
-  overrides: Partial<SemanticModelClassProfile>,
-): SemanticModelClassProfile {
-  return {
-    id: "class-1",
-    type: [SEMANTIC_MODEL_CLASS_PROFILE],
-    iri: ":class-1",
-    name: {},
-    nameFromProfiled: null,
-    description: {},
-    descriptionFromProfiled: null,
-    profiling: [],
-    usageNote: null,
-    usageNoteFromProfiled: null,
-    externalDocumentationUrl: null,
-    tags: [],
-    controlledVocabularies: [],
-    ...overrides,
-  };
-}
-
-function assignmentFixture(
-  overrides: Partial<ControlledVocabularyAssignment>,
-): ControlledVocabularyAssignment {
-  return {
-    id: "cv-1",
-    type: [CONTROLLED_VOCABULARY_ASSIGNMENT],
-    classProfile: "class-1",
-    vocabulary: "voc-1",
-    qualifier: "MUST",
-    replaces: null,
-    iri: null,
-    ...overrides,
-  };
-}
-
-function profileModel(
-  identifier: string, entities: Record<string, SemanticModelClassProfile | ControlledVocabularyAssignment>,
-): ProfileModel {
-  return {
-    getId: () => identifier,
-    getBaseIri: () => null,
-    getEntities: () => entities,
-  };
-}
 
 describe("flattenProfileModels", () => {
 
   test("Own controlled vocabulary assignment is passed through and stays resolvable.", () => {
-    const assignment = assignmentFixture({});
-    const classProfile = classProfileFixture({ controlledVocabularies: ["cv-1"] });
-    const top = profileModel("top", { "class-1": classProfile, "cv-1": assignment });
+    const builder = createDefaultProfileModelBuilder({
+      baseIri: "http://example.com/top#",
+      baseIdentifier: "top:",
+    });
+    builder.class({ id: "class-1", controlledVocabularies: ["cv-1"] });
+    builder.controlledVocabularyAssignment({ id: "cv-1", classProfile: "class-1", vocabulary: "voc-1" });
+    const top = builder.build();
 
     const actual = flattenProfileModels("flat", [], top);
 
     expect(actual.getEntities()["class-1"]).toMatchObject({
       controlledVocabularies: ["cv-1"],
     });
-    expect(actual.getEntities()["cv-1"]).toStrictEqual(assignment);
+    expect(actual.getEntities()["cv-1"]).toStrictEqual(top.getEntities()["cv-1"]);
   });
 
   test("Inherited controlled vocabulary assignment is dropped - not implemented.", () => {
-    const ancestorAssignment = assignmentFixture({
-      id: "cv-ancestor", classProfile: "ancestor", qualifier: "RECOMMENDED",
+    const dependencyBuilder = createDefaultProfileModelBuilder({
+      baseIri: "http://example.com/dependency#",
+      baseIdentifier: "dependency:",
     });
-    const ancestor = classProfileFixture({
+    const ancestor = dependencyBuilder.class({
       id: "ancestor", controlledVocabularies: ["cv-ancestor"],
     });
-    const dependency = profileModel(
-      "dependency", { "ancestor": ancestor, "cv-ancestor": ancestorAssignment });
+    dependencyBuilder.controlledVocabularyAssignment({
+      id: "cv-ancestor", classProfile: "ancestor", vocabulary: "voc-1", qualifier: "RECOMMENDED",
+    });
 
-    const classProfile = classProfileFixture({ profiling: ["ancestor"] });
-    const top = profileModel("top", { "class-1": classProfile });
+    const topBuilder = createDefaultProfileModelBuilder({
+      baseIri: "http://example.com/top#",
+      baseIdentifier: "top:",
+    });
+    topBuilder.class({ id: "class-1" }).profile(ancestor);
 
-    const actual = flattenProfileModels("flat", [dependency], top);
+    const actual = flattenProfileModels(
+      "flat", [dependencyBuilder.build()], topBuilder.build());
 
     // Not implemented: the inherited assignment is neither pulled onto
     // the flattened class profile's own controlledVocabularies list...

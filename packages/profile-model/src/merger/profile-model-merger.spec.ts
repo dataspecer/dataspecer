@@ -2,24 +2,8 @@ import { describe, test, expect } from "vitest";
 import { createDefaultProfileModelBuilder } from "../default-profile-model-builder.ts";
 import { margeProfileModels } from "./profile-model-merger.ts";
 import {
-  CONTROLLED_VOCABULARY_ASSIGNMENT,
-  ControlledVocabularyAssignment,
   ProfileClass,
-  ProfileModel,
 } from "../profile-model.ts";
-
-/**
- * Adds an entity to a built model's entities - used to attach a standalone
- * ControlledVocabularyAssignment, which the builder has no dedicated method
- * for.
- */
-function withExtraEntity(model: ProfileModel, entity: ControlledVocabularyAssignment): ProfileModel {
-  return {
-    getId: () => model.getId(),
-    getBaseIri: () => model.getBaseIri(),
-    getEntities: () => ({ ...model.getEntities(), [entity.id]: entity }),
-  };
-}
 
 describe("margeProfileModels", () => {
 
@@ -118,32 +102,27 @@ describe("margeProfileModels", () => {
 
   test("Two models' own assignments for the same vocabulary on the same class profile collapse to one (left wins).", () => {
 
-    function assignmentFixture(
-      overrides: Partial<ControlledVocabularyAssignment>,
-    ): ControlledVocabularyAssignment {
-      return {
-        id: "cv", type: [CONTROLLED_VOCABULARY_ASSIGNMENT],
-        classProfile: "shared", vocabulary: "voc-1", qualifier: "MUST",
-        replaces: null, iri: null,
-        ...overrides,
-      };
-    }
-
     const first = createDefaultProfileModelBuilder({
       baseIri: "http://example.com/first#",
       baseIdentifier: "shared:",
     });
     first.class({ id: "shared", iri: "Person", controlledVocabularies: ["cv-left"] });
+    first.controlledVocabularyAssignment({
+      id: "cv-left", classProfile: "shared", vocabulary: "voc-1", qualifier: "MUST",
+    });
 
     const second = createDefaultProfileModelBuilder({
       baseIri: "http://example.com/second#",
       baseIdentifier: "shared:",
     });
     second.class({ id: "shared", iri: "Person", controlledVocabularies: ["cv-right"] });
+    second.controlledVocabularyAssignment({
+      id: "cv-right", classProfile: "shared", vocabulary: "voc-1", qualifier: "RECOMMENDED",
+    });
 
     const actual = margeProfileModels("merge", [
-      withExtraEntity(first.build(), assignmentFixture({ id: "cv-left", qualifier: "MUST" })),
-      withExtraEntity(second.build(), assignmentFixture({ id: "cv-right", qualifier: "RECOMMENDED" })),
+      first.build(),
+      second.build(),
     ]);
 
     const mergedClassProfile = actual.getEntities()["shared"] as ProfileClass;
@@ -153,32 +132,23 @@ describe("margeProfileModels", () => {
 
   test("Same-vocabulary assignments on two different (non-conflicting) class profiles are both kept - dedup only applies within a single merged class profile.", () => {
 
-    function assignmentFixture(
-      overrides: Partial<ControlledVocabularyAssignment>,
-    ): ControlledVocabularyAssignment {
-      return {
-        id: "cv", type: [CONTROLLED_VOCABULARY_ASSIGNMENT],
-        classProfile: "cv", vocabulary: "voc-1", qualifier: "MUST",
-        replaces: null, iri: null,
-        ...overrides,
-      };
-    }
-
     const first = createDefaultProfileModelBuilder({
       baseIri: "http://example.com/first#",
       baseIdentifier: "first:",
     });
     first.class({ id: "class-1", iri: "Class1", controlledVocabularies: ["cv-1"] });
+    first.controlledVocabularyAssignment({ id: "cv-1", classProfile: "class-1", vocabulary: "voc-1" });
 
     const second = createDefaultProfileModelBuilder({
       baseIri: "http://example.com/second#",
       baseIdentifier: "second:",
     });
     second.class({ id: "class-2", iri: "Class2", controlledVocabularies: ["cv-2"] });
+    second.controlledVocabularyAssignment({ id: "cv-2", classProfile: "class-2", vocabulary: "voc-1" });
 
     const actual = margeProfileModels("merge", [
-      withExtraEntity(first.build(), assignmentFixture({ id: "cv-1", classProfile: "class-1" })),
-      withExtraEntity(second.build(), assignmentFixture({ id: "cv-2", classProfile: "class-2" })),
+      first.build(),
+      second.build(),
     ]);
 
     expect((actual.getEntities()["class-1"] as ProfileClass).controlledVocabularies)
