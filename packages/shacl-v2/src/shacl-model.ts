@@ -53,6 +53,21 @@ export interface ShaclNodeShape {
    */
   propertyShapes: ShaclPropertyShape[];
 
+  /**
+   * Regular expression the focus node's IRI must match.
+   *
+   * @lc-identifier shacl:pattern
+   */
+  pattern: string | null;
+
+  /**
+   * Severity to report when this shape's constraints are not met.
+   * `null` means no override, i.e. SHACL's implicit default (shacl:Violation).
+   *
+   * @lc-identifier shacl:severity
+   */
+  severity: ShaclSeverity | null;
+
 }
 
 /**
@@ -150,4 +165,12 @@ export enum ShaclNodeKind {
   BlankNodeOrIRI = "BlankNodeOrIRI",
   BlankNodeOrLiteral = "BlankNodeOrLiteral",
   IRIOrLiteral = "IRIOrLiteral",
+}
+
+/**
+ * Enum for SHACL Severities.
+ */
+export enum ShaclSeverity {
+  Violation = "Violation",
+  Warning = "Warning",
 }

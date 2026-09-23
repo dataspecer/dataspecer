@@ -22,6 +22,8 @@ describe("applyNoClassConstraint", () => {
         closed: false,
         seeAlso: "http://localhost/does-not-matter",
         targetClass: "http://example.com/vocabulary#object",
+        pattern: null,
+        severity: null,
         propertyShapes: [{
           iri: "",
           seeAlso: null,
@@ -58,6 +60,8 @@ describe("filterLanguageStrings", () => {
         closed: false,
         seeAlso: "http://localhost/does-not-matter",
         targetClass: "http://localhost/does-not-matter",
+        pattern: null,
+        severity: null,
         propertyShapes: [createShaclPropertyShape({
           iri: "http://localhost/does-not-matter",
           path: "http://spdx.org/rdf/terms#checksum",
@@ -89,6 +93,8 @@ describe("splitConstraints", () => {
         closed: false,
         seeAlso: "http://localhost/does-not-matter",
         targetClass: "http://www.w3.org/ns/dcat#Dataset",
+        pattern: null,
+        severity: null,
         propertyShapes: [{
           iri: "http://example/shape",
           seeAlso: null,
@@ -117,6 +123,8 @@ describe("splitConstraints", () => {
         closed: false,
         seeAlso: "http://localhost/does-not-matter",
         targetClass: "http://www.w3.org/ns/dcat#Dataset",
+        pattern: null,
+        severity: null,
         propertyShapes: [createShaclPropertyShape({
           iri: "http://example/shape/nodeKind",
           description: { en: "Description.." },
@@ -172,6 +180,8 @@ describe("splitConstraints", () => {
         closed: false,
         seeAlso: "http://localhost/does-not-matter",
         targetClass: "http://www.w3.org/ns/dcat#Dataset",
+        pattern: null,
+        severity: null,
         propertyShapes: [{
           iri: "http://example/shape",
           seeAlso: null,
@@ -200,6 +210,8 @@ describe("splitConstraints", () => {
         closed: false,
         seeAlso: "http://localhost/does-not-matter",
         targetClass: "http://www.w3.org/ns/dcat#Dataset",
+        pattern: null,
+        severity: null,
         propertyShapes: [],
       }]
     };
