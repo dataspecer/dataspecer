@@ -5,23 +5,20 @@ import {
 import type { SelectControlledVocabulariesState } from "./select-controlled-vocabularies-state";
 import { createSelectControlledVocabulariesState } from "./select-controlled-vocabularies-state";
 import type { ControlledVocabularyUsage } from "./controlled-vocabulary-model";
+import { DEFAULT_CONTROLLED_VOCABULARY } from "@dataspecer/controlled-vocabulary-model";
 
 const V1 = {
+  ...DEFAULT_CONTROLLED_VOCABULARY,
   id: "v1",
-  name: "Vocabulary 1",
-  iri: "http://example.com/v1",
-  regex: "^.*$",
-  downloadUrl: "http://example.com/v1/download",
-  docsUrl: "http://example.com/v1/docs",
+  title: "Vocabulary 1",
+  references: "http://example.com/v1",
 };
 
 const V2 = {
+  ...DEFAULT_CONTROLLED_VOCABULARY,
   id: "v2",
-  name: "Vocabulary 2",
-  iri: "http://example.com/v2",
-  regex: "^.*$",
-  downloadUrl: "http://example.com/v2/download",
-  docsUrl: "http://example.com/v2/docs",
+  title: "Vocabulary 2",
+  references: "http://example.com/v2",
 };
 
 function findItem(state: SelectControlledVocabulariesState, vocabularyId: string) {
@@ -49,9 +46,21 @@ describe("createSelectControlledVocabulariesPresenter", () => {
     expect(state.addForm?.availableVocabularies).toEqual([V1, V2]);
   });
 
+  test("onOpenAddForm excludes vocabularies already used by an inherited or added item.", () => {
+    const inherited: ControlledVocabularyUsage[] = [
+      { assignmentId: "cv-v1", vocabulary: V1, qualifier: "MUST" },
+    ];
+    let state = createSelectControlledVocabulariesState(inherited, [], [], [V1, V2]);
+    const presenter = createSelectControlledVocabulariesPresenter(
+      next => { state = next(state); });
+
+    presenter.onOpenAddForm();
+    expect(state.addForm?.availableVocabularies).toEqual([V2]);
+  });
+
   test("onCancelAddForm closes the add form.", () => {
     const inherited: ControlledVocabularyUsage[] = [
-      { vocabulary: V1, qualifier: "MUST" },
+      { assignmentId: "cv-v1", vocabulary: V1, qualifier: "MUST" },
     ];
     let state = createSelectControlledVocabulariesState(inherited, [], [], [V1, V2]);
     const presenter = createSelectControlledVocabulariesPresenter(
@@ -96,8 +105,8 @@ describe("createSelectControlledVocabulariesPresenter", () => {
 
   test("onRemove removes a directly added vocabulary.", () => {
     const added: ControlledVocabularyUsage[] = [
-      { vocabulary: V1, qualifier: "MAY" },
-      { vocabulary: V2, qualifier: "RECOMMENDED" },
+      { assignmentId: "cv-v1", vocabulary: V1, qualifier: "MAY" },
+      { assignmentId: "cv-v2", vocabulary: V2, qualifier: "RECOMMENDED" },
     ];
     let state = createSelectControlledVocabulariesState([], [], added, [V1, V2]);
     const presenter = createSelectControlledVocabulariesPresenter(
@@ -111,7 +120,7 @@ describe("createSelectControlledVocabulariesPresenter", () => {
 
   test("onRemove is a no-op for an inherited vocabulary.", () => {
     const inherited: ControlledVocabularyUsage[] = [
-      { vocabulary: V1, qualifier: "MUST" },
+      { assignmentId: "cv-v1", vocabulary: V1, qualifier: "MUST" },
     ];
     let state = createSelectControlledVocabulariesState(inherited, [], [], [V1, V2]);
     const presenter = createSelectControlledVocabulariesPresenter(
@@ -125,7 +134,7 @@ describe("createSelectControlledVocabulariesPresenter", () => {
 
   test("itemPresenter modifies the qualifier of a directly added item.", () => {
     const added: ControlledVocabularyUsage[] = [
-      { vocabulary: V1, qualifier: "MAY" },
+      { assignmentId: "cv-v1", vocabulary: V1, qualifier: "MAY" },
     ];
     let state = createSelectControlledVocabulariesState([], [], added, [V1, V2]);
     const presenter = createSelectControlledVocabulariesPresenter(
@@ -138,10 +147,10 @@ describe("createSelectControlledVocabulariesPresenter", () => {
 
   test("itemPresenter only ever touches the targeted vocabulary.", () => {
     const inherited: ControlledVocabularyUsage[] = [
-      { vocabulary: V1, qualifier: "MAY" },
+      { assignmentId: "cv-v1", vocabulary: V1, qualifier: "MAY" },
     ];
     const added: ControlledVocabularyUsage[] = [
-      { vocabulary: V2, qualifier: "RECOMMENDED" },
+      { assignmentId: "cv-v2", vocabulary: V2, qualifier: "RECOMMENDED" },
     ];
     let state = createSelectControlledVocabulariesState(inherited, [], added, [V1, V2]);
     const presenter = createSelectControlledVocabulariesPresenter(
@@ -155,7 +164,7 @@ describe("createSelectControlledVocabulariesPresenter", () => {
 
   test("itemPresenter enables override and seeds the qualifier from the inherited value.", () => {
     const inherited: ControlledVocabularyUsage[] = [
-      { vocabulary: V1, qualifier: "MUST" },
+      { assignmentId: "cv-v1", vocabulary: V1, qualifier: "MUST" },
     ];
     let state = createSelectControlledVocabulariesState(inherited, [], [], [V1, V2]);
     const presenter = createSelectControlledVocabulariesPresenter(
@@ -171,7 +180,7 @@ describe("createSelectControlledVocabulariesPresenter", () => {
 
   test("itemPresenter changes an override qualifier once enabled.", () => {
     const inherited: ControlledVocabularyUsage[] = [
-      { vocabulary: V1, qualifier: "MUST" },
+      { assignmentId: "cv-v1", vocabulary: V1, qualifier: "MUST" },
     ];
     let state = createSelectControlledVocabulariesState(inherited, [], [], [V1, V2]);
     const presenter = createSelectControlledVocabulariesPresenter(

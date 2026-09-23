@@ -2,14 +2,13 @@ import { describe, test, expect } from "vitest";
 import { VocabularyItemState } from "./vocabulary-item-state";
 import { createVocabularyItemPresenter } from "./vocabulary-item-presenter";
 import { ControlledVocabulary } from "./controlled-vocabulary-model";
+import { DEFAULT_CONTROLLED_VOCABULARY } from "@dataspecer/controlled-vocabulary-model";
 
 const VOCABULARY: ControlledVocabulary = {
+  ...DEFAULT_CONTROLLED_VOCABULARY,
   id: "v1",
-  name: "Vocabulary",
-  iri: "http://example.com/v1",
-  regex: "^.*$",
-  downloadUrl: "http://example.com/v1/download",
-  docsUrl: "http://example.com/v1/docs",
+  title: "Vocabulary",
+  references: "http://example.com/v1",
 };
 
 describe("test createVocabularyItemPresenter", () => {
@@ -17,9 +16,10 @@ describe("test createVocabularyItemPresenter", () => {
   test("After enabling override the inherited qualifier value is used", () => {
     let state: VocabularyItemState = {
       id: "1",
+      entityId: null,
       vocabulary: VOCABULARY,
       qualifier: "MUST",
-      inherited: { qualifier: "MUST", overrideEnabled: false },
+      inherited: { assignmentId: "cv-1", qualifier: "MUST", overrideEnabled: false },
     };
     const presenter = createVocabularyItemPresenter(next => { state = next(state); });
 
@@ -32,9 +32,10 @@ describe("test createVocabularyItemPresenter", () => {
   test("Disabling override reverts qualifier to the inherited value.", () => {
     let state: VocabularyItemState = {
       id: "1",
+      entityId: "own-1",
       vocabulary: VOCABULARY,
       qualifier: "RECOMMENDED",
-      inherited: { qualifier: "MUST", overrideEnabled: true },
+      inherited: { assignmentId: "cv-1", qualifier: "MUST", overrideEnabled: true },
     };
     const presenter = createVocabularyItemPresenter(next => { state = next(state); });
 
@@ -47,6 +48,7 @@ describe("test createVocabularyItemPresenter", () => {
   test("Is a no-op for items that are not inherited.", () => {
     const initial: VocabularyItemState = {
       id: "1",
+      entityId: "own-1",
       vocabulary: VOCABULARY,
       qualifier: "MAY",
       inherited: null,
@@ -62,9 +64,10 @@ describe("test createVocabularyItemPresenter", () => {
   test("Changes the qualifier of an overridden inherited item.", () => {
     let state: VocabularyItemState = {
       id: "1",
+      entityId: "own-1",
       vocabulary: VOCABULARY,
       qualifier: "MUST",
-      inherited: { qualifier: "MUST", overrideEnabled: true },
+      inherited: { assignmentId: "cv-1", qualifier: "MUST", overrideEnabled: true },
     };
     const presenter = createVocabularyItemPresenter(next => { state = next(state); });
 
@@ -77,6 +80,7 @@ describe("test createVocabularyItemPresenter", () => {
   test("Changes the qualifier of an added item.", () => {
     let state: VocabularyItemState = {
       id: "1",
+      entityId: "own-1",
       vocabulary: VOCABULARY,
       qualifier: "AT_LEAST_1",
       inherited: null,

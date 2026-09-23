@@ -40,6 +40,7 @@ import {
 import { DialogSemanticTracker } from "../dialog-v2/dialog-semantic-tracker";
 import { LabelResolver } from "../dependency-tracker";
 import { applyControlledVocabularySelection } from "./apply-controlled-vocabulary-selection";
+import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 
 /**
  * Creates default profiles of given {@link semanticClassesToProfile} and {@link semanticRelationshipsToProfile}.
@@ -58,6 +59,7 @@ export async function createDefaultProfilesAction(
   shouldBeAddedToVisualModel: boolean,
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
+  availableVocabularies: ControlledVocabulary[],
 ): Promise<void> {
   const writableSemanticModel = findAnyWritableModelFromRawInput(graph.models, visualModel);
   if (writableSemanticModel === null) {
@@ -68,11 +70,12 @@ export async function createDefaultProfilesAction(
   const createdClassProfiles = await createDefaultClassProfiles(
     cmeExecutor, notifications, graph, diagram, options.language, classesContext,
     visualModel, semanticClassesToProfile, shouldBeAddedToVisualModel, tracker,
-    labelResolver);
+    labelResolver, availableVocabularies);
   createDefaultRelationshipProfiles(
     notifications, classesContext, graph, diagram, options.language, visualModel,
     writableSemanticModel, cmeExecutor, semanticRelationshipsToProfile,
-    createdClassProfiles, shouldBeAddedToVisualModel, tracker, labelResolver);
+    createdClassProfiles, shouldBeAddedToVisualModel, tracker, labelResolver,
+    availableVocabularies);
 };
 
 /**
@@ -94,13 +97,14 @@ async function createDefaultClassProfiles(
   shouldBeAddedToVisualModel: boolean,
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
+  availableVocabularies: ControlledVocabulary[],
 ): Promise<Record<string, (string | null)[]>> {
   const createdClassProfiles: Record<string, (string | null)[]> = {};
   for (const entityToProfile of classesAndClassProfilesToProfile) {
     const createdClassProfile = await createDefaultClassProfile(
       cmeExecutor, notifications, graph, diagram, language, classesContext,
       visualModel, entityToProfile, shouldBeAddedToVisualModel, tracker,
-      labelResolver);
+      labelResolver, availableVocabularies);
 
     if (createdClassProfiles[entityToProfile] === undefined) {
       createdClassProfiles[entityToProfile] = [];
@@ -128,6 +132,7 @@ async function createDefaultClassProfile(
   shouldBeAddedToVisualModel: boolean,
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
+  availableVocabularies: ControlledVocabulary[],
 ): Promise<string | null> {
   const classOrClassProfileToBeProfiled = graph.aggregatorView.getEntities()?.[entityToProfile]?.aggregatedEntity;
   if (classOrClassProfileToBeProfiled === undefined || classOrClassProfileToBeProfiled === null) {
@@ -143,7 +148,7 @@ async function createDefaultClassProfile(
 
   const profileClassState = createNewProfileClassDialogState(
     visualModel, language, [classOrClassProfileToBeProfiled.id], tracker,
-    labelResolver, graph);
+    labelResolver, graph, availableVocabularies);
   const createdClassProfile = createClassProfile(profileClassState, cmeExecutor);
   if (shouldBeAddedToVisualModel) {
     if (isWritableVisualModel(visualModel)) {
@@ -187,6 +192,7 @@ function createDefaultRelationshipProfiles(
   shouldBeAddedToVisualModel: boolean,
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
+  availableVocabularies: ControlledVocabulary[],
 ) {
   // Casting ... the correctness should be already validated
   const writableSemanticModel = graph.models.get(writableCmeModel.identifier) as InMemorySemanticModel;
@@ -195,7 +201,7 @@ function createDefaultRelationshipProfiles(
       notifications, classesContext, graph, diagram, language,
       writableSemanticModel, cmeExecutor, visualModel,
       edgeToProfile, createdClassProfiles, shouldBeAddedToVisualModel, tracker,
-      labelResolver);
+      labelResolver, availableVocabularies);
   }
 }
 
@@ -218,6 +224,7 @@ async function createDefaultRelationshipProfile(
   shouldBeAddedToVisualModel: boolean,
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
+  availableVocabularies: ControlledVocabulary[],
 ) {
   const relationshipToProfile = getAndValidateRelationshipToBeProfiled(notifications, graph, entityToProfile);
   if (relationshipToProfile === null) {
@@ -240,7 +247,7 @@ async function createDefaultRelationshipProfile(
       const possibleEnd = await createDefaultClassProfile(
         cmeExecutor, notifications, graph, diagram, language, classesContext,
         visualModel, end.concept, shouldBeAddedToVisualModel, tracker,
-        labelResolver);
+        labelResolver, availableVocabularies);
 
       if (possibleEnd === null) {
         notifications.error("Can not create relationship profile end");

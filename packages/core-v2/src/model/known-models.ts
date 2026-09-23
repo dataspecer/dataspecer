@@ -29,6 +29,12 @@ export const QUERYABLE_MODEL = "https://dataspecer.com/core/model-descriptor/sgo
  */
 export const RDFS_MODEL = "https://dataspecer.com/core/model-descriptor/pim-store-wrapper";
 
+/**
+ * Model representing a single controlled vocabulary metadata entry.
+ * TODO: do we need to publish this URL?
+ */
+export const CONTROLLED_VOCABULARY_MODEL = "http://dataspecer.com/resources/local/controlled-vocabulary";
+
 // Old models from core@v1
 export const V1 = {
     /** @deprecated */

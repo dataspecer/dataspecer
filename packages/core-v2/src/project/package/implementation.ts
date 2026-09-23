@@ -200,19 +200,27 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
             responseStatuses.add(updatedResponse.status);
         }
 
-        // Remove other models
+        // Remove other models.
+        //
+        // An empty `models`/`visualModels` is never a legitimate "the user
+        // removed every model" - a package always has at least its own
+        // primary semantic model - so it can only mean the caller failed to
+        // load its models before saving. Deleting on that basis would wipe
+        // every model resource in the package, so skip the cleanup instead.
         const modelIds = [...models, ...visualModels].map(model => model.getId());
-        const pckg = await this.getPackage(packageId);
-        for (const model of pckg.subResources!) {
-            if (model.types.some(t => [
-                VISUAL_MODEL,
-                QUERYABLE_MODEL,
-                LOCAL_SEMANTIC_MODEL,
-                RDFS_MODEL
-            ].includes(t))) {
-                if (!modelIds.includes(model.iri)) {
-                    // Remove model
-                    await this.deleteResource(model.iri);
+        if (modelIds.length > 0) {
+            const pckg = await this.getPackage(packageId);
+            for (const model of pckg.subResources!) {
+                if (model.types.some(t => [
+                    VISUAL_MODEL,
+                    QUERYABLE_MODEL,
+                    LOCAL_SEMANTIC_MODEL,
+                    RDFS_MODEL
+                ].includes(t))) {
+                    if (!modelIds.includes(model.iri)) {
+                        // Remove model
+                        await this.deleteResource(model.iri);
+                    }
                 }
             }
         }

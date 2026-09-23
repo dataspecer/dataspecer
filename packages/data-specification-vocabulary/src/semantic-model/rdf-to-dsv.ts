@@ -5,6 +5,7 @@ import {
   ApplicationProfile,
   ClassProfile,
   ClassProfileType,
+  ControlledVocabularyAssignmentProfile,
   PropertyProfile,
   ObjectPropertyProfile,
   ObjectPropertyProfileType,
@@ -52,6 +53,8 @@ class RdfLoaderContext {
 
   readonly datatypePropertyProfiles: N3.Quad_Subject[] = [];
 
+  readonly controlledVocabularyAssignments: N3.Quad_Subject[] = [];
+
   constructor(quads: N3.Quad[]) {
     for (const quad of quads) {
       this.addToQuadsBySubject(quad);
@@ -81,6 +84,8 @@ class RdfLoaderContext {
       this.objectPropertyProfiles.push(subject);
     } else if (DSV.DatatypePropertyProfile.equals(type)) {
       this.datatypePropertyProfiles.push(subject);
+    } else if (DSV.ControlledVocabularyAssignment.equals(type)) {
+      this.controlledVocabularyAssignments.push(subject);
     }
   }
 
@@ -204,8 +209,30 @@ class ProfileLoader {
       type: [ClassProfileType],
       profiledClassIri: reader.iris(DSV.class),
       classRole: iriToClassRole(reader.iri(DSV.classRole)),
+      controlledVocabularyAssignments: this.loadControlledVocabularyAssignments(subject),
     };
     this.addToApplicationProfile(reader, item => item.classProfiles, profile);
+  }
+
+  /**
+   * Reads this class profile's own controlled vocabulary assignments,
+   * discovered via the backward edge on each assignment (dsv:classProfile)
+   */
+  private loadControlledVocabularyAssignments(
+    classProfile: N3.Quad_Subject,
+  ): ControlledVocabularyAssignmentProfile[] {
+    const result: ControlledVocabularyAssignmentProfile[] = [];
+    for (const node of this.context.controlledVocabularyAssignments) {
+      const owner = new RdfPropertyReader(this.context, node).iri(DSV.classProfile);
+      if (owner !== classProfile.value) {
+        continue;
+      }
+      const assignment = loadControlledVocabularyAssignment(this.context, node);
+      if (assignment !== null) {
+        result.push(assignment);
+      }
+    }
+    return result;
   }
 
   private loadTermProfile(
@@ -344,6 +371,29 @@ function loadReusesPropertyValue(
     reusedAsPropertyIri: reusedAsProperty,
     propertyReusedFromResourceIri: reusedFrom,
   });
+}
+
+function loadControlledVocabularyAssignment(
+  context: RdfLoaderContext,
+  subject: N3.Quad_Subject,
+): ControlledVocabularyAssignmentProfile | null {
+  const reader = new RdfPropertyReader(context, subject);
+  const controlledVocabularyIri = reader.iri(DSV.controlledVocabulary);
+  const usageExpectationIri = reader.iri(DSV.usageExpectation);
+  if (controlledVocabularyIri === null || usageExpectationIri === null) {
+    console.warn("Invalid dsv:ControlledVocabularyAssignment, missing controlledVocabulary or usageExpectation.", {
+      subject: subject.value,
+      controlledVocabularyIri,
+      usageExpectationIri,
+    });
+    return null;
+  }
+  return {
+    iri: subject.value,
+    controlledVocabularyIri,
+    usageExpectationIri,
+    replacesIri: reader.iri(DSV.replaces),
+  };
 }
 
 /**

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import type { CvmControlledVocabulary } from '../types/controlled-vocabulary'
+import type { ControlledVocabulary } from '@dataspecer/controlled-vocabulary-model'
 
 /**
  * Manages UI state for vocabulary editing workflow.
@@ -12,9 +12,9 @@ import type { CvmControlledVocabulary } from '../types/controlled-vocabulary'
  * @returns Object with editing state and workflow methods
  */
 export function useVocabularyEditor() {
-  const [editingVocabulary, setEditingVocabulary] = useState<CvmControlledVocabulary | undefined>(undefined)
+  const [editingVocabulary, setEditingVocabulary] = useState<ControlledVocabulary | undefined>(undefined)
 
-  const startEditing = useCallback((vocabulary: CvmControlledVocabulary) => {
+  const startEditing = useCallback((vocabulary: ControlledVocabulary) => {
     setEditingVocabulary(vocabulary)
   }, [])
 

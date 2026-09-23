@@ -1,5 +1,7 @@
 import {
+  isControlledVocabularyAssignment,
   ProfileClass,
+  ProfileEntityRecord,
   ProfileGeneralization,
   ProfileRelationshipEnd,
   ProfileRelationship,
@@ -9,7 +11,11 @@ import { ProfileModelMergePolicy } from "./merge-policy.ts";
 
 class DefaultMergePolicy implements ProfileModelMergePolicy {
 
-  mergeClassProfile(left: ProfileClass, right: ProfileClass): ProfileClass {
+  mergeClassProfile(
+    left: ProfileClass,
+    right: ProfileClass,
+    assignmentEntities: ProfileEntityRecord,
+  ): ProfileClass {
     return {
       id: left.id,
       type: left.type,
@@ -27,9 +33,8 @@ class DefaultMergePolicy implements ProfileModelMergePolicy {
       // Here the order does not matter.
       profiling: [...new Set(...left.profiling, ...right.profiling)],
       tags: [...new Set(...left.tags, ...right.tags)],
-      controlledVocabularies: left.controlledVocabularies === undefined && right.controlledVocabularies === undefined
-        ? undefined
-        : [...(left.controlledVocabularies ?? []), ...(right.controlledVocabularies ?? [])]
+      controlledVocabularies: mergeControlledVocabularies(
+        left.controlledVocabularies, right.controlledVocabularies, assignmentEntities),
     };
   }
 
@@ -113,6 +118,39 @@ function mergeRelationshipEndProfile(
     profiling: [...new Set(...left.profiling, ...right.profiling)],
     tags: [...new Set(...left.tags, ...right.tags)],
   };
+}
+
+/**
+ * Merges own assignment ids, keeping at most one per vocabulary (left wins).
+ */
+function mergeControlledVocabularies(
+  left: string[] | undefined,
+  right: string[] | undefined,
+  assignmentEntities: ProfileEntityRecord,
+): string[] | undefined {
+  if (left === undefined && right === undefined) {
+    return undefined;
+  }
+  const resolveVocabulary = (id: string): string | null => {
+    const entity = assignmentEntities[id];
+    return isControlledVocabularyAssignment(entity) ? entity.vocabulary : null;
+  };
+  const result = [...(left ?? [])];
+  const usedVocabularies = new Set(
+    result.map(resolveVocabulary).filter(vocabulary => vocabulary !== null));
+  for (const id of right ?? []) {
+    const vocabulary = resolveVocabulary(id);
+    if (vocabulary !== null) {
+      if (usedVocabularies.has(vocabulary)) {
+        console.warn("Dropped a duplicate controlled vocabulary assignment during merge - a class profile can only have one own assignment per vocabulary.",
+          { id, vocabulary });
+        continue;
+      }
+      usedVocabularies.add(vocabulary);
+    }
+    result.push(id);
+  }
+  return result;
 }
 
 /**

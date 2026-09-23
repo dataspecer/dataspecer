@@ -4,20 +4,18 @@ import {
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
 import { DataspecerError } from "../../dataspecer-error";
 import { CmeReference } from "../model";
-import { EntityDsIdentifier } from "../../entity-model";
 
 const factory = createDefaultSemanticModelProfileOperationFactory();
 
 /**
  * @throws DataspecerError
  */
-export function removeCmeControlledVocabularyAssignment(
+export function deleteCmeControlledVocabularyAssignment(
   model: InMemorySemanticModel,
-  classProfile: CmeReference,
-  controlledVocabularyIdentifier: EntityDsIdentifier,
+  assignment: CmeReference,
 ) {
   const operation = factory.removeControlledVocabularyAssignment(
-    classProfile.identifier, controlledVocabularyIdentifier);
+    assignment.identifier);
 
   const result = model.executeOperation(operation);
   if (result.success === false) {

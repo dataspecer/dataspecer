@@ -103,6 +103,7 @@ test("End to end test I.", async () => {
       "specializationOfIri": [],
       "externalDocumentationUrl": "external-doc-1",
       "classRole": ClassRole.undefined,
+      "controlledVocabularyAssignments": [],
     }, {
       "iri": "http://dcat/model/flatBack1",
       "prefLabel": { "en": "Flat Back Changed in Profile" },
@@ -115,6 +116,7 @@ test("End to end test I.", async () => {
       "specializationOfIri": [],
       "externalDocumentationUrl": "external-doc-2",
       "classRole": ClassRole.supportive,
+      "controlledVocabularyAssignments": [],
     }],
     "datatypePropertyProfiles": [{
       "iri": "http://dcat/model/SweetState.tightArtChanges",

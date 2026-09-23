@@ -4,6 +4,57 @@ import { flattenProfileModels } from "./profile-model-flattener.ts";
 
 describe("flattenProfileModels", () => {
 
+  test("Own controlled vocabulary assignment is passed through and stays resolvable.", () => {
+    const builder = createDefaultProfileModelBuilder({
+      baseIri: "http://example.com/top#",
+      baseIdentifier: "top:",
+    });
+    builder.class({ id: "class-1", controlledVocabularies: ["cv-1"] });
+    builder.controlledVocabularyAssignment({ id: "cv-1", classProfile: "class-1", vocabulary: "voc-1" });
+    const top = builder.build();
+
+    const actual = flattenProfileModels("flat", [], top);
+
+    expect(actual.getEntities()["class-1"]).toMatchObject({
+      controlledVocabularies: ["cv-1"],
+    });
+    expect(actual.getEntities()["cv-1"]).toStrictEqual(top.getEntities()["cv-1"]);
+  });
+
+  test("Inherited controlled vocabulary assignment is dropped - not implemented.", () => {
+    const dependencyBuilder = createDefaultProfileModelBuilder({
+      baseIri: "http://example.com/dependency#",
+      baseIdentifier: "dependency:",
+    });
+    const ancestor = dependencyBuilder.class({
+      id: "ancestor", controlledVocabularies: ["cv-ancestor"],
+    });
+    dependencyBuilder.controlledVocabularyAssignment({
+      id: "cv-ancestor", classProfile: "ancestor", vocabulary: "voc-1", qualifier: "RECOMMENDED",
+    });
+
+    const topBuilder = createDefaultProfileModelBuilder({
+      baseIri: "http://example.com/top#",
+      baseIdentifier: "top:",
+    });
+    topBuilder.class({ id: "class-1" }).profile(ancestor);
+
+    const actual = flattenProfileModels(
+      "flat", [dependencyBuilder.build()], topBuilder.build());
+
+    // Not implemented: the inherited assignment is neither pulled onto
+    // the flattened class profile's own controlledVocabularies list...
+    expect(actual.getEntities()["class-1"]).toMatchObject({
+      controlledVocabularies: [],
+    });
+    // ...nor materialized in the flattened output at all.
+    expect(actual.getEntities()["cv-ancestor"]).toBeUndefined();
+  });
+
+});
+
+describe("flattenProfileModels - existing behavior", () => {
+
   test("Implementation test I.", () => {
 
     const biology = createDefaultProfileModelBuilder({

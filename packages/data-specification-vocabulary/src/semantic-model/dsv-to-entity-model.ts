@@ -6,6 +6,7 @@ import {
   ApplicationProfile,
   Cardinality,
   ClassProfile,
+  ControlledVocabularyAssignmentProfile,
   PropertyProfile,
   isObjectPropertyProfile,
   isDatatypePropertyProfile,
@@ -16,13 +17,15 @@ import {
 } from "./dsv-model.ts";
 
 import {
+  CONTROLLED_VOCABULARY_ASSIGNMENT,
+  ControlledVocabularyAssignment,
   SEMANTIC_MODEL_CLASS_PROFILE,
   SEMANTIC_MODEL_RELATIONSHIP_PROFILE,
   SemanticModelClassProfile,
   SemanticModelRelationshipEndProfile,
   SemanticModelRelationshipProfile,
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { DSV_CLASS_ROLE, DSV_MANDATORY_LEVEL, SKOS } from "./vocabulary.ts";
+import { DSV_CLASS_ROLE, DSV_MANDATORY_LEVEL, iriToUsageExpectation, SKOS } from "./vocabulary.ts";
 import { SEMANTIC_MODEL_GENERALIZATION, SemanticModelGeneralization } from "@dataspecer/core-v2/semantic-model/concepts";
 
 interface MandatoryConceptualModelToEntityListContainerContext {
@@ -162,19 +165,23 @@ class ApplicationProfileToEntityModel {
     const nameReuse = this.selectPropertyReuseByReusedAs(profile, this.nameProperties);
     const descriptionReuse = this.selectPropertyReuseByReusedAs(profile, this.descriptionProperties);
 
+    const classProfileId = this.context.iriToIdentifier(profile.iri);
+    const controlledVocabularies = this.controlledVocabularyAssignmentsToEntities(
+      classProfileId, profile.controlledVocabularyAssignments);
+
     const classProfile: SemanticModelClassProfile = {
       // SemanticModelEntity
       iri: this.context.iriUpdate(profile.iri),
       tags,
       // Entity
-      id: this.context.iriToIdentifier(profile.iri),
+      id: classProfileId,
       type: [SEMANTIC_MODEL_CLASS_PROFILE],
       // Profile
       profiling,
       usageNote: profile.usageNote ?? {},
       usageNoteFromProfiled: usageNoteReuse ? this.context.iriToIdentifier(usageNoteReuse.propertyReusedFromResourceIri) : null,
       externalDocumentationUrl: profile.externalDocumentationUrl,
-      controlledVocabularies: [],
+      controlledVocabularies,
       // NamedThingProfile
       name: profile.prefLabel ?? {},
       nameFromProfiled: nameReuse ? this.context.iriToIdentifier(nameReuse.propertyReusedFromResourceIri) : null,
@@ -184,6 +191,39 @@ class ApplicationProfileToEntityModel {
     this.entities.push(classProfile);
     // Convert generalizations.
     this.specializationOfToGeneralization(classProfile.id, profile);
+  }
+
+  /**
+   * Creates a new ControlledVocabularyAssignment entity for each assignment
+   * this class profile owns, and pushes them to {@link entities}
+   */
+  private controlledVocabularyAssignmentsToEntities(
+    classProfileId: string,
+    assignments: ControlledVocabularyAssignmentProfile[],
+  ): string[] {
+    const result: string[] = [];
+    for (const assignment of assignments) {
+      const qualifier = iriToUsageExpectation(assignment.usageExpectationIri);
+      if (qualifier === null) {
+        console.warn(`Unknown usage expectation IRI '${assignment.usageExpectationIri}' for controlled vocabulary assignment '${assignment.iri}', skipping.`);
+        continue;
+      }
+      const id = this.context.iriToIdentifier(assignment.iri);
+      const entity: ControlledVocabularyAssignment = {
+        id,
+        type: [CONTROLLED_VOCABULARY_ASSIGNMENT],
+        iri: assignment.iri,
+        classProfile: classProfileId,
+        vocabulary: this.context.iriToIdentifier(assignment.controlledVocabularyIri),
+        qualifier,
+        replaces: assignment.replacesIri === null
+          ? null
+          : { kind: "imported", iri: assignment.replacesIri },
+      };
+      this.entities.push(entity);
+      result.push(id);
+    }
+    return result;
   }
 
   private profilesToIdentifier(items: string[]): string[] {

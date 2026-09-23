@@ -1,4 +1,5 @@
 import type {
+  ControlledVocabularyAssignment,
   ProfileModel,
   SemanticModelClassProfile,
 } from "./profile-model.ts";
@@ -14,6 +15,15 @@ export interface ProfileModelBuilder {
   property(
     value?: Partial<PropertyProfile>,
   ): ProfileRelationshipBuilder;
+
+  /**
+   * Adds a standalone controlled vocabulary assignment. It is not linked
+   * to its class profile automatically - list its identifier in the class
+   * profile's controlledVocabularies to do so.
+   */
+  controlledVocabularyAssignment(
+    value?: Partial<ControlledVocabularyAssignment>,
+  ): IdentifiableBuilder;
 
   generalization<
     Type extends ProfileClassBuilder | ProfileRelationshipBuilder,

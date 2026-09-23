@@ -19,6 +19,7 @@
     "./ldes": "./lib/ldes/index.js"
   },
   "dependencies": {
+    "@dataspecer/controlled-vocabulary-model": "*",
     "@dataspecer/core": "*",
     "@dataspecer/core-v2": "*",
     "@dataspecer/lightweight-owl": "*",

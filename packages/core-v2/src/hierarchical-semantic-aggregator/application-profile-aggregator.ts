@@ -11,9 +11,11 @@ import {
 } from "../semantic-model/concepts/index.ts";
 import {
   createSemanticProfileAggregator,
+  SemanticClassProfileAggregator,
   SemanticProfileAggregator,
 } from "../semantic-model/profile/aggregator/index.ts";
 import {
+  isControlledVocabularyAssignment,
   isSemanticModelClassProfile,
   isSemanticModelRelationshipProfile,
   SemanticModelClassProfile,
@@ -222,7 +224,17 @@ export class ApplicationProfileAggregator implements SemanticModelAggregator {
         if (isSemanticModelClassProfile(entity)) {
           // todo: we need to handle the case with local classes!
           const dependsOnWrappedEntities = entity.profiling.map((id) => this.entities[id] ?? this.sourceEntities[id]).filter((x) => x) as LocalEntityWrapped<SemanticModelClass>[];
-          const dependsOn = dependsOnWrappedEntities.map((e) => e.aggregatedEntity);
+          // Controlled vocabulary assignments are not aggregated
+          // themselves (unlike profiling dependencies), so they are
+          // resolved directly from the raw profile entities instead of
+          // through the this.entities/this.sourceEntities wrapping.
+          const controlledVocabularyAssignments = (entity.controlledVocabularies ?? [])
+            .map((id) => this.profileEntities[id] ?? null)
+            .filter(isControlledVocabularyAssignment);
+          const dependsOn = [
+            ...dependsOnWrappedEntities.map((e) => e.aggregatedEntity),
+            ...controlledVocabularyAssignments,
+          ];
           const aggregatedEntity = this.profileEntityAggregator.aggregateSemanticModelClassProfile(entity, dependsOn);
           // todo workaround with typing
           const aggregatedEntityClass = { ...aggregatedEntity, type: ["class", "class-profile", "aggregate"] } as unknown as SemanticModelClass;
@@ -234,9 +246,14 @@ export class ApplicationProfileAggregator implements SemanticModelAggregator {
             sources: dependsOnWrappedEntities,
           } satisfies AggregatedEntityInApplicationProfileAggregator;
           this.entities[entity.id] = updatedEntity;
-          this.dependsOn.overrideByFirst(entity.id, entity.profiling);
+          this.dependsOn.overrideByFirst(entity.id, SemanticClassProfileAggregator.dependencies(entity));
           toUpdate.push(...this.dependsOn.getBySecond(entity.id));
           updated[entity.id] = updatedEntity;
+        } else if (isControlledVocabularyAssignment(entity)) {
+          // Not aggregated on its own - only the owning class profile is.
+          // Propagate to the owning class profile so it gets re-aggregated when the assignment changes.
+          // This happens when the CV assignment is edited (no change in profile itself)
+          toUpdate.push(...this.dependsOn.getBySecond(entity.id));
         } else if (isSemanticModelRelationshipProfile(entity)) {
           // todo: we need to handle the case with local relations!
           const dependsOnWrappedEntities = entity.ends

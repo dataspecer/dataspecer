@@ -34,12 +34,14 @@ export function createSelectControlledVocabulariesState(
 ): SelectControlledVocabulariesState {
   const inheritedItems: VocabularyItemState[] = inherited.map(usage => {
     const override = overrides.find(
-      item => item.vocabularyId === usage.vocabulary.id);
+      item => item.targetAssignmentId === usage.assignmentId);
     return {
       id: crypto.randomUUID(),
+      entityId: override?.id ?? null,
       vocabulary: usage.vocabulary,
       qualifier: override?.qualifier ?? usage.qualifier,
       inherited: {
+        assignmentId: usage.assignmentId,
         qualifier: usage.qualifier,
         overrideEnabled: override !== undefined,
       },
@@ -47,6 +49,7 @@ export function createSelectControlledVocabulariesState(
   });
   const addedItems: VocabularyItemState[] = added.map(usage => ({
     id: crypto.randomUUID(),
+    entityId: usage.assignmentId,
     vocabulary: usage.vocabulary,
     qualifier: usage.qualifier,
     inherited: null,
@@ -71,23 +74,21 @@ export function hasControlledVocabularyConflict(
 }
 
 /**
- * Returns the ids of items whose vocabulary and current effective qualifier
- * are not unique within the profile - i.e. the same vocabulary is assigned
- * the exact same qualifier more than once. Checked across inherited and
- * added items together, using each item's current effective qualifier
- * (the inherited default when not overridden, the override value when it
- * is). Assigning the same vocabulary with a different qualifier is not a
- * duplicate.
+ * Returns the ids (VocabularyItemState.id) of items whose vocabulary is
+ * not unique within the profile - i.e. the same vocabulary is assigned more
+ * than once, regardless of qualifier. Checked across inherited and added
+ * items together: a class profile can only ever have one assignment per
+ * vocabulary.
  */
 export function findDuplicateVocabularyItemIds(
   state: SelectControlledVocabulariesState,
 ): Set<string> {
   const groups = new Map<string, VocabularyItemState[]>();
   for (const item of state.items) {
-    const key = `${item.vocabulary.id}|${item.qualifier}`;
-    const group = groups.get(key) ?? [];
+    const groupKey = item.vocabulary.id;
+    const group = groups.get(groupKey) ?? [];
     group.push(item);
-    groups.set(key, group);
+    groups.set(groupKey, group);
   }
   const duplicateIds = new Set<string>();
   for (const group of groups.values()) {

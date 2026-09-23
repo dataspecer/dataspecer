@@ -1,4 +1,4 @@
-import { LOCAL_SEMANTIC_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { CONTROLLED_VOCABULARY_MODEL, LOCAL_SEMANTIC_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import {
   isSemanticModelClass,
   isSemanticModelRelationPrimitive,
@@ -6,9 +6,11 @@ import {
   LanguageString,
   SemanticModelEntity,
 } from "@dataspecer/core-v2/semantic-model/concepts";
+import { isControlledVocabularyAssignment } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { DataTypeURIs, isDataType } from "@dataspecer/core-v2/semantic-model/datatypes";
 import { createRdfsModel } from "@dataspecer/core-v2/semantic-model/simplified";
 import { PimStoreWrapper, serializationToPimModelEntities } from "@dataspecer/core-v2/semantic-model/v1-adapters";
+import { parseControlledVocabularyCatalog, type ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 import type { CoreResource } from "@dataspecer/core/core/core-resource";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
 import { DataSpecificationConfigurator } from "@dataspecer/core/data-specification/configuration";
@@ -397,6 +399,42 @@ async function importRdfsAndDsv(repository: ModelRepositoryType, parentIri: stri
   if (dsvUrl) {
     const response = await fetchOrThrow(dsvUrl);
     const data = await response.text();
+
+    // Controlled vocabularies created by an earlier recursive isProfileOf
+    // import (a nested specification's own catalog) are already persisted
+    // to this same repository - resolve references into them too.
+    const resolvedVocabularyModelIds = new Set<string>();
+    const existingModels = await getModelsForPackage(parentIri, repository);
+    const existingProjectModel = existingModels[PROJECT_MODEL_ID] ?? {};
+    for (const [modelId, entity] of Object.entries(existingProjectModel)) {
+      if ((entity as { modelType?: string }).modelType === CONTROLLED_VOCABULARY_MODEL) {
+        const cvIri = (existingModels[modelId]?.[modelId] as ControlledVocabulary | undefined)?.iri;
+        if (cvIri) {
+          knownMapping[cvIri] = modelId;
+          resolvedVocabularyModelIds.add(modelId);
+        }
+      }
+    }
+
+    // Parse and materialize this document's own embedded controlled
+    // vocabulary catalog before resolving the rest of the DSV below, so
+    // ControlledVocabularyAssignment references can already find them.
+    const parsedVocabularies = parseControlledVocabularyCatalog(new N3.Parser().parse(data));
+    for (const vocabulary of parsedVocabularies) {
+      const cvModelId = parentIri + "/controlled-vocabulary/" + uuidv4();
+      await ensureResource(repository, parentIri, cvModelId, CONTROLLED_VOCABULARY_MODEL, { label: { en: vocabulary.title } });
+      touchedModelIds?.add(cvModelId);
+      // Mirrors controlledVocabularyModelEntitiesToSerialization's own
+      // stored shape (the entity minus id/type, which the model's own id
+      // provides on deserialize).
+      const { id: _cvId, type: _cvType, ...modelData }: ControlledVocabulary = vocabulary;
+      await repository.setModelJson(cvModelId, modelData);
+      if (vocabulary.iri) {
+        knownMapping[vocabulary.iri] = cvModelId;
+        resolvedVocabularyModelIds.add(cvModelId);
+      }
+    }
+
     const conceptualModel = await rdfToConceptualModel(data);
     const dsvResult = conceptualModelToEntityListContainer(conceptualModel[0], {
       iriToIdentifier: (iri) => knownMapping[iri] ?? iri,
@@ -411,6 +449,12 @@ async function importRdfsAndDsv(repository: ModelRepositoryType, parentIri: stri
     });
 
     profileEntities = dsvResult.entities as SemanticModelEntity[];
+
+    for (const entity of profileEntities) {
+      if (isControlledVocabularyAssignment(entity) && !resolvedVocabularyModelIds.has(entity.vocabulary)) {
+        console.warn(`Controlled vocabulary assignment "${entity.id}" references an unknown controlled vocabulary "${entity.vocabulary}" - it was not found in this document's own catalog or in an already-imported one.`);
+      }
+    }
   }
   if (profileEntities.length > 0) {
     await createModelFromEntities(profileEntities, parentIri + "/" + "profile", userMetadata);

@@ -1,7 +1,9 @@
+import { CONTROLLED_VOCABULARY_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { CoreResourceReader } from "@dataspecer/core/core/core-reader";
 import { LanguageString } from "@dataspecer/core/core/index";
 import { InputStream } from "@dataspecer/core/io/stream/input-stream";
 import { StreamDictionary } from "@dataspecer/core/io/stream/stream-dictionary";
+import type { ProjectModelEntity } from "@dataspecer/core/project-model";
 import { getDataSpecificationWithModels } from "@dataspecer/specification/specification";
 import { DefaultArtifactBuilder } from "@dataspecer/specification/v1";
 import express from "express";
@@ -12,6 +14,7 @@ import { modelRepository, transactionModel } from "../main.ts";
 import { asyncHandler } from "../utils/async-handler.ts";
 import { getContentDispositionAttachmentHeaderValue, safeAsciiFileName, safeUnicodeFileName } from "../utils/safe-file-name.ts";
 import { getModelsForPackage } from "../utils/backend-model-store.ts";
+import { PROJECT_MODEL_ID } from "../models/model-id.ts";
 
 function getName(name: LanguageString | undefined, defaultName: string) {
   return name?.["cs"] || name?.["en"] || defaultName;
@@ -58,6 +61,24 @@ async function generateArtifacts(
   singleFilePath: string | null = null,
 ) {
   const allModels = await getModelsForPackage(packageIri, modelRepository);
+
+  // TODO: do we want to include the CVs from nested packages?
+  // Controlled vocabularies are project-wide, not tied to any one
+  // specification - if the requested package is a nested specification (not
+  // the project root), its own subtree does not include sibling CV models.
+  // Fetch the whole project's models too and merge in what the DCAT catalog
+  // generator needs (see specification.ts's writeDcatCatalog).
+  const projectIri = await modelRepository.getProjectIri(packageIri);
+  if (projectIri && projectIri !== packageIri) {
+    const projectModels = await getModelsForPackage(projectIri, modelRepository);
+    const projectModelEntities = (projectModels[PROJECT_MODEL_ID] ?? {}) as Record<string, ProjectModelEntity>;
+    allModels[PROJECT_MODEL_ID] = { ...projectModelEntities, ...allModels[PROJECT_MODEL_ID] };
+    for (const [modelId, entity] of Object.entries(projectModelEntities)) {
+      if (entity.modelType === CONTROLLED_VOCABULARY_MODEL) {
+        allModels[modelId] ??= projectModels[modelId]!;
+      }
+    }
+  }
 
   const { store, dataSpecifications } = getDataSpecificationWithModels(packageIri, allModels);
   const generator = new DefaultArtifactBuilder(store as CoreResourceReader, dataSpecifications, configuration.configuration, fetch, allModels);
