@@ -17,4 +17,42 @@ describe("createSemicShaclStylePolicy", () => {
 
   });
 
+  describe("shaclControlledVocabularyShape", () => {
+
+    test("Different vocabularies on the same class get distinct IRIs.", () => {
+
+      const policy = createSemicShaclStylePolicy("http://example.com/", {});
+
+      const first = policy.shaclControlledVocabularyShape(
+        "http://example.com/profile#Person",
+        "http://example.com/vocabulary#Person",
+        "http://example.com/vocabularies/cv-1");
+      const second = policy.shaclControlledVocabularyShape(
+        "http://example.com/profile#Person",
+        "http://example.com/vocabulary#Person",
+        "http://example.com/vocabularies/cv-2");
+
+      expect(first).not.toBe(second);
+
+    });
+
+    test("Same inputs are deterministic.", () => {
+
+      const policy = createSemicShaclStylePolicy("http://example.com/", {});
+
+      const first = policy.shaclControlledVocabularyShape(
+        "http://example.com/profile#Person",
+        "http://example.com/vocabulary#Person",
+        "http://example.com/vocabularies/cv-1");
+      const second = policy.shaclControlledVocabularyShape(
+        "http://example.com/profile#Person",
+        "http://example.com/vocabulary#Person",
+        "http://example.com/vocabularies/cv-1");
+
+      expect(first).toBe(second);
+
+    });
+
+  });
+
 });

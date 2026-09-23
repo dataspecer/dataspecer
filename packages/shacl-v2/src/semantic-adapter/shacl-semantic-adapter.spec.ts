@@ -1,10 +1,76 @@
 import { describe, test, expect } from "vitest";
 
-import { createDefaultSemanticModelBuilder } from "@dataspecer/semantic-model";
-import { createDefaultProfileModelBuilder } from "@dataspecer/profile-model";
+import { createDefaultSemanticModelBuilder, SemanticModel } from "@dataspecer/semantic-model";
+import { createDefaultProfileModelBuilder, ProfileModel } from "@dataspecer/profile-model";
+import {
+  CONTROLLED_VOCABULARY_TYPE,
+  ControlledVocabulary,
+} from "@dataspecer/controlled-vocabulary-model";
+import {
+  CONTROLLED_VOCABULARY_ASSIGNMENT,
+  ControlledVocabularyAssignment,
+} from "@dataspecer/core-v2/semantic-model/profile/concepts";
+import type { Entity } from "@dataspecer/core-v2/entity-model";
 
 import { semanticModelsToShacl } from "./shacl-semantic-adapter.ts";
 import { shaclToRdf } from "../shacl-to-rdf.ts";
+import { ShaclSeverity } from "../shacl-model.ts";
+
+/**
+ * Adds extra entities to a built model - used to attach a standalone
+ * ControlledVocabularyAssignment/ControlledVocabulary, which the
+ * fluent builders have no dedicated method for. Wraps each accessor
+ * explicitly rather than spreading `model` - it is a class instance,
+ * so its methods live on the prototype and a spread would drop them.
+ */
+function withExtraEntities(
+  model: ProfileModel, entities: Entity[],
+): ProfileModel {
+  const extra: Record<string, Entity> = {};
+  entities.forEach(entity => { extra[entity.id] = entity; });
+  return {
+    getId: () => model.getId(),
+    getBaseIri: () => model.getBaseIri(),
+    getEntities: () => ({ ...model.getEntities(), ...extra }),
+  };
+}
+
+/**
+ * A minimal semantic-model-shaped container for standalone entities,
+ * such as a ControlledVocabulary, that have no dedicated builder.
+ */
+function entityModel(baseIri: string, entities: Entity[]): SemanticModel {
+  const record: Record<string, Entity> = {};
+  entities.forEach(entity => { record[entity.id] = entity; });
+  return {
+    getId: () => baseIri,
+    getBaseIri: () => baseIri,
+    getEntities: () => record,
+  } as SemanticModel;
+}
+
+function controlledVocabularyFixture(
+  overrides: Partial<ControlledVocabulary>,
+): ControlledVocabulary {
+  return {
+    id: "cv", type: [CONTROLLED_VOCABULARY_TYPE],
+    title: "", pattern: "", references: "", documentation: "",
+    distribution: { downloadUrl: "", accessUrl: "" },
+    iri: null,
+    ...overrides,
+  };
+}
+
+function assignmentFixture(
+  overrides: Partial<ControlledVocabularyAssignment>,
+): ControlledVocabularyAssignment {
+  return {
+    id: "cv-assignment", type: [CONTROLLED_VOCABULARY_ASSIGNMENT],
+    classProfile: "", vocabulary: "", qualifier: "MUST",
+    replaces: null, iri: null,
+    ...overrides,
+  };
+}
 
 describe("semanticModelsToShacl", () => {
 
@@ -405,6 +471,310 @@ describe("semanticModelsToShacl", () => {
 
     expect(actualType)
       .toBe("http://www.w3.org/1999/02/22-rdf-syntax-ns#langString");
+
+  });
+
+});
+
+describe("semanticModelsToShacl - controlled vocabularies", () => {
+
+  const configuration = {
+    policy: "semic-v1" as const,
+    languages: [],
+    noClassConstraints: false,
+    splitPropertyShapesByConstraints: false,
+  };
+
+  test("MUST severity, single controlled vocabulary.", async () => {
+
+    const vocabulary = createDefaultSemanticModelBuilder({
+      baseIdentifier: "vocab:",
+      baseIri: "http://example.com/vocabulary#",
+    });
+
+    const person = vocabulary.class({ iri: "person" });
+
+    const controlledVocabulary = controlledVocabularyFixture({
+      id: "cv-1",
+      iri: "http://example.com/vocabularies/cv-1",
+      pattern: "^http://example\\.com/codes/.*$",
+    });
+    const controlledVocabularies = entityModel(
+      "http://example.com/cv#", [controlledVocabulary]);
+
+    const profileBuilder = createDefaultProfileModelBuilder({
+      baseIdentifier: "profile:",
+      baseIri: "http://example.com/profile#",
+    });
+
+    const personProfile = profileBuilder.class({
+      iri: "person",
+      controlledVocabularies: ["assignment-1"],
+    }).profile(person);
+
+    const profile = withExtraEntities(profileBuilder.build(), [assignmentFixture({
+      id: "assignment-1",
+      iri: "http://example.com/assignments/1",
+      classProfile: personProfile.identifier,
+      vocabulary: "cv-1",
+      qualifier: "MUST",
+    })]);
+
+    const shacl = semanticModelsToShacl(
+      [vocabulary.build()],
+      [profile],
+      profile,
+      configuration,
+      { baseIri: "http://example/shacl.ttl" },
+      [controlledVocabularies]);
+
+    // The primary shape and the controlled vocabulary shape, sharing
+    // the same targetClass.
+    expect(shacl.members.length).toBe(2);
+
+    const primaryShape = shacl.members.find(item => item.pattern === null);
+    const cvShape = shacl.members.find(item => item.pattern !== null);
+
+    expect(primaryShape).toBeDefined();
+    expect(cvShape).toBeDefined();
+    expect(cvShape!.targetClass).toBe("http://example.com/vocabulary#person");
+    expect(cvShape!.targetClass).toBe(primaryShape!.targetClass);
+    expect(cvShape!.propertyShapes).toStrictEqual([]);
+    expect(cvShape!.pattern).toBe("^http://example\\.com/codes/.*$");
+    expect(cvShape!.severity).toBe(ShaclSeverity.Violation);
+
+    const rdf = await shaclToRdf(shacl, {});
+    expect(rdf).toContain("sh:pattern");
+    expect(rdf).toContain("sh:severity sh:Violation");
+
+  });
+
+  test("AT_LEAST_1 and RECOMMENDED both map to Warning, as independent shapes (not combined via sh:or).", async () => {
+
+    const vocabulary = createDefaultSemanticModelBuilder({
+      baseIdentifier: "vocab:",
+      baseIri: "http://example.com/vocabulary#",
+    });
+
+    const person = vocabulary.class({ iri: "person" });
+
+    const controlledVocabularies = entityModel("http://example.com/cv#", [
+      controlledVocabularyFixture({
+        id: "cv-a",
+        iri: "http://example.com/vocabularies/cv-a",
+        pattern: "^http://example\\.com/a/.*$",
+      }),
+      controlledVocabularyFixture({
+        id: "cv-b",
+        iri: "http://example.com/vocabularies/cv-b",
+        pattern: "^http://example\\.com/b/.*$",
+      }),
+    ]);
+
+    const profileBuilder = createDefaultProfileModelBuilder({
+      baseIdentifier: "profile:",
+      baseIri: "http://example.com/profile#",
+    });
+
+    const personProfile = profileBuilder.class({
+      iri: "person",
+      controlledVocabularies: ["assignment-a", "assignment-b"],
+    }).profile(person);
+
+    const profile = withExtraEntities(profileBuilder.build(), [
+      assignmentFixture({
+        id: "assignment-a",
+        iri: "http://example.com/assignments/a",
+        classProfile: personProfile.identifier,
+        vocabulary: "cv-a",
+        qualifier: "AT_LEAST_1",
+      }),
+      assignmentFixture({
+        id: "assignment-b",
+        iri: "http://example.com/assignments/b",
+        classProfile: personProfile.identifier,
+        vocabulary: "cv-b",
+        qualifier: "RECOMMENDED",
+      }),
+    ]);
+
+    const shacl = semanticModelsToShacl(
+      [vocabulary.build()],
+      [profile],
+      profile,
+      configuration,
+      { baseIri: "http://example/shacl.ttl" },
+      [controlledVocabularies]);
+
+    // Primary shape + one independent shape per controlled vocabulary.
+    expect(shacl.members.length).toBe(3);
+
+    const cvShapes = shacl.members.filter(item => item.pattern !== null);
+    expect(cvShapes.length).toBe(2);
+    expect(cvShapes.every(shape => shape.severity === ShaclSeverity.Warning))
+      .toBe(true);
+
+    const patterns = cvShapes.map(shape => shape.pattern).sort();
+    expect(patterns).toStrictEqual([
+      "^http://example\\.com/a/.*$",
+      "^http://example\\.com/b/.*$",
+    ]);
+
+    // Distinct IRIs - two separate, independently reported shapes.
+    expect(new Set(cvShapes.map(shape => shape.iri)).size).toBe(2);
+
+    const rdf = await shaclToRdf(shacl, {});
+    const patternCount = (rdf.match(/sh:pattern/g) ?? []).length;
+    expect(patternCount).toBe(2);
+    expect(rdf).not.toContain("sh:or");
+
+  });
+
+  test("Inherits a controlled vocabulary shape from an ancestor class.", async () => {
+
+    const vocabulary = createDefaultSemanticModelBuilder({
+      baseIdentifier: "vocab:",
+      baseIri: "http://example.com/vocabulary#",
+    });
+
+    const baseClass = vocabulary.class({ iri: "base" });
+    const derivedClass = vocabulary.class({ iri: "derived" });
+
+    const controlledVocabularies = entityModel("http://example.com/cv#", [
+      controlledVocabularyFixture({
+        id: "cv-1",
+        iri: "http://example.com/vocabularies/cv-1",
+        pattern: "^http://example\\.com/codes/.*$",
+      }),
+    ]);
+
+    const profileBuilder = createDefaultProfileModelBuilder({
+      baseIdentifier: "profile:",
+      baseIri: "http://example.com/profile#",
+    });
+
+    const baseProfile = profileBuilder.class({
+      iri: "base",
+      controlledVocabularies: ["assignment-1"],
+    }).profile(baseClass);
+
+    const derivedProfile = profileBuilder.class({ iri: "derived" })
+      .profile(derivedClass);
+
+    profileBuilder.generalization(baseProfile, derivedProfile);
+
+    const profile = withExtraEntities(profileBuilder.build(), [assignmentFixture({
+      id: "assignment-1",
+      iri: "http://example.com/assignments/1",
+      classProfile: baseProfile.identifier,
+      vocabulary: "cv-1",
+      qualifier: "MUST",
+    })]);
+
+    const shacl = semanticModelsToShacl(
+      [vocabulary.build()],
+      [profile],
+      profile,
+      configuration,
+      { baseIri: "http://example/shacl.ttl" },
+      [controlledVocabularies]);
+
+    const derivedCvShape = shacl.members.find(item =>
+      item.targetClass === "http://example.com/vocabulary#derived"
+      && item.pattern !== null);
+
+    expect(derivedCvShape).toBeDefined();
+    expect(derivedCvShape!.pattern).toBe("^http://example\\.com/codes/.*$");
+    expect(derivedCvShape!.severity).toBe(ShaclSeverity.Violation);
+
+    // Base keeps its own shape too.
+    const baseCvShape = shacl.members.find(item =>
+      item.targetClass === "http://example.com/vocabulary#base"
+      && item.pattern !== null);
+    expect(baseCvShape).toBeDefined();
+
+  });
+
+  test("An override with 'replaces' takes precedence over the inherited assignment.", async () => {
+
+    const vocabulary = createDefaultSemanticModelBuilder({
+      baseIdentifier: "vocab:",
+      baseIri: "http://example.com/vocabulary#",
+    });
+
+    const baseClass = vocabulary.class({ iri: "base" });
+    const derivedClass = vocabulary.class({ iri: "derived" });
+
+    const controlledVocabularies = entityModel("http://example.com/cv#", [
+      controlledVocabularyFixture({
+        id: "cv-base",
+        iri: "http://example.com/vocabularies/cv-base",
+        pattern: "^http://example\\.com/base/.*$",
+      }),
+      controlledVocabularyFixture({
+        id: "cv-override",
+        iri: "http://example.com/vocabularies/cv-override",
+        pattern: "^http://example\\.com/override/.*$",
+      }),
+    ]);
+
+    const profileBuilder = createDefaultProfileModelBuilder({
+      baseIdentifier: "profile:",
+      baseIri: "http://example.com/profile#",
+    });
+
+    const baseProfile = profileBuilder.class({
+      iri: "base",
+      controlledVocabularies: ["assignment-base"],
+    }).profile(baseClass);
+
+    const derivedProfile = profileBuilder.class({
+      iri: "derived",
+      controlledVocabularies: ["assignment-override"],
+    }).profile(derivedClass);
+
+    profileBuilder.generalization(baseProfile, derivedProfile);
+
+    const profile = withExtraEntities(profileBuilder.build(), [
+      assignmentFixture({
+        id: "assignment-base",
+        iri: "http://example.com/assignments/base",
+        classProfile: baseProfile.identifier,
+        vocabulary: "cv-base",
+        qualifier: "MUST",
+      }),
+      assignmentFixture({
+        id: "assignment-override",
+        iri: "http://example.com/assignments/override",
+        classProfile: derivedProfile.identifier,
+        vocabulary: "cv-override",
+        qualifier: "MUST",
+        replaces: { kind: "local", target: "assignment-base" },
+      }),
+    ]);
+
+    const shacl = semanticModelsToShacl(
+      [vocabulary.build()],
+      [profile],
+      profile,
+      configuration,
+      { baseIri: "http://example/shacl.ttl" },
+      [controlledVocabularies]);
+
+    const derivedCvShapes = shacl.members.filter(item =>
+      item.targetClass === "http://example.com/vocabulary#derived"
+      && item.pattern !== null);
+
+    expect(derivedCvShapes.length).toBe(1);
+    expect(derivedCvShapes[0]!.pattern).toBe("^http://example\\.com/override/.*$");
+
+    // Base keeps its own, un-overridden shape.
+    const baseCvShapes = shacl.members.filter(item =>
+      item.targetClass === "http://example.com/vocabulary#base"
+      && item.pattern !== null);
+
+    expect(baseCvShapes.length).toBe(1);
+    expect(baseCvShapes[0]!.pattern).toBe("^http://example\\.com/base/.*$");
 
   });
 
