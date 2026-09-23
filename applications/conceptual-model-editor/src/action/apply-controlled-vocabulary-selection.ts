@@ -20,7 +20,7 @@ function isOwnItem(item: VocabularyItemState): boolean {
  * is then just created.
  *
  * Each row addresses its own persisted ControlledVocabularyAssignment
- * entity by VocabularyItemState.id (null until the row is first saved),
+ * entity by VocabularyItemState.entityId (null until the row is first saved),
  * so rows are diffed individually - create, modify, or remove - rather
  * than as a group.
  */
@@ -33,20 +33,20 @@ export function applyControlledVocabularySelection(
   const previousOwnById = new Map(
     previous
       .filter(isOwnItem)
-      .filter((item): item is VocabularyItemState & { id: EntityDsIdentifier } => item.id !== null)
-      .map(item => [item.id, item]));
+      .filter((item): item is VocabularyItemState & { entityId: EntityDsIdentifier } => item.entityId !== null)
+      .map(item => [item.entityId, item]));
 
   const nextOwnIds = new Set(
     next
       .filter(isOwnItem)
-      .map(item => item.id)
+      .map(item => item.entityId)
       .filter((id): id is EntityDsIdentifier => id !== null));
 
   for (const item of next) {
     if (!isOwnItem(item)) {
       continue;
     }
-    if (item.id === null) {
+    if (item.entityId === null) {
       cmeExecutor.createControlledVocabularyAssignment(classProfile, {
         vocabulary: item.vocabulary.id,
         qualifier: item.qualifier,
@@ -56,10 +56,10 @@ export function applyControlledVocabularySelection(
       });
       continue;
     }
-    const before = previousOwnById.get(item.id);
+    const before = previousOwnById.get(item.entityId);
     if (before !== undefined && before.qualifier !== item.qualifier) {
       cmeExecutor.modifyControlledVocabularyAssignment(
-        { identifier: item.id, model: classProfile.model },
+        { identifier: item.entityId, model: classProfile.model },
         { qualifier: item.qualifier });
     }
   }

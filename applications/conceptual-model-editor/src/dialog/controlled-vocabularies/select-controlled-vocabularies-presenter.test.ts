@@ -25,12 +25,12 @@ function findItem(state: SelectControlledVocabulariesState, vocabularyId: string
   return state.items.find(item => item.vocabulary.id === vocabularyId);
 }
 
-function itemKey(state: SelectControlledVocabulariesState, vocabularyId: string) {
+function itemId(state: SelectControlledVocabulariesState, vocabularyId: string) {
   const item = findItem(state, vocabularyId);
   if (item === undefined) {
     throw new Error(`No item for vocabulary '${vocabularyId}' in state.`);
   }
-  return item.key;
+  return item.id;
 }
 
 describe("createSelectControlledVocabulariesPresenter", () => {
@@ -113,7 +113,7 @@ describe("createSelectControlledVocabulariesPresenter", () => {
       next => { state = next(state); });
 
     expect(state.items).toHaveLength(2);
-    presenter.onRemove(itemKey(state, "v1"));
+    presenter.onRemove(itemId(state, "v1"));
     expect(state.items).toHaveLength(1);
     expect(state.items[0].vocabulary.id).toBe("v2");
   });
@@ -126,7 +126,7 @@ describe("createSelectControlledVocabulariesPresenter", () => {
     const presenter = createSelectControlledVocabulariesPresenter(
       next => { state = next(state); });
 
-    presenter.onRemove(itemKey(state, "v1"));
+    presenter.onRemove(itemId(state, "v1"));
 
     expect(state.items).toHaveLength(1);
     expect(state.items[0].vocabulary.id).toBe("v1");
@@ -140,7 +140,7 @@ describe("createSelectControlledVocabulariesPresenter", () => {
     const presenter = createSelectControlledVocabulariesPresenter(
       next => { state = next(state); });
 
-    presenter.getItemPresenter(itemKey(state, "v1")).onQualifierChange("MUST");
+    presenter.getItemPresenter(itemId(state, "v1")).onQualifierChange("MUST");
 
     expect(findItem(state, "v1")?.qualifier).toBe("MUST");
   });
@@ -156,7 +156,7 @@ describe("createSelectControlledVocabulariesPresenter", () => {
     const presenter = createSelectControlledVocabulariesPresenter(
       next => { state = next(state); });
 
-    presenter.getItemPresenter(itemKey(state, "v2")).onQualifierChange("MUST");
+    presenter.getItemPresenter(itemId(state, "v2")).onQualifierChange("MUST");
 
     expect(findItem(state, "v2")?.qualifier).toBe("MUST");
     expect(findItem(state, "v1")?.qualifier).toBe("MAY");
@@ -172,7 +172,7 @@ describe("createSelectControlledVocabulariesPresenter", () => {
 
     expect(findItem(state, "v1")?.inherited?.overrideEnabled).toBe(false);
 
-    presenter.getItemPresenter(itemKey(state, "v1")).onOverrideToggle();
+    presenter.getItemPresenter(itemId(state, "v1")).onOverrideToggle();
 
     expect(findItem(state, "v1")?.inherited?.overrideEnabled).toBe(true);
     expect(findItem(state, "v1")?.qualifier).toBe("MUST");
@@ -186,8 +186,8 @@ describe("createSelectControlledVocabulariesPresenter", () => {
     const presenter = createSelectControlledVocabulariesPresenter(
       next => { state = next(state); });
 
-    presenter.getItemPresenter(itemKey(state, "v1")).onOverrideToggle();
-    presenter.getItemPresenter(itemKey(state, "v1")).onQualifierChange("RECOMMENDED");
+    presenter.getItemPresenter(itemId(state, "v1")).onOverrideToggle();
+    presenter.getItemPresenter(itemId(state, "v1")).onQualifierChange("RECOMMENDED");
 
     expect(findItem(state, "v1")?.qualifier).toBe("RECOMMENDED");
     expect(findItem(state, "v1")?.inherited?.qualifier).toBe("MUST");

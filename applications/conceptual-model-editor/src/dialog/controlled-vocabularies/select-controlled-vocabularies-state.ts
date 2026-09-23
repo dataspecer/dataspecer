@@ -36,8 +36,8 @@ export function createSelectControlledVocabulariesState(
     const override = overrides.find(
       item => item.targetAssignmentId === usage.assignmentId);
     return {
-      key: crypto.randomUUID(),
-      id: override?.id ?? null,
+      id: crypto.randomUUID(),
+      entityId: override?.id ?? null,
       vocabulary: usage.vocabulary,
       qualifier: override?.qualifier ?? usage.qualifier,
       inherited: {
@@ -48,8 +48,8 @@ export function createSelectControlledVocabulariesState(
     };
   });
   const addedItems: VocabularyItemState[] = added.map(usage => ({
-    key: crypto.randomUUID(),
-    id: usage.assignmentId,
+    id: crypto.randomUUID(),
+    entityId: usage.assignmentId,
     vocabulary: usage.vocabulary,
     qualifier: usage.qualifier,
     inherited: null,
@@ -74,13 +74,13 @@ export function hasControlledVocabularyConflict(
 }
 
 /**
- * Returns the keys (VocabularyItemState.key) of items whose vocabulary is
+ * Returns the ids (VocabularyItemState.id) of items whose vocabulary is
  * not unique within the profile - i.e. the same vocabulary is assigned more
  * than once, regardless of qualifier. Checked across inherited and added
  * items together: a class profile can only ever have one assignment per
  * vocabulary.
  */
-export function findDuplicateVocabularyItemKeys(
+export function findDuplicateVocabularyItemIds(
   state: SelectControlledVocabulariesState,
 ): Set<string> {
   const groups = new Map<string, VocabularyItemState[]>();
@@ -90,13 +90,13 @@ export function findDuplicateVocabularyItemKeys(
     group.push(item);
     groups.set(groupKey, group);
   }
-  const duplicateKeys = new Set<string>();
+  const duplicateIds = new Set<string>();
   for (const group of groups.values()) {
     if (group.length > 1) {
       for (const item of group) {
-        duplicateKeys.add(item.key);
+        duplicateIds.add(item.id);
       }
     }
   }
-  return duplicateKeys;
+  return duplicateIds;
 }
