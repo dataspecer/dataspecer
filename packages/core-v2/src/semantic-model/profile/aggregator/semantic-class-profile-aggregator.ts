@@ -40,12 +40,7 @@ function aggregateSemanticModelClassProfile(
   )[],
 ): AggregatedProfiledSemanticModelClass {
 
-  // A helper for easy access to dependencies. Its return type spans every
-  // dependency kind (including ControlledVocabularyAssignment, which
-  // carries none of name/description/nameProperty/descriptionProperty),
-  // so the two spots below that read those fields directly cast down to
-  // the narrower "profiled" types first - same pattern the nameProperty/
-  // descriptionProperty lines two lines below already use.
+  // A helper for easy access to dependencies. 
   const getProfiled = createProfiledGetter(dependencies);
 
   // We try to get an entity to get the name from.
@@ -85,11 +80,13 @@ function aggregateSemanticModelClassProfile(
   const inheritedControlledVocabularies: EntityIdentifier[] = [];
   const inheritedControlledVocabularyKeys = new Set<string>();
 
-  // If multiple ancestors contain an assignment for the same
-  // (vocabulary, qualifier) pair, only the first one encountered is
-  // kept - this might be changed in the future to better resolve
-  // conflicts. Ids that do not resolve to an assignment entity (dangling
-  // references) are silently skipped.
+  /**
+  * If multiple ancestors contain an assignment for the same
+  * (vocabulary, qualifier) pair, only the first one encountered is
+  * kept - this might be changed in the future to better resolve
+  * conflicts. Ids that do not resolve to an assignment entity 
+  * (dangling references) are silently skipped.
+  */
   function collectInheritedAssignments(assignmentIds: EntityIdentifier[] | undefined): void {
     for (const assignmentId of assignmentIds ?? []) {
       const assignment = getProfiled(assignmentId);

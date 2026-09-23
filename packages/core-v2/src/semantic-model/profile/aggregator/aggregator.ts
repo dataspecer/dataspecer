@@ -84,6 +84,11 @@ class DefaultProfileEntityAggregator implements SemanticProfileAggregator {
       return SemanticGeneralizationProfileAggregator.dependencies(entity);
     }
     if (isControlledVocabularyAssignment(entity)) {
+      /**
+       * select only 'local' dependencies 
+       * - meaning the replaced assignment is an entity located inside the same package
+       * and not external assignment referenced by IRI, see {@link ControlledVocabularyAssignmentReplaces}
+       */
       return entity.replaces?.kind === "local" ? [entity.replaces.target] : [];
     }
     return null;
