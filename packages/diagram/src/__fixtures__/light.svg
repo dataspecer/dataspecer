@@ -1,0 +1,88 @@
+<svg class="dataspecer-diagram" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1157.34" height="451" viewBox="-120.5 -70.5 1157.34 451" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif" font-size="16" font-weight="400" text-anchor="start" fill="#000000">
+  <style>
+    .dataspecer-diagram .shape { stroke-width: 1; }
+    .dataspecer-diagram path.relationship { stroke-width: 2; stroke-linejoin: round; }
+    .dataspecer-diagram path.dashed { stroke-dasharray: 5 5; }
+    .dataspecer-diagram path.hit-area { stroke-width: 12; pointer-events: stroke; }
+    .dataspecer-diagram a { cursor: pointer; }
+  </style>
+
+  <!-- Background -->
+  <rect x="-120.5" y="-70.5" width="1157.34" height="451" fill="#ffffff"/>
+
+  <!-- Arrows -->
+  <a class="relationship" href="#worksFor" xlink:href="#worksFor" target="_self">
+    <path class="relationship hit-area" d="M124 21.722 L300 70 L458.066 8" fill="none" stroke="transparent"/>
+    <path class="relationship" d="M124 21.722 L300 70 L458.066 8" fill="none" stroke="#cbd5e1"/>
+    <path class="relationship" d="M440.98 8.257 L458.066 8 L445.362 19.428" fill="none" stroke="#cbd5e1"/>
+  </a>
+
+  <a class="generalization" href="#generalization" xlink:href="#generalization" target="_self">
+    <path class="relationship hit-area" d="M180.378 230 L491.374 8" fill="none" stroke="transparent"/>
+    <path class="relationship" d="M180.378 230 L491.374 8" fill="none" stroke="#cbd5e1"/>
+    <path class="relationship" d="M474.866 12.412 L491.374 8 L481.838 22.179 Z" fill="#ffffff" stroke="#cbd5e1"/>
+  </a>
+
+  <a class="profile-link" href="#Employee" xlink:href="#Employee" target="_self">
+    <path class="relationship hit-area" d="M12 230 L12 32" fill="none" stroke="transparent"/>
+    <path class="relationship dashed" d="M12 230 L12 32" fill="none" stroke="#000000"/>
+    <path class="relationship" d="M6 48 L12 32 L18 48 Z" fill="#ffffff" stroke="#000000"/>
+  </a>
+
+  <!-- Classes and diagrams -->
+  <rect class="shape" x="-100" y="-50" width="224" height="82" rx="0" fill="#ffffff" stroke="#000000"/>
+  <a class="class" href="#Person" xlink:href="#Person" target="_self">
+    <rect class="shape" x="-99.5" y="-49.5" width="223" height="31.5" rx="0" fill="#cbd5e1"/>
+    <text fill="#000000" xml:space="preserve"><tspan x="-96" y="-30">Person</tspan></text>
+  </a>
+  <text fill="#6b7280" xml:space="preserve"><tspan x="-96" y="-2">ex:Person</tspan></text>
+  <a class="attribute" href="#name" xlink:href="#name" target="_self">
+    <rect class="shape" x="-99" y="6" width="222" height="24" rx="0" fill="transparent"/>
+    <text fill="#000000" xml:space="preserve"><tspan x="-96" y="22">- Name : xsd:string [1..1]</tspan></text>
+  </a>
+
+  <rect class="shape" x="420" y="-50" width="224" height="58" rx="0" fill="#ffffff" stroke="#000000"/>
+  <a class="class" href="#Organization" xlink:href="#Organization" target="_self">
+    <rect class="shape" x="420.5" y="-49.5" width="223" height="31.5" rx="0" fill="#cbd5e1"/>
+    <text fill="#000000" xml:space="preserve"><tspan x="424" y="-30">Organization</tspan></text>
+  </a>
+  <text fill="#6b7280" xml:space="preserve"><tspan x="424" y="-2">ex:Organization</tspan></text>
+
+
+  <rect class="shape" x="-100" y="230" width="378.64" height="130" rx="0" fill="#ffffff" stroke="#000000"/>
+  <a class="class" href="#Employee" xlink:href="#Employee" target="_self">
+    <rect class="shape" x="-99.5" y="230.5" width="377.64" height="55.5" rx="0" fill="#99f6e4"/>
+    <text fill="#000000" xml:space="preserve"><tspan x="-96" y="250">Employee ⚓</tspan></text>
+
+    <text fill="#4b5563" xml:space="preserve"><tspan x="-96" y="274">profile of Person</tspan></text>
+  </a>
+  <text fill="#6b7280" xml:space="preserve"><tspan x="-96" y="302">profile:Employee</tspan></text>
+
+  <text fill="#000000" xml:space="preserve"><tspan x="-96" y="326">&lt;&lt;mandatory&gt;&gt;</tspan></text>
+  <a class="attribute" href="#employeeName" xlink:href="#employeeName" target="_self">
+    <rect class="shape" x="-99" y="334" width="376.64" height="24" rx="0" fill="transparent"/>
+    <text fill="#000000" xml:space="preserve"><tspan x="-96" y="350">- Employee name : xsd:string profile of Name [1..1]</tspan></text>
+  </a>
+
+  <a class="diagram" href="#detail" xlink:href="#detail" target="_self">
+    <path class="relationship" d="M750 230 L760 222 L1015.84 222 L1005.84 230 Z" fill="#ffffff" stroke="#000000"/>
+    <path class="relationship" d="M1005.84 230 L1015.84 222 L1015.84 322 L1005.84 330 Z" fill="#ffffff" stroke="#000000"/>
+    <rect class="shape" x="750" y="230" width="255.84" height="100" rx="0" fill="#ffffff" stroke="#000000"/>
+    <text fill="#000000" xml:space="preserve"><tspan x="770" y="256">Detail diagram</tspan></text>
+
+    <text fill="#6b7280" xml:space="preserve"><tspan x="770" y="280">Represents Detail diagram</tspan></text>
+  </a>
+
+  <!-- Arrow labels -->
+  <a class="relationship" href="#worksFor" xlink:href="#worksFor" target="_self">
+    <rect class="shape" x="339.233" y="26" width="79.6" height="26" rx="15" fill="#ffffff"/>
+    <rect class="shape" x="339.233" y="26" width="79.6" height="26" rx="15" fill="#cbd5e1" fill-opacity="0.1"/>
+    <text fill="#000000" text-anchor="middle" xml:space="preserve"><tspan x="379.033" y="43.8">Works for</tspan></text>
+    <rect class="shape" x="138.933" y="-2.477" width="42.08" height="20" rx="0" fill="#ffffff"/>
+    <rect class="shape" x="138.933" y="-2.477" width="42.08" height="20" rx="0" fill="#cbd5e1" fill-opacity="0.1"/>
+    <text fill="#000000" text-anchor="middle" xml:space="preserve"><tspan x="159.973" y="12.323">[0..*]</tspan></text>
+    <rect class="shape" x="417.071" y="32.674" width="42.08" height="20" rx="0" fill="#ffffff"/>
+    <rect class="shape" x="417.071" y="32.674" width="42.08" height="20" rx="0" fill="#cbd5e1" fill-opacity="0.1"/>
+    <text fill="#000000" text-anchor="middle" xml:space="preserve"><tspan x="438.111" y="47.474">[1..1]</tspan></text>
+  </a>
+</svg>
