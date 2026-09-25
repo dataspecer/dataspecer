@@ -8,31 +8,17 @@ Here are some of the major planned milestones.
 
 <div class="timeline-roadmap">
   <div class="timeline-item">
-    <div class="timeline-date">Q3 2025</div>
-    <div class="timeline-content">
-      <strong>SHACL Generation</strong><br/>
-      In Q3 2025 we are adding support for SHACL generation based on application profiles.
-    </div>
-  </div>
-  <div class="timeline-item">
-    <div class="timeline-date">Q4 2025</div>
-    <div class="timeline-content">
-      <strong>Application Profiles Consistency Validations</strong><br/>
-      In Q4 2025 we plan to have application profile consistency validations.
-    </div>
-  </div>
-  <div class="timeline-item">
-    <div class="timeline-date">Q1 2026</div>
-    <div class="timeline-content">
-      <strong>Integration with Git</strong><br/>
-      In Q1 2026 we plan to support integration with the Git versioning system.
-    </div>
-  </div>
-  <div class="timeline-item">
-    <div class="timeline-date">2026</div>
+    <div class="timeline-date">Q4 2026</div>
     <div class="timeline-content">
       <strong>Change Operations &amp; Propagation</strong><br/>
       In 2026 we plan to add support for representation of specification change operations and assistance with their propagation through the application profile hierarchy.
+    </div>
+  </div>
+  <div class="timeline-item">
+    <div class="timeline-date">Q2 2027</div>
+    <div class="timeline-content">
+      <strong>Integration with Git</strong><br/>
+      In Q1 2026 we plan to support integration with the Git versioning system.
     </div>
   </div>
 </div>
