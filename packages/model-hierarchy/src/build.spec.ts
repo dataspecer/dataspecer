@@ -4,172 +4,127 @@ import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1 } 
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { PROJECT_MODEL_ID, PROJECT_MODEL_MODEL_ENTITY, type PackageEntity, type ProjectModelEntity } from "@dataspecer/core/project-model";
 import { buildModelHierarchy, isModelHierarchyRelevantChange } from "./build.ts";
-import type { ModelCompositionConfiguration, ModelCompositionConfigurationApplicationProfile, ModelCompositionConfigurationMerge } from "./composition-configuration.ts";
 
 function vocabulary(id: string, modelType = LOCAL_SEMANTIC_MODEL, projectId = "root"): ProjectModelEntity {
-  return { id, type: [PROJECT_MODEL_MODEL_ENTITY], modelType, projectId, label: {}, description: {} };
+  return { id, type: [PROJECT_MODEL_MODEL_ENTITY], modelType, projectId, label: { en: id }, description: {} };
 }
 
-function packageEntity(id: string, subModels: string[], projectId = id): PackageEntity {
+function packageEntity(id: string, subModels: string[], projectId = "root"): PackageEntity {
   return { ...vocabulary(id, LOCAL_PACKAGE, projectId), modelType: LOCAL_PACKAGE, subModels, reusedProjects: [] };
 }
 
-function modelRecords(entities: ProjectModelEntity[], configuration?: ModelCompositionConfiguration): Record<string, EntityRecord> {
-  const project = Object.fromEntries(entities.map((entity) => [entity.id, entity]));
+function modelRecords(entities: ProjectModelEntity[], profiles: string[] = []): Record<string, EntityRecord> {
   const models: Record<string, EntityRecord> = Object.fromEntries(entities.map((entity) => [entity.id, {}]));
-  models[PROJECT_MODEL_ID] = project;
-  if (configuration) {
-    const root = { id: "root", type: [], modelCompositionConfiguration: configuration };
-    models.root = { root };
+  models[PROJECT_MODEL_ID] = Object.fromEntries(entities.map((entity) => [entity.id, entity]));
+  for (const id of profiles) {
+    models[id] = { item: { id: "item", type: [SEMANTIC_MODEL_CLASS_PROFILE] } };
   }
   return models;
 }
 
-describe("model composition", () => {
-  it("includes legacy semantic models and keeps imported models read-only", () => {
+describe("buildModelHierarchy", () => {
+  it("exposes local definitions and separates vocabulary and profile dependencies", () => {
     const models = modelRecords([
-      packageEntity("root", ["cim", "pim", "rdfs", "query", "other"]),
-      vocabulary("cim", V1.CIM),
-      vocabulary("pim", V1.PIM),
-      vocabulary("rdfs", RDFS_MODEL),
-      vocabulary("query", QUERYABLE_MODEL),
-      vocabulary("other", "non-semantic-model"),
+      packageEntity("root", ["local", "other-local", "profile", "rdfs", "vocabulary-package", "profile-package", "structure"]),
+      vocabulary("local"), vocabulary("other-local"), vocabulary("profile"), vocabulary("rdfs", RDFS_MODEL),
+      vocabulary("structure", "structure"),
+      packageEntity("vocabulary-package", ["nested-local", "nested-import"]),
+      vocabulary("nested-local"), vocabulary("nested-import", QUERYABLE_MODEL),
+      packageEntity("profile-package", ["nested-profile", "profile-source"], "reused"),
+      vocabulary("nested-profile", LOCAL_SEMANTIC_MODEL, "reused"), vocabulary("profile-source", LOCAL_SEMANTIC_MODEL, "reused"),
+    ], ["profile", "nested-profile"]);
+    const before = structuredClone(models);
+    const hierarchy = buildModelHierarchy("root", models);
+    expect(hierarchy.root).toMatchObject({ type: ["specification"], vocabularies: ["local", "other-local"], applicationProfile: "profile" });
+    expect(hierarchy.local).toMatchObject({ imports: ["rdfs", "nested-local"], specificationId: "root", label: { en: "local" } });
+    expect(hierarchy["other-local"]).toMatchObject({ imports: ["rdfs", "nested-local"] });
+    expect(hierarchy.profile).toMatchObject({ profiles: ["local", "other-local", "rdfs", "nested-local", "nested-profile"] });
+    expect(hierarchy["nested-local"]).toMatchObject({ imports: ["nested-import"] });
+    expect(hierarchy["vocabulary-package"]).toMatchObject({ vocabularies: ["nested-local"], applicationProfile: null });
+    expect(hierarchy["profile-package"]).toMatchObject({ vocabularies: ["profile-source"], applicationProfile: "nested-profile", projectId: "reused" });
+    expect(hierarchy["nested-profile"]).toMatchObject({ profiles: ["profile-source"], specificationId: "profile-package", projectId: "reused" });
+    expect(hierarchy.rdfs).toMatchObject({ imports: [] });
+    expect(hierarchy.structure).toBeUndefined();
+    expect(Object.values(hierarchy).every(entity => !("passThrough" in entity))).toBe(true);
+    expect(models).toEqual(before);
+  });
+
+  it("includes legacy and imported models without exporting them as local definitions", () => {
+    const models = modelRecords([
+      packageEntity("root", ["local", "cim", "pim", "rdfs", "query"]), vocabulary("local"),
+      vocabulary("cim", V1.CIM), vocabulary("pim", V1.PIM), vocabulary("rdfs", RDFS_MODEL), vocabulary("query", QUERYABLE_MODEL),
     ]);
-
     const hierarchy = buildModelHierarchy("root", models);
-    expect(Object.keys(hierarchy)).toEqual(["cim", "pim", "rdfs", "query", "root"]);
-    expect(hierarchy.root).toMatchObject({ type: ["specification"], vocabularies: ["cim", "pim", "rdfs", "query"], applicationProfile: null });
-    expect(hierarchy.cim).toMatchObject({ writable: true });
-    expect(hierarchy.pim).toMatchObject({ writable: true });
-    expect(hierarchy.rdfs).toMatchObject({ writable: false });
-    expect(hierarchy.query).toMatchObject({ writable: false });
+    expect(Object.keys(hierarchy)).toHaveLength(6);
+    expect(hierarchy.root).toMatchObject({ vocabularies: ["local"], applicationProfile: null });
+    expect(hierarchy.local).toMatchObject({ imports: ["cim", "pim", "rdfs", "query"] });
   });
 
-  it("passes nested profile sources through to the root profile", () => {
+  it("preserves shared dependencies and supports cyclic packages", () => {
     const models = modelRecords([
-      packageEntity("root", ["nested", "root-profile", "local"]),
-      vocabulary("root-profile"),
-      vocabulary("local"),
-      packageEntity("nested", ["nested-profile", "source"]),
-      vocabulary("nested-profile", LOCAL_SEMANTIC_MODEL, "nested"),
-      vocabulary("source", LOCAL_SEMANTIC_MODEL, "nested"),
-    ]);
-
-    models["root-profile"] = { item: { id: "item", type: [SEMANTIC_MODEL_CLASS_PROFILE] } };
-    models["nested-profile"] = { item: { id: "item", type: [SEMANTIC_MODEL_RELATIONSHIP_PROFILE] } };
+      packageEntity("root", ["outer", "left", "right"]), vocabulary("outer"),
+      packageEntity("left", ["first", "shared"]), vocabulary("first"),
+      packageEntity("right", ["second", "shared"]), vocabulary("second"),
+      packageEntity("shared", ["source", "root"]), vocabulary("source"),
+    ], ["outer", "first", "second"]);
     const hierarchy = buildModelHierarchy("root", models);
-    expect(hierarchy["root-profile"]).toMatchObject({
-      type: ["application-profile"], profiles: ["local", "nested-profile"], passThrough: false, writable: true,
-    });
-    expect(hierarchy["nested-profile"]).toMatchObject({
-      type: ["application-profile"], profiles: ["source"], passThrough: true, writable: false,
-    });
-    expect(hierarchy.source).toMatchObject({ writable: false });
-    expect(buildModelHierarchy("root", models, true)["root-profile"]).toMatchObject({ passThrough: true });
-    expect(hierarchy.root).toMatchObject({ vocabularies: [], applicationProfile: "root-profile" });
-    expect(hierarchy.nested).toMatchObject({ type: ["specification"], vocabularies: [], applicationProfile: "nested-profile" });
+    expect(Object.keys(hierarchy)).toHaveLength(8);
+    expect(hierarchy.outer).toMatchObject({ profiles: ["first", "second"] });
+    expect(hierarchy.first).toMatchObject({ profiles: ["source"] });
+    expect(hierarchy.second).toMatchObject({ profiles: ["source"] });
+    expect(hierarchy.source).toMatchObject({ specificationId: "shared", imports: [] });
+    expect(buildModelHierarchy("root", models)).toEqual(hierarchy);
   });
 
-  it("excludes earlier references from merge-all and records vocabulary merge order", () => {
-    const configuration: ModelCompositionConfigurationMerge = {
-      modelType: "merge",
-      models: [
-        { model: "second" },
-        { model: { modelType: "merge", models: null } as ModelCompositionConfigurationMerge },
-        { model: "second" },
-      ],
-    };
-    const models = modelRecords([
-      packageEntity("root", ["first", "second"]), vocabulary("first"), vocabulary("second"),
-    ], configuration);
-
-    const hierarchy = buildModelHierarchy("root", models);
-    expect(hierarchy.root).toMatchObject({ vocabularies: ["second", "first"], applicationProfile: null });
-    expect(Object.keys(hierarchy)).toHaveLength(3);
+  it("keeps vocabulary dependency cycles without expanding them", () => {
+    const hierarchy = buildModelHierarchy("root", modelRecords([
+      packageEntity("root", ["a", "nested"]), vocabulary("a"),
+      packageEntity("nested", ["b", "root"]), vocabulary("b"),
+    ]));
+    expect(hierarchy.a).toMatchObject({ imports: ["b"] });
+    expect(hierarchy.b).toMatchObject({ imports: ["a"] });
   });
 
-  it("forces explicit root pass-through without modifying stored configuration", () => {
-    const configuration: ModelCompositionConfigurationApplicationProfile = Object.freeze({
-      modelType: "application-profile", model: "profile", profiles: "source",
-      canAddEntities: false, canModify: false, allowPassThrough: false,
-    });
-    const models = modelRecords([
-      packageEntity("root", ["profile", "source"]), vocabulary("profile"), vocabulary("source"),
-    ], configuration);
-
-    expect(buildModelHierarchy("root", models, true).profile).toMatchObject({ passThrough: true });
-    expect(configuration.allowPassThrough).toBe(false);
-    expect(buildModelHierarchy("root", models).profile).toMatchObject({ writable: false, canAddEntities: false, canModify: false, passThrough: false });
+  it("deduplicates repeated references and excludes unreachable packages", () => {
+    const hierarchy = buildModelHierarchy("root", modelRecords([
+      packageEntity("root", ["local", "local", "nested", "nested"]), vocabulary("local"),
+      packageEntity("nested", ["source"]), vocabulary("source"), packageEntity("unreachable", []),
+    ]));
+    expect(hierarchy.root).toMatchObject({ vocabularies: ["local"] });
+    expect(hierarchy.local).toMatchObject({ imports: ["source"] });
+    expect(hierarchy.unreachable).toBeUndefined();
   });
 
-  it("exposes a vocabulary alongside its application profile", () => {
-    const profile: ModelCompositionConfigurationApplicationProfile = {
-      modelType: "application-profile", model: "profile", profiles: "source",
-      canAddEntities: false, canModify: true,
-    };
-    const configuration: ModelCompositionConfigurationMerge = {
-      modelType: "merge", models: [{ model: profile }, { model: "source" }],
-    };
-    const models = modelRecords([
-      packageEntity("root", ["profile", "source"]), vocabulary("profile"), vocabulary("source"),
-    ], configuration);
-
-    const hierarchy = buildModelHierarchy("root", models);
-    expect(Object.keys(hierarchy)).toHaveLength(3);
-    expect(hierarchy.profile).toMatchObject({ profiles: ["source"], canAddEntities: false, canModify: true });
-    expect(hierarchy.root).toMatchObject({ vocabularies: ["source"], applicationProfile: "profile" });
-  });
-
-  it("keeps references to unloaded sources without emitting unloaded entities", () => {
-    const models = modelRecords([
-      packageEntity("root", ["root-profile", "source"]), vocabulary("root-profile"), vocabulary("source"),
-    ]);
-    models["root-profile"] = { item: { id: "item", type: [SEMANTIC_MODEL_CLASS_PROFILE] } };
+  it("creates entities for empty and unloaded models using project metadata", () => {
+    const models = modelRecords([packageEntity("root", ["source"]), vocabulary("source")]);
     delete models.source;
-
-    const hierarchy = buildModelHierarchy("root", models);
-    expect(Object.keys(hierarchy)).toEqual(["root-profile", "root"]);
-    expect(hierarchy["root-profile"]).toMatchObject({ profiles: ["source"] });
+    expect(buildModelHierarchy("root", models).source).toMatchObject({ type: ["vocabulary"] });
+    expect(buildModelHierarchy("root", modelRecords([packageEntity("root", [])])).root).toMatchObject({ vocabularies: [], applicationProfile: null });
   });
 
-  it("allows consumers to handle an empty composition", () => {
-    const models = modelRecords([packageEntity("root", [])]);
-    expect(buildModelHierarchy("root", models).root).toMatchObject({ type: ["specification"], vocabularies: [], applicationProfile: null });
+  it("recognizes relationship profiles and rejects multiple profiles in a package", () => {
+    const models = modelRecords([packageEntity("root", ["first", "second"]), vocabulary("first"), vocabulary("second")]);
+    models.first = { item: { id: "item", type: [SEMANTIC_MODEL_RELATIONSHIP_PROFILE] } };
+    expect(buildModelHierarchy("root", models).root).toMatchObject({ applicationProfile: "first" });
+    models.second = models.first;
+    expect(() => buildModelHierarchy("root", models)).toThrow("multiple application profiles");
   });
 
-  it.each([false, true])("rejects merging distinct application profiles (nested: %s)", (nested) => {
-    const first: ModelCompositionConfigurationApplicationProfile = {
-      modelType: "application-profile", model: "first", profiles: "source", canAddEntities: true, canModify: true,
-    };
-    const second: ModelCompositionConfigurationApplicationProfile = {
-      ...first, model: "second",
-    };
-    const merge: ModelCompositionConfigurationMerge = {
-      modelType: "merge", models: [{ model: first }, { model: second }],
-    };
-    const configuration = nested ? { ...first, model: "outer", profiles: merge } : merge;
-    const models = modelRecords([
-      packageEntity("root", ["first", "second", "outer", "source"]),
-      vocabulary("first"), vocabulary("second"), vocabulary("outer"), vocabulary("source"),
-    ], configuration);
-
-    expect(() => buildModelHierarchy("root", models)).toThrow("cannot merge multiple application profiles");
-  });
-
-  it("retains the specification of a package referenced more than once", () => {
-    const configuration: ModelCompositionConfigurationMerge = {
-      modelType: "merge", models: [{ model: "nested" }, { model: "nested" }],
-    };
-    const models = modelRecords([
-      packageEntity("root", ["nested"]), packageEntity("nested", ["source"]), vocabulary("source"),
-    ], configuration);
-
-    const hierarchy = buildModelHierarchy("root", models);
-    expect(hierarchy.nested).toMatchObject({ vocabularies: ["source"], applicationProfile: null });
-    expect(hierarchy.root).toMatchObject({ vocabularies: ["source"], applicationProfile: null });
-  });
-
-  it("requires the virtual project model", () => {
+  it("reports missing project metadata", () => {
     expect(() => buildModelHierarchy("root", {})).toThrow("Project model with ID '_project_model' is not available.");
+    expect(() => buildModelHierarchy("root", modelRecords([]))).toThrow("Root package 'root' is not available.");
+    expect(() => buildModelHierarchy("root", modelRecords([packageEntity("root", ["missing"])]))).toThrow("Model 'missing'");
+  });
+});
+
+describe("isModelHierarchyRelevantChange", () => {
+  it("reacts to project changes and both sides of profile changes", () => {
+    const profile = { id: "item", type: [SEMANTIC_MODEL_CLASS_PROFILE] };
+    const ordinary = { id: "item", type: [] };
+    expect(isModelHierarchyRelevantChange({ [PROJECT_MODEL_ID]: [{ previous: null, next: vocabulary("new") }] })).toBe(true);
+    expect(isModelHierarchyRelevantChange({ model: [{ previous: ordinary, next: profile }] })).toBe(true);
+    expect(isModelHierarchyRelevantChange({ model: [{ previous: profile, next: ordinary }] })).toBe(true);
+    expect(isModelHierarchyRelevantChange({ model: [{ previous: ordinary, next: null }] })).toBe(false);
+    expect(isModelHierarchyRelevantChange({ [PROJECT_MODEL_ID]: [] })).toBe(false);
   });
 });

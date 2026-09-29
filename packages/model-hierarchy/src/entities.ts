@@ -23,6 +23,11 @@ interface BaseModelHierarchyEntity extends Entity {
    */
   modelType: string;
 
+  /**
+   * Identifier of the specification containing this model; not a dependency edge.
+   */
+  specificationId: ModelIdentifier;
+
   label: LanguageString;
 
   /**
@@ -52,20 +57,10 @@ export interface VocabularyHierarchyEntity extends BaseModelHierarchyEntity {
   type: [typeof MODEL_HIERARCHY_VOCABULARY];
 
   /**
-   * Whether this session can write to the model (by applying operations).
-   */
-  writable: boolean;
-
-  /**
-   * List of models in the hierarchy that this model uses, e.g. vocabularies
+   * Vocabulary identifiers that this model uses, e.g. vocabularies
    * that it imports. These are the only models that this models sees.
    */
   imports: ModelIdentifier[];
-
-  /**
-   * Whether imported vocabularies should be merged together with this model.
-   */
-  passThrough: boolean;
 }
 
 /**
@@ -81,36 +76,18 @@ export interface VocabularyHierarchyEntity extends BaseModelHierarchyEntity {
 export interface ApplicationProfileHierarchyEntity extends BaseModelHierarchyEntity {
   type: [typeof MODEL_HIERARCHY_APPLICATION_PROFILE];
 
-  writable: boolean;
-
   /**
-   * Whether the aggregator can create entities in this profile.
-   */
-  canAddEntities: boolean;
-
-  /**
-   * Whether the aggregator can modify entities in this profile.
-   */
-  canModify: boolean;
-
-  /**
-   * IDs of the other models in the hierarchy that this application profile
-   * profiles/uses, in merge order. Each referenced model applies its own
-   * pass-through setting; its dependencies are not expanded into this array.
+   * IDs of vocabulary or application-profile entities that this application profile
+   * profiles/uses. Dependencies are not expanded into this array.
    */
   profiles: ModelIdentifier[];
-
-  /**
-   * Whether entities from {@link profiles} that are not themselves profiled by
-   * this model are still visible through it.
-   */
-  passThrough: boolean;
 }
 
 /**
  * This represents a specification - the end product that data modeller exposes
  * to the world. Specification defines vocabularies, application profiles and
- * structure models.
+ * structure models. Each specification roots a semantic-model dependency graph;
+ * dependencies never reference another specification.
  */
 export interface SpecificationHierarchyEntity extends BaseModelHierarchyEntity {
   type: [typeof MODEL_HIERARCHY_SPECIFICATION];

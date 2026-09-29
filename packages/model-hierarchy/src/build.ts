@@ -1,10 +1,9 @@
 import { isModelProfile, isSemanticModelClassProfile, isSemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
-import type { Entity, EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
+import { LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
-import { PROJECT_MODEL_ID, type ProjectModelEntity, type PackageEntity } from "@dataspecer/core/project-model";
-import { MODEL_HIERARCHY_APPLICATION_PROFILE, MODEL_HIERARCHY_VOCABULARY, MODEL_HIERARCHY_SPECIFICATION, isSpecificationHierarchyEntity, type ModelHierarchyEntity } from "./entities.ts";
-import type { ModelCompositionConfiguration, ModelCompositionConfigurationApplicationProfile, ModelCompositionConfigurationMerge } from "./composition-configuration.ts";
+import { PROJECT_MODEL_ID, isPackageEntity, type ProjectModelEntity, type PackageEntity } from "@dataspecer/core/project-model";
+import { MODEL_HIERARCHY_APPLICATION_PROFILE, MODEL_HIERARCHY_VOCABULARY, MODEL_HIERARCHY_SPECIFICATION, type ModelHierarchyEntity, type SpecificationHierarchyEntity, type VocabularyHierarchyEntity, type ApplicationProfileHierarchyEntity } from "./entities.ts";
 
 export { PROJECT_MODEL_ID } from "@dataspecer/core/project-model";
 
@@ -13,35 +12,23 @@ export function isSemanticModelType(modelType: string): boolean {
 }
 
 /**
- * Model types for which there is no editing support at all, regardless of any
- * composition configuration or where the model is located.
- */
-function isAlwaysReadOnlyModelType(modelType: string): boolean {
-  return modelType === QUERYABLE_MODEL || modelType === RDFS_MODEL;
-}
-
-/**
  * Builds the model hierarchy for a project: one {@link ModelHierarchyEntity}
  * per reachable semantic model and package, describing dependencies and
- * the models exposed by each package.
+ * the models exposed by each package. Empty or unloaded semantic models are
+ * classified as vocabularies until profiling entities are available.
  *
- * @param mainProjectModelId ID of the root package of the project.
+ * @param rootProjectModelId ID of the root package of the project.
  * @param allModels Current state of every model in the project (as read from
  * the model store), including the virtual project model itself.
- * @param forcePassThrough Enables pass-through for the root package's application profile.
  */
-export function buildModelHierarchy(
-  mainProjectModelId: ModelIdentifier,
-  allModels: Record<ModelIdentifier, EntityRecord>,
-  forcePassThrough = false,
-): EntityRecord<ModelHierarchyEntity> {
-  return new ModelHierarchyBuilder(mainProjectModelId, allModels, forcePassThrough).build();
+export function buildModelHierarchy(rootProjectModelId: ModelIdentifier, allModels: Record<ModelIdentifier, EntityRecord>): EntityRecord<ModelHierarchyEntity> {
+  return new ModelHierarchyBuilder(rootProjectModelId, allModels).build();
 }
 
 /**
  * Whether any of the given entity changes could affect the result of
  * {@link buildModelHierarchy}. Used to avoid recomputing the hierarchy for
- * every entity change. Package structure, composition settings and the presence
+ * every entity change. Package structure and the presence
  * of class or relationship profiles determine the hierarchy.
  */
 export function isModelHierarchyRelevantChange(entityChanges: Record<ModelIdentifier, EntityChange[]>): boolean {
@@ -52,249 +39,154 @@ export function isModelHierarchyRelevantChange(entityChanges: Record<ModelIdenti
     if (modelId === PROJECT_MODEL_ID) {
       return true;
     }
-    if (changes.some((change) => (change.next ?? change.previous)?.id === modelId)) {
-      return true;
-    }
-    if (changes.some((change) => [change.previous, change.next].some((entity) =>
-      entity && (isSemanticModelClassProfile(entity) || isSemanticModelRelationshipProfile(entity))))) {
+    if (changes.some((change) => [change.previous, change.next].some((entity) => entity && (isSemanticModelClassProfile(entity) || isSemanticModelRelationshipProfile(entity))))) {
       return true;
     }
   }
   return false;
 }
 
+/**
+ * Each package can have three levels of hierarchy: single application profile,
+ * multiple locally defined vocabularies and multiple imported vocabularies &
+ * other packages.
+ *
+ * When importing a package, you either import the application profile, or all
+ * locally defined the vocabularies, if the profile is not present.
+ *
+ * When exporting a package, you export both the application profile and all the
+ * locally defined vocabularies, because that is what the specification defines.
+ */
 class ModelHierarchyBuilder {
-  private readonly mainProjectModelId: ModelIdentifier;
-  private readonly allModels: Record<ModelIdentifier, EntityRecord>;
+  private readonly entities: EntityRecord<ModelHierarchyEntity> = {};
   private readonly projectModel: EntityRecord<ProjectModelEntity>;
 
-  /**
-   * Ids of models directly contained in the project's root package - the only
-   * ones that are writable by default.
-   */
-  private readonly rootChildIds: Set<ModelIdentifier>;
-
-  private readonly result: EntityRecord<ModelHierarchyEntity> = {};
-  private readonly usedModels = new Set<ModelIdentifier>();
-  private readonly applicationProfileIds = new Set<ModelIdentifier>();
-
-  constructor(mainProjectModelId: ModelIdentifier, allModels: Record<ModelIdentifier, EntityRecord>, private readonly forcePassThrough: boolean) {
-    this.mainProjectModelId = mainProjectModelId;
-    this.allModels = allModels;
-
-    const projectModel = allModels[PROJECT_MODEL_ID];
-    if (!projectModel) {
-      throw new Error(`Project model with ID '${PROJECT_MODEL_ID}' is not available.`);
-    }
-    this.projectModel = projectModel as EntityRecord<ProjectModelEntity>;
-
-    const rootPackage = this.projectModel[mainProjectModelId] as PackageEntity | undefined;
-    this.rootChildIds = new Set(rootPackage?.subModels ?? []);
+  constructor (private readonly rootProjectModelId: ModelIdentifier, private readonly models: Record<ModelIdentifier, EntityRecord>) {
+    this.projectModel = models[PROJECT_MODEL_ID] as EntityRecord<ProjectModelEntity>;
   }
 
   build(): EntityRecord<ModelHierarchyEntity> {
-    this.resolveModelReference(this.mainProjectModelId);
-    return this.result;
-  }
-
-  /**
-   * Get the composition configuration for a package.
-   * If not explicitly defined, derives it from the contained models.
-   */
-  private getCompositionConfiguration(packageId: ModelIdentifier): ModelCompositionConfiguration {
-    const packageEntity = this.projectModel[packageId] as PackageEntity | undefined;
-    if (!packageEntity) {
-      throw new Error(`Package '${packageId}' not found in project model.`);
+    if (!this.projectModel) {
+      throw new Error(`Project model with ID '${PROJECT_MODEL_ID}' is not available.`);
+    }
+    const root = this.projectModel[this.rootProjectModelId];
+    if (!root || !isPackageEntity(root)) {
+      throw new Error(`Root package '${this.rootProjectModelId}' is not available.`);
     }
 
-    const rootModel = this.allModels[packageId]?.[packageId] as (Entity & {
-      modelCompositionConfiguration?: ModelCompositionConfiguration;
-    }) | undefined;
-    const explicitConfiguration = rootModel?.modelCompositionConfiguration;
-
-    if (explicitConfiguration) {
-      if (typeof explicitConfiguration !== "string" && explicitConfiguration.modelType === "application-profile" && packageId === this.mainProjectModelId && this.forcePassThrough) {
-        return { ...explicitConfiguration, allowPassThrough: true } as ModelCompositionConfigurationApplicationProfile;
+    // Create package exports before resolving dependencies, including cycles.
+    this.buildSpecification(this.rootProjectModelId);
+    for (const entity of Object.values(this.entities)) {
+      if (entity.type[0] !== MODEL_HIERARCHY_SPECIFICATION) {
+        continue;
       }
-      return explicitConfiguration;
+      const specification = entity as SpecificationHierarchyEntity;
+      const pkg = this.projectModel[specification.id] as PackageEntity;
+      const vocabularyImports: ModelIdentifier[] = [];
+      const profileImports: ModelIdentifier[] = [...specification.vocabularies];
+      for (const id of pkg.subModels) {
+        const dependency = this.entities[id];
+        if (!dependency) {
+          continue;
+        }
+        if (dependency.type[0] === MODEL_HIERARCHY_SPECIFICATION) {
+          const imported = dependency as SpecificationHierarchyEntity;
+          if (imported.applicationProfile !== null) {
+            profileImports.push(imported.applicationProfile);
+          } else {
+            vocabularyImports.push(...imported.vocabularies);
+            profileImports.push(...imported.vocabularies);
+          }
+        } else if (dependency.type[0] === MODEL_HIERARCHY_VOCABULARY &&
+          dependency.modelType !== LOCAL_SEMANTIC_MODEL) {
+          vocabularyImports.push(id);
+          profileImports.push(id);
+        }
+      }
+      for (const id of specification.vocabularies) {
+        (this.entities[id] as VocabularyHierarchyEntity).imports = [...new Set(vocabularyImports)];
+      }
+      if (specification.applicationProfile !== null) {
+        (this.entities[specification.applicationProfile] as ApplicationProfileHierarchyEntity).profiles = [...new Set(profileImports)];
+      }
     }
-
-    const profileModelIds = packageEntity.subModels.filter((modelId) => {
-      const model = this.projectModel[modelId];
-      const entities = this.allModels[modelId];
-      return model && isSemanticModelType(model.modelType) && entities && isModelProfile(entities);
-    });
-    if (profileModelIds.length > 1) {
-      throw new Error(`Package '${packageId}' cannot merge multiple application profiles: ${profileModelIds.join(", ")}.`);
-    }
-    const profileModelId = profileModelIds[0];
-
-    // Nested packages also expose entities from their profiled models.
-    const allowPassThrough = packageId !== this.mainProjectModelId || this.forcePassThrough;
-
-    if (profileModelId !== undefined) {
-      return {
-        modelType: "application-profile",
-        model: profileModelId,
-        profiles: { modelType: "merge", models: null },
-        canAddEntities: true,
-        canModify: true,
-
-        allowPassThrough,
-      } as ModelCompositionConfigurationApplicationProfile;
-    }
-
-    return { modelType: "merge", models: null } as ModelCompositionConfigurationMerge;
+    return this.entities;
   }
 
-  /**
-   * Get all semantic models and sub-packages for a given package
-   */
-  private getPackageContents(packageId: ModelIdentifier): {
-    semanticModels: string[];
-    subPackages: string[];
-  } {
-    const packageEntity = this.projectModel[packageId] as PackageEntity | undefined;
-    if (!packageEntity) {
-      throw new Error(`Package '${packageId}' not found in project model.`);
+  private buildSpecification(packageId: ModelIdentifier): void {
+    if (this.entities[packageId]) {
+      return;
     }
-
-    const semanticModels: string[] = [];
-    const subPackages: string[] = [];
-
-    for (const subModelId of packageEntity.subModels) {
-      const subModel = this.projectModel[subModelId] as ProjectModelEntity | undefined;
-      if (subModel) {
-        if (isSemanticModelType(subModel.modelType)) {
-          semanticModels.push(subModel.id);
-        } else if (subModel.modelType === LOCAL_PACKAGE) {
-          subPackages.push(subModel.id);
+    const pkg = this.projectModel[packageId] as PackageEntity;
+    const specification = this.buildSpecificationHierarchyEntity(packageId);
+    for (const id of pkg.subModels) {
+      const model = this.projectModel[id];
+      if (!model) {
+        throw new Error(`Model '${id}' referenced by package '${packageId}' is not available in the project model.`);
+      }
+      if (isPackageEntity(model)) {
+        this.buildSpecification(id);
+      } else if (isSemanticModelType(model.modelType)) {
+        if (isModelProfile(this.models[id] ?? {})) {
+          if (specification.applicationProfile !== null && specification.applicationProfile !== id) {
+            throw new Error(`Package '${packageId}' has multiple application profiles.`);
+          }
+          if (!this.entities[id]) {
+            this.buildApplicationProfileHierarchyEntity(id, packageId);
+          }
+          specification.applicationProfile = id;
+        } else {
+          if (!this.entities[id]) {
+            this.buildVocabularyHierarchyEntity(id, packageId);
+          }
+          if (model.modelType === LOCAL_SEMANTIC_MODEL && !specification.vocabularies.includes(id)) {
+            specification.vocabularies.push(id);
+          }
         }
       }
     }
-
-    return { semanticModels, subPackages };
   }
 
-  private resolveModelReference(modelId: ModelIdentifier): ModelIdentifier[] {
-    this.usedModels.add(modelId);
-    const entity = this.projectModel[modelId];
-    if (entity?.modelType === LOCAL_PACKAGE) {
-      const specification = this.result[modelId];
-      if (isSpecificationHierarchyEntity(specification)) {
-        return specification.applicationProfile === null
-          ? specification.vocabularies
-          : [specification.applicationProfile, ...specification.vocabularies];
-      }
-      const roots = this.resolveConfiguration(modelId, this.getCompositionConfiguration(modelId));
-      const applicationProfiles = roots.filter((id) => this.applicationProfileIds.has(id));
-      this.result[modelId] = {
-        id: modelId,
-        type: [MODEL_HIERARCHY_SPECIFICATION],
-        modelType: entity.modelType,
-        label: entity.label,
-        projectId: entity.projectId,
-        vocabularies: [...new Set(roots.filter((id) => !this.applicationProfileIds.has(id)))],
-        applicationProfile: applicationProfiles[0] ?? null,
-      };
-      return roots;
-    }
-    this.emitVocabulary(modelId);
-    return [modelId];
+  private buildSpecificationHierarchyEntity(packageId: ModelIdentifier): SpecificationHierarchyEntity {
+    const entity: SpecificationHierarchyEntity = {
+      id: packageId,
+      type: [MODEL_HIERARCHY_SPECIFICATION],
+      modelType: this.projectModel[packageId].modelType,
+      specificationId: packageId,
+      label: this.projectModel[packageId].label,
+      projectId: this.projectModel[packageId].projectId,
+      vocabularies: [],
+      applicationProfile: null,
+    };
+    this.entities[packageId] = entity;
+    return entity;
   }
 
-  private resolveConfiguration(packageId: ModelIdentifier, configuration: ModelCompositionConfiguration): ModelIdentifier[] {
-    if (typeof configuration === "string") {
-      return this.resolveModelReference(configuration);
-    } else if (configuration.modelType === "application-profile") {
-      const profileConfig = configuration as ModelCompositionConfigurationApplicationProfile;
-      const profileModelId = profileConfig.model as ModelIdentifier;
-      this.usedModels.add(profileModelId);
-      this.applicationProfileIds.add(profileModelId);
-      const profiles = this.resolveConfiguration(packageId, profileConfig.profiles);
-      this.emitApplicationProfile(profileModelId, profiles, profileConfig);
-      return [profileModelId];
-    } else if (configuration.modelType === "merge") {
-      const mergeConfig = configuration as ModelCompositionConfigurationMerge;
-      const models = !mergeConfig.models
-        ? this.resolveMergeAllModels(packageId)
-        : mergeConfig.models.flatMap((modelRef) => this.resolveConfiguration(packageId, modelRef.model));
-      const applicationProfiles = new Set(models.filter((id) => this.applicationProfileIds.has(id)));
-      if (applicationProfiles.size > 1) {
-        throw new Error(`Package '${packageId}' cannot merge multiple application profiles: ${[...applicationProfiles].join(", ")}.`);
-      }
-      return models;
-    }
-    throw new Error(`Unsupported model composition type: ${configuration.modelType}`);
-  }
-
-  private resolveMergeAllModels(packageId: ModelIdentifier): ModelIdentifier[] {
-    const { semanticModels, subPackages } = this.getPackageContents(packageId);
-    const resolved: ModelIdentifier[] = [];
-    for (const modelId of [...semanticModels, ...subPackages]) {
-      if (!this.usedModels.has(modelId)) {
-        resolved.push(...this.resolveModelReference(modelId));
-      }
-    }
-    return resolved;
-  }
-
-  /**
-   * Whether the model belongs to the project being worked on, as opposed to a
-   * project it reuses. Only models of the own project can be written to from
-   * here.
-   */
-  private isOwnModel(modelEntity: ProjectModelEntity): boolean {
-    return modelEntity.projectId === this.mainProjectModelId;
-  }
-
-  private emitVocabulary(modelId: ModelIdentifier): void {
-    if (this.result[modelId]) {
-      return;
-    }
-
-    const modelEntity = this.projectModel[modelId] as ProjectModelEntity | undefined;
-    const modelEntities = this.allModels[modelId];
-    if (!modelEntity || !modelEntities) {
-      // Model is referenced from the project structure but its data is not (yet) loaded.
-      return;
-    }
-
-    this.result[modelId] = {
+  private buildVocabularyHierarchyEntity(modelId: ModelIdentifier, specificationId: ModelIdentifier): VocabularyHierarchyEntity {
+    const entity: VocabularyHierarchyEntity = {
       id: modelId,
       type: [MODEL_HIERARCHY_VOCABULARY],
-      modelType: modelEntity.modelType,
-      label: modelEntity.label,
-      projectId: modelEntity.projectId,
-      writable: isAlwaysReadOnlyModelType(modelEntity.modelType) ? false : this.rootChildIds.has(modelId) && this.isOwnModel(modelEntity),
+      modelType: this.projectModel[modelId].modelType,
+      specificationId,
+      label: this.projectModel[modelId].label,
+      projectId: this.projectModel[modelId].projectId,
       imports: [],
-      passThrough: false,
     };
+    this.entities[modelId] = entity;
+    return entity;
   }
 
-  private emitApplicationProfile(modelId: ModelIdentifier, profiles: ModelIdentifier[], configuration: ModelCompositionConfigurationApplicationProfile): void {
-    if (this.result[modelId]) {
-      return;
-    }
-
-    const modelEntity = this.projectModel[modelId] as ProjectModelEntity | undefined;
-    const modelEntities = this.allModels[modelId];
-    if (!modelEntity || !modelEntities) {
-      // Model is referenced from the project structure but its data is not (yet) loaded.
-      return;
-    }
-
-    this.result[modelId] = {
+  private buildApplicationProfileHierarchyEntity(modelId: ModelIdentifier, specificationId: ModelIdentifier): ApplicationProfileHierarchyEntity {
+    const entity: ApplicationProfileHierarchyEntity = {
       id: modelId,
       type: [MODEL_HIERARCHY_APPLICATION_PROFILE],
-      modelType: modelEntity.modelType,
-      label: modelEntity.label,
-      projectId: modelEntity.projectId,
-      writable: (configuration.canModify ?? true) && this.isOwnModel(modelEntity),
-      canAddEntities: configuration.canAddEntities ?? true,
-      canModify: configuration.canModify ?? true,
-      profiles,
-      passThrough: configuration.allowPassThrough ?? false,
+      modelType: this.projectModel[modelId].modelType,
+      specificationId,
+      label: this.projectModel[modelId].label,
+      projectId: this.projectModel[modelId].projectId,
+      profiles: [],
     };
+    this.entities[modelId] = entity;
+    return entity;
   }
 }
