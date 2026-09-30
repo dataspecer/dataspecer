@@ -27,12 +27,15 @@ async function render(
   vocabularies: ControlledVocabulary[],
   template: string,
   language: string = "en",
+  nestedSpecifications: { builder: ProfileModelBuilder, documentationUrl: string }[] = [],
 ): Promise<string> {
   return await generateDocumentation(
     {
       label: {},
       models: [
         { id: "primary", isPrimary: true, entities: builder.build().getEntities() as never, baseIri: "", documentationUrl: null, title: null },
+        // Nested specifications have their own documentation.
+        ...nestedSpecifications.map((item, index) => ({ id: `nested-${index}`, isPrimary: false, entities: item.builder.build().getEntities() as never, baseIri: "", documentationUrl: item.documentationUrl, title: null })),
         // Every controlled vocabulary is a model of its own.
         ...vocabularies.map(item => ({ id: item.id, isPrimary: false, entities: { [item.id]: item } as never, baseIri: null, documentationUrl: null, title: null })),
       ],
@@ -61,8 +64,7 @@ describe("generateDocumentation controlled vocabularies", () => {
 
     const html = await render(builder, [vocabulary("voc-a", "Vocabulary A")], CLASS_PROFILE_TEMPLATE);
 
-    expect(html).toContain('<a href="https://example.com/voc-a">Vocabulary A</a>');
-    expect(html).toContain("(RECOMMENDED)");
+    expect(html).toContain('<a href="https://example.com/voc-a">Vocabulary A</a> (RECOMMENDED)');
   });
 
   it("Includes assignments inherited from the profiled class profile.", async () => {
@@ -169,6 +171,8 @@ describe("generateDocumentation controlled vocabularies", () => {
       // The nearest replaced assignment comes first and each one is nested in the previous.
       expect(html).toMatch(/\(MUST, override\)[\s\S]*replaces controlled vocabulary assignment[\s\S]*\(RECOMMENDED\) of class profile[\s\S]*Parent[\s\S]*replaces controlled vocabulary assignment[\s\S]*\(MAY\) of class profile[\s\S]*Grandparent/);
       // A single assignment is not a list, so only the replaced assignments are nested.
+      expect(html).toContain("</a> (MUST, override)");
+      expect(html).toContain("</a> (RECOMMENDED) of class profile");
       expect(html.match(/<ul/g)).toHaveLength(2);
       expect(html.match(/<\/ul>/g)).toHaveLength(2);
       expect(html.match(/<li>/g)).toHaveLength(2);
@@ -309,6 +313,120 @@ describe("generateDocumentation controlled vocabularies", () => {
       const html = await renderUsage("MUST", "controlled-vocabulary-class-profile-usage", "cs");
       expect(html).toContain(`Tento profil třídy MUSÍ být v datech reprezentován položkami řízeného slovníku ${LINK}.`);
       expect(html).not.toContain("This class profile");
+    });
+
+  });
+
+  describe("usage table", () => {
+
+    /**
+     * Renders the usage table for a property whose range is a class profile
+     * that has the assignment of its own or inherited from a profiled class profile.
+     */
+    async function renderUsageTable(inherited: boolean): Promise<string> {
+      const builder = createBuilder();
+      const assignment = builder.controlledVocabularyAssignment({
+        id: "assignment", classProfile: inherited ? "owner" : "range", vocabulary: "voc-a", qualifier: "MUST",
+      });
+      const domain = builder.class({ id: "domain", name: { en: "Domain class" } });
+      const owner = builder.class({ id: "owner", name: { en: "Owner class" }, controlledVocabularies: inherited ? [assignment.identifier] : [] });
+      const range = builder.class({ id: "range", name: { en: "Range class" }, controlledVocabularies: inherited ? [] : [assignment.identifier] }).profile(owner);
+      builder.property({ id: "relationship", name: { en: "property" } }).domain(domain).range(range);
+
+      return (await render(
+        builder,
+        [vocabulary("voc-a", "Vocabulary A")],
+        `{{> definitions}}{{> controlled-vocabulary-usage-table rows=controlledVocabularyUsagesByQualifier.MUST}}`,
+      )).replace(/\s+/g, " ");
+    }
+
+    it("Shows the class profile that is the range of the property.", async () => {
+      const html = await renderUsageTable(false);
+
+      expect(html).toContain("Range class");
+      expect(html).not.toContain("Domain class");
+    });
+
+    it("Shows the range class profile, not the one that owns an inherited assignment.", async () => {
+      const html = await renderUsageTable(true);
+
+      expect(html).toContain("Range class");
+      expect(html).not.toContain("Owner class");
+      expect(html).not.toContain("Domain class");
+    });
+
+  });
+
+  describe("origin of an inherited assignment", () => {
+
+    const CLASS_PROFILE_ROW_TEMPLATE = `{{> definitions}}{{#each semanticEntitiesByType.classProfiles}}{{#ifEquals id "child"}}{{> controlled-vocabulary-list vocabularies=resolvedControlledVocabularies showReplaced=true}}{{/ifEquals}}{{/each}}`;
+
+    it("Links the class profile in the nested specification that the assignment is taken from.", async () => {
+      const nested = createBuilder();
+      const assignment = nested.controlledVocabularyAssignment({ id: "assignment", classProfile: "owner", vocabulary: "voc-a", qualifier: "MUST" });
+      const owner = nested.class({ id: "owner", iri: "http://example.com/nested#Owner", name: { en: "Owner class" }, controlledVocabularies: [assignment.identifier] });
+
+      const builder = createBuilder();
+      builder.class({ id: "child", name: { en: "Child class" } }).profile(owner);
+
+      const html = (await render(
+        builder,
+        [vocabulary("voc-a", "Vocabulary A")],
+        CLASS_PROFILE_ROW_TEMPLATE,
+        "en",
+        [{ builder: nested, documentationUrl: "https://example.com/nested/" }],
+      )).replace(/\s+/g, " ");
+
+      expect(html).toContain("Taken from the profiled class profile");
+      expect(html).toContain('<a href="https://example.com/nested/#Owner">Owner class</a>');
+    });
+
+    it("Says it in Czech.", async () => {
+      const nested = createBuilder();
+      const assignment = nested.controlledVocabularyAssignment({ id: "assignment", classProfile: "owner", vocabulary: "voc-a" });
+      const owner = nested.class({ id: "owner", name: { en: "Owner class" }, controlledVocabularies: [assignment.identifier] });
+      const builder = createBuilder();
+      builder.class({ id: "child" }).profile(owner);
+
+      const html = await render(
+        builder,
+        [vocabulary("voc-a", "Vocabulary A")],
+        CLASS_PROFILE_ROW_TEMPLATE,
+        "cs",
+        [{ builder: nested, documentationUrl: "https://example.com/nested/" }],
+      );
+
+      expect(html).toContain("Převzato z profilovaného profilu třídy");
+      expect(html).not.toContain("Taken from");
+    });
+
+    it("Does not say it for an assignment of the class profile itself.", async () => {
+      const builder = createBuilder();
+      const assignment = builder.controlledVocabularyAssignment({ id: "assignment", classProfile: "child", vocabulary: "voc-a" });
+      builder.class({ id: "child", controlledVocabularies: [assignment.identifier] });
+
+      const html = await render(builder, [vocabulary("voc-a", "Vocabulary A")], CLASS_PROFILE_ROW_TEMPLATE);
+
+      expect(html).not.toContain("Taken from");
+    });
+
+    it("Does not say it in the list without the option, used for properties.", async () => {
+      const nested = createBuilder();
+      const assignment = nested.controlledVocabularyAssignment({ id: "assignment", classProfile: "owner", vocabulary: "voc-a" });
+      const owner = nested.class({ id: "owner", controlledVocabularies: [assignment.identifier] });
+      const builder = createBuilder();
+      builder.class({ id: "child" }).profile(owner);
+
+      const html = await render(
+        builder,
+        [vocabulary("voc-a", "Vocabulary A")],
+        `{{#each semanticEntitiesByType.classProfiles}}{{#ifEquals id "child"}}{{> controlled-vocabulary-list vocabularies=resolvedControlledVocabularies}}{{/ifEquals}}{{/each}}`,
+        "en",
+        [{ builder: nested, documentationUrl: "https://example.com/nested/" }],
+      );
+
+      expect(html).toContain("Vocabulary A");
+      expect(html).not.toContain("Taken from");
     });
 
   });
