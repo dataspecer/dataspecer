@@ -4,51 +4,14 @@ import {
   SemanticModelClass,
 } from "../../concepts/index.ts";
 import {
-  CONTROLLED_VOCABULARY_ASSIGNMENT,
-  ControlledVocabularyAssignment,
   SEMANTIC_MODEL_CLASS_PROFILE,
   SemanticModelClassProfile,
 } from "../concepts/index.ts";
+import { assignmentFixture, classProfileFixture } from "../test-fixtures.ts";
 import { AggregatedProfiledSemanticModelClass } from "./index.ts";
 import {
   SemanticClassProfileAggregator,
 } from "./semantic-class-profile-aggregator.ts";
-
-function classProfileFixture(
-  overrides: Partial<SemanticModelClassProfile> = {},
-): SemanticModelClassProfile {
-  return {
-    id: "1",
-    type: [SEMANTIC_MODEL_CLASS_PROFILE],
-    iri: ":1",
-    name: null,
-    nameFromProfiled: null,
-    description: null,
-    descriptionFromProfiled: null,
-    profiling: [],
-    usageNote: null,
-    usageNoteFromProfiled: null,
-    externalDocumentationUrl: null,
-    tags: [],
-    controlledVocabularies: [],
-    ...overrides,
-  };
-}
-
-function assignmentFixture(
-  overrides: Partial<ControlledVocabularyAssignment> = {},
-): ControlledVocabularyAssignment {
-  return {
-    id: "cv-1",
-    type: [CONTROLLED_VOCABULARY_ASSIGNMENT],
-    classProfile: "ancestor",
-    vocabulary: "voc-1",
-    qualifier: "must",
-    iri: null,
-    replaces: null,
-    ...overrides,
-  };
-}
 
 describe("SemanticClassProfileAggregator", () => {
 
