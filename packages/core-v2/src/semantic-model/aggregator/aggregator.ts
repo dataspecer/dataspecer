@@ -255,17 +255,23 @@ class SemanticModelAggregatorInternal implements SemanticModelAggregator {
                         .map(identifier => this.baseModelEntities[identifier])
                         .filter(item => item !== undefined);
 
+
+                    // pass profile's own controlled vocabulary assignments to the aggregation
+                    // to resolve the replacement chain of assignment overrides
                     const aggregatedDependencies =
                         dependencies.map(item => item.aggregatedEntity)
                             .filter(item => item !== null)
-                            .filter(item => isSemanticModelClassProfile(item) || isSemanticModelClass(item));
+                            .filter(item => isSemanticModelClassProfile(item) || isSemanticModelClass(item) || isControlledVocabularyAssignment(item));
+                    // filter out CV assignments because they are not parents of class profiles, they only belong to a parent
+                    const sources = dependencies
+                        .filter(item => !isControlledVocabularyAssignment(item.aggregatedEntity));
 
                     this.baseModelEntities[updatedEntity] = {
                         id: updatedEntity,
                         aggregatedEntity: this.profileEntityAggregator.aggregateSemanticModelClassProfile(
                             entity, aggregatedDependencies),
                         rawEntity: entity,
-                        sources: dependencies,
+                        sources,
                         visualEntities: [],
                     };
                 } else if (isSemanticModelRelationshipProfile(entity)) {
