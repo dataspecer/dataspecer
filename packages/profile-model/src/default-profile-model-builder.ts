@@ -138,7 +138,7 @@ class DefaultProfileModelBuilder implements ProfileModelBuilder {
       // ControlledVocabularyAssignment
       classProfile: "",
       vocabulary: "",
-      qualifier: "MUST",
+      qualifier: "must",
       replaces: null,
       iri: null,
       ...value,

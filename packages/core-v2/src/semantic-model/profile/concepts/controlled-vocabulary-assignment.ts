@@ -1,7 +1,16 @@
 import { Entity } from "@dataspecer/core/entity-model";
 import { EntityIdentifier } from "../../../entity-model/entity.ts";
 
-export type Qualifier = "MUST" | "AT_LEAST_1" | "RECOMMENDED" | "MAY";
+/**
+ * Qualifier for expected usage of controlled vocabularies, when assigned to a class profile.
+ * Qualifier is based on how DCAT-AP 3 specification describes possible controlled vocabulary usage.
+ * Ordered from the strictest to the most permissive:
+ * - must: values must come from the vocabulary
+ * - at-least-one: at least one value must come from the vocabulary
+ * - recommended: values should come from the vocabulary
+ * - may: values may come from the vocabulary
+ */
+export type Qualifier = "must" | "at-least-one" | "recommended" | "may";
 
 /**
  * Represents a reference to a local controlled vocabulary assignment

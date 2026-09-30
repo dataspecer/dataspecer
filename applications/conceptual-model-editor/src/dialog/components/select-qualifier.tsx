@@ -57,20 +57,20 @@ export function SelectQualifier(props: {
 }
 
 
-const QUALIFIERS: Qualifier[] = ["MUST", "AT_LEAST_1", "RECOMMENDED", "MAY"];
+const QUALIFIERS: Qualifier[] = ["must", "at-least-one", "recommended", "may"];
 
 function qualifierLabel(qualifier: Qualifier): string {
-  return qualifier.replace(/_/g, " ");
+  return qualifier.replace(/-/g, " ").toUpperCase();
 }
 
 /**
  * Stricter qualifiers come first - a qualifier is disabled if it is less strict than inherited.
  */
 const QUALIFIER_STRICTNESS: Record<Qualifier, number> = {
-  MUST: 0,
-  AT_LEAST_1: 1,
-  RECOMMENDED: 2,
-  MAY: 3,
+  "must": 0,
+  "at-least-one": 1,
+  "recommended": 2,
+  "may": 3,
 };
 
 function isDisabledByInherited(option: Qualifier, inherited: Qualifier): boolean {

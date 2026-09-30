@@ -667,7 +667,7 @@ test("Create controlled vocabulary assignment.", () => {
   );
   //
   const result = executor.executeOperation(factory.createControlledVocabularyAssignment(
-    { id: "cv-1", classProfile: "1", vocabulary: "voc-1", qualifier: "MUST" }));
+    { id: "cv-1", classProfile: "1", vocabulary: "voc-1", qualifier: "must" }));
   //
   expect(result).toStrictEqual({ success: true, created: ["cv-1"] });
   expect(actual.length).toBe(1);
@@ -678,7 +678,7 @@ test("Create controlled vocabulary assignment.", () => {
         type: [CONTROLLED_VOCABULARY_ASSIGNMENT],
         classProfile: "1",
         vocabulary: "voc-1",
-        qualifier: "MUST",
+        qualifier: "must",
         replaces: null,
         iri: null,
       } as ControlledVocabularyAssignment,
@@ -701,7 +701,7 @@ test("Create controlled vocabulary assignment, a stored iri is preserved.", () =
   //
   const result = executor.executeOperation(factory.createControlledVocabularyAssignment(
     {
-      id: "cv-1", classProfile: "1", vocabulary: "voc-1", qualifier: "MUST",
+      id: "cv-1", classProfile: "1", vocabulary: "voc-1", qualifier: "must",
       iri: "http://example.com/imported-assignment",
     }));
   //
@@ -715,7 +715,7 @@ test("Create controlled vocabulary assignment, same vocabulary with a different 
   const actual: ChangeEntry[] = [];
   const cv1: ControlledVocabularyAssignment = {
     id: "cv-1", type: [CONTROLLED_VOCABULARY_ASSIGNMENT],
-    classProfile: "1", vocabulary: "voc-1", qualifier: "MUST", replaces: null, iri: null,
+    classProfile: "1", vocabulary: "voc-1", qualifier: "must", replaces: null, iri: null,
   };
   const classProfile = classProfileFixture({ controlledVocabularies: ["cv-1"] });
   const executor = createDefaultSemanticModelProfileOperationExecutor(
@@ -724,7 +724,7 @@ test("Create controlled vocabulary assignment, same vocabulary with a different 
   );
   //
   const result = executor.executeOperation(factory.createControlledVocabularyAssignment(
-    { id: "cv-2", classProfile: "1", vocabulary: "voc-1", qualifier: "MAY" }));
+    { id: "cv-2", classProfile: "1", vocabulary: "voc-1", qualifier: "may" }));
   //
   expect(result).toStrictEqual({ success: false, created: [] });
   expect(actual.length).toBe(0);
@@ -734,7 +734,7 @@ test("Create controlled vocabulary assignment, same vocabulary and qualifier dup
   const actual: ChangeEntry[] = [];
   const cv1: ControlledVocabularyAssignment = {
     id: "cv-1", type: [CONTROLLED_VOCABULARY_ASSIGNMENT],
-    classProfile: "1", vocabulary: "voc-1", qualifier: "MUST", replaces: null, iri: null,
+    classProfile: "1", vocabulary: "voc-1", qualifier: "must", replaces: null, iri: null,
   };
   const classProfile = classProfileFixture({ controlledVocabularies: ["cv-1"] });
   const executor = createDefaultSemanticModelProfileOperationExecutor(
@@ -743,7 +743,7 @@ test("Create controlled vocabulary assignment, same vocabulary and qualifier dup
   );
   //
   const result = executor.executeOperation(factory.createControlledVocabularyAssignment(
-    { id: "cv-2", classProfile: "1", vocabulary: "voc-1", qualifier: "MUST" }));
+    { id: "cv-2", classProfile: "1", vocabulary: "voc-1", qualifier: "must" }));
   //
   expect(result).toStrictEqual({ success: false, created: [] });
   expect(actual.length).toBe(0);
@@ -757,7 +757,7 @@ test("Create controlled vocabulary assignment, target is not a class profile is 
   );
   //
   const result = executor.executeOperation(factory.createControlledVocabularyAssignment(
-    { id: "cv-1", classProfile: "missing", vocabulary: "voc-1", qualifier: "MUST" }));
+    { id: "cv-1", classProfile: "missing", vocabulary: "voc-1", qualifier: "must" }));
   //
   expect(result).toStrictEqual({ success: false, created: [] });
   expect(actual.length).toBe(0);
@@ -767,7 +767,7 @@ test("Remove controlled vocabulary assignment.", () => {
   const actual: ChangeEntry[] = [];
   const cv1: ControlledVocabularyAssignment = {
     id: "cv-1", type: [CONTROLLED_VOCABULARY_ASSIGNMENT],
-    classProfile: "1", vocabulary: "voc-1", qualifier: "MUST", replaces: null, iri: null,
+    classProfile: "1", vocabulary: "voc-1", qualifier: "must", replaces: null, iri: null,
   };
   const classProfile = classProfileFixture({ controlledVocabularies: ["cv-1"] });
   const executor = createDefaultSemanticModelProfileOperationExecutor(
@@ -806,7 +806,7 @@ test("Modify controlled vocabulary assignment.", () => {
   const actual: ChangeEntry[] = [];
   const cv1: ControlledVocabularyAssignment = {
     id: "cv-1", type: [CONTROLLED_VOCABULARY_ASSIGNMENT],
-    classProfile: "1", vocabulary: "voc-1", qualifier: "MUST", replaces: null, iri: null,
+    classProfile: "1", vocabulary: "voc-1", qualifier: "must", replaces: null, iri: null,
   };
   const executor = createDefaultSemanticModelProfileOperationExecutor(
     tableReader({ "cv-1": cv1 }),
@@ -814,7 +814,7 @@ test("Modify controlled vocabulary assignment.", () => {
   );
   //
   const result = executor.executeOperation(factory.modifyControlledVocabularyAssignment(
-    "cv-1", { qualifier: "RECOMMENDED", replaces: { kind: "local", target: "cv-0" } }));
+    "cv-1", { qualifier: "recommended", replaces: { kind: "local", target: "cv-0" } }));
   //
   expect(result).toStrictEqual({ success: true, created: [] });
   expect(actual.length).toBe(1);
@@ -822,7 +822,7 @@ test("Modify controlled vocabulary assignment.", () => {
     updated: {
       "cv-1": {
         ...cv1,
-        qualifier: "RECOMMENDED",
+        qualifier: "recommended",
         replaces: { kind: "local", target: "cv-0" },
       } as ControlledVocabularyAssignment,
     },
@@ -834,7 +834,7 @@ test("Modify controlled vocabulary assignment, an imported replaces is stored.",
   const actual: ChangeEntry[] = [];
   const cv1: ControlledVocabularyAssignment = {
     id: "cv-1", type: [CONTROLLED_VOCABULARY_ASSIGNMENT],
-    classProfile: "1", vocabulary: "voc-1", qualifier: "MUST", replaces: null, iri: null,
+    classProfile: "1", vocabulary: "voc-1", qualifier: "must", replaces: null, iri: null,
   };
   const executor = createDefaultSemanticModelProfileOperationExecutor(
     tableReader({ "cv-1": cv1 }),
@@ -865,7 +865,7 @@ test("Modify controlled vocabulary assignment, target not found is rejected.", (
   );
   //
   const result = executor.executeOperation(factory.modifyControlledVocabularyAssignment(
-    "missing", { qualifier: "RECOMMENDED" }));
+    "missing", { qualifier: "recommended" }));
   //
   expect(result).toStrictEqual({ success: false, created: [] });
   expect(actual.length).toBe(0);

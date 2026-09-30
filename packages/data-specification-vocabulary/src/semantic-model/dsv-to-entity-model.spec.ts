@@ -440,7 +440,7 @@ test("Creates a ControlledVocabularyAssignment entity for a class profile's own 
     controlledVocabularyAssignments: [{
       iri: "http://dcat/model/class-1/assignment-1",
       controlledVocabularyIri: "http://vocab.example.com/scheme",
-      usageExpectationIri: DSV_USAGE_EXPECTATION.MUST,
+      usageExpectationIri: DSV_USAGE_EXPECTATION.must,
       replacesIri: "http://foreign.example.com/some-assignment",
     }],
   });
@@ -461,7 +461,7 @@ test("Creates a ControlledVocabularyAssignment entity for a class profile's own 
     iri: "http://dcat/model/class-1/assignment-1",
     classProfile: "http://dcat/model/class-1",
     vocabulary: "http://vocab.example.com/scheme",
-    qualifier: "MUST",
+    qualifier: "must",
     // Imported replaces is stored verbatim - never resolved locally.
     replaces: { kind: "imported", iri: "http://foreign.example.com/some-assignment" },
   });
@@ -475,7 +475,7 @@ test("A controlled vocabulary assignment with no replaces created with replaces:
     controlledVocabularyAssignments: [{
       iri: "http://dcat/model/class-1/assignment-1",
       controlledVocabularyIri: "http://vocab.example.com/scheme",
-      usageExpectationIri: DSV_USAGE_EXPECTATION.RECOMMENDED,
+      usageExpectationIri: DSV_USAGE_EXPECTATION.recommended,
       replacesIri: null,
     }],
   });
@@ -488,7 +488,7 @@ test("A controlled vocabulary assignment with no replaces created with replaces:
 
   const assignment = actual.entities.find(isControlledVocabularyAssignment)!;
   expect(assignment.replaces).toBeNull();
-  expect(assignment.qualifier).toBe("RECOMMENDED");
+  expect(assignment.qualifier).toBe("recommended");
 });
 
 test("Warns and skips a controlled vocabulary assignment with an unknown usage expectation IRI.", () => {

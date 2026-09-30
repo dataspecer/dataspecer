@@ -69,7 +69,7 @@ export function hasControlledVocabularyConflict(
   state: SelectControlledVocabulariesState,
 ): boolean {
   const qualifiers = state.items.map(item => item.qualifier);
-  const mustCount = qualifiers.filter(qualifier => qualifier === "MUST").length;
+  const mustCount = qualifiers.filter(qualifier => qualifier === "must").length;
   return mustCount > 0 && qualifiers.length > 1;
 }
 

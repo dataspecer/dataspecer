@@ -30,7 +30,7 @@ describe("flattenProfileModels", () => {
       id: "ancestor", controlledVocabularies: ["cv-ancestor"],
     });
     dependencyBuilder.controlledVocabularyAssignment({
-      id: "cv-ancestor", classProfile: "ancestor", vocabulary: "voc-1", qualifier: "RECOMMENDED",
+      id: "cv-ancestor", classProfile: "ancestor", vocabulary: "voc-1", qualifier: "recommended",
     });
 
     const topBuilder = createDefaultProfileModelBuilder({

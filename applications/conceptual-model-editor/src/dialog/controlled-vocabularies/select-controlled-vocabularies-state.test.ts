@@ -34,7 +34,7 @@ describe("hasControlledVocabularyConflict", () => {
   test("No conflict when one MUST vocabulary alone.", () => {
     const state: SelectControlledVocabulariesState = {
       items: [
-        { id: "1", entityId: "1", vocabulary: EDUCATION_VOCABULARY, qualifier: "MUST", inherited: null },
+        { id: "1", entityId: "1", vocabulary: EDUCATION_VOCABULARY, qualifier: "must", inherited: null },
       ],
       availableVocabularies: [EDUCATION_VOCABULARY, GEOGRAPHY_VOCABULARY],
       addForm: null,
@@ -45,8 +45,8 @@ describe("hasControlledVocabularyConflict", () => {
   test("Conflict when two vocabularies with one MUST.", () => {
     const state: SelectControlledVocabulariesState = {
       items: [
-        { id: "1", entityId: "1", vocabulary: EDUCATION_VOCABULARY, qualifier: "MUST", inherited: null },
-        { id: "2", entityId: "2", vocabulary: GEOGRAPHY_VOCABULARY, qualifier: "MAY", inherited: null },
+        { id: "1", entityId: "1", vocabulary: EDUCATION_VOCABULARY, qualifier: "must", inherited: null },
+        { id: "2", entityId: "2", vocabulary: GEOGRAPHY_VOCABULARY, qualifier: "may", inherited: null },
       ],
       availableVocabularies: [EDUCATION_VOCABULARY, GEOGRAPHY_VOCABULARY],
       addForm: null,
@@ -57,8 +57,8 @@ describe("hasControlledVocabularyConflict", () => {
   test("No conflict when multiple vocabularies with no MUST.", () => {
     const state: SelectControlledVocabulariesState = {
       items: [
-        { id: "1", entityId: "1", vocabulary: EDUCATION_VOCABULARY, qualifier: "RECOMMENDED", inherited: null },
-        { id: "2", entityId: "2", vocabulary: GEOGRAPHY_VOCABULARY, qualifier: "MAY", inherited: null },
+        { id: "1", entityId: "1", vocabulary: EDUCATION_VOCABULARY, qualifier: "recommended", inherited: null },
+        { id: "2", entityId: "2", vocabulary: GEOGRAPHY_VOCABULARY, qualifier: "may", inherited: null },
       ],
       availableVocabularies: [EDUCATION_VOCABULARY, GEOGRAPHY_VOCABULARY],
       addForm: null,
@@ -69,8 +69,8 @@ describe("hasControlledVocabularyConflict", () => {
   test("Conflict when two MUST vocabularies.", () => {
     const state: SelectControlledVocabulariesState = {
       items: [
-        { id: "1", entityId: "1", vocabulary: EDUCATION_VOCABULARY, qualifier: "MUST", inherited: null },
-        { id: "2", entityId: "2", vocabulary: GEOGRAPHY_VOCABULARY, qualifier: "MUST", inherited: null },
+        { id: "1", entityId: "1", vocabulary: EDUCATION_VOCABULARY, qualifier: "must", inherited: null },
+        { id: "2", entityId: "2", vocabulary: GEOGRAPHY_VOCABULARY, qualifier: "must", inherited: null },
       ],
       availableVocabularies: [EDUCATION_VOCABULARY, GEOGRAPHY_VOCABULARY],
       addForm: null,
@@ -85,10 +85,10 @@ describe("hasControlledVocabularyConflict", () => {
           id: "1",
           entityId: "own-1",
           vocabulary: EDUCATION_VOCABULARY,
-          qualifier: "MUST",
-          inherited: { assignmentId: "cv-1", qualifier: "RECOMMENDED", overrideEnabled: true },
+          qualifier: "must",
+          inherited: { assignmentId: "cv-1", qualifier: "recommended", overrideEnabled: true },
         },
-        { id: "2", entityId: "2", vocabulary: GEOGRAPHY_VOCABULARY, qualifier: "MAY", inherited: null },
+        { id: "2", entityId: "2", vocabulary: GEOGRAPHY_VOCABULARY, qualifier: "may", inherited: null },
       ],
       availableVocabularies: [EDUCATION_VOCABULARY, GEOGRAPHY_VOCABULARY],
       addForm: null,
@@ -104,8 +104,8 @@ describe("findDuplicateVocabularyItemIds", () => {
   test("No duplicates when vocabularies differ.", () => {
     const state: SelectControlledVocabulariesState = {
       items: [
-        { id: "1", entityId: "1", vocabulary: EDUCATION_VOCABULARY, qualifier: "MUST", inherited: null },
-        { id: "2", entityId: "2", vocabulary: GEOGRAPHY_VOCABULARY, qualifier: "MAY", inherited: null },
+        { id: "1", entityId: "1", vocabulary: EDUCATION_VOCABULARY, qualifier: "must", inherited: null },
+        { id: "2", entityId: "2", vocabulary: GEOGRAPHY_VOCABULARY, qualifier: "may", inherited: null },
       ],
       availableVocabularies: [EDUCATION_VOCABULARY, GEOGRAPHY_VOCABULARY],
       addForm: null,
@@ -116,8 +116,8 @@ describe("findDuplicateVocabularyItemIds", () => {
   test("Same vocabulary with the same qualifier is a duplicate.", () => {
     const state: SelectControlledVocabulariesState = {
       items: [
-        { id: "1", entityId: "1", vocabulary: EDUCATION_VOCABULARY, qualifier: "MUST", inherited: null },
-        { id: "2", entityId: "2", vocabulary: EDUCATION_VOCABULARY, qualifier: "MUST", inherited: null },
+        { id: "1", entityId: "1", vocabulary: EDUCATION_VOCABULARY, qualifier: "must", inherited: null },
+        { id: "2", entityId: "2", vocabulary: EDUCATION_VOCABULARY, qualifier: "must", inherited: null },
       ],
       availableVocabularies: [EDUCATION_VOCABULARY],
       addForm: null,
@@ -128,8 +128,8 @@ describe("findDuplicateVocabularyItemIds", () => {
   test("Same vocabulary with a different qualifier is also a duplicate.", () => {
     const state: SelectControlledVocabulariesState = {
       items: [
-        { id: "1", entityId: "1", vocabulary: EDUCATION_VOCABULARY, qualifier: "MUST", inherited: null },
-        { id: "2", entityId: "2", vocabulary: EDUCATION_VOCABULARY, qualifier: "MAY", inherited: null },
+        { id: "1", entityId: "1", vocabulary: EDUCATION_VOCABULARY, qualifier: "must", inherited: null },
+        { id: "2", entityId: "2", vocabulary: EDUCATION_VOCABULARY, qualifier: "may", inherited: null },
       ],
       availableVocabularies: [EDUCATION_VOCABULARY],
       addForm: null,

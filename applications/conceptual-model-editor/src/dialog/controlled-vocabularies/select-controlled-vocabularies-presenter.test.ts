@@ -48,7 +48,7 @@ describe("createSelectControlledVocabulariesPresenter", () => {
 
   test("onOpenAddForm excludes vocabularies already used by an inherited or added item.", () => {
     const inherited: ControlledVocabularyUsage[] = [
-      { assignmentId: "cv-education", vocabulary: EDUCATION_VOCABULARY, qualifier: "MUST" },
+      { assignmentId: "cv-education", vocabulary: EDUCATION_VOCABULARY, qualifier: "must" },
     ];
     let state = createSelectControlledVocabulariesState(inherited, [], [], [EDUCATION_VOCABULARY, GEOGRAPHY_VOCABULARY]);
     const presenter = createSelectControlledVocabulariesPresenter(
@@ -60,7 +60,7 @@ describe("createSelectControlledVocabulariesPresenter", () => {
 
   test("onCancelAddForm closes the add form.", () => {
     const inherited: ControlledVocabularyUsage[] = [
-      { assignmentId: "cv-education", vocabulary: EDUCATION_VOCABULARY, qualifier: "MUST" },
+      { assignmentId: "cv-education", vocabulary: EDUCATION_VOCABULARY, qualifier: "must" },
     ];
     let state = createSelectControlledVocabulariesState(inherited, [], [], [EDUCATION_VOCABULARY, GEOGRAPHY_VOCABULARY]);
     const presenter = createSelectControlledVocabulariesPresenter(
@@ -80,13 +80,13 @@ describe("createSelectControlledVocabulariesPresenter", () => {
 
     presenter.onOpenAddForm();
     presenter.addFormPresenter.vocabularyPicker.onChange("education");
-    presenter.addFormPresenter.onQualifierChange("RECOMMENDED");
+    presenter.addFormPresenter.onQualifierChange("recommended");
     expect(state.items).toHaveLength(0);
 
     presenter.onConfirmAddForm();
     expect(state.items).toHaveLength(1);
     expect(state.items[0].vocabulary.id).toBe("education");
-    expect(state.items[0].qualifier).toBe("RECOMMENDED");
+    expect(state.items[0].qualifier).toBe("recommended");
     expect(state.addForm).toBeNull();
   });
 
@@ -105,8 +105,8 @@ describe("createSelectControlledVocabulariesPresenter", () => {
 
   test("onRemove removes a directly added vocabulary.", () => {
     const added: ControlledVocabularyUsage[] = [
-      { assignmentId: "cv-education", vocabulary: EDUCATION_VOCABULARY, qualifier: "MAY" },
-      { assignmentId: "cv-geography", vocabulary: GEOGRAPHY_VOCABULARY, qualifier: "RECOMMENDED" },
+      { assignmentId: "cv-education", vocabulary: EDUCATION_VOCABULARY, qualifier: "may" },
+      { assignmentId: "cv-geography", vocabulary: GEOGRAPHY_VOCABULARY, qualifier: "recommended" },
     ];
     let state = createSelectControlledVocabulariesState([], [], added, [EDUCATION_VOCABULARY, GEOGRAPHY_VOCABULARY]);
     const presenter = createSelectControlledVocabulariesPresenter(
@@ -120,7 +120,7 @@ describe("createSelectControlledVocabulariesPresenter", () => {
 
   test("onRemove is a no-op for an inherited vocabulary.", () => {
     const inherited: ControlledVocabularyUsage[] = [
-      { assignmentId: "cv-education", vocabulary: EDUCATION_VOCABULARY, qualifier: "MUST" },
+      { assignmentId: "cv-education", vocabulary: EDUCATION_VOCABULARY, qualifier: "must" },
     ];
     let state = createSelectControlledVocabulariesState(inherited, [], [], [EDUCATION_VOCABULARY, GEOGRAPHY_VOCABULARY]);
     const presenter = createSelectControlledVocabulariesPresenter(
@@ -134,37 +134,37 @@ describe("createSelectControlledVocabulariesPresenter", () => {
 
   test("itemPresenter modifies the qualifier of a directly added item.", () => {
     const added: ControlledVocabularyUsage[] = [
-      { assignmentId: "cv-education", vocabulary: EDUCATION_VOCABULARY, qualifier: "MAY" },
+      { assignmentId: "cv-education", vocabulary: EDUCATION_VOCABULARY, qualifier: "may" },
     ];
     let state = createSelectControlledVocabulariesState([], [], added, [EDUCATION_VOCABULARY, GEOGRAPHY_VOCABULARY]);
     const presenter = createSelectControlledVocabulariesPresenter(
       next => { state = next(state); });
 
-    presenter.getItemPresenter(itemId(state, "education")).onQualifierChange("MUST");
+    presenter.getItemPresenter(itemId(state, "education")).onQualifierChange("must");
 
-    expect(findItem(state, "education")?.qualifier).toBe("MUST");
+    expect(findItem(state, "education")?.qualifier).toBe("must");
   });
 
   test("itemPresenter only ever touches the targeted vocabulary.", () => {
     const inherited: ControlledVocabularyUsage[] = [
-      { assignmentId: "cv-education", vocabulary: EDUCATION_VOCABULARY, qualifier: "MAY" },
+      { assignmentId: "cv-education", vocabulary: EDUCATION_VOCABULARY, qualifier: "may" },
     ];
     const added: ControlledVocabularyUsage[] = [
-      { assignmentId: "cv-geography", vocabulary: GEOGRAPHY_VOCABULARY, qualifier: "RECOMMENDED" },
+      { assignmentId: "cv-geography", vocabulary: GEOGRAPHY_VOCABULARY, qualifier: "recommended" },
     ];
     let state = createSelectControlledVocabulariesState(inherited, [], added, [EDUCATION_VOCABULARY, GEOGRAPHY_VOCABULARY]);
     const presenter = createSelectControlledVocabulariesPresenter(
       next => { state = next(state); });
 
-    presenter.getItemPresenter(itemId(state, "geography")).onQualifierChange("MUST");
+    presenter.getItemPresenter(itemId(state, "geography")).onQualifierChange("must");
 
-    expect(findItem(state, "geography")?.qualifier).toBe("MUST");
-    expect(findItem(state, "education")?.qualifier).toBe("MAY");
+    expect(findItem(state, "geography")?.qualifier).toBe("must");
+    expect(findItem(state, "education")?.qualifier).toBe("may");
   });
 
   test("itemPresenter enables override and seeds the qualifier from the inherited value.", () => {
     const inherited: ControlledVocabularyUsage[] = [
-      { assignmentId: "cv-education", vocabulary: EDUCATION_VOCABULARY, qualifier: "MUST" },
+      { assignmentId: "cv-education", vocabulary: EDUCATION_VOCABULARY, qualifier: "must" },
     ];
     let state = createSelectControlledVocabulariesState(inherited, [], [], [EDUCATION_VOCABULARY, GEOGRAPHY_VOCABULARY]);
     const presenter = createSelectControlledVocabulariesPresenter(
@@ -175,22 +175,22 @@ describe("createSelectControlledVocabulariesPresenter", () => {
     presenter.getItemPresenter(itemId(state, "education")).onOverrideToggle();
 
     expect(findItem(state, "education")?.inherited?.overrideEnabled).toBe(true);
-    expect(findItem(state, "education")?.qualifier).toBe("MUST");
+    expect(findItem(state, "education")?.qualifier).toBe("must");
   });
 
   test("itemPresenter changes an override qualifier once enabled.", () => {
     const inherited: ControlledVocabularyUsage[] = [
-      { assignmentId: "cv-education", vocabulary: EDUCATION_VOCABULARY, qualifier: "MUST" },
+      { assignmentId: "cv-education", vocabulary: EDUCATION_VOCABULARY, qualifier: "must" },
     ];
     let state = createSelectControlledVocabulariesState(inherited, [], [], [EDUCATION_VOCABULARY, GEOGRAPHY_VOCABULARY]);
     const presenter = createSelectControlledVocabulariesPresenter(
       next => { state = next(state); });
 
     presenter.getItemPresenter(itemId(state, "education")).onOverrideToggle();
-    presenter.getItemPresenter(itemId(state, "education")).onQualifierChange("RECOMMENDED");
+    presenter.getItemPresenter(itemId(state, "education")).onQualifierChange("recommended");
 
-    expect(findItem(state, "education")?.qualifier).toBe("RECOMMENDED");
-    expect(findItem(state, "education")?.inherited?.qualifier).toBe("MUST");
+    expect(findItem(state, "education")?.qualifier).toBe("recommended");
+    expect(findItem(state, "education")?.inherited?.qualifier).toBe("must");
   });
 
 });

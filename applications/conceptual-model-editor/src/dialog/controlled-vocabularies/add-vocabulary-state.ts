@@ -3,7 +3,7 @@ import { SelectState } from "../../dialog-v2/shared";
 import { ControlledVocabulary } from "./controlled-vocabulary-model";
 
 
-const DEFAULT_QUALIFIER_OPTION: Qualifier = "AT_LEAST_1";
+const DEFAULT_QUALIFIER_OPTION: Qualifier = "at-least-one";
 
 export interface AddVocabularyState {
 

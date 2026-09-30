@@ -104,10 +104,10 @@ export const DSV_MANDATORY_LEVEL = {
  * published dsv namespace, to be swapped once agreed.
  */
 export const DSV_USAGE_EXPECTATION: Record<Qualifier, string> = {
-  "MUST": "https://w3id.org/dsv/usage-expectation#must",
-  "AT_LEAST_1": "https://w3id.org/dsv/usage-expectation#at-least-1",
-  "RECOMMENDED": "https://w3id.org/dsv/usage-expectation#recommended",
-  "MAY": "https://w3id.org/dsv/usage-expectation#may",
+  "must": "https://w3id.org/dsv/usage-expectation#must",
+  "at-least-one": "https://w3id.org/dsv/usage-expectation#at-least-1",
+  "recommended": "https://w3id.org/dsv/usage-expectation#recommended",
+  "may": "https://w3id.org/dsv/usage-expectation#may",
 };
 
 const DSV_USAGE_EXPECTATION_REVERSE: Record<string, Qualifier> =

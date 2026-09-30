@@ -108,7 +108,7 @@ describe("margeProfileModels", () => {
     });
     first.class({ id: "shared", iri: "Person", controlledVocabularies: ["cv-left"] });
     first.controlledVocabularyAssignment({
-      id: "cv-left", classProfile: "shared", vocabulary: "voc-1", qualifier: "MUST",
+      id: "cv-left", classProfile: "shared", vocabulary: "voc-1", qualifier: "must",
     });
 
     const second = createDefaultProfileModelBuilder({
@@ -117,7 +117,7 @@ describe("margeProfileModels", () => {
     });
     second.class({ id: "shared", iri: "Person", controlledVocabularies: ["cv-right"] });
     second.controlledVocabularyAssignment({
-      id: "cv-right", classProfile: "shared", vocabulary: "voc-1", qualifier: "RECOMMENDED",
+      id: "cv-right", classProfile: "shared", vocabulary: "voc-1", qualifier: "recommended",
     });
 
     const actual = margeProfileModels("merge", [

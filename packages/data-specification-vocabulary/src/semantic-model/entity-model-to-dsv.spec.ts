@@ -33,7 +33,7 @@ const CV_CATALOG_IRI = "http://example.com/catalog";
 function controlledVocabularyAssignmentEntity(overrides: Record<string, unknown>) {
     return {
         id: "cv-1", type: [CONTROLLED_VOCABULARY_ASSIGNMENT],
-        classProfile: "class-1", vocabulary: "voc-1", qualifier: "MUST",
+        classProfile: "class-1", vocabulary: "voc-1", qualifier: "must",
         replaces: null, iri: null,
         ...overrides,
     } as any;
@@ -806,10 +806,10 @@ test("Controlled vocabulary assignment: a local replaces resolves to the target'
             entities: [
                 CONTROLLED_VOCABULARY,
                 controlledVocabularyAssignmentEntity({
-                    id: "cv-ancestor", classProfile: "ancestor", qualifier: "RECOMMENDED",
+                    id: "cv-ancestor", classProfile: "ancestor", qualifier: "recommended",
                 }),
                 controlledVocabularyAssignmentEntity({
-                    id: "cv-child", classProfile: "child", qualifier: "MUST",
+                    id: "cv-child", classProfile: "child", qualifier: "must",
                     replaces: { kind: "local", target: "cv-ancestor" },
                 }),
             ],
