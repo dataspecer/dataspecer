@@ -351,7 +351,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
     {{#if resolvedControlledVocabularies}}
     <tr>
       <td>{{#iflng "cs"}}Řízené slovníky{{lng}}Controlled vocabularies{{/iflng}}</td>
-      <td>{{> controlled-vocabulary-list vocabularies=resolvedControlledVocabularies}}</td>
+      <td>{{> controlled-vocabulary-list vocabularies=resolvedControlledVocabularies showReplaced=true}}</td>
     </tr>
     {{/if}}
   </table>
@@ -381,9 +381,33 @@ export const defaultConfiguration: DocumentationConfiguration = {
     <li>
       {{#semanticEntity vocabulary}}<a href="{{{distribution.accessUrl}}}">{{title}}</a>{{else}}{{.}}{{/semanticEntity}}
       ({{qualifier}}{{#if replaces}}, {{#iflng "cs"}}přepsáno{{lng}}override{{/iflng}}{{/if}})
+      {{#if ../showReplaced}}
+        {{> controlled-vocabulary-imported-replaces}}
+        {{! The replaced assignments are a list, shown as a hierarchy: each opens a nested list, all are closed after the last one. }}
+        {{#each (replacedAssignments .)}}
+          <ul style="list-style-type: disclosure-closed;"><li>
+          {{> controlled-vocabulary-replaced-assignment}}
+          {{> controlled-vocabulary-imported-replaces}}
+        {{/each}}
+        {{#each (replacedAssignments .)}}
+          </li></ul>
+        {{/each}}
+      {{/if}}
     </li>
   {{/each}}
 </ul>`,
+
+    "controlled-vocabulary-replaced-assignment": `{{#iflng "cs"}}nahrazuje přiřazení řízeného slovníku{{lng}}replaces controlled vocabulary assignment{{/iflng}}
+{{#semanticEntity vocabulary}}<a href="{{{distribution.accessUrl}}}">{{title}}</a>{{else}}{{.}}{{/semanticEntity}}
+({{qualifier}}) {{#iflng "cs"}}profilu třídy{{lng}}of class profile{{/iflng}}
+{{#semanticEntity classProfile}}{{class}}{{else}}{{.}}{{/semanticEntity}}`,
+
+    "controlled-vocabulary-imported-replaces": `{{#ifEquals replaces.kind "imported"}}
+  <ul style="list-style-type: disclosure-closed;"><li>
+    {{#iflng "cs"}}nahrazuje importované přiřazení{{lng}}replaces imported assignment{{/iflng}}
+    <a href="{{{replaces.iri}}}">{{replaces.iri}}</a>
+  </li></ul>
+{{/ifEquals}}`,
 
     "controlled-vocabulary-usage-table": `<table class="def">
   <thead>
