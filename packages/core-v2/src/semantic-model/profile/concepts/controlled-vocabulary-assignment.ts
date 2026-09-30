@@ -8,7 +8,7 @@ export type Qualifier = "MUST" | "AT_LEAST_1" | "RECOMMENDED" | "MAY";
  * where the assignment is an entity local to this package,
  * so it can be referenced by an EntityIdentifier
  */
-export type CVAssignmentReferenceLocal = { kind: "local", target: EntityIdentifier };
+export type LocalControlledVocabylaryAssignmentRefenence = { kind: "local", target: EntityIdentifier };
 
 /**
  * Represents a reference to an imported controlled vocabulary assignment
@@ -16,15 +16,15 @@ export type CVAssignmentReferenceLocal = { kind: "local", target: EntityIdentifi
  *  rather than from the local package entity
  * - the IRI is stored verbatim and never resolved locally
  */
-export type CVAssignmentReferenceImported = { kind: "imported", iri: string };
+export type ImportedControlledVocabylaryAssignmentRefenence = { kind: "imported", iri: string };
 
 /**
  * Reference to a controlled vocabulary assignment 
  * when it is being replaced by a different assignment
- * {@link CVAssignmentReferenceLocal} targets another assignment entity in this package
- * {@link CVAssignmentReferenceImported} targets an imported assignment
+ * {@link LocalControlledVocabylaryAssignmentRefenence} targets another assignment entity in this package
+ * {@link ImportedControlledVocabylaryAssignmentRefenence} targets an imported assignment
  */
-export type ControlledVocabularyAssignmentReplaces = CVAssignmentReferenceLocal | CVAssignmentReferenceImported;
+export type ControlledVocabularyAssignmentReplaces = LocalControlledVocabylaryAssignmentRefenence | ImportedControlledVocabylaryAssignmentRefenence;
 
 
 /**
