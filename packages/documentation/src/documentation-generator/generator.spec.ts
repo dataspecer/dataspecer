@@ -26,6 +26,7 @@ async function render(
   builder: ProfileModelBuilder,
   vocabularies: ControlledVocabulary[],
   template: string,
+  language: string = "en",
 ): Promise<string> {
   return await generateDocumentation(
     {
@@ -39,7 +40,7 @@ async function render(
       dsv: {},
       prefixMap: {},
     },
-    { template, language: "en", partials: defaultConfiguration.partials },
+    { template, language, partials: defaultConfiguration.partials },
   );
 }
 
@@ -167,10 +168,10 @@ describe("generateDocumentation controlled vocabularies", () => {
 
       // The nearest replaced assignment comes first and each one is nested in the previous.
       expect(html).toMatch(/\(MUST, override\)[\s\S]*replaces controlled vocabulary assignment[\s\S]*\(RECOMMENDED\) of class profile[\s\S]*Parent[\s\S]*replaces controlled vocabulary assignment[\s\S]*\(MAY\) of class profile[\s\S]*Grandparent/);
-      expect(html.match(/<ul/g)).toHaveLength(3);
-      expect(html.match(/<\/ul>/g)).toHaveLength(3);
-      // Only the assignment of the class profile itself is listed at the top.
-      expect(html.match(/<li>/g)).toHaveLength(3);
+      // A single assignment is not a list, so only the replaced assignments are nested.
+      expect(html.match(/<ul/g)).toHaveLength(2);
+      expect(html.match(/<\/ul>/g)).toHaveLength(2);
+      expect(html.match(/<li>/g)).toHaveLength(2);
     });
 
     it("Shows an assignment replaced by a reference to an imported assignment.", async () => {
@@ -184,7 +185,7 @@ describe("generateDocumentation controlled vocabularies", () => {
       const html = collapse(await render(builder, [vocabulary("voc-a", "Vocabulary A")], CHAIN_TEMPLATE));
 
       expect(html).toContain('replaces imported assignment <a href="http://example.com/imported-assignment">');
-      expect(html.match(/<ul/g)).toHaveLength(2);
+      expect(html.match(/<ul/g)).toHaveLength(1);
     });
 
     it("Ends the chain when the replaced assignment is not in the models.", async () => {
@@ -198,7 +199,7 @@ describe("generateDocumentation controlled vocabularies", () => {
       const html = collapse(await render(builder, [vocabulary("voc-a", "Vocabulary A")], CHAIN_TEMPLATE));
 
       expect(html).not.toContain("replaces controlled vocabulary assignment");
-      expect(html.match(/<ul/g)).toHaveLength(1);
+      expect(html).not.toContain("<ul");
     });
 
     it("Does not show the chain in the list without the option, used for relationships.", async () => {
@@ -218,6 +219,96 @@ describe("generateDocumentation controlled vocabularies", () => {
       );
 
       expect(html).not.toContain("replaces controlled vocabulary assignment");
+    });
+
+  });
+
+  describe("list of assignments", () => {
+
+    it("Does not use a bullet list for a single assignment.", async () => {
+      const builder = createBuilder();
+      const assignment = builder.controlledVocabularyAssignment({ vocabulary: "voc-a" });
+      builder.class({ id: "profile", controlledVocabularies: [assignment.identifier] });
+
+      const html = await render(builder, [vocabulary("voc-a", "Vocabulary A")], CLASS_PROFILE_TEMPLATE);
+
+      expect(html).toContain("Vocabulary A");
+      expect(html).not.toContain("<ul");
+    });
+
+    it("Uses a bullet list for more assignments.", async () => {
+      const builder = createBuilder();
+      const first = builder.controlledVocabularyAssignment({ vocabulary: "voc-a" });
+      const second = builder.controlledVocabularyAssignment({ vocabulary: "voc-b" });
+      builder.class({ id: "profile", controlledVocabularies: [first.identifier, second.identifier] });
+
+      const html = await render(
+        builder,
+        [vocabulary("voc-a", "Vocabulary A"), vocabulary("voc-b", "Vocabulary B")],
+        CLASS_PROFILE_TEMPLATE,
+      );
+
+      expect(html.match(/<li>/g)).toHaveLength(2);
+    });
+
+  });
+
+  describe("usage sentences", () => {
+
+    const LINK = '<a href="https://example.com/voc-a">Vocabulary A</a>';
+
+    /**
+     * Renders the usage of the assignment for the class profile, or for the
+     * property whose range is the class profile.
+     */
+    async function renderUsage(
+      qualifier: "MUST" | "AT_LEAST_1" | "RECOMMENDED" | "MAY",
+      partial: "controlled-vocabulary-class-profile-usage" | "controlled-vocabulary-property-usage",
+      language: string = "en",
+    ): Promise<string> {
+      const builder = createBuilder();
+      const assignment = builder.controlledVocabularyAssignment({ id: "assignment", classProfile: "range", vocabulary: "voc-a", qualifier });
+      const domain = builder.class({ id: "domain" });
+      const range = builder.class({ id: "range", controlledVocabularies: [assignment.identifier] });
+      builder.property({ id: "relationship", name: { en: "property" } }).domain(domain).range(range);
+
+      const template = partial === "controlled-vocabulary-class-profile-usage"
+        ? `{{#each semanticEntitiesByType.classProfiles}}{{#ifEquals id "range"}}{{> ${partial} vocabularies=resolvedControlledVocabularies}}{{/ifEquals}}{{/each}}`
+        : `{{#each semanticEntitiesByType.relationshipProfiles}}{{> ${partial} vocabularies=derivedControlledVocabularies}}{{/each}}`;
+      return (await render(builder, [vocabulary("voc-a", "Vocabulary A")], template, language)).replace(/\s+/g, " ");
+    }
+
+    it.each([
+      ["MUST", `This class profile MUST be represented in data by instances of ${LINK} controlled vocabulary.`],
+      ["AT_LEAST_1", `This class profile MUST be represented in data by AT LEAST ONE instance of ${LINK} controlled vocabulary.`],
+      ["RECOMMENDED", `It is RECOMMENDED that this class profile is represented in data by instances of ${LINK} controlled vocabulary.`],
+      ["MAY", `This class profile MAY be represented in data by instances of ${LINK} controlled vocabulary.`],
+    ] as const)("Describes the %s usage for a class profile.", async (qualifier, sentence) => {
+      const html = await renderUsage(qualifier, "controlled-vocabulary-class-profile-usage");
+      expect(html).toContain(sentence);
+    });
+
+    it.each([
+      ["MUST", `The property MUST use as range values codes from ${LINK}.`, "Validation systems SHOULD produce errors."],
+      ["AT_LEAST_1", `The property MUST have AT LEAST ONE value from ${LINK}.`, "This expectation makes the value space minimally constrained."],
+      ["RECOMMENDED", `The property IS RECOMMENDED to use as range values codes from ${LINK}.`, "Recommending means expressing a strong preference."],
+      ["MAY", `The property MAY use as range values codes from ${LINK}.`, "No validation in this case is also acceptable."],
+    ] as const)("Describes the %s usage for a property.", async (qualifier, sentence, explanation) => {
+      const html = await renderUsage(qualifier, "controlled-vocabulary-property-usage");
+      expect(html).toContain(sentence);
+      expect(html).toContain(explanation);
+    });
+
+    it("Describes the usage of a property in Czech.", async () => {
+      const html = await renderUsage("RECOMMENDED", "controlled-vocabulary-property-usage", "cs");
+      expect(html).toContain(`Pro vlastnost se DOPORUČUJE používat jako obor hodnot položky z ${LINK}.`);
+      expect(html).not.toContain("The property");
+    });
+
+    it("Describes the usage in Czech.", async () => {
+      const html = await renderUsage("MUST", "controlled-vocabulary-class-profile-usage", "cs");
+      expect(html).toContain(`Tento profil třídy MUSÍ být v datech reprezentován položkami řízeného slovníku ${LINK}.`);
+      expect(html).not.toContain("This class profile");
     });
 
   });
