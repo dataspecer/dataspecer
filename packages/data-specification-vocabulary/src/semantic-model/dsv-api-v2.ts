@@ -30,7 +30,7 @@ interface ProfileModel {
  *  They must provide connection from the second function argument to the semantic model.
  *  This is required to properly determine profile types.
  * @param dependencies.controlledVocabularies Controlled vocabulary models -
- *  each holds exactly one CV entity. Only used to resolve references to them
+ *  each holds exactly one controlled vocabulary entity. Only used to resolve references to them
  *  (via createContext); they do not affect profile type determination the
  *  way semantics/profiles do.
  * @param profiles The top level semantic profile model to create the DSV representation for.
