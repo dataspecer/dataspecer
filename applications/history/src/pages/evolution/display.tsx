@@ -8,7 +8,7 @@ import type { ReviewGroup } from "./review-state";
  * Names of the entities appearing on the evolution review screen. Both the
  * upstream entity an item reacts to and a profile entity are resolved through
  * the same group's effective (aggregated) entities — see
- * `effectiveGroupEntities` in evolution-data.ts, built with `forcePassThrough`
+ * `effectiveGroupEntities` in evolution-data.ts, with display-specific pass-through
  * so a package's own profile entities and the vocabulary/profile it profiles
  * are both present in one map — so inherited values (e.g. a name that only
  * exists a vocabulary above a profile) resolve correctly and update live as

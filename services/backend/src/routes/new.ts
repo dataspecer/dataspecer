@@ -6,7 +6,6 @@ import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { createUpdateEntityOperation, type OperationInModel } from "@dataspecer/core/operation";
 import { createWritableInMemoryProfileModel, isSemanticModelClassProfile, isSemanticModelRelationshipProfile, SemanticProfileModelOperations } from "@dataspecer/profile-model";
 import { createCreateModelOperation, createCreateProjectOperation, createRemoveModelOperation, type ProjectModelEntity } from "@dataspecer/core/project-model";
-import type { ModelCompositionConfigurationApplicationProfile, ModelCompositionConfigurationMerge } from "@dataspecer/model-hierarchy";
 import { createStructureProfile } from "@dataspecer/structure-model/profile";
 import { createSetLabelOperation } from "@dataspecer/visual-model";
 import { type Request, type Response } from "express";
@@ -283,21 +282,6 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
         operations.push(...diffModelEntitiesToOperations(schema.iri!, V1.PSM, {}, entities));
       }
     }
-
-    // The package itself holds the composition of the models it contains.
-    const updatePackageContent = {
-      modelCompositionConfiguration: {
-        modelType: "application-profile",
-        model: semanticModelIri,
-        profiles: {
-          modelType: "merge",
-          models: null,
-        } satisfies ModelCompositionConfigurationMerge as ModelCompositionConfigurationMerge,
-        canAddEntities: true,
-        canModify: true,
-      } satisfies ModelCompositionConfigurationApplicationProfile,
-    };
-    operations.push({ modelId: packageIri, operation: createUpdateEntityOperation(packageIri, updatePackageContent) });
 
     await modelRepository.applyTransactions(projectIri, [{ id: uuidv4(), operations }]);
 

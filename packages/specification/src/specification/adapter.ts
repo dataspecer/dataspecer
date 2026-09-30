@@ -7,7 +7,7 @@ import type { ModelIdentifier } from "@dataspecer/core/model";
 import { FederatedObservableStore } from "@dataspecer/federated-observable-store/federated-observable-store";
 import { isPackageEntity, type ProjectModelEntity, type PackageEntity } from "@dataspecer/core/project-model";
 import { buildModelHierarchy, isSemanticModelType } from "@dataspecer/model-hierarchy";
-import { build } from "../model-hierarchy/semantic-model-aggregator-builder.ts";
+import { build } from "../aggregator-builder/semantic-model-aggregator-builder.ts";
 import { DataSpecification } from "./model.ts";
 import { TransactionMetadata } from "@dataspecer/model-store";
 import { OperationInModel } from "@dataspecer/core/operation";

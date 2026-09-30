@@ -1,20 +1,17 @@
 # @dataspecer/model-hierarchy
 
-This package interprets an internal represetation of how packages and models are structured and stored inside **@dataspecer/core/project-model** and interprets it as a tree of individual dependencies between packages and models.
+Interprets the packages and models in `@dataspecer/core/project-model` as a graph of specifications and semantic models.
 
-The idea is following:
-- Load all models and a project model for the given project.
-- Pass it via this package to understand its hierarchy in terms of vocabularies, application profiles and structure models.
+Load the project model and its semantic models, then pass them to `buildModelHierarchy`. Each specification records:
 
-## composition configuration
+- `applicationProfile`: its application profile ID, or `null`.
+- `vocabularies`: its locally defined vocabulary IDs.
+- `usedExternalSpecifications`: direct child specification IDs and directly imported external vocabulary IDs.
 
-Is an additional configuration that can tweak how models are composed together.
+An application profile's `profiles` contains its specification's local vocabularies followed by its external dependencies. Child specifications remain specification references; their dependencies are not expanded. Vocabulary entities have no dependency list.
 
-## `reusedProjects` property
+The hierarchy records dependencies without deciding which entities pass through to an aggregated output. That policy belongs to the aggregator builder.
 
-It is a mechanism of **@dataspecer/core/project-model** that allows one project to be injected into another as a dependency. For this package, there is no distinction between normal dependency and reused project.
+Projects injected through `reusedProjects` appear as child packages in the project model and are handled like other specification dependencies.
 
-## future work
-
-- Currently the model is read-only. So to add model you still need to undertstand the underlying **@dataspecer/core/project-model**.
-- The model has no dynamic interface. In case of change in the **@dataspecer/core/project-model** or data on packages you need to rebuild from scratch.
+`ModelHierarchyModel` observes relevant model-store changes and rebuilds the hierarchy. Consumers can subscribe to its entity changes. The hierarchy is read-only; changes to package membership still go through the project model.

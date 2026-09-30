@@ -337,7 +337,7 @@ function asEntityModel(entities: EntityRecord): EntityModel {
 /**
  * Builds the aggregation hierarchy of a model bottom-up by following the
  * profiling references between models. A stand-in for the
- * configuration-driven builder of `@dataspecer/specification/model-hierarchy`,
+ * configuration-driven builder of `@dataspecer/specification/aggregator-builder`,
  * which needs a package composition configuration these proof-of-concept
  * projects do not have.
  */

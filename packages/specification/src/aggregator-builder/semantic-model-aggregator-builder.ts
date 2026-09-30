@@ -9,12 +9,21 @@ import {
 } from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
 import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
-import { VisualModelData } from "@dataspecer/visual-model";
-import { isApplicationProfileHierarchyEntity, isSpecificationHierarchyEntity, isVocabularyHierarchyEntity, type ModelHierarchyEntity, type ApplicationProfileHierarchyEntity } from "@dataspecer/model-hierarchy";
-import { getProvidedSourceSemanticModel } from "./adapter.ts";
+import { isApplicationProfileHierarchyEntity, isSpecificationHierarchyEntity, isVocabularyHierarchyEntity, type ModelHierarchyEntity, type SpecificationHierarchyEntity } from "@dataspecer/model-hierarchy";
+import { getProvidedSourceSemanticModel } from "./cim-adapter.ts";
 
 const DEFAULT_VOCABULARY_COLOR = "#f9aa49";
 const DEFAULT_COLOR = "#4998f9";
+
+/** Options controlling specification pass-through and root-profile permissions. */
+export interface SemanticModelAggregatorBuilderOptions {
+  /** Includes local vocabularies and external dependencies in the root output. */
+  forcePassThrough?: boolean;
+  /** Allows adding entities to the root specification's profile. */
+  canAddEntities?: boolean;
+  /** Allows modifying the root specification's profile. */
+  canModify?: boolean;
+}
 
 /**
  * Build semantic model aggregator. If onChange is not provided, then the model
@@ -25,6 +34,9 @@ const DEFAULT_COLOR = "#4998f9";
  * @param models Current semantic model contents.
  * @param onChange Subscribes to semantic model changes; returns an unsubscribe function.
  * @param executeOperation Forwards operations to the corresponding semantic model.
+ * @param options Controls pass-through and root-profile editing permissions.
+ * Pass-through is always enabled for dependencies. Other profiles are read-only;
+ * source vocabulary and cache operations are forwarded.
  * @returns Semantic model aggregator built from the hierarchy and model contents
  */
 export function build(
@@ -33,8 +45,9 @@ export function build(
   models: Record<ModelIdentifier, EntityRecord>,
   onChange?: (changeListener: (changes: Record<ModelIdentifier, EntityChange[]>) => void) => () => void,
   executeOperation?: (modelId: ModelIdentifier, operation: any) => void,
+  options?: SemanticModelAggregatorBuilderOptions,
 ): SemanticModelAggregator {
-  const builder = new SemanticModelAggregatorBuilder(specificationId, hierarchy, models, onChange, executeOperation);
+  const builder = new SemanticModelAggregatorBuilder(specificationId, hierarchy, models, onChange, executeOperation, options);
   return builder.build();
 }
 
@@ -108,15 +121,16 @@ class SemanticModelAggregatorBuilder {
   private readonly executeOperation?: (modelId: ModelIdentifier, operation: any) => void;
   private readonly aggregators: Record<ModelIdentifier, SemanticModelAggregator> = {};
   private readonly building = new Set<ModelIdentifier>();
-  private knownModels: Record<string, EntityModel> = {};
-  private modelData: Record<string, VisualModelData> = {};
+  private readonly knownModels: Record<ModelIdentifier, EntityModel> = {};
+  private rootProfileId: ModelIdentifier | null = null;
 
   constructor(
     private readonly specificationId: ModelIdentifier,
     hierarchy: EntityRecord<ModelHierarchyEntity>,
     allModels: Record<ModelIdentifier, EntityRecord>,
-    onChange?: (changeListener: (changes: Record<ModelIdentifier, EntityChange[]>) => void) => () => void,
-    executeOperation?: (modelId: ModelIdentifier, operation: any) => void,
+    onChange: ((changeListener: (changes: Record<ModelIdentifier, EntityChange[]>) => void) => () => void) | undefined,
+    executeOperation: ((modelId: ModelIdentifier, operation: any) => void) | undefined,
+    private readonly options: SemanticModelAggregatorBuilderOptions = {},
   ) {
     this.hierarchy = hierarchy;
     this.allModels = allModels;
@@ -128,12 +142,19 @@ class SemanticModelAggregatorBuilder {
    * Main entry point: builds the aggregator for the root package
    */
   build(): SemanticModelAggregator {
-    this.knownModels = {};
-    this.modelData = {};
     const specification = this.hierarchy[this.specificationId];
     if (!isSpecificationHierarchyEntity(specification)) {
       throw new Error(`Specification '${this.specificationId}' not found in the hierarchy.`);
     }
+    this.rootProfileId = specification.applicationProfile;
+    return this.buildModel(this.specificationId);
+  }
+
+  /**
+   * Selects the specification's output and includes dependencies in pass-through mode.
+   */
+  private buildSpecification(specification: SpecificationHierarchyEntity): SemanticModelAggregator {
+    const passThrough = specification.id !== this.specificationId || (this.options.forcePassThrough ?? false);
     const roots: ModelIdentifier[] = [];
     if (specification.applicationProfile !== null) {
       if (!isApplicationProfileHierarchyEntity(this.hierarchy[specification.applicationProfile])) {
@@ -141,13 +162,24 @@ class SemanticModelAggregatorBuilder {
       }
       roots.push(specification.applicationProfile);
     }
-    for (const modelId of specification.vocabularies) {
-      if (!isVocabularyHierarchyEntity(this.hierarchy[modelId])) {
-        throw new Error(`Model '${modelId}' is not a vocabulary in the hierarchy.`);
+    if (specification.applicationProfile === null || passThrough) {
+      for (const modelId of specification.vocabularies) {
+        if (!isVocabularyHierarchyEntity(this.hierarchy[modelId])) {
+          throw new Error(`Model '${modelId}' is not a vocabulary in the hierarchy.`);
+        }
+        roots.push(modelId);
       }
-      roots.push(modelId);
     }
-    return this.mergeIfNecessary(roots.map((modelId) => this.buildModel(modelId)));
+    if (passThrough) {
+      for (const modelId of specification.usedExternalSpecifications) {
+        const entity = this.hierarchy[modelId];
+        if (!isSpecificationHierarchyEntity(entity) && !isVocabularyHierarchyEntity(entity)) {
+          throw new Error(`Model '${modelId}' is not a specification or external vocabulary in the hierarchy.`);
+        }
+        roots.push(modelId);
+      }
+    }
+    return this.mergeIfNecessary([...new Set(roots)].map((modelId) => this.buildModel(modelId)));
   }
 
   private buildModel(modelId: ModelIdentifier): SemanticModelAggregator {
@@ -164,23 +196,15 @@ class SemanticModelAggregatorBuilder {
     this.building.add(modelId);
 
     let aggregator: SemanticModelAggregator;
-    if (isApplicationProfileHierarchyEntity(entity)) {
-      const applicationProfiles = new Set(entity.profiles.filter((id) => isApplicationProfileHierarchyEntity(this.hierarchy[id])));
-      if (applicationProfiles.size > 1) {
-        throw new Error(`Application profile '${modelId}' cannot merge multiple application profiles.`);
-      }
+    if (isSpecificationHierarchyEntity(entity)) {
+      aggregator = this.buildSpecification(entity);
+    } else if (isApplicationProfileHierarchyEntity(entity)) {
       const profiles = this.mergeIfNecessary(entity.profiles.map((id) => this.buildModel(id)));
-      aggregator = this.buildApplicationProfile(modelId, profiles, entity);
-      if (entity.passThrough) {
-        aggregator = new MergeAggregator([aggregator, profiles]);
-      }
+      aggregator = this.buildApplicationProfile(modelId, profiles);
     } else if (isVocabularyHierarchyEntity(entity)) {
       aggregator = this.buildVocabulary(modelId);
-      if (entity.passThrough && entity.imports.length > 0) {
-        aggregator = new MergeAggregator([aggregator, ...entity.imports.map((id) => this.buildModel(id))]);
-      }
     } else {
-      throw new Error(`Model '${modelId}' is not a vocabulary or application profile.`);
+      throw new Error(`Model '${modelId}' is not a specification, vocabulary or application profile.`);
     }
 
     this.building.delete(modelId);
@@ -209,12 +233,12 @@ class SemanticModelAggregatorBuilder {
   private buildApplicationProfile(
     modelId: ModelIdentifier,
     profiles: SemanticModelAggregator,
-    configuration: ApplicationProfileHierarchyEntity,
   ): SemanticModelAggregator {
+    const isRootProfile = modelId === this.rootProfileId;
     const aggregator = new ApplicationProfileAggregator(this.getSemanticModel(modelId), profiles, true)
-      .setCanAddEntities(configuration.canAddEntities)
-      .setCanModify(configuration.canModify);
-    (aggregator.thisVocabularyChain as any)["color"] = this.modelData[modelId]?.color ?? DEFAULT_COLOR;
+      .setCanAddEntities(isRootProfile && (this.options.canAddEntities ?? true))
+      .setCanModify(isRootProfile && (this.options.canModify ?? true));
+    (aggregator.thisVocabularyChain as any)["color"] = DEFAULT_COLOR;
     return aggregator;
   }
 
@@ -225,12 +249,12 @@ class SemanticModelAggregatorBuilder {
     if (mainEntity?.["caches"]) {
       const cimAdapter = getProvidedSourceSemanticModel(mainEntity["caches"] as any[]);
       const aggregator = new ExternalModelWithCacheAggregator(model, cimAdapter);
-      (aggregator.thisVocabularyChain as any)["color"] = this.modelData[modelId]?.color ?? DEFAULT_VOCABULARY_COLOR;
+      (aggregator.thisVocabularyChain as any)["color"] = DEFAULT_VOCABULARY_COLOR;
       return aggregator;
     }
 
     const aggregator = new VocabularyAggregator(model);
-    (aggregator.thisVocabularyChain as any)["color"] = this.modelData[modelId]?.color ?? DEFAULT_VOCABULARY_COLOR;
+    (aggregator.thisVocabularyChain as any)["color"] = DEFAULT_VOCABULARY_COLOR;
     return aggregator;
   }
 
@@ -238,9 +262,6 @@ class SemanticModelAggregatorBuilder {
    * Merge multiple aggregators into one, or return single if only one provided
    */
   private mergeIfNecessary(aggregators: SemanticModelAggregator[]): SemanticModelAggregator {
-    if (aggregators.length === 0) {
-      throw new Error("Cannot merge zero aggregators");
-    }
     if (aggregators.length === 1) {
       return aggregators[0]!;
     }

@@ -23,7 +23,7 @@ function modelRecords(entities: ProjectModelEntity[], profiles: string[] = []): 
 }
 
 describe("buildModelHierarchy", () => {
-  it("exposes local definitions and separates vocabulary and profile dependencies", () => {
+  it("records local definitions and direct specification dependencies", () => {
     const models = modelRecords([
       packageEntity("root", ["local", "other-local", "profile", "rdfs", "vocabulary-package", "profile-package", "structure"]),
       vocabulary("local"), vocabulary("other-local"), vocabulary("profile"), vocabulary("rdfs", RDFS_MODEL),
@@ -35,15 +35,13 @@ describe("buildModelHierarchy", () => {
     ], ["profile", "nested-profile"]);
     const before = structuredClone(models);
     const hierarchy = buildModelHierarchy("root", models);
-    expect(hierarchy.root).toMatchObject({ type: ["specification"], vocabularies: ["local", "other-local"], applicationProfile: "profile" });
-    expect(hierarchy.local).toMatchObject({ imports: ["rdfs", "nested-local"], specificationId: "root", label: { en: "local" } });
-    expect(hierarchy["other-local"]).toMatchObject({ imports: ["rdfs", "nested-local"] });
-    expect(hierarchy.profile).toMatchObject({ profiles: ["local", "other-local", "rdfs", "nested-local", "nested-profile"] });
-    expect(hierarchy["nested-local"]).toMatchObject({ imports: ["nested-import"] });
-    expect(hierarchy["vocabulary-package"]).toMatchObject({ vocabularies: ["nested-local"], applicationProfile: null });
+    expect(hierarchy.root).toMatchObject({ type: ["specification"], vocabularies: ["local", "other-local"], applicationProfile: "profile", usedExternalSpecifications: ["rdfs", "vocabulary-package", "profile-package"] });
+    expect(hierarchy.local).toMatchObject({ specificationId: "root", label: { en: "local" } });
+    expect(hierarchy.profile).toMatchObject({ profiles: ["local", "other-local", "rdfs", "vocabulary-package", "profile-package"] });
+    expect(hierarchy["vocabulary-package"]).toMatchObject({ vocabularies: ["nested-local"], applicationProfile: null, usedExternalSpecifications: ["nested-import"] });
     expect(hierarchy["profile-package"]).toMatchObject({ vocabularies: ["profile-source"], applicationProfile: "nested-profile", projectId: "reused" });
     expect(hierarchy["nested-profile"]).toMatchObject({ profiles: ["profile-source"], specificationId: "profile-package", projectId: "reused" });
-    expect(hierarchy.rdfs).toMatchObject({ imports: [] });
+    expect(Object.values(hierarchy).every(entity => !("imports" in entity))).toBe(true);
     expect(hierarchy.structure).toBeUndefined();
     expect(Object.values(hierarchy).every(entity => !("passThrough" in entity))).toBe(true);
     expect(models).toEqual(before);
@@ -57,7 +55,7 @@ describe("buildModelHierarchy", () => {
     const hierarchy = buildModelHierarchy("root", models);
     expect(Object.keys(hierarchy)).toHaveLength(6);
     expect(hierarchy.root).toMatchObject({ vocabularies: ["local"], applicationProfile: null });
-    expect(hierarchy.local).toMatchObject({ imports: ["cim", "pim", "rdfs", "query"] });
+    expect(hierarchy.root).toMatchObject({ usedExternalSpecifications: ["cim", "pim", "rdfs", "query"] });
   });
 
   it("preserves shared dependencies and supports cyclic packages", () => {
@@ -69,20 +67,20 @@ describe("buildModelHierarchy", () => {
     ], ["outer", "first", "second"]);
     const hierarchy = buildModelHierarchy("root", models);
     expect(Object.keys(hierarchy)).toHaveLength(8);
-    expect(hierarchy.outer).toMatchObject({ profiles: ["first", "second"] });
-    expect(hierarchy.first).toMatchObject({ profiles: ["source"] });
-    expect(hierarchy.second).toMatchObject({ profiles: ["source"] });
-    expect(hierarchy.source).toMatchObject({ specificationId: "shared", imports: [] });
+    expect(hierarchy.outer).toMatchObject({ profiles: ["left", "right"] });
+    expect(hierarchy.first).toMatchObject({ profiles: ["shared"] });
+    expect(hierarchy.second).toMatchObject({ profiles: ["shared"] });
+    expect(hierarchy.source).toMatchObject({ specificationId: "shared" });
     expect(buildModelHierarchy("root", models)).toEqual(hierarchy);
   });
 
-  it("keeps vocabulary dependency cycles without expanding them", () => {
+  it("keeps specification dependency cycles without expanding them", () => {
     const hierarchy = buildModelHierarchy("root", modelRecords([
       packageEntity("root", ["a", "nested"]), vocabulary("a"),
       packageEntity("nested", ["b", "root"]), vocabulary("b"),
     ]));
-    expect(hierarchy.a).toMatchObject({ imports: ["b"] });
-    expect(hierarchy.b).toMatchObject({ imports: ["a"] });
+    expect(hierarchy.root).toMatchObject({ usedExternalSpecifications: ["nested"] });
+    expect(hierarchy.nested).toMatchObject({ usedExternalSpecifications: ["root"] });
   });
 
   it("deduplicates repeated references and excludes unreachable packages", () => {
@@ -91,7 +89,7 @@ describe("buildModelHierarchy", () => {
       packageEntity("nested", ["source"]), vocabulary("source"), packageEntity("unreachable", []),
     ]));
     expect(hierarchy.root).toMatchObject({ vocabularies: ["local"] });
-    expect(hierarchy.local).toMatchObject({ imports: ["source"] });
+    expect(hierarchy.root).toMatchObject({ usedExternalSpecifications: ["nested"] });
     expect(hierarchy.unreachable).toBeUndefined();
   });
 

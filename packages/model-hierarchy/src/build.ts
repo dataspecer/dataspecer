@@ -47,15 +47,8 @@ export function isModelHierarchyRelevantChange(entityChanges: Record<ModelIdenti
 }
 
 /**
- * Each package can have three levels of hierarchy: single application profile,
- * multiple locally defined vocabularies and multiple imported vocabularies &
- * other packages.
- *
- * When importing a package, you either import the application profile, or all
- * locally defined the vocabularies, if the profile is not present.
- *
- * When exporting a package, you export both the application profile and all the
- * locally defined vocabularies, because that is what the specification defines.
+ * Records each specification's local definitions and direct dependencies.
+ * Aggregation policies are applied by consumers of the hierarchy.
  */
 class ModelHierarchyBuilder {
   private readonly entities: EntityRecord<ModelHierarchyEntity> = {};
@@ -82,32 +75,21 @@ class ModelHierarchyBuilder {
       }
       const specification = entity as SpecificationHierarchyEntity;
       const pkg = this.projectModel[specification.id] as PackageEntity;
-      const vocabularyImports: ModelIdentifier[] = [];
-      const profileImports: ModelIdentifier[] = [...specification.vocabularies];
+      const externalSpecifications: ModelIdentifier[] = [];
       for (const id of pkg.subModels) {
         const dependency = this.entities[id];
         if (!dependency) {
           continue;
         }
-        if (dependency.type[0] === MODEL_HIERARCHY_SPECIFICATION) {
-          const imported = dependency as SpecificationHierarchyEntity;
-          if (imported.applicationProfile !== null) {
-            profileImports.push(imported.applicationProfile);
-          } else {
-            vocabularyImports.push(...imported.vocabularies);
-            profileImports.push(...imported.vocabularies);
-          }
-        } else if (dependency.type[0] === MODEL_HIERARCHY_VOCABULARY &&
-          dependency.modelType !== LOCAL_SEMANTIC_MODEL) {
-          vocabularyImports.push(id);
-          profileImports.push(id);
+        if (dependency.type[0] === MODEL_HIERARCHY_SPECIFICATION ||
+          (dependency.type[0] === MODEL_HIERARCHY_VOCABULARY && dependency.modelType !== LOCAL_SEMANTIC_MODEL)) {
+          externalSpecifications.push(id);
         }
       }
-      for (const id of specification.vocabularies) {
-        (this.entities[id] as VocabularyHierarchyEntity).imports = [...new Set(vocabularyImports)];
-      }
+      specification.usedExternalSpecifications = [...new Set(externalSpecifications)];
       if (specification.applicationProfile !== null) {
-        (this.entities[specification.applicationProfile] as ApplicationProfileHierarchyEntity).profiles = [...new Set(profileImports)];
+        (this.entities[specification.applicationProfile] as ApplicationProfileHierarchyEntity).profiles =
+          [...specification.vocabularies, ...specification.usedExternalSpecifications];
       }
     }
     return this.entities;
@@ -157,6 +139,7 @@ class ModelHierarchyBuilder {
       projectId: this.projectModel[packageId].projectId,
       vocabularies: [],
       applicationProfile: null,
+      usedExternalSpecifications: [],
     };
     this.entities[packageId] = entity;
     return entity;
@@ -170,7 +153,6 @@ class ModelHierarchyBuilder {
       specificationId,
       label: this.projectModel[modelId].label,
       projectId: this.projectModel[modelId].projectId,
-      imports: [],
     };
     this.entities[modelId] = entity;
     return entity;

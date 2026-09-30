@@ -55,18 +55,11 @@ interface BaseModelHierarchyEntity extends Entity {
  */
 export interface VocabularyHierarchyEntity extends BaseModelHierarchyEntity {
   type: [typeof MODEL_HIERARCHY_VOCABULARY];
-
-  /**
-   * Vocabulary identifiers that this model uses, e.g. vocabularies
-   * that it imports. These are the only models that this models sees.
-   */
-  imports: ModelIdentifier[];
 }
 
 /**
  * A semantic model that profiles (some of) the entities of other models.
- * Instead of imports field, it has profiles field that specifies other
- * vocabularies or profiles that this model profiles.
+ * Its dependencies can be vocabularies or entire specifications.
  *
  * Examples:
  * - A local, writable, semantic model that contain profiling entities.
@@ -77,8 +70,8 @@ export interface ApplicationProfileHierarchyEntity extends BaseModelHierarchyEnt
   type: [typeof MODEL_HIERARCHY_APPLICATION_PROFILE];
 
   /**
-   * IDs of vocabulary or application-profile entities that this application profile
-   * profiles/uses. Dependencies are not expanded into this array.
+   * Local vocabulary IDs followed by directly used external vocabulary and
+   * specification IDs. Referenced specifications are not expanded.
    */
   profiles: ModelIdentifier[];
 }
@@ -86,14 +79,13 @@ export interface ApplicationProfileHierarchyEntity extends BaseModelHierarchyEnt
 /**
  * This represents a specification - the end product that data modeller exposes
  * to the world. Specification defines vocabularies, application profiles and
- * structure models. Each specification roots a semantic-model dependency graph;
- * dependencies never reference another specification.
+ * structure models. Each specification roots a semantic-model dependency graph.
  */
 export interface SpecificationHierarchyEntity extends BaseModelHierarchyEntity {
   type: [typeof MODEL_HIERARCHY_SPECIFICATION];
 
   /**
-   * Vocabulary identifiers in merge order, exposed alongside the profile.
+   * Locally defined vocabulary identifiers in merge order.
    */
   vocabularies: ModelIdentifier[];
 
@@ -101,6 +93,12 @@ export interface SpecificationHierarchyEntity extends BaseModelHierarchyEntity {
    * The exposed application profile, or null for a vocabulary-only package.
    */
   applicationProfile: ModelIdentifier | null;
+
+  /**
+   * Direct child specification and external vocabulary IDs in dependency order.
+   * Transitive dependencies are represented by the referenced specifications.
+   */
+  usedExternalSpecifications: ModelIdentifier[];
 
   // todo: list of structure models as a future work
 }

@@ -7,7 +7,7 @@ import type { EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import type { OperationInModel } from "@dataspecer/core/operation";
 import { buildModelHierarchy } from "@dataspecer/model-hierarchy";
-import { build } from "@dataspecer/specification/model-hierarchy";
+import { build } from "@dataspecer/specification/aggregator-builder";
 import { isPackageEntity } from "@dataspecer/core/project-model";
 import { memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -40,8 +40,13 @@ export function getAggregatedEntitiesWithPassthroughForPackage(models: Record<Mo
 
   let context: EntityRecord = {};
   try {
-    const hierarchy = buildModelHierarchy(owningPackageId, models, true);
-    const aggregator = build(owningPackageId, hierarchy, models);
+    const hierarchy = buildModelHierarchy(owningPackageId, models);
+    // History labels also need entities hidden by the exposed profile.
+    const aggregator = build(owningPackageId, hierarchy, models, undefined, undefined, {
+      forcePassThrough: true,
+      canAddEntities: false,
+      canModify: false,
+    });
     for (const wrapped of Object.values(aggregator.getAggregatedEntities())) {
       context[wrapped.aggregatedEntity.id] = wrapped.aggregatedEntity;
     }
