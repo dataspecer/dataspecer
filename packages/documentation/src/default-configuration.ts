@@ -348,10 +348,10 @@ export const defaultConfiguration: DocumentationConfiguration = {
       <td>{{translation}}{{#if otherLang}} (@{{otherLang}}){{/if}}</td>
     </tr>
     {{/translate}}
-    {{#if aggregation.controlledVocabularies}}
+    {{#if resolvedControlledVocabularies}}
     <tr>
       <td>{{#iflng "cs"}}Řízené slovníky{{lng}}Controlled vocabularies{{/iflng}}</td>
-      <td>{{> controlled-vocabulary-list vocabularies=aggregation.controlledVocabularies}}</td>
+      <td>{{> controlled-vocabulary-list vocabularies=resolvedControlledVocabularies}}</td>
     </tr>
     {{/if}}
   </table>
@@ -379,8 +379,8 @@ export const defaultConfiguration: DocumentationConfiguration = {
     "controlled-vocabulary-list": `<ul>
   {{#each vocabularies}}
     <li>
-      {{#semanticEntity identifier}}<a href="{{{distribution.accessUrl}}}">{{title}}</a>{{else}}{{.}}{{/semanticEntity}}
-      ({{qualifier}}{{#if override}}, {{#iflng "cs"}}přepsáno{{lng}}override{{/iflng}}{{/if}})
+      {{#semanticEntity vocabulary}}<a href="{{{distribution.accessUrl}}}">{{title}}</a>{{else}}{{.}}{{/semanticEntity}}
+      ({{qualifier}}{{#if replaces}}, {{#iflng "cs"}}přepsáno{{lng}}override{{/iflng}}{{/if}})
     </li>
   {{/each}}
 </ul>`,
@@ -388,19 +388,19 @@ export const defaultConfiguration: DocumentationConfiguration = {
     "controlled-vocabulary-usage-table": `<table class="def">
   <thead>
     <tr>
-      <th>{{#iflng "cs"}}Řízený slovník{{lng}}Controlled vocabulary{{/iflng}}</th>
       <th>{{#iflng "cs"}}Vlastnost{{lng}}Property{{/iflng}}</th>
       <th>{{#iflng "cs"}}Použito pro třídu{{lng}}Used for Class{{/iflng}}</th>
+      <th>{{#iflng "cs"}}Řízený slovník{{lng}}Controlled vocabulary{{/iflng}}</th>
       <th>{{#iflng "cs"}}Přepsáno{{lng}}Override{{/iflng}}</th>
     </tr>
   </thead>
   <tbody>
     {{#each rows}}
       <tr>
-        <td>{{#semanticEntity identifier}}<a href="{{{distribution.accessUrl}}}">{{title}}</a>{{else}}{{.}}{{/semanticEntity}}</td>
         <td>{{#with property}}{{relation}}{{/with}}</td>
         <td>{{#semanticEntity property.ends.0.concept}}{{class}}{{/semanticEntity}}</td>
-        <td>{{#if override}}{{#iflng "cs"}}ano{{lng}}yes{{/iflng}}{{/if}}</td>
+        <td>{{#semanticEntity vocabulary}}<a href="{{{distribution.accessUrl}}}">{{title}}</a>{{else}}{{.}}{{/semanticEntity}}</td>
+        <td>{{#if replaces}}{{#iflng "cs"}}ano{{lng}}yes{{/iflng}}{{/if}}</td>
       </tr>
     {{/each}}
   </tbody>
