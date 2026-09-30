@@ -381,18 +381,22 @@ export const defaultConfiguration: DocumentationConfiguration = {
 </section>`,
 
     "controlled-vocabulary-list": `{{#if (equals vocabularies.length 1)}}
-  {{#each vocabularies}}{{> controlled-vocabulary-list-item showReplaced=../showReplaced}}{{/each}}
+  {{#each vocabularies}}{{> controlled-vocabulary-list-item showReplaced=../showReplaced documentedClassProfile=../id}}{{/each}}
 {{else}}
   <ul>
     {{#each vocabularies}}
-      <li>{{> controlled-vocabulary-list-item showReplaced=../showReplaced}}</li>
+      <li>{{> controlled-vocabulary-list-item showReplaced=../showReplaced documentedClassProfile=../id}}</li>
     {{/each}}
   </ul>
 {{/if}}`,
 
-    "controlled-vocabulary-list-item": `{{> controlled-vocabulary-link}}
-({{qualifier}}{{#if replaces}}, {{#iflng "cs"}}přepsáno{{lng}}override{{/iflng}}{{/if}})
+    "controlled-vocabulary-list-item": `{{> controlled-vocabulary-link}} ({{qualifier}}{{#if replaces}}, {{#iflng "cs"}}přepsáno{{lng}}override{{/iflng}}{{/if}})
 {{#if showReplaced}}
+  {{! An assignment of another class profile is inherited from the profiled class profile, which can be in a nested specification. }}
+  {{#unless (equals classProfile documentedClassProfile)}}
+    <br />{{#iflng "cs"}}Převzato z profilovaného profilu třídy{{lng}}Taken from the profiled class profile{{/iflng}}
+    {{#semanticEntity classProfile}}{{class}}{{else}}{{.}}{{/semanticEntity}}
+  {{/unless}}
   {{> controlled-vocabulary-imported-replaces}}
   {{! The replaced assignments are a list, shown as a hierarchy: each opens a nested list, all are closed after the last one. }}
   {{#each (replacedAssignments .)}}
@@ -408,8 +412,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
     "controlled-vocabulary-link": `{{#semanticEntity vocabulary}}<a href="{{{distribution.accessUrl}}}">{{title}}</a>{{else}}{{.}}{{/semanticEntity}}`,
 
     "controlled-vocabulary-replaced-assignment": `{{#iflng "cs"}}nahrazuje přiřazení řízeného slovníku{{lng}}replaces controlled vocabulary assignment{{/iflng}}
-{{> controlled-vocabulary-link}}
-({{qualifier}}) {{#iflng "cs"}}profilu třídy{{lng}}of class profile{{/iflng}}
+{{> controlled-vocabulary-link}} ({{qualifier}}) {{#iflng "cs"}}profilu třídy{{lng}}of class profile{{/iflng}}
 {{#semanticEntity classProfile}}{{class}}{{else}}{{.}}{{/semanticEntity}}`,
 
     "controlled-vocabulary-imported-replaces": `{{#ifEquals replaces.kind "imported"}}
@@ -470,7 +473,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
     {{#each rows}}
       <tr>
         <td>{{#with property}}{{relation}}{{/with}}</td>
-        <td>{{#semanticEntity classProfile}}{{class}}{{else}}{{.}}{{/semanticEntity}}</td>
+        <td>{{#semanticEntity property.ends.1.concept}}{{class}}{{else}}{{.}}{{/semanticEntity}}</td>
         <td>{{> controlled-vocabulary-link}}</td>
         <td>{{#if replaces}}{{#iflng "cs"}}ano{{lng}}yes{{/iflng}}{{/if}}</td>
       </tr>
