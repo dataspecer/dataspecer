@@ -36,7 +36,7 @@ export interface LdesVersion {
   /**
    * Identifier of the last internal transaction that belongs to the version.
    */
-  transactionId: string;
+  transactionId: string | null;
 
   /**
    * When the version was published (the time of the transaction carrying the
@@ -71,7 +71,7 @@ export interface LdesEvent {
    * Identifier of the internal transaction the event was derived from. Events
    * of one transaction share the timestamp and were applied atomically.
    */
-  transactionId: string;
+  transactionId: string | null;
 
   /**
    * When the change was recorded in Dataspecer, as xsd:dateTime.
