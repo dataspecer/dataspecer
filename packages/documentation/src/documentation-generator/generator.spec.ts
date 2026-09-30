@@ -64,11 +64,7 @@ describe("generateDocumentation controlled vocabularies", () => {
     expect(html).toContain("(RECOMMENDED)");
   });
 
-  // The semantic model aggregator hands only classes and class profiles to the
-  // class profile aggregator, so assignments inherited from a profiled class
-  // profile are not part of the aggregated class profile yet.
-  // Remove `.fails` once the aggregator passes them on.
-  it.fails("Includes assignments inherited from the profiled class profile.", async () => {
+  it("Includes assignments inherited from the profiled class profile.", async () => {
     const builder = createBuilder();
     const parentAssignment = builder.controlledVocabularyAssignment({ id: "parent-assignment", vocabulary: "voc-a", qualifier: "MAY" });
     const parent = builder.class({ id: "parent", controlledVocabularies: [parentAssignment.identifier] });
@@ -136,6 +132,94 @@ describe("generateDocumentation controlled vocabularies", () => {
     expect(html).toContain("[relationship: assignment]");
     expect(html).toContain("<assignment relationship>");
     expect(html).not.toContain("unexpected");
+  });
+
+  describe("chain of replaced assignments", () => {
+
+    /**
+     * Lists the assignments of the class profile `child` the way the class
+     * profile documentation does, including the replaced assignments.
+     */
+    const CHAIN_TEMPLATE = `{{> definitions}}{{#each semanticEntitiesByType.classProfiles}}{{#ifEquals id "child"}}{{> controlled-vocabulary-list vocabularies=resolvedControlledVocabularies showReplaced=true}}{{/ifEquals}}{{/each}}`;
+
+    function collapse(html: string): string {
+      return html.replace(/\s+/g, " ");
+    }
+
+    it("Shows the assignments replaced through the ancestors as a nested hierarchy.", async () => {
+      const builder = createBuilder();
+      const grandparentAssignment = builder.controlledVocabularyAssignment({
+        id: "grandparent-assignment", classProfile: "grandparent", vocabulary: "voc-a", qualifier: "MAY",
+      });
+      const parentAssignment = builder.controlledVocabularyAssignment({
+        id: "parent-assignment", classProfile: "parent", vocabulary: "voc-a", qualifier: "RECOMMENDED",
+        replaces: { kind: "local", target: grandparentAssignment.identifier },
+      });
+      const childAssignment = builder.controlledVocabularyAssignment({
+        id: "child-assignment", classProfile: "child", vocabulary: "voc-a", qualifier: "MUST",
+        replaces: { kind: "local", target: parentAssignment.identifier },
+      });
+      const grandparent = builder.class({ id: "grandparent", name: { en: "Grandparent" }, controlledVocabularies: [grandparentAssignment.identifier] });
+      const parent = builder.class({ id: "parent", name: { en: "Parent" }, controlledVocabularies: [parentAssignment.identifier] }).profile(grandparent);
+      builder.class({ id: "child", name: { en: "Child" }, controlledVocabularies: [childAssignment.identifier] }).profile(parent);
+
+      const html = collapse(await render(builder, [vocabulary("voc-a", "Vocabulary A")], CHAIN_TEMPLATE));
+
+      // The nearest replaced assignment comes first and each one is nested in the previous.
+      expect(html).toMatch(/\(MUST, override\)[\s\S]*replaces controlled vocabulary assignment[\s\S]*\(RECOMMENDED\) of class profile[\s\S]*Parent[\s\S]*replaces controlled vocabulary assignment[\s\S]*\(MAY\) of class profile[\s\S]*Grandparent/);
+      expect(html.match(/<ul/g)).toHaveLength(3);
+      expect(html.match(/<\/ul>/g)).toHaveLength(3);
+      // Only the assignment of the class profile itself is listed at the top.
+      expect(html.match(/<li>/g)).toHaveLength(3);
+    });
+
+    it("Shows an assignment replaced by a reference to an imported assignment.", async () => {
+      const builder = createBuilder();
+      const assignment = builder.controlledVocabularyAssignment({
+        id: "child-assignment", classProfile: "child", vocabulary: "voc-a",
+        replaces: { kind: "imported", iri: "http://example.com/imported-assignment" },
+      });
+      builder.class({ id: "child", controlledVocabularies: [assignment.identifier] });
+
+      const html = collapse(await render(builder, [vocabulary("voc-a", "Vocabulary A")], CHAIN_TEMPLATE));
+
+      expect(html).toContain('replaces imported assignment <a href="http://example.com/imported-assignment">');
+      expect(html.match(/<ul/g)).toHaveLength(2);
+    });
+
+    it("Ends the chain when the replaced assignment is not in the models.", async () => {
+      const builder = createBuilder();
+      const assignment = builder.controlledVocabularyAssignment({
+        id: "child-assignment", classProfile: "child", vocabulary: "voc-a",
+        replaces: { kind: "local", target: "missing" },
+      });
+      builder.class({ id: "child", controlledVocabularies: [assignment.identifier] });
+
+      const html = collapse(await render(builder, [vocabulary("voc-a", "Vocabulary A")], CHAIN_TEMPLATE));
+
+      expect(html).not.toContain("replaces controlled vocabulary assignment");
+      expect(html.match(/<ul/g)).toHaveLength(1);
+    });
+
+    it("Does not show the chain in the list without the option, used for relationships.", async () => {
+      const builder = createBuilder();
+      const parentAssignment = builder.controlledVocabularyAssignment({ id: "parent-assignment", classProfile: "parent", vocabulary: "voc-a" });
+      const childAssignment = builder.controlledVocabularyAssignment({
+        id: "child-assignment", classProfile: "child", vocabulary: "voc-a",
+        replaces: { kind: "local", target: parentAssignment.identifier },
+      });
+      const parent = builder.class({ id: "parent", controlledVocabularies: [parentAssignment.identifier] });
+      builder.class({ id: "child", controlledVocabularies: [childAssignment.identifier] }).profile(parent);
+
+      const html = await render(
+        builder,
+        [vocabulary("voc-a", "Vocabulary A")],
+        `{{#each semanticEntitiesByType.classProfiles}}{{#ifEquals id "child"}}{{> controlled-vocabulary-list vocabularies=resolvedControlledVocabularies}}{{/ifEquals}}{{/each}}`,
+      );
+
+      expect(html).not.toContain("replaces controlled vocabulary assignment");
+    });
+
   });
 
 });

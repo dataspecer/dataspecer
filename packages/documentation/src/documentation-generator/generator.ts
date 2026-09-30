@@ -511,6 +511,29 @@ export async function generateDocumentation(
     return entities;
   };
 
+  /**
+   * Follows the chain of controlled vocabulary assignments replacements, strting from the given assignment.
+   * An assignment replaces at most one other assignment, so the result is a list.
+   * The list ends when the replaced assignment is not in the models, 
+   * when it is referenced by IRI from an imported specification
+   * or when it would repeat an assignment.
+   */
+  data['replacedAssignments'] = function(assignment: ControlledVocabularyAssignment): ControlledVocabularyAssignment[] {
+    const chain: ControlledVocabularyAssignment[] = [];
+    const visited = new Set<string>([assignment.id]);
+    let current = assignment;
+    while (current.replaces?.kind === "local") {
+      const replaced = aggregatedEntities[current.replaces.target]?.aggregatedEntity ?? null;
+      if (!isControlledVocabularyAssignment(replaced) || visited.has(replaced.id)) {
+        break;
+      }
+      visited.add(replaced.id);
+      chain.push(replaced);
+      current = replaced;
+    }
+    return chain;
+  };
+
   const result = await handlebarsAdapter.render(configuration.template, data, configuration.partials);
   return result;
 }
