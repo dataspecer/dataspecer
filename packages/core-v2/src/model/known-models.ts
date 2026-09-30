@@ -31,7 +31,7 @@ export const RDFS_MODEL = "https://dataspecer.com/core/model-descriptor/pim-stor
 
 /**
  * Model representing a single controlled vocabulary metadata entry.
- * TODO: do we need to publish this URL?
+ * TODO: do we need to publish this URL? - issue#1559 https://github.com/dataspecer/dataspecer/issues/1559
  */
 export const CONTROLLED_VOCABULARY_MODEL = "http://dataspecer.com/resources/local/controlled-vocabulary";
 
