@@ -12,6 +12,7 @@
 lib/
 data/
 node_modules/
+database/
 !.github/
 
 # All package-locks except root
