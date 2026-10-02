@@ -3,7 +3,7 @@ import { isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRel
 import { Entity, InMemoryEntityModel } from "@dataspecer/core-v2/entity-model";
 import { SemanticModelAggregator } from "@dataspecer/core-v2/semantic-model/aggregator";
 import { LanguageString, SemanticModelClass, SemanticModelEntity, SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
-import { ControlledVocabularyAssignment, isControlledVocabularyAssignment, isSemanticModelClassProfile, isSemanticModelRelationshipProfile, SemanticModelClassProfile, SemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
+import { ControlledVocabularyAssignment, Qualifier, isControlledVocabularyAssignment, isSemanticModelClassProfile, isSemanticModelRelationshipProfile, SemanticModelClassProfile, SemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { getTranslation } from "@dataspecer/core-v2/utils/language";
 import { createHandlebarsAdapter, HandlebarsAdapter } from "@dataspecer/handlebars-adapter";
 import { StructureModel } from '@dataspecer/core/structure-model/model/structure-model';
@@ -509,6 +509,13 @@ export async function generateDocumentation(
       }
     }
     return entities;
+  };
+
+  /**
+   * Text of a qualifier as shown in the documentation, e.g. "AT LEAST ONE".
+   */
+  data['qualifierLabel'] = function(qualifier: Qualifier): string {
+    return qualifier.toUpperCase().replaceAll("-", " ");
   };
 
   /**

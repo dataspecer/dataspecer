@@ -42,7 +42,7 @@ export function assignmentFixture(
     type: [CONTROLLED_VOCABULARY_ASSIGNMENT],
     classProfile: "ancestor",
     vocabulary: "voc-1",
-    qualifier: "MUST",
+    qualifier: "must",
     iri: null,
     replaces: null,
     ...overrides,

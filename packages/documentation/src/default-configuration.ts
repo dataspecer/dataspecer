@@ -129,35 +129,35 @@ export const defaultConfiguration: DocumentationConfiguration = {
 
     {{> used-prefixes}}
 
-    {{#if (or controlledVocabularyUsagesByQualifier.MUST controlledVocabularyUsagesByQualifier.AT_LEAST_1 controlledVocabularyUsagesByQualifier.RECOMMENDED controlledVocabularyUsagesByQualifier.MAY)}}
+    {{#if (or controlledVocabularyUsagesByQualifier.must controlledVocabularyUsagesByQualifier.[at-least-one] controlledVocabularyUsagesByQualifier.recommended controlledVocabularyUsagesByQualifier.may)}}
       <section>
         <h2>{{#iflng "cs"}}Řízené slovníky{{lng}}Controlled vocabularies{{/iflng}}</h2>
 
-        {{#if controlledVocabularyUsagesByQualifier.MUST}}
+        {{#if controlledVocabularyUsagesByQualifier.must}}
           <section>
             <h3>{{#iflng "cs"}}Vlastnosti s řízenými slovníky, které MUSÍ být použity{{lng}}Properties with controlled vocabularies that MUST be used{{/iflng}}</h3>
-            {{> controlled-vocabulary-usage-table rows=controlledVocabularyUsagesByQualifier.MUST}}
+            {{> controlled-vocabulary-usage-table rows=controlledVocabularyUsagesByQualifier.must}}
           </section>
         {{/if}}
 
-        {{#if controlledVocabularyUsagesByQualifier.AT_LEAST_1}}
+        {{#if controlledVocabularyUsagesByQualifier.[at-least-one]}}
           <section>
             <h3>{{#iflng "cs"}}Vlastnosti s řízenými slovníky, ze kterých MUSÍ být použit alespoň jeden{{lng}}Properties with controlled vocabularies where AT LEAST ONE must be used{{/iflng}}</h3>
-            {{> controlled-vocabulary-usage-table rows=controlledVocabularyUsagesByQualifier.AT_LEAST_1}}
+            {{> controlled-vocabulary-usage-table rows=controlledVocabularyUsagesByQualifier.[at-least-one]}}
           </section>
         {{/if}}
 
-        {{#if controlledVocabularyUsagesByQualifier.RECOMMENDED}}
+        {{#if controlledVocabularyUsagesByQualifier.recommended}}
           <section>
             <h3>{{#iflng "cs"}}Vlastnosti s DOPORUČENÝMI řízenými slovníky{{lng}}Properties with RECOMMENDED controlled vocabularies{{/iflng}}</h3>
-            {{> controlled-vocabulary-usage-table rows=controlledVocabularyUsagesByQualifier.RECOMMENDED}}
+            {{> controlled-vocabulary-usage-table rows=controlledVocabularyUsagesByQualifier.recommended}}
           </section>
         {{/if}}
 
-        {{#if controlledVocabularyUsagesByQualifier.MAY}}
+        {{#if controlledVocabularyUsagesByQualifier.may}}
           <section>
             <h3>{{#iflng "cs"}}Vlastnosti s řízenými slovníky, které MOHOU být použity{{lng}}Properties with controlled vocabularies that MAY be used{{/iflng}}</h3>
-            {{> controlled-vocabulary-usage-table rows=controlledVocabularyUsagesByQualifier.MAY}}
+            {{> controlled-vocabulary-usage-table rows=controlledVocabularyUsagesByQualifier.may}}
           </section>
         {{/if}}
       </section>
@@ -390,7 +390,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
   </ul>
 {{/if}}`,
 
-    "controlled-vocabulary-list-item": `{{> controlled-vocabulary-link}} ({{qualifier}}{{#if replaces}}, {{#iflng "cs"}}přepsáno{{lng}}override{{/iflng}}{{/if}})
+    "controlled-vocabulary-list-item": `{{> controlled-vocabulary-link}} ({{qualifierLabel qualifier}}{{#if replaces}}, {{#iflng "cs"}}přepsáno{{lng}}override{{/iflng}}{{/if}})
 {{#if showReplaced}}
   {{! An assignment of another class profile is inherited from the profiled class profile, which can be in a nested specification. }}
   {{#unless (equals classProfile documentedClassProfile)}}
@@ -412,7 +412,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
     "controlled-vocabulary-link": `{{#semanticEntity vocabulary}}<a href="{{{distribution.accessUrl}}}">{{title}}</a>{{else}}{{.}}{{/semanticEntity}}`,
 
     "controlled-vocabulary-replaced-assignment": `{{#iflng "cs"}}nahrazuje přiřazení řízeného slovníku{{lng}}replaces controlled vocabulary assignment{{/iflng}}
-{{> controlled-vocabulary-link}} ({{qualifier}}) {{#iflng "cs"}}profilu třídy{{lng}}of class profile{{/iflng}}
+{{> controlled-vocabulary-link}} ({{qualifierLabel qualifier}}) {{#iflng "cs"}}profilu třídy{{lng}}of class profile{{/iflng}}
 {{#semanticEntity classProfile}}{{class}}{{else}}{{.}}{{/semanticEntity}}`,
 
     "controlled-vocabulary-imported-replaces": `{{#ifEquals replaces.kind "imported"}}
@@ -424,19 +424,19 @@ export const defaultConfiguration: DocumentationConfiguration = {
 
     "controlled-vocabulary-property-usage": `{{#each vocabularies}}
   <p>
-  {{#ifEquals qualifier "MUST"}}
+  {{#ifEquals qualifier "must"}}
     {{#iflng "cs"}}Vlastnost MUSÍ používat jako obor hodnot položky z {{> controlled-vocabulary-link}}.{{lng}}The property MUST use as range values codes from {{> controlled-vocabulary-link}}.{{/iflng}}<br />
     {{#iflng "cs"}}Toto očekávání znamená, že prostor hodnot je uzavřen vzhledem k řízenému slovníku. Validační systémy BY MĚLY vytvářet chyby. Všechny profily v ekosystému MUSÍ předcházet konfliktům vytvářením podvlastností.{{lng}}This expectation results in that the value space is closed under the controlled vocabulary. Validation systems SHOULD produce errors. All profiles in the ecosystem MUST avoid conflicts by creating subproperties.{{/iflng}}
   {{/ifEquals}}
-  {{#ifEquals qualifier "AT_LEAST_1"}}
+  {{#ifEquals qualifier "at-least-one"}}
     {{#iflng "cs"}}Vlastnost MUSÍ mít ALESPOŇ JEDNU hodnotu z {{> controlled-vocabulary-link}}.{{lng}}The property MUST have AT LEAST ONE value from {{> controlled-vocabulary-link}}.{{/iflng}}<br />
     {{#iflng "cs"}}Toto očekávání jen minimálně omezuje prostor hodnot. Validační systémy BY MĚLY vytvářet varování.{{lng}}This expectation makes the value space minimally constrained. Validation systems SHOULD produce warnings.{{/iflng}}
   {{/ifEquals}}
-  {{#ifEquals qualifier "RECOMMENDED"}}
+  {{#ifEquals qualifier "recommended"}}
     {{#iflng "cs"}}Pro vlastnost se DOPORUČUJE používat jako obor hodnot položky z {{> controlled-vocabulary-link}}.{{lng}}The property IS RECOMMENDED to use as range values codes from {{> controlled-vocabulary-link}}.{{/iflng}}<br />
     {{#iflng "cs"}}Prostor hodnot je uzavřen vzhledem k řízenému slovníku, ale jiné hodnoty jsou tolerovány. Doporučení vyjadřuje silnou preferenci. Aby byl tento silnější směr ke sjednocení hodnot viditelný ve výměnách dat, validační systémy BY MĚLY vytvářet varování.{{lng}}The value space is closed under the controlled vocabulary, but other values are tolerated. Recommending means expressing a strong preference. To make this stronger direction towards harmonisation visible in the data exchanges, validation systems SHOULD produce warnings.{{/iflng}}
   {{/ifEquals}}
-  {{#ifEquals qualifier "MAY"}}
+  {{#ifEquals qualifier "may"}}
     {{#iflng "cs"}}Vlastnost MŮŽE používat jako obor hodnot položky z {{> controlled-vocabulary-link}}.{{lng}}The property MAY use as range values codes from {{> controlled-vocabulary-link}}.{{/iflng}}<br />
     {{#iflng "cs"}}Prostor hodnot je uzavřen vzhledem k řízenému slovníku, ale jiné hodnoty jsou přijímány. Toto očekávání je spíše nápověda k použití. Protože zde není vyjádřena ani povinnost, ani silné doporučení, je použití jiných číselníků ve všech případech platné. Validační systémy proto MOHOU vytvářet varování, ale uživatelé je mohou ignorovat. Také žádná validace není v tomto případě přijatelná.{{lng}}The value space is closed under the controlled vocabulary, but other values are accepted. This expectation is more a hint to be used. As there is no obligation nor strong suggestion expressed here, the use of other codelists is valid in all cases. Therefore validation systems MAY produce warnings but users are free to ignore them. No validation in this case is also acceptable.{{/iflng}}
   {{/ifEquals}}
@@ -445,16 +445,16 @@ export const defaultConfiguration: DocumentationConfiguration = {
 
     "controlled-vocabulary-class-profile-usage": `{{#each vocabularies}}
   <p>
-  {{#ifEquals qualifier "MUST"}}
+  {{#ifEquals qualifier "must"}}
     {{#iflng "cs"}}Tento profil třídy MUSÍ být v datech reprezentován položkami řízeného slovníku {{> controlled-vocabulary-link}}.{{lng}}This class profile MUST be represented in data by instances of {{> controlled-vocabulary-link}} controlled vocabulary.{{/iflng}}
   {{/ifEquals}}
-  {{#ifEquals qualifier "AT_LEAST_1"}}
+  {{#ifEquals qualifier "at-least-one"}}
     {{#iflng "cs"}}Tento profil třídy MUSÍ být v datech reprezentován ALESPOŇ JEDNOU položkou řízeného slovníku {{> controlled-vocabulary-link}}.{{lng}}This class profile MUST be represented in data by AT LEAST ONE instance of {{> controlled-vocabulary-link}} controlled vocabulary.{{/iflng}}
   {{/ifEquals}}
-  {{#ifEquals qualifier "RECOMMENDED"}}
+  {{#ifEquals qualifier "recommended"}}
     {{#iflng "cs"}}DOPORUČUJE se, aby byl tento profil třídy v datech reprezentován položkami řízeného slovníku {{> controlled-vocabulary-link}}.{{lng}}It is RECOMMENDED that this class profile is represented in data by instances of {{> controlled-vocabulary-link}} controlled vocabulary.{{/iflng}}
   {{/ifEquals}}
-  {{#ifEquals qualifier "MAY"}}
+  {{#ifEquals qualifier "may"}}
     {{#iflng "cs"}}Tento profil třídy MŮŽE být v datech reprezentován položkami řízeného slovníku {{> controlled-vocabulary-link}}.{{lng}}This class profile MAY be represented in data by instances of {{> controlled-vocabulary-link}} controlled vocabulary.{{/iflng}}
   {{/ifEquals}}
   </p>
