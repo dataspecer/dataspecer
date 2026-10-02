@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CONTROLLED_VOCABULARY_TYPE, DEFAULT_CONTROLLED_VOCABULARY, type ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 import { createDefaultProfileModelBuilder, type ProfileModelBuilder } from "@dataspecer/profile-model";
+import type { Qualifier } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { defaultConfiguration } from "../default-configuration.ts";
 import { generateDocumentation } from "./generator.ts";
 
@@ -59,7 +60,7 @@ describe("generateDocumentation controlled vocabularies", () => {
 
   it("Lists own assignments of a class profile with the vocabulary and qualifier.", async () => {
     const builder = createBuilder();
-    const assignment = builder.controlledVocabularyAssignment({ vocabulary: "voc-a", qualifier: "RECOMMENDED" });
+    const assignment = builder.controlledVocabularyAssignment({ vocabulary: "voc-a", qualifier: "recommended" });
     builder.class({ id: "profile", controlledVocabularies: [assignment.identifier] });
 
     const html = await render(builder, [vocabulary("voc-a", "Vocabulary A")], CLASS_PROFILE_TEMPLATE);
@@ -69,23 +70,23 @@ describe("generateDocumentation controlled vocabularies", () => {
 
   it("Includes assignments inherited from the profiled class profile.", async () => {
     const builder = createBuilder();
-    const parentAssignment = builder.controlledVocabularyAssignment({ id: "parent-assignment", vocabulary: "voc-a", qualifier: "MAY" });
+    const parentAssignment = builder.controlledVocabularyAssignment({ id: "parent-assignment", vocabulary: "voc-a", qualifier: "may" });
     const parent = builder.class({ id: "parent", controlledVocabularies: [parentAssignment.identifier] });
     builder.class({ id: "child" }).profile(parent);
 
     const html = await render(builder, [vocabulary("voc-a", "Vocabulary A")], ASSIGNMENT_LIST_TEMPLATE);
 
-    expect(html).toContain("[child: parent-assignment=MAY]");
-    expect(html).toContain("[parent: parent-assignment=MAY]");
+    expect(html).toContain("[child: parent-assignment=may]");
+    expect(html).toContain("[parent: parent-assignment=may]");
   });
 
   it("Prefers the own assignment over an inherited one it replaces.", async () => {
     const builder = createBuilder();
-    const parentAssignment = builder.controlledVocabularyAssignment({ id: "parent-assignment", vocabulary: "voc-a", qualifier: "MAY" });
+    const parentAssignment = builder.controlledVocabularyAssignment({ id: "parent-assignment", vocabulary: "voc-a", qualifier: "may" });
     const childAssignment = builder.controlledVocabularyAssignment({
       id: "child-assignment",
       vocabulary: "voc-a",
-      qualifier: "MUST",
+      qualifier: "must",
       replaces: { kind: "local", target: parentAssignment.identifier },
     });
     const parent = builder.class({ id: "parent", controlledVocabularies: [parentAssignment.identifier] });
@@ -93,8 +94,8 @@ describe("generateDocumentation controlled vocabularies", () => {
 
     const html = await render(builder, [vocabulary("voc-a", "Vocabulary A")], ASSIGNMENT_LIST_TEMPLATE);
 
-    expect(html).toContain("[child: child-assignment=MUST+replaces]");
-    expect(html).toContain("[parent: parent-assignment=MAY]");
+    expect(html).toContain("[child: child-assignment=must+replaces]");
+    expect(html).toContain("[parent: parent-assignment=may]");
   });
 
   it("Skips ids that are not assignments.", async () => {
@@ -119,7 +120,7 @@ describe("generateDocumentation controlled vocabularies", () => {
 
   it("Derives the vocabularies of a relationship from its range and groups the usages by qualifier.", async () => {
     const builder = createBuilder();
-    const assignment = builder.controlledVocabularyAssignment({ id: "assignment", vocabulary: "voc-a", qualifier: "AT_LEAST_1" });
+    const assignment = builder.controlledVocabularyAssignment({ id: "assignment", vocabulary: "voc-a", qualifier: "at-least-one" });
     const domain = builder.class({ id: "domain" });
     const range = builder.class({ id: "range", controlledVocabularies: [assignment.identifier] });
     builder.property({ id: "relationship", name: { en: "property" } }).domain(domain).range(range);
@@ -128,8 +129,8 @@ describe("generateDocumentation controlled vocabularies", () => {
       builder,
       [vocabulary("voc-a", "Vocabulary A")],
       `{{#each semanticEntitiesByType.relationshipProfiles}}[{{id}}:{{#each derivedControlledVocabularies}} {{id}}{{/each}}]{{/each}}
-      {{#each controlledVocabularyUsagesByQualifier.AT_LEAST_1}}<{{id}} {{property.id}}>{{/each}}
-      {{#if controlledVocabularyUsagesByQualifier.MUST}}unexpected{{/if}}`,
+      {{#each controlledVocabularyUsagesByQualifier.[at-least-one]}}<{{id}} {{property.id}}>{{/each}}
+      {{#if controlledVocabularyUsagesByQualifier.must}}unexpected{{/if}}`,
     );
 
     expect(html).toContain("[relationship: assignment]");
@@ -152,14 +153,14 @@ describe("generateDocumentation controlled vocabularies", () => {
     it("Shows the assignments replaced through the ancestors as a nested hierarchy.", async () => {
       const builder = createBuilder();
       const grandparentAssignment = builder.controlledVocabularyAssignment({
-        id: "grandparent-assignment", classProfile: "grandparent", vocabulary: "voc-a", qualifier: "MAY",
+        id: "grandparent-assignment", classProfile: "grandparent", vocabulary: "voc-a", qualifier: "may",
       });
       const parentAssignment = builder.controlledVocabularyAssignment({
-        id: "parent-assignment", classProfile: "parent", vocabulary: "voc-a", qualifier: "RECOMMENDED",
+        id: "parent-assignment", classProfile: "parent", vocabulary: "voc-a", qualifier: "recommended",
         replaces: { kind: "local", target: grandparentAssignment.identifier },
       });
       const childAssignment = builder.controlledVocabularyAssignment({
-        id: "child-assignment", classProfile: "child", vocabulary: "voc-a", qualifier: "MUST",
+        id: "child-assignment", classProfile: "child", vocabulary: "voc-a", qualifier: "must",
         replaces: { kind: "local", target: parentAssignment.identifier },
       });
       const grandparent = builder.class({ id: "grandparent", name: { en: "Grandparent" }, controlledVocabularies: [grandparentAssignment.identifier] });
@@ -266,7 +267,7 @@ describe("generateDocumentation controlled vocabularies", () => {
      * property whose range is the class profile.
      */
     async function renderUsage(
-      qualifier: "MUST" | "AT_LEAST_1" | "RECOMMENDED" | "MAY",
+      qualifier: Qualifier,
       partial: "controlled-vocabulary-class-profile-usage" | "controlled-vocabulary-property-usage",
       language: string = "en",
     ): Promise<string> {
@@ -283,20 +284,20 @@ describe("generateDocumentation controlled vocabularies", () => {
     }
 
     it.each([
-      ["MUST", `This class profile MUST be represented in data by instances of ${LINK} controlled vocabulary.`],
-      ["AT_LEAST_1", `This class profile MUST be represented in data by AT LEAST ONE instance of ${LINK} controlled vocabulary.`],
-      ["RECOMMENDED", `It is RECOMMENDED that this class profile is represented in data by instances of ${LINK} controlled vocabulary.`],
-      ["MAY", `This class profile MAY be represented in data by instances of ${LINK} controlled vocabulary.`],
+      ["must", `This class profile MUST be represented in data by instances of ${LINK} controlled vocabulary.`],
+      ["at-least-one", `This class profile MUST be represented in data by AT LEAST ONE instance of ${LINK} controlled vocabulary.`],
+      ["recommended", `It is RECOMMENDED that this class profile is represented in data by instances of ${LINK} controlled vocabulary.`],
+      ["may", `This class profile MAY be represented in data by instances of ${LINK} controlled vocabulary.`],
     ] as const)("Describes the %s usage for a class profile.", async (qualifier, sentence) => {
       const html = await renderUsage(qualifier, "controlled-vocabulary-class-profile-usage");
       expect(html).toContain(sentence);
     });
 
     it.each([
-      ["MUST", `The property MUST use as range values codes from ${LINK}.`, "Validation systems SHOULD produce errors."],
-      ["AT_LEAST_1", `The property MUST have AT LEAST ONE value from ${LINK}.`, "This expectation makes the value space minimally constrained."],
-      ["RECOMMENDED", `The property IS RECOMMENDED to use as range values codes from ${LINK}.`, "Recommending means expressing a strong preference."],
-      ["MAY", `The property MAY use as range values codes from ${LINK}.`, "No validation in this case is also acceptable."],
+      ["must", `The property MUST use as range values codes from ${LINK}.`, "Validation systems SHOULD produce errors."],
+      ["at-least-one", `The property MUST have AT LEAST ONE value from ${LINK}.`, "This expectation makes the value space minimally constrained."],
+      ["recommended", `The property IS RECOMMENDED to use as range values codes from ${LINK}.`, "Recommending means expressing a strong preference."],
+      ["may", `The property MAY use as range values codes from ${LINK}.`, "No validation in this case is also acceptable."],
     ] as const)("Describes the %s usage for a property.", async (qualifier, sentence, explanation) => {
       const html = await renderUsage(qualifier, "controlled-vocabulary-property-usage");
       expect(html).toContain(sentence);
@@ -304,13 +305,13 @@ describe("generateDocumentation controlled vocabularies", () => {
     });
 
     it("Describes the usage of a property in Czech.", async () => {
-      const html = await renderUsage("RECOMMENDED", "controlled-vocabulary-property-usage", "cs");
+      const html = await renderUsage("recommended", "controlled-vocabulary-property-usage", "cs");
       expect(html).toContain(`Pro vlastnost se DOPORUČUJE používat jako obor hodnot položky z ${LINK}.`);
       expect(html).not.toContain("The property");
     });
 
     it("Describes the usage in Czech.", async () => {
-      const html = await renderUsage("MUST", "controlled-vocabulary-class-profile-usage", "cs");
+      const html = await renderUsage("must", "controlled-vocabulary-class-profile-usage", "cs");
       expect(html).toContain(`Tento profil třídy MUSÍ být v datech reprezentován položkami řízeného slovníku ${LINK}.`);
       expect(html).not.toContain("This class profile");
     });
@@ -326,7 +327,7 @@ describe("generateDocumentation controlled vocabularies", () => {
     async function renderUsageTable(inherited: boolean): Promise<string> {
       const builder = createBuilder();
       const assignment = builder.controlledVocabularyAssignment({
-        id: "assignment", classProfile: inherited ? "owner" : "range", vocabulary: "voc-a", qualifier: "MUST",
+        id: "assignment", classProfile: inherited ? "owner" : "range", vocabulary: "voc-a", qualifier: "must",
       });
       const domain = builder.class({ id: "domain", name: { en: "Domain class" } });
       const owner = builder.class({ id: "owner", name: { en: "Owner class" }, controlledVocabularies: inherited ? [assignment.identifier] : [] });
@@ -336,7 +337,7 @@ describe("generateDocumentation controlled vocabularies", () => {
       return (await render(
         builder,
         [vocabulary("voc-a", "Vocabulary A")],
-        `{{> definitions}}{{> controlled-vocabulary-usage-table rows=controlledVocabularyUsagesByQualifier.MUST}}`,
+        `{{> definitions}}{{> controlled-vocabulary-usage-table rows=controlledVocabularyUsagesByQualifier.must}}`,
       )).replace(/\s+/g, " ");
     }
 
@@ -363,7 +364,7 @@ describe("generateDocumentation controlled vocabularies", () => {
 
     it("Links the class profile in the nested specification that the assignment is taken from.", async () => {
       const nested = createBuilder();
-      const assignment = nested.controlledVocabularyAssignment({ id: "assignment", classProfile: "owner", vocabulary: "voc-a", qualifier: "MUST" });
+      const assignment = nested.controlledVocabularyAssignment({ id: "assignment", classProfile: "owner", vocabulary: "voc-a", qualifier: "must" });
       const owner = nested.class({ id: "owner", iri: "http://example.com/nested#Owner", name: { en: "Owner class" }, controlledVocabularies: [assignment.identifier] });
 
       const builder = createBuilder();

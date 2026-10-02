@@ -66,11 +66,11 @@ describe("ApplicationProfileAggregator", () => {
         classProfileFixture({
           id: "child", profiling: ["parent"], controlledVocabularies: ["child-assignment"],
         }),
-        assignmentFixture({ id: "parent-assignment", classProfile: "parent", qualifier: "MAY" }),
+        assignmentFixture({ id: "parent-assignment", classProfile: "parent", qualifier: "may" }),
         assignmentFixture({
           id: "child-assignment",
           classProfile: "child",
-          qualifier: "MUST",
+          qualifier: "must",
           replaces: { kind: "local", target: "parent-assignment" },
         }),
       ]);
@@ -84,8 +84,8 @@ describe("ApplicationProfileAggregator", () => {
         classProfileFixture({
           id: "child", profiling: ["parent"], controlledVocabularies: ["child-assignment"],
         }),
-        assignmentFixture({ id: "parent-assignment", classProfile: "parent", qualifier: "MAY" }),
-        assignmentFixture({ id: "child-assignment", classProfile: "child", qualifier: "MUST" }),
+        assignmentFixture({ id: "parent-assignment", classProfile: "parent", qualifier: "may" }),
+        assignmentFixture({ id: "child-assignment", classProfile: "child", qualifier: "must" }),
       ]);
       expect(controlledVocabulariesOf(entities, "child"))
         .toStrictEqual(["parent-assignment", "child-assignment"]);
