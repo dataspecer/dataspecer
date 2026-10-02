@@ -40,6 +40,7 @@ export type ControlledVocabularyAssignmentReplaces = LocalControlledVocabylaryAs
  * Represents assigning a controlled vocabulary to a class profile,
  * meaning that values of class profile should be instances of the controlled vocabulary, depending on the usage qualifier.
  * There can be multiple assignments of different vocabularies per profile.
+ * An assignment references exactly one controlled vocabulary.
  * Having this as an entity separate from class profile allows to reference the specific CV assignment 
  * when it is replaced further in the profile hierarchy.
  */
@@ -53,7 +54,10 @@ export interface ControlledVocabularyAssignment extends Entity {
   classProfile: EntityIdentifier;
 
   /**
-   * Id of the vocabulary entity being assigned.
+   * Reference to the controlled vocabulary entity being assigned.
+   * Each ControlledVocabulary entity is saved on BE inside a separate model
+   * of type CONTROLLED_VOCABULARY_MODEL. 
+   * The model has the same ID as the one ControlledVocabulary entity it contains.
    */
   vocabulary: EntityIdentifier;
 
