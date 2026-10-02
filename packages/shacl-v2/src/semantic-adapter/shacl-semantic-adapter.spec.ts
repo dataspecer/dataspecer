@@ -66,7 +66,7 @@ function assignmentFixture(
 ): ControlledVocabularyAssignment {
   return {
     id: "cv-assignment", type: [CONTROLLED_VOCABULARY_ASSIGNMENT],
-    classProfile: "", vocabulary: "", qualifier: "MUST",
+    classProfile: "", vocabulary: "", qualifier: "must",
     replaces: null, iri: null,
     ...overrides,
   };
@@ -485,7 +485,7 @@ describe("semanticModelsToShacl - controlled vocabularies", () => {
     splitPropertyShapesByConstraints: false,
   };
 
-  test("MUST severity, single controlled vocabulary.", async () => {
+  test("must severity, single controlled vocabulary.", async () => {
 
     const vocabulary = createDefaultSemanticModelBuilder({
       baseIdentifier: "vocab:",
@@ -517,7 +517,7 @@ describe("semanticModelsToShacl - controlled vocabularies", () => {
       iri: "http://example.com/assignments/1",
       classProfile: personProfile.identifier,
       vocabulary: "cv-1",
-      qualifier: "MUST",
+      qualifier: "must",
     })]);
 
     const shacl = semanticModelsToShacl(
@@ -549,7 +549,7 @@ describe("semanticModelsToShacl - controlled vocabularies", () => {
 
   });
 
-  test("AT_LEAST_1 and RECOMMENDED both map to Warning, as independent shapes (not combined via sh:or).", async () => {
+  test("at-least-one and recommended both map to Warning, as independent shapes (not combined via sh:or).", async () => {
 
     const vocabulary = createDefaultSemanticModelBuilder({
       baseIdentifier: "vocab:",
@@ -587,14 +587,14 @@ describe("semanticModelsToShacl - controlled vocabularies", () => {
         iri: "http://example.com/assignments/a",
         classProfile: personProfile.identifier,
         vocabulary: "cv-a",
-        qualifier: "AT_LEAST_1",
+        qualifier: "at-least-one",
       }),
       assignmentFixture({
         id: "assignment-b",
         iri: "http://example.com/assignments/b",
         classProfile: personProfile.identifier,
         vocabulary: "cv-b",
-        qualifier: "RECOMMENDED",
+        qualifier: "recommended",
       }),
     ]);
 
@@ -668,7 +668,7 @@ describe("semanticModelsToShacl - controlled vocabularies", () => {
       iri: "http://example.com/assignments/1",
       classProfile: baseProfile.identifier,
       vocabulary: "cv-1",
-      qualifier: "MUST",
+      qualifier: "must",
     })]);
 
     const shacl = semanticModelsToShacl(
@@ -741,14 +741,14 @@ describe("semanticModelsToShacl - controlled vocabularies", () => {
         iri: "http://example.com/assignments/base",
         classProfile: baseProfile.identifier,
         vocabulary: "cv-base",
-        qualifier: "MUST",
+        qualifier: "must",
       }),
       assignmentFixture({
         id: "assignment-override",
         iri: "http://example.com/assignments/override",
         classProfile: derivedProfile.identifier,
         vocabulary: "cv-override",
-        qualifier: "MUST",
+        qualifier: "must",
         replaces: { kind: "local", target: "assignment-base" },
       }),
     ]);

@@ -53,7 +53,7 @@ function assignmentFixture(
 ): ControlledVocabularyAssignment {
   return {
     id: "cv-assignment", type: [CONTROLLED_VOCABULARY_ASSIGNMENT],
-    classProfile: "", vocabulary: "", qualifier: "MUST",
+    classProfile: "", vocabulary: "", qualifier: "must",
     replaces: null, iri: null,
     ...overrides,
   };
@@ -214,7 +214,7 @@ describe("createStructureModel", () => {
       iri: "http://example.com/assignments/1",
       classProfile: "profile:001",
       vocabulary: "cv-1",
-      qualifier: "MUST",
+      qualifier: "must",
     })]);
 
     // DSV
@@ -242,7 +242,7 @@ describe("createStructureModel", () => {
       iri: "http://example.com/assignments/1",
       controlledVocabularyIri: "http://example.com/vocabularies/cv-1",
       pattern: "^http://example\\.com/codes/.*$",
-      usageExpectation: "MUST",
+      usageExpectation: "must",
       replaces: null,
     }]);
 

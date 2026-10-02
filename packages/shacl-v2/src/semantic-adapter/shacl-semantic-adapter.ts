@@ -373,18 +373,18 @@ function buildEffectiveControlledVocabularyAssignments(
 
 /**
  * Maps DCAT-AP's controlled vocabulary usage expectation to a SHACL
- * severity: MUST closes the value space (a violation), while
- * AT_LEAST_1/RECOMMENDED/MAY are all reported as warnings.
+ * severity: "must" closes the value space (a violation), while
+ * "at-least-one"/"recommended"/"may" are all reported as warnings.
  *
  * @see https://github.com/SEMICeu/DCAT-AP/blob/master/releases/3.0.0/dcat-ap_final.md
  */
 function qualifierToSeverity(qualifier: Qualifier | null): ShaclSeverity | null {
   switch (qualifier) {
-    case "MUST":
+    case "must":
       return ShaclSeverity.Violation;
-    case "AT_LEAST_1":
-    case "RECOMMENDED":
-    case "MAY":
+    case "at-least-one":
+    case "recommended":
+    case "may":
       return ShaclSeverity.Warning;
     case null:
       return null;
