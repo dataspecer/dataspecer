@@ -15,14 +15,19 @@ export function VocabularyCard({ vocabulary, onView, onEdit, onDelete }: Vocabul
 
   return (
     <div className="px-4 py-3 flex items-center justify-between">
-      <div className="flex-1">
+      <div className="flex-1 min-w-0">
         <div className="font-medium">
           {vocabulary.title}
           {vocabulary.conformsToSkos && (
             <Badge variant="secondary" className="ml-2">{t("list.badge.skos")}</Badge>
           )}
         </div>
-        <div className="text-caption text-muted-foreground font-mono">{vocabulary.references}</div>
+        <div
+          className="text-caption text-muted-foreground font-mono truncate"
+          title={vocabulary.references}
+        >
+          {vocabulary.references}
+        </div>
       </div>
       <div className="flex items-center gap-3 ml-4">
         <button
