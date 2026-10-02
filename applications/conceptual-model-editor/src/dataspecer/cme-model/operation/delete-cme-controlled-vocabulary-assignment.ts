@@ -10,7 +10,7 @@ const factory = createDefaultSemanticModelProfileOperationFactory();
 /**
  * @throws DataspecerError
  */
-export function removeCmeControlledVocabularyAssignment(
+export function deleteCmeControlledVocabularyAssignment(
   model: InMemorySemanticModel,
   assignment: CmeReference,
 ) {

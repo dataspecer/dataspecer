@@ -14,7 +14,7 @@ import { useClassProfileDialogController } from "./edit-class-profile-dialog-con
 import { InputText } from "../components/input-text";
 import { SelectBuildIn } from "../components/select-build-in";
 import {
-  findDuplicateVocabularyItemKeys,
+  findDuplicateVocabularyItemIds,
   hasControlledVocabularyConflict,
   SelectControlledVocabulariesView,
 } from "../controlled-vocabularies";
@@ -162,7 +162,7 @@ export const EditClassProfileDialog = (props: DialogProps<ClassProfileDialogStat
 function isClassProfileDialogStateValid(state: ClassProfileDialogState): boolean {
   return isValid(state.iriValidation)
     && !hasControlledVocabularyConflict(state.controlledVocabularies)
-    && findDuplicateVocabularyItemKeys(state.controlledVocabularies).size === 0;
+    && findDuplicateVocabularyItemIds(state.controlledVocabularies).size === 0;
 }
 
 export const createNewClassProfileDialog = (

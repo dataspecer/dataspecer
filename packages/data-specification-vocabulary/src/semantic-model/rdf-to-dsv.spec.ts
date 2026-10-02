@@ -596,7 +596,7 @@ test("Skips writing a null LanguageString value (defensive handling of malformed
 });
 
 test("Round-trips every controlled vocabulary assignment usage expectation value through RDF.", async () => {
-  const usageExpectations: Qualifier[] = ["MUST", "AT_LEAST_1", "RECOMMENDED", "MAY"];
+  const usageExpectations: Qualifier[] = ["must", "at-least-one", "recommended", "may"];
   const builder = createDefaultApplicationProfileBuilder({ iri: "http://example.com/model" });
   builder.classProfile({
     iri: "http://example.com/class-1",

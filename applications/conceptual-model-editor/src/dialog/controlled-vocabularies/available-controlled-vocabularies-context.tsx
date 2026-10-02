@@ -1,3 +1,10 @@
+/**
+ * This provider is a temporary solution to provide access to controlled vocabulary models trough model-store.
+ * This approach is used because the CME does not support frontend model store yet, 
+ * so model store is used only to enable controlled vocabulary assignment component.
+ * Once CME properly supports model store in the future, this provider and `useAvailableControlledVocabularies` should be unified.
+ * This future work is recorded in issue#1558 https://github.com/dataspecer/dataspecer/issues/1558
+ */
 import React, { createContext, useContext } from "react";
 import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 import { useAvailableControlledVocabularies } from "./use-available-controlled-vocabularies";

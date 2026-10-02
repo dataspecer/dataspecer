@@ -5,7 +5,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc -w",
-    "prebuild": "node -e \"fs.rmSync('lib', { recursive: true, force: true })\""
+    "prebuild": "node -e \"fs.rmSync('lib', { recursive: true, force: true })\"",
+    "test": "vitest run --pass-with-no-tests"
   },
   "exports": {
     ".": "./lib/index.js",
@@ -18,7 +19,9 @@
     "@dataspecer/handlebars-adapter": "*"
   },
   "devDependencies": {
+    "@dataspecer/profile-model": "*",
     "@types/node": "^25.5.2",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.7"
   }
 }

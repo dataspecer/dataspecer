@@ -3,7 +3,7 @@ import { isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRel
 import { Entity, InMemoryEntityModel } from "@dataspecer/core-v2/entity-model";
 import { SemanticModelAggregator } from "@dataspecer/core-v2/semantic-model/aggregator";
 import { LanguageString, SemanticModelClass, SemanticModelEntity, SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
-import { isSemanticModelClassProfile, isSemanticModelRelationshipProfile, SemanticModelClassProfile, SemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
+import { ControlledVocabularyAssignment, Qualifier, isControlledVocabularyAssignment, isSemanticModelClassProfile, isSemanticModelRelationshipProfile, SemanticModelClassProfile, SemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { getTranslation } from "@dataspecer/core-v2/utils/language";
 import { createHandlebarsAdapter, HandlebarsAdapter } from "@dataspecer/handlebars-adapter";
 import { StructureModel } from '@dataspecer/core/structure-model/model/structure-model';
@@ -13,6 +13,16 @@ export interface DocumentationGeneratorConfiguration {
   language: string;
   partials: Record<string, string>;
 }
+
+/**
+ * An entity with the result of its aggregation, which the generator attaches
+ * to each entity. `aggregation` is the aggregated entity itself,
+ * `aggregationParents` are the entities it was aggregated from.
+ */
+type WithAggregation<EntityType extends Entity = Entity, AggregationType extends Entity = Entity> = EntityType & {
+  aggregation?: AggregationType;
+  aggregationParents?: Entity[];
+};
 
 type ClassLike = SemanticModelClass | SemanticModelClassProfile;
 type RelationshipLike = SemanticModelRelationship | SemanticModelRelationshipProfile;
@@ -108,7 +118,7 @@ export async function generateDocumentation(
   const models = structuredClone(inputModel.models);
 
   // Primary semantic model
-  const semanticModel = {} as Record<string, Entity & {aggregation?: Entity, aggregationParents?: Entity[]}>;
+  const semanticModel = {} as Record<string, WithAggregation>;
   for (const model of models) {
     if (model.isPrimary) {
       Object.assign(semanticModel, model.entities);
@@ -128,14 +138,14 @@ export async function generateDocumentation(
   // We need to modify all the models
   for (const model of models) {
     for (const entity of Object.values(model.entities)) {
-      const entityWithAggregation = entity as Entity & {aggregation?: Entity, aggregationParents?: Entity[]};
+      const entityWithAggregation = entity as WithAggregation;
       entityWithAggregation.aggregation = aggregatedEntities[entity.id]?.aggregatedEntity!;
       entityWithAggregation.aggregationParents = aggregatedEntities[entity.id]?.sources.map(s => s.aggregatedEntity);
     }
   }
 
   const sortedSemanticModel = Object.values(semanticModel).sort((a, b) => {
-    const getOrder = (entity: Entity & {aggregation?: Entity}): string | null => {
+    const getOrder = (entity: WithAggregation): string | null => {
       if (isSemanticModelClassProfile(entity)) return entity.order ?? null;
       if (isSemanticModelRelationshipProfile(entity)) return entity.ends?.[1]?.order ?? null;
       if (isSemanticModelClass(entity)) return entity.order ?? null;
@@ -154,6 +164,29 @@ export async function generateDocumentation(
     const bLang = getLabel(b.aggregation, configuration.language);
     return aLang.localeCompare(bLang);
   });
+
+  // Controlled vocabulary assignments are separate entities that class profiles reference by id.
+  const resolveAssignments = (assignmentIds: string[]): ControlledVocabularyAssignment[] =>
+    assignmentIds
+      .map(id => aggregatedEntities[id]?.aggregatedEntity ?? null)
+      .filter(isControlledVocabularyAssignment);
+
+  // Resolve the controlled vocabulary assignments on class pofiles,
+  // attach the assignments directly so that the templates can read them.
+  // The assignments are taken from the aggregated class profile, because
+  // that includes the ones inherited from the profiled class profiles,
+  // not only the profile's own.
+  for (const entity of sortedSemanticModel) {
+    // controlled vocabulary assignments are present only in class profiles
+    if (!isSemanticModelClassProfile(entity)) {
+      continue;
+    }
+    const classProfile = entity as WithAggregation<SemanticModelClassProfile, SemanticModelClassProfile> & {
+      resolvedControlledVocabularies?: ControlledVocabularyAssignment[];
+    };
+    const assignmentIds = classProfile.aggregation?.controlledVocabularies ?? [];
+    classProfile.resolvedControlledVocabularies = resolveAssignments(assignmentIds);
+  }
 
   // Add all relationships to each entity
   // We know, that each relationship profile MUST have its concept present in the model so we do not need to enumerate rest
@@ -176,6 +209,16 @@ export async function generateDocumentation(
           if (concept) {
             concept.backwardsRelationships = concept.backwardsRelationships || [];
             concept.backwardsRelationships.push(entity);
+
+            // Properties do not carry their own controlled vocabulary
+            // assignments. Instead, a property derives one from its range:
+            // if the range is a class profile that itself has controlled
+            // vocabularies (including ones merged in from its own profiling
+            // chain), the property inherits that same, already-resolved list.
+            const rangeControlledVocabularies = (concept as ClassLike & {resolvedControlledVocabularies?: ControlledVocabularyAssignment[]}).resolvedControlledVocabularies;
+            if (rangeControlledVocabularies?.length) {
+              (entity as RelationshipLike & {derivedControlledVocabularies?: ControlledVocabularyAssignment[]}).derivedControlledVocabularies = rangeControlledVocabularies;
+            }
           }
         }
       }
@@ -183,6 +226,25 @@ export async function generateDocumentation(
   }
 
   const locallyDefinedSemanticEntityByTags = Object.groupBy(sortedSemanticModel, entity => (entity as SemanticModelClassProfile)?.tags?.[0] || "default");
+
+  // Reversed view of derived controlled vocabulary usages: for each
+  // qualifier, one entry per (vocabulary, property) pair, for the "which
+  // properties require this vocabulary" summary section.
+  const controlledVocabularyUsagesByQualifier: Record<string, (ControlledVocabularyAssignment & {
+    property: RelationshipLike;
+  })[]> = {};
+  for (const entity of sortedSemanticModel) {
+    if (!(isSemanticModelRelationship(entity) || isSemanticModelRelationshipProfile(entity))) {
+      continue;
+    }
+    const assignments = (entity as RelationshipLike & {derivedControlledVocabularies?: ControlledVocabularyAssignment[]}).derivedControlledVocabularies;
+    for (const assignment of assignments ?? []) {
+      (controlledVocabularyUsagesByQualifier[assignment.qualifier] ??= []).push({
+        ...assignment,
+        property: entity,
+      });
+    }
+  }
 
   const handlebarsAdapter = createHandlebarsAdapter();
 
@@ -200,6 +262,8 @@ export async function generateDocumentation(
     },
 
     classProfilesByTags: Object.groupBy(sortedSemanticModel.filter(entity => isSemanticModelClassProfile(entity)), entity => (entity as SemanticModelClassProfile)?.tags?.[0] || "default"),
+
+    controlledVocabularyUsagesByQualifier,
 
     dsv: inputModel.dsv,
 
@@ -445,6 +509,36 @@ export async function generateDocumentation(
       }
     }
     return entities;
+  };
+
+  /**
+   * Text of a qualifier as shown in the documentation, e.g. "AT LEAST ONE".
+   */
+  data['qualifierLabel'] = function(qualifier: Qualifier): string {
+    return qualifier.toUpperCase().replaceAll("-", " ");
+  };
+
+  /**
+   * Follows the chain of controlled vocabulary assignments replacements, strting from the given assignment.
+   * An assignment replaces at most one other assignment, so the result is a list.
+   * The list ends when the replaced assignment is not in the models, 
+   * when it is referenced by IRI from an imported specification
+   * or when it would repeat an assignment.
+   */
+  data['replacedAssignments'] = function(assignment: ControlledVocabularyAssignment): ControlledVocabularyAssignment[] {
+    const chain: ControlledVocabularyAssignment[] = [];
+    const visited = new Set<string>([assignment.id]);
+    let current = assignment;
+    while (current.replaces?.kind === "local") {
+      const replaced = aggregatedEntities[current.replaces.target]?.aggregatedEntity ?? null;
+      if (!isControlledVocabularyAssignment(replaced) || visited.has(replaced.id)) {
+        break;
+      }
+      visited.add(replaced.id);
+      chain.push(replaced);
+      current = replaced;
+    }
+    return chain;
   };
 
   const result = await handlebarsAdapter.render(configuration.template, data, configuration.partials);

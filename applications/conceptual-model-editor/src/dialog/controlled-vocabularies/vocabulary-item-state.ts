@@ -8,7 +8,7 @@ export interface VocabularyItemState {
    * Stable per-instance UI identifier - not persisted, used to address a
    * row for dialog interactions (React keys, presenter dispatch).
    */
-  key: string;
+  id: string;
 
   /**
    * This class profile's own persisted ControlledVocabularyAssignment id,
@@ -16,7 +16,7 @@ export interface VocabularyItemState {
    * item that has not been overridden, or a row added/overridden during
    * this dialog session that has not been saved yet.
    */
-  id: EntityDsIdentifier | null;
+  entityId: EntityDsIdentifier | null;
 
   vocabulary: ControlledVocabulary;
 
@@ -54,5 +54,5 @@ export function createVocabularyItemState(
   qualifier: Qualifier,
   inherited: InheritedQualifierState | null,
 ): VocabularyItemState {
-  return { key: crypto.randomUUID(), id: null, vocabulary, qualifier, inherited };
+  return { id: crypto.randomUUID(), entityId: null, vocabulary, qualifier, inherited };
 }

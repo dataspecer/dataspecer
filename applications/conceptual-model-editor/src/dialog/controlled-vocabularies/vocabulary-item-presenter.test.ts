@@ -15,42 +15,42 @@ describe("test createVocabularyItemPresenter", () => {
 
   test("After enabling override the inherited qualifier value is used", () => {
     let state: VocabularyItemState = {
-      key: "1",
-      id: null,
+      id: "1",
+      entityId: null,
       vocabulary: VOCABULARY,
-      qualifier: "MUST",
-      inherited: { assignmentId: "cv-1", qualifier: "MUST", overrideEnabled: false },
+      qualifier: "must",
+      inherited: { assignmentId: "cv-1", qualifier: "must", overrideEnabled: false },
     };
     const presenter = createVocabularyItemPresenter(next => { state = next(state); });
 
     presenter.onOverrideToggle();
 
     expect(state.inherited?.overrideEnabled).toBe(true);
-    expect(state.qualifier).toBe("MUST");
+    expect(state.qualifier).toBe("must");
   });
 
   test("Disabling override reverts qualifier to the inherited value.", () => {
     let state: VocabularyItemState = {
-      key: "1",
-      id: "own-1",
+      id: "1",
+      entityId: "own-1",
       vocabulary: VOCABULARY,
-      qualifier: "RECOMMENDED",
-      inherited: { assignmentId: "cv-1", qualifier: "MUST", overrideEnabled: true },
+      qualifier: "recommended",
+      inherited: { assignmentId: "cv-1", qualifier: "must", overrideEnabled: true },
     };
     const presenter = createVocabularyItemPresenter(next => { state = next(state); });
 
     presenter.onOverrideToggle();
 
     expect(state.inherited?.overrideEnabled).toBe(false);
-    expect(state.qualifier).toBe("MUST");
+    expect(state.qualifier).toBe("must");
   });
 
   test("Is a no-op for items that are not inherited.", () => {
     const initial: VocabularyItemState = {
-      key: "1",
-      id: "own-1",
+      id: "1",
+      entityId: "own-1",
       vocabulary: VOCABULARY,
-      qualifier: "MAY",
+      qualifier: "may",
       inherited: null,
     };
     let state = initial;
@@ -63,33 +63,33 @@ describe("test createVocabularyItemPresenter", () => {
 
   test("Changes the qualifier of an overridden inherited item.", () => {
     let state: VocabularyItemState = {
-      key: "1",
-      id: "own-1",
+      id: "1",
+      entityId: "own-1",
       vocabulary: VOCABULARY,
-      qualifier: "MUST",
-      inherited: { assignmentId: "cv-1", qualifier: "MUST", overrideEnabled: true },
+      qualifier: "must",
+      inherited: { assignmentId: "cv-1", qualifier: "must", overrideEnabled: true },
     };
     const presenter = createVocabularyItemPresenter(next => { state = next(state); });
 
-    presenter.onQualifierChange("RECOMMENDED");
+    presenter.onQualifierChange("recommended");
 
-    expect(state.qualifier).toBe("RECOMMENDED");
-    expect(state.inherited?.qualifier).toBe("MUST");
+    expect(state.qualifier).toBe("recommended");
+    expect(state.inherited?.qualifier).toBe("must");
   });
 
   test("Changes the qualifier of an added item.", () => {
     let state: VocabularyItemState = {
-      key: "1",
-      id: "own-1",
+      id: "1",
+      entityId: "own-1",
       vocabulary: VOCABULARY,
-      qualifier: "AT_LEAST_1",
+      qualifier: "at-least-one",
       inherited: null,
     };
     const presenter = createVocabularyItemPresenter(next => { state = next(state); });
 
-    presenter.onQualifierChange("MAY");
+    presenter.onQualifierChange("may");
 
-    expect(state.qualifier).toBe("MAY");
+    expect(state.qualifier).toBe("may");
   });
 
 });

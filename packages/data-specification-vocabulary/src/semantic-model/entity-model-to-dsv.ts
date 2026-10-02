@@ -414,7 +414,7 @@ class EntityListContainerToDsv {
    * `local` - should resolve to an assignment entity
    */
   private resolveControlledVocabularyAssignmentReplaces(
-    replaces: ControlledVocabularyAssignmentReplaces,
+    replaces: ControlledVocabularyAssignmentReplaces | null,
   ): string | null {
     if (replaces === null) {
       return null;

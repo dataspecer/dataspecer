@@ -7,7 +7,7 @@ import {
   createSelectControlledVocabulariesPresenter,
 } from "./select-controlled-vocabularies-presenter";
 import {
-  findDuplicateVocabularyItemKeys,
+  findDuplicateVocabularyItemIds,
   hasControlledVocabularyConflict,
   SelectControlledVocabulariesState,
 } from "./select-controlled-vocabularies-state";
@@ -22,8 +22,8 @@ export function SelectControlledVocabulariesView(
   );
   const state = props.state;
   const hasConflict = hasControlledVocabularyConflict(state);
-  const duplicateItemKeys = findDuplicateVocabularyItemKeys(state);
-  const hasDuplicates = duplicateItemKeys.size > 0;
+  const duplicateItemIds = findDuplicateVocabularyItemIds(state);
+  const hasDuplicates = duplicateItemIds.size > 0;
   const inheritedItems = state.items.filter(item => item.inherited !== null);
   const addedItems = state.items.filter(item => item.inherited === null);
 
@@ -34,10 +34,10 @@ export function SelectControlledVocabulariesView(
           <p className="text-sm text-gray-500">From profiled</p>
           {inheritedItems.map(item => (
             <VocabularyItemView
-              key={item.key}
+              key={item.id}
               state={item}
-              presenter={presenter.getItemPresenter(item.key)}
-              isDuplicate={duplicateItemKeys.has(item.key)}
+              presenter={presenter.getItemPresenter(item.id)}
+              isDuplicate={duplicateItemIds.has(item.id)}
             />
           ))}
         </div>
@@ -48,11 +48,11 @@ export function SelectControlledVocabulariesView(
           <p className="text-sm text-gray-500">In this profile</p>
           {addedItems.map(item => (
             <VocabularyItemView
-              key={item.key}
+              key={item.id}
               state={item}
-              presenter={presenter.getItemPresenter(item.key)}
-              onRemove={() => presenter.onRemove(item.key)}
-              isDuplicate={duplicateItemKeys.has(item.key)}
+              presenter={presenter.getItemPresenter(item.id)}
+              onRemove={() => presenter.onRemove(item.id)}
+              isDuplicate={duplicateItemIds.has(item.id)}
             />
           ))}
         </div>
