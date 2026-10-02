@@ -7,7 +7,7 @@ import {
   SemanticModelAggregator,
   VocabularyAggregator,
 } from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
-import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
+import type { Entity, EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import { isApplicationProfileHierarchyEntity, isSpecificationHierarchyEntity, isVocabularyHierarchyEntity, type ModelHierarchyEntity, type SpecificationHierarchyEntity } from "@dataspecer/model-hierarchy";
 import { getProvidedSourceSemanticModel } from "./cim-adapter.ts";
@@ -244,7 +244,7 @@ class SemanticModelAggregatorBuilder {
 
   private buildVocabulary(modelId: ModelIdentifier): SemanticModelAggregator {
     const model = this.getSemanticModel(modelId);
-    const mainEntity = getMainEntity(model.getEntities()) as Record<string, unknown> | null;
+    const mainEntity = getMainEntity(model.getEntities()) as (Entity & Record<string, unknown>) | null;
 
     if (mainEntity?.["caches"]) {
       const cimAdapter = getProvidedSourceSemanticModel(mainEntity["caches"] as any[]);

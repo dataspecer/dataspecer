@@ -36,6 +36,7 @@ import {
 } from "./utils.ts";
 import { artefactToDsv } from "./v1/artefact-to-dsv.ts";
 import { MainEntity as RdfsModelMainEntity } from "@dataspecer/model-store/implementation";
+import { generateApplicationProfileSvg } from "./application-profile-diagram.ts";
 
 /**
  * Id under which the project model (the package hierarchy) is stored in the
@@ -632,6 +633,37 @@ export async function generateSpecification(packageId: string, context: Generate
         iri: null,
         url: resourceUrl,
 
+        role: dsvMetadataWellKnown.role.guidance,
+        formatMime: dsvMetadataWellKnown.formatMime.svg,
+        conformsTo: [dsvMetadataWellKnown.conformsTo.svg],
+        additionalRdfTypes: [],
+      } satisfies ResourceDescriptor;
+      allModelsHasResource.forEach((hasResource) => hasResource.push(descriptor));
+    }
+  }
+
+  if (visualModels.length === 0 && hasApplicationProfile) {
+    const applicationProfile = modelDescriptions.find((model) => model.isPrimary && isModelProfile(model.entities));
+    if (applicationProfile?.id) {
+      const svg = await generateApplicationProfileSvg(
+        packageId,
+        applicationProfile.id,
+        applicationProfile.entities,
+        allModels,
+        prefixMap,
+      );
+      const resourceFileName = packageId + ".svg";
+      const resourceUrl = baseUrl + resourceFileName + queryParams;
+
+      await writeFile(resourceFileName, svg);
+      externalArtifacts["svg"] = [
+        ...(externalArtifacts["svg"] ?? []),
+        { type: "svg", URL: resourceUrl, label: rootPackageEntity.label },
+      ];
+
+      const descriptor = {
+        iri: null,
+        url: resourceUrl,
         role: dsvMetadataWellKnown.role.guidance,
         formatMime: dsvMetadataWellKnown.formatMime.svg,
         conformsTo: [dsvMetadataWellKnown.conformsTo.svg],

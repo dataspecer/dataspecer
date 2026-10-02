@@ -1,15 +1,15 @@
-import { Graph, isSubgraph, MainGraph } from "../../graph/representation/graph.ts";
-
-
-
-import ELK from "elkjs/lib/elk.bundled.js"; // Importing non-standard export
-
-import { ElkNode, ElkExtendedEdge, type ELK as ELKType } from "elkjs/lib/elk-api.js"; // Importing non-standard export
-
-import { ConfigurationsContainer, ElkConfigurationsContainer } from "../../configurations/configurations-container.ts";
+import type {
+    ELKConstructorArguments,
+    ElkExtendedEdge,
+    ElkNode,
+    ELK as ELKType,
+} from "elkjs";
+import ELK from "elkjs/lib/elk.bundled.js";
 import _ from "lodash";
-import { LayoutAlgorithm } from "../layout-algorithms-interfaces.ts";
+import { ConfigurationsContainer, ElkConfigurationsContainer } from "../../configurations/configurations-container.ts";
+import { Graph, isSubgraph, MainGraph } from "../../graph/representation/graph.ts";
 import { ElkGraphTransformer } from "../graph-transformers/elk-graph-transformer.ts";
+import { LayoutAlgorithm } from "../layout-algorithms-interfaces.ts";
 
 
 /**
@@ -65,11 +65,6 @@ function removeEdgesLeadingToSubgraphInsideSubgraph(subgraph: ElkNode): [ElkExte
  * Class which handles the act of layouting within the ELK layouting library. For more info check docs of {@link LayoutAlgorithm} interface, which this class implements.
  */
 export class ElkLayout implements LayoutAlgorithm {
-    constructor() {
-        // @ts-ignore Issues with importing ELK
-        this.elk = new ELK();
-    }
-
     prepareFromGraph(graph: Graph, configurations: ElkConfigurationsContainer): void {
         this.graph = graph
         this.elkGraphTransformer = new ElkGraphTransformer(graph, configurations);
@@ -128,7 +123,15 @@ export class ElkLayout implements LayoutAlgorithm {
         });
     }
 
-    private elk: ELKType;
+    private elkInstance: ELKType | null = null;
+
+    private get elk(): ELKType {
+        if (this.elkInstance === null) {
+            this.elkInstance = createElkInstance();
+        }
+        return this.elkInstance;
+    }
+
     protected graph: Graph;
     protected graphInElk: ElkNode;
     private getGraphInElk(): ElkNode {
@@ -136,4 +139,31 @@ export class ElkLayout implements LayoutAlgorithm {
     }
     protected configurations: ConfigurationsContainer;
     private elkGraphTransformer: ElkGraphTransformer;
+}
+
+/**
+ * At the time of writing this function, Bun does not support the Web Worker
+ * API. Furthermore, ELK uses weird hacks to detect if it is running in a Web
+ * Worker or not and this collides with Bun's runtime.
+ */
+function createElkInstance(): ELKType {
+    const ElkConstructor = ELK as unknown as new (options?: ELKConstructorArguments) => ELKType;
+    const bunRuntime = globalThis as typeof globalThis & {
+        Bun?: unknown;
+        Worker?: new (url: string) => unknown;
+    };
+    if (bunRuntime.Bun === undefined) {
+        return new ElkConstructor();
+    }
+
+    const WorkerConstructor = bunRuntime.Worker;
+    if (WorkerConstructor === undefined) {
+        throw new Error("Bun's Worker API is required to run ELK layouts in Bun.");
+    }
+
+    const workerUrl = import.meta.resolve("elkjs/lib/elk-worker.min.js");
+    return new ElkConstructor({
+        workerFactory: () => new WorkerConstructor(workerUrl) as
+            ReturnType<NonNullable<ELKConstructorArguments["workerFactory"]>>,
+    });
 }
