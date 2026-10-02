@@ -33,6 +33,7 @@ test("Round-trips controlled vocabularies with no prior iri through a DCAT catal
       title: "Geonames",
       pattern: "",
       references: "http://www.geonames.org/",
+      conformsToSkos: false,
       documentation: "",
       distribution: { downloadUrl: "", accessUrl: "https://example.com/geonames" },
     }),
@@ -47,6 +48,7 @@ test("Round-trips controlled vocabularies with no prior iri through a DCAT catal
     expect(match).toBeDefined();
     expect(match!.title).toBe(source.title);
     expect(match!.pattern).toBe(source.pattern);
+    expect(match!.conformsToSkos).toBe(source.conformsToSkos);
     expect(match!.documentation).toBe(source.documentation);
     expect(match!.distribution).toStrictEqual(source.distribution);
     // Freshly minted on parse - unrelated to the source id, but stable and non-empty.
@@ -56,6 +58,19 @@ test("Round-trips controlled vocabularies with no prior iri through a DCAT catal
     // the parser then reads back as this vocabulary's own iri.
     expect(match!.iri).toBe(controlledVocabularyDatasetIri(CATALOG_IRI, source.id));
   }
+});
+
+test("Writes dct:conformsTo skos only for vocabularies that conform to SKOS.", async () => {
+  const turtle = await controlledVocabulariesToDcatCatalog(CATALOG_IRI, [
+    vocabulary({ id: "skos", references: "http://example.com/scheme", conformsToSkos: true }),
+    vocabulary({ id: "other", references: "http://example.com/download", conformsToSkos: false }),
+  ]);
+
+  const quads = turtleToQuads(turtle);
+  const conformsTo = quads.filter((q) => q.predicate.value === "http://purl.org/dc/terms/conformsTo");
+  expect(conformsTo).toHaveLength(1);
+  expect(conformsTo[0]!.subject.value).toBe(controlledVocabularyDatasetIri(CATALOG_IRI, "skos"));
+  expect(conformsTo[0]!.object.value).toBe("http://www.w3.org/2004/02/skos/core");
 });
 
 test("A vocabulary with an existing iri keeps it through export instead of minting a new one.", async () => {

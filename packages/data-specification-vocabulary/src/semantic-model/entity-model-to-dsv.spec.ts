@@ -25,6 +25,7 @@ import { CONTROLLED_VOCABULARY_TYPE, controlledVocabularyDatasetIri } from "@dat
 const CONTROLLED_VOCABULARY = {
     id: "voc-1", type: [CONTROLLED_VOCABULARY_TYPE],
     title: "Test Vocab", pattern: "", references: "http://vocab.example.com/scheme",
+    conformsToSkos: true,
     documentation: "", distribution: { downloadUrl: "", accessUrl: "" }, iri: null,
 } as any;
 
