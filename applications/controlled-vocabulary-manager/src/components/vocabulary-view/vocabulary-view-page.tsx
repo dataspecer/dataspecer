@@ -39,7 +39,14 @@ export function VocabularyViewPage({ vocabulary, onClose }: VocabularyViewPagePr
       <Card>
         <CardContent className="p-5 space-y-4">
           <Field label={t("form.field.name")} value={vocabulary.title} />
-          <Field label={t("form.field.iri")} value={vocabulary.references} />
+          <Field
+            label={t("view.field.conformsToSkos")}
+            value={vocabulary.conformsToSkos ? t("view.value.yes") : t("view.value.no")}
+          />
+          <Field
+            label={vocabulary.conformsToSkos ? t("form.field.iri") : t("view.field.mainReference")}
+            value={vocabulary.references}
+          />
           <Field label={t("form.field.regex")} value={vocabulary.pattern} />
           <Field label={t("form.field.downloadUrl")} value={vocabulary.distribution.downloadUrl} />
           <Field label={t("form.field.docsUrl")} value={vocabulary.documentation} />

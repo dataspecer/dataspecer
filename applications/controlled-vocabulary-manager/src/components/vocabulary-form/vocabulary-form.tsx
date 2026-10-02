@@ -6,6 +6,7 @@ import { z } from "zod"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Switch } from "@/components/ui/switch"
 import {
   Form,
   FormControl,
@@ -17,8 +18,16 @@ import {
 import { useVocabulariesContext } from "@/contexts/vocabularies-context"
 import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model"
 
+/**
+ * Which of the vocabulary's URLs is used as its main reference when it is not SKOS-based. 
+ * Only exists in the form - the chosen URL is what gets stored as `references`.
+ */
+type ReferenceSource = "download" | "documentation"
+
 interface VocabularyFormValues {
   title: string
+  conformsToSkos: boolean
+  referenceSource: ReferenceSource
   references: string
   pattern: string
   downloadUrl: string
@@ -32,6 +41,19 @@ interface VocabularyFormProps {
   onConfirm: (vocabulary: Omit<ControlledVocabulary, 'id' | 'type'>) => void
 }
 
+function initialReferenceSource(vocabulary?: ControlledVocabulary): ReferenceSource {
+  if (
+    vocabulary !== undefined
+    && !vocabulary.conformsToSkos
+    && vocabulary.references !== ""
+    && vocabulary.references === vocabulary.documentation
+    && vocabulary.references !== vocabulary.distribution.downloadUrl
+  ) {
+    return "documentation"
+  }
+  return "download"
+}
+
 export function VocabularyForm({
   initialValues,
   currentVocabularyId,
@@ -43,7 +65,9 @@ export function VocabularyForm({
 
   const schema = useMemo(() => z.object({
     title: z.string().min(1, t("form.validation.requiredField")),
-    references: z.string().min(1, t("form.validation.requiredField")).url(t("form.validation.invalidUrl")),
+    conformsToSkos: z.boolean(),
+    referenceSource: z.enum(["download", "documentation"]),
+    references: z.string(),
     pattern: z.string().refine(
       (val) => {
         if (!val) return true;
@@ -53,6 +77,17 @@ export function VocabularyForm({
     ),
     downloadUrl: z.string().min(1, t("form.validation.requiredField")).url(t("form.validation.invalidUrl")),
     documentation: z.union([z.literal(""), z.string().url(t("form.validation.invalidUrl"))]),
+  }).superRefine((values, context) => {
+    if (values.conformsToSkos) {
+      // The scheme IRI is only entered for SKOS-based vocabularies.
+      if (values.references === "") {
+        context.addIssue({ code: "custom", path: ["references"], message: t("form.validation.requiredField") })
+      } else if (!z.string().url().safeParse(values.references).success) {
+        context.addIssue({ code: "custom", path: ["references"], message: t("form.validation.invalidUrl") })
+      }
+    } else if (values.referenceSource === "documentation" && values.documentation === "") {
+      context.addIssue({ code: "custom", path: ["documentation"], message: t("form.validation.requiredField") })
+    }
   }), [t])
 
   const form = useForm<VocabularyFormValues>({
@@ -60,6 +95,8 @@ export function VocabularyForm({
     mode: "onTouched",
     defaultValues: {
       title: initialValues?.title ?? "",
+      conformsToSkos: initialValues?.conformsToSkos ?? true,
+      referenceSource: initialReferenceSource(initialValues),
       references: initialValues?.references ?? "",
       pattern: initialValues?.pattern ?? "",
       downloadUrl: initialValues?.distribution.downloadUrl ?? "",
@@ -67,14 +104,23 @@ export function VocabularyForm({
     },
   })
 
+  const conformsToSkos = form.watch("conformsToSkos")
+  const referenceSource = form.watch("referenceSource")
+
   const handleSubmit = (values: VocabularyFormValues) => {
-    // Check if the vocabulary's IRI already exists in other vocabularies
-    const existingVocab = vocabularies.find((v) => v.references === values.references)
+    // SKOS-based vocabularies are referenced by their scheme IRI, others by
+    // the URL chosen as their main reference.
+    const references = values.conformsToSkos
+      ? values.references
+      : values.referenceSource === "documentation" ? values.documentation : values.downloadUrl
+
+    // Check if the vocabulary's reference already exists in other vocabularies
+    const existingVocab = vocabularies.find((v) => v.references === references)
     if (existingVocab && existingVocab.id !== currentVocabularyId) {
-      form.setError("references", {
-        type: "manual",
-        message: t("form.validation.duplicateIri"),
-      })
+      form.setError(
+        values.conformsToSkos ? "references" : values.referenceSource === "documentation" ? "documentation" : "downloadUrl",
+        { type: "manual", message: t("form.validation.duplicateIri") },
+      )
       return
     }
 
@@ -84,7 +130,8 @@ export function VocabularyForm({
     // a fresh one is generated on the next DSV export.
     const vocabulary: Omit<ControlledVocabulary, 'id' | 'type'> = {
       title: values.title,
-      references: values.references,
+      references,
+      conformsToSkos: values.conformsToSkos,
       pattern: values.pattern,
       documentation: values.documentation,
       distribution: {
@@ -119,27 +166,79 @@ export function VocabularyForm({
             />
             <FormField
               control={form.control}
-              name="references"
+              name="conformsToSkos"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>
-                    {t("form.field.iri")}
-                    <span className="text-destructive"> *</span>
-                  </FormLabel>
-                  <FormControl>
-                    <Input placeholder={t("form.placeholder.iri")} {...field} />
-                  </FormControl>
-                  <FormMessage />
+                  <div className="flex items-center gap-3">
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={(checked) =>
+                          form.setValue("conformsToSkos", checked, { shouldValidate: true })
+                        }
+                      />
+                    </FormControl>
+                    <FormLabel>{t("form.field.conformsToSkos")}</FormLabel>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{t("form.field.conformsToSkos.hint")}</p>
                 </FormItem>
               )}
             />
+            {/*
+              Both variants stay mounted and only the applicable one is shown:
+              react-hook-form drops the value of an unmounted field, which
+              would leave it missing from the values the schema validates.
+            */}
+            <div className={conformsToSkos ? undefined : "hidden"}>
+              <FormField
+                control={form.control}
+                name="references"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t("form.field.iri")}
+                      <span className="text-destructive"> *</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input placeholder={t("form.placeholder.iri")} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className={conformsToSkos ? "hidden" : undefined}>
+              <FormField
+                control={form.control}
+                name="referenceSource"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.field.referenceSource")}</FormLabel>
+                    <div className="flex gap-2">
+                      {(["download", "documentation"] as const).map((source) => (
+                        <Button
+                          key={source}
+                          type="button"
+                          size="xsm"
+                          variant={field.value === source ? "default" : "outline"}
+                          aria-pressed={field.value === source}
+                          onClick={() => form.setValue("referenceSource", source, { shouldValidate: true })}
+                        >
+                          {t(source === "download" ? "form.field.downloadUrl" : "form.field.docsUrl")}
+                        </Button>
+                      ))}
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </div>
             <FormField
               control={form.control}
               name="pattern"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    {t("form.field.regex")}
+                    {t(conformsToSkos ? "form.field.regex" : "form.field.regexOther")}
                   </FormLabel>
                   <FormControl>
                     <Input placeholder={t("form.placeholder.regex")} {...field} />
@@ -171,6 +270,9 @@ export function VocabularyForm({
                 <FormItem>
                   <FormLabel>
                     {t("form.field.docsUrl")}
+                    {!conformsToSkos && referenceSource === "documentation" && (
+                      <span className="text-destructive"> *</span>
+                    )}
                   </FormLabel>
                   <FormControl>
                     <Input placeholder={t("form.placeholder.docsUrl")} {...field} />
