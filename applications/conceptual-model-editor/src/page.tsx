@@ -208,31 +208,29 @@ const Page = () => {
   }, [viewId, aggregatorView, aggregator]);
 
   return (
-    <OptionsContextProvider>
-      <ModelGraphContext.Provider value={modelGraphContext}>
-        <ClassesContext.Provider value={classesContext}>
-          <LayoutConfigurationContext.Provider value={layoutConfigurationContext}>
-            <DialogContextProvider>
-              <ActionsContextProvider>
-                <Header />
-                <main className="w-full flex-grow bg-teal-50 md:h-[calc(100%-48px)]">
-                  <VerticalSplitter
-                    className="h-full"
-                    initialSize={preferences().pageSplitterValue}
-                    onSizeChange={value => updatePreferences({ pageSplitterValue: value })}
-                  >
-                    <Catalog />
-                    <Visualization />
-                  </VerticalSplitter>
-                </main>
-                <NotificationList />
-                <DialogRenderer />
-              </ActionsContextProvider>
-            </DialogContextProvider>
-          </LayoutConfigurationContext.Provider>
-        </ClassesContext.Provider>
-      </ModelGraphContext.Provider>
-    </OptionsContextProvider >
+    <ModelGraphContext.Provider value={modelGraphContext}>
+      <ClassesContext.Provider value={classesContext}>
+        <LayoutConfigurationContext.Provider value={layoutConfigurationContext}>
+          <DialogContextProvider>
+            <ActionsContextProvider>
+              <Header />
+              <main className="w-full flex-grow bg-teal-50 md:h-[calc(100%-48px)]">
+                <VerticalSplitter
+                  className="h-full"
+                  initialSize={preferences().pageSplitterValue}
+                  onSizeChange={value => updatePreferences({ pageSplitterValue: value })}
+                >
+                  <Catalog />
+                  <Visualization />
+                </VerticalSplitter>
+              </main>
+              <NotificationList />
+              <DialogRenderer />
+            </ActionsContextProvider>
+          </DialogContextProvider>
+        </LayoutConfigurationContext.Provider>
+      </ClassesContext.Provider>
+    </ModelGraphContext.Provider>
   );
 };
 
@@ -243,7 +241,9 @@ const PageWrapper = () => {
   // <ThemeProvider defaultTheme="dark" storageKey="dataspecer-cme-ui-theme">
   return (
     <QueryParamsProvider>
-      <Page />
+      <OptionsContextProvider>
+        <Page />
+      </OptionsContextProvider>
     </QueryParamsProvider>
   )
 }
