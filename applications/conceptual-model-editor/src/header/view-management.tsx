@@ -11,7 +11,7 @@ export const ViewManagement = () => {
   const {
     aggregatorView,
     visualModels,
-    removeVisualModel
+    deleteVisualModel: removeVisualModel
   } = useModelGraphContext();
   const { language } = useOptions();
 

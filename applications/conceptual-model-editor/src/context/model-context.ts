@@ -1,4 +1,4 @@
-import React, { useContext, useMemo, useState } from "react";
+import React, { useContext, useMemo } from "react";
 
 import {
   SemanticModelAggregator,
@@ -30,19 +30,19 @@ interface ModelGraphContext {
 
   reloadView(): void;
 
-  selectVisualModel(identifier: ModelDsIdentifier | null): void;
+  selectActiveVisualModel(identifier: ModelDsIdentifier | null): void;
 
   addSemanticModel(model: EntityModel): void;
 
   addVisualModel(model: VisualModel): void;
 
-  deleteModel: (model: EntityModel) => void;
+  deleteModel: (model: ModelDsIdentifier) => void;
 
-  deleteVisualModel: (model: VisualModel) => void;
+  deleteVisualModel: (model: ModelDsIdentifier) => void;
 
 };
 
-export const ModelGraphContext = React.createContext(null as unknown as ModelGraphContext);
+const ModelGraphContext = React.createContext(null as any);
 
 export function ModelContextProvider(props: {
   aggregator: SemanticModelAggregatorType,
@@ -78,7 +78,7 @@ export function ModelContextProvider(props: {
       reloadView: function (): void {
         setAggregatorView(aggregator.getView());
       },
-      selectVisualModel: function (identifier: ModelDsIdentifier | null): void {
+      selectActiveVisualModel: function (identifier: ModelDsIdentifier | null): void {
         aggregatorView.changeActiveVisualModel(identifier);
         setAggregatorView(aggregator.getView());
         queryParamsContext.updateViewId(identifier);
@@ -91,13 +91,19 @@ export function ModelContextProvider(props: {
         aggregator.addModel(model);
         setVisualModels(prev => [...prev, model]);
       },
-      // setModels,
-      // setVisualModels,
-      deleteModel: (model: EntityModel) => {
+      deleteModel: (identifier: ModelDsIdentifier) => {
+        const model = modelMap.get(identifier);
+        if (model === undefined) {
+          return;
+        }
         aggregator.deleteModel(model);
         setModels(prev => prev.filter(item => item !== model));
       },
-      deleteVisualModel: (model: VisualModel) => {
+      deleteVisualModel: (identifier: ModelDsIdentifier) => {
+        const model = visualModelMap.get(identifier);
+        if (model === undefined) {
+          return;
+        }
         aggregator.deleteModel(model);
         setVisualModels(prev => prev.filter(item => item !== model));
       },
@@ -159,43 +165,24 @@ export function modelGraphContextToUse(context: ModelGraphContext): UseModelGrap
     model.setBaseIri(iri);
   };
 
-  const replaceModels = (entityModels: EntityModel[], visualModels: WritableVisualModel[]) => {
+  const replaceModels = (nextModels: EntityModel[], nextVisualModels: WritableVisualModel[]) => {
     // Remove old models.
-    for (const [_, model] of models) {
-      context.deleteModel(model);
-    }
-    for (const model of visualModels) {
-      context.deleteVisualModel(model);
-    }
+    models.keys().forEach(item => context.deleteModel(item));
+    visualModels.keys().forEach(item => context.deleteVisualModel(item));
     // Set new models.
-    for (const model of visualModels) {
-      context.addVisualModel(model);
-    }
-    for (const model of entityModels) {
-      context.addSemanticModel(model);
-    }
+    nextModels.forEach(item => context.addSemanticModel(item));
+    nextVisualModels.forEach(item => context.addVisualModel(item));
   };
 
-  const removeModel = (modelId: string) => {
-    const model = models.get(modelId);
-    if (!model) {
-      console.error(`No model with id: ${modelId} found.`);
-      return;
-    }
-    // Start be removing all from the visual models.
-    visualModels.forEach(visualModel => deleteEntityModel(
-      visualModel, model.getId()));
+  const deleteModel = (modelId: string) => {
+    // We need to remove all records about this model.
+    visualModels.forEach(visualModel => deleteEntityModel(visualModel, modelId));
     // Now we can remove this from the package.
-    context.deleteModel(model);
+    context.deleteModel(modelId);
   };
 
-  const removeVisualModel = (modelId: string) => {
-    const visualModel = visualModels.get(modelId);
-    if (!visualModel) {
-      console.error(`No model with id: ${modelId} found`);
-      return;
-    }
-    context.deleteVisualModel(visualModel);
+  const deleteVisualModel = (modelId: string) => {
+    context.deleteVisualModel(modelId);
     context.reloadView();
   };
 
@@ -204,29 +191,31 @@ export function modelGraphContextToUse(context: ModelGraphContext): UseModelGrap
     models,
     visualModels,
     //
+    reloadView: () => context.reloadView(),
+    selectActiveVisualModel: (model) => context.selectActiveVisualModel(model),
     addModel,
     addVisualModel,
     setModelAlias,
     setModelIri,
     replaceModels,
-    removeModel,
-    removeVisualModel,
+    deleteModel,
+    deleteVisualModel,
   };
 }
 
 export interface UseModelGraphContextType {
 
-  // aggregator: typeof _semanticModelAggregator;
-
   aggregatorView: SemanticModelAggregatorView;
-
-  // setAggregatorView: (next: SemanticModelAggregatorView) => void;
 
   models: Map<string, EntityModel>;
 
   visualModels: Map<string, WritableVisualModel>;
 
   //
+
+  reloadView: () => void;
+
+  selectActiveVisualModel(identifier: ModelDsIdentifier | null): void;
 
   addModel: (...models: EntityModel[]) => void;
 
@@ -238,10 +227,11 @@ export interface UseModelGraphContextType {
 
   replaceModels: (entityModels: EntityModel[], visualModels: WritableVisualModel[]) => void;
 
-  removeModel: (modelId: string) => void;
+  deleteModel: (modelId: string) => void;
 
-  removeVisualModel: (modelId: string) => void;
+  deleteVisualModel: (modelId: string) => void;
 
 }
 
-export type ModelGraphContextType = ModelGraphContext;
+/* Type alias for easier migration. */
+export type ModelGraphContextType = UseModelGraphContextType;

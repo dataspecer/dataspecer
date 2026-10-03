@@ -397,31 +397,6 @@ export class ActionsTestSuite {
       [visualModel.getIdentifier()]: visualModel
     }));
 
-    const graph: ModelGraphContextType = {
-      aggregatorView,
-      models,
-      visualModels,
-      //
-      addSemanticModel(model) {
-        models.set(model.getId(), model);
-      },
-      addVisualModel(model) {
-        visualModels.set(model.getIdentifier(), model as WritableVisualModel);
-      },
-      reloadView() {
-        throw Error("Not supported during tests!");
-      },
-      deleteModel(model) {
-        models.delete(model.getId());
-      },
-      deleteVisualModel(model) {
-        visualModels.delete(model.getIdentifier());
-      },
-      selectVisualModel() {
-        throw Error("Not supported during tests!");
-      },
-    };
-
     for(let i = 0; i < modelCount; i++) {
       const model = new InMemorySemanticModel();
       if (i === 0) {
@@ -435,7 +410,31 @@ export class ActionsTestSuite {
       createdRelationships.push([]);
     }
 
-    const useGraph = modelGraphContextToUse(graph);
+    const graph = modelGraphContextToUse({
+      aggregatorView,
+      models,
+      visualModels,
+      addSemanticModel(model) {
+        aggregator.addModel(model);
+        models.set(model.getId(), model);
+      },
+      addVisualModel(model) {
+        aggregator.addModel(model);
+        visualModels.set(model.getIdentifier(), model as WritableVisualModel);
+      },
+      deleteModel(model) {
+        models.delete(model);
+      },
+      deleteVisualModel(model) {
+        visualModels.delete(model);
+      },
+      reloadView() {
+        this.aggregatorView = aggregator.getView();
+      },
+      selectActiveVisualModel() {
+        throw Error("Not supported");
+      },
+    });
 
     // Fill with data
 
@@ -499,7 +498,6 @@ export class ActionsTestSuite {
       models,
       modelsAsArray,
       graph,
-      useGraph,
       classesContext
     };
   }

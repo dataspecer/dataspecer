@@ -20,7 +20,7 @@ test("Put 4 visual nodes without edges into visual model with visual diagram nod
   const {
     visualModel,
     graph,
-    useGraph,
+    graph: useGraph,
     visualNodeIdentifiers
   } = ActionsTestSuite.prepareModelsWithSemanticData(4, TestedSemanticConnectionType.Association);
   const diagram = ActionsTestSuite.createTestDiagram();
@@ -48,7 +48,7 @@ test("Put visual nodes with edges into visual model with visual diagram node ref
     visualModel,
     modelsAsArray,
     graph,
-    useGraph,
+    graph: useGraph,
   } = ActionsTestSuite.prepareModelsWithSemanticData(0, TestedSemanticConnectionType.Association);
   const diagram = ActionsTestSuite.createTestDiagram();
   const model = modelsAsArray[2].getId();

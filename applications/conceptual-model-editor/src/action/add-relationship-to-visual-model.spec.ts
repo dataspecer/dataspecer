@@ -22,7 +22,7 @@ import {
   createRelationship
 } from "@dataspecer/core-v2/semantic-model/operations";
 import { addSemanticRelationshipToVisualModelAction } from "./add-relationship-to-visual-model";
-import { ModelGraphContextType } from "../context/model-context";
+import { modelGraphContextToUse, ModelGraphContextType } from "../context/model-context";
 import { SemanticModelAggregator, SemanticModelAggregatorView } from "@dataspecer/core-v2/semantic-model/aggregator";
 import { SetStateAction } from "react";
 import { createVisualEdgeEndpointDuplicateAction } from "./create-visual-edge-endpoint-duplicate";
@@ -410,30 +410,31 @@ const prepareVisualModelWithFourNodes = () => {
     [visualModel.getIdentifier()]: visualModel
   }));
 
-  const graph: ModelGraphContextType = {
+  const graph = modelGraphContextToUse({
     aggregatorView,
-    models: models,
+    models,
     visualModels,
-    //
     addSemanticModel(model) {
+      aggregator.addModel(model);
       models.set(model.getId(), model);
     },
     addVisualModel(model) {
+      aggregator.addModel(model);
       visualModels.set(model.getIdentifier(), model as WritableVisualModel);
     },
-    reloadView() {
-      throw Error("Not supported during tests!");
-    },
     deleteModel(model) {
-      models.delete(model.getId());
+      models.delete(model);
     },
     deleteVisualModel(model) {
-      visualModels.delete(model.getIdentifier());
+      visualModels.delete(model);
     },
-    selectVisualModel() {
-      throw Error("Not supported during tests!");
+    reloadView() {
+      throw Error("Not supported");
     },
-  };
+    selectActiveVisualModel() {
+      throw Error("Not supported");
+    },
+  });
 
   return {
     visualModel,

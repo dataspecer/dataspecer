@@ -70,7 +70,7 @@ function addModelsToGraph(graph: ModelGraphContextType, models: EntityModel[]) {
   }
 
   for (const model of models) {
-    graph.addSemanticModel(model);
+    graph.addModel(model);
     for (const [_, visualModel] of graph.visualModels) {
       visualModel.setModelColor(model.getId(), randomColorFromPalette());
     }

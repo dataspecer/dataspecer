@@ -9,6 +9,6 @@ export function changeVisualModelAction (
   queryParamsContext: QueryParamsContextType,
   viewIdentifier: string | null
 ) {
-  graph.selectVisualModel(viewIdentifier);
+  graph.selectActiveVisualModel(viewIdentifier);
   queryParamsContext.updateViewId(viewIdentifier);
 };

@@ -20,7 +20,7 @@ import {
 } from "@dataspecer/core-v2/semantic-model/concepts";
 
 import { ClassesContext } from "./context/classes-context";
-import { ModelContextProvider, ModelGraphContext } from "./context/model-context";
+import { ModelContextProvider } from "./context/model-context";
 import Header from "./header/header";
 import { useBackendConnection } from "./backend-connection";
 import { Catalog as CatalogV3 } from "./catalog-v3/catalog";
