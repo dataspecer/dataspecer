@@ -32,7 +32,7 @@ export function openEditAssociationDialogAction(
   labelResolver: LabelResolver,
 ) {
   const initialState = createEditAssociationDialogState(
-    visualModel, options.language, model, entity, graph.models, tracker,
+    visualModel, options.language, model, entity, graph.semanticModels, tracker,
     labelResolver);
 
   const onConfirm = (state: AssociationDialogState) => {

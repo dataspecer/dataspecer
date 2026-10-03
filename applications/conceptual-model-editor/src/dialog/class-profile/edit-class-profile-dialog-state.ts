@@ -67,7 +67,7 @@ function createClassProfileControlledVocabulariesState(
 ): SelectControlledVocabulariesState {
   const availableVocabularies = MOCK_AVAILABLE_VOCABULARIES;
 
-  const entities = graph.aggregatorView.getEntities();
+  const entities = graph.getEntities();
   const inheritedAssignments = ancestorIdentifiers.flatMap(identifier => {
     const aggregatedEntity = entities[identifier]?.aggregatedEntity;
     if (aggregatedEntity === null || aggregatedEntity === undefined

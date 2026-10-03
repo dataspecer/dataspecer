@@ -25,7 +25,7 @@ export function openEditClassDialogAction(
   labelResolver: LabelResolver,
 ) {
   const initialState = createEditClassDialogState(
-    visualModel, options.language, model, entity, graph.models, tracker,
+    visualModel, options.language, model, entity, graph.semanticModels, tracker,
     labelResolver);
 
   const onConfirm = (state: ClassDialogState) => {

@@ -9,7 +9,7 @@ import { createDependencyTracker, Tracker } from "./dependency-tracker";
  */
 export function useDependencyTrackers(trackers: Tracker[]) {
   const modelGraphContext = useModelGraphContext();
-  const entityModels = modelGraphContext.models;
+  const entityModels = modelGraphContext.semanticModels;
   const visualModels = modelGraphContext.visualModels;
 
   const dependencyTracker = useMemo(

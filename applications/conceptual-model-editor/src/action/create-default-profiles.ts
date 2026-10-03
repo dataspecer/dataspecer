@@ -59,7 +59,7 @@ export async function createDefaultProfilesAction(
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
 ): Promise<void> {
-  const writableSemanticModel = findAnyWritableModelFromRawInput(graph.models, visualModel);
+  const writableSemanticModel = findAnyWritableModelFromRawInput(graph.semanticModels, visualModel);
   if (writableSemanticModel === null) {
     notifications.error("There is no InMemorySemanticModel to put the profiles into.");
     return;
@@ -129,7 +129,7 @@ async function createDefaultClassProfile(
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
 ): Promise<string | null> {
-  const classOrClassProfileToBeProfiled = graph.aggregatorView.getEntities()?.[entityToProfile]?.aggregatedEntity;
+  const classOrClassProfileToBeProfiled = graph.getEntities()?.[entityToProfile]?.aggregatedEntity;
   if (classOrClassProfileToBeProfiled === undefined || classOrClassProfileToBeProfiled === null) {
     notifications.error("The entity (node) to be profiled from selection is not present in aggregatorView");
     return null;
@@ -189,7 +189,7 @@ function createDefaultRelationshipProfiles(
   labelResolver: LabelResolver,
 ) {
   // Casting ... the correctness should be already validated
-  const writableSemanticModel = graph.models.get(writableCmeModel.identifier) as InMemorySemanticModel;
+  const writableSemanticModel = graph.semanticModels.get(writableCmeModel.identifier) as InMemorySemanticModel;
   for (const edgeToProfile of edgesToProfile) {
     createDefaultRelationshipProfile(
       notifications, classesContext, graph, diagram, language,
@@ -294,7 +294,7 @@ function getAndValidateRelationshipToBeProfiled(
   graph: ModelGraphContextType,
   entityToProfile: string
 ): SemanticModelRelationship | SemanticModelRelationshipProfile | null {
-  const relationshipToProfile = graph.aggregatorView.getEntities()?.[entityToProfile]?.aggregatedEntity;
+  const relationshipToProfile = graph.getEntities()?.[entityToProfile]?.aggregatedEntity;
   if (relationshipToProfile === undefined || relationshipToProfile === null) {
     notifications.error("The entity (edge) to be profiled from selection is not present in aggregatorView");
     return null;

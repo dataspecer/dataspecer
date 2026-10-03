@@ -63,14 +63,14 @@ export async function createSemanticModels(
 
 function addModelsToGraph(graph: ModelGraphContextType, models: EntityModel[]) {
   // If there is no visual model, we create a default one.
-  if (graph.aggregatorView.getActiveVisualModel() === null) {
+  if (graph.getActiveVisualModel() === null) {
     LOG.warn("Creating default visual model.")
     const visualModel = createDefaultWritableVisualModel(models);
-    graph.aggregatorView.changeActiveVisualModel(visualModel.getId());
+    graph.selectActiveVisualModel(visualModel.getId());
   }
 
   for (const model of models) {
-    graph.addModel(model);
+    graph.addSemanticModel(model);
     for (const [_, visualModel] of graph.visualModels) {
       visualModel.setModelColor(model.getId(), randomColorFromPalette());
     }

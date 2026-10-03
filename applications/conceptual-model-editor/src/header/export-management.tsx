@@ -16,7 +16,7 @@ import { useActions } from "../action/actions-react-binding";
 
 export const ExportManagement = () => {
   const actions = useActions();
-  const { aggregatorView, models } = useModelGraphContext();
+  const graph = useModelGraphContext();
   const { sourceModelOfEntityMap } = useClassesContext();
 
   const { download } = useDownload();
@@ -32,13 +32,13 @@ export const ExportManagement = () => {
   }, [open]);
 
   const handleGenerateLightweightOwl = () => {
-    const entities = Object.values(aggregatorView.getEntities())
+    const entities = Object.values(graph.getEntities())
       .map((aggregatedEntityWrapper) => aggregatedEntityWrapper.aggregatedEntity)
       .filter((entityOrNull): entityOrNull is SemanticModelEntity => {
         return entityOrNull !== null;
       })
       .map((aggregatedEntity) => {
-        const modelBaseIri = getModelIri(models.get(sourceModelOfEntityMap.get(aggregatedEntity.id) ?? ""));
+        const modelBaseIri = getModelIri(graph.semanticModels.get(sourceModelOfEntityMap.get(aggregatedEntity.id) ?? ""));
         const entityIri = getIri(aggregatedEntity, modelBaseIri);
 
         if (!entityIri) {
@@ -78,7 +78,7 @@ export const ExportManagement = () => {
       baseIri: "",
       entities: [],
     };
-    for (const model of models.values()) {
+    for (const model of graph.semanticModels.values()) {
       contextModels.push({
         baseIri: isInMemorySemanticModel(model) ? model.getBaseIri() : "",
         entities: Object.values(model.getEntities()),
@@ -99,8 +99,8 @@ export const ExportManagement = () => {
   };
 
   const handleGenerateProfileShacl = () => {
-    const semanticModels = [...models.values()];
-    const profileModels = [...models.values()];
+    const semanticModels = [...graph.semanticModels.values()];
+    const profileModels = [...graph.semanticModels.values()];
     const topProfileModel = profileModels[0];
 
     const iri = isInMemorySemanticModel(topProfileModel) ?

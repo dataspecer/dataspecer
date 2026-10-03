@@ -46,7 +46,7 @@ export async function layoutActiveVisualModel(
   outsiders?: Record<string, XY | null>,
   shouldPutOutsidersInVisualModel?: boolean,
 ) {
-  const models = graph.models;
+  const models = graph.semanticModels;
 
   const reactflowDimensionQueryHandler = createExactNodeDimensionsQueryHandler(diagram);
 
@@ -249,7 +249,7 @@ function addClassOrClassProfileToVisualModel(
   visualModel: WritableVisualModel,
   visualNode: VisualNode
 ): void {
-  const represented = graph.aggregatorView.getEntities()[visualNode.representedEntity]?.rawEntity;
+  const represented = graph.getEntities()[visualNode.representedEntity]?.rawEntity;
   if (isSemanticModelClass(represented)) {
     addSemanticClassToVisualModelAction(
       notifications, graph, classes, visualModel, diagram,

@@ -14,7 +14,7 @@ export async function removeFromSemanticModelsAction(
   entitiesToDelete: EntityToDelete[],
 ) {
   for(const { identifier, sourceModel: modelIdentifier } of entitiesToDelete) {
-    const model = graph.models.get(modelIdentifier);
+    const model = graph.semanticModels.get(modelIdentifier);
     if (model === undefined) {
       notifications.error(`Can not find model with identifier '${modelIdentifier}'.`);
       continue;

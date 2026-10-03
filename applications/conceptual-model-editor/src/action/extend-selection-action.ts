@@ -164,7 +164,7 @@ export const extendSelectionAction = (
   }
 
   const entities: ClassesContextEntities = JSON.parse(JSON.stringify(classesContext));
-  const visualModel = graph.aggregatorView.getActiveVisualModel();
+  const visualModel = graph.getActiveVisualModel();
 
   if(visualModel === null && nodeSelection.areIdentifiersFromVisualModel) {
     notifications.error("The identifiers are from visual model, but the visual model is null");
@@ -251,7 +251,7 @@ export const extendSelectionAction = (
   if(semanticModelFilter === null) {
     return selectionExtension;
   }
-  return filterExtensionUsingSemanticModelFilters(selectionExtension, semanticModelFilter, graph.models);
+  return filterExtensionUsingSemanticModelFilters(selectionExtension, semanticModelFilter, graph.semanticModels);
 };
 
 function getNewNodeSelectionExtendedByNodeDuplicates(

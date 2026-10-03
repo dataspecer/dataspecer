@@ -18,9 +18,8 @@ export function addVisualDiagramNodeForExistingModelToVisualModelAction(
   visualModelToRepresent: string,
 ): string | null {
 
-  const availableVisualModels = graph.aggregatorView.getAvailableVisualModels();
   const doesAddingCauseModelRecursion = doesAddingVisualModelCauseSelfReference(
-    availableVisualModels, visualModelToAddTo, visualModelToRepresent);
+    graph.visualModels, visualModelToAddTo, visualModelToRepresent);
   if (doesAddingCauseModelRecursion) {
     notifications.error("The added visual model represented by diagram node would cause self-reference");
     return null;

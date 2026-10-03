@@ -34,13 +34,12 @@ test("Put 4 visual nodes without edges into visual model with visual diagram nod
   expect(createdVisualDiagramNode).not.toBeNull();
   expect(isVisualDiagramNode(createdVisualDiagramNode!)).toBeTruthy();
 
-  const createdVisualModel = graph.aggregatorView.getModels()
-    .find(model => model.getId() === createdVisualDiagramNode.representedVisualModel) as WritableVisualModel;
+  const createdVisualModel = graph.visualModels.get(createdVisualDiagramNode.representedVisualModel);
   expect(createdVisualModel).not.toBeUndefined();
   expect(isWritableVisualModel(createdVisualModel)).toBeTruthy();
 
   // 4 nodes + 1 visual model entity
-  expect([...createdVisualModel.getVisualEntities().keys()].length).toBe(5);
+  expect([...createdVisualModel!.getVisualEntities().keys()].length).toBe(5);
 });
 
 test("Put visual nodes with edges into visual model with visual diagram node reference to it", () => {
@@ -103,12 +102,11 @@ test("Put visual nodes with edges into visual model with visual diagram node ref
   expect(createdVisualDiagramNode).not.toBeNull();
   expect(isVisualDiagramNode(createdVisualDiagramNode!)).toBeTruthy();
 
-  const createdVisualModel = graph.aggregatorView.getModels()
-    .find(model => model.getId() === createdVisualDiagramNode.representedVisualModel) as WritableVisualModel;
+  const createdVisualModel = graph.visualModels.get(createdVisualDiagramNode.representedVisualModel);
   expect(createdVisualModel).not.toBeUndefined();
   expect(isWritableVisualModel(createdVisualModel)).toBeTruthy();
 
-  expect(createdVisualModel.getVisualEntitiesForRepresented("8").length).toBe(1);
-  expect(createdVisualModel.getVisualEntitiesForRepresented("9").length).toBe(1);
-  expect(createdVisualModel.getVisualEntitiesForRepresented("8-9").length).toBe(1);
+  expect(createdVisualModel!.getVisualEntitiesForRepresented("8").length).toBe(1);
+  expect(createdVisualModel!.getVisualEntitiesForRepresented("9").length).toBe(1);
+  expect(createdVisualModel!.getVisualEntitiesForRepresented("8-9").length).toBe(1);
 });

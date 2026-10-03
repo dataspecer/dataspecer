@@ -28,14 +28,14 @@ export async function addSemanticClassProfileToVisualModelAction(
   _modelIdentifier: string,
   position: { x: number, y: number } | null,
 ) {
-  const entities = graph.aggregatorView.getEntities();
+  const entities = graph.getEntities();
   if(position === null) {
     const positions = await findPositionForNewNodesUsingLayouting(
       notifications, diagram, graph, visualModel, classes, [entityIdentifier]);
     position = positions[entityIdentifier];
   }
 
-  const model = findSourceModelOfEntity(entityIdentifier, graph.models);
+  const model = findSourceModelOfEntity(entityIdentifier, graph.semanticModels);
   if (model === null) {
     LOG.error("Operation ignored, we fail to find model for given entity.", { identifier: entityIdentifier });
     notifications.error("Can not find model for given entity");
@@ -55,7 +55,7 @@ export async function addSemanticClassProfileToVisualModelAction(
       position);
     addRelatedEntitiesAction(
       notifications, graph, classes, visualModel, Object.values(entities),
-      graph.models, entity);
+      graph.semanticModels, entity);
   } else {
     LOG.invalidEntity(entityIdentifier, "Entity is not of an expected type.", { entity });
     notifications.error("Invalid entity type!");

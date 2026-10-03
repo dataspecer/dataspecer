@@ -96,8 +96,8 @@ export function createCreateConnectionState(
   target: SemanticModelClass,
   language: string,
 ): CreateConnectionState {
-  const models = filterInMemoryModels([...graph.models.values()]);
-  const owner = findSourceModelOfEntity(source.id, graph.models);
+  const models = filterInMemoryModels([...graph.semanticModels.values()]);
+  const owner = findSourceModelOfEntity(source.id, graph.semanticModels);
   // Check we have an owner as a semantic model we can write to.
   let model;
   if (owner === null || !(owner instanceof InMemorySemanticModel)) {

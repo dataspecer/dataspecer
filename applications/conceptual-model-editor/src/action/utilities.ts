@@ -319,7 +319,7 @@ export function findTopLevelGroupInVisualModel(
  *  (possibly multiple times if it the class is present in it more than once)
  */
 export function getVisualDiagramNodeMappingsByRepresented(
-  availableVisualModels: VisualModel[],
+  availableVisualModels: Map<string, WritableVisualModel>,
   visualModel: VisualModel
 ): {
   existingVisualDiagramNodes: Record<string, VisualDiagramNode>,
@@ -516,7 +516,7 @@ export const getOtherCoordinate = (coordinate: Coordinate): Coordinate => {
  * Checks if we can reach the {@link visualModelToAddTo} from {@link addedVisualModel}
  */
 export function doesAddingVisualModelCauseSelfReference(
-  availableVisualModels: VisualModel[],
+  availableVisualModels: Map<string, WritableVisualModel>,
   visualModelToAddTo: VisualModel,
   addedVisualModel: string,
 ) {
@@ -543,7 +543,7 @@ export function isVisualEdgeEnd(what: VisualEntity): what is VisualEdgeEndPoint 
  *          The visual diagram nodes are also contained in the output - those have the represented model's identifier
  */
 export function getClassesAndDiagramNodesModelsFromVisualModelRecursively(
-  availableVisualModels: VisualModel[],
+  availableVisualModels: Map<string, WritableVisualModel>,
   visualModel: string,
 ) {
   return getClassesAndDiagramNodesFromVisualModelInternal(
@@ -551,12 +551,11 @@ export function getClassesAndDiagramNodesModelsFromVisualModelRecursively(
 }
 
 function getClassesAndDiagramNodesFromVisualModelInternal(
-  availableVisualModels: VisualModel[],
+  availableVisualModels: Map<string, WritableVisualModel>,
   visualModel: string,
   result: string[],
 ) {
-  const linkedVisualModel = availableVisualModels.find(
-    availableVisualModel => visualModel === availableVisualModel.getIdentifier());
+  const linkedVisualModel = availableVisualModels.get(visualModel);
   if (linkedVisualModel !== undefined) {
     for (const [_, visualEntity] of linkedVisualModel.getVisualEntities()) {
       if (isVisualNode(visualEntity)) {

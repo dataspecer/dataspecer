@@ -22,7 +22,7 @@ export function openSearchExternalSemanticModelDialogAction(
 ) {
   const initialState = createSearchExternalSemanticModelState();
 
-  const model = graph.models.get(modelIdentifier);
+  const model = graph.semanticModels.get(modelIdentifier);
   if (model === undefined || !(model instanceof ExternalSemanticModel)) {
     notifications.error("Invalid model to search.");
     return;

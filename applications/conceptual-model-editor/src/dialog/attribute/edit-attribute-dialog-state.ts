@@ -50,7 +50,7 @@ export function createNewAttributeDialogState(
 ): AttributeDialogState {
 
   const allModels = semanticModelMapToCmeSemanticModel(
-    graphContext.models, visualModel,
+    graphContext.semanticModels, visualModel,
     configuration().defaultModelColor,
     identifier => t("model-service.model-label-from-id", identifier));
 
@@ -92,7 +92,7 @@ function listAttributes(
   graphContext: ModelGraphContextType,
   vocabularies: CmeSemanticModel[],
 ) {
-  const models = [...graphContext.models.values()];
+  const models = [...graphContext.semanticModels.values()];
 
   const owlThing = representOwlThing();
 
@@ -129,7 +129,7 @@ export function createEditAttributeDialogState(
   //
 
   const allModels = semanticModelMapToCmeSemanticModel(
-    graphContext.models, visualModel,
+    graphContext.semanticModels, visualModel,
     configuration().defaultModelColor,
     identifier => t("model-service.model-label-from-id", identifier));
 
@@ -149,7 +149,7 @@ export function createEditAttributeDialogState(
   // EntityState
 
   const entityState = createEditBaseEntityDialogState(
-    language, graphContext.models, allModels,
+    language, graphContext.semanticModels, allModels,
     { identifier: entity.id, model: model.getId() },
     range.iri ?? "", range.name, range.description,
     range.externalDocumentationUrl ?? "",
@@ -187,7 +187,7 @@ export function createAddAttributeDialogState(
 ): AttributeDialogState {
 
   const allModels = semanticModelMapToCmeSemanticModel(
-    graphContext.models, visualModel,
+    graphContext.semanticModels, visualModel,
     configuration().defaultModelColor,
     identifier => t("model-service.model-label-from-id", identifier));
 
@@ -203,7 +203,7 @@ export function createAddAttributeDialogState(
     labelResolver, classesContext, graphContext, allModels);
 
   const defaultModel = selectDefaultModelForAttribute(
-    entity.id, [...graphContext.models.values()], allModels);
+    entity.id, [...graphContext.semanticModels.values()], allModels);
 
   // EntityState
 

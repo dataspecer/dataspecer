@@ -28,7 +28,7 @@ export function openEditSemanticModelDialogAction(
   visualModel: VisualModel | null,
   identifier: ModelDsIdentifier,
 ) {
-  const model: SemanticModel | undefined = graph.models.get(identifier);
+  const model: SemanticModel | undefined = graph.semanticModels.get(identifier);
   if (model === undefined) {
     return;
   }

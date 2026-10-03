@@ -132,7 +132,7 @@ function validateEntities(
       continue;
     }
 
-    const model = sourceModelOfEntity(entityIdentifier, [...graph.models.values()]);
+    const model = sourceModelOfEntity(entityIdentifier, [...graph.semanticModels.values()]);
     if(model === undefined) {
       // Note that we continue, therefore if one entity fails, the addition of rest is not affected.
       notifications.error(

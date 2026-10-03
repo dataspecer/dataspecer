@@ -38,7 +38,7 @@ export function openEditAssociationProfileDialogAction(
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
 ) {
-  const aggregate = graph.aggregatorView.getEntities()?.[entity.id];
+  const aggregate = graph.getEntities()?.[entity.id];
   const rawEntity = aggregate?.rawEntity;
   const aggregatedEntity = aggregate?.aggregatedEntity;
   if (!isSemanticModelRelationshipProfile(rawEntity)
@@ -49,7 +49,7 @@ export function openEditAssociationProfileDialogAction(
 
   const initialState = createEditAssociationProfileDialogState(
     visualModel, options.language, model, rawEntity, aggregatedEntity,
-    graph.models, tracker, labelResolver);
+    graph.semanticModels, tracker, labelResolver);
 
   const onConfirm = (state: AssociationProfileDialogState) => {
     cmeExecutor.updateRelationshipProfile({

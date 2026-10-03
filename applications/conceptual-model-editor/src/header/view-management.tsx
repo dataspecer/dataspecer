@@ -8,19 +8,15 @@ import { useOptions } from "../configuration/options";
 import { useActions } from "../action/actions-react-binding";
 
 export const ViewManagement = () => {
-  const {
-    aggregatorView,
-    visualModels,
-    deleteVisualModel: removeVisualModel
-  } = useModelGraphContext();
+  const graph = useModelGraphContext();
   const { language } = useOptions();
 
   const actions = useActions();
 
   const { updateViewId: setViewIdSearchParam, viewId: currentViewIdInUrl } = useQueryParamsContext();
 
-  const activeViewId = aggregatorView.getActiveViewId();
-  const availableVisualModelIds = aggregatorView.getAvailableVisualModels()
+  const activeViewId = graph.getActiveViewId();
+  const availableVisualModelIds = graph.visualModelsList
     .map(item => [
       item.getIdentifier(),
       item.getLabel() === null ? null : languageStringToString(
@@ -49,11 +45,11 @@ export const ViewManagement = () => {
   };
 
   const handleViewDeleted = (viewId: string) => {
-    const visualModel = visualModels.get(viewId);
+    const visualModel = graph.visualModels.get(viewId);
     if (!visualModel) {
       return;
     }
-    removeVisualModel(viewId);
+    graph.deleteVisualModel(viewId);
   };
 
   return (

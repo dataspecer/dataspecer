@@ -23,7 +23,7 @@ export interface PackageSectionServiceType {
 export const usePackageSectionService = (): PackageSectionServiceType => {
   const actions = useActions();
   const { updateSemanticModelPackageModels } = useBackendConnection();
-  const { models, visualModels, aggregatorView } = useModelGraphContext();
+  const graph = useModelGraphContext();
   const { layoutConfiguration } = useLayoutConfigurationContext();
 
   const { currentPackage, currentPackageIdentifier } = usePackageService();
@@ -43,9 +43,9 @@ export const usePackageSectionService = (): PackageSectionServiceType => {
       return;
     }
     const result = await updateSemanticModelPackageModels(
-      currentPackageIdentifier, [...models.values()], [...visualModels.values()]);
+      currentPackageIdentifier, [...graph.semanticModels.values()], [...graph.visualModels.values()]);
     const svg = await actions.diagram?.actions().renderToSvgString();
-    const activeVisualModel = aggregatorView.getActiveVisualModel();
+    const activeVisualModel = graph.getActiveVisualModel();
 
     saveLayoutConfiguration(currentPackageIdentifier);
 

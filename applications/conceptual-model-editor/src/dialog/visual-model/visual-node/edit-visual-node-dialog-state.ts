@@ -68,7 +68,7 @@ export function createEditVisualNodeState(
     model: visualNode.model,
   };
 
-  const entities = graphContext.aggregatorView.getEntities();
+  const entities = graphContext.getEntities();
   const entity = entities[visualNode.representedEntity] ?? null;
   if (entity === null) {
     LOG.error("Can not find represented entity.", { entity: representedEntity });

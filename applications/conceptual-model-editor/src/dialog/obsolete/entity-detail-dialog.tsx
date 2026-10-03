@@ -48,7 +48,7 @@ export const createEntityDetailDialog = (
   entity: SupportedTypes,
   language: string,
 ): DialogWrapper<EntityDetailState> => {
-  const aggregatedEntity = graph.aggregatorView.getEntities()[entity.id];
+  const aggregatedEntity = graph.getEntities()[entity.id];
 
   return {
     label: selectLabel(aggregatedEntity),
@@ -97,7 +97,7 @@ const EntityDetailDialog = (props: DialogProps<EntityDetailState>) => {
   const graph = useModelGraphContext();
   //
   const entity = props.state.entity;
-  const models = [...graph.models.values()];
+  const models = [...graph.semanticModels.values()];
   const sourceModel = sourceModelOfEntity(entity.id, models);
 
   const proxy = useEntityProxy(entity, language);

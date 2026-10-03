@@ -31,12 +31,11 @@ export function addAllRelationshipsForVisualDiagramNodeToVisualModelAction(
     ...classesContext.relationshipProfiles,
   ];
 
-  const availableVisualModels: VisualModel[] = graph.aggregatorView.getAvailableVisualModels();
+  const availableVisualModels = graph.visualModels;
 
   const visualRelationshipsToAdd: Omit<VisualRelationship, "id" | "type">[] = [];
 
-  const representedVisualModel = availableVisualModels
-    .find(model => model.getIdentifier() === visualModelDiagramNode.externalIdentifier);
+  const representedVisualModel = availableVisualModels.get(visualModelDiagramNode.externalIdentifier);
   if (representedVisualModel === undefined) {
     notifications.error("Missing referenced visual model");
     return;
@@ -106,7 +105,7 @@ function findRelationshipsForEnd(
   // which are already covered by the relationship
   const availableVisualEnds = getVisualEntitiesForRepresentedGlobal(end);
   const visualRelationships = visualModel.getVisualEntitiesForRepresented(relationship.id);
-  const model = findSourceModelOfEntity(relationship.id, graph.models);
+  const model = findSourceModelOfEntity(relationship.id, graph.semanticModels);
   if (model === null) {
     return;
   }

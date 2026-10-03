@@ -46,7 +46,7 @@ export function openCreateAttributeForEntityDialogAction(
   onConfirmCallback: ConfirmationCallback,
   labelResolver: LabelResolver,
 ) {
-  const aggregate = graph.aggregatorView.getEntities()?.[identifier];
+  const aggregate = graph.getEntities()?.[identifier];
 
   const entity = aggregate.aggregatedEntity;
   if (entity === undefined || entity === null) {

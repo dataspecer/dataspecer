@@ -151,7 +151,7 @@ export const addEntityNeighborhoodToVisualModelAction = async (
         ...classes.relationshipProfiles
       ];
       addSemanticConnectionBetweenAllValidVisualNodes(
-        notifications, allConnections, graph.models, visualModel, identifier);
+        notifications, allConnections, graph.semanticModels, visualModel, identifier);
     }
   }
 }
@@ -195,7 +195,7 @@ function addSemanticClassOrClassProfileToVisualModelCommand(
     VisibilityFilter.All, null);
 
   for (const classProfileChild of classProfileChildren.selectionExtension.nodeSelection) {
-    const modelForVisualProfileRelationship = findSourceModelOfEntity(classProfileChild, graph.models);
+    const modelForVisualProfileRelationship = findSourceModelOfEntity(classProfileChild, graph.semanticModels);
     if (modelForVisualProfileRelationship === null) {
       notifications.error("The related class profile has no source model");
       continue;
@@ -257,7 +257,7 @@ const addClassOrClassProfileToVisualModel = async (
       return false;
     }
 
-    const model = findSourceModelOfEntity(classProfile.id, graph.models);
+    const model = findSourceModelOfEntity(classProfile.id, graph.semanticModels);
     if (model === null) {
       notifications.error("Related entity is class or class profile, but has missing source model");
       return false;
@@ -278,7 +278,7 @@ const addClassOrClassProfileToVisualModel = async (
     return true;
   }
 
-  const model = findSourceModelOfEntity(cclass.id, graph.models);
+  const model = findSourceModelOfEntity(cclass.id, graph.semanticModels);
   if (model === null) {
     notifications.error(
       "Given entity is relationship or relationship profile, but its domain or range has missing source model");
@@ -370,7 +370,7 @@ const addClassNeighborhoodToVisualModelAction = async (
 
   for (const neighborhoodSemanticEdge of allNeighborhoodSemanticEdges) {
     addSemanticConnectionBetweenAllValidVisualNodes(
-      notifications, allConnections, graph.models, visualModel, neighborhoodSemanticEdge.identifier);
+      notifications, allConnections, graph.semanticModels, visualModel, neighborhoodSemanticEdge.identifier);
   }
 };
 

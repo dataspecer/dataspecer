@@ -36,7 +36,7 @@ export function openCreateClassDialogAction(
   labelResolver: LabelResolver,
 ) {
 
-  const model = defaultModel ?? firstInMemorySemanticModel(graph.models);
+  const model = defaultModel ?? firstInMemorySemanticModel(graph.semanticModels);
   if (model === null) {
     notifications.error("You have to create a writable vocabulary first!");
     return;

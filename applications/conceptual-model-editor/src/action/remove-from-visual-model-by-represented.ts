@@ -45,11 +45,10 @@ function collectIndirectVisualEntitiesToRemove(
   const directEntitiesToRemove = collectDirectVisualEntitiesToRemove(
     visualModel, semanticIdentifiers, getVisualEntitiesForRepresented, false);
 
-  const availableVisualModels = graph.aggregatorView.getAvailableVisualModels();
-  const indirectEntitesToRemove = findInvalidVisualEdgesForVisualDiagramNodes(
-    notifications, classesContext, availableVisualModels, visualModel, semanticIdentifiers);
+  const indirectEntitiesToRemove = findInvalidVisualEdgesForVisualDiagramNodes(
+    notifications, classesContext, graph.visualModels, visualModel, semanticIdentifiers);
 
-  return directEntitiesToRemove.concat(indirectEntitesToRemove);
+  return directEntitiesToRemove.concat(indirectEntitiesToRemove);
 }
 
 /**
@@ -60,7 +59,7 @@ function collectIndirectVisualEntitiesToRemove(
 function findInvalidVisualEdgesForVisualDiagramNodes(
   notifications: UseNotificationServiceWriterType | null,
   classesContext: ClassesContextType,
-  availableVisualModels: VisualModel[],
+  availableVisualModels: Map<string, WritableVisualModel>,
   visualModel: VisualModel,
   removedClasses: string[],
 ): VisualEntity[] {

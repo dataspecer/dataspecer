@@ -132,7 +132,7 @@ export const createEntityProxy = (
     generalizations,
     rawEntities,
   } = classesContext;
-  const { models: modelsMap } = graph;
+  const { semanticModels: modelsMap } = graph;
   const models = [...modelsMap.values()];
   const sourceModel = sourceModelOfEntity(viewedEntity.id, models);
   const profileSources = [...classes, ...relationships, ...classProfiles, ...relationshipProfiles];

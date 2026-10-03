@@ -86,8 +86,8 @@ function openCreateConnectionDialogActionInternal(
     // Create a relationship profile or generalization for profiles.
     // We do not support this yet.
 
-    const sourceModel = findSourceModelOfEntity(source.id, graph.models);
-    const targetModel = findSourceModelOfEntity(target.id, graph.models);
+    const sourceModel = findSourceModelOfEntity(source.id, graph.semanticModels);
+    const targetModel = findSourceModelOfEntity(target.id, graph.semanticModels);
 
     if (sourceModel === null || targetModel === null) {
       LOG.error("Missing model for entity.",
@@ -126,7 +126,7 @@ function findSourceAndTarget(
   sourceIdentifier: string,
   targetIdentifier: string,
 ) {
-  const entities = graph.aggregatorView.getEntities();
+  const entities = graph.getEntities();
   const source = entities[sourceIdentifier]?.aggregatedEntity ?? null;
   const target = entities[targetIdentifier]?.aggregatedEntity ?? null;
   if (source === null || target === null) {
@@ -213,8 +213,8 @@ function createProfile(
   source: SemanticModelClassProfile,
   target: SemanticModelClass,
 ) {
-  const sourceModel = findSourceModelOfEntity(source.id, graph.models);
-  const targetModel = findSourceModelOfEntity(target.id, graph.models);
+  const sourceModel = findSourceModelOfEntity(source.id, graph.semanticModels);
+  const targetModel = findSourceModelOfEntity(target.id, graph.semanticModels);
 
   if (sourceModel === null || targetModel === null) {
     LOG.error("Missing model for entity.",

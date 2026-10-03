@@ -16,7 +16,7 @@ export function addSemanticGeneralizationToVisualModelAction(
 ) {
   const executor = createVisualModelOperationExecutor(visualModel);
 
-  const entities = graph.aggregatorView.getEntities();
+  const entities = graph.getEntities();
   withErrorBoundary(notifications, () =>
     withAggregatedEntity(notifications, entities, entityIdentifier, modelIdentifier,
       isSemanticModelGeneralization, (entity) => {

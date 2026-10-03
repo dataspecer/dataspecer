@@ -44,14 +44,14 @@ export function openModifyDialogAction(
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
 ) {
-  const aggregate = graph.aggregatorView.getEntities()?.[identifier];
+  const aggregate = graph.getEntities()?.[identifier];
 
   const entity = aggregate.aggregatedEntity;
   if (entity === undefined || entity === null) {
     notifications.error(`Can not find the entity with identifier '${identifier}'.`);
     return;
   }
-  const model = findSourceModelOfEntity(entity.id, graph.models);
+  const model = findSourceModelOfEntity(entity.id, graph.semanticModels);
   if (model === null || !isInMemorySemanticModel(model)) {
     notifications.error("Model is not writable, can not modify entity.");
     return;

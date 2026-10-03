@@ -58,7 +58,7 @@ export function putVisualDiagramNodeContentToVisualModelAction(
     return;
   }
 
-  const availableVisualModels = graph.aggregatorView.getAvailableVisualModels();
+  const availableVisualModels = graph.visualModels;
 
   const visualDiagramNode = visualModel.getVisualEntity(diagramNode.identifier);
   if(visualDiagramNode === null || !isVisualDiagramNode(visualDiagramNode)) {
@@ -67,7 +67,7 @@ export function putVisualDiagramNodeContentToVisualModelAction(
   }
 
   copyVisualEntitiesBetweenModels(
-    notifications, classesContext, graph, diagram, availableVisualModels,
+    notifications, classesContext, graph, diagram, graph.visualModels,
     referencedVisualModel, visualModel, visualDiagramNode.position, diagramNode);
 
   // Ideally we would implement the rerouting for visual profile relationships somewhere down in this file,
@@ -81,7 +81,7 @@ function copyVisualEntitiesBetweenModels(
   classesContext: ClassesContextType,
   graph: ModelGraphContextType,
   diagram: UseDiagramType,
-  availableVisualModels: VisualModel[],
+  availableVisualModels: Map<string, WritableVisualModel>,
   copyFrom: VisualModel,
   copyTo: WritableVisualModel,
   centerPositionInNewModel: XY,
@@ -142,7 +142,7 @@ function copyVisualEntitiesBetweenModels(
 function rerouteEdgesFromVisualDiagramNodeToItsContent(
   notifications: UseNotificationServiceWriterType,
   classesContext: ClassesContextType,
-  availableVisualModels: VisualModel[],
+  availableVisualModels: Map<string, WritableVisualModel>,
   diagramNodeToReroute: string,
   visualModelContainingDiagramNode: WritableVisualModel,
   modelReferencedByDiagramNode: VisualModel,
@@ -218,7 +218,7 @@ function rerouteToEntityInsideDiagramNode(
   notifications: UseNotificationServiceWriterType,
   allClasses: (SemanticModelClass | SemanticModelClassProfile)[],
   allRelationships: (SemanticModelRelationship | SemanticModelRelationshipProfile | SemanticModelGeneralization)[],
-  allAvailableVisualModels: VisualModel[],
+  allAvailableVisualModels: Map<string, WritableVisualModel>,
   visualModelWithDiagramNode: VisualModel,
   referencedVisualModel: VisualModel,
   visualRelationship: VisualRelationship,

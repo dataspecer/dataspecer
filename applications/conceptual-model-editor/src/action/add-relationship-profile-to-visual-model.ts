@@ -25,7 +25,7 @@ export function addSemanticRelationshipProfileToVisualModelAction(
   entityIdentifier: string,
   modelIdentifier: string,
 ) {
-  const entities = graph.aggregatorView.getEntities();
+  const entities = graph.getEntities();
   withAggregatedEntity(notifications, entities,
     entityIdentifier, modelIdentifier,
     (item) => isSemanticModelRelationshipProfile(item),

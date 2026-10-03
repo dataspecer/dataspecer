@@ -396,6 +396,7 @@ export class ActionsTestSuite {
     const visualModels: Map<string, WritableVisualModel> = new Map(Object.entries({
       [visualModel.getIdentifier()]: visualModel
     }));
+    const visualModelsList = [...visualModels.values()];
 
     for(let i = 0; i < modelCount; i++) {
       const model = new InMemorySemanticModel();
@@ -414,6 +415,7 @@ export class ActionsTestSuite {
       aggregatorView,
       models,
       visualModels,
+      visualModelsList,
       addSemanticModel(model) {
         aggregator.addModel(model);
         models.set(model.getId(), model);
@@ -421,12 +423,17 @@ export class ActionsTestSuite {
       addVisualModel(model) {
         aggregator.addModel(model);
         visualModels.set(model.getIdentifier(), model as WritableVisualModel);
+        visualModelsList.push(model as WritableVisualModel);
       },
       deleteModel(model) {
         models.delete(model);
       },
       deleteVisualModel(model) {
         visualModels.delete(model);
+        const index = visualModelsList.findIndex(item => item.getIdentifier());
+        if (index > -1) {
+          visualModelsList.splice(index, 1);
+        }
       },
       reloadView() {
         this.aggregatorView = aggregator.getView();

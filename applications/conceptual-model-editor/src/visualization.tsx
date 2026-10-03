@@ -25,7 +25,6 @@ import {
 } from "@dataspecer/visual-model";
 import {
   AggregatedEntityWrapper,
-  type SemanticModelAggregatorView,
 } from "@dataspecer/core-v2/semantic-model/aggregator";
 import {
   isSemanticModelClassProfile,
@@ -86,10 +85,9 @@ export const Visualization = () => {
   const actions = useActions();
   const classesContext = useClassesContext();
 
-  const aggregatorView = graph.aggregatorView;
   const activeVisualModel = useMemo(
-    () => aggregatorView.getActiveVisualModel(),
-    [aggregatorView]);
+    () => graph.getActiveVisualModel(),
+    [graph]);
 
   const extendedOptions: ExtendedOptions = useMemo(() => ({
     language: options.language,
@@ -98,8 +96,8 @@ export const Visualization = () => {
   }), [options.language, options.visualOptions]);
 
   useEffect(() => {
-    const previousEntities = aggregatorView.getEntities();
-    const unsubscribeSemanticAggregatorCallback = aggregatorView.subscribeToChanges((updated, removed) => {
+    const previousEntities = graph.getEntities();
+    const unsubscribeSemanticAggregatorCallback = graph.subscribeToChanges((updated, removed) => {
       console.log("[VISUALIZATION] SemanticModelAggregatorView.subscribeToChanges", { updated, removed });
       if (isWritableVisualModel(activeVisualModel)) {
         synchronizeOnAggregatorChange(activeVisualModel, updated, removed);
@@ -115,7 +113,7 @@ export const Visualization = () => {
         // We ignore model color changes here for now.
         console.log("[VISUALIZATION] VisualModel.subscribeToChanges.modelColorDidChange", { model });
         propagateVisualModelColorChangesToVisualization(
-          extendedOptions, activeVisualModel, actions.diagram, aggregatorView, graph, model);
+          extendedOptions, activeVisualModel, actions.diagram, graph, model);
       },
       visualEntitiesDidChange(changes) {
         if (activeVisualModel === null) {
@@ -123,7 +121,7 @@ export const Visualization = () => {
         }
         console.log("[VISUALIZATION] VisualModel.subscribeToChanges.visualEntitiesDidChange", { changes });
         onChangeVisualEntities(
-          extendedOptions, activeVisualModel, actions.diagram, aggregatorView, graph, changes);
+          extendedOptions, activeVisualModel, actions.diagram, graph, changes);
       },
     });
 
@@ -132,18 +130,18 @@ export const Visualization = () => {
       unsubscribeCanvasCallback?.();
     };
 
-  }, [options, activeVisualModel, actions, aggregatorView, graph]);
+  }, [options, activeVisualModel, actions, graph, graph]);
 
   // Update canvas content on view change.
   useEffect(() => {
     console.log("[VISUALIZATION] Something has changed, recreating diagram visual.", activeVisualModel);
     validateVisualModel(
-      actions, activeVisualModel, aggregatorView.getAvailableVisualModels(),
-      classesContext, graph.models);
+      actions, activeVisualModel, graph.visualModels,
+      classesContext, graph.semanticModels);
     onChangeVisualModel(
-      extendedOptions, activeVisualModel, actions.diagram, aggregatorView,
+      extendedOptions, activeVisualModel, actions.diagram, graph,
       classesContext, graph);
-  }, [extendedOptions, activeVisualModel, actions, aggregatorView, classesContext, graph]);
+  }, [extendedOptions, activeVisualModel, actions, graph, classesContext, graph]);
 
   return (
     <>
@@ -158,8 +156,7 @@ function propagateVisualModelColorChangesToVisualization(
   options: ExtendedOptions,
   visualModel: VisualModel | null,
   diagram: UseDiagramType | null,
-  aggregatorView: SemanticModelAggregatorView,
-  graphContext: UseModelGraphContextType,
+  aggregatorView: UseModelGraphContextType,
   changedModelIdentifier: string,
 ) {
   if (visualModel === null) {
@@ -196,8 +193,7 @@ function propagateVisualModelColorChangesToVisualization(
 
   // Call the change method.
   onChangeVisualEntities(
-    options, visualModel, diagram, aggregatorView,
-    graphContext, changes)
+    options, visualModel, diagram, aggregatorView, changes)
 }
 
 /**
@@ -208,7 +204,7 @@ function onChangeVisualModel(
   options: ExtendedOptions,
   visualModel: VisualModel | null,
   diagram: UseDiagramType | null,
-  aggregatorView: SemanticModelAggregatorView,
+  aggregatorView: UseModelGraphContextType,
   _classesContext: UseClassesContextType,
   graphContext: UseModelGraphContextType,
 ) {
@@ -222,8 +218,8 @@ function onChangeVisualModel(
     return;
   }
 
-  const models = graphContext.models;
-  const entities = aggregatorView.getEntities();
+  const models = graphContext.semanticModels;
+  const entities = graphContext.getEntities();
 
   const nextNodes: DiagramNodeTypes[] = [];
   const nextEdges: Edge[] = [];
@@ -235,7 +231,7 @@ function onChangeVisualModel(
   for (const visualEntity of visualEntities) {
     if (isVisualDiagramNode(visualEntity)) {
       const node = createVisualModelDiagramNode(
-        options, aggregatorView.getAvailableVisualModels(),
+        options, aggregatorView.visualModels,
         visualEntity, nodeToGroupMapping[visualEntity.id] ?? null);
       nextNodes.push(node);
     } else if (isVisualGroup(visualEntity)) {
@@ -324,12 +320,11 @@ function onChangeVisualModel(
 
 function createVisualModelDiagramNode(
   options: ExtendedOptions,
-  availableVisualModels: VisualModel[],
+  availableVisualModels: Map<string, VisualModel>,
   visualDiagramNode: VisualDiagramNode,
   group: string | null,
 ): VisualModelDiagramNode {
-  const referencedVisualModel = availableVisualModels.find(
-    model => model.getIdentifier() === visualDiagramNode.representedVisualModel);
+  const referencedVisualModel = availableVisualModels.get(visualDiagramNode.representedVisualModel);
   let referencedVisualModelLabel = referencedVisualModel === undefined ?
     "" :
     getLocalizedStringFromLanguageString(referencedVisualModel.getLabel(), options.language);
@@ -814,8 +809,7 @@ function onChangeVisualEntities(
   options: ExtendedOptions,
   visualModel: VisualModel | null,
   diagram: UseDiagramType | null,
-  aggregatorView: SemanticModelAggregatorView,
-  graphContext: UseModelGraphContextType,
+  aggregatorView: UseModelGraphContextType,
   changes: {
     previous: VisualEntity | null;
     next: VisualEntity | null;
@@ -831,7 +825,7 @@ function onChangeVisualEntities(
     return;
   }
 
-  const models = graphContext.models;
+  const models = aggregatorView.semanticModels;
   const entities = aggregatorView.getEntities();
   const actions = diagram.actions();
 
@@ -876,7 +870,7 @@ function onChangeVisualEntities(
         }
 
         const node = createVisualModelDiagramNode(
-          options, aggregatorView.getAvailableVisualModels(), next, group);
+          options, aggregatorView.visualModels, next, group);
         if (previous === null) {
           // Create new entity.
           actions.addNodes([node]);

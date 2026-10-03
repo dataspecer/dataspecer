@@ -37,11 +37,7 @@ export function openEditVisualDiagramNodeDialogAction(
 
   const onConfirm = (nextState: EditVisualDiagramNodeDialogState) => {
     dialogData.referencedVisualModel.setLabel(nextState.representedVisualModelName);
-
-    // Hack to force update in the Header component
-    const activeViewId = graph.aggregatorView.getActiveViewId();
-    graph.aggregatorView.changeActiveVisualModel(activeViewId ?? null);
-    graph.reloadView();
+    graph.onVisualModelDidChange();
   };
 
   dialogs?.openDialog(createEditVisualDiagramNodeDialog(dialogData.state, onConfirm));
@@ -65,8 +61,7 @@ export function prepareDataForVisualDiagramNodeDialog(
     return null;
   }
 
-  const referencedVisualModel = graph.aggregatorView.getAvailableVisualModels().find(
-    availableModel => availableModel.getIdentifier() === visualDiagramNode.representedVisualModel);
+  const referencedVisualModel = graph.visualModels.get(visualDiagramNode.representedVisualModel);
 
   if (referencedVisualModel === undefined) {
     notifications.error("The edited visual diagram node has missing the referenced visual model");

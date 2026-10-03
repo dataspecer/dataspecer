@@ -596,7 +596,7 @@ function createActionsContext(
 
   // For now we create derived state here, till is is available as a context.
 
-  const cmeExecutor = createCmeModelOperationExecutor(useGraph.models);
+  const cmeExecutor = createCmeModelOperationExecutor(useGraph.semanticModels);
   const labelResolver = createLabelResolver(
     configuration().prefixes, [options.language]);
 
@@ -631,7 +631,7 @@ function createActionsContext(
   };
 
   const deleteVisualElements = (identifiers: string[]) => {
-    const entitiesToDelete = convertToEntitiesToDeleteType(notifications, useGraph.models, identifiers);
+    const entitiesToDelete = convertToEntitiesToDeleteType(notifications, useGraph.semanticModels, identifiers);
     deleteFromSemanticModels(entitiesToDelete);
   };
 
@@ -750,8 +750,8 @@ function createActionsContext(
   };
 
   const openCreateClassDialog = (model: string) => {
-    const visualModel = useGraph.aggregatorView.getActiveVisualModel();
-    const modelInstance = useGraph.models.get(model);
+    const visualModel = useGraph.getActiveVisualModel();
+    const modelInstance = useGraph.semanticModels.get(model);
     if (modelInstance === null || modelInstance instanceof InMemorySemanticModel) {
       openCreateClassDialogAction(
         cmeExecutor, options, dialogs, classes, useGraph, notifications, visualModel,
@@ -762,8 +762,8 @@ function createActionsContext(
   };
 
   const openCreateAssociationDialog = (model: string) => {
-    const visualModel = useGraph.aggregatorView.getActiveVisualModel();
-    const modelInstance = useGraph.models.get(model);
+    const visualModel = useGraph.getActiveVisualModel();
+    const modelInstance = useGraph.semanticModels.get(model);
     if (modelInstance === null || modelInstance instanceof InMemorySemanticModel) {
       openCreateAssociationDialogAction(
         cmeExecutor, options, dialogs, useGraph, notifications, visualModel,
@@ -774,8 +774,8 @@ function createActionsContext(
   };
 
   const openCreateAttributeDialogForModel = (model: string) => {
-    const visualModel = useGraph.aggregatorView.getActiveVisualModel();
-    const modelInstance = useGraph.models.get(model);
+    const visualModel = useGraph.getActiveVisualModel();
+    const modelInstance = useGraph.semanticModels.get(model);
     if (modelInstance === null || modelInstance instanceof InMemorySemanticModel) {
       openCreateAttributeDialogAction(
         cmeExecutor, options, dialogs, classes, useGraph, notifications,
@@ -935,7 +935,7 @@ function createActionsContext(
       ({
         ...entityToDelete,
         isAttributeOrAttributeProfile: isAttributeOrAttributeProfile(
-          entityToDelete.identifier, useGraph.models, entityToDelete.sourceModel)
+          entityToDelete.identifier, useGraph.semanticModels, entityToDelete.sourceModel)
       })
       );
       const attributesToBeDeleted =
@@ -970,7 +970,7 @@ function createActionsContext(
 
   const addEntitiesFromSemanticModelToVisualModel = async (semanticModel: EntityModel | string) => {
     if (typeof semanticModel === "string") {
-      const newSemanticModel = useGraph.models.get(semanticModel);
+      const newSemanticModel = useGraph.semanticModels.get(semanticModel);
       if (newSemanticModel === undefined) {
         return Promise.reject();
       }
@@ -987,7 +987,7 @@ function createActionsContext(
 
   const removeEntitiesInSemanticModelFromVisualModel = (semanticModel: EntityModel | string) => {
     if (typeof semanticModel === "string") {
-      const newSemanticModel = useGraph.models.get(semanticModel);
+      const newSemanticModel = useGraph.semanticModels.get(semanticModel);
       if (newSemanticModel === undefined) {
         return Promise.reject();
       }
@@ -1114,7 +1114,7 @@ function createActionsContext(
     semanticModel: ModelDsIdentifier, entity: EntityDsIdentifier,
   ) => {
     const cmeOperationExecutor = createCmeOperationExecutor(
-      [...useGraph.models.values()], [...useGraph.visualModels.values()]);
+      [...useGraph.semanticModels.values()], [...useGraph.visualModels.values()]);
     await cmeOperationExecutor.execute<AddSemanticClassSurroundingsOperation>({
       type: "add-class-surroundings-operation",
       semanticModel,
@@ -1126,7 +1126,7 @@ function createActionsContext(
     semanticModel: ModelDsIdentifier, entity: EntityDsIdentifier,
   ) => {
     const cmeOperationExecutor = createCmeOperationExecutor(
-      [...useGraph.models.values()], [...useGraph.visualModels.values()]);
+      [...useGraph.semanticModels.values()], [...useGraph.visualModels.values()]);
     await cmeOperationExecutor.execute<ReleaseSemanticClassSurroundingsOperation>({
       type: "release-class-surroundings-operation",
       semanticModel,
@@ -1137,7 +1137,7 @@ function createActionsContext(
   const openProfileModelDialog = async (model: ModelDsIdentifier) => {
     withVisualModel(notifications, useGraph, (visualModel) => {
       const cmeOperationExecutor = createCmeOperationExecutor(
-        [...useGraph.models.values()], [...useGraph.visualModels.values()]);
+        [...useGraph.semanticModels.values()], [...useGraph.visualModels.values()]);
       openProfileModelDialogAction(
         cmeOperationExecutor, options, dialogs, notifications, useGraph,
         visualModel, model);
@@ -1377,7 +1377,7 @@ function createActionsContext(
 
     onEditEntityItem: (identifier: string) => {
       withVisualModel(notifications, useGraph, (visualModel) => {
-        const model = findSourceModelOfEntity(identifier, useGraph.models);
+        const model = findSourceModelOfEntity(identifier, useGraph.semanticModels);
         if (model === null) {
           notifications.error("Given attribute does not have source model.");
           return;
@@ -1495,7 +1495,7 @@ function withVisualModel(
   useGraph: ModelGraphContextType,
   callback: (visualModel: WritableVisualModel) => void,
 ): void {
-  const visualModel = useGraph.aggregatorView.getActiveVisualModel();
+  const visualModel = useGraph.getActiveVisualModel();
   if (visualModel === null) {
     notifications.error("There is no active visual model.");
     return;

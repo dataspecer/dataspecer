@@ -76,7 +76,7 @@ export function filterSelectionAction(
   const selectionFilterMethods: SelectionFilterMethod[] = [];
   const contextEntities: ClassesContextEntities = classesContext;
 
-  const activeVisualModel = graph.aggregatorView.getActiveVisualModel();
+  const activeVisualModel = graph.getActiveVisualModel();
 
   if((visibilityFilter === VisibilityFilter.OnlyNonVisible || visibilityFilter === VisibilityFilter.OnlyVisible) &&
         activeVisualModel === null) {
@@ -104,7 +104,7 @@ export function filterSelectionAction(
       contextEntities, activeVisualModel);
   });
 
-  const models = graph.models;
+  const models = graph.semanticModels;
 
   filteredNodeSelection = filterBasedOnVisibility(
     filteredNodeSelection, selections.areVisualModelIdentifiers, visibilityFilter, activeVisualModel);

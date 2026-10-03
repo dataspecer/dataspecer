@@ -22,10 +22,10 @@ export function openProfileModelDialogAction(
   model: ModelDsIdentifier,
 ) {
   const initialState = createProfileModelDialogState(
-    graph.models, visualModel, options.language, model);
+    graph.semanticModels, visualModel, options.language, model);
 
   const onConfirm = (state: ProfileModelState) => {
-    const semanticModel = graph.models.get(state.sourceModel.identifier);
+    const semanticModel = graph.semanticModels.get(state.sourceModel.identifier);
     if (semanticModel === undefined) {
       notifications.error("Invalid semantic source model");
       return;

@@ -63,7 +63,7 @@ export function openCreateProfileDialogAction(
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
 ) {
-  const entity = graph.aggregatorView.getEntities()?.[identifier].aggregatedEntity;
+  const entity = graph.getEntities()?.[identifier].aggregatedEntity;
   if (entity === undefined) {
     notifications.error(`Can not find the entity with identifier '${identifier}'.`);
     return;

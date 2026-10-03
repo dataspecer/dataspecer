@@ -409,6 +409,7 @@ const prepareVisualModelWithFourNodes = () => {
   const visualModels: Map<string, WritableVisualModel> = new Map(Object.entries({
     [visualModel.getIdentifier()]: visualModel
   }));
+  const visualModelsList = [...visualModels.values()];
 
   const graph = modelGraphContextToUse({
     aggregatorView,
@@ -421,12 +422,17 @@ const prepareVisualModelWithFourNodes = () => {
     addVisualModel(model) {
       aggregator.addModel(model);
       visualModels.set(model.getIdentifier(), model as WritableVisualModel);
+      visualModelsList.push(model as WritableVisualModel);
     },
     deleteModel(model) {
       models.delete(model);
     },
     deleteVisualModel(model) {
       visualModels.delete(model);
+      const index = visualModelsList.findIndex(item => item.getIdentifier());
+        if (index > -1) {
+          visualModelsList.splice(index, 1);
+        }
     },
     reloadView() {
       throw Error("Not supported");
@@ -434,6 +440,7 @@ const prepareVisualModelWithFourNodes = () => {
     selectActiveVisualModel() {
       throw Error("Not supported");
     },
+    visualModelsList,
   });
 
   return {

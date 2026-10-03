@@ -1,6 +1,7 @@
 import React, { useContext, useMemo } from "react";
 
 import {
+  AggregatedEntityWrapper,
   SemanticModelAggregator,
   type SemanticModelAggregatorView,
 } from "@dataspecer/core-v2/semantic-model/aggregator";
@@ -25,6 +26,8 @@ interface ModelGraphContext {
   models: Map<string, EntityModel>;
 
   visualModels: Map<string, WritableVisualModel>;
+
+  visualModelsList: WritableVisualModel[];
 
   // Actions
 
@@ -75,6 +78,7 @@ export function ModelContextProvider(props: {
       aggregatorView,
       models: modelMap,
       visualModels: visualModelMap,
+      visualModelsList: visualModels,
       reloadView: function (): void {
         setAggregatorView(aggregator.getView());
       },
@@ -128,7 +132,7 @@ export const useModelGraphContext = (): UseModelGraphContextType => {
 };
 
 export function modelGraphContextToUse(context: ModelGraphContext): UseModelGraphContextType {
-  const { aggregatorView, models, visualModels } = context;
+  const { aggregatorView, models, visualModels, visualModelsList } = context;
 
   const addModel = (...models: EntityModel[]) => {
     // Make sure there is a view model.
@@ -187,37 +191,60 @@ export function modelGraphContextToUse(context: ModelGraphContext): UseModelGrap
   };
 
   return {
-    aggregatorView,
-    models,
+    semanticModels: models,
     visualModels,
+    visualModelsList,
     //
+    getActiveViewId() {
+      return aggregatorView.getActiveViewId();
+    },
+    getActiveVisualModel() {
+      return aggregatorView.getActiveVisualModel();
+    },
+    getEntities() {
+      return aggregatorView.getEntities();
+    },
     reloadView: () => context.reloadView(),
     selectActiveVisualModel: (model) => context.selectActiveVisualModel(model),
-    addModel,
+    addSemanticModel: addModel,
     addVisualModel,
     setModelAlias,
     setModelIri,
     replaceModels,
     deleteModel,
     deleteVisualModel,
+    onVisualModelDidChange: () => {
+      const activeViewId = aggregatorView.getActiveViewId();
+      aggregatorView.changeActiveVisualModel(activeViewId ?? null);
+      context.reloadView();
+    },
+    subscribeToChanges(callback) {
+      return aggregatorView.subscribeToChanges(callback);
+    },
   };
 }
 
 export interface UseModelGraphContextType {
 
-  aggregatorView: SemanticModelAggregatorView;
-
-  models: Map<string, EntityModel>;
+  semanticModels: Map<string, EntityModel>;
 
   visualModels: Map<string, WritableVisualModel>;
 
+  visualModelsList: WritableVisualModel[];
+
   //
+
+  getActiveViewId() : string | undefined;
+
+  getEntities(): Record<string, AggregatedEntityWrapper>;
 
   reloadView: () => void;
 
+  getActiveVisualModel(): VisualModel | null;
+
   selectActiveVisualModel(identifier: ModelDsIdentifier | null): void;
 
-  addModel: (...models: EntityModel[]) => void;
+  addSemanticModel: (...models: EntityModel[]) => void;
 
   addVisualModel: (...models: WritableVisualModel[]) => void;
 
@@ -225,11 +252,15 @@ export interface UseModelGraphContextType {
 
   setModelIri: (iri: string, model: InMemorySemanticModel) => void;
 
-  replaceModels: (entityModels: EntityModel[], visualModels: WritableVisualModel[]) => void;
+  replaceModels: (semanticModels: EntityModel[], visualModels: WritableVisualModel[]) => void;
 
   deleteModel: (modelId: string) => void;
 
   deleteVisualModel: (modelId: string) => void;
+
+  subscribeToChanges(callback: (updated: AggregatedEntityWrapper[], removed: string[]) => void): () => void;
+
+  onVisualModelDidChange: () => void;
 
 }
 

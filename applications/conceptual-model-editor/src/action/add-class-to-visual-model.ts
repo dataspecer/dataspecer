@@ -20,7 +20,7 @@ export async function addSemanticClassToVisualModelAction(
   modelIdentifier: string,
   position: { x: number, y: number } | null,
 ) {
-  const entities = graph.aggregatorView.getEntities();
+  const entities = graph.getEntities();
   if (position === null) {
     position = await findPositionForNewNodeUsingLayouting(
       notifications, diagram, graph, visualModel, classes, entityIdentifier);
@@ -36,6 +36,6 @@ export async function addSemanticClassToVisualModelAction(
         entity, modelIdentifier, position, content);
       addRelatedEntitiesAction(
         notifications, graph, classes, visualModel, Object.values(entities),
-        graph.models, entity);
+        graph.semanticModels, entity);
     });
 }

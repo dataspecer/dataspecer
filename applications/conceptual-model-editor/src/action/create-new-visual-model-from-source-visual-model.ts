@@ -31,7 +31,7 @@ export function createNewVisualModelAction(
   newVisualModelInitialEdges: string[],
 ): WritableVisualModel {
 
-  const activeVisualModel = graph.aggregatorView.getActiveVisualModel();
+  const activeVisualModel = graph.getActiveVisualModel();
   const model = createWritableVisualModel(activeVisualModel);
 
   if(sourceVisualModel !== null) {

@@ -43,7 +43,7 @@ export function centerViewportToVisualEntityByRepresentedAction(
     entityIdentifier = domainClassIdentifier;
   }
 
-  const visualModel = graph.aggregatorView.getActiveVisualModel();
+  const visualModel = graph.getActiveVisualModel();
   if (visualModel === null) {
     notifications.error("There is no active visual model.");
     return;
