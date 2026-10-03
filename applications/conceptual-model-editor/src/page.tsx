@@ -129,7 +129,11 @@ const Page = () => {
       setVisualModels={setVisualModels}
       queryParamsContext={queryParamsContext}
     >
-      <ClassesContextProvider aggregatorView={aggregatorView}>
+      <ClassesContextProvider
+        semanticModelsList={models}
+        visualModelsList={visualModels}
+        source={aggregatorView}
+      >
         <LayoutConfigurationContext.Provider value={layoutConfigurationContext}>
           <DialogContextProvider>
             <ActionsContextProvider>

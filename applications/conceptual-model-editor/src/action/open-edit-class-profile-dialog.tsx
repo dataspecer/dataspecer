@@ -3,6 +3,7 @@ import { isWritableVisualModel, VisualModel } from "@dataspecer/visual-model";
 
 import { DialogApiContextType } from "../dialog/dialog-service";
 import { UseModelGraphContextType } from "../context/model-context";
+import { ClassesContext } from "../context/classes-context";
 import { Options } from "../application";
 import {
   isSemanticModelClassProfile,
@@ -31,6 +32,7 @@ export function openEditClassProfileDialogAction(
   cmeExecutor: CmeModelOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
+  classes: ClassesContext,
   graph: UseModelGraphContextType,
   visualModel: VisualModel | null,
   model: InMemorySemanticModel,
@@ -46,7 +48,7 @@ export function openEditClassProfileDialogAction(
   }
 
   const initialState = createEditClassProfileDialogState(
-    visualModel, options.language, model, rawEntity, graph.semanticModels, tracker,
+    visualModel, options.language, model, rawEntity, classes.semanticModels, tracker,
     labelResolver, graph);
 
   const onConfirm = (state: ClassProfileDialogState) => {

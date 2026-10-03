@@ -27,8 +27,6 @@ interface ModelGraphContext {
 
   visualModels: Map<string, WritableVisualModel>;
 
-  visualModelsList: WritableVisualModel[];
-
   // Actions
 
   reloadView(): void;
@@ -78,7 +76,6 @@ export function ModelContextProvider(props: {
       aggregatorView,
       models: modelMap,
       visualModels: visualModelMap,
-      visualModelsList: visualModels,
       reloadView: function (): void {
         setAggregatorView(aggregator.getView());
       },
@@ -132,7 +129,7 @@ export const useModelGraphContext = (): UseModelGraphContextType => {
 };
 
 export function modelGraphContextToUse(context: ModelGraphContext): UseModelGraphContextType {
-  const { aggregatorView, models, visualModels, visualModelsList } = context;
+  const { aggregatorView, models, visualModels } = context;
 
   const addModel = (...models: EntityModel[]) => {
     // Make sure there is a view model.
@@ -191,10 +188,6 @@ export function modelGraphContextToUse(context: ModelGraphContext): UseModelGrap
   };
 
   return {
-    semanticModels: models,
-    visualModels,
-    visualModelsList,
-    //
     getActiveViewId() {
       return aggregatorView.getActiveViewId();
     },
@@ -225,14 +218,6 @@ export function modelGraphContextToUse(context: ModelGraphContext): UseModelGrap
 }
 
 export interface UseModelGraphContextType {
-
-  semanticModels: Map<string, EntityModel>;
-
-  visualModels: Map<string, WritableVisualModel>;
-
-  visualModelsList: WritableVisualModel[];
-
-  //
 
   getActiveViewId(): string | undefined;
 

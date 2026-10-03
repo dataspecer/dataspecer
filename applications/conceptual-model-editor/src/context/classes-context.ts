@@ -3,20 +3,31 @@ import type {
   SemanticModelGeneralization,
   SemanticModelRelationship,
 } from "@dataspecer/core-v2/semantic-model/concepts";
-import React, { useContext, useEffect, useMemo, useState } from "react";
-import type { Entity } from "@dataspecer/core-v2";
+import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
+import type { Entity, EntityModel } from "@dataspecer/core-v2";
 import {
   SemanticModelClassProfile,
   SemanticModelRelationshipProfile,
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { AggregatedEntityWrapper, SemanticModelAggregatorView } from "@dataspecer/core-v2/semantic-model/aggregator";
-import { propagateAggregatorChangesToLocalState } from "./page-aggregator-sync";
+import { AggregatedEntityWrapper } from "@dataspecer/core-v2/semantic-model/aggregator";
+import { buildSourceModelOfEntityMap, propagateAggregatorChangesToLocalState } from "./page-aggregator-sync";
+import { WritableVisualModel } from "@dataspecer/visual-model";
 
 export const useClassesContext = (): ClassesContext => {
   return useContext(ReactClassesContext);
 };
 
 export interface ClassesContext {
+
+  semanticModels: Map<string, EntityModel>;
+
+  semanticModelsList: EntityModel[];
+
+  visualModels: Map<string, WritableVisualModel>;
+
+  visualModelsList: WritableVisualModel[];
+
+  // Aggregated entities.
 
   classes: SemanticModelClass[];
 
@@ -30,16 +41,31 @@ export interface ClassesContext {
 
   sourceModelOfEntityMap: Map<string, string>;
 
-  rawEntities: (Entity | null)[];
+  /**
+   * Raw entities.
+   */
+  entities: Entity[];
+
 };
 
 const ReactClassesContext = React.createContext(null as unknown as ClassesContext);
 
+type Listener = (updated: AggregatedEntityWrapper[], removed: string[]) => void;
+
 export function ClassesContextProvider(props: {
-  aggregatorView: SemanticModelAggregatorView
+  semanticModelsList: EntityModel[],
+  visualModelsList: WritableVisualModel[],
+  source: { subscribeToChanges: (callback: Listener) => void },
   children: React.ReactNode,
 }) {
-  const { aggregatorView } = props;
+  const { semanticModelsList, visualModelsList, source: aggregatorView } = props;
+
+  const semanticModels = useMemo(() => new Map(semanticModelsList.map(
+    (model) => [model.getId(), model])), [semanticModelsList]);
+
+  const visualModels = useMemo(() => new Map(visualModelsList.map(
+    (model) => [model.getIdentifier(), model])),
+    [visualModelsList]);
 
   const [classes, setClasses] = useState<SemanticModelClass[]>([]);
   const [relationships, setRelationships] = useState<SemanticModelRelationship[]>([]);
@@ -47,14 +73,25 @@ export function ClassesContextProvider(props: {
   const [classProfiles, setClassProfiles] = useState<SemanticModelClassProfile[]>([]);
   const [relationshipProfiles, setRelationshipProfiles] = useState<SemanticModelRelationshipProfile[]>([]);
   const [sourceModelOfEntityMap, setSourceModelOfEntityMap] = useState(new Map<string, string>());
-  const [rawEntities, setRawEntities] = useState<(Entity | null)[]>([]);
+  const [entities, setEntities] = useState<Entity[]>([]);
+
+  // The aggregator notifies us synchronously in addModel/deleteModel, before
+  // the new list of models is rendered.
+  // So the callback would see an outdated list.
+  const semanticModelsListRef = useRef(semanticModelsList);
+  useEffect(() => {
+    semanticModelsListRef.current = semanticModelsList;
+    setSourceModelOfEntityMap(buildSourceModelOfEntityMap(semanticModelsList));
+  }, [semanticModelsList]);
 
   useEffect(() => {
-    const callback = (updated: AggregatedEntityWrapper[], removed: string[]) => {
-      propagateAggregatorChangesToLocalState(updated, removed,
+    const callback: Listener = (updated, removed) => {
+      propagateAggregatorChangesToLocalState(
+        semanticModelsListRef.current,
+        updated, removed,
         setClasses, setRelationships, setGeneralizations,
-        setRawEntities, setSourceModelOfEntityMap,
-        setClassProfiles, setRelationshipProfiles, aggregatorView)
+        setEntities, setSourceModelOfEntityMap,
+        setClassProfiles, setRelationshipProfiles)
     };
     return aggregatorView.subscribeToChanges(callback);
   }, [aggregatorView]);
@@ -63,26 +100,17 @@ export function ClassesContextProvider(props: {
 
   const context = useMemo(() => {
     return {
+      semanticModels, semanticModelsList,
+      visualModels, visualModelsList,
       classes, relationships, generalizations, classProfiles,
-      relationshipProfiles, sourceModelOfEntityMap, rawEntities
-    };
-  }, [classes, relationships, generalizations, classProfiles,
-    relationshipProfiles, sourceModelOfEntityMap, rawEntities])
+      relationshipProfiles, sourceModelOfEntityMap, entities,
+    } satisfies ClassesContext;
+  }, [
+    semanticModels, semanticModelsList,
+    visualModels, visualModelsList,
+    classes, relationships, generalizations, classProfiles,
+    relationshipProfiles, sourceModelOfEntityMap, entities])
 
   return React.createElement(
     ReactClassesContext.Provider, { value: context }, props.children)
 }
-
-/*
-  const createConnection = (model: InMemorySemanticModel, connection: ConnectionType) => {
-    if (!model || !(model instanceof InMemorySemanticModel)) {
-      console.error("no local model found or is not of type InMemoryLocal");
-      return null;
-    }
-    if (connection.type === "association") {
-      return model.executeOperation(createRelationship({ ...connection }));
-    } else {
-      return model.executeOperation(createGeneralization({ ...connection }));
-    }
-  };
-*/

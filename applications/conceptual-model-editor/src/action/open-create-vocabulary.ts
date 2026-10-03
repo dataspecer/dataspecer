@@ -2,6 +2,7 @@ import { EntityModel } from "@dataspecer/core-v2";
 
 import { createLogger } from "../application";
 import { UseModelGraphContextType } from "../context/model-context";
+import { ClassesContext } from "../context/classes-context";
 import { DialogApiContextType } from "../dialog/dialog-service";
 import { createAddModelDialog } from "../dialog/semantic-model/create-semantic-model/create-semantic-model-dialog";
 import {
@@ -20,12 +21,13 @@ const LOG = createLogger(import.meta.url);
 
 export function openCreateVocabularyAction(
   dialogs: DialogApiContextType,
+  classes: ClassesContext,
   graph: UseModelGraphContextType,
 ) {
   const onConfirm = (state: CreateModelState) => {
     void (async () => {
       const models = await createSemanticModels(state);
-      addModelsToGraph(graph, models);
+      addModelsToGraph(classes, graph, models);
       graph.reloadView();
     })();
   };
@@ -61,7 +63,11 @@ export async function createSemanticModels(
   return result;
 }
 
-function addModelsToGraph(graph: UseModelGraphContextType, models: EntityModel[]) {
+function addModelsToGraph(
+  classes: ClassesContext,
+  graph: UseModelGraphContextType,
+  models: EntityModel[],
+) {
   // If there is no visual model, we create a default one.
   if (graph.getActiveVisualModel() === null) {
     LOG.warn("Creating default visual model.")
@@ -71,7 +77,7 @@ function addModelsToGraph(graph: UseModelGraphContextType, models: EntityModel[]
 
   for (const model of models) {
     graph.addSemanticModel(model);
-    for (const [_, visualModel] of graph.visualModels) {
+    for (const [_, visualModel] of classes.visualModels) {
       visualModel.setModelColor(model.getId(), randomColorFromPalette());
     }
   }

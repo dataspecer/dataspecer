@@ -26,13 +26,12 @@ export function removeFromVisualModelByRepresentedAction(
   identifiers: string[],
 ) {
   const entitiesToRemove = collectIndirectVisualEntitiesToRemove(
-    notifications, graph, classesContext, visualModel, identifiers);
+    notifications, classesContext, visualModel, identifiers);
   removeVisualEntitiesFromVisualModelAction(notifications, visualModel, entitiesToRemove);
 }
 
 function collectIndirectVisualEntitiesToRemove(
   notifications: UseNotificationServiceWriterType,
-  graph: UseModelGraphContextType,
   classesContext: ClassesContext,
   visualModel: WritableVisualModel,
   semanticIdentifiers: string[],
@@ -46,7 +45,7 @@ function collectIndirectVisualEntitiesToRemove(
     visualModel, semanticIdentifiers, getVisualEntitiesForRepresented, false);
 
   const indirectEntitiesToRemove = findInvalidVisualEdgesForVisualDiagramNodes(
-    notifications, classesContext, graph.visualModels, visualModel, semanticIdentifiers);
+    notifications, classesContext, classesContext.visualModels, visualModel, semanticIdentifiers);
 
   return directEntitiesToRemove.concat(indirectEntitiesToRemove);
 }

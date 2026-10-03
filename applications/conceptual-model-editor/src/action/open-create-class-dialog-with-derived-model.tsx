@@ -41,7 +41,7 @@ export function openCreateClassDialogWithModelDerivedFromClassAction(
     return;
   }
 
-  const model = firstInMemorySemanticModel(graph.semanticModels);
+  const model = firstInMemorySemanticModel(classes.semanticModels);
   if (model === null) {
     notifications.error("You have to create a writable vocabulary first!");
     return;

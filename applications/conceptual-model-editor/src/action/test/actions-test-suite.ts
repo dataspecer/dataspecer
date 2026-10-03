@@ -269,6 +269,13 @@ export class ActionsTestSuite {
     givenRelationships: CreatedSemanticEntityData[],
     givenGeneralizations: CreatedSemanticEntityData[],
     givenRelationshipProfiles: CreatedSemanticEntityData[],
+    models: Pick<ClassesContext,
+      "semanticModels" | "semanticModelsList" | "visualModels" | "visualModelsList"> = {
+      semanticModels: new Map(),
+      semanticModelsList: [],
+      visualModels: new Map(),
+      visualModelsList: [],
+    },
   ): ClassesContext {
     const sourceModelOfEntityMap = new Map();
 
@@ -306,11 +313,12 @@ export class ActionsTestSuite {
       .concat(relationshipProfilesAsSemanticEntities);
 
     const classes: ClassesContext = {
+      ...models,
       classes: classesAsSemanticEntities,
       relationships: relationshipsAsSemanticEntities,
       generalizations: generalizationsAsSemanticEntities,
       sourceModelOfEntityMap,
-      rawEntities,
+      entities: rawEntities,
       classProfiles: [],
       relationshipProfiles: relationshipProfilesAsSemanticEntities
     };
@@ -413,7 +421,6 @@ export class ActionsTestSuite {
       aggregatorView,
       models,
       visualModels,
-      visualModelsList,
       addSemanticModel(model) {
         aggregator.addModel(model);
         models.set(model.getId(), model);
@@ -493,6 +500,12 @@ export class ActionsTestSuite {
       connectionToTestType === TestedSemanticConnectionType.Association ? createdRelationships.flat() : [],
       connectionToTestType === TestedSemanticConnectionType.Generalization ? createdRelationships.flat() : [],
       connectionToTestType === TestedSemanticConnectionType.AssociationProfile ? createdRelationships.flat() : [],
+      {
+        semanticModels: models,
+        semanticModelsList: modelsAsArray,
+        visualModels,
+        visualModelsList,
+      },
     );
 
     return {
@@ -812,7 +825,7 @@ export class ActionsTestSuite {
       throw new Error("Failed when creating attribute");
     }
     classesContext.relationships.push(attributeObject);
-    classesContext.rawEntities.push(attributeObject);
+    classesContext.entities.push(attributeObject);
 
     return {
       identifier: newAttribute.id,

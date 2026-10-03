@@ -3,7 +3,7 @@ import { VisualModel } from "@dataspecer/visual-model";
 import { ModelDsIdentifier } from "../dataspecer/entity-model";
 import { DialogApiContextType } from "../dialog/dialog-service";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
-import { UseModelGraphContextType } from "../context/model-context";
+import { ClassesContext } from "../context/classes-context";
 import {
   createProfileModelDialog,
   createProfileModelDialogState,
@@ -17,15 +17,15 @@ export function openProfileModelDialogAction(
   options: Options,
   dialogs: DialogApiContextType,
   notifications: UseNotificationServiceWriterType,
-  graph: UseModelGraphContextType,
+  classes: ClassesContext,
   visualModel: VisualModel | null,
   model: ModelDsIdentifier,
 ) {
   const initialState = createProfileModelDialogState(
-    graph.semanticModels, visualModel, options.language, model);
+    classes.semanticModels, visualModel, options.language, model);
 
   const onConfirm = (state: ProfileModelState) => {
-    const semanticModel = graph.semanticModels.get(state.sourceModel.identifier);
+    const semanticModel = classes.semanticModels.get(state.sourceModel.identifier);
     if (semanticModel === undefined) {
       notifications.error("Invalid semantic source model");
       return;

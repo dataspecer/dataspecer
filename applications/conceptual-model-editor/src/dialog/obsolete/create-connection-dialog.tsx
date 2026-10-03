@@ -11,7 +11,6 @@ import {
   isSemanticModelRelationship,
 } from "@dataspecer/core-v2/semantic-model/concepts";
 
-import { UseModelGraphContextType } from "../../context/model-context";
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
 import { InputLanguageString } from "../components/input-language-string";
 import { IriInput } from "../../components/input/iri-input";
@@ -25,6 +24,7 @@ import { filterInMemoryModels } from "../../util/model-utils";
 import { findSourceModelOfEntity } from "../../service/model-service";
 import { generateName } from "../../util/name-utils";
 import { getDomainAndRange } from "../../util/relationship-utils";
+import { ClassesContext } from "../../context/classes-context";
 
 
 export enum ConnectionType {
@@ -69,7 +69,7 @@ export interface CreateConnectionState {
 let nextOpenConnectionType = ConnectionType.Association;
 
 export const createConnectionDialog = (
-  graph: UseModelGraphContextType,
+  classesContext: ClassesContext,
   source: SemanticModelClass,
   target: SemanticModelClass,
   language: string,
@@ -78,7 +78,7 @@ export const createConnectionDialog = (
   return {
     label: "create-connection-dialog.label",
     component: CreateConnectionDialog,
-    state: createCreateConnectionState(graph, source, target, language),
+    state: createCreateConnectionState(classesContext, source, target, language),
     confirmLabel: "create-connection-dialog.btn-ok",
     cancelLabel: "create-connection-dialog.btn-close",
     validate: null,
@@ -91,13 +91,13 @@ export const createConnectionDialog = (
 }
 
 export function createCreateConnectionState(
-  graph: UseModelGraphContextType,
+  classesContext: ClassesContext,
   source: SemanticModelClass,
   target: SemanticModelClass,
   language: string,
 ): CreateConnectionState {
-  const models = filterInMemoryModels([...graph.semanticModels.values()]);
-  const owner = findSourceModelOfEntity(source.id, graph.semanticModels);
+  const models = filterInMemoryModels(classesContext.semanticModelsList);
+  const owner = findSourceModelOfEntity(source.id, classesContext.semanticModels);
   // Check we have an owner as a semantic model we can write to.
   let model;
   if (owner === null || !(owner instanceof InMemorySemanticModel)) {

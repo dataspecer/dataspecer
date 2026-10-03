@@ -17,7 +17,7 @@ import { useActions } from "../action/actions-react-binding";
 export const ExportManagement = () => {
   const actions = useActions();
   const graph = useModelGraphContext();
-  const { sourceModelOfEntityMap } = useClassesContext();
+  const classes = useClassesContext();
 
   const { download } = useDownload();
 
@@ -38,7 +38,7 @@ export const ExportManagement = () => {
         return entityOrNull !== null;
       })
       .map((aggregatedEntity) => {
-        const modelBaseIri = getModelIri(graph.semanticModels.get(sourceModelOfEntityMap.get(aggregatedEntity.id) ?? ""));
+        const modelBaseIri = getModelIri(classes.semanticModels.get(classes.sourceModelOfEntityMap.get(aggregatedEntity.id) ?? ""));
         const entityIri = getIri(aggregatedEntity, modelBaseIri);
 
         if (!entityIri) {
@@ -78,7 +78,7 @@ export const ExportManagement = () => {
       baseIri: "",
       entities: [],
     };
-    for (const model of graph.semanticModels.values()) {
+    for (const model of classes.semanticModels.values()) {
       contextModels.push({
         baseIri: isInMemorySemanticModel(model) ? model.getBaseIri() : "",
         entities: Object.values(model.getEntities()),
@@ -99,8 +99,8 @@ export const ExportManagement = () => {
   };
 
   const handleGenerateProfileShacl = () => {
-    const semanticModels = [...graph.semanticModels.values()];
-    const profileModels = [...graph.semanticModels.values()];
+    const semanticModels = classes.semanticModelsList;
+    const profileModels = classes.semanticModelsList;
     const topProfileModel = profileModels[0];
 
     const iri = isInMemorySemanticModel(topProfileModel) ?

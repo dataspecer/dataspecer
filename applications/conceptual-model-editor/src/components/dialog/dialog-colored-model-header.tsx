@@ -10,6 +10,7 @@ import { t } from "../../application";
 import { getModelLabel } from "../../service/model-service";
 import { type ChangeEvent } from "react";
 import { VisualModel } from "@dataspecer/visual-model";
+import { useClassesContext } from "../../context/classes-context";
 
 export const DialogColoredModelHeader = (props: { activeModel: EntityModel | null; style?: string }) => {
   const graph = useModelGraphContext();
@@ -80,9 +81,10 @@ export const DialogColoredModelHeaderWithModelSelector = (props: {
     style?: string;
 }) => {
   const graph= useModelGraphContext();
+  const classesContext = useClassesContext();
   const { activeModel, style } = props;
 
-  const availableModels = graph.semanticModels.values()
+  const availableModels = classesContext.semanticModels.values()
     .filter(model => model instanceof InMemorySemanticModel)
     .map(model => ({
       id: model.getId(),

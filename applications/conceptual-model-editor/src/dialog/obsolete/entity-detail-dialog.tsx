@@ -11,7 +11,7 @@ import {
 
 import { IriLink } from "../../components/iri-link";
 import { sourceModelOfEntity } from "../../util/model-utils";
-import { UseModelGraphContextType, useModelGraphContext } from "../../context/model-context";
+import { UseModelGraphContextType } from "../../context/model-context";
 import { ResourceDetailClickThrough } from "../../components/entity-detail-dialog-clicktrough-component";
 import { getEntityTypeString, useEntityProxy } from "../../util/detail-utils";
 import { DialogDetailRow } from "../../components/dialog/dialog-detail-row";
@@ -27,6 +27,7 @@ import {
   SemanticModelRelationshipProfile,
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { isSemanticModelAttributeProfile } from "../../dataspecer/semantic-model";
+import { useClassesContext } from "../../context/classes-context";
 
 type SupportedTypes =
   | SemanticModelClass
@@ -94,10 +95,10 @@ function createEntityDetailDialogState(
 
 const EntityDetailDialog = (props: DialogProps<EntityDetailState>) => {
   const [language, setLanguage] = useState<string>(props.state.language);
-  const graph = useModelGraphContext();
+  const classesContext = useClassesContext();
   //
   const entity = props.state.entity;
-  const models = [...graph.semanticModels.values()];
+  const models = classesContext.semanticModelsList;
   const sourceModel = sourceModelOfEntity(entity.id, models);
 
   const proxy = useEntityProxy(entity, language);

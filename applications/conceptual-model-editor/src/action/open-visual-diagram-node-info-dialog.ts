@@ -3,7 +3,7 @@ import { Options } from "../application";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { VisualModelDiagramNode } from "../diagram";
 import { VisualModel } from "@dataspecer/visual-model";
-import { UseModelGraphContextType } from "../context/model-context";
+import { ClassesContext } from "../context/classes-context";
 import { prepareDataForVisualDiagramNodeDialog } from "./open-edit-visual-diagram-node-dialog";
 import {
   createVisualDiagramNodeInfoDialog
@@ -16,12 +16,12 @@ export function openVisualDiagramNodeInfoDialogAction(
   notifications: UseNotificationServiceWriterType,
   options: Options,
   dialogs: DialogApiContextType,
-  graph: UseModelGraphContextType,
+  classes: ClassesContext,
   visualModel: VisualModel,
   visualModelDiagramNode: VisualModelDiagramNode,
 ) {
   const data = prepareDataForVisualDiagramNodeDialog(
-    notifications, options, graph, visualModel, visualModelDiagramNode);
+    notifications, options, classes, visualModel, visualModelDiagramNode);
 
   if (data === null) {
     return;

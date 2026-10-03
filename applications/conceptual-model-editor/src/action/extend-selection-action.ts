@@ -28,14 +28,7 @@ import { createLogger } from "../application";
 
 const LOG = createLogger(import.meta.url);
 
-export type ClassesContextEntities = {
-    classes: SemanticModelClass[],
-    relationships: SemanticModelRelationship[],
-    generalizations: SemanticModelGeneralization[],
-    classProfiles: SemanticModelClassProfile[],
-    relationshipProfiles: SemanticModelRelationshipProfile[],
-    rawEntities: (Entity | null)[],
-};
+export type ClassesContextEntities = ClassesContext;
 
 /**
  * Type representing all the possible extensions of the selection.
@@ -251,7 +244,7 @@ export const extendSelectionAction = (
   if(semanticModelFilter === null) {
     return selectionExtension;
   }
-  return filterExtensionUsingSemanticModelFilters(selectionExtension, semanticModelFilter, graph.semanticModels);
+  return filterExtensionUsingSemanticModelFilters(selectionExtension, semanticModelFilter, classesContext.semanticModels);
 };
 
 function getNewNodeSelectionExtendedByNodeDuplicates(

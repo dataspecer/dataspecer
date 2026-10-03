@@ -41,7 +41,7 @@ export function openCreateClassDialogAndCreateAssociationAction(
 ) {
   const onConfirm = (created: CmeReference, state: ClassDialogState) => {
     createAssociationToCreatedClass(
-      cmeExecutor, notifications, options, graph, visualModel,
+      cmeExecutor, notifications, options, graph, classes, visualModel,
       nodeIdentifier, isCreatedClassTarget, created, state, tracker,
       labelResolver);
   }
@@ -57,6 +57,7 @@ function createAssociationToCreatedClass(
   notifications: UseNotificationServiceWriterType,
   options: Options,
   graph: UseModelGraphContextType,
+  classesContext: ClassesContext,
   visualModel: WritableVisualModel,
   nodeIdentifier: string,
   isCreatedClassTarget: boolean,
@@ -80,7 +81,7 @@ function createAssociationToCreatedClass(
   const sourceClassIdentifier = node.representedEntity;
 
   const vocabularyForCreatedClass = findVocabularyForModel(
-    graph, visualModel, createdClassData.model);
+    classesContext, visualModel, createdClassData.model);
 
   const createdClassEntityRepresentative: EntityRepresentative = {
     identifier: createdClassData.identifier,

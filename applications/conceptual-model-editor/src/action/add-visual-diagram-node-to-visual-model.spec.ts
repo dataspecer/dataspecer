@@ -20,13 +20,13 @@ test("Put 4 visual nodes without edges into visual model with visual diagram nod
   const {
     visualModel,
     graph,
-    graph: useGraph,
-    visualNodeIdentifiers
+    visualNodeIdentifiers,
+    classesContext
   } = ActionsTestSuite.prepareModelsWithSemanticData(4, TestedSemanticConnectionType.Association);
   const diagram = ActionsTestSuite.createTestDiagram();
 
   const createdVisualDiagramNodeIdentifier = addVisualDiagramNodeForNewModelToVisualModelAction(
-    notificationMockup, graph, useGraph, diagram, visualModel, null, visualNodeIdentifiers, []);
+    notificationMockup, graph, graph, diagram, visualModel, null, visualNodeIdentifiers, []);
   expect(createdVisualDiagramNodeIdentifier).not.toBeNull();
   const createdVisualDiagramNode = visualModel.getVisualEntity(
     createdVisualDiagramNodeIdentifier!) as VisualDiagramNode;
@@ -34,7 +34,7 @@ test("Put 4 visual nodes without edges into visual model with visual diagram nod
   expect(createdVisualDiagramNode).not.toBeNull();
   expect(isVisualDiagramNode(createdVisualDiagramNode!)).toBeTruthy();
 
-  const createdVisualModel = graph.visualModels.get(createdVisualDiagramNode.representedVisualModel);
+  const createdVisualModel = classesContext.visualModels.get(createdVisualDiagramNode.representedVisualModel);
   expect(createdVisualModel).not.toBeUndefined();
   expect(isWritableVisualModel(createdVisualModel)).toBeTruthy();
 
@@ -47,7 +47,7 @@ test("Put visual nodes with edges into visual model with visual diagram node ref
     visualModel,
     modelsAsArray,
     graph,
-    graph: useGraph,
+    classesContext,
   } = ActionsTestSuite.prepareModelsWithSemanticData(0, TestedSemanticConnectionType.Association);
   const diagram = ActionsTestSuite.createTestDiagram();
   const model = modelsAsArray[2].getId();
@@ -72,7 +72,7 @@ test("Put visual nodes with edges into visual model with visual diagram node ref
 
   // Perform action
   const createdVisualDiagramNodeIdentifier = addVisualDiagramNodeForNewModelToVisualModelAction(
-    notificationMockup, graph, useGraph, diagram, visualModel, null,
+    notificationMockup, graph, graph, diagram, visualModel, null,
     [nodeVisuals[0], nodeVisuals[1]], edgeVisuals);
 
   // Check the content of the main visual model
@@ -102,7 +102,7 @@ test("Put visual nodes with edges into visual model with visual diagram node ref
   expect(createdVisualDiagramNode).not.toBeNull();
   expect(isVisualDiagramNode(createdVisualDiagramNode!)).toBeTruthy();
 
-  const createdVisualModel = graph.visualModels.get(createdVisualDiagramNode.representedVisualModel);
+  const createdVisualModel = classesContext.visualModels.get(createdVisualDiagramNode.representedVisualModel);
   expect(createdVisualModel).not.toBeUndefined();
   expect(isWritableVisualModel(createdVisualModel)).toBeTruthy();
 

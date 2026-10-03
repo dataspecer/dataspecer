@@ -46,7 +46,7 @@ export async function layoutActiveVisualModel(
   outsiders?: Record<string, XY | null>,
   shouldPutOutsidersInVisualModel?: boolean,
 ) {
-  const models = graph.semanticModels;
+  const models = classes.semanticModels;
 
   const reactflowDimensionQueryHandler = createExactNodeDimensionsQueryHandler(diagram);
 

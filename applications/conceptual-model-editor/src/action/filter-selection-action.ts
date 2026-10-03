@@ -74,7 +74,6 @@ export function filterSelectionAction(
   let filteredNodeSelection: string[] = [];
   let filteredEdgeSelection: string[] = [];
   const selectionFilterMethods: SelectionFilterMethod[] = [];
-  const contextEntities: ClassesContextEntities = classesContext;
 
   const activeVisualModel = graph.getActiveVisualModel();
 
@@ -101,10 +100,10 @@ export function filterSelectionAction(
     filterMethod(
       selections.nodeSelection, selections.areVisualModelIdentifiers,
       filteredNodeSelection, selections.edgeSelection, filteredEdgeSelection,
-      contextEntities, activeVisualModel);
+      classesContext, activeVisualModel);
   });
 
-  const models = graph.semanticModels;
+  const models = classesContext.semanticModels;
 
   filteredNodeSelection = filterBasedOnVisibility(
     filteredNodeSelection, selections.areVisualModelIdentifiers, visibilityFilter, activeVisualModel);

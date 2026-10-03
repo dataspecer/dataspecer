@@ -59,15 +59,14 @@ describe("findSourceModelOfEntity", () => {
   });
 
   test("agrees with sourceModelOfEntityMap for semantic entities", () => {
-    const { semanticModel, first, second, aggregatorView, models } = buildFixture();
+    const { semanticModel, first, second, models } = buildFixture();
 
     let capturedMap = new Map<string, string>();
     propagateAggregatorChangesToLocalState(
-      [], [],
+      [...models.values()], [], [],
       () => undefined, () => undefined, () => undefined, () => undefined,
       (next) => { capturedMap = typeof next === "function" ? next(capturedMap) : next; },
       () => undefined, () => undefined,
-      aggregatorView as any,
     );
 
     for (const id of [first.id, second.id]) {

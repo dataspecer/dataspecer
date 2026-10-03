@@ -440,7 +440,6 @@ const prepareVisualModelWithFourNodes = () => {
     selectActiveVisualModel() {
       throw Error("Not supported");
     },
-    visualModelsList,
   });
 
   return {

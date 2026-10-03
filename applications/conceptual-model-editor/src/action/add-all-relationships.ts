@@ -31,7 +31,7 @@ export function addAllRelationshipsForVisualDiagramNodeToVisualModelAction(
     ...classesContext.relationshipProfiles,
   ];
 
-  const availableVisualModels = graph.visualModels;
+  const availableVisualModels = classesContext.visualModels;
 
   const visualRelationshipsToAdd: Omit<VisualRelationship, "id" | "type">[] = [];
 
@@ -60,12 +60,12 @@ export function addAllRelationshipsForVisualDiagramNodeToVisualModelAction(
       // If domain is in the visual model diagram node
       if (source === cclass) {
         findRelationshipsForEnd(
-          notifications, graph, visualModel, getVisualEntitiesForRepresentedGlobal,
+          notifications, classesContext, visualModel, getVisualEntitiesForRepresentedGlobal,
           relationship, visualModelDiagramNode.identifier, target, false, visualRelationshipsToAdd);
       }
       if (target === cclass) {
         findRelationshipsForEnd(
-          notifications, graph, visualModel, getVisualEntitiesForRepresentedGlobal,
+          notifications, classesContext, visualModel, getVisualEntitiesForRepresentedGlobal,
           relationship, visualModelDiagramNode.identifier, source, true, visualRelationshipsToAdd);
       }
     }
@@ -85,7 +85,7 @@ export function addAllRelationshipsForVisualDiagramNodeToVisualModelAction(
  */
 function findRelationshipsForEnd(
   notifications: UseNotificationServiceWriterType,
-  graph: UseModelGraphContextType,
+  classesContext: ClassesContext,
   visualModel: VisualModel,
   getVisualEntitiesForRepresentedGlobal: VisualsForRepresentedWrapper,
   relationship: SemanticModelRelationship | SemanticModelRelationshipProfile | SemanticModelGeneralization,
@@ -105,7 +105,7 @@ function findRelationshipsForEnd(
   // which are already covered by the relationship
   const availableVisualEnds = getVisualEntitiesForRepresentedGlobal(end);
   const visualRelationships = visualModel.getVisualEntitiesForRepresented(relationship.id);
-  const model = findSourceModelOfEntity(relationship.id, graph.semanticModels);
+  const model = findSourceModelOfEntity(relationship.id, classesContext.semanticModels);
   if (model === null) {
     return;
   }

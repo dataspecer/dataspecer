@@ -49,7 +49,7 @@ export async function addSemanticEntitiesToVisualModelAction(
   entities: EntityToAddToVisualModel[],
 ) {
   const validatedEntitiesToAddToVisualModel: ValidatedDataAboutEntity[] = validateEntities(
-    notifications, graph, visualModel, entities);
+    notifications, classes, visualModel, entities);
   const { nodes, edges } = await updatePositionsAndSplitIntoNodesAndEdges(
     notifications, classes, graph, visualModel, diagram, validatedEntitiesToAddToVisualModel);
   // Add to visual model
@@ -118,7 +118,7 @@ async function updatePositionsAndSplitIntoNodesAndEdges(
 
 function validateEntities(
   notifications: UseNotificationServiceWriterType,
-  graph: UseModelGraphContextType,
+  classes: ClassesContext,
   visualModel: WritableVisualModel,
   entities: EntityToAddToVisualModel[]
 ) {
@@ -132,7 +132,7 @@ function validateEntities(
       continue;
     }
 
-    const model = sourceModelOfEntity(entityIdentifier, [...graph.semanticModels.values()]);
+    const model = sourceModelOfEntity(entityIdentifier, [...classes.semanticModels.values()]);
     if(model === undefined) {
       // Note that we continue, therefore if one entity fails, the addition of rest is not affected.
       notifications.error(

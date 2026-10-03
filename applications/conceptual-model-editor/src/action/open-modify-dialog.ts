@@ -51,7 +51,7 @@ export function openModifyDialogAction(
     notifications.error(`Can not find the entity with identifier '${identifier}'.`);
     return;
   }
-  const model = findSourceModelOfEntity(entity.id, graph.semanticModels);
+  const model = findSourceModelOfEntity(entity.id, classes.semanticModels);
   if (model === null || !isInMemorySemanticModel(model)) {
     notifications.error("Model is not writable, can not modify entity.");
     return;
@@ -61,12 +61,12 @@ export function openModifyDialogAction(
   // we just fall through to a single dialog for all.
   if (isSemanticModelClass(entity)) {
     openEditClassDialogAction(
-      cmeExecutor, options, dialogs, graph, visualModel, model,
+      cmeExecutor, options, dialogs, classes, visualModel, model,
       entity, tracker, labelResolver);
     return;
   } else if (isSemanticModelClassProfile(entity)) {
     openEditClassProfileDialogAction(
-      cmeExecutor, options, dialogs, graph,
+      cmeExecutor, options, dialogs, classes, graph,
       visualModel, model, entity, tracker, labelResolver);
     return;
   } else if (isSemanticModelAttribute(entity)) {
@@ -82,12 +82,12 @@ export function openModifyDialogAction(
     return;
   } else if (isSemanticModelRelationship(entity)) {
     openEditAssociationDialogAction(
-      cmeExecutor, options, dialogs, graph,
+      cmeExecutor, options, dialogs, classes,
       visualModel, model, entity, tracker, labelResolver);
     return;
   } else if (isSemanticModelRelationshipProfile(entity)) {
     openEditAssociationProfileDialogAction(
-      cmeExecutor, options, dialogs, graph, visualModel,
+      cmeExecutor, options, dialogs, classes, graph, visualModel,
       model, aggregate.rawEntity as SemanticModelRelationshipProfile, tracker,
       labelResolver);
     return;

@@ -1,4 +1,4 @@
-import type { UseModelGraphContextType } from "../context/model-context";
+import type { ClassesContext } from "../context/classes-context";
 import type { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
 import { deleteEntity } from "@dataspecer/core-v2/semantic-model/operations";
@@ -10,11 +10,11 @@ import { EntityToDelete } from "./utilities";
  */
 export async function removeFromSemanticModelsAction(
   notifications: UseNotificationServiceWriterType,
-  graph: UseModelGraphContextType,
+  classes: ClassesContext,
   entitiesToDelete: EntityToDelete[],
 ) {
   for(const { identifier, sourceModel: modelIdentifier } of entitiesToDelete) {
-    const model = graph.semanticModels.get(modelIdentifier);
+    const model = classes.semanticModels.get(modelIdentifier);
     if (model === undefined) {
       notifications.error(`Can not find model with identifier '${modelIdentifier}'.`);
       continue;

@@ -29,7 +29,7 @@ export function openCreateAttributeDialogAction(
   labelResolver: LabelResolver,
 ) {
 
-  const model = defaultModel ?? firstInMemorySemanticModel(graph.semanticModels);
+  const model = defaultModel ?? firstInMemorySemanticModel(classes.semanticModels);
   if (model === null) {
     notifications.error("You have to create a writable vocabulary first!");
     return;

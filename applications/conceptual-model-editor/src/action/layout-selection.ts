@@ -39,7 +39,7 @@ export async function layoutGivenVisualEntities(
   outsiders?: Record<string, XY | null>,
   shouldPutOutsidersInVisualModel?: boolean,
 ) {
-  const models = graph.semanticModels;
+  const models = classes.semanticModels;
 
   const reactflowDimensionQueryHandler = createExactNodeDimensionsQueryHandler(diagram);
 

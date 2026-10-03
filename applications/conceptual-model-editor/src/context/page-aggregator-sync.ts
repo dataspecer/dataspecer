@@ -1,10 +1,9 @@
 import { type Dispatch, type SetStateAction } from "react";
 
-import type { Entity } from "@dataspecer/core-v2/entity-model";
+import type { Entity, EntityModel } from "@dataspecer/core-v2/entity-model";
 import { isVisualModel } from "@dataspecer/visual-model";
 import {
   type AggregatedEntityWrapper,
-  type SemanticModelAggregatorView,
 } from "@dataspecer/core-v2/semantic-model/aggregator";
 import {
   type SemanticModelClass,
@@ -24,29 +23,27 @@ import {
 import { bothEndsHaveAnIri } from "../util/relationship-utils";
 
 /**
- * Extracted from page.tsx as-is so it can be characterization-tested.
- *
  * Registers a subscription callback at the aggregator, that:
  * - removes whatever was removed from the models registered at the aggregator from the `ClassContext`
  * - goes through the updated elements
  * - based on their types puts them to their respective buckets - classes, relationships, etc
  */
 export function propagateAggregatorChangesToLocalState(
+  models: EntityModel[],
+  // Changes.
   updated: AggregatedEntityWrapper[],
   removed: string[],
-  // Local state.
+  // Local state to set.
   setClasses: Dispatch<SetStateAction<SemanticModelClass[]>>,
   setRelationships: Dispatch<SetStateAction<SemanticModelRelationship[]>>,
   setGeneralizations: Dispatch<SetStateAction<SemanticModelGeneralization[]>>,
-  setRawEntities: Dispatch<SetStateAction<(Entity | null)[]>>,
+  setRawEntities: Dispatch<SetStateAction<Entity[]>>,
   setSourceModelOfEntityMap: Dispatch<SetStateAction<Map<string, string>>>,
   setClassProfiles: Dispatch<SetStateAction<SemanticModelClassProfile[]>>,
   setRelationshipProfiles: Dispatch<SetStateAction<SemanticModelRelationshipProfile[]>>,
-  aggregator: SemanticModelAggregatorView,
 ) {
 
   // Prepare update.
-  const localSourceMap = new Map<string, string>();
   const {
     updatedClasses,
     updatedRelationships,
@@ -142,16 +139,7 @@ export function propagateAggregatorChangesToLocalState(
     }
   );
 
-  const models = aggregator.getModels();
-  for (const model of models.values()) {
-    const modelId = model.getId();
-    if (isVisualModel(model)) {
-      // We ignore those.
-      continue;
-    }
-    Object.values(model.getEntities()).forEach((e) => localSourceMap.set(e.id, modelId));
-  }
-  setSourceModelOfEntityMap(new Map(localSourceMap));
+  setSourceModelOfEntityMap(buildSourceModelOfEntityMap(models));
 
   // Update local state.
   const removedIds = new Set(removed);
@@ -164,6 +152,22 @@ export function propagateAggregatorChangesToLocalState(
     updatedRawEntities.filter(item => item !== null)));
   setClassProfiles(prev => updateItems(prev, removedIds, updatedClassProfiles));
   setRelationshipProfiles(prev => updateItems(prev, removedIds, updatedRelationshipProfiles));
+}
+
+/**
+ * @returns Map from entity identifier to identifier of the semantic model owning it.
+ */
+export function buildSourceModelOfEntityMap(models: EntityModel[]): Map<string, string> {
+  const result = new Map<string, string>();
+  for (const model of models) {
+    const modelId = model.getId();
+    if (isVisualModel(model)) {
+      // We ignore those.
+      continue;
+    }
+    Object.values(model.getEntities()).forEach((e) => result.set(e.id, modelId));
+  }
+  return result;
 }
 
 function updateItems<Type extends { id: string }>(items: Type[], removed: Set<string>, changed: Type[]): Type[] {

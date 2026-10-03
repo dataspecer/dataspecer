@@ -54,7 +54,7 @@ export const addEntitiesFromSemanticModelToVisualModelAction = async (
 
   const classesPresentOnCanvas = entitiesFromSemanticModel.nodeSelection
     .filter(identifier => visualModel.hasVisualEntityForRepresented(identifier))
-    .map(identifier => classesContext.rawEntities.find(entity => entity?.id === identifier))
+    .map(identifier => classesContext.entities.find(entity => entity?.id === identifier))
     .filter(entity => entity !== null && entity !== undefined)
     .filter(entity => isSemanticModelClass(entity) || isSemanticModelClassProfile(entity));
 

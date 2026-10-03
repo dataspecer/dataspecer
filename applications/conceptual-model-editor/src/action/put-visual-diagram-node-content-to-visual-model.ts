@@ -48,7 +48,7 @@ export function putVisualDiagramNodeContentToVisualModelAction(
   visualModel: WritableVisualModel,
   diagramNode: VisualModelDiagramNode,
 ): void {
-  const referencedVisualModel = graph.visualModels.get(diagramNode.externalIdentifier);
+  const referencedVisualModel = classesContext.visualModels.get(diagramNode.externalIdentifier);
   if(referencedVisualModel === undefined) {
     notifications.error("The referenced visual model does not exist");
     return;
@@ -58,7 +58,7 @@ export function putVisualDiagramNodeContentToVisualModelAction(
     return;
   }
 
-  const availableVisualModels = graph.visualModels;
+  const availableVisualModels = classesContext.visualModels;
 
   const visualDiagramNode = visualModel.getVisualEntity(diagramNode.identifier);
   if(visualDiagramNode === null || !isVisualDiagramNode(visualDiagramNode)) {
@@ -67,7 +67,7 @@ export function putVisualDiagramNodeContentToVisualModelAction(
   }
 
   copyVisualEntitiesBetweenModels(
-    notifications, classesContext, graph, diagram, graph.visualModels,
+    notifications, classesContext, graph, diagram, availableVisualModels,
     referencedVisualModel, visualModel, visualDiagramNode.position, diagramNode);
 
   // Ideally we would implement the rerouting for visual profile relationships somewhere down in this file,

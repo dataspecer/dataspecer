@@ -59,7 +59,7 @@ export async function createDefaultProfilesAction(
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
 ): Promise<void> {
-  const writableSemanticModel = findAnyWritableModelFromRawInput(graph.semanticModels, visualModel);
+  const writableSemanticModel = findAnyWritableModelFromRawInput(classesContext.semanticModels, visualModel);
   if (writableSemanticModel === null) {
     notifications.error("There is no InMemorySemanticModel to put the profiles into.");
     return;
@@ -189,7 +189,7 @@ function createDefaultRelationshipProfiles(
   labelResolver: LabelResolver,
 ) {
   // Casting ... the correctness should be already validated
-  const writableSemanticModel = graph.semanticModels.get(writableCmeModel.identifier) as InMemorySemanticModel;
+  const writableSemanticModel = classesContext.semanticModels.get(writableCmeModel.identifier) as InMemorySemanticModel;
   for (const edgeToProfile of edgesToProfile) {
     createDefaultRelationshipProfile(
       notifications, classesContext, graph, diagram, language,

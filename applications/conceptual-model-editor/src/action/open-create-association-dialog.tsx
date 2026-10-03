@@ -20,6 +20,7 @@ import {
   associationDialogStateToNewCmeRelationship,
 } from "../dialog/association/edit-association-dialog-state-adapter";
 import { LabelResolver } from "../dependency-tracker";
+import { ClassesContext } from "../context/classes-context";
 
 /**
  * Open and handle create association dialog.
@@ -28,7 +29,7 @@ export function openCreateAssociationDialogAction(
   cmeExecutor: CmeModelOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
-  graph: UseModelGraphContextType,
+  classes: ClassesContext,
   notifications: UseNotificationServiceWriterType,
   visualModel: VisualModel | null,
   defaultModel: InMemorySemanticModel | null,
@@ -36,7 +37,7 @@ export function openCreateAssociationDialogAction(
   labelResolver: LabelResolver,
 ) {
 
-  const model = defaultModel ?? firstInMemorySemanticModel(graph.semanticModels);
+  const model = defaultModel ?? firstInMemorySemanticModel(classes.semanticModels);
   if (model === null) {
     notifications.error("You have to create a writable vocabulary first!");
     return;

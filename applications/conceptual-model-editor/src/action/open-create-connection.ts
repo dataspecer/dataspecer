@@ -26,6 +26,7 @@ import {
 import { findSourceModelOfEntity } from "../service/model-service";
 import { withErrorBoundary } from "./utilities/error-utilities";
 import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
+import { ClassesContext } from "../context/classes-context";
 
 const LOG = createLogger(import.meta.url);
 
@@ -35,6 +36,7 @@ export function openCreateConnectionDialogAction(
   dialogs: DialogApiContextType,
   notifications: UseNotificationServiceWriterType,
   graph: UseModelGraphContextType,
+  classes: ClassesContext,
   visualModel: WritableVisualModel,
   //
   semanticSource: string,
@@ -44,7 +46,7 @@ export function openCreateConnectionDialogAction(
 ) {
   withErrorBoundary(notifications,
     () => openCreateConnectionDialogActionInternal(
-      cmeExecutor, options, dialogs, graph, visualModel,
+      cmeExecutor, options, dialogs, graph, classes, visualModel,
       semanticSource, semanticTarget, visualSource, visualTarget
     ));
 }
@@ -57,6 +59,7 @@ function openCreateConnectionDialogActionInternal(
   options: Options,
   dialogs: DialogApiContextType,
   graph: UseModelGraphContextType,
+  classes: ClassesContext,
   visualModel: WritableVisualModel,
   //
   semanticSource: string,
@@ -73,21 +76,21 @@ function openCreateConnectionDialogActionInternal(
     && isSemanticModelClass(target)) {
     // Can be a relationship or generalization.
     openRelationshipOrGeneralizationDialog(
-      options, dialogs, visualExecutor, graph, cmeExecutor,
+      options, dialogs, visualExecutor, classes, cmeExecutor,
       source, target, visualSource, visualTarget);
   }
   else if (isSemanticModelClassProfile(source)
     && isSemanticModelClass(target)) {
     // Create a profile from class to the profile.
-    createProfile(cmeExecutor, graph, visualExecutor, source, target);
+    createProfile(cmeExecutor, graph, classes, visualExecutor, source, target);
   }
   else if (isSemanticModelClassProfile(source)
     && isSemanticModelClassProfile(target)) {
     // Create a relationship profile or generalization for profiles.
     // We do not support this yet.
 
-    const sourceModel = findSourceModelOfEntity(source.id, graph.semanticModels);
-    const targetModel = findSourceModelOfEntity(target.id, graph.semanticModels);
+    const sourceModel = findSourceModelOfEntity(source.id, classes.semanticModels);
+    const targetModel = findSourceModelOfEntity(target.id, classes.semanticModels);
 
     if (sourceModel === null || targetModel === null) {
       LOG.error("Missing model for entity.",
@@ -141,7 +144,7 @@ function openRelationshipOrGeneralizationDialog(
   options: Options,
   dialogs: DialogApiContextType,
   visualExecutor: VisualModelOperationExecutor,
-  graph: UseModelGraphContextType,
+  classesContext: ClassesContext,
   cmeExecutor: CmeModelOperationExecutor,
   source: SemanticModelClass,
   target: SemanticModelClass,
@@ -160,7 +163,7 @@ function openRelationshipOrGeneralizationDialog(
   };
 
   dialogs.openDialog(createConnectionDialog(
-    graph, source, target, options.language, onConfirm));
+    classesContext, source, target, options.language, onConfirm));
 
 }
 
@@ -209,12 +212,13 @@ function createGeneralization(
 function createProfile(
   cmeExecutor: CmeModelOperationExecutor,
   graph: UseModelGraphContextType,
+  classes: ClassesContext,
   visualExecutor: VisualModelOperationExecutor,
   source: SemanticModelClassProfile,
   target: SemanticModelClass,
 ) {
-  const sourceModel = findSourceModelOfEntity(source.id, graph.semanticModels);
-  const targetModel = findSourceModelOfEntity(target.id, graph.semanticModels);
+  const sourceModel = findSourceModelOfEntity(source.id, classes.semanticModels);
+  const targetModel = findSourceModelOfEntity(target.id, classes.semanticModels);
 
   if (sourceModel === null || targetModel === null) {
     LOG.error("Missing model for entity.",

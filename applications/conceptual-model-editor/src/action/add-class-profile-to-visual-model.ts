@@ -35,7 +35,7 @@ export async function addSemanticClassProfileToVisualModelAction(
     position = positions[entityIdentifier];
   }
 
-  const model = findSourceModelOfEntity(entityIdentifier, graph.semanticModels);
+  const model = findSourceModelOfEntity(entityIdentifier, classes.semanticModels);
   if (model === null) {
     LOG.error("Operation ignored, we fail to find model for given entity.", { identifier: entityIdentifier });
     notifications.error("Can not find model for given entity");
@@ -55,7 +55,7 @@ export async function addSemanticClassProfileToVisualModelAction(
       position);
     addRelatedEntitiesAction(
       notifications, graph, classes, visualModel, Object.values(entities),
-      graph.semanticModels, entity);
+      classes.semanticModels, entity);
   } else {
     LOG.invalidEntity(entityIdentifier, "Entity is not of an expected type.", { entity });
     notifications.error("Invalid entity type!");

@@ -56,7 +56,7 @@ export function createNewAttributeProfileDialogState(
 ): AttributeProfileDialogState {
 
   const allModels = semanticModelMapToCmeSemanticModel(
-    graphContext.semanticModels, visualModel,
+    classesContext.semanticModels, visualModel,
     configuration().defaultModelColor,
     identifier => t("model-service.model-label-from-id", identifier));
 
@@ -142,7 +142,7 @@ export function createEditAttributeProfileDialogState(
   //
 
   const allModels = semanticModelMapToCmeSemanticModel(
-    graphContext.semanticModels, visualModel,
+    classesContext.semanticModels, visualModel,
     configuration().defaultModelColor,
     identifier => t("model-service.model-label-from-id", identifier));
 
@@ -164,7 +164,7 @@ export function createEditAttributeProfileDialogState(
   // EntityProfileState
 
   const entityProfileState = createEditBaseEntityProfileDialogState(
-    language, graphContext.semanticModels, allModels,
+    language, classesContext.semanticModels, allModels,
     { identifier: entity.id, model: model.getId() },
     allProfiles, range.profiling, noProfile, range.iri ?? "",
     range.name, range.nameFromProfiled,
@@ -199,7 +199,7 @@ function listAttributesToProfile(
   vocabularies: CmeSemanticModel[],
 ) {
   const entities = graphContext.getEntities();
-  const models = [...graphContext.semanticModels.values()];
+  const models = classesContext.semanticModelsList;
 
   const owlThing = representOwlThing();
 
@@ -221,7 +221,7 @@ function listAttributesToSpecialize(
   vocabularies: CmeSemanticModel[],
 ) {
   const entities = graphContext.getEntities();
-  const models = [...graphContext.semanticModels.values()];
+  const models = [...classesContext.semanticModels.values()];
   return [
     ...representRelationshipProfile(entities, models, vocabularies,
       classesContext.relationshipProfiles, labelResolver)
@@ -238,7 +238,7 @@ export function createAddAttributeProfileDialogState(
 ): AttributeProfileDialogState {
 
   const allModels = semanticModelMapToCmeSemanticModel(
-    graphContext.semanticModels, visualModel,
+    classesContext.semanticModels, visualModel,
     configuration().defaultModelColor,
     identifier => t("model-service.model-label-from-id", identifier));
 

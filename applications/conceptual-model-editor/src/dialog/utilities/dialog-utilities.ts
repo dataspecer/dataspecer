@@ -183,12 +183,12 @@ function findOwnerVocabulary(
 };
 
 export function findVocabularyForModel(
-  graph: UseModelGraphContextType,
+  classesContext: ClassesContext,
   visualModel: VisualModel,
   model: string,
 ): CmeSemanticModel | null {
   const vocabularies = semanticModelMapToCmeSemanticModel(
-    graph.semanticModels, visualModel,
+    classesContext.semanticModels, visualModel,
     configuration().defaultModelColor,
     identifier => t("model-service.model-label-from-id", identifier));
   const vocabulary = vocabularies.find(item => item.identifier === model);
@@ -242,15 +242,14 @@ export function representClassProfiles(
  */
 export function listRelationshipDomains(
   classesContext: ClassesContext,
-  graphContext: UseModelGraphContextType,
   vocabularies: CmeSemanticModel[],
   labelResolver: LabelResolver,
 ): EntityRepresentative[] {
-  const models = [...graphContext.semanticModels.values()];
-
   return [
     representOwlThing(),
-    ...representClasses(models, vocabularies, classesContext.classes, labelResolver)
+    ...representClasses(
+      classesContext.semanticModelsList,
+      vocabularies, classesContext.classes, labelResolver)
   ]
 
 }
@@ -267,7 +266,7 @@ export function listRelationshipProfileDomains(
   labelResolver: LabelResolver,
 ): EntityRepresentative[] {
   const entities = graphContext.getEntities();
-  const models = [...graphContext.semanticModels.values()];
+  const models = classesContext.semanticModelsList;
 
   return [
     representOwlThing(),

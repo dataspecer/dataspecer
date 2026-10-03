@@ -3,6 +3,7 @@ import { VisualModel } from "@dataspecer/visual-model";
 
 import { DialogApiContextType } from "../dialog/dialog-service";
 import { UseModelGraphContextType } from "../context/model-context";
+import { ClassesContext } from "../context/classes-context";
 import { Options } from "../application";
 import {
   isSemanticModelRelationshipProfile,
@@ -31,6 +32,7 @@ export function openEditAssociationProfileDialogAction(
   cmeExecutor: CmeModelOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
+  classes: ClassesContext,
   graph: UseModelGraphContextType,
   visualModel: VisualModel | null,
   model: InMemorySemanticModel,
@@ -49,7 +51,7 @@ export function openEditAssociationProfileDialogAction(
 
   const initialState = createEditAssociationProfileDialogState(
     visualModel, options.language, model, rawEntity, aggregatedEntity,
-    graph.semanticModels, tracker, labelResolver);
+    classes.semanticModels, tracker, labelResolver);
 
   const onConfirm = (state: AssociationProfileDialogState) => {
     cmeExecutor.updateRelationshipProfile({
