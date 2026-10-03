@@ -19,6 +19,7 @@ import { configuration } from "../../application";
 import { LabelResolver } from "../../dependency-tracker";
 import {
   ControlledVocabularyAssignment,
+  isControlledVocabularyAssignment,
   isSemanticModelClassProfile,
   SemanticModelClassProfile,
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
@@ -30,7 +31,6 @@ import {
   createSelectControlledVocabulariesState,
   SelectControlledVocabulariesState,
 } from "../controlled-vocabularies";
-import { MOCK_AVAILABLE_VOCABULARIES } from "../controlled-vocabularies/mock-available-vocabularies";
 import { CmeClassProfileRole } from "../../dataspecer/cme-model/model";
 
 export interface ClassProfileDialogState
@@ -55,20 +55,26 @@ export interface ClassProfileDialogState
 /**
  * Builds the controlled-vocabularies sub-state for the class-profile dialog.
  *
- * "inherited" is resolved by reading each direct profiled ancestor's aggregatedEntity
- *
- * availableVocabularies is mocked until controlled vocabularies are loaded
- * from the controlled vocabulary model.
+ * "inherited" is resolved by reading each direct profiled ancestor's
+ * aggregatedEntity, then resolving each of its assignment ids to the
+ * actual ControlledVocabularyAssignment entity.
  */
 function createClassProfileControlledVocabulariesState(
   graph: ModelGraphContextType,
   ancestorIdentifiers: EntityDsIdentifier[],
-  ownAssignments: ControlledVocabularyAssignment[] | undefined,
+  ownAssignmentIds: EntityDsIdentifier[] | undefined,
+  availableVocabularies: ControlledVocabulary[],
 ): SelectControlledVocabulariesState {
-  const availableVocabularies = MOCK_AVAILABLE_VOCABULARIES;
-
   const entities = graph.aggregatorView.getEntities();
-  const inheritedAssignments = ancestorIdentifiers.flatMap(identifier => {
+
+  const resolveAssignment = (
+    identifier: EntityDsIdentifier,
+  ): ControlledVocabularyAssignment | null => {
+    const rawEntity = entities[identifier]?.rawEntity;
+    return isControlledVocabularyAssignment(rawEntity) ? rawEntity : null;
+  };
+
+  const inheritedAssignmentIds = ancestorIdentifiers.flatMap(identifier => {
     const aggregatedEntity = entities[identifier]?.aggregatedEntity;
     if (aggregatedEntity === null || aggregatedEntity === undefined
       || !isSemanticModelClassProfile(aggregatedEntity)) {
@@ -76,15 +82,29 @@ function createClassProfileControlledVocabulariesState(
     }
     return aggregatedEntity.controlledVocabularies ?? [];
   });
+  const inheritedAssignments = inheritedAssignmentIds
+    .map(resolveAssignment)
+    .filter(item => item !== null);
   const inherited = toControlledVocabularyUsages(
     inheritedAssignments, availableVocabularies);
 
-  const ownItems = ownAssignments ?? [];
-  const overrides: ControlledVocabularyOverride[] = ownItems
-    .filter(item => item.override)
-    .map(item => ({ vocabularyId: item.identifier, qualifier: item.qualifier }));
-  const added = toControlledVocabularyUsages(
-    ownItems.filter(item => !item.override), availableVocabularies);
+  const ownAssignments = (ownAssignmentIds ?? [])
+    .map(resolveAssignment)
+    .filter(item => item !== null);
+  const overrides: ControlledVocabularyOverride[] = [];
+  const ownAdditions: ControlledVocabularyAssignment[] = [];
+  for (const assignment of ownAssignments) {
+    if (assignment.replaces !== null && assignment.replaces.kind === "local") {
+      overrides.push({
+        id: assignment.id,
+        targetAssignmentId: assignment.replaces.target,
+        qualifier: assignment.qualifier,
+      });
+    } else {
+      ownAdditions.push(assignment);
+    }
+  }
+  const added = toControlledVocabularyUsages(ownAdditions, availableVocabularies);
 
   return createSelectControlledVocabulariesState(
     inherited, overrides, added, availableVocabularies);
@@ -97,11 +117,13 @@ function toControlledVocabularyUsages(
   const result: ControlledVocabularyUsage[] = [];
   for (const assignment of assignments) {
     const vocabulary = availableVocabularies.find(
-      item => item.id === assignment.identifier);
+      item => item.id === assignment.vocabulary);
     if (vocabulary === undefined) {
       continue;
     }
-    result.push({ vocabulary, qualifier: assignment.qualifier });
+    result.push({
+      assignmentId: assignment.id, vocabulary, qualifier: assignment.qualifier,
+    });
   }
   return result;
 }
@@ -127,6 +149,7 @@ export function createNewProfileClassDialogState(
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
   graph: ModelGraphContextType,
+  availableVocabularies: ControlledVocabulary[],
 ): ClassProfileDialogState {
 
   const allModels = semanticModelTrackerToCmeSemanticModel(
@@ -153,7 +176,7 @@ export function createNewProfileClassDialogState(
     availableRoles: ROLES,
     role: ROLES[0].value,
     controlledVocabularies: createClassProfileControlledVocabulariesState(
-      graph, profilesIdentifiers, undefined),
+      graph, profilesIdentifiers, undefined, availableVocabularies),
   };
 }
 
@@ -169,6 +192,7 @@ export function createEditClassProfileDialogState(
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
   graph: ModelGraphContextType,
+  availableVocabularies: ControlledVocabulary[],
 ): ClassProfileDialogState {
 
   const allModels = semanticModelTrackerToCmeSemanticModel(
@@ -203,6 +227,6 @@ export function createEditClassProfileDialogState(
     role: ROLES.find(item => entity.tags?.includes(item.cme ?? ""))?.value
       ?? ROLES[0].value,
     controlledVocabularies: createClassProfileControlledVocabulariesState(
-      graph, entity.profiling, entity.controlledVocabularies),
+      graph, entity.profiling, entity.controlledVocabularies, availableVocabularies),
   };
 }

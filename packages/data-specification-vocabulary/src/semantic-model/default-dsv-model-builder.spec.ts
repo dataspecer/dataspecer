@@ -28,6 +28,7 @@ describe("DefaultApplicationProfileBuilder", () => {
         externalDocumentationUrl: null,
         profiledClassIri: [],
         classRole: ClassRole.undefined,
+        controlledVocabularyAssignments: [],
       }],
       datatypePropertyProfiles: [],
       objectPropertyProfiles: [],

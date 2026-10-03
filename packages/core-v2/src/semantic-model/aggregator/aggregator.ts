@@ -4,7 +4,7 @@ import { VisualEntity, VisualModel, isVisualModel } from "@dataspecer/visual-mod
 import { SEMANTIC_MODEL_CLASS, SEMANTIC_MODEL_GENERALIZATION, SEMANTIC_MODEL_RELATIONSHIP, SemanticModelClass, SemanticModelRelationship, isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship, type SemanticModelEntity } from "../concepts/index.ts";
 import { SemanticEntityIdMerger, StrongerWinsSemanticEntityIdMerger } from "../merge/merger/index.ts";
 import { createSemanticProfileAggregator, SemanticProfileAggregator } from "../profile/aggregator/aggregator.ts";
-import { isSemanticModelClassProfile, isSemanticModelRelationshipProfile } from "../profile/concepts/index.ts";
+import { isControlledVocabularyAssignment, isSemanticModelClassProfile, isSemanticModelRelationshipProfile } from "../profile/concepts/index.ts";
 
 /**
  * Object containing the result of the aggregation of an entity together with additional metadata, such as how the
@@ -280,6 +280,16 @@ class SemanticModelAggregatorInternal implements SemanticModelAggregator {
                             entity, aggregatedDependencies),
                         rawEntity: entity,
                         sources: dependencies,
+                        visualEntities: [],
+                    };
+                } else if (isControlledVocabularyAssignment(entity)) {
+                    // Consumed as a dependency by class profile aggregation
+                    // above, not aggregated on its own - passed through as-is.
+                    this.baseModelEntities[updatedEntity] = {
+                        id: updatedEntity,
+                        aggregatedEntity: entity,
+                        rawEntity: entity,
+                        sources: [],
                         visualEntities: [],
                     };
                 } else {

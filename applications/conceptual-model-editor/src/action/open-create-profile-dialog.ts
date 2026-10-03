@@ -48,6 +48,7 @@ import {
 } from "../dialog/association-profile/edit-association-profile-dialog-state-adapter";
 import { LabelResolver } from "../dependency-tracker";
 import { applyControlledVocabularySelection } from "./apply-controlled-vocabulary-selection";
+import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 
 export function openCreateProfileDialogAction(
   cmeExecutor: CmeModelOperationExecutor,
@@ -62,6 +63,7 @@ export function openCreateProfileDialogAction(
   identifier: string,
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
+  availableVocabularies: ControlledVocabulary[],
 ) {
   const entity = graph.aggregatorView.getEntities()?.[identifier].aggregatedEntity;
   if (entity === undefined) {
@@ -72,7 +74,7 @@ export function openCreateProfileDialogAction(
   if (isSemanticModelClass(entity) || isSemanticModelClassProfile(entity)) {
     const initialState = createNewProfileClassDialogState(
       visualModel, options.language, [entity.id], tracker, labelResolver,
-      graph);
+      graph, availableVocabularies);
     const onConfirm = (state: ClassProfileDialogState) => {
 
       const result = cmeExecutor.createClassProfile(

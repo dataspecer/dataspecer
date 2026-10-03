@@ -34,9 +34,9 @@ import {
   type ModifyRelationEndOperation,
   type ModifyRelationOperation,
 } from "@dataspecer/core-v2/semantic-model/operations";
-import { isSemanticModelClassProfile, isSemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
+import { isControlledVocabularyAssignment, isSemanticModelClassProfile, isSemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import {
-  ADD_CONTROLLED_VOCABULARY_ASSIGNMENT,
+  CREATE_CONTROLLED_VOCABULARY_ASSIGNMENT,
   CREATE_SEMANTIC_MODEL_CLASS_PROFILE,
   CREATE_SEMANTIC_MODEL_RELATIONSHIP_PROFILE,
   isModifySemanticModelRelationshipProfile,
@@ -45,7 +45,7 @@ import {
   MODIFY_SEMANTIC_MODEL_RELATIONSHIP_END_PROFILE,
   MODIFY_SEMANTIC_MODEL_RELATIONSHIP_PROFILE,
   REMOVE_CONTROLLED_VOCABULARY_ASSIGNMENT,
-  type AddControlledVocabularyAssignment,
+  type CreateControlledVocabularyAssignment,
   type CreateSemanticModelClassProfile,
   type CreateSemanticModelRelationshipProfile,
   type ModifyControlledVocabularyAssignment,
@@ -484,9 +484,9 @@ function ModifyRelationshipProfileRow({ operation, contextBefore }: OperationRow
   );
 }
 
-function AssignControlledVocabularyRow({ operation, contextBefore }: OperationRowProps) {
-  const op = operation as AddControlledVocabularyAssignment;
-  const name = <SemanticEntityName entityId={op.classProfileIdentifier} entities={contextBefore} />;
+function AssignControlledVocabularyRow({ operation, contextAfter }: OperationRowProps) {
+  const op = operation as CreateControlledVocabularyAssignment;
+  const name = <SemanticEntityName entityId={op.entity.classProfile} entities={contextAfter} />;
   return (
     <Row icon={Plus} colorClass="text-green-600 dark:text-green-400" operation={operation}>
       <span>
@@ -496,9 +496,28 @@ function AssignControlledVocabularyRow({ operation, contextBefore }: OperationRo
   );
 }
 
+/**
+ * Remove/Modify address the assignment by its own id, not the owning
+ * class profile's - resolve the owner from the assignment entity itself,
+ * which (for Remove) is still present in contextBefore before removal.
+ */
+function controlledVocabularyOwnerId(
+  assignmentIdentifier: string, contextBefore: EntityRecord,
+): string {
+  const assignment = contextBefore[assignmentIdentifier] ?? null;
+  return isControlledVocabularyAssignment(assignment)
+    ? assignment.classProfile
+    : assignmentIdentifier;
+}
+
 function RemoveControlledVocabularyRow({ operation, contextBefore }: OperationRowProps) {
   const op = operation as RemoveControlledVocabularyAssignment;
-  const name = <SemanticEntityName entityId={op.classProfileIdentifier} entities={contextBefore} />;
+  const name = (
+    <SemanticEntityName
+      entityId={controlledVocabularyOwnerId(op.identifier, contextBefore)}
+      entities={contextBefore}
+    />
+  );
   return (
     <Row icon={Trash2} colorClass="text-red-600 dark:text-red-400" operation={operation}>
       <span>
@@ -510,7 +529,12 @@ function RemoveControlledVocabularyRow({ operation, contextBefore }: OperationRo
 
 function ModifyControlledVocabularyRow({ operation, contextBefore }: OperationRowProps) {
   const op = operation as ModifyControlledVocabularyAssignment;
-  const name = <SemanticEntityName entityId={op.classProfileIdentifier} entities={contextBefore} />;
+  const name = (
+    <SemanticEntityName
+      entityId={controlledVocabularyOwnerId(op.identifier, contextBefore)}
+      entities={contextBefore}
+    />
+  );
   return (
     <Row icon={Pencil} colorClass="text-blue-600 dark:text-blue-400" operation={operation}>
       <span>
@@ -1026,7 +1050,7 @@ const OPERATION_ROWS: Record<string, ComponentType<OperationRowProps>> = {
   [CREATE_SEMANTIC_MODEL_RELATIONSHIP_PROFILE]: CreateRelationshipProfileRow,
   [MODIFY_SEMANTIC_MODEL_RELATIONSHIP_PROFILE]: ModifyRelationshipProfileRow,
   [MODIFY_SEMANTIC_MODEL_RELATIONSHIP_END_PROFILE]: ModifyRelationshipProfileRow,
-  [ADD_CONTROLLED_VOCABULARY_ASSIGNMENT]: AssignControlledVocabularyRow,
+  [CREATE_CONTROLLED_VOCABULARY_ASSIGNMENT]: AssignControlledVocabularyRow,
   [REMOVE_CONTROLLED_VOCABULARY_ASSIGNMENT]: RemoveControlledVocabularyRow,
   [MODIFY_CONTROLLED_VOCABULARY_ASSIGNMENT]: ModifyControlledVocabularyRow,
 

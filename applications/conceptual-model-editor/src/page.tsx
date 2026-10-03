@@ -25,6 +25,7 @@ import {
 
 import { ClassesContext } from "./context/classes-context";
 import { ModelGraphContext } from "./context/model-context";
+import { AvailableControlledVocabulariesProvider } from "./dialog/controlled-vocabularies/available-controlled-vocabularies-context";
 import Header from "./header/header";
 import { useBackendConnection } from "./backend-connection";
 import { Catalog as CatalogV1 } from "./catalog/catalog";
@@ -42,6 +43,7 @@ import { OptionsContextProvider } from "./configuration/options";
 import { migrateVisualModelFromV0 } from "./dataspecer/visual-model/visual-model-v0-to-v1";
 import { ExplorationContextProvider } from "./context/highlighting-exploration-mode";
 import {
+  isControlledVocabularyAssignment,
   isSemanticModelClassProfile,
   isSemanticModelRelationshipProfile,
   SemanticModelClassProfile,
@@ -232,27 +234,29 @@ const Page = () => {
     <ExplorationContextProvider>
       <OptionsContextProvider>
         <ModelGraphContext.Provider value={modelGraphContext}>
-          <ClassesContext.Provider value={classesContext}>
-            <LayoutConfigurationContext.Provider value={layoutConfigurationContext}>
-              <DialogContextProvider>
-                <ActionsContextProvider>
-                  <Header />
-                  <main className="w-full flex-grow bg-teal-50 md:h-[calc(100%-48px)]">
-                    <VerticalSplitter
-                      className="h-full"
-                      initialSize={preferences().pageSplitterValue}
-                      onSizeChange={value => updatePreferences({ pageSplitterValue: value })}
-                    >
-                      <Catalog />
-                      <Visualization />
-                    </VerticalSplitter>
-                  </main>
-                  <NotificationList />
-                  <DialogRenderer />
-                </ActionsContextProvider>
-              </DialogContextProvider>
-            </LayoutConfigurationContext.Provider>
-          </ClassesContext.Provider>
+          <AvailableControlledVocabulariesProvider packageId={packageId}>
+            <ClassesContext.Provider value={classesContext}>
+              <LayoutConfigurationContext.Provider value={layoutConfigurationContext}>
+                <DialogContextProvider>
+                  <ActionsContextProvider>
+                    <Header />
+                    <main className="w-full flex-grow bg-teal-50 md:h-[calc(100%-48px)]">
+                      <VerticalSplitter
+                        className="h-full"
+                        initialSize={preferences().pageSplitterValue}
+                        onSizeChange={value => updatePreferences({ pageSplitterValue: value })}
+                      >
+                        <Catalog />
+                        <Visualization />
+                      </VerticalSplitter>
+                    </main>
+                    <NotificationList />
+                    <DialogRenderer />
+                  </ActionsContextProvider>
+                </DialogContextProvider>
+              </LayoutConfigurationContext.Provider>
+            </ClassesContext.Provider>
+          </AvailableControlledVocabulariesProvider>
         </ModelGraphContext.Provider>
       </OptionsContextProvider >
     </ExplorationContextProvider >
@@ -499,6 +503,18 @@ function propagateAggregatorChangesToLocalState(
           updatedRawEntities: updatedRawEntities.concat(curr.rawEntity),
           updatedClassProfiles,
           updatedRelationshipProfiles: updatedRelationshipProfiles.concat(curr.aggregatedEntity),
+        };
+      } else if (isControlledVocabularyAssignment(curr.aggregatedEntity)) {
+        // Controlled vocabulary assignments have no dedicated local state -
+        // they are surfaced through their owning class profile's
+        // `controlledVocabularies` list. Just keep the raw entity around.
+        return {
+          updatedClasses,
+          updatedRelationships,
+          updatedGeneralizations,
+          updatedRawEntities: updatedRawEntities.concat(curr.rawEntity),
+          updatedClassProfiles,
+          updatedRelationshipProfiles,
         };
       } else {
         console.error("Unknown type of updated entity", curr.aggregatedEntity);

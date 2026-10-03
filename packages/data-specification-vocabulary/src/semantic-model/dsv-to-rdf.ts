@@ -20,6 +20,7 @@ import {
 import {
   RDF, DSV, DCT, SKOS, DSV_CLASS_ROLE, DSV_MANDATORY_LEVEL, PROF,
 } from "./vocabulary.ts";
+import { writeControlledVocabularyCatalogQuads, type ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 
 const IRI = DataFactory.namedNode;
 
@@ -39,6 +40,17 @@ interface DsvToRdfConfiguration {
    */
   prettyPrint?: boolean;
 
+  /**
+   * Controlled vocabularies to embed as a DCAT catalog alongside the conceptual model
+   */
+  controlledVocabularies?: ControlledVocabulary[];
+
+  /**
+   * IRI of the catalog controlledVocabularies are written as members of.
+   * Required (and only meaningful) when controlledVocabularies is non-empty.
+   */
+  controlledVocabularyCatalogIri?: string;
+
 }
 
 export async function dsvToRdf(
@@ -53,12 +65,23 @@ export async function dsvToRdf(
       ...(configuration.prefixes || {}),
     },
   };
+  const embedsCatalog = !!(effectiveConfiguration.controlledVocabularies?.length && effectiveConfiguration.controlledVocabularyCatalogIri);
   const prefixes = {
     ...(model.iri ? {"": model.iri} : {}),
     ...effectiveConfiguration.prefixes,
+    // Only relevant (and only added) when a catalog is actually embedded -
+    // an otherwise-unused prefix on every dsv.ttl would be noise.
+    ...(embedsCatalog ? { "dcat": "http://www.w3.org/ns/dcat#", "sh": "http://www.w3.org/ns/shacl#" } : {}),
   };
   const n3Writer = new N3.Writer({ prefixes });
   (new DsvWriter(n3Writer, model)).writeConceptualModel();
+  if (embedsCatalog) {
+    writeControlledVocabularyCatalogQuads(
+      n3Writer,
+      effectiveConfiguration.controlledVocabularyCatalogIri!,
+      effectiveConfiguration.controlledVocabularies!,
+    );
+  }
   // Convert to a string.
   return new Promise((resolve, reject) => n3Writer.end((error, result) => {
     if (error) {
@@ -144,6 +167,20 @@ export class DsvWriter {
         break;
       case ClassRole.undefined:
         break;
+    }
+    this.writeControlledVocabularyAssignments(profile);
+  }
+
+  /**
+   * Writes this class profile's own controlled vocabulary assignments.
+   */
+  private writeControlledVocabularyAssignments(profile: ClassProfile) {
+    for (const assignment of profile.controlledVocabularyAssignments) {
+      this.addType(assignment.iri, DSV.ControlledVocabularyAssignment);
+      this.addIri(assignment.iri, DSV.classProfile, profile.iri);
+      this.addIri(assignment.iri, DSV.controlledVocabulary, assignment.controlledVocabularyIri);
+      this.addIri(assignment.iri, DSV.usageExpectation, assignment.usageExpectationIri);
+      this.addIri(assignment.iri, DSV.replaces, assignment.replacesIri);
     }
   }
 

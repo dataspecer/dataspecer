@@ -75,12 +75,13 @@ All models also accept the generic `SetEntityOperation` / `UpdateEntityOperation
 
 | Model | Operations | Interface |
 |---|---|---|
-| Project model (virtual, lists models in the project) | [`packages/project-model/src/operations.ts`](../project-model/src/operations.ts) | [`packages/project-model/src/model.ts`](../project-model/src/model.ts) |
+| Project model (virtual, lists models in the project) | [`packages/core/src/project-model/operations.ts`](../core/src/project-model/operations.ts) | [`packages/core/src/project-model/model.ts`](../core/src/project-model/model.ts) |
 | Semantic model (vocabulary classes/relationships/profiles) | [`packages/core-v2/src/semantic-model/operations/operations.ts`](../core-v2/src/semantic-model/operations/operations.ts) (and profile operations in [`packages/core-v2/src/semantic-model/profile/operations/operations.ts`](../core-v2/src/semantic-model/profile/operations/operations.ts)) | [`packages/core-v2/src/semantic-model/concepts/concepts.ts`](../core-v2/src/semantic-model/concepts/concepts.ts) (profiles in [`packages/core-v2/src/semantic-model/profile/concepts/index.ts`](../core-v2/src/semantic-model/profile/concepts/index.ts)) |
 | Visual model (canvas layout) | [`packages/visual-model/src/operations.ts`](../visual-model/src/operations.ts) | [`packages/visual-model/src/concepts/index.ts`](../visual-model/src/concepts/index.ts) |
 | RDFS model (imported vocabulary by URL) | [`packages/model-store/src/implementation/pim-model.ts`](./src/implementation/pim-model.ts) | [`packages/model-store/src/implementation/pim-model.ts`](./src/implementation/pim-model.ts) |
 | Queryable model (SGOV) | [`packages/model-store/src/implementation/async-queryable-model.ts`](./src/implementation/async-queryable-model.ts) | [`packages/model-store/src/implementation/async-queryable-model.ts`](./src/implementation/async-queryable-model.ts) |
 | Structure model (PSM) | [`packages/core/src/data-psm/operation/index.ts`](../core/src/data-psm/operation/index.ts) | [`packages/core/src/data-psm/model/index.ts`](../core/src/data-psm/model/index.ts) |
+| Controlled vocabulary model (one model per vocabulary) | none (only generic `SetEntityOperation`/`UpdateEntityOperation` above; the model is created/removed via the project model's `CreateModelOperation`/`RemoveModelOperation`) | [`packages/controlled-vocabulary-model/src/concepts/controlled-vocabulary.ts`](../controlled-vocabulary-model/src/concepts/controlled-vocabulary.ts) |
 | Blob model (arbitrary JSON resource, e.g. package metadata, generator config) | none (only generic `SetEntityOperation`/`UpdateEntityOperation` above) | [`packages/core/src/entity-model/utils/blob-model.ts`](../core/src/entity-model/utils/blob-model.ts) |
 | Model hierarchy (read-only, see below) | none (read-only) | [`packages/model-hierarchy/src/entities.ts`](../model-hierarchy/src/entities.ts) |
 

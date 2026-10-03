@@ -87,6 +87,8 @@ import {
   getSelectionForWholeSemanticModel,
 } from "./extend-selection-action";
 import { createFilterSelectionDialog } from "../dialog/selection/filter-selection-dialog";
+import { useAvailableControlledVocabulariesContext } from "../dialog/controlled-vocabularies/available-controlled-vocabularies-context";
+import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 import { EntityModel } from "@dataspecer/core-v2";
 import { openCreateAttributeForEntityDialogAction } from "./open-add-attribute-for-entity-dialog";
 import { addGroupToVisualModelAction } from "./add-group-to-visual-model";
@@ -539,6 +541,7 @@ export const ActionsContextProvider = (props: {
   const notifications = useNotificationServiceWriter();
   const graph = useContext(ModelGraphContext);
   const useGraph = useModelGraphContext();
+  const availableVocabularies = useAvailableControlledVocabulariesContext();
 
   const dialogTracker = useMemo(() => new DialogSemanticTracker(), []);
   useDependencyTrackers(useMemo(() => [dialogTracker], [dialogTracker]));
@@ -550,10 +553,12 @@ export const ActionsContextProvider = (props: {
   const actions = useMemo(
     () => createActionsContext(
       options, dialogs, classes, useClasses, notifications, graph, useGraph,
-      diagram, layoutConfiguration, queryParamsContext, dialogTracker),
+      diagram, layoutConfiguration, queryParamsContext, dialogTracker,
+      availableVocabularies),
     [
       options, dialogs, classes, useClasses, notifications, graph, useGraph,
-      diagram, layoutConfiguration, queryParamsContext, dialogTracker]
+      diagram, layoutConfiguration, queryParamsContext, dialogTracker,
+      availableVocabularies]
   );
 
   return (
@@ -574,6 +579,7 @@ let prevDiagram: UseDiagramType | null = null;
 let prevLayoutConfiguration: LayoutConfigurationContextType | null = null;
 let prevQueryParamsContext: QueryParamsContextType | null = null;
 let prevDialogTracker: DialogSemanticTracker | null = null;
+let prevAvailableVocabularies: ControlledVocabulary[] | null = null;
 
 function createActionsContext(
   options: Options | null,
@@ -587,6 +593,7 @@ function createActionsContext(
   layoutConfiguration: LayoutConfigurationContextType,
   queryParamsContext: QueryParamsContextType | null,
   dialogTracker: DialogSemanticTracker,
+  availableVocabularies: ControlledVocabulary[],
 ): ActionsContextType {
 
   if (options === null || dialogs === null || classes === null ||
@@ -614,6 +621,7 @@ function createActionsContext(
   if (prevLayoutConfiguration !== layoutConfiguration) changed.push("layoutConfiguration");
   if (prevQueryParamsContext !== queryParamsContext) changed.push("queryParamsContext");
   if (prevDialogTracker !== dialogTracker) changed.push("dialogTracker");
+  if (prevAvailableVocabularies !== availableVocabularies) changed.push("availableVocabularies");
   console.info("[ACTIONS] Creating new context object. ", { changed });
   prevOptions = options;
   prevDialogs = dialogs;
@@ -626,6 +634,7 @@ function createActionsContext(
   prevLayoutConfiguration = layoutConfiguration;
   prevQueryParamsContext = queryParamsContext;
   prevDialogTracker = dialogTracker;
+  prevAvailableVocabularies = availableVocabularies;
 
   // For now we create derived state here, till is is available as a context.
 
@@ -641,7 +650,7 @@ function createActionsContext(
       openCreateProfileDialogAction(
         cmeExecutor, options, dialogs, notifications, classes, graph,
         visualModel, diagram, position, identifier, dialogTracker,
-        labelResolver);
+        labelResolver, availableVocabularies);
     });
   };
 
@@ -778,7 +787,8 @@ function createActionsContext(
     withVisualModel(notifications, graph, (visualModel) => {
       openModifyDialogAction(
         cmeExecutor, options, dialogs, notifications, useClasses, graph,
-        visualModel, identifier, dialogTracker, labelResolver);
+        visualModel, identifier, dialogTracker, labelResolver,
+        availableVocabularies);
     });
   };
 
@@ -1405,7 +1415,7 @@ function createActionsContext(
         createDefaultProfilesAction(
           cmeExecutor, notifications, graph, diagram, options, classes,
           visualModel, nodeSelection, edgeSelection, true, dialogTracker,
-          labelResolver);
+          labelResolver, availableVocabularies);
       });
     },
 

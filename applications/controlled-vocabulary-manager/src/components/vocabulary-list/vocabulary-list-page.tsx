@@ -6,25 +6,29 @@ import { Button } from "@/components/ui/button"
 import { EmptyState } from "./empty-state"
 import { VocabularyCard } from "./vocabulary-card"
 import { useVocabulariesContext } from "@/contexts/vocabularies-context"
-import type { CvmControlledVocabulary } from "@/types/controlled-vocabulary"
+import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model"
+import { createStringSelector } from "@dataspecer/core/core/utilities/string-selector"
 import { useConfig } from "@/contexts/config-context"
 
 interface VocabularyListPageProps {
   onNavigateSourceSelection: () => void
   onNavigateFormEmpty: () => void
-  onEdit: (vocabulary: CvmControlledVocabulary) => void
-  onDelete: (vocabulary: CvmControlledVocabulary) => void
+  onView: (vocabulary: ControlledVocabulary) => void
+  onEdit: (vocabulary: ControlledVocabulary) => void
+  onDelete: (id: string) => void
 }
 
 export function VocabularyListPage({
   onNavigateSourceSelection,
   onNavigateFormEmpty,
+  onView,
   onEdit,
   onDelete,
 }: VocabularyListPageProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { managerUrl } = useConfig()
-  const { vocabularies } = useVocabulariesContext()
+  const { own, nestedPackages } = useVocabulariesContext()
+  const selectPackageLabel = createStringSelector([i18n.language, 'en'])
 
   return (
     <>
@@ -44,20 +48,37 @@ export function VocabularyListPage({
           {t("list.addByUrl")}
         </Button>
       </PageHeader>
-      {vocabularies.length === 0 ? (
+      {own.length === 0 ? (
         <EmptyState />
       ) : (
         <div className="bg-card border border-border rounded-lg divide-y divide-border">
-          {vocabularies.map((vocab) => (
+          {own.map((vocab) => (
             <VocabularyCard
               key={vocab.id}
               vocabulary={vocab}
+              onView={() => onView(vocab)}
               onEdit={() => onEdit(vocab)}
-              onDelete={() => onDelete(vocab)}
+              onDelete={() => onDelete(vocab.id)}
             />
           ))}
         </div>
       )}
+      {nestedPackages.map((pkg) => (
+        <div key={pkg.packageId} className="mt-6">
+          <h2 className="text-sm font-medium text-muted-foreground mb-2">
+            {selectPackageLabel(pkg.label) ?? pkg.packageId}
+          </h2>
+          <div className="bg-card border border-border rounded-lg divide-y divide-border">
+            {pkg.vocabularies.map((vocab) => (
+              <VocabularyCard
+                key={vocab.id}
+                vocabulary={vocab}
+                onView={() => onView(vocab)}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
     </>
   )
 }

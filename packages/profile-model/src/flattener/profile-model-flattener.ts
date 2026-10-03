@@ -1,6 +1,7 @@
 import {
   ProfileClass,
   ProfileGeneralization,
+  isControlledVocabularyAssignment,
   isProfileClass,
   isProfileGeneralization,
   isProfileRelationship,
@@ -69,6 +70,15 @@ function flattenEntity(
     return flattenRelationshipProfile(dependencies, entity);
   } else if (isProfileGeneralization(entity)) {
     return flattenGeneralizationProfile(entity);
+  } else if (isControlledVocabularyAssignment(entity)) {
+    // Passed through unchanged. This only keeps a class profile's own
+    // assignments intact (they live in the same input model as the
+    // profile and are copied over id-for-id here); an assignment
+    // inherited from an ancestor in `dependencies` is never reached by
+    // this function at all (dependencies are never iterated for output,
+    // only looked up by id) and so is dropped - not implemented, see
+    // flattenClassProfile.
+    return entity;
   } else {
     // We ignore unknown entity.
     console.warn("Ignored entity of unknown type for flattening.", { entity });
@@ -120,7 +130,19 @@ export function flattenClassProfile(
     externalDocumentationUrl: profile.externalDocumentationUrl,
     profiling,
     tags: profile.tags,
-    controlledVocabularies: profile.controlledVocabularies, // TODO: is this correct
+    // Own assignments only. Their entities are passed through unchanged
+    // by flattenEntity's ControlledVocabularyAssignment branch, so these
+    // ids resolve correctly in the flattened output.
+    //
+    // Inherited assignments (owned by an ancestor in `dependencies`, not
+    // by `profile` itself) are NOT pulled in - unlike
+    // name/description/usageNote/profiling above, this is not
+    // implemented. A `replaces.target` pointing at such an ancestor
+    // assignment will not resolve post-flattening; per the wider
+    // convention elsewhere in this codebase a dangling `replaces.target`
+    // simply reads as "no override" wherever it is consumed, so this
+    // degrades gracefully rather than producing invalid data.
+    controlledVocabularies: profile.controlledVocabularies,
   }
 }
 

@@ -107,22 +107,24 @@ export function isModifySemanticModelRelationshipEndProfile(operation: Operation
   return operation.type === MODIFY_SEMANTIC_MODEL_RELATIONSHIP_END_PROFILE;
 }
 
-export interface AddControlledVocabularyAssignment extends Operation {
-  type: typeof ADD_CONTROLLED_VOCABULARY_ASSIGNMENT;
-  classProfileIdentifier: EntityIdentifier;
-  assignment: ControlledVocabularyAssignment;
+export interface CreateControlledVocabularyAssignment extends Operation {
+  type: typeof CREATE_CONTROLLED_VOCABULARY_ASSIGNMENT;
+  /**
+   * Missing properties are filled with default values during execution.
+   */
+  entity: Partial<Omit<ControlledVocabularyAssignment, "type">>
+    & Pick<ControlledVocabularyAssignment, "id" | "classProfile" | "vocabulary" | "qualifier">;
 }
 
-export const ADD_CONTROLLED_VOCABULARY_ASSIGNMENT = "https://schemas.dataspecer.com/semantic-model/operations/create-controlled-vocabulary-assignment";
+export const CREATE_CONTROLLED_VOCABULARY_ASSIGNMENT = "https://schemas.dataspecer.com/semantic-model/operations/create-controlled-vocabulary-assignment";
 
-export function isAddControlledVocabularyAssignment(op: Operation): op is AddControlledVocabularyAssignment {
-  return op.type === ADD_CONTROLLED_VOCABULARY_ASSIGNMENT;
+export function isCreateControlledVocabularyAssignment(op: Operation): op is CreateControlledVocabularyAssignment {
+  return op.type === CREATE_CONTROLLED_VOCABULARY_ASSIGNMENT;
 }
 
 export interface RemoveControlledVocabularyAssignment extends Operation {
   type: typeof REMOVE_CONTROLLED_VOCABULARY_ASSIGNMENT;
-  classProfileIdentifier: EntityIdentifier;
-  controlledVocabularyIdentifier: EntityIdentifier;
+  identifier: EntityIdentifier;
 }
 
 export const REMOVE_CONTROLLED_VOCABULARY_ASSIGNMENT = "https://schemas.dataspecer.com/semantic-model/operations/delete-controlled-vocabulary-assignment";
@@ -133,9 +135,8 @@ export function isRemoveControlledVocabularyAssignment(op: Operation): op is Rem
 
 export interface ModifyControlledVocabularyAssignment extends Operation {
   type: typeof MODIFY_CONTROLLED_VOCABULARY_ASSIGNMENT;
-  classProfileIdentifier: EntityIdentifier;
-  controlledVocabularyIdentifier: EntityIdentifier;
-  changes: Partial<Pick<ControlledVocabularyAssignment, "qualifier" | "override">>;
+  identifier: EntityIdentifier;
+  changes: Partial<Pick<ControlledVocabularyAssignment, "qualifier" | "replaces">>;
 }
 
 export const MODIFY_CONTROLLED_VOCABULARY_ASSIGNMENT = "https://schemas.dataspecer.com/semantic-model/operations/update-controlled-vocabulary-assignment";
