@@ -33,7 +33,6 @@ import { ActionsContextProvider } from "./action/actions-react-binding";
 import { OptionsContextProvider } from "./configuration/options";
 
 import { migrateVisualModelFromV0 } from "./dataspecer/visual-model/visual-model-v0-to-v1";
-import { ExplorationContextProvider } from "./context/highlighting-exploration-mode";
 import {
   SemanticModelClassProfile,
   SemanticModelRelationshipProfile,
@@ -209,33 +208,31 @@ const Page = () => {
   }, [viewId, aggregatorView, aggregator]);
 
   return (
-    <ExplorationContextProvider>
-      <OptionsContextProvider>
-        <ModelGraphContext.Provider value={modelGraphContext}>
-          <ClassesContext.Provider value={classesContext}>
-            <LayoutConfigurationContext.Provider value={layoutConfigurationContext}>
-              <DialogContextProvider>
-                <ActionsContextProvider>
-                  <Header />
-                  <main className="w-full flex-grow bg-teal-50 md:h-[calc(100%-48px)]">
-                    <VerticalSplitter
-                      className="h-full"
-                      initialSize={preferences().pageSplitterValue}
-                      onSizeChange={value => updatePreferences({ pageSplitterValue: value })}
-                    >
-                      <Catalog />
-                      <Visualization />
-                    </VerticalSplitter>
-                  </main>
-                  <NotificationList />
-                  <DialogRenderer />
-                </ActionsContextProvider>
-              </DialogContextProvider>
-            </LayoutConfigurationContext.Provider>
-          </ClassesContext.Provider>
-        </ModelGraphContext.Provider>
-      </OptionsContextProvider >
-    </ExplorationContextProvider >
+    <OptionsContextProvider>
+      <ModelGraphContext.Provider value={modelGraphContext}>
+        <ClassesContext.Provider value={classesContext}>
+          <LayoutConfigurationContext.Provider value={layoutConfigurationContext}>
+            <DialogContextProvider>
+              <ActionsContextProvider>
+                <Header />
+                <main className="w-full flex-grow bg-teal-50 md:h-[calc(100%-48px)]">
+                  <VerticalSplitter
+                    className="h-full"
+                    initialSize={preferences().pageSplitterValue}
+                    onSizeChange={value => updatePreferences({ pageSplitterValue: value })}
+                  >
+                    <Catalog />
+                    <Visualization />
+                  </VerticalSplitter>
+                </main>
+                <NotificationList />
+                <DialogRenderer />
+              </ActionsContextProvider>
+            </DialogContextProvider>
+          </LayoutConfigurationContext.Provider>
+        </ClassesContext.Provider>
+      </ModelGraphContext.Provider>
+    </OptionsContextProvider >
   );
 };
 

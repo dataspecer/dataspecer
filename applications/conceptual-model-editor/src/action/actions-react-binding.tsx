@@ -449,9 +449,6 @@ export interface ActionsContextType extends DialogActions, VisualModelActions {
     semanticModelFilter: Record<string, boolean> | null
   ) => Selections;
 
-  highlightNodeInExplorationModeFromCatalog: (
-    classIdentifier: string, modelOfClassWhichStartedHighlighting: string) => void;
-
   addSemanticClassSurroundings: (model: ModelDsIdentifier, entity: EntityDsIdentifier) => Promise<void>;
 
   releaseSemanticClassSurroundings: (model: ModelDsIdentifier, entity: EntityDsIdentifier) => Promise<void>;
@@ -510,7 +507,6 @@ const noOperationActionsContext: ActionsContextType = {
   openPerformLayoutVisualModelDialog: noOperation,
   extendSelection: () => ({ nodeSelection: [], edgeSelection: [] }),
   filterSelection: () => ({ nodeSelection: [], edgeSelection: [] }),
-  highlightNodeInExplorationModeFromCatalog: noOperation,
   openSearchExternalSemanticModelDialog: noOperation,
   addSemanticClassSurroundings: noOperationAsync,
   releaseSemanticClassSurroundings: noOperationAsync,
@@ -1143,23 +1139,6 @@ function createActionsContext(
       visibilityFilter, semanticModelFilter);
   };
 
-  const highlightNodeInExplorationModeFromCatalog = (
-    classIdentifier: string,
-    modelOfClassWhichStartedHighlighting: string
-  ) => {
-    withVisualModel(notifications, graph, (visualModel) => {
-      const nodeIdentifiers = visualModel.getVisualEntitiesForRepresented(classIdentifier)
-        .map(visualEntity => visualEntity.id);
-      const isClassInVisualModel = nodeIdentifiers.length > 0;
-      if (!isClassInVisualModel) {
-        return;
-      }
-
-      diagram.actions().highlightNodesInExplorationModeFromCatalog(
-        nodeIdentifiers, modelOfClassWhichStartedHighlighting);
-    });
-  }
-
   const addSemanticClassSurroundings = async (
     semanticModel: ModelDsIdentifier, entity: EntityDsIdentifier,
   ) => {
@@ -1532,7 +1511,6 @@ function createActionsContext(
     openFilterSelectionDialog,
     extendSelection,
     filterSelection,
-    highlightNodeInExplorationModeFromCatalog,
     addSemanticClassSurroundings,
     releaseSemanticClassSurroundings,
     openProfileModelDialog,

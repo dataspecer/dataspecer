@@ -54,8 +54,6 @@ import { diagramContentAsSvg } from "./render-svg";
 import { CanvasMenuContentType } from "./canvas/canvas-menu-props";
 import { CanvasMenuCreatedByEdgeDrag } from "./canvas/canvas-menu-drag-edge";
 import { SelectionActionsMenu } from "./node/selection-actions-menu";
-import { setHighlightingStylesBasedOnSelection } from "./features/highlighting/set-selection-highlighting-styles";
-import { useExplorationCanvasHighlightingController } from "./features/highlighting/exploration/canvas/canvas-exploration-highlighting-controller";
 import { ReactPrevSetStateType } from "./utilities";
 import { GroupMenu } from "./node/group-menu";
 import { findTopLevelGroup } from "../action/utilities";
@@ -262,10 +260,6 @@ interface UseDiagramControllerType {
 
   alignmentController: AlignmentController;
 
-  onNodeMouseEnter: (event: React.MouseEvent, node: Node) => void;
-
-  onNodeMouseLeave: (event: React.MouseEvent, node: Node) => void;
-
   onNodeDoubleClick: (event: React.MouseEvent, node: Node) => void;
 
   onSelectionStart: () => void;
@@ -372,7 +366,6 @@ function useCreateDiagramControllerIndependentOnActionsAndContext(
     cleanSelection,
   } = createdReactStates;
   const alignmentController = useAlignmentController({ reactFlowInstance });
-  const canvasHighlighting = useExplorationCanvasHighlightingController(setNodes, setEdges);
   const isCtrlPressed = useKeyPress("Control");
   const isShiftPressed = useKeyPress("Shift");
   const isSelecting = isCtrlPressed || isShiftPressed;
@@ -398,13 +391,6 @@ function useCreateDiagramControllerIndependentOnActionsAndContext(
     setEdges, setSelectedEdges),
   [setEdges, setSelectedEdges]);
 
-  useEffect(() => {
-    if (!canvasHighlighting.isHighlightingOn) {
-      setHighlightingStylesBasedOnSelection(
-        reactFlowInstance.getNode, selectedNodes, selectedEdges, setNodes, setEdges);
-    }
-  }, [reactFlowInstance, setNodes, setEdges, selectedNodes, selectedEdges, canvasHighlighting.isHighlightingOn]);
-
   const onConnect = useCallback(createConnectHandler(), [setEdges]);
 
   const onConnectStart = useCallback(createConnectStartHandler(), []);
@@ -423,16 +409,7 @@ function useCreateDiagramControllerIndependentOnActionsAndContext(
 
   const onNodeDrag = useCallback(createOnNodeDragHandler(), []);
   const onNodeDragStop = useCallback(createOnNodeDragStopHandler(
-    api, alignmentController, canvasHighlighting.enableTemporarily),
-  [api, alignmentController, canvasHighlighting.enableTemporarily]);
-
-  const onNodeMouseEnter = useCallback(
-    createOnNodeMouseEnterHandler(canvasHighlighting.changeHighlight, reactFlowInstance),
-    [canvasHighlighting.changeHighlight, reactFlowInstance]);
-
-  const onNodeMouseLeave = useCallback(
-    createOnNodeMouseLeaveHandler(canvasHighlighting.resetHighlight),
-    [canvasHighlighting.resetHighlight]);
+    alignmentController), [alignmentController]);
 
   const onSelectionStart = useCallback(createOnSelectionStartHandler(
     cleanSelection, selectedNodesRef.current, userSelectedNodesRef.current),
@@ -452,8 +429,6 @@ function useCreateDiagramControllerIndependentOnActionsAndContext(
     onOpenEdgeToolbar,
     onNodeDrag,
     onNodeDragStop,
-    onNodeMouseEnter,
-    onNodeMouseLeave,
     onSelectionStart,
   };
 }
@@ -483,8 +458,6 @@ function useCreateDiagramControllerDependentOnActionsAndContext(
     selectedNodes, selectedEdges, userSelectedNodes]
   );
 
-  const canvasHighlighting = useExplorationCanvasHighlightingController(setNodes, setEdges);
-
   const setSelectedNodesThroughOnNodesChange = useCallback((newlySelectedNodes: string[], newlyUnselectedNodes: string[]) => {
     const changes: NodeChange<NodeType>[] = [artificialChange];
     for (const newSelectedNode of newlySelectedNodes) {
@@ -507,11 +480,10 @@ function useCreateDiagramControllerDependentOnActionsAndContext(
 
   const actions = useMemo(() => createActions(reactFlowInstance, setNodes, setEdges,
     alignmentController, context, selectedNodes, setSelectedNodesThroughOnNodesChange,
-    setSelectedEdges, canvasHighlighting.changeHighlight, groups, setGroups,
-    setNodeToGroupMapping, cleanSelection),
+    setSelectedEdges, setGroups, setNodeToGroupMapping),
   [reactFlowInstance, setNodes, setEdges, alignmentController, context,
     selectedNodes, setSelectedNodesThroughOnNodesChange, setSelectedEdges,
-    canvasHighlighting.changeHighlight, groups, setGroups, setNodeToGroupMapping, cleanSelection]);
+    groups, setGroups, setNodeToGroupMapping]);
 
   // Register actions to API.
   useEffect(() => api.setActions(actions), [api, actions]);
@@ -523,8 +495,8 @@ function useCreateDiagramControllerDependentOnActionsAndContext(
   const onNodeDoubleClick = useCallback(createOnNodeDoubleClickHandler(reactFlowInstance, actions.openGroupMenu), [reactFlowInstance, actions.openGroupMenu]);
 
   const onNodeDragStart = useCallback(createOnNodeDragStartHandler(
-    alignmentController, canvasHighlighting.disableTemporarily, context.closeCanvasMenu),
-  [alignmentController, canvasHighlighting.disableTemporarily, context.closeCanvasMenu]);
+    alignmentController, context.closeCanvasMenu),
+  [alignmentController, context.closeCanvasMenu]);
 
   return {
     context,
@@ -566,8 +538,6 @@ export function useDiagramController(api: UseDiagramType): UseDiagramControllerT
     onNodeDragStop: independentPartOfDiagramController.onNodeDragStop,
     onPaneClick: dependentPartOfDiagramController.onPaneClick,
     alignmentController: independentPartOfDiagramController.alignmentController,
-    onNodeMouseEnter: independentPartOfDiagramController.onNodeMouseEnter,
-    onNodeMouseLeave: independentPartOfDiagramController.onNodeMouseLeave,
     onNodeDoubleClick: dependentPartOfDiagramController.onNodeDoubleClick,
     onSelectionStart: independentPartOfDiagramController.onSelectionStart,
   };
@@ -592,50 +562,11 @@ const createOnNodeDragHandler = (): OnNodeDrag<Node> => {
 
 const createOnNodeDragStartHandler = (
   alignmentController: AlignmentController,
-  disableExplorationModeHighlightingChanges: () => void,
   closeCanvasMenu: () => void,
 ): OnNodeDrag<Node> => {
   return (_event, node, _nodes) => {
     closeCanvasMenu();
-    disableExplorationModeHighlightingChanges();
     alignmentController.alignmentSetUpOnNodeDragStart(node);
-  };
-};
-
-const createOnNodeMouseEnterHandler = (
-  changeHighlight: (
-    startingNodesIdentifiers: string[],
-    reactFlowInstance: ReactFlowInstance<NodeType, EdgeType>,
-    isSourceOfEventCanvas: boolean,
-    modelOfClassWhichStartedHighlighting: string | null
-  ) => void,
-  reactFlowInstance: ReactFlowInstance<NodeType, EdgeType>,
-) => {
-  return (_: React.MouseEvent, node: Node) => {
-    const nodesWithSameRepresented = findNodesRepresentedBySameClass(
-      reactFlowInstance, node as NodeType);
-    changeHighlight(nodesWithSameRepresented, reactFlowInstance, true, null);
-  };
-};
-
-const findNodesRepresentedBySameClass = (
-  reactFlowInstance: ReactFlowInstance<NodeType, EdgeType>,
-  node: NodeType
-) => {
-  const nodesWithSameRepresented = [];
-  for (const nodeInDiagram of reactFlowInstance.getNodes()) {
-    // Also handles the case when nodeInDiagram === node
-    if (nodeInDiagram.data.externalIdentifier === node.data.externalIdentifier) {
-      nodesWithSameRepresented.push(nodeInDiagram.data.identifier);
-    }
-  }
-
-  return nodesWithSameRepresented;
-}
-
-const createOnNodeMouseLeaveHandler = (resetHighlight: () => void) => {
-  return (_: React.MouseEvent, _node: Node) => {
-    resetHighlight();
   };
 };
 
@@ -655,12 +586,9 @@ const createOnNodeDoubleClickHandler = (
 };
 
 const createOnNodeDragStopHandler = (
-  api: UseDiagramType,
   alignmentController: AlignmentController,
-  enableExplorationModeHighlightingChanges: () => void,
 ): OnNodeDrag<Node> => {
   return (_event, node, _nodes) => {
-    enableExplorationModeHighlightingChanges();
     alignmentController.alignmentCleanUpOnNodeDragStop(node);
   };
 };
@@ -1525,16 +1453,8 @@ const createActions = (
   selectedNodes: string[],
   setSelectedNodesThroughOnNodesChange: (newlySelectedNodes: string[], newlyUnselectedNodes: string[]) => void,
   setSelectedEdgesInternal: React.Dispatch<React.SetStateAction<string[]>>,
-  changeHighlight: (
-    startingNodesIdentifiers: string[],
-    reactFlowInstance: ReactFlowInstance<NodeType, EdgeType>,
-    isSourceOfEventCanvas: boolean,
-    modelOfClassWhichStartedHighlighting: string | null
-  ) => void,
-  groups: Record<string, NodeIdentifierWithType[]>,
   setGroups: ReactPrevSetStateType<Record<string, NodeIdentifierWithType[]>>,
   setNodeToGroupMapping: ReactPrevSetStateType<Record<string, string>>,
-  cleanSelection: () => void,
 ): DiagramActions => {
   return {
     getGroups() {
@@ -1660,7 +1580,6 @@ const createActions = (
         }).filter(node => node !== null);
       });
 
-      cleanSelection();
     },
     setGroup(group, content) {
       console.log("Diagram.setGroup", { group, content });
@@ -1722,7 +1641,6 @@ const createActions = (
         });
       });
 
-      cleanSelection();
     },
     getGroupContent(group) {
       console.log("Diagram.getGroupContent", { group });
@@ -1862,7 +1780,6 @@ const createActions = (
       setNodes(nodes.map(nodeToNodeType));
       setEdges(edges.map(edgeToEdgeType));
       this.addGroups(groups, true);
-      cleanSelection();
       alignment.onReset();
       return Promise.resolve();
     },
@@ -1914,9 +1831,6 @@ const createActions = (
     openGroupMenu(groupIdentifier, canvasPosition) {
       console.log("openGroupMenu", { groupIdentifier, canvasPosition });
       context?.onOpenCanvasContextMenu(groupIdentifier, canvasPosition, GroupMenu);
-    },
-    highlightNodesInExplorationModeFromCatalog(nodeIdentifiers, modelOfClassWhichStartedHighlighting) {
-      changeHighlight(nodeIdentifiers, reactFlow, false, modelOfClassWhichStartedHighlighting);
     },
   };
 };
