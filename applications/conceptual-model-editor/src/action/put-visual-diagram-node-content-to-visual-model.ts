@@ -73,11 +73,7 @@ export function putVisualDiagramNodeContentToVisualModelAction(
   // Ideally we would implement the rerouting for visual profile relationships somewhere down in this file,
   // but the validation in visual model handles it for us. So that seems like extra work,
   // which is not really that trivial.
-  refreshVisualModel(graph);
-}
-
-function refreshVisualModel (graph: ModelGraphContextType) {
-  graph.setAggregatorView(graph.aggregator.getView());
+  graph.reloadView();
 }
 
 function copyVisualEntitiesBetweenModels(

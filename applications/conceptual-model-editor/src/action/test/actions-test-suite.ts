@@ -44,7 +44,7 @@ import {
   SemanticModelAggregatorView
 } from "@dataspecer/core-v2/semantic-model/aggregator";
 import { XY } from "@dataspecer/layout";
-import { ModelGraphContextType, UseModelGraphContextType } from "../../context/model-context";
+import { modelGraphContextToUse, ModelGraphContextType, UseModelGraphContextType } from "../../context/model-context";
 import { CmeSpecialization } from "../../dataspecer/cme-model/model";
 import { addVisualDiagramNode } from "../../dataspecer/visual-model/operation/add-visual-diagram-node";
 import {
@@ -398,20 +398,30 @@ export class ActionsTestSuite {
     }));
 
     const graph: ModelGraphContextType = {
-      aggregator,
       aggregatorView,
-      setAggregatorView: function (): void {
-        // Do nothing
-      },
-      models: models,
-      setModels: function (): void {
-        throw new Error("Function not implemented.");
-      },
+      models,
       visualModels,
-      setVisualModels: function (): void {
-        throw new Error("Function not implemented.");
-      }
+      //
+      addSemanticModel(model) {
+        models.set(model.getId(), model);
+      },
+      addVisualModel(model) {
+        visualModels.set(model.getIdentifier(), model as WritableVisualModel);
+      },
+      reloadView() {
+        throw Error("Not supported during tests!");
+      },
+      deleteModel(model) {
+        models.delete(model.getId());
+      },
+      deleteVisualModel(model) {
+        visualModels.delete(model.getIdentifier());
+      },
+      selectVisualModel() {
+        throw Error("Not supported during tests!");
+      },
     };
+
     for(let i = 0; i < modelCount; i++) {
       const model = new InMemorySemanticModel();
       if (i === 0) {
@@ -425,38 +435,7 @@ export class ActionsTestSuite {
       createdRelationships.push([]);
     }
 
-    const useGraph: UseModelGraphContextType = {
-      aggregator,
-      aggregatorView,
-      setAggregatorView: function (_value: SetStateAction<SemanticModelAggregatorView>): void {
-        throw new Error("Function not implemented.");
-      },
-      models,
-      visualModels,
-      addModel: function (..._models: EntityModel[]): void {
-        throw new Error("Function not implemented.");
-      },
-      addVisualModel: function (...visualModels: WritableVisualModel[]): void {
-        for(const visualModel of visualModels) {
-          graph.aggregator.addModel(visualModel);
-        }
-      },
-      setModelAlias: function (_alias: string | null, _model: EntityModel): void {
-        throw new Error("Function not implemented.");
-      },
-      setModelIri: function (_iri: string, _model: InMemorySemanticModel): void {
-        throw new Error("Function not implemented.");
-      },
-      replaceModels: function (_entityModels: EntityModel[], _visualModels: WritableVisualModel[]): void {
-        throw new Error("Function not implemented.");
-      },
-      removeModel: function (_modelId: string): void {
-        throw new Error("Function not implemented.");
-      },
-      removeVisualModel: function (_modelId: string): void {
-        throw new Error("Function not implemented.");
-      }
-    }
+    const useGraph = modelGraphContextToUse(graph);
 
     // Fill with data
 

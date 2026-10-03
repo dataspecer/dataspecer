@@ -28,7 +28,7 @@ test("Test creating visual diagram node from existing visual model", () => {
   const referencedVisualModel = createDefaultVisualModelFactory().createNewWritableVisualModelSync(null);
   ActionsTestSuite.createNewVisualNodeForTesting(referencedVisualModel, firstModel.getId(), "2");
   ActionsTestSuite.createNewVisualNodeForTesting(referencedVisualModel, firstModel.getId(), "3");
-  graph.aggregator.addModel(referencedVisualModel);
+  graph.addVisualModel(referencedVisualModel);
 
   // Perform action
   addVisualDiagramNodeForExistingModelToVisualModelAction(

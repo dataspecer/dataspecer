@@ -411,18 +411,27 @@ const prepareVisualModelWithFourNodes = () => {
   }));
 
   const graph: ModelGraphContextType = {
-    aggregator,
     aggregatorView,
-    setAggregatorView: function (_value: SetStateAction<SemanticModelAggregatorView>): void {
-      throw new Error("Function not implemented.");
-    },
     models: models,
-    setModels: function (_): void {
-      throw new Error("Function not implemented.");
-    },
     visualModels,
-    setVisualModels: function (): void {
-      throw new Error("Function not implemented.");
+    //
+    addSemanticModel(model) {
+      models.set(model.getId(), model);
+    },
+    addVisualModel(model) {
+      visualModels.set(model.getIdentifier(), model as WritableVisualModel);
+    },
+    reloadView() {
+      throw Error("Not supported during tests!");
+    },
+    deleteModel(model) {
+      models.delete(model.getId());
+    },
+    deleteVisualModel(model) {
+      visualModels.delete(model.getIdentifier());
+    },
+    selectVisualModel() {
+      throw Error("Not supported during tests!");
     },
   };
 

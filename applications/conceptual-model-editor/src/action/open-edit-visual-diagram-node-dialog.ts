@@ -41,7 +41,7 @@ export function openEditVisualDiagramNodeDialogAction(
     // Hack to force update in the Header component
     const activeViewId = graph.aggregatorView.getActiveViewId();
     graph.aggregatorView.changeActiveVisualModel(activeViewId ?? null);
-    graph.setAggregatorView(graph.aggregator.getView());
+    graph.reloadView();
   };
 
   dialogs?.openDialog(createEditVisualDiagramNodeDialog(dialogData.state, onConfirm));

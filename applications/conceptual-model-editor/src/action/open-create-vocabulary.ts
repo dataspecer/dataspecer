@@ -26,8 +26,7 @@ export function openCreateVocabularyAction(
     void (async () => {
       const models = await createSemanticModels(state);
       addModelsToGraph(graph, models);
-      const aggregatedView = graph.aggregator.getView();
-      graph.setAggregatorView(aggregatedView);
+      graph.reloadView();
     })();
   };
   dialogs.openDialog(createAddModelDialog(onConfirm));
@@ -71,8 +70,7 @@ function addModelsToGraph(graph: ModelGraphContextType, models: EntityModel[]) {
   }
 
   for (const model of models) {
-    graph.aggregator.addModel(model);
-    graph.setModels((previous) => [...previous, model]);
+    graph.addSemanticModel(model);
     for (const [_, visualModel] of graph.visualModels) {
       visualModel.setModelColor(model.getId(), randomColorFromPalette());
     }

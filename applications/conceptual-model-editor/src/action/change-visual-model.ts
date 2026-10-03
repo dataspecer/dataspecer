@@ -9,7 +9,6 @@ export function changeVisualModelAction (
   queryParamsContext: QueryParamsContextType,
   viewIdentifier: string | null
 ) {
-  graph.aggregatorView.changeActiveVisualModel(viewIdentifier);
-  graph.setAggregatorView(graph.aggregator.getView());
+  graph.selectVisualModel(viewIdentifier);
   queryParamsContext.updateViewId(viewIdentifier);
 };

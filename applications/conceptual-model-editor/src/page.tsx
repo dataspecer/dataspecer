@@ -20,7 +20,7 @@ import {
 } from "@dataspecer/core-v2/semantic-model/concepts";
 
 import { ClassesContext } from "./context/classes-context";
-import { ModelGraphContext } from "./context/model-context";
+import { ModelContextProvider, ModelGraphContext } from "./context/model-context";
 import Header from "./header/header";
 import { useBackendConnection } from "./backend-connection";
 import { Catalog as CatalogV3 } from "./catalog-v3/catalog";
@@ -49,6 +49,7 @@ import { LayoutConfigurationContext } from "./context/layout-configuration-conte
 import { propagateAggregatorChangesToLocalState } from "./page-aggregator-sync";
 
 const _semanticModelAggregator = new SemanticModelAggregator();
+
 type SemanticModelAggregatorType = typeof _semanticModelAggregator;
 
 /** Select Catalog component. */
@@ -58,10 +59,12 @@ const Catalog = (() => {
 
 const Page = () => {
   // URL query
-  const { packageId, viewId } = useQueryParamsContext();
+  const queryParamsContext = useQueryParamsContext();
+  const { packageId, viewId } = queryParamsContext;
   // Dataspecer API
-  const [aggregator, setAggregator] = useState(new SemanticModelAggregator());
+  const [aggregator] = useState(new SemanticModelAggregator());
   const [aggregatorView, setAggregatorView] = useState(aggregator.getView());
+
   const { getModelsFromBackend, getLayoutConfigurationModelFromBackend } = useBackendConnection();
   // Local state - models
   const [models, setModels] = useState<EntityModel[]>([]);
@@ -82,28 +85,6 @@ const Page = () => {
     useState(getDefaultUserGivenAlgorithmConfigurationsFull());
 
   // Derived state - this is for backwards compatibility.
-
-  const modelMap = useMemo(() => new Map(models.map(
-    (model) => [model.getId(), model])), [models]);
-
-  const visualModelMap = useMemo(() => new Map(visualModels.map(
-    (model) => [model.getIdentifier(), model])),
-    [visualModels]);
-
-  const modelGraphContext = useMemo(() => {
-    return {
-      aggregator,
-      aggregatorView,
-      setAggregatorView,
-      models: modelMap,
-      setModels,
-      visualModels: visualModelMap,
-      setVisualModels,
-    };
-  }, [
-    aggregator, aggregatorView, setAggregatorView,
-    modelMap, setModels, visualModelMap, setVisualModels,
-  ]);
 
   const classesContext = useMemo(() => {
     console.log("update ClassesContext", { classes, classProfiles });
@@ -208,7 +189,16 @@ const Page = () => {
   }, [viewId, aggregatorView, aggregator]);
 
   return (
-    <ModelGraphContext.Provider value={modelGraphContext}>
+    <ModelContextProvider
+      aggregator={aggregator}
+      aggregatorView={aggregatorView}
+      setAggregatorView={setAggregatorView}
+      models={models}
+      setModels={setModels}
+      visualModels={visualModels}
+      setVisualModels={setVisualModels}
+      queryParamsContext={queryParamsContext}
+    >
       <ClassesContext.Provider value={classesContext}>
         <LayoutConfigurationContext.Provider value={layoutConfigurationContext}>
           <DialogContextProvider>
@@ -230,7 +220,7 @@ const Page = () => {
           </DialogContextProvider>
         </LayoutConfigurationContext.Provider>
       </ClassesContext.Provider>
-    </ModelGraphContext.Provider>
+    </ModelContextProvider>
   );
 };
 

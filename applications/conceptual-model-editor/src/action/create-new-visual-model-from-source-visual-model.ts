@@ -45,7 +45,7 @@ export function createNewVisualModelAction(
 
   useGraph.addVisualModel(model);
   model.setLabel(newVisualModelName ?? { en: "Visual model" });
-  graph.setAggregatorView(graph.aggregator.getView());
+  graph.reloadView();
 
   return model;
 }
