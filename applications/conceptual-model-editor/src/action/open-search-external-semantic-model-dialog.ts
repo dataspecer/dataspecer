@@ -1,5 +1,5 @@
 import { DialogApiContextType } from "../dialog/dialog-service";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import {
   createSearchExternalSemanticDialog,
   createSearchExternalSemanticModelState,
@@ -17,7 +17,7 @@ const LOG = createLogger(import.meta.url);
 export function openSearchExternalSemanticModelDialogAction(
   notifications: UseNotificationServiceWriterType,
   dialogs: DialogApiContextType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   modelIdentifier: ModelDsIdentifier,
 ) {
   const initialState = createSearchExternalSemanticModelState();

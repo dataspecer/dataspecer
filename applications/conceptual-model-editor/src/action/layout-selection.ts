@@ -1,5 +1,5 @@
 import { ClassesContextType } from "../context/classes-context";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseDiagramType } from "../diagram/diagram-hook";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import {
@@ -30,7 +30,7 @@ export async function layoutGivenVisualEntities(
   notifications: UseNotificationServiceWriterType,
   classes: ClassesContextType,
   diagram: UseDiagramType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   configuration: UserGivenAlgorithmConfigurations,
   visualEntitiesToLayout: string[],
@@ -95,7 +95,7 @@ export async function layouGivenVisualEntitiesAction(
   notifications: UseNotificationServiceWriterType,
   classes: ClassesContextType,
   diagram: UseDiagramType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   configuration: UserGivenAlgorithmConfigurations,
   visualEntitiesToLayout: string[],

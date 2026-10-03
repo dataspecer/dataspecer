@@ -1,7 +1,7 @@
 import { isSemanticModelGeneralization } from "@dataspecer/core-v2/semantic-model/concepts";
 
 import type { UseNotificationServiceWriterType } from "../notification/notification-service-context";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { withAggregatedEntity } from "./utilities";
 import { withErrorBoundary } from "./utilities/error-utilities";
 import { WritableVisualModel } from "@dataspecer/visual-model";
@@ -9,7 +9,7 @@ import { createVisualModelOperationExecutor } from "../dataspecer/visual-model/v
 
 export function addSemanticGeneralizationToVisualModelAction(
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   entityIdentifier: string,
   modelIdentifier: string,

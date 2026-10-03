@@ -9,7 +9,7 @@ import {
 } from "./extend-selection-action";
 import { ClassesContextType } from "../context/classes-context";
 import { VisualModel } from "@dataspecer/visual-model";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 
 /**
@@ -56,7 +56,7 @@ export type SelectionsWithIdInfo = Selections & {areVisualModelIdentifiers: bool
  */
 export function filterSelectionAction(
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   classesContext: ClassesContextType | null,
   selections: SelectionsWithIdInfo,
   filters: SelectionFilter[],

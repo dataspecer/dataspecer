@@ -3,7 +3,7 @@ import { isWritableVisualModel, VisualModel } from "@dataspecer/visual-model";
 import { SemanticModelClass } from "@dataspecer/core-v2/semantic-model/concepts";
 
 import { DialogApiContextType } from "../dialog/dialog-service";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { Options } from "../application";
 import { ClassDialogState, createEditClassDialogState } from "../dialog/class/edit-class-dialog-state";
 import { DialogSemanticTracker } from "../dialog-v2/dialog-semantic-tracker";
@@ -17,7 +17,7 @@ export function openEditClassDialogAction(
   cmeExecutor: CmeModelOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: VisualModel | null,
   model: InMemorySemanticModel,
   entity: SemanticModelClass,

@@ -1,7 +1,7 @@
 import { EntityModel } from "@dataspecer/core-v2";
 
 import { createLogger } from "../application";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { DialogApiContextType } from "../dialog/dialog-service";
 import { createAddModelDialog } from "../dialog/semantic-model/create-semantic-model/create-semantic-model-dialog";
 import {
@@ -20,7 +20,7 @@ const LOG = createLogger(import.meta.url);
 
 export function openCreateVocabularyAction(
   dialogs: DialogApiContextType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
 ) {
   const onConfirm = (state: CreateModelState) => {
     void (async () => {
@@ -61,7 +61,7 @@ export async function createSemanticModels(
   return result;
 }
 
-function addModelsToGraph(graph: ModelGraphContextType, models: EntityModel[]) {
+function addModelsToGraph(graph: UseModelGraphContextType, models: EntityModel[]) {
   // If there is no visual model, we create a default one.
   if (graph.getActiveVisualModel() === null) {
     LOG.warn("Creating default visual model.")

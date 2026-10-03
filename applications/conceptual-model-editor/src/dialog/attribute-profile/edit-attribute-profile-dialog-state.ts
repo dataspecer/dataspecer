@@ -1,6 +1,6 @@
 import { VisualModel } from "@dataspecer/visual-model";
 import { ClassesContextType } from "../../context/classes-context";
-import { ModelGraphContextType } from "../../context/model-context";
+import { UseModelGraphContextType } from "../../context/model-context";
 import {
   DataTypeRepresentative,
   filterByModel,
@@ -48,7 +48,7 @@ export interface AttributeProfileDialogState extends
  */
 export function createNewAttributeProfileDialogState(
   classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
+  graphContext: UseModelGraphContextType,
   visualModel: VisualModel | null,
   language: string,
   profilesIdentifiers: EntityDsIdentifier[],
@@ -109,7 +109,7 @@ export function createNewAttributeProfileDialogState(
  */
 export function createEditAttributeProfileDialogState(
   classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
+  graphContext: UseModelGraphContextType,
   visualModel: VisualModel | null,
   language: string,
   model: InMemorySemanticModel,
@@ -195,7 +195,7 @@ export function createEditAttributeProfileDialogState(
 function listAttributesToProfile(
   labelResolver: LabelResolver,
   classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
+  graphContext: UseModelGraphContextType,
   vocabularies: CmeSemanticModel[],
 ) {
   const entities = graphContext.getEntities();
@@ -217,7 +217,7 @@ function listAttributesToProfile(
 function listAttributesToSpecialize(
   labelResolver: LabelResolver,
   classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
+  graphContext: UseModelGraphContextType,
   vocabularies: CmeSemanticModel[],
 ) {
   const entities = graphContext.getEntities();
@@ -230,7 +230,7 @@ function listAttributesToSpecialize(
 
 export function createAddAttributeProfileDialogState(
   classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
+  graphContext: UseModelGraphContextType,
   visualModel: VisualModel | null,
   language: string,
   domainIdentifier: EntityDsIdentifier,

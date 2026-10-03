@@ -2,7 +2,7 @@ import { WritableVisualModel } from "@dataspecer/visual-model";
 
 import type { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { getDomainAndRange } from "../util/relationship-utils";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { withAggregatedEntity } from "./utilities";
 import {
   isSemanticModelRelationshipProfile,
@@ -20,7 +20,7 @@ import {
  */
 export function addSemanticRelationshipProfileToVisualModelAction(
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   entityIdentifier: string,
   modelIdentifier: string,

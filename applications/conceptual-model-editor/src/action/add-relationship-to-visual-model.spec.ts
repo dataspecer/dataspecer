@@ -22,7 +22,7 @@ import {
   createRelationship
 } from "@dataspecer/core-v2/semantic-model/operations";
 import { addSemanticRelationshipToVisualModelAction } from "./add-relationship-to-visual-model";
-import { modelGraphContextToUse, ModelGraphContextType } from "../context/model-context";
+import { modelGraphContextToUse, UseModelGraphContextType } from "../context/model-context";
 import { SemanticModelAggregator, SemanticModelAggregatorView } from "@dataspecer/core-v2/semantic-model/aggregator";
 import { SetStateAction } from "react";
 import { createVisualEdgeEndpointDuplicateAction } from "./create-visual-edge-endpoint-duplicate";
@@ -561,7 +561,7 @@ enum RelationshipToTestType {
  * @returns
  */
 function createTestRelationshipOfGivenType(
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   models: Map<string, EntityModel>,
   modelDsIdentifier: string,
@@ -597,7 +597,7 @@ function createTestRelationshipOfGivenType(
 }
 
 function addTestRelationshipToVisualModel(
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   modelDsIdentifier: string,
   relationshipToTestType: RelationshipToTestType,

@@ -10,7 +10,7 @@ import {
 import type { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { collectDirectVisualEntitiesToRemove } from "./remove-from-visual-model-by-visual";
 import { removeVisualEntitiesFromVisualModelAction } from "./remove-visual-entities-from-visual-model";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { getVisualDiagramNodeMappingsByRepresented } from "./utilities";
 import { ClassesContextType } from "../context/classes-context";
 import { getDomainAndRangeConcepts } from "../util/relationship-utils";
@@ -20,7 +20,7 @@ import { getDomainAndRangeConcepts } from "../util/relationship-utils";
  */
 export function removeFromVisualModelByRepresentedAction(
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   classesContext: ClassesContextType,
   visualModel: WritableVisualModel,
   identifiers: string[],
@@ -32,7 +32,7 @@ export function removeFromVisualModelByRepresentedAction(
 
 function collectIndirectVisualEntitiesToRemove(
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   classesContext: ClassesContextType,
   visualModel: WritableVisualModel,
   semanticIdentifiers: string[],

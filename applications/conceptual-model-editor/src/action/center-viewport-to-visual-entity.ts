@@ -1,5 +1,5 @@
 import { isVisualGroup, isVisualNode, isVisualRelationship, VisualEntity } from "@dataspecer/visual-model";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseDiagramType } from "../diagram/diagram-hook";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { SemanticModelRelationship, isSemanticModelAttribute } from "@dataspecer/core-v2/semantic-model/concepts";
@@ -16,7 +16,7 @@ import { isSemanticModelAttributeProfile } from "../dataspecer/semantic-model";
  */
 export function centerViewportToVisualEntityByRepresentedAction(
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   classesContext: ClassesContextType,
   diagram: UseDiagramType,
   entityIdentifier: string,

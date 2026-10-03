@@ -2,7 +2,7 @@ import { isWritableVisualModel, VisualModel } from "@dataspecer/visual-model";
 
 import { createLogger, Options } from "../application";
 import { ClassesContextType } from "../context/classes-context";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { DialogApiContextType } from "../dialog/dialog-service";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { isSemanticModelClass, SemanticModelClass } from "@dataspecer/core-v2/semantic-model/concepts";
@@ -39,7 +39,7 @@ export function openCreateAttributeForEntityDialogAction(
   options: Options,
   dialogs: DialogApiContextType,
   classes: ClassesContextType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   notifications: UseNotificationServiceWriterType,
   visualModel: VisualModel | null,
   identifier: string,
@@ -73,7 +73,7 @@ function handleCreateClassAttribute(
   options: Options,
   dialogs: DialogApiContextType,
   classes: ClassesContextType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   notifications: UseNotificationServiceWriterType,
   visualModel: VisualModel | null,
   aggregate: SemanticModelClass,
@@ -109,7 +109,7 @@ function handleCreateClassProfileAttribute(
   options: Options,
   dialogs: DialogApiContextType,
   classes: ClassesContextType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   notifications: UseNotificationServiceWriterType,
   visualModel: VisualModel | null,
   aggregate: SemanticModelClassProfile,

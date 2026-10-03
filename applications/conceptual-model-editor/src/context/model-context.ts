@@ -263,6 +263,3 @@ export interface UseModelGraphContextType {
   onVisualModelDidChange: () => void;
 
 }
-
-/* Type alias for easier migration. */
-export type ModelGraphContextType = UseModelGraphContextType;

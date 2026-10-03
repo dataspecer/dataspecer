@@ -8,14 +8,14 @@ import {
   createEditVisualNodeState,
   EditVisualNodeDialogState,
 } from "../dialog/visual-model/visual-node/edit-visual-node-dialog-state";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { SemanticModelClass } from "@dataspecer/core-v2/semantic-model/concepts";
 import { SemanticModelClassProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { getEntityLabelToShowInDiagram } from "../util/utils";
 
 export function openEditNodeAttributesDialogAction(
   classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
+  graphContext: UseModelGraphContextType,
   dialogs: DialogApiContextType,
   _notifications: UseNotificationServiceWriterType,
   options: Options,

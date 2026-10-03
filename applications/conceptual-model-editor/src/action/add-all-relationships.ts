@@ -5,7 +5,7 @@ import {
   VisualRelationship,
 } from "@dataspecer/visual-model";
 import { getVisualDiagramNodeMappingsByRepresented, isVisualEdgeEnd } from "./utilities";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { ClassesContextType } from "../context/classes-context";
 import { findSourceModelOfEntity } from "../service/model-service";
@@ -21,7 +21,7 @@ import { getSemanticConnectionEndConcepts } from "../util/relationship-utils";
 export function addAllRelationshipsForVisualDiagramNodeToVisualModelAction(
   notifications: UseNotificationServiceWriterType,
   classesContext: ClassesContextType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   visualModelDiagramNode: VisualModelDiagramNode,
 ) {
@@ -85,7 +85,7 @@ export function addAllRelationshipsForVisualDiagramNodeToVisualModelAction(
  */
 function findRelationshipsForEnd(
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: VisualModel,
   getVisualEntitiesForRepresentedGlobal: VisualsForRepresentedWrapper,
   relationship: SemanticModelRelationship | SemanticModelRelationshipProfile | SemanticModelGeneralization,

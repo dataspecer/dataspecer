@@ -11,7 +11,7 @@ import { configuration, createLogger, t } from "../../application";
 import { getDomainAndRange } from "../../util/relationship-utils";
 import { EntityDsIdentifier } from "../../dataspecer/entity-model";
 import { ClassesContextType } from "../../context/classes-context";
-import { ModelGraphContextType } from "../../context/model-context";
+import { UseModelGraphContextType } from "../../context/model-context";
 import {
   isSemanticModelClassProfile,
   isSemanticModelRelationshipProfile,
@@ -183,7 +183,7 @@ function findOwnerVocabulary(
 };
 
 export function findVocabularyForModel(
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: VisualModel,
   model: string,
 ): CmeSemanticModel | null {
@@ -242,7 +242,7 @@ export function representClassProfiles(
  */
 export function listRelationshipDomains(
   classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
+  graphContext: UseModelGraphContextType,
   vocabularies: CmeSemanticModel[],
   labelResolver: LabelResolver,
 ): EntityRepresentative[] {
@@ -262,7 +262,7 @@ export function listRelationshipDomains(
  */
 export function listRelationshipProfileDomains(
   classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
+  graphContext: UseModelGraphContextType,
   vocabularies: CmeSemanticModel[],
   labelResolver: LabelResolver,
 ): EntityRepresentative[] {

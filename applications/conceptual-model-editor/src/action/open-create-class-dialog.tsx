@@ -3,7 +3,7 @@ import { VisualModel, isWritableVisualModel } from "@dataspecer/visual-model";
 
 import { DialogApiContextType } from "../dialog/dialog-service";
 import { ClassesContextType } from "../context/classes-context";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { Options } from "../application";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { firstInMemorySemanticModel } from "../utilities/model";
@@ -25,7 +25,7 @@ export function openCreateClassDialogAction(
   options: Options,
   dialogs: DialogApiContextType,
   classes: ClassesContextType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   notifications: UseNotificationServiceWriterType,
   visualModel: VisualModel | null,
   diagram: UseDiagramType,

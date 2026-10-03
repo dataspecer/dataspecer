@@ -1,7 +1,7 @@
 import { isVisualNode, WritableVisualModel } from "@dataspecer/visual-model";
 import { openCreateClassDialogWithModelDerivedFromClassAction } from "./open-create-class-dialog-with-derived-model";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { ClassesContextType } from "../context/classes-context";
 import { Options } from "../application";
 import { DialogApiContextType } from "../dialog/dialog-service";
@@ -24,7 +24,7 @@ export function openCreateClassDialogAndCreateGeneralizationAction(
   dialogs: DialogApiContextType,
   classes: ClassesContextType,
   options: Options,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   visualModel: WritableVisualModel,
   nodeIdentifier: string,
@@ -48,7 +48,7 @@ export function openCreateClassDialogAndCreateGeneralizationAction(
 function createGeneralizationToCreatedClass(
   cmeExecutor: CmeModelOperationExecutor,
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   nodeIdentifier: string,
   isCreatedClassParent: boolean,

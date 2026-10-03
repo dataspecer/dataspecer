@@ -11,7 +11,7 @@ import {
   isSemanticModelRelationship,
 } from "@dataspecer/core-v2/semantic-model/concepts";
 
-import { ModelGraphContextType } from "../../context/model-context";
+import { UseModelGraphContextType } from "../../context/model-context";
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
 import { InputLanguageString } from "../components/input-language-string";
 import { IriInput } from "../../components/input/iri-input";
@@ -69,7 +69,7 @@ export interface CreateConnectionState {
 let nextOpenConnectionType = ConnectionType.Association;
 
 export const createConnectionDialog = (
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   source: SemanticModelClass,
   target: SemanticModelClass,
   language: string,
@@ -91,7 +91,7 @@ export const createConnectionDialog = (
 }
 
 export function createCreateConnectionState(
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   source: SemanticModelClass,
   target: SemanticModelClass,
   language: string,

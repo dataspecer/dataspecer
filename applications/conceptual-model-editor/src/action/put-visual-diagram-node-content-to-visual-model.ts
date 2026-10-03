@@ -10,7 +10,7 @@ import { isVisualDiagramNode,
   WritableVisualModel
 } from "@dataspecer/visual-model";
 import { VisualModelDiagramNode } from "../diagram";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { AnchorOverrideSetting, getDefaultUserGivenAlgorithmConfigurationsFull, XY } from "@dataspecer/layout";
 import { addVisualNode } from "../dataspecer/visual-model/operation/add-visual-node";
@@ -43,7 +43,7 @@ import { layoutActiveVisualModelAction } from "./layout-visual-model";
 export function putVisualDiagramNodeContentToVisualModelAction(
   notifications: UseNotificationServiceWriterType,
   classesContext: ClassesContextType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   visualModel: WritableVisualModel,
   diagramNode: VisualModelDiagramNode,
@@ -79,7 +79,7 @@ export function putVisualDiagramNodeContentToVisualModelAction(
 function copyVisualEntitiesBetweenModels(
   notifications: UseNotificationServiceWriterType,
   classesContext: ClassesContextType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   availableVisualModels: Map<string, WritableVisualModel>,
   copyFrom: VisualModel,

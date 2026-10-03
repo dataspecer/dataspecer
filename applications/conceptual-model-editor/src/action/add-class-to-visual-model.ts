@@ -3,7 +3,7 @@ import { isSemanticModelClass } from "@dataspecer/core-v2/semantic-model/concept
 
 import { getVisualNodeContentBasedOnExistingEntities, withAggregatedEntity } from "./utilities";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseDiagramType } from "../diagram/diagram-hook";
 import { addRelatedEntitiesAction } from "./add-related-entities-to-visual-model";
 import { findPositionForNewNodeUsingLayouting } from "./layout-visual-model";
@@ -12,7 +12,7 @@ import { addVisualNode } from "../dataspecer/visual-model/operation/add-visual-n
 
 export async function addSemanticClassToVisualModelAction(
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   classes: ClassesContextType,
   visualModel: WritableVisualModel,
   diagram: UseDiagramType,

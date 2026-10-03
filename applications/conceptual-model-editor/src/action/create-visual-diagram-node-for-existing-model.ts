@@ -2,7 +2,7 @@ import { WritableVisualModel } from "@dataspecer/visual-model";
 import { getViewportCenterForClassPlacement, doesAddingVisualModelCauseSelfReference } from "./utilities";
 import { UseDiagramType } from "../diagram/diagram-hook";
 import { addVisualDiagramNode } from "../dataspecer/visual-model/operation/add-visual-diagram-node";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 
 /**
@@ -12,7 +12,7 @@ import { UseNotificationServiceWriterType } from "../notification/notification-s
  */
 export function addVisualDiagramNodeForExistingModelToVisualModelAction(
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   visualModelToAddTo: WritableVisualModel,
   visualModelToRepresent: string,

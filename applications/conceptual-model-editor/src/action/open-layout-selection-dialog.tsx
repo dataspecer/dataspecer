@@ -5,7 +5,7 @@ import { getDefaultUserGivenAlgorithmConfigurationsFull } from "@dataspecer/layo
 import { ClassesContextType } from "../context/classes-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { UseDiagramType } from "../diagram/diagram-hook";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import {
   isVisualProfileRelationship,
   isVisualRelationship,
@@ -25,7 +25,7 @@ export function openLayoutSelectionDialogAction(
   dialogs: DialogApiContextType,
   classes: ClassesContextType,
   diagram: UseDiagramType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   nodeSelection: string[],
   edgeSelection: string[],

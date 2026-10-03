@@ -1,7 +1,7 @@
 
 import { VisualModel, isVisualNode, isWritableVisualModel } from "@dataspecer/visual-model";
 import { ClassesContextType } from "../context/classes-context";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { Options } from "../application";
 import {
@@ -48,7 +48,7 @@ import { applyControlledVocabularySelection } from "./apply-controlled-vocabular
 export async function createDefaultProfilesAction(
   cmeExecutor: CmeModelOperationExecutor,
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   options: Options,
   classesContext: ClassesContextType,
@@ -85,7 +85,7 @@ export async function createDefaultProfilesAction(
 async function createDefaultClassProfiles(
   cmeExecutor: CmeModelOperationExecutor,
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   language: Language,
   classesContext: ClassesContextType,
@@ -119,7 +119,7 @@ async function createDefaultClassProfiles(
 async function createDefaultClassProfile(
   cmeExecutor: CmeModelOperationExecutor,
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   language: Language,
   classesContext: ClassesContextType,
@@ -176,7 +176,7 @@ function createClassProfile(
 function createDefaultRelationshipProfiles(
   notifications: UseNotificationServiceWriterType,
   classesContext: ClassesContextType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   language: Language,
   visualModel: VisualModel | null,
@@ -207,7 +207,7 @@ function createDefaultRelationshipProfiles(
 async function createDefaultRelationshipProfile(
   notifications: UseNotificationServiceWriterType,
   classesContext: ClassesContextType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   language: Language,
   model: InMemorySemanticModel,
@@ -291,7 +291,7 @@ async function createDefaultRelationshipProfile(
 
 function getAndValidateRelationshipToBeProfiled(
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   entityToProfile: string
 ): SemanticModelRelationship | SemanticModelRelationshipProfile | null {
   const relationshipToProfile = graph.getEntities()?.[entityToProfile]?.aggregatedEntity;

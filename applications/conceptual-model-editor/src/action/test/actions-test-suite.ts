@@ -44,7 +44,7 @@ import {
   SemanticModelAggregatorView
 } from "@dataspecer/core-v2/semantic-model/aggregator";
 import { XY } from "@dataspecer/layout";
-import { modelGraphContextToUse, ModelGraphContextType, UseModelGraphContextType } from "../../context/model-context";
+import { modelGraphContextToUse, UseModelGraphContextType } from "../../context/model-context";
 import { CmeSpecialization } from "../../dataspecer/cme-model/model";
 import { addVisualDiagramNode } from "../../dataspecer/visual-model/operation/add-visual-diagram-node";
 import {
@@ -968,7 +968,7 @@ export class ActionsTestSuite {
   }
 
   static addTestRelationshipToVisualModel(
-    graph: ModelGraphContextType,
+    graph: UseModelGraphContextType,
     visualModel: WritableVisualModel,
     modelDsIdentifier: string,
     relationshipToTestType: TestedSemanticConnectionType,

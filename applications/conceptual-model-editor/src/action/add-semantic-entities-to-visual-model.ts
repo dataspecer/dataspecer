@@ -1,5 +1,5 @@
 import { WritableVisualModel } from "@dataspecer/visual-model";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { UseDiagramType } from "../diagram/diagram-hook";
 import { sourceModelOfEntity } from "../util/model-utils";
@@ -43,7 +43,7 @@ type ValidatedDataAboutEntity = {
 export async function addSemanticEntitiesToVisualModelAction(
   notifications: UseNotificationServiceWriterType,
   classes: ClassesContextType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   diagram: UseDiagramType,
   entities: EntityToAddToVisualModel[],
@@ -60,7 +60,7 @@ export async function addSemanticEntitiesToVisualModelAction(
 async function updatePositionsAndSplitIntoNodesAndEdges(
   notifications: UseNotificationServiceWriterType,
   classes: ClassesContextType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   diagram: UseDiagramType,
   validatedEntitiesToAddToVisualModel: ValidatedDataAboutEntity[]
@@ -118,7 +118,7 @@ async function updatePositionsAndSplitIntoNodesAndEdges(
 
 function validateEntities(
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   entities: EntityToAddToVisualModel[]
 ) {
@@ -154,7 +154,7 @@ function validateEntities(
 async function addClassesAndClassProfilesToVisualModel(
   notifications: UseNotificationServiceWriterType,
   classes: ClassesContextType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   diagram: UseDiagramType,
   validatedNodesData: ValidatedDataAboutEntity[]
@@ -184,7 +184,7 @@ async function addClassesAndClassProfilesToVisualModel(
 
 function addConnectionsToVisualModel(
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   validatedEdgesData: ValidatedDataAboutEntity[]
 ) {

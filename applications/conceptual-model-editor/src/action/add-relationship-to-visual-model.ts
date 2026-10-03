@@ -3,7 +3,7 @@ import { SemanticModelRelationship, isSemanticModelRelationship } from "@dataspe
 
 import type { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { getDomainAndRange } from "../util/relationship-utils";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { withAggregatedEntity } from "./utilities";
 import {
   addVisualRelationshipsWithSpecifiedVisualEnds,
@@ -16,7 +16,7 @@ import {
  */
 export function addSemanticRelationshipToVisualModelAction(
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   entityIdentifier: string,
   modelIdentifier: string,

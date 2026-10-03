@@ -1,6 +1,6 @@
 import { VisualModel } from "@dataspecer/visual-model";
 import { ClassesContextType } from "../../context/classes-context";
-import { ModelGraphContextType } from "../../context/model-context";
+import { UseModelGraphContextType } from "../../context/model-context";
 import {
   type BaseEntityDialogState,
   createEditBaseEntityDialogState,
@@ -42,7 +42,7 @@ export interface AttributeDialogState extends
 
 export function createNewAttributeDialogState(
   classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
+  graphContext: UseModelGraphContextType,
   visualModel: VisualModel | null,
   language: string,
   defaultModelIdentifier: string | null,
@@ -89,7 +89,7 @@ export function createNewAttributeDialogState(
 function listAttributes(
   labelResolver: LabelResolver,
   classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
+  graphContext: UseModelGraphContextType,
   vocabularies: CmeSemanticModel[],
 ) {
   const models = [...graphContext.semanticModels.values()];
@@ -112,7 +112,7 @@ function listAttributes(
  */
 export function createEditAttributeDialogState(
   classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
+  graphContext: UseModelGraphContextType,
   visualModel: VisualModel | null,
   language: string,
   model: InMemorySemanticModel,
@@ -179,7 +179,7 @@ export function createEditAttributeDialogState(
  */
 export function createAddAttributeDialogState(
   classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
+  graphContext: UseModelGraphContextType,
   visualModel: VisualModel | null,
   language: string,
   entity: SemanticModelClass,

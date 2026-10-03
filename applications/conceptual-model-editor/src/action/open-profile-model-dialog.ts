@@ -3,7 +3,7 @@ import { VisualModel } from "@dataspecer/visual-model";
 import { ModelDsIdentifier } from "../dataspecer/entity-model";
 import { DialogApiContextType } from "../dialog/dialog-service";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import {
   createProfileModelDialog,
   createProfileModelDialogState,
@@ -17,7 +17,7 @@ export function openProfileModelDialogAction(
   options: Options,
   dialogs: DialogApiContextType,
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: VisualModel | null,
   model: ModelDsIdentifier,
 ) {

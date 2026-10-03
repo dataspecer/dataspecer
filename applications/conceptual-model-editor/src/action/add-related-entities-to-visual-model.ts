@@ -16,7 +16,7 @@ import { findSourceModelOfEntity } from "../service/model-service";
 import { addSemanticGeneralizationToVisualModelAction } from "./add-generalization-to-visual-model";
 import { addSemanticRelationshipToVisualModelAction } from "./add-relationship-to-visual-model";
 import { addSemanticRelationshipProfileToVisualModelAction } from "./add-relationship-profile-to-visual-model";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import {
   isSemanticModelClassProfile,
   isSemanticModelRelationshipProfile,
@@ -35,7 +35,7 @@ import { ClassesContextType } from "../context/classes-context";
  */
 export function addRelatedEntitiesAction(
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   classes: ClassesContextType,
   visualModel: WritableVisualModel,
   entities: AggregatedEntityWrapper[],

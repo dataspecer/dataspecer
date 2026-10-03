@@ -6,7 +6,7 @@ import {
 } from "@dataspecer/core-v2/semantic-model/concepts";
 import { WritableVisualModel, isWritableVisualModel } from "@dataspecer/visual-model";
 
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { DialogApiContextType } from "../dialog/dialog-service";
 import { Options } from "../configuration/options";
@@ -55,7 +55,7 @@ export function openCreateProfileDialogAction(
   dialogs: DialogApiContextType,
   notifications: UseNotificationServiceWriterType,
   classes: ClassesContextType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   diagram: UseDiagramType,
   position: { x: number, y: number },

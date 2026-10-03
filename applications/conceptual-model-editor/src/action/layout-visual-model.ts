@@ -11,7 +11,7 @@ import {
   getDefaultUserGivenAlgorithmConfigurationsFull,
   performLayoutOfVisualModel
 } from "@dataspecer/layout";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { UseDiagramType } from "../diagram/diagram-hook";
 import { XY } from "@dataspecer/layout";
@@ -38,7 +38,7 @@ export async function layoutActiveVisualModel(
   notifications: UseNotificationServiceWriterType,
   classes: ClassesContextType,
   diagram: UseDiagramType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   configuration: UserGivenAlgorithmConfigurations,
   explicitAnchors?: ExplicitAnchors,
@@ -80,7 +80,7 @@ export async function layoutActiveVisualModelAction(
   notifications: UseNotificationServiceWriterType,
   classes: ClassesContextType,
   diagram: UseDiagramType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   configuration: UserGivenAlgorithmConfigurations,
   explicitAnchors?: ExplicitAnchors,
@@ -96,7 +96,7 @@ export async function layoutActiveVisualModelAction(
 export async function findPositionForNewNodeUsingLayouting(
   notifications: UseNotificationServiceWriterType,
   diagram: UseDiagramType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   classes: ClassesContextType,
   identifier: string,
@@ -112,7 +112,7 @@ export async function findPositionForNewNodeUsingLayouting(
 export async function findPositionForNewNodesUsingLayouting(
   notifications: UseNotificationServiceWriterType,
   diagram: UseDiagramType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   classes: ClassesContextType,
   identifiers: string[],
@@ -211,7 +211,7 @@ export function processLayoutResult(
   notifications: UseNotificationServiceWriterType,
   classes: ClassesContextType,
   diagram: UseDiagramType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   shouldUpdatePositionsInVisualModel: boolean,
   shouldPutOutsidersInVisualModel: boolean,
@@ -245,7 +245,7 @@ function addClassOrClassProfileToVisualModel(
   notifications: UseNotificationServiceWriterType,
   classes: ClassesContextType,
   diagram: UseDiagramType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   visualNode: VisualNode
 ): void {

@@ -5,7 +5,7 @@ import {
   isSemanticModelRelationship,
 } from "@dataspecer/core-v2/semantic-model/concepts";
 
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { DialogApiContextType } from "../dialog/dialog-service";
 import { Options } from "../configuration/options";
@@ -38,7 +38,7 @@ export function openModifyDialogAction(
   dialogs: DialogApiContextType,
   notifications: UseNotificationServiceWriterType,
   classes: ClassesContextType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: VisualModel | null,
   identifier: string,
   tracker: DialogSemanticTracker,

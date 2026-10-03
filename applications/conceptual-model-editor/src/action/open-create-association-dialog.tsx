@@ -2,7 +2,7 @@ import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-mem
 import { VisualModel, isWritableVisualModel } from "@dataspecer/visual-model";
 
 import { DialogApiContextType } from "../dialog/dialog-service";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { Options } from "../application";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { firstInMemorySemanticModel } from "../utilities/model";
@@ -28,7 +28,7 @@ export function openCreateAssociationDialogAction(
   cmeExecutor: CmeModelOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   notifications: UseNotificationServiceWriterType,
   visualModel: VisualModel | null,
   defaultModel: InMemorySemanticModel | null,

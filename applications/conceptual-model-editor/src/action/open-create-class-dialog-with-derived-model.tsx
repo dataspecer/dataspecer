@@ -1,4 +1,4 @@
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { placePositionOnGrid } from "@dataspecer/layout";
 import { Options, configuration } from "../application";
@@ -18,7 +18,7 @@ import { LabelResolver } from "../dependency-tracker";
 export function openCreateClassDialogWithModelDerivedFromClassAction(
   cmeExecutor: CmeModelOperationExecutor,
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   dialogs: DialogApiContextType,
   classes: ClassesContextType,
   options: Options,

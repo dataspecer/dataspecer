@@ -1,5 +1,5 @@
 import { WritableVisualModel } from "@dataspecer/visual-model";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { getSelectionForWholeSemanticModel } from "./extend-selection-action";
 import {
@@ -32,7 +32,7 @@ import { addSemanticAttributeToVisualModelAction } from "./add-semantic-attribut
 export const addEntitiesFromSemanticModelToVisualModelAction = async (
   notifications: UseNotificationServiceWriterType,
   classesContext: ClassesContextType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   visualModel: WritableVisualModel,
   semanticModel: EntityModel

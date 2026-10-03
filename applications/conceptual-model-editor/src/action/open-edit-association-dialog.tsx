@@ -2,7 +2,7 @@ import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-mem
 import { VisualModel } from "@dataspecer/visual-model";
 
 import { DialogApiContextType } from "../dialog/dialog-service";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { Options } from "../application";
 import { SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
 import {
@@ -24,7 +24,7 @@ export function openEditAssociationDialogAction(
   cmeExecutor: CmeModelOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: VisualModel | null,
   model: InMemorySemanticModel,
   entity: SemanticModelRelationship,

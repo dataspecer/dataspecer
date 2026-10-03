@@ -20,7 +20,7 @@ import {
 } from "@dataspecer/visual-model";
 import { DiagramNodeTypes, Edge, EdgeType } from "../diagram";
 import { findSourceModelOfEntity } from "../service/model-service";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { ClassesContextType } from "../context/classes-context";
 import { ExtensionType, VisibilityFilter, extendSelectionAction } from "./extend-selection-action";
 import { Selections } from "./filter-selection-action";
@@ -195,7 +195,7 @@ type ComputedPositionForNodePlacement = {
  */
 export const computeRelatedAssociationsBarycenterAction = (
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   diagram: UseDiagramType,
   classesContext: ClassesContextType,
@@ -258,7 +258,7 @@ const computeBarycenter = (positions: Position[], diagram: UseDiagramType): Comp
 
 const findAssociatedClassesAndClassProfiles = (
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   classesContext: ClassesContextType,
   classToFindAssociationsFor: string
 ) => {

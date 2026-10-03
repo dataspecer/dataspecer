@@ -1,7 +1,7 @@
 import { WritableVisualModel } from "@dataspecer/visual-model";
 
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseDiagramType } from "../diagram/diagram-hook";
 import { addRelatedEntitiesAction } from "./add-related-entities-to-visual-model";
 import { ClassesContextType } from "../context/classes-context";
@@ -18,7 +18,7 @@ const LOG = createLogger(import.meta.url);
 
 export async function addSemanticClassProfileToVisualModelAction(
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   classes: ClassesContextType,
   visualModel: WritableVisualModel,
   diagram: UseDiagramType,

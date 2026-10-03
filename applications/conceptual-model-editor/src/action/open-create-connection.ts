@@ -4,7 +4,7 @@ import {
 } from "@dataspecer/core-v2/semantic-model/concepts";
 import { WritableVisualModel } from "@dataspecer/visual-model";
 
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { DialogApiContextType } from "../dialog/dialog-service";
 import { Options } from "../configuration/options";
@@ -34,7 +34,7 @@ export function openCreateConnectionDialogAction(
   options: Options,
   dialogs: DialogApiContextType,
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   //
   semanticSource: string,
@@ -56,7 +56,7 @@ function openCreateConnectionDialogActionInternal(
   cmeExecutor: CmeModelOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   //
   semanticSource: string,
@@ -122,7 +122,7 @@ function openCreateConnectionDialogActionInternal(
  * @throws {InvalidState}
  */
 function findSourceAndTarget(
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   sourceIdentifier: string,
   targetIdentifier: string,
 ) {
@@ -141,7 +141,7 @@ function openRelationshipOrGeneralizationDialog(
   options: Options,
   dialogs: DialogApiContextType,
   visualExecutor: VisualModelOperationExecutor,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   cmeExecutor: CmeModelOperationExecutor,
   source: SemanticModelClass,
   target: SemanticModelClass,
@@ -208,7 +208,7 @@ function createGeneralization(
 
 function createProfile(
   cmeExecutor: CmeModelOperationExecutor,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualExecutor: VisualModelOperationExecutor,
   source: SemanticModelClassProfile,
   target: SemanticModelClass,

@@ -1,5 +1,5 @@
 import { Options } from "../application";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { DialogApiContextType } from "../dialog/dialog-service";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import {
@@ -24,7 +24,7 @@ export function openEditVisualDiagramNodeDialogAction(
   notifications: UseNotificationServiceWriterType,
   options: Options,
   dialogs: DialogApiContextType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   visualModelDiagramNode: VisualModelDiagramNode,
 ) {
@@ -47,7 +47,7 @@ export function openEditVisualDiagramNodeDialogAction(
 export function prepareDataForVisualDiagramNodeDialog(
   notifications: UseNotificationServiceWriterType,
   options: Options,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: VisualModel,
   visualModelDiagramNode: VisualModelDiagramNode,
 ): {

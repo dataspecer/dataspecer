@@ -2,7 +2,7 @@ import { isVisualNode, VisualModel } from "@dataspecer/visual-model";
 import { CmeReference, CmeRelationshipProfileMandatoryLevel } from "../../../dataspecer/cme-model/model";
 import { createLogger } from "../../../application";
 import { InvalidState } from "../../../application/error";
-import { ModelGraphContextType } from "../../../context/model-context";
+import { UseModelGraphContextType } from "../../../context/model-context";
 import { EntityDsIdentifier } from "../../../dataspecer/entity-model";
 import { isSemanticModelRelationship } from "@dataspecer/semantic-model";
 import { getDomainAndRange } from "../../../util/relationship-utils";
@@ -50,7 +50,7 @@ export interface ContentItem {
  * @throws InvalidState
  */
 export function createEditVisualNodeState(
-  graphContext: ModelGraphContextType,
+  graphContext: UseModelGraphContextType,
   visualModel: VisualModel,
   visualEntityIdentifier: string,
   language: string,

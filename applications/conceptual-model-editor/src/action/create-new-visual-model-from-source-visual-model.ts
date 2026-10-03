@@ -8,7 +8,7 @@ import {
   VisualRelationship,
   WritableVisualModel
 } from "@dataspecer/visual-model";
-import { ModelGraphContextType, UseModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
 import { createWritableVisualModel } from "../dataspecer/visual-model/visual-model-factory";
@@ -23,7 +23,7 @@ import { createWritableVisualModel } from "../dataspecer/visual-model/visual-mod
  */
 export function createNewVisualModelAction(
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   useGraph: UseModelGraphContextType,
   sourceVisualModel: VisualModel | null,
   newVisualModelName: LanguageString | null,

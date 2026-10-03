@@ -22,7 +22,7 @@ import {
   isSemanticModelClassProfile,
   SemanticModelClassProfile,
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { ModelGraphContextType } from "../../context/model-context";
+import { UseModelGraphContextType } from "../../context/model-context";
 import {
   ControlledVocabulary,
   ControlledVocabularyOverride,
@@ -61,7 +61,7 @@ export interface ClassProfileDialogState
  * from the controlled vocabulary model.
  */
 function createClassProfileControlledVocabulariesState(
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   ancestorIdentifiers: EntityDsIdentifier[],
   ownAssignments: ControlledVocabularyAssignment[] | undefined,
 ): SelectControlledVocabulariesState {
@@ -126,7 +126,7 @@ export function createNewProfileClassDialogState(
   profilesIdentifiers: EntityDsIdentifier[],
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
 ): ClassProfileDialogState {
 
   const allModels = semanticModelTrackerToCmeSemanticModel(
@@ -168,7 +168,7 @@ export function createEditClassProfileDialogState(
   entityModels: Map<string, EntityModel>,
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
 ): ClassProfileDialogState {
 
   const allModels = semanticModelTrackerToCmeSemanticModel(

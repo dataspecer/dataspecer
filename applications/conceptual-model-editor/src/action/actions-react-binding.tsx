@@ -25,8 +25,7 @@ import { useNotificationServiceWriter } from "../notification";
 import { type UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import {
   useModelGraphContext,
-  UseModelGraphContextType,
-  type ModelGraphContextType,
+  type UseModelGraphContextType,
 } from "../context/model-context";
 import {
   type DiagramCallbacks,
@@ -1492,7 +1491,7 @@ function createActionsContext(
 
 function withVisualModel(
   notifications: UseNotificationServiceWriterType,
-  useGraph: ModelGraphContextType,
+  useGraph: UseModelGraphContextType,
   callback: (visualModel: WritableVisualModel) => void,
 ): void {
   const visualModel = useGraph.getActiveVisualModel();

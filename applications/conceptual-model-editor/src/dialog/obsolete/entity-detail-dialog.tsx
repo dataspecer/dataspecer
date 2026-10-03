@@ -11,7 +11,7 @@ import {
 
 import { IriLink } from "../../components/iri-link";
 import { sourceModelOfEntity } from "../../util/model-utils";
-import { ModelGraphContextType, useModelGraphContext } from "../../context/model-context";
+import { UseModelGraphContextType, useModelGraphContext } from "../../context/model-context";
 import { ResourceDetailClickThrough } from "../../components/entity-detail-dialog-clicktrough-component";
 import { getEntityTypeString, useEntityProxy } from "../../util/detail-utils";
 import { DialogDetailRow } from "../../components/dialog/dialog-detail-row";
@@ -44,7 +44,7 @@ interface EntityDetailState {
 }
 
 export const createEntityDetailDialog = (
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   entity: SupportedTypes,
   language: string,
 ): DialogWrapper<EntityDetailState> => {

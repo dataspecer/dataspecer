@@ -1,6 +1,6 @@
 import { isVisualNode, isVisualRelationship, WritableVisualModel } from "@dataspecer/visual-model";
 import { ClassesContextType } from "../context/classes-context";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseDiagramType } from "../diagram/diagram-hook";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { EntityToAddToVisualModel } from "./add-semantic-entities-to-visual-model";
@@ -42,7 +42,7 @@ import { EntityModel } from "@dataspecer/core-v2";
 export const addEntityNeighborhoodToVisualModelAction = async (
   notifications: UseNotificationServiceWriterType,
   classes: ClassesContextType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   visualModel: WritableVisualModel,
   identifier: string
@@ -159,7 +159,7 @@ export const addEntityNeighborhoodToVisualModelAction = async (
 function addSemanticClassOrClassProfileToVisualModelCommand(
   notifications: UseNotificationServiceWriterType,
   classes: ClassesContextType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   entity: SemanticModelClass | SemanticModelClassProfile,
   model: string,
@@ -236,7 +236,7 @@ function addSemanticClassOrClassProfileToVisualModelCommand(
 const addClassOrClassProfileToVisualModel = async (
   notifications: UseNotificationServiceWriterType,
   classes: ClassesContextType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   visualModel: WritableVisualModel,
   identifier: string,
@@ -303,7 +303,7 @@ const addClassOrClassProfileToVisualModel = async (
 const addClassNeighborhoodToVisualModelAction = async (
   notifications: UseNotificationServiceWriterType,
   classes: ClassesContextType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   visualModel: WritableVisualModel,
   identifier: string

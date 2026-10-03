@@ -11,7 +11,7 @@ import {
 import { ModelDsIdentifier } from "../dataspecer/entity-model";
 import { configuration, Options } from "../application";
 import { DialogApiContextType } from "../dialog/dialog-service";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { SemanticModel } from "../dataspecer/semantic-model";
 import {
   createEditSemanticModelDialog,
@@ -24,7 +24,7 @@ export function openEditSemanticModelDialogAction(
   cmeExecutor: CmeModelOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: VisualModel | null,
   identifier: ModelDsIdentifier,
 ) {
