@@ -4,6 +4,7 @@ import { VisualEntity, VisualModel, isVisualModel } from "@dataspecer/visual-mod
 import { SEMANTIC_MODEL_CLASS, SEMANTIC_MODEL_GENERALIZATION, SEMANTIC_MODEL_RELATIONSHIP, SemanticModelClass, SemanticModelRelationship, isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship, type SemanticModelEntity } from "../concepts/index.ts";
 import { SemanticEntityIdMerger, StrongerWinsSemanticEntityIdMerger } from "../merge/merger/index.ts";
 import { createSemanticProfileAggregator, SemanticProfileAggregator } from "../profile/aggregator/aggregator.ts";
+import { isControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 import { isControlledVocabularyAssignment, isSemanticModelClassProfile, isSemanticModelRelationshipProfile } from "../profile/concepts/index.ts";
 
 /**
@@ -179,7 +180,10 @@ class SemanticModelAggregatorInternal implements SemanticModelAggregator {
         }
 
         // Special handling of selected entity types.
-        if (isSemanticModelClass(entity) || isSemanticModelRelationship(entity) || isSemanticModelGeneralization(entity)) {
+        if (isSemanticModelClass(entity) 
+            || isSemanticModelRelationship(entity) 
+            || isSemanticModelGeneralization(entity) 
+            || isControlledVocabulary(entity)) {
             return [];
         }
 
@@ -251,17 +255,23 @@ class SemanticModelAggregatorInternal implements SemanticModelAggregator {
                         .map(identifier => this.baseModelEntities[identifier])
                         .filter(item => item !== undefined);
 
+
+                    // pass profile's own controlled vocabulary assignments to the aggregation
+                    // to resolve the replacement chain of assignment overrides
                     const aggregatedDependencies =
                         dependencies.map(item => item.aggregatedEntity)
                             .filter(item => item !== null)
-                            .filter(item => isSemanticModelClassProfile(item) || isSemanticModelClass(item));
+                            .filter(item => isSemanticModelClassProfile(item) || isSemanticModelClass(item) || isControlledVocabularyAssignment(item));
+                    // filter out CV assignments because they are not parents of class profiles, they only belong to a parent
+                    const sources = dependencies
+                        .filter(item => !isControlledVocabularyAssignment(item.aggregatedEntity));
 
                     this.baseModelEntities[updatedEntity] = {
                         id: updatedEntity,
                         aggregatedEntity: this.profileEntityAggregator.aggregateSemanticModelClassProfile(
                             entity, aggregatedDependencies),
                         rawEntity: entity,
-                        sources: dependencies,
+                        sources,
                         visualEntities: [],
                     };
                 } else if (isSemanticModelRelationshipProfile(entity)) {
@@ -285,6 +295,16 @@ class SemanticModelAggregatorInternal implements SemanticModelAggregator {
                 } else if (isControlledVocabularyAssignment(entity)) {
                     // Consumed as a dependency by class profile aggregation
                     // above, not aggregated on its own - passed through as-is.
+                    this.baseModelEntities[updatedEntity] = {
+                        id: updatedEntity,
+                        aggregatedEntity: entity,
+                        rawEntity: entity,
+                        sources: [],
+                        visualEntities: [],
+                    };
+                } else if (isControlledVocabulary(entity)) {
+                    // Does not depend on other entities, so there is nothing
+                    // to aggregate - passed through as-is.
                     this.baseModelEntities[updatedEntity] = {
                         id: updatedEntity,
                         aggregatedEntity: entity,
