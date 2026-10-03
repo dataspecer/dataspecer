@@ -23,8 +23,6 @@ import { ClassesContext } from "./context/classes-context";
 import { ModelGraphContext } from "./context/model-context";
 import Header from "./header/header";
 import { useBackendConnection } from "./backend-connection";
-import { Catalog as CatalogV1 } from "./catalog/catalog";
-import { Catalog as CatalogV2 } from "./catalog-v2/catalog";
 import { Catalog as CatalogV3 } from "./catalog-v3/catalog";
 import { Visualization } from "./visualization";
 import { QueryParamsProvider, useQueryParamsContext } from "./context/query-params-context";
@@ -56,19 +54,7 @@ type SemanticModelAggregatorType = typeof _semanticModelAggregator;
 
 /** Select Catalog component. */
 const Catalog = (() => {
-  const params = new URLSearchParams(window.location.search);
-  const catalog = params.get("dev-catalog");
-  if (catalog === "v1" || catalog === "v2" || catalog === "v3") {
-    updatePreferences({ catalogComponent: catalog });
-  }
-  switch (preferences().catalogComponent) {
-    case "v1":
-      return CatalogV1;
-    case "v2":
-      return CatalogV2;
-    case "v3":
-      return CatalogV3;
-  }
+  return CatalogV3;
 })();
 
 const Page = () => {

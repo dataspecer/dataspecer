@@ -1,9 +1,0 @@
-.catalog-highlight-main {
-  backdrop-filter: brightness(50%);
-  transition: backdrop-filter 2s;
-}
-
-.catalog-highlight-secondary {
-  backdrop-filter: brightness(80%);
-  transition: backdrop-filter 2s;
-}

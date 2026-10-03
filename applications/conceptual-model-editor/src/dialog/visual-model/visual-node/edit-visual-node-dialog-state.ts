@@ -1,14 +1,14 @@
 import { isVisualNode, VisualModel } from "@dataspecer/visual-model";
-import { CmeReference } from "../../../dataspecer/cme-model/model";
-import { configuration, createLogger } from "../../../application";
+import { CmeReference, CmeRelationshipProfileMandatoryLevel } from "../../../dataspecer/cme-model/model";
+import { createLogger } from "../../../application";
 import { InvalidState } from "../../../application/error";
 import { ModelGraphContextType } from "../../../context/model-context";
-import {
-  createUiModelState,
-  UiRelationship,
-  UiRelationshipProfile,
-  wrapUiModelStateToUiModelApi
-} from "../../../catalog-v2/ui-model";
+import { EntityDsIdentifier } from "../../../dataspecer/entity-model";
+import { isSemanticModelRelationship } from "@dataspecer/semantic-model";
+import { getDomainAndRange } from "../../../util/relationship-utils";
+import { isSemanticModelRelationshipProfile } from "@dataspecer/profile-model";
+import { asMandatoryLevel } from "../../../dataspecer/cme-model/adapter/adapter-utilities";
+import { languageStringToStringNext } from "../../../utilities/string";
 
 const LOG = createLogger(import.meta.url);
 
@@ -36,7 +36,15 @@ export interface EditVisualNodeDialogState {
 
 }
 
-export type ContentItem = UiRelationship | UiRelationshipProfile;
+export interface ContentItem {
+
+  identifier: EntityDsIdentifier;
+
+  label: string;
+
+  mandatoryLevel: CmeRelationshipProfileMandatoryLevel | null;
+
+};
 
 /**
  * @throws InvalidState
@@ -60,16 +68,8 @@ export function createEditVisualNodeState(
     model: visualNode.model,
   };
 
-  const uiModelState = createUiModelState(
-    graphContext.aggregatorView,
-    [...graphContext.models.values()],
-    language,
-    configuration().languagePreferences,
-    visualModel,
-    configuration().defaultModelColor);
-
-  const uiModelApi = wrapUiModelStateToUiModelApi(uiModelState);
-  const entity = uiModelApi.getEntity(representedEntity);
+  const entities = graphContext.aggregatorView.getEntities();
+  const entity = entities[visualNode.representedEntity] ?? null;
   if (entity === null) {
     LOG.error("Can not find represented entity.", { entity: representedEntity });
     throw new InvalidState();
@@ -79,24 +79,46 @@ export function createEditVisualNodeState(
   const inactiveContent: ContentItem[] = []
 
   // Relationships
-  uiModelState.relationships
-    .filter(item => item.domain === entity)
+  Object.values(entities)
+    .map(item => item.aggregatedEntity)
+    .filter(item => isSemanticModelRelationship(item))
     .forEach(item => {
-      if (visualNode.content.includes(item.identifier)) {
-        contentMap[item.identifier] = item;
+      const { domain, range } = getDomainAndRange(item);
+      if (domain === null || domain.concept !== entity.id || range === null) {
+        return;
+      }
+      const content: ContentItem = {
+        identifier: item.id,
+        label: languageStringToStringNext([language], range.name),
+        mandatoryLevel: null,
+      };
+      console.log({item, content});
+      if (visualNode.content.includes(item.id)) {
+        contentMap[item.id] = content;
       } else {
-        inactiveContent.push(item);
+        inactiveContent.push(content);
       }
     });
 
   // Relationships profile
-  uiModelState.relationshipProfiles
-    .filter(item => item.domain === entity)
+  Object.values(entities)
+    .map(item => item.aggregatedEntity)
+    .filter(item => isSemanticModelRelationshipProfile(item))
     .forEach(item => {
-      if (visualNode.content.includes(item.identifier)) {
-        contentMap[item.identifier] = item;
+      const { domain, range } = getDomainAndRange(item);
+      if (domain === null || domain.concept !== entity.id || range === null) {
+        return;
+      }
+      const content: ContentItem = {
+        identifier: item.id,
+        label: languageStringToStringNext([language], range.name),
+        mandatoryLevel: asMandatoryLevel(range.tags),
+      };
+      console.log(domain, range, content);
+      if (visualNode.content.includes(item.id)) {
+        contentMap[item.id] = content;
       } else {
-        inactiveContent.push(item);
+        inactiveContent.push(content);
       }
     });
 
