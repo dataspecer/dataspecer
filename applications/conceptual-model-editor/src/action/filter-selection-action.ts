@@ -7,7 +7,7 @@ import {
   getSemanticEdgeIdentifier,
   isEntityInVisualModel
 } from "./extend-selection-action";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { VisualModel } from "@dataspecer/visual-model";
 import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
@@ -57,7 +57,7 @@ export type SelectionsWithIdInfo = Selections & {areVisualModelIdentifiers: bool
 export function filterSelectionAction(
   notifications: UseNotificationServiceWriterType,
   graph: UseModelGraphContextType,
-  classesContext: ClassesContextType | null,
+  classesContext: ClassesContext | null,
   selections: SelectionsWithIdInfo,
   filters: SelectionFilter[],
   visibilityFilter: VisibilityFilter,

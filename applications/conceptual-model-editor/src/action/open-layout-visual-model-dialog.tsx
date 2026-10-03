@@ -5,7 +5,7 @@ import {
 } from "../dialog/layout/create-perform-layout-dialog";
 import { PerformLayoutDialogState } from "../dialog/layout/perform-layout-controller";
 import { layoutActiveVisualModelAction } from "./layout-visual-model";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { UseDiagramType } from "../diagram/diagram-hook";
 import { UseModelGraphContextType } from "../context/model-context";
@@ -18,7 +18,7 @@ import { LayoutConfigurationContextType } from "../context/layout-configuration-
 export function openLayoutVisualModelDialogAction(
   notifications: UseNotificationServiceWriterType,
   dialogs: DialogApiContextType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   diagram: UseDiagramType,
   graph: UseModelGraphContextType,
   layoutConfigurationContext: LayoutConfigurationContextType,

@@ -1,4 +1,4 @@
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { UseModelGraphContextType } from "../context/model-context";
 import { sourceModelOfEntity } from "../util/model-utils";
 import { Entity, EntityModel } from "@dataspecer/core-v2";
@@ -151,7 +151,7 @@ export type NodeSelection = {
 export const extendSelectionAction = (
   notifications: UseNotificationServiceWriterType,
   graph: UseModelGraphContextType,
-  classesContext: ClassesContextType | null,
+  classesContext: ClassesContext | null,
   nodeSelection: NodeSelection,
   extensionTypes: ExtensionType[],
   visibilityFilter: VisibilityFilter,

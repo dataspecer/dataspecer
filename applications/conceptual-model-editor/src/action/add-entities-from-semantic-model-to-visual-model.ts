@@ -6,7 +6,7 @@ import {
   EntityToAddToVisualModel,
   addSemanticEntitiesToVisualModelAction
 } from "./add-semantic-entities-to-visual-model";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { UseDiagramType } from "../diagram/diagram-hook";
 import { EntityModel } from "@dataspecer/core-v2";
 import {
@@ -31,7 +31,7 @@ import { addSemanticAttributeToVisualModelAction } from "./add-semantic-attribut
  */
 export const addEntitiesFromSemanticModelToVisualModelAction = async (
   notifications: UseNotificationServiceWriterType,
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   visualModel: WritableVisualModel,
@@ -67,7 +67,7 @@ export const addEntitiesFromSemanticModelToVisualModelAction = async (
 
 function addHiddenAttributesForExistingClassesAndClassProfiles(
   notifications: UseNotificationServiceWriterType,
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   visualModel: WritableVisualModel,
   classesPresentOnCanvas: (SemanticModelClass | SemanticModelClassProfile)[]
 ): void {

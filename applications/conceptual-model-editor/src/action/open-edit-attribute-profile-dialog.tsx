@@ -2,7 +2,7 @@ import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-mem
 import { VisualModel } from "@dataspecer/visual-model";
 
 import { DialogApiContextType } from "../dialog/dialog-service";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { UseModelGraphContextType } from "../context/model-context";
 import { Options } from "../application";
 import { SemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
@@ -24,7 +24,7 @@ export function openEditAttributeProfileDialogAction(
   cmeExecutor: CmeModelOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   graph: UseModelGraphContextType,
   visualModel: VisualModel | null,
   model: InMemorySemanticModel,

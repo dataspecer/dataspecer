@@ -1,7 +1,7 @@
 import { isWritableVisualModel, VisualModel } from "@dataspecer/visual-model";
 
 import { createLogger, Options } from "../application";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { UseModelGraphContextType } from "../context/model-context";
 import { DialogApiContextType } from "../dialog/dialog-service";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
@@ -38,7 +38,7 @@ export function openCreateAttributeForEntityDialogAction(
   cmeExecutor: CmeModelOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   graph: UseModelGraphContextType,
   notifications: UseNotificationServiceWriterType,
   visualModel: VisualModel | null,
@@ -72,7 +72,7 @@ function handleCreateClassAttribute(
   cmeExecutor: CmeModelOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   graph: UseModelGraphContextType,
   notifications: UseNotificationServiceWriterType,
   visualModel: VisualModel | null,
@@ -108,7 +108,7 @@ function handleCreateClassProfileAttribute(
   cmeExecutor: CmeModelOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   graph: UseModelGraphContextType,
   notifications: UseNotificationServiceWriterType,
   visualModel: VisualModel | null,

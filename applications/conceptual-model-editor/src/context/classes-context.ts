@@ -3,85 +3,86 @@ import type {
   SemanticModelGeneralization,
   SemanticModelRelationship,
 } from "@dataspecer/core-v2/semantic-model/concepts";
-import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
-import {
-  createGeneralization,
-  createRelationship,
-} from "@dataspecer/core-v2/semantic-model/operations";
-import React, { useContext } from "react";
-import type { ConnectionType } from "../util/edge-connection";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import type { Entity } from "@dataspecer/core-v2";
 import {
   SemanticModelClassProfile,
   SemanticModelRelationshipProfile,
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
+import { AggregatedEntityWrapper, SemanticModelAggregatorView } from "@dataspecer/core-v2/semantic-model/aggregator";
+import { propagateAggregatorChangesToLocalState } from "./page-aggregator-sync";
 
-export type ClassesContextType = {
-
-    classes: SemanticModelClass[];
-
-    allowedClasses: string[];
-
-    // Used by entities-of-model.tsx
-    setAllowedClasses: React.Dispatch<React.SetStateAction<string[]>>;
-
-    relationships: SemanticModelRelationship[];
-
-    generalizations: SemanticModelGeneralization[];
-
-    classProfiles: SemanticModelClassProfile[];
-
-    relationshipProfiles: SemanticModelRelationshipProfile[];
-
-    sourceModelOfEntityMap: Map<string, string>;
-
-    rawEntities: (Entity | null)[];
+export const useClassesContext = (): ClassesContext => {
+  return useContext(ReactClassesContext);
 };
 
-export const ClassesContext = React.createContext(null as unknown as ClassesContextType);
+export interface ClassesContext {
 
-type ResultType = {
-    success: boolean;
-    id?: undefined;
-} | {
-    success: true;
-    id: string;
+  classes: SemanticModelClass[];
+
+  relationships: SemanticModelRelationship[];
+
+  generalizations: SemanticModelGeneralization[];
+
+  classProfiles: SemanticModelClassProfile[];
+
+  relationshipProfiles: SemanticModelRelationshipProfile[];
+
+  sourceModelOfEntityMap: Map<string, string>;
+
+  rawEntities: (Entity | null)[];
 };
 
-export interface UseClassesContextType  extends ClassesContextType {
+const ReactClassesContext = React.createContext(null as unknown as ClassesContext);
 
-    /**
-     * @deprecated Replace with CME actions
-     */
-    createConnection: (
-        model: InMemorySemanticModel,
-        connection: ConnectionType,
-    ) => ResultType | null;
+export function ClassesContextProvider(props: {
+  aggregatorView: SemanticModelAggregatorView
+  children: React.ReactNode,
+}) {
+  const { aggregatorView } = props;
 
+  const [classes, setClasses] = useState<SemanticModelClass[]>([]);
+  const [relationships, setRelationships] = useState<SemanticModelRelationship[]>([]);
+  const [generalizations, setGeneralizations] = useState<SemanticModelGeneralization[]>([]);
+  const [classProfiles, setClassProfiles] = useState<SemanticModelClassProfile[]>([]);
+  const [relationshipProfiles, setRelationshipProfiles] = useState<SemanticModelRelationshipProfile[]>([]);
+  const [sourceModelOfEntityMap, setSourceModelOfEntityMap] = useState(new Map<string, string>());
+  const [rawEntities, setRawEntities] = useState<(Entity | null)[]>([]);
+
+  useEffect(() => {
+    const callback = (updated: AggregatedEntityWrapper[], removed: string[]) => {
+      propagateAggregatorChangesToLocalState(updated, removed,
+        setClasses, setRelationships, setGeneralizations,
+        setRawEntities, setSourceModelOfEntityMap,
+        setClassProfiles, setRelationshipProfiles, aggregatorView)
+    };
+    return aggregatorView.subscribeToChanges(callback);
+  }, [aggregatorView]);
+
+  // Create the context object.
+
+  const context = useMemo(() => {
+    return {
+      classes, relationships, generalizations, classProfiles,
+      relationshipProfiles, sourceModelOfEntityMap, rawEntities
+    };
+  }, [classes, relationships, generalizations, classProfiles,
+    relationshipProfiles, sourceModelOfEntityMap, rawEntities])
+
+  return React.createElement(
+    ReactClassesContext.Provider, { value: context }, props.children)
 }
 
-/**
- * Provides all concepts we work with
- * also provides concept manipulating functions (eg create, modify, delete, ..)
- */
-export const useClassesContext = (): UseClassesContextType => {
-  const context = useContext(ClassesContext);
-
+/*
   const createConnection = (model: InMemorySemanticModel, connection: ConnectionType) => {
     if (!model || !(model instanceof InMemorySemanticModel)) {
       console.error("no local model found or is not of type InMemoryLocal");
       return null;
     }
-
     if (connection.type === "association") {
       return model.executeOperation(createRelationship({ ...connection }));
     } else {
       return model.executeOperation(createGeneralization({ ...connection }));
     }
   };
-
-  return {
-    ...context,
-    createConnection,
-  };
-};
+*/

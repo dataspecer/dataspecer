@@ -1,5 +1,5 @@
 import { VisualModel } from "@dataspecer/visual-model";
-import { ClassesContextType } from "../../context/classes-context";
+import { ClassesContext } from "../../context/classes-context";
 import { UseModelGraphContextType } from "../../context/model-context";
 import {
   DataTypeRepresentative,
@@ -47,7 +47,7 @@ export interface AttributeProfileDialogState extends
  * State represents a newly created profile for given profiled entity.
  */
 export function createNewAttributeProfileDialogState(
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   graphContext: UseModelGraphContextType,
   visualModel: VisualModel | null,
   language: string,
@@ -108,7 +108,7 @@ export function createNewAttributeProfileDialogState(
  * @throws InvalidState
  */
 export function createEditAttributeProfileDialogState(
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   graphContext: UseModelGraphContextType,
   visualModel: VisualModel | null,
   language: string,
@@ -194,7 +194,7 @@ export function createEditAttributeProfileDialogState(
 
 function listAttributesToProfile(
   labelResolver: LabelResolver,
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   graphContext: UseModelGraphContextType,
   vocabularies: CmeSemanticModel[],
 ) {
@@ -216,7 +216,7 @@ function listAttributesToProfile(
 
 function listAttributesToSpecialize(
   labelResolver: LabelResolver,
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   graphContext: UseModelGraphContextType,
   vocabularies: CmeSemanticModel[],
 ) {
@@ -229,7 +229,7 @@ function listAttributesToSpecialize(
 }
 
 export function createAddAttributeProfileDialogState(
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   graphContext: UseModelGraphContextType,
   visualModel: VisualModel | null,
   language: string,

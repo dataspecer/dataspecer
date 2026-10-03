@@ -3,7 +3,7 @@ import { EntityRepresentative, findRepresentative, findVocabularyForModel } from
 import { openCreateClassDialogWithModelDerivedFromClassAction } from "./open-create-class-dialog-with-derived-model";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { UseModelGraphContextType } from "../context/model-context";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { Options } from "../application";
 import { DialogApiContextType } from "../dialog/dialog-service";
 import { UseDiagramType } from "../diagram/diagram-hook";
@@ -28,7 +28,7 @@ export function openCreateClassDialogAndCreateAssociationAction(
   cmeExecutor: CmeModelOperationExecutor,
   notifications: UseNotificationServiceWriterType,
   dialogs: DialogApiContextType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   options: Options,
   graph: UseModelGraphContextType,
   diagram: UseDiagramType,

@@ -21,7 +21,7 @@ import {
 import { DiagramNodeTypes, Edge, EdgeType } from "../diagram";
 import { findSourceModelOfEntity } from "../service/model-service";
 import { UseModelGraphContextType } from "../context/model-context";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { ExtensionType, VisibilityFilter, extendSelectionAction } from "./extend-selection-action";
 import { Selections } from "./filter-selection-action";
 import { isSemanticModelAttribute, SemanticModelClass } from "@dataspecer/core-v2/semantic-model/concepts";
@@ -198,7 +198,7 @@ export const computeRelatedAssociationsBarycenterAction = (
   graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   diagram: UseDiagramType,
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   classToFindAssociationsFor: string,
 ): ComputedPositionForNodePlacement => {
   const associatedClasses: string[] = findAssociatedClassesAndClassProfiles(
@@ -259,7 +259,7 @@ const computeBarycenter = (positions: Position[], diagram: UseDiagramType): Comp
 const findAssociatedClassesAndClassProfiles = (
   notifications: UseNotificationServiceWriterType,
   graph: UseModelGraphContextType,
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   classToFindAssociationsFor: string
 ) => {
   // Is synchronous for this case
@@ -576,7 +576,7 @@ function getClassesAndDiagramNodesFromVisualModelInternal(
  *  that means all relevant attributes existing in semantic model.
  */
 export function getVisualNodeContentBasedOnExistingEntities(
-  classes: ClassesContextType,
+  classes: ClassesContext,
   entity: SemanticModelClass | SemanticModelClassProfile,
 ): string[] {
   const nodeContent: string[] = [];

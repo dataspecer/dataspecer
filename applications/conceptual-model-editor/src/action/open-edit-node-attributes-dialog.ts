@@ -1,6 +1,6 @@
 import { WritableVisualModel } from "@dataspecer/visual-model";
 import { DialogApiContextType } from "../dialog/dialog-service";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { createEditVisualNodeDialog } from "../dialog/visual-model/visual-node/edit-visual-node-dialog";
 import { Options } from "../application";
@@ -14,7 +14,7 @@ import { SemanticModelClassProfile } from "@dataspecer/core-v2/semantic-model/pr
 import { getEntityLabelToShowInDiagram } from "../util/utils";
 
 export function openEditNodeAttributesDialogAction(
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   graphContext: UseModelGraphContextType,
   dialogs: DialogApiContextType,
   _notifications: UseNotificationServiceWriterType,
@@ -37,7 +37,7 @@ export function openEditNodeAttributesDialogAction(
 }
 
 const getNodeName = (
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   state: EditVisualNodeDialogState
 ) => {
   const entities = (classesContext.classes as (SemanticModelClass | SemanticModelClassProfile)[])

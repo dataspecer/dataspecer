@@ -22,7 +22,7 @@ import { createClass, CreatedEntityOperationResult } from "@dataspecer/core-v2/s
 import { createDefaultVisualModelFactory } from "@dataspecer/visual-model";
 
 import { findSourceModelOfEntity } from "./model-service";
-import { propagateAggregatorChangesToLocalState } from "../page-aggregator-sync";
+import { propagateAggregatorChangesToLocalState } from "../context/page-aggregator-sync";
 
 function buildFixture() {
   const semanticModel = new InMemorySemanticModel();

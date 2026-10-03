@@ -1,5 +1,5 @@
 import { VisualModel } from "@dataspecer/visual-model";
-import { ClassesContextType } from "../../context/classes-context";
+import { ClassesContext } from "../../context/classes-context";
 import { UseModelGraphContextType } from "../../context/model-context";
 import {
   type BaseEntityDialogState,
@@ -41,7 +41,7 @@ export interface AttributeDialogState extends
   BaseEntityDialogState, BaseRelationshipDialogState<DataTypeRepresentative> { }
 
 export function createNewAttributeDialogState(
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   graphContext: UseModelGraphContextType,
   visualModel: VisualModel | null,
   language: string,
@@ -88,7 +88,7 @@ export function createNewAttributeDialogState(
 
 function listAttributes(
   labelResolver: LabelResolver,
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   graphContext: UseModelGraphContextType,
   vocabularies: CmeSemanticModel[],
 ) {
@@ -111,7 +111,7 @@ function listAttributes(
  * @throws InvalidState
  */
 export function createEditAttributeDialogState(
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   graphContext: UseModelGraphContextType,
   visualModel: VisualModel | null,
   language: string,
@@ -178,7 +178,7 @@ export function createEditAttributeDialogState(
  * @throws InvalidState
  */
 export function createAddAttributeDialogState(
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   graphContext: UseModelGraphContextType,
   visualModel: VisualModel | null,
   language: string,

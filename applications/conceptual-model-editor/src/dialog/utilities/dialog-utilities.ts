@@ -10,7 +10,7 @@ import { DataTypeURIs, isDataType } from "@dataspecer/core-v2/semantic-model/dat
 import { configuration, createLogger, t } from "../../application";
 import { getDomainAndRange } from "../../util/relationship-utils";
 import { EntityDsIdentifier } from "../../dataspecer/entity-model";
-import { ClassesContextType } from "../../context/classes-context";
+import { ClassesContext } from "../../context/classes-context";
 import { UseModelGraphContextType } from "../../context/model-context";
 import {
   isSemanticModelClassProfile,
@@ -241,7 +241,7 @@ export function representClassProfiles(
  * @returns owl:Thing, classes.
  */
 export function listRelationshipDomains(
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   graphContext: UseModelGraphContextType,
   vocabularies: CmeSemanticModel[],
   labelResolver: LabelResolver,
@@ -261,7 +261,7 @@ export function listRelationshipDomains(
  * @returns owl:Thing, classes, class profiles.
  */
 export function listRelationshipProfileDomains(
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   graphContext: UseModelGraphContextType,
   vocabularies: CmeSemanticModel[],
   labelResolver: LabelResolver,

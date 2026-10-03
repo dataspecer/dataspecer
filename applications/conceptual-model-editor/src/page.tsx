@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
-import type { Entity, EntityModel } from "@dataspecer/core-v2/entity-model";
+import type { EntityModel } from "@dataspecer/core-v2/entity-model";
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
 import {
   type VisualModel,
@@ -9,17 +9,11 @@ import {
   isWritableVisualModel,
 } from "@dataspecer/visual-model";
 import {
-  type AggregatedEntityWrapper,
   SemanticModelAggregator,
   type SemanticModelAggregatorView,
 } from "@dataspecer/core-v2/semantic-model/aggregator";
-import {
-  type SemanticModelClass,
-  type SemanticModelGeneralization,
-  type SemanticModelRelationship,
-} from "@dataspecer/core-v2/semantic-model/concepts";
 
-import { ClassesContext } from "./context/classes-context";
+import { ClassesContextProvider } from "./context/classes-context";
 import { ModelContextProvider } from "./context/model-context";
 import Header from "./header/header";
 import { useBackendConnection } from "./backend-connection";
@@ -33,10 +27,6 @@ import { ActionsContextProvider } from "./action/actions-react-binding";
 import { OptionsContextProvider } from "./configuration/options";
 
 import { migrateVisualModelFromV0 } from "./dataspecer/visual-model/visual-model-v0-to-v1";
-import {
-  SemanticModelClassProfile,
-  SemanticModelRelationshipProfile,
-} from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { createDefaultWritableVisualModel } from "./dataspecer/visual-model/visual-model-factory";
 import { VerticalSplitter } from "./components/vertical-splitter";
 import { preferences, updatePreferences } from "./configuration";
@@ -46,7 +36,6 @@ import {
   UserGivenAlgorithmConfigurations,
 } from "@dataspecer/layout";
 import { LayoutConfigurationContext } from "./context/layout-configuration-context";
-import { propagateAggregatorChangesToLocalState } from "./page-aggregator-sync";
 
 const _semanticModelAggregator = new SemanticModelAggregator();
 
@@ -69,47 +58,9 @@ const Page = () => {
   // Local state - models
   const [models, setModels] = useState<EntityModel[]>([]);
   const [visualModels, setVisualModels] = useState<WritableVisualModel[]>([]);
-  // Local state - entities
-  const [rawEntities, setRawEntities] = useState<(Entity | null)[]>([]);
-
-  const [classes, setClasses] = useState<SemanticModelClass[]>([]);
-  const [allowedClasses, setAllowedClasses] = useState<string[]>([]);
-  const [relationships, setRelationships] = useState<SemanticModelRelationship[]>([]);
-  const [generalizations, setGeneralizations] = useState<SemanticModelGeneralization[]>([]);
-  const [classProfiles, setClassProfiles] = useState<SemanticModelClassProfile[]>([]);
-  const [relationshipProfiles, setRelationshipProfiles] = useState<SemanticModelRelationshipProfile[]>([]);
-
-  const [sourceModelOfEntityMap, setSourceModelOfEntityMap] = useState(new Map<string, string>());
 
   const [layoutConfiguration, setLayoutConfiguration] =
     useState(getDefaultUserGivenAlgorithmConfigurationsFull());
-
-  // Derived state - this is for backwards compatibility.
-
-  const classesContext = useMemo(() => {
-    console.log("update ClassesContext", { classes, classProfiles });
-    return {
-      classes,
-      allowedClasses,
-      setAllowedClasses,
-      relationships,
-      generalizations,
-      sourceModelOfEntityMap,
-      rawEntities,
-      classProfiles,
-      relationshipProfiles,
-    };
-  }, [
-    classes,
-    allowedClasses,
-    setAllowedClasses,
-    relationships,
-    generalizations,
-    sourceModelOfEntityMap,
-    rawEntities,
-    classProfiles,
-    relationshipProfiles,
-  ]);
 
   const layoutConfigurationContext = useMemo(() => {
     return {
@@ -147,27 +98,6 @@ const Page = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Registers a subscription callback at the aggregator, that:
-  // - removes whatever was removed from the models registered at the aggregator from the `ClassContext`
-  // - goes through the updated elements
-  // - based on their types puts them to their respective buckets - classes, relationships, etc
-  useEffect(() => {
-    if (aggregatorView === null) {
-      return;
-    }
-    const callback = (updated: AggregatedEntityWrapper[], removed: string[]) => {
-      propagateAggregatorChangesToLocalState(
-        updated, removed,
-        setClasses, setRelationships,
-        setGeneralizations, setRawEntities,
-        setSourceModelOfEntityMap,
-        setClassProfiles, setRelationshipProfiles,
-        aggregatorView);
-    };
-    return aggregatorView?.subscribeToChanges(callback);
-
-  }, [aggregatorView]);
-
   // Handle browser navigation (back/forward) by changing the active visual model
   // when viewId changes in the URL
   useEffect(() => {
@@ -199,7 +129,7 @@ const Page = () => {
       setVisualModels={setVisualModels}
       queryParamsContext={queryParamsContext}
     >
-      <ClassesContext.Provider value={classesContext}>
+      <ClassesContextProvider aggregatorView={aggregatorView}>
         <LayoutConfigurationContext.Provider value={layoutConfigurationContext}>
           <DialogContextProvider>
             <ActionsContextProvider>
@@ -219,7 +149,7 @@ const Page = () => {
             </ActionsContextProvider>
           </DialogContextProvider>
         </LayoutConfigurationContext.Provider>
-      </ClassesContext.Provider>
+      </ClassesContextProvider>
     </ModelContextProvider>
   );
 };

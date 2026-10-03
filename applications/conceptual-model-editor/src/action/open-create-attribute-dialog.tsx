@@ -2,7 +2,7 @@ import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-mem
 import { isWritableVisualModel, VisualModel } from "@dataspecer/visual-model";
 
 import { DialogApiContextType } from "../dialog/dialog-service";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { UseModelGraphContextType } from "../context/model-context";
 import { Options } from "../application";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
@@ -21,7 +21,7 @@ export function openCreateAttributeDialogAction(
   cmeExecutor: CmeModelOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   graph: UseModelGraphContextType,
   notifications: UseNotificationServiceWriterType,
   visualModel: VisualModel | null,

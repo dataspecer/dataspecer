@@ -7,13 +7,13 @@ import { UseModelGraphContextType } from "../context/model-context";
 import { UseDiagramType } from "../diagram/diagram-hook";
 import { addRelatedEntitiesAction } from "./add-related-entities-to-visual-model";
 import { findPositionForNewNodeUsingLayouting } from "./layout-visual-model";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { addVisualNode } from "../dataspecer/visual-model/operation/add-visual-node";
 
 export async function addSemanticClassToVisualModelAction(
   notifications: UseNotificationServiceWriterType,
   graph: UseModelGraphContextType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   visualModel: WritableVisualModel,
   diagram: UseDiagramType,
   entityIdentifier: string,

@@ -21,7 +21,7 @@ import {
   SemanticModelRelationshipProfile,
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 
-import { bothEndsHaveAnIri } from "./util/relationship-utils";
+import { bothEndsHaveAnIri } from "../util/relationship-utils";
 
 /**
  * Extracted from page.tsx as-is so it can be characterization-tested.
@@ -166,7 +166,7 @@ export function propagateAggregatorChangesToLocalState(
   setRelationshipProfiles(prev => updateItems(prev, removedIds, updatedRelationshipProfiles));
 }
 
-export function updateItems<Type extends { id: string }>(items: Type[], removed: Set<string>, changed: Type[]): Type[] {
+function updateItems<Type extends { id: string }>(items: Type[], removed: Set<string>, changed: Type[]): Type[] {
   if (removed.size === 0 && changed.length === 0) {
     return items;
   }

@@ -9,7 +9,7 @@ import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { DialogApiContextType } from "../dialog/dialog-service";
 import { Options } from "../configuration/options";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { findSourceModelOfEntity } from "../service/model-service";
 import { VisualModel } from "@dataspecer/visual-model";
 import { isInMemorySemanticModel } from "../dataspecer/semantic-model";
@@ -37,7 +37,7 @@ export function openModifyDialogAction(
   options: Options,
   dialogs: DialogApiContextType,
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   graph: UseModelGraphContextType,
   visualModel: VisualModel | null,
   identifier: string,

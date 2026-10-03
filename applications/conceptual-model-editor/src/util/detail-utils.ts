@@ -23,7 +23,7 @@ import type { Entity, EntityModel } from "@dataspecer/core-v2";
 import { sourceModelOfEntity } from "./model-utils";
 import { getIri, getModelIri } from "./iri-utils";
 import { useModelGraphContext, UseModelGraphContextType } from "../context/model-context";
-import { ClassesContext, ClassesContextType } from "../context/classes-context";
+import { ClassesContext, useClassesContext } from "../context/classes-context";
 import { getTheOriginalProfiledEntity } from "./profile-utils";
 import { cardinalityToHumanLabel, getDomainAndRange } from "../util/relationship-utils";
 import {
@@ -113,13 +113,13 @@ export const useEntityProxy = (
   viewedEntity: EntityDetailSupportedType,
   currentLang?: string,
 ) => {
-  const classes = useContext(ClassesContext);
+  const classes = useClassesContext();
   const graph = useModelGraphContext();
   return createEntityProxy(classes, graph, viewedEntity, currentLang);
 }
 
 export const createEntityProxy = (
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   graph: UseModelGraphContextType,
   viewedEntity: EntityDetailSupportedType,
   currentLang?: string,

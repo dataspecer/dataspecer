@@ -15,7 +15,7 @@ import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { UseDiagramType } from "../diagram/diagram-hook";
 import { XY } from "@dataspecer/layout";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { isSemanticModelClass } from "@dataspecer/core-v2/semantic-model/concepts";
 import { addSemanticClassToVisualModelAction } from "./add-class-to-visual-model";
 import { addSemanticClassProfileToVisualModelAction } from "./add-class-profile-to-visual-model";
@@ -36,7 +36,7 @@ import { isSemanticModelClassProfile } from "@dataspecer/core-v2/semantic-model/
  */
 export async function layoutActiveVisualModel(
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   diagram: UseDiagramType,
   graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
@@ -78,7 +78,7 @@ export async function layoutActiveVisualModel(
  */
 export async function layoutActiveVisualModelAction(
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   diagram: UseDiagramType,
   graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
@@ -98,7 +98,7 @@ export async function findPositionForNewNodeUsingLayouting(
   diagram: UseDiagramType,
   graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   identifier: string,
 ): Promise<XY> {
   const positions = await findPositionForNewNodesUsingLayouting(
@@ -114,7 +114,7 @@ export async function findPositionForNewNodesUsingLayouting(
   diagram: UseDiagramType,
   graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   identifiers: string[],
 ): Promise<Record<string, XY>> {
   const identifierToPositionMap: Record<string, XY> = {};
@@ -209,7 +209,7 @@ export function createExactNodeDimensionsQueryHandler(
  */
 export function processLayoutResult(
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   diagram: UseDiagramType,
   graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
@@ -243,7 +243,7 @@ export function processLayoutResult(
 
 function addClassOrClassProfileToVisualModel(
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   diagram: UseDiagramType,
   graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,

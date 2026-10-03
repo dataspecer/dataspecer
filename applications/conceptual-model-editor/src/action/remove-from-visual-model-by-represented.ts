@@ -12,7 +12,7 @@ import { collectDirectVisualEntitiesToRemove } from "./remove-from-visual-model-
 import { removeVisualEntitiesFromVisualModelAction } from "./remove-visual-entities-from-visual-model";
 import { UseModelGraphContextType } from "../context/model-context";
 import { getVisualDiagramNodeMappingsByRepresented } from "./utilities";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { getDomainAndRangeConcepts } from "../util/relationship-utils";
 
 /**
@@ -21,7 +21,7 @@ import { getDomainAndRangeConcepts } from "../util/relationship-utils";
 export function removeFromVisualModelByRepresentedAction(
   notifications: UseNotificationServiceWriterType,
   graph: UseModelGraphContextType,
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   visualModel: WritableVisualModel,
   identifiers: string[],
 ) {
@@ -33,7 +33,7 @@ export function removeFromVisualModelByRepresentedAction(
 function collectIndirectVisualEntitiesToRemove(
   notifications: UseNotificationServiceWriterType,
   graph: UseModelGraphContextType,
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   visualModel: WritableVisualModel,
   semanticIdentifiers: string[],
 ) {
@@ -58,7 +58,7 @@ function collectIndirectVisualEntitiesToRemove(
  */
 function findInvalidVisualEdgesForVisualDiagramNodes(
   notifications: UseNotificationServiceWriterType | null,
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   availableVisualModels: Map<string, WritableVisualModel>,
   visualModel: VisualModel,
   removedClasses: string[],

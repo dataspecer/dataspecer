@@ -14,7 +14,7 @@ import { addSemanticRelationshipToVisualModelAction } from "./add-relationship-t
 import { addSemanticRelationshipProfileToVisualModelAction } from "./add-relationship-profile-to-visual-model";
 import { addSemanticGeneralizationToVisualModelAction } from "./add-generalization-to-visual-model";
 import { Entity, EntityModel } from "@dataspecer/core-v2";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { XY } from "@dataspecer/layout";
 import { findPositionForNewNodesUsingLayouting } from "./layout-visual-model";
 import {
@@ -42,7 +42,7 @@ type ValidatedDataAboutEntity = {
 
 export async function addSemanticEntitiesToVisualModelAction(
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   diagram: UseDiagramType,
@@ -59,7 +59,7 @@ export async function addSemanticEntitiesToVisualModelAction(
 
 async function updatePositionsAndSplitIntoNodesAndEdges(
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   diagram: UseDiagramType,
@@ -153,7 +153,7 @@ function validateEntities(
 
 async function addClassesAndClassProfilesToVisualModel(
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   diagram: UseDiagramType,

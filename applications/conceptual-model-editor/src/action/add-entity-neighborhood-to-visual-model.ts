@@ -1,5 +1,5 @@
 import { isVisualNode, isVisualRelationship, WritableVisualModel } from "@dataspecer/visual-model";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { UseModelGraphContextType } from "../context/model-context";
 import { UseDiagramType } from "../diagram/diagram-hook";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
@@ -41,7 +41,7 @@ import { EntityModel } from "@dataspecer/core-v2";
  */
 export const addEntityNeighborhoodToVisualModelAction = async (
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   visualModel: WritableVisualModel,
@@ -158,7 +158,7 @@ export const addEntityNeighborhoodToVisualModelAction = async (
 
 function addSemanticClassOrClassProfileToVisualModelCommand(
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   entity: SemanticModelClass | SemanticModelClassProfile,
@@ -235,7 +235,7 @@ function addSemanticClassOrClassProfileToVisualModelCommand(
  */
 const addClassOrClassProfileToVisualModel = async (
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   visualModel: WritableVisualModel,
@@ -302,7 +302,7 @@ const addClassOrClassProfileToVisualModel = async (
 
 const addClassNeighborhoodToVisualModelAction = async (
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   visualModel: WritableVisualModel,
@@ -375,7 +375,7 @@ const addClassNeighborhoodToVisualModelAction = async (
 };
 
 function getAllAttributesForDomainClass(
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   domainClass: string
 ) {
   const attributes = classesContext.relationships.filter(isSemanticModelAttribute);

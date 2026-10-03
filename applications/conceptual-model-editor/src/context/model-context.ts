@@ -6,7 +6,7 @@ import {
   type SemanticModelAggregatorView,
 } from "@dataspecer/core-v2/semantic-model/aggregator";
 import type { EntityModel } from "@dataspecer/core-v2/entity-model";
-import type { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
+import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
 import { VisualModel, type WritableVisualModel } from "@dataspecer/visual-model";
 
 import { randomColorFromPalette } from "../util/color-utils";
@@ -234,7 +234,7 @@ export interface UseModelGraphContextType {
 
   //
 
-  getActiveViewId() : string | undefined;
+  getActiveViewId(): string | undefined;
 
   getEntities(): Record<string, AggregatedEntityWrapper>;
 

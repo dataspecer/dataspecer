@@ -1,4 +1,4 @@
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { UseModelGraphContextType } from "../context/model-context";
 import { UseDiagramType } from "../diagram/diagram-hook";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
@@ -28,7 +28,7 @@ import { createExactNodeDimensionsQueryHandler, processLayoutResult } from "./la
  */
 export async function layoutGivenVisualEntities(
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   diagram: UseDiagramType,
   graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
@@ -93,7 +93,7 @@ export async function layoutGivenVisualEntities(
  */
 export async function layouGivenVisualEntitiesAction(
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   diagram: UseDiagramType,
   graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,

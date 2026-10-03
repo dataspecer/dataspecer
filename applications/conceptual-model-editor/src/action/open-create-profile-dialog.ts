@@ -10,7 +10,7 @@ import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { DialogApiContextType } from "../dialog/dialog-service";
 import { Options } from "../configuration/options";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { UseDiagramType } from "../diagram/diagram-hook";
 import { addSemanticRelationshipProfileToVisualModelAction } from "./add-relationship-profile-to-visual-model";
 import { addSemanticClassProfileToVisualModelAction } from "./add-class-profile-to-visual-model";
@@ -54,7 +54,7 @@ export function openCreateProfileDialogAction(
   options: Options,
   dialogs: DialogApiContextType,
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   diagram: UseDiagramType,

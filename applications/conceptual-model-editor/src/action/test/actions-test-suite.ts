@@ -14,7 +14,7 @@ import {
 } from "../../diagram";
 import { UseDiagramType } from "../../diagram/diagram-hook";
 import { UseNotificationServiceWriterType } from "../../notification/notification-service-context";
-import { ClassesContextType } from "../../context/classes-context";
+import { ClassesContext } from "../../context/classes-context";
 import {
   isSemanticModelAttribute,
   isSemanticModelClass,
@@ -269,7 +269,7 @@ export class ActionsTestSuite {
     givenRelationships: CreatedSemanticEntityData[],
     givenGeneralizations: CreatedSemanticEntityData[],
     givenRelationshipProfiles: CreatedSemanticEntityData[],
-  ): ClassesContextType {
+  ): ClassesContext {
     const sourceModelOfEntityMap = new Map();
 
     const classesAsSemanticEntities: SemanticModelClass[] = [];
@@ -305,10 +305,8 @@ export class ActionsTestSuite {
       .concat(generalizationsAsSemanticEntities)
       .concat(relationshipProfilesAsSemanticEntities);
 
-    const classes: ClassesContextType = {
+    const classes: ClassesContext = {
       classes: classesAsSemanticEntities,
-      allowedClasses: [],
-      setAllowedClasses: function (_) { },
       relationships: relationshipsAsSemanticEntities,
       generalizations: generalizationsAsSemanticEntities,
       sourceModelOfEntityMap,
@@ -690,7 +688,7 @@ export class ActionsTestSuite {
   static createRelationshipProfileOfEveryRelationshipTestVariant(
     models: Map<string, EntityModel>,
     modelDsIdentifier: string,
-    classesContext: ClassesContextType,
+    classesContext: ClassesContext,
   ) {
     const createdIdentifiers = [];
     const model = models.get(modelDsIdentifier) as InMemorySemanticModel;
@@ -746,7 +744,7 @@ export class ActionsTestSuite {
   static createClassProfileOfEveryClassTestVariant(
     models: Map<string, EntityModel>,
     modelDsIdentifier: string,
-    classesContext: ClassesContextType,
+    classesContext: ClassesContext,
   ) {
     const createdIdentifiers: {
       profiledClass: string,
@@ -778,7 +776,7 @@ export class ActionsTestSuite {
    * Creates semantic attribute, adds it to the model and extends the classes context
    */
   static createSemanticAttributeTestVariant(
-    classesContext: ClassesContextType,
+    classesContext: ClassesContext,
     models: Map<string, EntityModel>,
     domainConceptIdentifier: string,
     ModelDsIdentifier: string,
@@ -823,7 +821,7 @@ export class ActionsTestSuite {
   }
 
   static createSemanticAttributeProfileTestVariant(
-    classesContext: ClassesContextType,
+    classesContext: ClassesContext,
     models: Map<string, EntityModel>,
     domainAttribute: string,
     domainConceptIdentifier: string,

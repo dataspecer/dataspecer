@@ -34,7 +34,7 @@ import {
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 
 import { type UseModelGraphContextType, useModelGraphContext } from "./context/model-context";
-import { type UseClassesContextType, useClassesContext } from "./context/classes-context";
+import { type ClassesContext, useClassesContext } from "./context/classes-context";
 import { cardinalityToHumanLabel, getDomainAndRange } from "./util/relationship-utils";
 import { useActions } from "./action/actions-react-binding";
 import { DiagramOptions } from "./diagram/model";
@@ -205,7 +205,7 @@ function onChangeVisualModel(
   visualModel: VisualModel | null,
   diagram: UseDiagramType | null,
   aggregatorView: UseModelGraphContextType,
-  _classesContext: UseClassesContextType,
+  _classesContext: ClassesContext,
   graphContext: UseModelGraphContextType,
 ) {
   if (diagram === null || !diagram.areActionsReady) {

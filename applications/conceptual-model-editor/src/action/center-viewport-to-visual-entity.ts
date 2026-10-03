@@ -3,7 +3,7 @@ import { UseModelGraphContextType } from "../context/model-context";
 import { UseDiagramType } from "../diagram/diagram-hook";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { SemanticModelRelationship, isSemanticModelAttribute } from "@dataspecer/core-v2/semantic-model/concepts";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { getDomainAndRange } from "../util/relationship-utils";
 import { SemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { isSemanticModelAttributeProfile } from "../dataspecer/semantic-model";
@@ -17,7 +17,7 @@ import { isSemanticModelAttributeProfile } from "../dataspecer/semantic-model";
 export function centerViewportToVisualEntityByRepresentedAction(
   notifications: UseNotificationServiceWriterType,
   graph: UseModelGraphContextType,
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   diagram: UseDiagramType,
   entityIdentifier: string,
   currentlyIteratedEntity: number,
@@ -66,7 +66,7 @@ export function centerViewportToVisualEntityByRepresentedAction(
  *  Otherwise the found relationship or relationship usage,
  *  Note that the returned type depends on the actual entity
  */
-export function findAttributeWithIdentifier(identifier: string, classesContext: ClassesContextType) {
+export function findAttributeWithIdentifier(identifier: string, classesContext: ClassesContext) {
   const attributes = classesContext.relationships.filter(isSemanticModelAttribute);
   const attributeProfiles = classesContext.relationshipProfiles.filter(isSemanticModelAttributeProfile);
 

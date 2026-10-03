@@ -7,7 +7,7 @@ import {
 import { getVisualDiagramNodeMappingsByRepresented, isVisualEdgeEnd } from "./utilities";
 import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { findSourceModelOfEntity } from "../service/model-service";
 import { VisualModelDiagramNode } from "../diagram";
 import { createGetVisualEntitiesForRepresentedGlobalWrapper, VisualsForRepresentedWrapper } from "../util/utils";
@@ -20,7 +20,7 @@ import { getSemanticConnectionEndConcepts } from "../util/relationship-utils";
  */
 export function addAllRelationshipsForVisualDiagramNodeToVisualModelAction(
   notifications: UseNotificationServiceWriterType,
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   visualModelDiagramNode: VisualModelDiagramNode,

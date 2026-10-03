@@ -24,7 +24,7 @@ import {
   SemanticModelRelationshipProfile,
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { createVisualModelOperationExecutor } from "../dataspecer/visual-model/visual-model-operation-executor";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 
 /**
  * For given entity make sure, that all related entities
@@ -36,7 +36,7 @@ import { ClassesContextType } from "../context/classes-context";
 export function addRelatedEntitiesAction(
   notifications: UseNotificationServiceWriterType,
   graph: UseModelGraphContextType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   visualModel: WritableVisualModel,
   entities: AggregatedEntityWrapper[],
   models: Map<string, EntityModel>,

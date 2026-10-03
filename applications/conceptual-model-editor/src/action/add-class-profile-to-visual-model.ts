@@ -4,7 +4,7 @@ import { UseNotificationServiceWriterType } from "../notification/notification-s
 import { UseModelGraphContextType } from "../context/model-context";
 import { UseDiagramType } from "../diagram/diagram-hook";
 import { addRelatedEntitiesAction } from "./add-related-entities-to-visual-model";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { findPositionForNewNodesUsingLayouting } from "./layout-visual-model";
 import { findSourceModelOfEntity } from "../service/model-service";
 import { createLogger } from "../application";
@@ -19,7 +19,7 @@ const LOG = createLogger(import.meta.url);
 export async function addSemanticClassProfileToVisualModelAction(
   notifications: UseNotificationServiceWriterType,
   graph: UseModelGraphContextType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   visualModel: WritableVisualModel,
   diagram: UseDiagramType,
   entityIdentifier: string,
@@ -64,7 +64,7 @@ export async function addSemanticClassProfileToVisualModelAction(
 }
 
 function addSemanticClassProfileToVisualModelCommand(
-  classes: ClassesContextType,
+  classes: ClassesContext,
   visualModel: WritableVisualModel,
   entity: SemanticModelClassProfile,
   model: string,

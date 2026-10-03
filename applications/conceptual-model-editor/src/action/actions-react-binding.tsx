@@ -15,12 +15,7 @@ import {
 import { type DialogApiContextType } from "../dialog/dialog-service";
 import { DialogApiContext } from "../dialog/dialog-context";
 import { configuration, createLogger } from "../application";
-import {
-  ClassesContext,
-  type ClassesContextType,
-  UseClassesContextType,
-  useClassesContext,
-} from "../context/classes-context";
+import { type ClassesContext, useClassesContext } from "../context/classes-context";
 import { useNotificationServiceWriter } from "../notification";
 import { type UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import {
@@ -528,7 +523,6 @@ export const ActionsContextProvider = (props: {
 }) => {
   const options = useOptions();
   const dialogs = useContext(DialogApiContext);
-  const classes = useContext(ClassesContext);
   const useClasses = useClassesContext();
   const notifications = useNotificationServiceWriter();
   const useGraph = useModelGraphContext();
@@ -542,10 +536,10 @@ export const ActionsContextProvider = (props: {
 
   const actions = useMemo(
     () => createActionsContext(
-      options, dialogs, classes, useClasses, notifications, useGraph,
+      options, dialogs, useClasses, notifications, useGraph,
       diagram, layoutConfiguration, queryParamsContext, dialogTracker),
     [
-      options, dialogs, classes, useClasses, notifications, useGraph,
+      options, dialogs, useClasses, notifications, useGraph,
       diagram, layoutConfiguration, queryParamsContext, dialogTracker]
   );
 
@@ -558,8 +552,8 @@ export const ActionsContextProvider = (props: {
 
 let prevOptions: Options | null = null;
 let prevDialogs: DialogApiContextType | null = null;
-let prevClasses: ClassesContextType | null = null;
-let prevUseClasses: UseClassesContextType | null = null;
+let prevClasses: ClassesContext | null = null;
+let prevUseClasses: ClassesContext | null = null;
 let prevNotifications: UseNotificationServiceWriterType | null = null;
 let prevUseGraph: UseModelGraphContextType | null = null;
 let prevDiagram: UseDiagramType | null = null;
@@ -570,8 +564,7 @@ let prevDialogTracker: DialogSemanticTracker | null = null;
 function createActionsContext(
   options: Options | null,
   dialogs: DialogApiContextType | null,
-  classes: ClassesContextType | null,
-  useClasses: UseClassesContextType | null,
+  classes: ClassesContext | null,
   notifications: UseNotificationServiceWriterType | null,
   useGraph: UseModelGraphContextType | null,
   diagram: UseDiagramType,
@@ -581,9 +574,9 @@ function createActionsContext(
 ): ActionsContextType {
 
   if (options === null || dialogs === null || classes === null ||
-    useClasses === null || notifications === null ||
-    !diagram.areActionsReady || layoutConfiguration === null ||
-    queryParamsContext === null || useGraph === null) {
+    notifications === null || !diagram.areActionsReady ||
+    layoutConfiguration === null || queryParamsContext === null ||
+    useGraph === null) {
     // We need to return the diagram object so it can be consumed by
     // the Diagram component and initialized.
     return {
@@ -743,7 +736,7 @@ function createActionsContext(
   const openModifyDialog = (identifier: string) => {
     withVisualModel(notifications, useGraph, (visualModel) => {
       openModifyDialogAction(
-        cmeExecutor, options, dialogs, notifications, useClasses, useGraph,
+        cmeExecutor, options, dialogs, notifications, classes, useGraph,
         visualModel, identifier, dialogTracker, labelResolver);
     });
   };

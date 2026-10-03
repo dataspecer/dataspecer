@@ -23,7 +23,7 @@ import {
   isVisualEdgeEnd,
   VisualEdgeEndPoint
 } from "./utilities";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import {
   SemanticModelClass,
   SemanticModelGeneralization,
@@ -42,7 +42,7 @@ import { layoutActiveVisualModelAction } from "./layout-visual-model";
  */
 export function putVisualDiagramNodeContentToVisualModelAction(
   notifications: UseNotificationServiceWriterType,
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   visualModel: WritableVisualModel,
@@ -78,7 +78,7 @@ export function putVisualDiagramNodeContentToVisualModelAction(
 
 function copyVisualEntitiesBetweenModels(
   notifications: UseNotificationServiceWriterType,
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   availableVisualModels: Map<string, WritableVisualModel>,
@@ -141,7 +141,7 @@ function copyVisualEntitiesBetweenModels(
  */
 function rerouteEdgesFromVisualDiagramNodeToItsContent(
   notifications: UseNotificationServiceWriterType,
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   availableVisualModels: Map<string, WritableVisualModel>,
   diagramNodeToReroute: string,
   visualModelContainingDiagramNode: WritableVisualModel,

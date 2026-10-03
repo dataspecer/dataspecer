@@ -1,6 +1,6 @@
 
 import { VisualModel, isVisualNode, isWritableVisualModel } from "@dataspecer/visual-model";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { Options } from "../application";
@@ -51,7 +51,7 @@ export async function createDefaultProfilesAction(
   graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   options: Options,
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   visualModel: VisualModel | null,
   semanticClassesToProfile: string[],
   semanticRelationshipsToProfile: string[],
@@ -88,7 +88,7 @@ async function createDefaultClassProfiles(
   graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   language: Language,
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   visualModel: VisualModel | null,
   classesAndClassProfilesToProfile: string[],
   shouldBeAddedToVisualModel: boolean,
@@ -122,7 +122,7 @@ async function createDefaultClassProfile(
   graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   language: Language,
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   visualModel: VisualModel | null,
   entityToProfile: string,
   shouldBeAddedToVisualModel: boolean,
@@ -175,7 +175,7 @@ function createClassProfile(
 
 function createDefaultRelationshipProfiles(
   notifications: UseNotificationServiceWriterType,
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   language: Language,
@@ -206,7 +206,7 @@ function createDefaultRelationshipProfiles(
  */
 async function createDefaultRelationshipProfile(
   notifications: UseNotificationServiceWriterType,
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   language: Language,
