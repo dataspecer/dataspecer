@@ -31,11 +31,11 @@ test("Round-trips controlled vocabularies with no prior iri through a DCAT catal
     vocabulary({
       id: "voc-2",
       title: "Geonames",
-      pattern: "",
+      pattern: null,
       references: "http://www.geonames.org/",
       conformsToSkos: false,
-      documentation: "",
-      distribution: { downloadUrl: "", accessUrl: "https://example.com/geonames" },
+      documentation: null,
+      distribution: { downloadUrl: null, accessUrl: "https://example.com/geonames" },
     }),
   ];
 
@@ -71,6 +71,38 @@ test("Writes dct:conformsTo skos only for vocabularies that conform to SKOS.", a
   expect(conformsTo).toHaveLength(1);
   expect(conformsTo[0]!.subject.value).toBe(controlledVocabularyDatasetIri(CATALOG_IRI, "skos"));
   expect(conformsTo[0]!.object.value).toBe("http://www.w3.org/2004/02/skos/core");
+});
+
+test("Parses a record with only an access URL without a download URL.", () => {
+  const quads = turtleToQuads(`
+    @prefix dcat: <http://www.w3.org/ns/dcat#> .
+    <http://example.com/dataset> a dcat:Dataset ;
+      dcat:distribution [ a dcat:Distribution ; dcat:accessURL <http://example.com/access> ] .
+  `);
+
+  const parsed = parseControlledVocabularyCatalog(quads);
+
+  expect(parsed).toHaveLength(1);
+  expect(parsed[0]!.distribution).toStrictEqual({
+    downloadUrl: null,
+    accessUrl: "http://example.com/access",
+  });
+});
+
+test("Parses the download URL as the access URL when the record has no access URL.", () => {
+  const quads = turtleToQuads(`
+    @prefix dcat: <http://www.w3.org/ns/dcat#> .
+    <http://example.com/dataset> a dcat:Dataset ;
+      dcat:distribution [ a dcat:Distribution ; dcat:downloadURL <http://example.com/file.rdf> ] .
+  `);
+
+  const parsed = parseControlledVocabularyCatalog(quads);
+
+  expect(parsed).toHaveLength(1);
+  expect(parsed[0]!.distribution).toStrictEqual({
+    downloadUrl: "http://example.com/file.rdf",
+    accessUrl: "http://example.com/file.rdf",
+  });
 });
 
 test("A vocabulary with an existing iri keeps it through export instead of minting a new one.", async () => {

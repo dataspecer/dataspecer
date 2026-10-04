@@ -24,9 +24,9 @@ import { CONTROLLED_VOCABULARY_TYPE, controlledVocabularyDatasetIri } from "@dat
  */
 const CONTROLLED_VOCABULARY = {
     id: "voc-1", type: [CONTROLLED_VOCABULARY_TYPE],
-    title: "Test Vocab", pattern: "", references: "http://vocab.example.com/scheme",
+    title: "Test Vocab", pattern: null, references: "http://vocab.example.com/scheme",
     conformsToSkos: true,
-    documentation: "", distribution: { downloadUrl: "", accessUrl: "" }, iri: null,
+    documentation: null, distribution: { downloadUrl: null, accessUrl: "" }, iri: null,
 } as any;
 
 const CV_CATALOG_IRI = "http://example.com/catalog";

@@ -150,12 +150,13 @@ export function parseControlledVocabularyCatalog(quads: N3.Quad[]): ControlledVo
     const title = store.getObjects(datasetSubject, DCT.title, null)[0]?.value ?? "";
     const references = store.getObjects(datasetSubject, DCT.references, null)[0]?.value ?? "";
     const conformsToSkos = store.countQuads(datasetSubject, DCT.conformsTo, SKOS_CORE, null) > 0;
-    const documentation = store.getObjects(datasetSubject, DCAT.landingPage, null)[0]?.value ?? "";
-    const pattern = store.getObjects(datasetSubject, SHACL.pattern, null)[0]?.value ?? "";
+    const documentation = store.getObjects(datasetSubject, DCAT.landingPage, null)[0]?.value ?? null;
+    const pattern = store.getObjects(datasetSubject, SHACL.pattern, null)[0]?.value ?? null;
 
     const distributionNode = store.getObjects(datasetSubject, DCAT.distribution, null)[0];
-    const downloadUrl = distributionNode ? (store.getObjects(distributionNode, DCAT.downloadURL, null)[0]?.value ?? "") : "";
-    const accessUrl = distributionNode ? (store.getObjects(distributionNode, DCAT.accessURL, null)[0]?.value ?? "") : "";
+    const downloadUrl = distributionNode ? (store.getObjects(distributionNode, DCAT.downloadURL, null)[0]?.value ?? null) : null;
+    // The access URL is required, a file that can be downloaded can be accessed there.
+    const accessUrl = distributionNode ? (store.getObjects(distributionNode, DCAT.accessURL, null)[0]?.value ?? downloadUrl ?? "") : "";
 
     result.push({
       ...DEFAULT_CONTROLLED_VOCABULARY,

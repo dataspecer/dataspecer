@@ -54,8 +54,8 @@ function controlledVocabularyFixture(
 ): ControlledVocabulary {
   return {
     id: "cv", type: [CONTROLLED_VOCABULARY_TYPE],
-    title: "", pattern: "", references: "", conformsToSkos: true, documentation: "",
-    distribution: { downloadUrl: "", accessUrl: "" },
+    title: "", pattern: null, references: "", conformsToSkos: true, documentation: null,
+    distribution: { downloadUrl: null, accessUrl: "" },
     iri: null,
     ...overrides,
   };

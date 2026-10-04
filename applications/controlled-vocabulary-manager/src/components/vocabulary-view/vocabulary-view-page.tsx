@@ -11,7 +11,7 @@ interface VocabularyViewPageProps {
   onClose: () => void
 }
 
-function Field({ label, value }: { label: string, value: string }) {
+function Field({ label, value }: { label: string, value: string | null }) {
   return (
     <div>
       <Label>{label}</Label>

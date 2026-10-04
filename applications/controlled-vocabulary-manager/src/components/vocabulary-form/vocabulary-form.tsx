@@ -41,6 +41,14 @@ interface VocabularyFormProps {
   onConfirm: (vocabulary: Omit<ControlledVocabulary, 'id' | 'type'>) => void
 }
 
+/**
+ * Fields that are not filled in are empty in the form, but null in the
+ * controlled vocabulary.
+ */
+function emptyToNull(value: string): string | null {
+  return value === "" ? null : value
+}
+
 function initialReferenceSource(vocabulary?: ControlledVocabulary): ReferenceSource {
   if (
     vocabulary !== undefined
@@ -132,8 +140,8 @@ export function VocabularyForm({
       title: values.title,
       references,
       conformsToSkos: values.conformsToSkos,
-      pattern: values.pattern,
-      documentation: values.documentation,
+      pattern: emptyToNull(values.pattern),
+      documentation: emptyToNull(values.documentation),
       distribution: {
         downloadUrl: values.downloadUrl,
         accessUrl: values.downloadUrl,

@@ -56,10 +56,10 @@ test("Embeds a DCAT catalog of controlled vocabularies in the output when given 
   const catalogIri = "http://example.com/model/controlled-vocabulary-catalog";
   const vocabulary: ControlledVocabulary = {
     id: "voc-1", type: ["controlled-vocabulary"],
-    title: "Dublin Core", pattern: "", references: "http://purl.org/dc/terms/",
+    title: "Dublin Core", pattern: null, references: "http://purl.org/dc/terms/",
     conformsToSkos: true,
     documentation: "https://www.dublincore.org/terms/",
-    distribution: { downloadUrl: "https://www.dublincore.org/terms.rdf", accessUrl: "" },
+    distribution: { downloadUrl: "https://www.dublincore.org/terms.rdf", accessUrl: "https://www.dublincore.org/terms.rdf" },
     iri: null,
   };
 
