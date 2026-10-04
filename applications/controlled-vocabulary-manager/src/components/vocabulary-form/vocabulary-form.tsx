@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Form,
   FormControl,
@@ -19,10 +20,10 @@ import { useVocabulariesContext } from "@/contexts/vocabularies-context"
 import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model"
 
 /**
- * Which of the vocabulary's URLs is used as its main reference when it is not SKOS-based. 
+ * Which of the vocabulary's URLs is used as its main reference when it is not SKOS-based.
  * Only exists in the form - the chosen URL is what gets stored as `references`.
  */
-type ReferenceSource = "download" | "documentation"
+type ReferenceSource = "access" | "documentation"
 
 interface VocabularyFormValues {
   title: string
@@ -30,7 +31,12 @@ interface VocabularyFormValues {
   referenceSource: ReferenceSource
   references: string
   pattern: string
-  downloadUrl: string
+  accessUrl: string
+  /**
+   * Only exists in the form - when checked, the access URL is also stored as
+   * the download URL.
+   */
+  accessUrlIsDownload: boolean
   documentation: string
 }
 
@@ -55,11 +61,11 @@ function initialReferenceSource(vocabulary?: ControlledVocabulary): ReferenceSou
     && !vocabulary.conformsToSkos
     && vocabulary.references !== ""
     && vocabulary.references === vocabulary.documentation
-    && vocabulary.references !== vocabulary.distribution.downloadUrl
+    && vocabulary.references !== vocabulary.distribution.accessUrl
   ) {
     return "documentation"
   }
-  return "download"
+  return "access"
 }
 
 export function VocabularyForm({
@@ -74,7 +80,7 @@ export function VocabularyForm({
   const schema = useMemo(() => z.object({
     title: z.string().min(1, t("form.validation.requiredField")),
     conformsToSkos: z.boolean(),
-    referenceSource: z.enum(["download", "documentation"]),
+    referenceSource: z.enum(["access", "documentation"]),
     references: z.string(),
     pattern: z.string().refine(
       (val) => {
@@ -83,7 +89,8 @@ export function VocabularyForm({
       },
       { message: t("form.validation.invalidRegex") }
     ),
-    downloadUrl: z.string().min(1, t("form.validation.requiredField")).url(t("form.validation.invalidUrl")),
+    accessUrl: z.string().min(1, t("form.validation.requiredField")).url(t("form.validation.invalidUrl")),
+    accessUrlIsDownload: z.boolean(),
     documentation: z.union([z.literal(""), z.string().url(t("form.validation.invalidUrl"))]),
   }).superRefine((values, context) => {
     if (values.conformsToSkos) {
@@ -107,7 +114,11 @@ export function VocabularyForm({
       referenceSource: initialReferenceSource(initialValues),
       references: initialValues?.references ?? "",
       pattern: initialValues?.pattern ?? "",
-      downloadUrl: initialValues?.distribution.downloadUrl ?? "",
+      accessUrl: initialValues?.distribution.accessUrl ?? "",
+      // A new vocabulary is assumed to be a downloadable file. Of an existing
+      // one, only a download URL equal to the access URL is kept by this form.
+      accessUrlIsDownload: initialValues === undefined
+        || initialValues.distribution.downloadUrl === initialValues.distribution.accessUrl,
       documentation: initialValues?.documentation ?? "",
     },
   })
@@ -120,13 +131,13 @@ export function VocabularyForm({
     // the URL chosen as their main reference.
     const references = values.conformsToSkos
       ? values.references
-      : values.referenceSource === "documentation" ? values.documentation : values.downloadUrl
+      : values.referenceSource === "documentation" ? values.documentation : values.accessUrl
 
     // Check if the vocabulary's reference already exists in other vocabularies
     const existingVocab = vocabularies.find((v) => v.references === references)
     if (existingVocab && existingVocab.id !== currentVocabularyId) {
       form.setError(
-        values.conformsToSkos ? "references" : values.referenceSource === "documentation" ? "documentation" : "downloadUrl",
+        values.conformsToSkos ? "references" : values.referenceSource === "documentation" ? "documentation" : "accessUrl",
         { type: "manual", message: t("form.validation.duplicateIri") },
       )
       return
@@ -143,8 +154,8 @@ export function VocabularyForm({
       pattern: emptyToNull(values.pattern),
       documentation: emptyToNull(values.documentation),
       distribution: {
-        downloadUrl: values.downloadUrl,
-        accessUrl: values.downloadUrl,
+        downloadUrl: values.accessUrlIsDownload ? values.accessUrl : null,
+        accessUrl: values.accessUrl,
       },
       iri: null,
     }
@@ -223,7 +234,7 @@ export function VocabularyForm({
                   <FormItem>
                     <FormLabel>{t("form.field.referenceSource")}</FormLabel>
                     <div className="flex gap-2">
-                      {(["download", "documentation"] as const).map((source) => (
+                      {(["access", "documentation"] as const).map((source) => (
                         <Button
                           key={source}
                           type="button"
@@ -232,7 +243,7 @@ export function VocabularyForm({
                           aria-pressed={field.value === source}
                           onClick={() => form.setValue("referenceSource", source, { shouldValidate: true })}
                         >
-                          {t(source === "download" ? "form.field.downloadUrl" : "form.field.docsUrl")}
+                          {t(source === "access" ? "form.field.accessUrl" : "form.field.docsUrl")}
                         </Button>
                       ))}
                     </div>
@@ -257,17 +268,34 @@ export function VocabularyForm({
             />
             <FormField
               control={form.control}
-              name="downloadUrl"
+              name="accessUrl"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    {t("form.field.downloadUrl")}
+                    {t("form.field.accessUrl")}
                     <span className="text-destructive"> *</span>
                   </FormLabel>
                   <FormControl>
-                    <Input placeholder={t("form.placeholder.downloadUrl")} {...field} />
+                    <Input placeholder={t("form.placeholder.accessUrl")} {...field} />
                   </FormControl>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="accessUrlIsDownload"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center gap-2">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onChange={(event) => field.onChange(event.target.checked)}
+                      />
+                    </FormControl>
+                    <FormLabel>{t("form.field.accessUrlIsDownload")}</FormLabel>
+                  </div>
                 </FormItem>
               )}
             />
