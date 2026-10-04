@@ -779,3 +779,196 @@ describe("semanticModelsToShacl - controlled vocabularies", () => {
   });
 
 });
+
+describe("semanticModelsToShacl - controlled vocabulary concept schemes", () => {
+
+  const SKOS_IN_SCHEME = "http://www.w3.org/2004/02/skos/core#inScheme";
+
+  /**
+   * Generates SHACL for a class `person` with a single assignment of
+   * a controlled vocabulary with given properties.
+   */
+  function generate(
+    vocabularyOverrides: Partial<ControlledVocabulary>,
+    qualifier: ControlledVocabularyAssignment["qualifier"],
+    splitPropertyShapesByConstraints: boolean = false,
+  ) {
+    const vocabulary = createDefaultSemanticModelBuilder({
+      baseIdentifier: "vocab:",
+      baseIri: "http://example.com/vocabulary#",
+    });
+
+    const person = vocabulary.class({ iri: "person" });
+
+    const controlledVocabularies = entityModel("http://example.com/cv#", [
+      controlledVocabularyFixture({
+        id: "cv-1",
+        iri: "http://example.com/vocabularies/cv-1",
+        ...vocabularyOverrides,
+      }),
+    ]);
+
+    const profileBuilder = createDefaultProfileModelBuilder({
+      baseIdentifier: "profile:",
+      baseIri: "http://example.com/profile#",
+    });
+
+    const personProfile = profileBuilder.class({
+      iri: "person",
+      controlledVocabularies: ["assignment-1"],
+    }).profile(person);
+
+    const profile = withExtraEntities(profileBuilder.build(), [assignmentFixture({
+      id: "assignment-1",
+      iri: "http://example.com/assignments/1",
+      classProfile: personProfile.identifier,
+      vocabulary: "cv-1",
+      qualifier,
+    })]);
+
+    return semanticModelsToShacl(
+      [vocabulary.build()],
+      [profile],
+      profile,
+      {
+        policy: "semic-v1" as const,
+        languages: [],
+        noClassConstraints: false,
+        splitPropertyShapesByConstraints,
+      },
+      { baseIri: "http://example/shacl.ttl" },
+      [controlledVocabularies]);
+  }
+
+  /**
+   * @returns Shapes other than the primary shape of the class.
+   */
+  function controlledVocabularyShapes(shacl: ReturnType<typeof generate>) {
+    return shacl.members.filter(item => item.iri.includes("/cv-"));
+  }
+
+  test("A SKOS-based vocabulary with a pattern checks both the pattern and the scheme.", async () => {
+
+    const shacl = generate({
+      pattern: "^http://example\\.com/codes/.*$",
+      references: "http://example.com/scheme",
+      conformsToSkos: true,
+    }, "must");
+
+    // The primary shape and a single shape for the vocabulary.
+    expect(shacl.members.length).toBe(2);
+    const shapes = controlledVocabularyShapes(shacl);
+    expect(shapes.length).toBe(1);
+    const shape = shapes[0]!;
+
+    expect(shape.targetClass).toBe("http://example.com/vocabulary#person");
+    expect(shape.pattern).toBe("^http://example\\.com/codes/.*$");
+    expect(shape.severity).toBe(ShaclSeverity.Violation);
+    expect(shape.propertyShapes.length).toBe(1);
+    const propertyShape = shape.propertyShapes[0]!;
+    expect(propertyShape.path).toBe(SKOS_IN_SCHEME);
+    expect(propertyShape.hasValue).toBe("http://example.com/scheme");
+    // Severity of the shape does not apply to its property shapes.
+    expect(propertyShape.severity).toBe(ShaclSeverity.Violation);
+
+    const rdf = await shaclToRdf(shacl, {});
+    expect(rdf).toContain("sh:pattern");
+    expect(rdf).toContain("sh:path skos:inScheme");
+    expect(rdf).toContain("sh:hasValue <http://example.com/scheme>");
+    // The shape and its property shape.
+    expect(rdf.match(/sh:severity sh:Violation/g)).toHaveLength(2);
+
+  });
+
+  test("A SKOS-based vocabulary without a pattern checks only the scheme, reported as a warning.", async () => {
+
+    const shacl = generate({
+      pattern: null,
+      references: "http://example.com/scheme",
+      conformsToSkos: true,
+    }, "recommended");
+
+    const shapes = controlledVocabularyShapes(shacl);
+    expect(shapes.length).toBe(1);
+    const shape = shapes[0]!;
+
+    expect(shape.pattern).toBeNull();
+    expect(shape.severity).toBe(ShaclSeverity.Warning);
+    expect(shape.propertyShapes.length).toBe(1);
+    expect(shape.propertyShapes[0]!.hasValue)
+      .toBe("http://example.com/scheme");
+    expect(shape.propertyShapes[0]!.severity).toBe(ShaclSeverity.Warning);
+
+    const rdf = await shaclToRdf(shacl, {});
+    expect(rdf).not.toContain("sh:pattern");
+    expect(rdf).toContain("sh:hasValue <http://example.com/scheme>");
+    expect(rdf).not.toContain("sh:Violation");
+    expect(rdf.match(/sh:severity sh:Warning/g)).toHaveLength(2);
+
+  });
+
+  test("A vocabulary that is not SKOS-based checks only the pattern.", async () => {
+
+    const shacl = generate({
+      pattern: "^https://www\\.iana\\.org/assignments/media-types/.*$",
+      references: "https://www.iana.org/assignments/media-types/media-types.xml",
+      conformsToSkos: false,
+    }, "must");
+
+    const shapes = controlledVocabularyShapes(shacl);
+    expect(shapes.length).toBe(1);
+    expect(shapes[0]!.pattern)
+      .toBe("^https://www\\.iana\\.org/assignments/media-types/.*$");
+    expect(shapes[0]!.propertyShapes).toStrictEqual([]);
+
+    const rdf = await shaclToRdf(shacl, {});
+    expect(rdf).toContain("sh:pattern");
+    expect(rdf).not.toContain("skos:inScheme");
+    expect(rdf).not.toContain("sh:hasValue");
+
+  });
+
+  test("There is no shape when there is nothing to check.", () => {
+
+    // SKOS-based without a pattern and without a scheme.
+    const withoutScheme = generate({
+      pattern: null,
+      references: "",
+      conformsToSkos: true,
+    }, "must");
+    expect(controlledVocabularyShapes(withoutScheme)).toStrictEqual([]);
+    expect(withoutScheme.members.length).toBe(1);
+
+    // Not SKOS-based and without a pattern, the reference is not a scheme.
+    const withoutPattern = generate({
+      pattern: null,
+      references: "https://example.com/vocabulary.rdf",
+      conformsToSkos: false,
+    }, "must");
+    expect(controlledVocabularyShapes(withoutPattern)).toStrictEqual([]);
+    expect(withoutPattern.members.length).toBe(1);
+
+  });
+
+  test("The scheme check is a separate property shape when constraints are split.", async () => {
+
+    const shacl = generate({
+      pattern: "^http://example\\.com/codes/.*$",
+      references: "http://example.com/scheme",
+      conformsToSkos: true,
+    }, "at-least-one", true);
+
+    const shape = controlledVocabularyShapes(shacl)[0]!;
+    expect(shape.propertyShapes.length).toBe(1);
+    expect(shape.propertyShapes[0]!.iri.endsWith("/inScheme/hasValue"))
+      .toBe(true);
+    expect(shape.propertyShapes[0]!.hasValue)
+      .toBe("http://example.com/scheme");
+    expect(shape.propertyShapes[0]!.severity).toBe(ShaclSeverity.Warning);
+
+    const rdf = await shaclToRdf(shacl, {});
+    expect(rdf).toContain("sh:hasValue <http://example.com/scheme>");
+
+  });
+
+});
