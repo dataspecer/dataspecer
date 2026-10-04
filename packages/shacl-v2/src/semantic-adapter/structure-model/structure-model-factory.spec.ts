@@ -41,8 +41,8 @@ function controlledVocabularyFixture(
 ): ControlledVocabulary {
   return {
     id: "cv", type: [CONTROLLED_VOCABULARY_TYPE],
-    title: "", pattern: "", references: "", conformsToSkos: true, documentation: "",
-    distribution: { downloadUrl: "", accessUrl: "" },
+    title: "", pattern: null, references: "", conformsToSkos: true, documentation: null,
+    distribution: { downloadUrl: null, accessUrl: "" },
     iri: null,
     ...overrides,
   };
@@ -176,7 +176,16 @@ describe("createStructureModel", () => {
 
   });
 
-  test("Resolves a controlled vocabulary assignment's pattern.", () => {
+  /**
+   * Resolves a single "must" assignment of the given controlled vocabulary
+   * on a class profile and returns the structure assignments of that class.
+   * When `resolvable` is false the vocabulary is left out of the models,
+   * as if the assignment pointed to a vocabulary that is not available.
+   */
+  function resolveAssignments(
+    vocabularyOverrides: Partial<ControlledVocabulary>,
+    resolvable: boolean = true,
+  ) {
 
     // Vocabulary
 
@@ -192,10 +201,10 @@ describe("createStructureModel", () => {
     const controlledVocabulary = controlledVocabularyFixture({
       id: "cv-1",
       iri: "http://example.com/vocabularies/cv-1",
-      pattern: "^http://example\\.com/codes/.*$",
+      ...vocabularyOverrides,
     });
     const controlledVocabularies = entityModel(
-      "http://example.com/cv#", [controlledVocabulary]);
+      "http://example.com/cv#", resolvable ? [controlledVocabulary] : []);
 
     // Profile
 
@@ -235,16 +244,67 @@ describe("createStructureModel", () => {
       entities: Object.values(controlledVocabularies.getEntities()),
     }]);
 
-    // Test.
-
     expect(actual.classes.length).toBe(1);
-    expect(actual.classes[0]!.controlledVocabularyAssignments).toStrictEqual([{
+    return actual.classes[0]!.controlledVocabularyAssignments;
+  }
+
+  test("Resolves the pattern and scheme of a SKOS-based controlled vocabulary.", () => {
+
+    const actual = resolveAssignments({
+      pattern: "^http://example\\.com/codes/.*$",
+      references: "http://example.com/scheme",
+      conformsToSkos: true,
+    });
+
+    expect(actual).toStrictEqual([{
       iri: "http://example.com/assignments/1",
       controlledVocabularyIri: "http://example.com/vocabularies/cv-1",
       pattern: "^http://example\\.com/codes/.*$",
+      schemeIri: "http://example.com/scheme",
       usageExpectation: "must",
       replaces: null,
     }]);
+
+  });
+
+  test("Does not resolve a scheme of a vocabulary that is not SKOS-based.", () => {
+
+    const actual = resolveAssignments({
+      pattern: "^http://example\\.com/codes/.*$",
+      references: "http://example.com/download",
+      conformsToSkos: false,
+    });
+
+    expect(actual).toHaveLength(1);
+    expect(actual[0]!.pattern).toBe("^http://example\\.com/codes/.*$");
+    expect(actual[0]!.schemeIri).toBeNull();
+
+  });
+
+  test("Resolves a vocabulary without a pattern or reference as missing.", () => {
+
+    const actual = resolveAssignments({
+      pattern: null,
+      references: "",
+      conformsToSkos: true,
+    });
+
+    expect(actual).toHaveLength(1);
+    expect(actual[0]!.pattern).toBeNull();
+    expect(actual[0]!.schemeIri).toBeNull();
+
+  });
+
+  test("Resolves nothing for a controlled vocabulary that is not available.", () => {
+
+    const actual = resolveAssignments({
+      pattern: "^http://example\\.com/codes/.*$",
+      references: "http://example.com/scheme",
+    }, false);
+
+    expect(actual).toHaveLength(1);
+    expect(actual[0]!.pattern).toBeNull();
+    expect(actual[0]!.schemeIri).toBeNull();
 
   });
 

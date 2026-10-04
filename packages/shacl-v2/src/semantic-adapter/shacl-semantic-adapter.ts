@@ -18,6 +18,7 @@ import {
   StructureProperty,
 } from "./structure-model/index.ts";
 import {
+  createShaclPropertyShape,
   ShaclModel,
   ShaclNodeKind,
   ShaclNodeShape,
@@ -31,6 +32,7 @@ import {
 import {
   SemanticModelsToShaclConfiguration,
 } from "./shacl-semantic-configuration.ts";
+import { SKOS } from "../vocabulary.ts";
 import {
   applyNoClassConstraint,
   filterLanguageStrings,
@@ -400,9 +402,14 @@ function qualifierToSeverity(qualifier: Qualifier | null): ShaclSeverity | null 
 /**
  * Builds a node shape validating a single controlled vocabulary
  * assignment, sharing {@link entity}'s primary shape's target class.
- * Returns `null` when the assignment's vocabulary could not be
- * resolved (see {@link StructureControlledVocabularyAssignment.pattern}),
- * in which case there is nothing to validate.
+ * The IRI of the value must match the pattern of the vocabulary, and when
+ * the vocabulary is SKOS-based, the value must be in its concept scheme.
+ * Both are reported with the severity of the assignment.
+ * Returns `null` when there is nothing to validate, that is when the
+ * vocabulary has neither a pattern nor a scheme (see
+ * {@link StructureControlledVocabularyAssignment.pattern} and
+ * {@link StructureControlledVocabularyAssignment.schemeIri}), for example
+ * when it could not be resolved.
  */
 function buildControlledVocabularyNodeShape(
   entity: StructureClass,
@@ -410,8 +417,21 @@ function buildControlledVocabularyNodeShape(
   assignment: StructureControlledVocabularyAssignment,
   policy: SemanticModelsToShaclPolicy,
 ): ShaclNodeShape | null {
-  if (assignment.pattern === null) {
+  if (assignment.pattern === null && assignment.schemeIri === null) {
     return null;
+  }
+  const severity = qualifierToSeverity(assignment.usageExpectation);
+  const propertyShapes: ShaclPropertyShape[] = [];
+  if (assignment.schemeIri !== null) {
+    // Severity of a node shape does not apply to its property shapes.
+    propertyShapes.push(createShaclPropertyShape({
+      iri: policy.shaclControlledVocabularySchemeShape(
+        entity.iri, type, assignment.controlledVocabularyIri),
+      seeAlso: entity.iri,
+      path: SKOS.inScheme.value,
+      hasValue: assignment.schemeIri,
+      severity,
+    }));
   }
   return {
     iri: policy.shaclControlledVocabularyShape(
@@ -419,9 +439,9 @@ function buildControlledVocabularyNodeShape(
     seeAlso: entity.iri,
     targetClass: type,
     closed: false,
-    propertyShapes: [],
+    propertyShapes,
     pattern: assignment.pattern,
-    severity: qualifierToSeverity(assignment.usageExpectation),
+    severity,
   };
 }
 

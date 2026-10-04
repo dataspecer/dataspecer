@@ -37,6 +37,18 @@ export interface SemanticModelsToShaclPolicy {
   ) => string;
 
   /**
+   * @param profile IRI of represented profile.
+   * @param type IRI of represented RDF type.
+   * @param controlledVocabularyIri Resolved IRI of the controlled
+   * vocabulary, the same as for {@link shaclControlledVocabularyShape}.
+   * @returns IRI for the property shape checking that a value belongs to
+   * the concept scheme of the controlled vocabulary.
+   */
+  shaclControlledVocabularySchemeShape: (
+    profile: string, type: string, controlledVocabularyIri: string,
+  ) => string;
+
+  /**
    * Returns node types we are allowed to check for.
    */
   nodeTypeFilter: (types: string[]) => string[];
@@ -163,6 +175,9 @@ export function createSemicShaclStylePolicy(
     shaclControlledVocabularyShape: (_profile, type, controlledVocabularyIri) =>
       sanitizeIri(
         `${baseIri}${applyPrefix(type)}Shape/cv-${computeHash(controlledVocabularyIri)}`),
+    shaclControlledVocabularySchemeShape: (_profile, type, controlledVocabularyIri) =>
+      sanitizeIri(
+        `${baseIri}${applyPrefix(type)}Shape/cv-${computeHash(controlledVocabularyIri)}/inScheme`),
     nodeTypeFilter: items => items.filter(item => !typesToIgnore.has(item)),
     literalTypeFilter: items => items.filter(item => !typesToIgnore.has(item)),
     prefixes: () => Object.fromEntries(

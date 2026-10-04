@@ -260,11 +260,16 @@ function classProfileToStructureClass(
 function controlledVocabularyAssignmentProfileToStructure(
   context: Context, assignment: ControlledVocabularyAssignmentProfile,
 ): StructureControlledVocabularyAssignment {
+  const vocabulary =
+    context.controlledVocabularies[assignment.controlledVocabularyIri];
   return {
     iri: assignment.iri,
     controlledVocabularyIri: assignment.controlledVocabularyIri,
-    pattern: context.controlledVocabularies[assignment.controlledVocabularyIri]
-      ?.pattern ?? null,
+    pattern: vocabulary?.pattern ?? null,
+    // The reference is a required field, so it is only empty for a
+    // vocabulary that was imported without one.
+    schemeIri: vocabulary?.conformsToSkos === true
+      ? (vocabulary.references || null) : null,
     usageExpectation: iriToUsageExpectation(assignment.usageExpectationIri),
     replaces: assignment.replacesIri,
   };

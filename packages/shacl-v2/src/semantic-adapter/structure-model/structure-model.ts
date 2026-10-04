@@ -69,9 +69,17 @@ export interface StructureControlledVocabularyAssignment {
 
   /**
    * Resolved {@link ControlledVocabulary.pattern} of the assigned
-   * vocabulary, or `null` if it could not be resolved.
+   * vocabulary, or `null` if it could not be resolved or it has none.
    */
   pattern: string | null;
+
+  /**
+   * IRI of the skos:ConceptScheme the values of the assigned vocabulary
+   * belong to, i.e. the resolved {@link ControlledVocabulary.references}.
+   * `null` if the vocabulary could not be resolved, is not SKOS-based
+   * ({@link ControlledVocabulary.conformsToSkos}), or has no reference.
+   */
+  schemeIri: string | null;
 
   /**
    * How strictly the vocabulary is expected to be used.

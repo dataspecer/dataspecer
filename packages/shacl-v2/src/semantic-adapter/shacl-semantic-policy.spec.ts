@@ -55,4 +55,28 @@ describe("createSemicShaclStylePolicy", () => {
 
   });
 
+
+  describe("shaclControlledVocabularySchemeShape", () => {
+
+    test("Is deterministic and distinct from the vocabulary node shape.", () => {
+
+      const policy = createSemicShaclStylePolicy("http://example.com/", {});
+      const profile = "http://example.com/profile#Person";
+      const type = "http://example.com/vocabulary#Person";
+      const vocabulary = "http://example.com/vocabularies/cv-1";
+
+      const scheme = policy.shaclControlledVocabularySchemeShape(
+        profile, type, vocabulary);
+
+      expect(scheme).toBe(policy.shaclControlledVocabularySchemeShape(
+        profile, type, vocabulary));
+      expect(scheme).not.toBe(policy.shaclControlledVocabularyShape(
+        profile, type, vocabulary));
+      expect(scheme).not.toBe(policy.shaclControlledVocabularySchemeShape(
+        profile, type, "http://example.com/vocabularies/cv-2"));
+
+    });
+
+  });
+
 });
