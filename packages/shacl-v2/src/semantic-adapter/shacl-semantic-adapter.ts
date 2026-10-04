@@ -269,6 +269,8 @@ function buildPropertyShapeTemplateForPrimitiveType(
     maxCount: property.rangeCardinality.max,
     datatype: range,
     class: null,
+    hasValue: null,
+    severity: null,
   };
 }
 
@@ -315,6 +317,8 @@ function buildPropertyShapeForTemplateComplexType(
     maxCount: property.rangeCardinality.max,
     datatype: null,
     class: range,
+    hasValue: null,
+    severity: null,
   };
 }
 
@@ -340,6 +344,8 @@ function buildShaclNodeShape(
       maxCount: property.maxCount,
       datatype: property.datatype,
       class: property.class,
+      hasValue: property.hasValue,
+      severity: property.severity,
     } satisfies ShaclPropertyShape)),
     pattern: null,
     severity: null,

@@ -137,6 +137,23 @@ export interface ShaclPropertyShape {
    */
   class: Node | null;
 
+  /**
+   * Value that must be among the values of the property.
+   *
+   * @lc-identifier shacl:hasValue
+   */
+  hasValue: Node | null;
+
+  /**
+   * Severity to report when this shape's constraints are not met.
+   * Unlike the other node shape fields, it is not inherited from the
+   * node shape. `null` means no override, i.e. SHACL's implicit default
+   * (shacl:Violation).
+   *
+   * @lc-identifier shacl:severity
+   */
+  severity: ShaclSeverity | null;
+
 }
 
 export function createShaclPropertyShape(
@@ -151,6 +168,8 @@ export function createShaclPropertyShape(
     maxCount: null,
     datatype: null,
     class: null,
+    hasValue: null,
+    severity: null,
     ...value,
   }
 };

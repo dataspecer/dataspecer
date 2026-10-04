@@ -41,6 +41,7 @@ export const SHACL = {
   "minCount": IRI(SHACL_PREFIX + "minCount"),
   "class": IRI(SHACL_PREFIX + "class"),
   "datatype": IRI(SHACL_PREFIX + "datatype"),
+  "hasValue": IRI(SHACL_PREFIX + "hasValue"),
   "pattern": IRI(SHACL_PREFIX + "pattern"),
   "severity": IRI(SHACL_PREFIX + "severity"),
   "Violation": IRI(SHACL_PREFIX + "Violation"),
@@ -52,4 +53,10 @@ export const SHACL = {
   "BlankNodeOrLiteral": IRI(SHACL_PREFIX + "BlankNodeOrLiteral"),
   "IRIOrLiteral": IRI(SHACL_PREFIX + "IRIOrLiteral"),
   "PropertyShape": IRI(SHACL_PREFIX + "PropertyShape"),
+};
+
+const SKOS_PREFIX = "http://www.w3.org/2004/02/skos/core#";
+
+export const SKOS = {
+  "inScheme": IRI(SKOS_PREFIX + "inScheme"),
 };

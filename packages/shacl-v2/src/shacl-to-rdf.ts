@@ -59,6 +59,7 @@ function createDefaultConfiguration(): ShaclModelToRdfConfiguration {
       "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
       "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
       "sh": "http://www.w3.org/ns/shacl#",
+      "skos": "http://www.w3.org/2004/02/skos/core#",
       "xsd": "http://www.w3.org/2001/XMLSchema#",
     },
     "prettyPrint": true,
@@ -152,6 +153,10 @@ class ShaclModelWriter {
     }
     this.builder.addIri(iri, SHACL.class, shape.class);
     this.builder.addIri(iri, SHACL.datatype, shape.datatype);
+    this.builder.addIri(iri, SHACL.hasValue, shape.hasValue);
+    if (shape.severity !== null) {
+      this.builder.addIri(iri, SHACL.severity, severityToIri(shape.severity));
+    }
     return iri;
   }
 
