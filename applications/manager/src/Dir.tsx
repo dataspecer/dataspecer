@@ -64,7 +64,7 @@ const useSortIris = (iris: string[]) => {
   }, [iris, resources, selectedOption]);
 };
 
-const Row = ({ iri, parentIri, onTagSelect }: { iri: string, parentIri?: string, onTagSelect: (tag: string) => void }) => {
+const Row = React.memo(({ iri, parentIri, onTagSelect }: { iri: string, parentIri?: string, onTagSelect: (tag: string) => void }) => {
   const resources = useContext(ResourcesContext);
   const resource = resources[iri]!;
   const {t, i18n} = useTranslation();
@@ -263,7 +263,7 @@ const Row = ({ iri, parentIri, onTagSelect }: { iri: string, parentIri?: string,
     </ul>}
     <ResourceDetail isOpen={detailModalToggle.isOpen} close={detailModalToggle.close} iri={iri} />
   </li>
-};
+});
 
 export default function Component() {
   return (
@@ -298,17 +298,27 @@ function RootPackage({iri}: {iri: string}) {
   }, [iri]);
 
   const subResources = useSortIris(pckg?.subResourcesIri ?? []);
+  const searchableResources = useMemo(() => subResources.map(iri => {
+    const resource = resources[iri];
+    return {
+      iri,
+      tags: resource?.userMetadata?.tags ?? [],
+      titles: Object.values(resource?.userMetadata?.label ?? {}).map(title => ({
+        value: title,
+        normalized: title.toLocaleLowerCase(),
+      })),
+    };
+  }), [subResources, resources]);
   const availableTags = useMemo(() => Array.from(new Set(
-    subResources.flatMap(resourceIri => resources[resourceIri]?.userMetadata?.tags ?? [])
-      .filter(tag => tag !== "")
-  )).sort((a, b) => a.localeCompare(b)), [subResources, resources]);
-  const matchingResources = useMemo(() => subResources.filter(resourceIri =>
-    (deferredTag === "" || resources[resourceIri]?.userMetadata?.tags?.includes(deferredTag)) &&
-    (deferredSearch === "" ||
-      Object.values(resources[resourceIri]?.userMetadata?.label ?? {})
-        .some(title => searchPattern ? searchPattern.test(title) :
-          title.toLocaleLowerCase().includes(deferredSearch.toLocaleLowerCase())))
-  ), [subResources, deferredSearch, deferredTag, searchPattern, resources]);
+    searchableResources.flatMap(resource => resource.tags).filter(tag => tag !== "")
+  )).sort((a, b) => a.localeCompare(b)), [searchableResources]);
+  const normalizedSearch = deferredSearch.toLocaleLowerCase();
+  const matchingResources = useMemo(() => searchableResources.filter(resource =>
+    (deferredTag === "" || resource.tags.includes(deferredTag)) &&
+    (deferredSearch === "" || resource.titles.some(title => searchPattern
+      ? searchPattern.test(title.value)
+      : title.normalized.includes(normalizedSearch)))
+  ).map(resource => resource.iri), [searchableResources, deferredSearch, deferredTag, searchPattern, normalizedSearch]);
   const hasFilters = search !== "" || selectedTag !== "";
   const clearFilters = () => {
     setSearch("");
