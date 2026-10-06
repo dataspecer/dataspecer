@@ -51,7 +51,9 @@ describe("SemanticClassProfileAggregator", () => {
       //
       conceptIris: [],
       conceptIdentifiers: [],
+      nameFromProperty: null,
       nameProperty: null,
+      descriptionFromProperty: null,
       descriptionProperty: null,
     };
     expect(actual).toStrictEqual(expected);
@@ -118,8 +120,10 @@ describe("SemanticClassProfileAggregator", () => {
       //
       conceptIris: ["http://class-2"],
       conceptIdentifiers: ["2"],
+      nameFromProperty: null,
       nameProperty: null,
-      descriptionProperty: "http://description-2",
+      descriptionFromProperty: "http://description-2",
+      descriptionProperty: null,
     };
     expect(actual).toStrictEqual(expected);
   });
@@ -168,7 +172,9 @@ describe("SemanticClassProfileAggregator", () => {
       //
       conceptIris: ["http://localhost/class"],
       conceptIdentifiers: ["2"],
+      nameFromProperty: null,
       nameProperty: null,
+      descriptionFromProperty: null,
       descriptionProperty: null,
     };
     expect(actual).toStrictEqual(expected);
@@ -213,7 +219,9 @@ describe("SemanticClassProfileAggregator", () => {
       externalDocumentationUrl: null,
       tags: [],
       controlledVocabularies: [],
+      descriptionFromProperty: null,
       descriptionProperty: null,
+      nameFromProperty: null,
       nameProperty: null,
       order: null,
     } satisfies AggregatedProfiledSemanticModelClass];

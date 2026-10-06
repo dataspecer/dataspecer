@@ -11,11 +11,11 @@ import {
   getDefaultUserGivenAlgorithmConfigurationsFull,
   performLayoutOfVisualModel
 } from "@dataspecer/layout";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { UseDiagramType } from "../diagram/diagram-hook";
 import { XY } from "@dataspecer/layout";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { isSemanticModelClass } from "@dataspecer/core-v2/semantic-model/concepts";
 import { addSemanticClassToVisualModelAction } from "./add-class-to-visual-model";
 import { addSemanticClassProfileToVisualModelAction } from "./add-class-profile-to-visual-model";
@@ -36,9 +36,9 @@ import { isSemanticModelClassProfile } from "@dataspecer/core-v2/semantic-model/
  */
 export async function layoutActiveVisualModel(
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   diagram: UseDiagramType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   configuration: UserGivenAlgorithmConfigurations,
   explicitAnchors?: ExplicitAnchors,
@@ -46,7 +46,7 @@ export async function layoutActiveVisualModel(
   outsiders?: Record<string, XY | null>,
   shouldPutOutsidersInVisualModel?: boolean,
 ) {
-  const models = graph.models;
+  const models = classes.semanticModels;
 
   const reactflowDimensionQueryHandler = createExactNodeDimensionsQueryHandler(diagram);
 
@@ -78,9 +78,9 @@ export async function layoutActiveVisualModel(
  */
 export async function layoutActiveVisualModelAction(
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   diagram: UseDiagramType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   configuration: UserGivenAlgorithmConfigurations,
   explicitAnchors?: ExplicitAnchors,
@@ -96,9 +96,9 @@ export async function layoutActiveVisualModelAction(
 export async function findPositionForNewNodeUsingLayouting(
   notifications: UseNotificationServiceWriterType,
   diagram: UseDiagramType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   identifier: string,
 ): Promise<XY> {
   const positions = await findPositionForNewNodesUsingLayouting(
@@ -112,9 +112,9 @@ export async function findPositionForNewNodeUsingLayouting(
 export async function findPositionForNewNodesUsingLayouting(
   notifications: UseNotificationServiceWriterType,
   diagram: UseDiagramType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   identifiers: string[],
 ): Promise<Record<string, XY>> {
   const identifierToPositionMap: Record<string, XY> = {};
@@ -209,9 +209,9 @@ export function createExactNodeDimensionsQueryHandler(
  */
 export function processLayoutResult(
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   diagram: UseDiagramType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   shouldUpdatePositionsInVisualModel: boolean,
   shouldPutOutsidersInVisualModel: boolean,
@@ -243,13 +243,13 @@ export function processLayoutResult(
 
 function addClassOrClassProfileToVisualModel(
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   diagram: UseDiagramType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   visualNode: VisualNode
 ): void {
-  const represented = graph.aggregatorView.getEntities()[visualNode.representedEntity]?.rawEntity;
+  const represented = graph.getEntities()[visualNode.representedEntity]?.rawEntity;
   if (isSemanticModelClass(represented)) {
     addSemanticClassToVisualModelAction(
       notifications, graph, classes, visualModel, diagram,

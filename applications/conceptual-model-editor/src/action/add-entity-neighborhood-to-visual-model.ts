@@ -1,6 +1,6 @@
 import { isVisualNode, isVisualRelationship, WritableVisualModel } from "@dataspecer/visual-model";
-import { ClassesContextType } from "../context/classes-context";
-import { ModelGraphContextType } from "../context/model-context";
+import { ClassesContext } from "../context/classes-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseDiagramType } from "../diagram/diagram-hook";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { EntityToAddToVisualModel } from "./add-semantic-entities-to-visual-model";
@@ -41,8 +41,8 @@ import { EntityModel } from "@dataspecer/core-v2";
  */
 export const addEntityNeighborhoodToVisualModelAction = async (
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContextType,
-  graph: ModelGraphContextType,
+  classes: ClassesContext,
+  graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   visualModel: WritableVisualModel,
   identifier: string
@@ -151,15 +151,15 @@ export const addEntityNeighborhoodToVisualModelAction = async (
         ...classes.relationshipProfiles
       ];
       addSemanticConnectionBetweenAllValidVisualNodes(
-        notifications, allConnections, graph.models, visualModel, identifier);
+        notifications, allConnections, classes.semanticModels, visualModel, identifier);
     }
   }
 }
 
 function addSemanticClassOrClassProfileToVisualModelCommand(
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContextType,
-  graph: ModelGraphContextType,
+  classes: ClassesContext,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   entity: SemanticModelClass | SemanticModelClassProfile,
   model: string,
@@ -195,7 +195,7 @@ function addSemanticClassOrClassProfileToVisualModelCommand(
     VisibilityFilter.All, null);
 
   for (const classProfileChild of classProfileChildren.selectionExtension.nodeSelection) {
-    const modelForVisualProfileRelationship = findSourceModelOfEntity(classProfileChild, graph.models);
+    const modelForVisualProfileRelationship = findSourceModelOfEntity(classProfileChild, classes.semanticModels);
     if (modelForVisualProfileRelationship === null) {
       notifications.error("The related class profile has no source model");
       continue;
@@ -235,8 +235,8 @@ function addSemanticClassOrClassProfileToVisualModelCommand(
  */
 const addClassOrClassProfileToVisualModel = async (
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContextType,
-  graph: ModelGraphContextType,
+  classes: ClassesContext,
+  graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   visualModel: WritableVisualModel,
   identifier: string,
@@ -257,7 +257,7 @@ const addClassOrClassProfileToVisualModel = async (
       return false;
     }
 
-    const model = findSourceModelOfEntity(classProfile.id, graph.models);
+    const model = findSourceModelOfEntity(classProfile.id, classes.semanticModels);
     if (model === null) {
       notifications.error("Related entity is class or class profile, but has missing source model");
       return false;
@@ -278,7 +278,7 @@ const addClassOrClassProfileToVisualModel = async (
     return true;
   }
 
-  const model = findSourceModelOfEntity(cclass.id, graph.models);
+  const model = findSourceModelOfEntity(cclass.id, classes.semanticModels);
   if (model === null) {
     notifications.error(
       "Given entity is relationship or relationship profile, but its domain or range has missing source model");
@@ -302,8 +302,8 @@ const addClassOrClassProfileToVisualModel = async (
 
 const addClassNeighborhoodToVisualModelAction = async (
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContextType,
-  graph: ModelGraphContextType,
+  classes: ClassesContext,
+  graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   visualModel: WritableVisualModel,
   identifier: string
@@ -370,12 +370,12 @@ const addClassNeighborhoodToVisualModelAction = async (
 
   for (const neighborhoodSemanticEdge of allNeighborhoodSemanticEdges) {
     addSemanticConnectionBetweenAllValidVisualNodes(
-      notifications, allConnections, graph.models, visualModel, neighborhoodSemanticEdge.identifier);
+      notifications, allConnections, classes.semanticModels, visualModel, neighborhoodSemanticEdge.identifier);
   }
 };
 
 function getAllAttributesForDomainClass(
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   domainClass: string
 ) {
   const attributes = classesContext.relationships.filter(isSemanticModelAttribute);

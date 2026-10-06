@@ -23,7 +23,7 @@ import {
   isSemanticModelClassProfile,
   SemanticModelClassProfile,
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { ModelGraphContextType } from "../../context/model-context";
+import { UseModelGraphContextType } from "../../context/model-context";
 import {
   ControlledVocabulary,
   ControlledVocabularyOverride,
@@ -60,12 +60,12 @@ export interface ClassProfileDialogState
  * actual ControlledVocabularyAssignment entity.
  */
 function createClassProfileControlledVocabulariesState(
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   ancestorIdentifiers: EntityDsIdentifier[],
   ownAssignmentIds: EntityDsIdentifier[] | undefined,
   availableVocabularies: ControlledVocabulary[],
 ): SelectControlledVocabulariesState {
-  const entities = graph.aggregatorView.getEntities();
+  const entities = graph.getEntities();
 
   const resolveAssignment = (
     identifier: EntityDsIdentifier,
@@ -148,7 +148,7 @@ export function createNewProfileClassDialogState(
   profilesIdentifiers: EntityDsIdentifier[],
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   availableVocabularies: ControlledVocabulary[],
 ): ClassProfileDialogState {
 
@@ -191,7 +191,7 @@ export function createEditClassProfileDialogState(
   entityModels: Map<string, EntityModel>,
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   availableVocabularies: ControlledVocabulary[],
 ): ClassProfileDialogState {
 

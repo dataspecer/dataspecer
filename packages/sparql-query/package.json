@@ -10,6 +10,7 @@
   "main": "lib/index.js",
   "dependencies": {
     "@dataspecer/core": "*",
+    "@dataspecer/generators": "^0.0.0",
     "@dataspecer/xml": "*"
   },
   "devDependencies": {

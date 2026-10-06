@@ -109,7 +109,6 @@ const noOperationDiagramActions: DiagramActions = {
   openSelectionActionsMenu: noOperation,
   openAlignmentMenu: noOperation,
   openGroupMenu: noOperation,
-  highlightNodesInExplorationModeFromCatalog: noOperation,
 };
 
 const noOperationCallbacks: DiagramCallbacks = {

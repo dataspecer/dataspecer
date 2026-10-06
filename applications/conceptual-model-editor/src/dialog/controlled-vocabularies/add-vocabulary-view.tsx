@@ -1,4 +1,4 @@
-import { Select } from "../../dialog-v2/shared";
+import { Select } from "../fields/select";
 import { SelectQualifier } from "../components/select-qualifier";
 import { AddVocabularyPresenter } from "./add-vocabulary-presenter";
 import { AddVocabularyState } from "./add-vocabulary-state";

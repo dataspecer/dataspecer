@@ -40,19 +40,16 @@ export const transactionModel = new TransactionModel(prismaClient);
 export const modelRepository = new ModelRepository(resourceModel, transactionModel);
 const migration = new Migrate(prismaClient);
 
-let fullUrl: string;
 let apiBasename: string;
 let basename: string | null = null;
 if (configuration.baseName) {
   basename = new URL(configuration.baseName).pathname;
-  fullUrl = new URL(configuration.baseName).toString();
   if (basename.endsWith("/")) {
     basename = basename.slice(0, -1);
   }
   apiBasename = basename + "/api";
 } else if (configuration.host) {
   apiBasename = new URL(configuration.host).pathname;
-  fullUrl = new URL(configuration.host).toString() + "data-specification";
   if (apiBasename.endsWith("/")) {
     apiBasename = apiBasename.slice(0, -1);
   }
@@ -200,7 +197,6 @@ if (configuration.staticFilesPath) {
         console.log(`Dataspecer is running! Try opening your browser at http://localhost:port/ where port is the port you mapped to the container's port ${configuration.port}.`);
       } else {
         console.log(`Server is listening on port ${Number(configuration.port)}.`);
-        console.log(`Try opening ${fullUrl}.`);
       }
     });
   }

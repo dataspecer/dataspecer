@@ -1,5 +1,5 @@
 import { WritableVisualModel } from "@dataspecer/visual-model";
-import { ModelGraphContextType, UseModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { DialogApiContextType } from "../dialog/dialog-service";
 import { Options } from "../application";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
@@ -21,7 +21,7 @@ export function openCreateVisualModelDialogAction(
   notifications: UseNotificationServiceWriterType,
   options: Options,
   dialogs: DialogApiContextType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   useGraph: UseModelGraphContextType,
   queryParamsContext: QueryParamsContextType,
   visualModel: WritableVisualModel,

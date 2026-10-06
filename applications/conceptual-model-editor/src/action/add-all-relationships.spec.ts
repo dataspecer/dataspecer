@@ -31,7 +31,7 @@ test("Try to call the action when all edges are missing, " +
   const referencedVisualModel = createDefaultVisualModelFactory().createNewWritableVisualModelSync(null);
   ActionsTestSuite.createNewVisualNodeForTesting(referencedVisualModel, model.getId(), "6");
   ActionsTestSuite.createNewVisualNodeForTesting(referencedVisualModel, model.getId(), "7");
-  graph.aggregator.addModel(referencedVisualModel);
+  graph.addVisualModel(referencedVisualModel);
 
   const diagramNodeIdentifier = ActionsTestSuite.createNewVisualDiagramNodeForTesting(
     visualModel, referencedVisualModel.getIdentifier());
@@ -101,11 +101,11 @@ test("Creating edges between two visual diagram nodes", () => {
   const firstReferencedVisualModel = createDefaultVisualModelFactory().createNewWritableVisualModelSync(null);
   ActionsTestSuite.createNewVisualNodeForTesting(firstReferencedVisualModel, model.getId(), "6");
   ActionsTestSuite.createNewVisualNodeForTesting(firstReferencedVisualModel, model.getId(), "7");
-  graph.aggregator.addModel(firstReferencedVisualModel);
+  graph.addVisualModel(firstReferencedVisualModel);
 
   const secondReferencedVisualModel = createDefaultVisualModelFactory().createNewWritableVisualModelSync(null);
   ActionsTestSuite.createNewVisualNodeForTesting(secondReferencedVisualModel, model.getId(), "5");
-  graph.aggregator.addModel(secondReferencedVisualModel);
+  graph.addVisualModel(secondReferencedVisualModel);
 
   const firstDiagramNodeIdentifier = ActionsTestSuite.createNewVisualDiagramNodeForTesting(
     visualModel, firstReferencedVisualModel.getIdentifier());

@@ -9,6 +9,9 @@
     "prettier": "^3.8.3",
     "turbo": "^2.9.14"
   },
+  "overrides": {
+    "zod-validation-error": "^4.0.0"
+  },
   "workspaces": [
     "packages/*",
     "services/*",

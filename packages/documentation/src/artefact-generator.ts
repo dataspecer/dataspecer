@@ -1,5 +1,5 @@
 import { DataSpecification, DataSpecificationArtefact } from "@dataspecer/core/data-specification/model";
-import { ArtefactGenerator, ArtefactGeneratorContext } from "@dataspecer/core/generator";
+import { ArtefactGenerator, ArtefactGeneratorContext } from "@dataspecer/generators/generator";
 import { StreamDictionary } from "@dataspecer/core/io/stream/stream-dictionary";
 import { getMustacheView } from "./mustache-view/views.ts";
 import { SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";

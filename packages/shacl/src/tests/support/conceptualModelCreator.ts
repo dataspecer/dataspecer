@@ -5,15 +5,15 @@ import {
     ConceptualModelComplexType,
     ConceptualModelProperty,
     ConceptualModelPrimitiveType,
-  } from "@dataspecer/core/conceptual-model/model";
-  import { ArtefactGeneratorContext } from "@dataspecer/core/generator";
+  } from "@dataspecer/generators/conceptual-model/model";
+  import { ArtefactGeneratorContext } from "@dataspecer/generators/generator";
   import { DataSpecificationArtefact } from "@dataspecer/core/data-specification/model";
 
 class ConceptualModelCreator {
 
    createModel(): ConceptualModel{
     var model = new ConceptualModel();
-  
+
     var zipType : ConceptualModelPrimitiveType;
     zipType = new ConceptualModelPrimitiveType();
     zipType.dataType = "http://www.w3.org/2001/XMLSchema#integer";
@@ -123,9 +123,9 @@ class ConceptualModelCreator {
     class1.pimIri = "https://example.com/class1/mojePimIri";
     class1.properties = [property1];
     class1.regex = null;
-  
+
       model.classes = {"https://example.com/class1/mojePimIri": class1, "https://example.com/class1/mojePimIriadresa": class2};
-  
+
     return model;
   }
 }

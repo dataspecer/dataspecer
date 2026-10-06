@@ -5,10 +5,6 @@ import { useEditVisualNodeController } from "./edit-visual-node-dialog-controlle
 import { ContentItem, EditVisualNodeDialogState } from "./edit-visual-node-dialog-state";
 import { useMemo } from "react";
 import {
-  isUiRelationshipProfile,
-  UiRelationshipProfile,
-} from "../../../catalog-v2/ui-model";
-import {
   CmeRelationshipProfileMandatoryLevel,
 } from "../../../dataspecer/cme-model";
 
@@ -116,16 +112,14 @@ const DroppableAreaItem = (props: {
           {...provided.dragHandleProps}
         >
           {props.value.label}
-          {isUiRelationshipProfile(props.value)
-            ? mandatoryLabelToLabel(props.value)
-            : null}
+          {mandatoryLabelToLabel(props.value)}
         </div>
       )}
     </Draggable>
   )
 };
 
-const mandatoryLabelToLabel = (entity: UiRelationshipProfile) => {
+const mandatoryLabelToLabel = (entity: ContentItem) => {
   if (entity.mandatoryLevel === null) {
     return null;
   }
@@ -155,6 +149,7 @@ export const createEditVisualNodeDialog = (
   onConfirm: ((state: EditVisualNodeDialogState) => void) | null,
 ): DialogWrapper<EditVisualNodeDialogState> => {
   return {
+    // TODO This gets into translation process and fails as it is no longer a key.
     label: t("edit-visual-node-dialog.label", nodeName),
     component: EditVisualNode,
     state,

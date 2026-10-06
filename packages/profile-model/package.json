@@ -14,6 +14,7 @@
     "./hooks": "./lib/hooks/index.js"
   },
   "dependencies": {
+    "@dataspecer/core": "*",
     "@dataspecer/core-v2": "*",
     "@dataspecer/entity-model": "*",
     "@dataspecer/semantic-model": "*",

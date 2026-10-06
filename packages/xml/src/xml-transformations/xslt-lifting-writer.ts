@@ -17,6 +17,8 @@ import { XmlStreamWriter, XmlWriter } from "../xml/xml-writer.ts";
 import { commonXmlNamespace, commonXmlPrefix, QName } from "../conventions.ts";
 import { XSLT_LIFTING } from "./xslt-vocabulary.ts";
 import { writePrefixesFromImports } from "./utils.ts";
+import { OFN, XSD } from "@dataspecer/core/well-known";
+
 
 const xslNamespace = "http://www.w3.org/1999/XSL/Transform";
 
@@ -810,7 +812,10 @@ async function writeForwardProperty(match: XmlMatch, writer: XmlWriter) {
   for (const interpretation of match.interpretations) { // If there are no interpretations, then there is no mapping for this primitive property, so it is not lifted.
     await writer.writeElementFull(...interpretation)(async (writer) => {
       if (xmlMatchIsLiteral(match)) {
-        await writer.writeAttributeValue("rdf", "datatype", match.dataTypeIri);
+        // We omit the value if it is string or language string
+        if (![OFN.rdfLangString, XSD.string].includes(match.dataTypeIri)) {
+          await writer.writeAttributeValue("rdf", "datatype", match.dataTypeIri);
+        }
 
         if (xmlMatchIsWktLiteral(match)) {
           // For WKT literals, use the wkt-transform template

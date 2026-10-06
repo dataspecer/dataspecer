@@ -21,7 +21,7 @@ import {
   SemanticModelRelationship,
 } from "@dataspecer/core-v2/semantic-model/concepts";
 import { ActionsContextType } from "./action/actions-react-binding";
-import { UseClassesContextType } from "./context/classes-context";
+import { ClassesContext } from "./context/classes-context";
 import { createLogger } from "./application";
 import { addToRecordArray } from "./utilities/functional";
 import { findSourceModelOfEntity } from "./service/model-service";
@@ -50,8 +50,8 @@ const LOG = createLogger(import.meta.url);
 export function validateVisualModel(
   actions: ActionsContextType,
   visualModel: VisualModel | null,
-  visualModels: VisualModel[],
-  classesContext: UseClassesContextType,
+  visualModels: Map<string, WritableVisualModel>,
+  classesContext: ClassesContext,
   models: Map<string, EntityModel>
 ) {
   if(!isWritableVisualModel(visualModel) || visualModel === null) {
@@ -81,7 +81,7 @@ export function validateVisualModel(
 function validateClassProfilesInsideVisualModel(
   actions: ActionsContextType,
   visualModel: WritableVisualModel,
-  classesContext: UseClassesContextType,
+  classesContext: ClassesContext,
   models: Map<string, EntityModel>,
 ) {
   const missingVisualProfileRelationships: Omit<VisualProfileRelationship, "id" | "type">[] = [];
@@ -177,7 +177,7 @@ function validateClassProfilesInsideVisualModel(
 function validateVisualModelAgainstDiagramNodes(
   actions: ActionsContextType,
   visualModel: VisualModel,
-  visualModels: VisualModel[],
+  visualModels: Map<string, WritableVisualModel>,
   allClasses: string[],
   relationships: (SemanticModelRelationship | SemanticModelGeneralization | SemanticModelRelationshipProfile)[],
 ) {
@@ -290,7 +290,7 @@ function validateVisualProfileRelationshipEnd(
  */
 function checkEdgeEndValidityAndExtend(
   visualModelToContentMappings: Record<string, VisualsForRepresentedWrapper>,
-  visualModels: VisualModel[],
+  visualModels: Map<string, WritableVisualModel>,
   visualEdgeEnd: VisualEntity,
   supposedSemanticEdgeEnd: string,
   examinedEdge: string,
@@ -335,10 +335,9 @@ function checkEdgeEndValidityAndExtend(
 function extendMappingsByDiagramNodeModelIfNotSet(
   visualModelToContentMappings: Record<string, VisualsForRepresentedWrapper>,
   visualEdgeEndPoint: VisualDiagramNode,
-  visualModels: VisualModel[],
+  visualModels: Map<string, WritableVisualModel>,
 ): boolean {
-  const representedVisualModel = visualModels
-    .find(visualModel => visualModel.getIdentifier() === visualEdgeEndPoint.representedVisualModel);
+  const representedVisualModel = visualModels.get(visualEdgeEndPoint.representedVisualModel);
   if (representedVisualModel === undefined) {
     return false;
   }

@@ -9,7 +9,7 @@ import {
   isSemanticModelRelationshipProfile,
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { DialogApiContextType } from "../dialog/dialog-service";
 import { createEntityDetailDialog } from "../dialog/obsolete/entity-detail-dialog";
@@ -19,10 +19,10 @@ export function openDetailDialogAction(
   options: Options,
   dialogs: DialogApiContextType,
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   identifier: string,
 ) {
-  const entity = graph.aggregatorView.getEntities()?.[identifier].rawEntity;
+  const entity = graph.getEntities()?.[identifier].rawEntity;
   if (entity === undefined) {
     notifications.error(`Can not find the entity with identifier '${identifier}'.`);
     return;

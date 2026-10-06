@@ -1,4 +1,4 @@
-import { LanguageString } from "@dataspecer/core/core/index";
+import { LanguageString } from "@dataspecer/core/core";
 
 /**
  * The idea of profile is to use an entity in a user defined context.

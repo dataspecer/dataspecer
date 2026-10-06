@@ -7,9 +7,9 @@ import {
   getSemanticEdgeIdentifier,
   isEntityInVisualModel
 } from "./extend-selection-action";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { VisualModel } from "@dataspecer/visual-model";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 
 /**
@@ -56,8 +56,8 @@ export type SelectionsWithIdInfo = Selections & {areVisualModelIdentifiers: bool
  */
 export function filterSelectionAction(
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
-  classesContext: ClassesContextType | null,
+  graph: UseModelGraphContextType,
+  classesContext: ClassesContext | null,
   selections: SelectionsWithIdInfo,
   filters: SelectionFilter[],
   visibilityFilter: VisibilityFilter,
@@ -74,9 +74,8 @@ export function filterSelectionAction(
   let filteredNodeSelection: string[] = [];
   let filteredEdgeSelection: string[] = [];
   const selectionFilterMethods: SelectionFilterMethod[] = [];
-  const contextEntities: ClassesContextEntities = classesContext;
 
-  const activeVisualModel = graph.aggregatorView.getActiveVisualModel();
+  const activeVisualModel = graph.getActiveVisualModel();
 
   if((visibilityFilter === VisibilityFilter.OnlyNonVisible || visibilityFilter === VisibilityFilter.OnlyVisible) &&
         activeVisualModel === null) {
@@ -101,10 +100,10 @@ export function filterSelectionAction(
     filterMethod(
       selections.nodeSelection, selections.areVisualModelIdentifiers,
       filteredNodeSelection, selections.edgeSelection, filteredEdgeSelection,
-      contextEntities, activeVisualModel);
+      classesContext, activeVisualModel);
   });
 
-  const models = graph.models;
+  const models = classesContext.semanticModels;
 
   filteredNodeSelection = filterBasedOnVisibility(
     filteredNodeSelection, selections.areVisualModelIdentifiers, visibilityFilter, activeVisualModel);

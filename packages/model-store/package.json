@@ -19,6 +19,7 @@
     "@dataspecer/core-v2": "*",
     "@dataspecer/sgov-adapter": "*",
     "@dataspecer/utilities": "*",
+    "@dataspecer/visual-model": "*",
     "uuid": "^14.0.0"
   },
   "peerDependencies": {
@@ -31,6 +32,7 @@
   },
   "devDependencies": {
     "@types/react": "^19.0.7",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
   }
 }

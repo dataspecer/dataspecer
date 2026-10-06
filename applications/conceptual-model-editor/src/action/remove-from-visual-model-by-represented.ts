@@ -10,9 +10,9 @@ import {
 import type { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { collectDirectVisualEntitiesToRemove } from "./remove-from-visual-model-by-visual";
 import { removeVisualEntitiesFromVisualModelAction } from "./remove-visual-entities-from-visual-model";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { getVisualDiagramNodeMappingsByRepresented } from "./utilities";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { getDomainAndRangeConcepts } from "../util/relationship-utils";
 
 /**
@@ -20,20 +20,19 @@ import { getDomainAndRangeConcepts } from "../util/relationship-utils";
  */
 export function removeFromVisualModelByRepresentedAction(
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
-  classesContext: ClassesContextType,
+  graph: UseModelGraphContextType,
+  classesContext: ClassesContext,
   visualModel: WritableVisualModel,
   identifiers: string[],
 ) {
   const entitiesToRemove = collectIndirectVisualEntitiesToRemove(
-    notifications, graph, classesContext, visualModel, identifiers);
+    notifications, classesContext, visualModel, identifiers);
   removeVisualEntitiesFromVisualModelAction(notifications, visualModel, entitiesToRemove);
 }
 
 function collectIndirectVisualEntitiesToRemove(
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   visualModel: WritableVisualModel,
   semanticIdentifiers: string[],
 ) {
@@ -45,11 +44,10 @@ function collectIndirectVisualEntitiesToRemove(
   const directEntitiesToRemove = collectDirectVisualEntitiesToRemove(
     visualModel, semanticIdentifiers, getVisualEntitiesForRepresented, false);
 
-  const availableVisualModels = graph.aggregatorView.getAvailableVisualModels();
-  const indirectEntitesToRemove = findInvalidVisualEdgesForVisualDiagramNodes(
-    notifications, classesContext, availableVisualModels, visualModel, semanticIdentifiers);
+  const indirectEntitiesToRemove = findInvalidVisualEdgesForVisualDiagramNodes(
+    notifications, classesContext, classesContext.visualModels, visualModel, semanticIdentifiers);
 
-  return directEntitiesToRemove.concat(indirectEntitesToRemove);
+  return directEntitiesToRemove.concat(indirectEntitiesToRemove);
 }
 
 /**
@@ -59,8 +57,8 @@ function collectIndirectVisualEntitiesToRemove(
  */
 function findInvalidVisualEdgesForVisualDiagramNodes(
   notifications: UseNotificationServiceWriterType | null,
-  classesContext: ClassesContextType,
-  availableVisualModels: VisualModel[],
+  classesContext: ClassesContext,
+  availableVisualModels: Map<string, WritableVisualModel>,
   visualModel: VisualModel,
   removedClasses: string[],
 ): VisualEntity[] {

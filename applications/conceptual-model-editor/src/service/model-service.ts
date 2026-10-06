@@ -22,9 +22,10 @@ export function getModelLabel(model: EntityModel | undefined | null): string {
  */
 export const findSourceModelOfEntity = (
   entityIdentifier: string,
-  models: Map<string, EntityModel>,
+  models: Map<string, EntityModel> | EntityModel[],
 ): EntityModel | null => {
-  for (const model of models.values()) {
+  const iterable = models instanceof Map ? models.values() : models;
+  for (const model of iterable) {
     const entities: Entities = model.getEntities();
     if (entities[entityIdentifier] === undefined) {
       continue;

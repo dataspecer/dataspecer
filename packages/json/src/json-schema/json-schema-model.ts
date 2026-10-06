@@ -1,4 +1,4 @@
-import type { StructureModelClass } from "@dataspecer/core/structure-model/model/structure-model-class";
+import type { StructureModelClass } from "@dataspecer/generators/structure-model/model/structure-model-class";
 
 export class JsonSchema {
   schema: string | null = "https://json-schema.org/draft/2020-12/schema";

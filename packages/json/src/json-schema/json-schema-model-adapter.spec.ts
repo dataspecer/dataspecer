@@ -6,7 +6,7 @@ import {
   defaultStringSelector,
 } from "@dataspecer/core/core";
 import { MemoryOutputStream } from "@dataspecer/core/io/stream/memory-output-stream";
-import { coreResourcesToStructuralModel } from "@dataspecer/core/structure-model";
+import { coreResourcesToStructuralModel } from "@dataspecer/generators/structure-model";
 import { DataSpecification, DataSpecificationArtefact } from "@dataspecer/core/data-specification/model";
 import { DefaultJsonConfiguration } from "../configuration.ts";
 

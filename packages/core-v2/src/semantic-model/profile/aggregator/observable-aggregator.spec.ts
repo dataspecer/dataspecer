@@ -86,7 +86,9 @@ describe("ObservableSemanticProfileAggregator", () => {
       controlledVocabularies: [],
       conceptIris: [":class-1"],
       conceptIdentifiers: ["class-1"],
+      nameFromProperty: null,
       nameProperty: null,
+      descriptionFromProperty: null,
       descriptionProperty: null,
     };
 
@@ -180,7 +182,9 @@ describe("ObservableSemanticProfileAggregator", () => {
       controlledVocabularies: [],
       conceptIris: [":class-1"],
       conceptIdentifiers: ["class-1"],
+      nameFromProperty: null,
       nameProperty: null,
+      descriptionFromProperty: null,
       descriptionProperty: null,
     };
 
@@ -280,6 +284,8 @@ describe("ObservableSemanticProfileAggregator", () => {
       conceptIris: [":class-1"],
       conceptIdentifiers: ["class-1"],
       nameProperty: null,
+      nameFromProperty: null,
+      descriptionFromProperty: null,
       descriptionProperty: null,
     };
 
@@ -379,8 +385,10 @@ describe("ObservableSemanticProfileAggregator", () => {
           ...profile,
           type: ["class-profile", "aggregate"],
           name: strongClass.name,
+          nameFromProperty: null,
           nameProperty: null,
           description: strongClass.description,
+          descriptionFromProperty: null,
           descriptionProperty: null,
           conceptIdentifiers: ["class-1"],
           conceptIris: [":class-1"],

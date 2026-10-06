@@ -85,7 +85,7 @@ function loadVersions(streamReader: MemberReader, quadsBySubject: Map<string, N3
     }
     versions.push({
       version,
-      transactionId: reader.literal(DATASPECER_LDES.transaction) ?? "",
+      transactionId: reader.literal(DATASPECER_LDES.transaction),
       issued: reader.literal(DCT.issued) ?? "",
     });
   }
@@ -137,7 +137,7 @@ function loadEvent(
     kind,
     iri,
     memberIri,
-    transactionId: reader.literal(DATASPECER_LDES.transaction) ?? "",
+    transactionId: reader.literal(DATASPECER_LDES.transaction),
     created: reader.literal(DCT.created) ?? "",
     issued: reader.literal(DCT.issued) ?? "",
     ...(version === null ? {} : { version }),
