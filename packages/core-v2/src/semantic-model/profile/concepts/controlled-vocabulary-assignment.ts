@@ -109,3 +109,16 @@ export function isControlledVocabularyAssignment(
 ): entity is ControlledVocabularyAssignment {
   return entity?.type.includes(CONTROLLED_VOCABULARY_ASSIGNMENT) ?? false;
 }
+
+/**
+ * @returns The entity with a legacy qualifier replaced, see
+ * {@link normalizeQualifier}. Anything that is not a controlled vocabulary
+ * assignment with a legacy qualifier is returned as it is.
+ */
+export function normalizeLegacyAssignment(entity: Entity): Entity {
+  if (!isControlledVocabularyAssignment(entity)) {
+    return entity;
+  }
+  const qualifier = normalizeQualifier(entity.qualifier);
+  return qualifier === entity.qualifier ? entity : { ...entity, qualifier } as Entity;
+}

@@ -8,10 +8,7 @@ import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { LOCAL_SEMANTIC_MODEL } from "../model/known-models.ts";
 import type { Operation } from "@dataspecer/core/operation";
 import { applyOperationsToSemanticModel } from "./apply-operations.ts";
-import {
-    isControlledVocabularyAssignment,
-    normalizeQualifier,
-} from "./profile/concepts/index.ts";
+import { normalizeLegacyAssignment } from "./profile/concepts/index.ts";
 
 export type EntityGetter = (identifier: string) => Entity | undefined;
 
@@ -55,13 +52,7 @@ function normalizeAssignments(entities: EntityRecord | undefined): EntityRecord 
     }
     const result: EntityRecord = {...entities};
     for (const [identifier, entity] of Object.entries(result)) {
-        if (!isControlledVocabularyAssignment(entity)) {
-            continue;
-        }
-        const qualifier = normalizeQualifier(entity.qualifier);
-        if (qualifier !== entity.qualifier) {
-            result[identifier] = {...entity, qualifier} as Entity;
-        }
+        result[identifier] = normalizeLegacyAssignment(entity);
     }
     return result;
 }
