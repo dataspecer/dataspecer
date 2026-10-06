@@ -23,6 +23,10 @@
   "create first specification": "Create your first data specification to get started.",
   "try other filters": "Try another search or tag.",
   "all tags": "All tags",
+  "tags": "Tags",
+  "tags-instruction": "Enter tags separated by commas",
+  "remove-tag": "Remove tag {{tag}}",
+  "confirm-remove-tag": "Remove the tag <tag>{{tag}}</tag> from this project?",
   "changed": "Changed on {{val, datetime(dateStyle: short; timeStyle: short)}}",
   "changed-relative": "Changed {{val}}",
   "created-relative": "Created {{val}}",
@@ -120,6 +124,9 @@
     "warning-no-name": "You are about to reload this resource from the URL(s) below. If the reload is successful, its content will be completely overwritten."
   },
   "remove": "Remove",
+  "modify-tags": {
+    "title": "Edit tags"
+  },
   "resource-detail": {
     "edit": "Edit",
     "modified": "Modified",
@@ -131,6 +138,7 @@
     "cancel": "Cancel",
     "description": "Description",
     "name": "Name",
+    "rename": "Rename",
     "save-changes": "Save changes",
     "subtitle-create": "Please select the name and the description of the resource.",
     "subtitle-edit": "Please change the name and the description of the resource.",

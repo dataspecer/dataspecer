@@ -2,7 +2,7 @@ import { TagBadge, TagName } from "@/components/tag";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
-import { BookOpen, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, EllipsisVertical, FileText, Folder, FolderDown, History, Import, NotepadTextDashed, Pencil, Plus, RotateCw, Search, Shapes, Sparkles, Tag, Trash2, WandSparkles } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, EllipsisVertical, FileText, Folder, FolderDown, History, Import, NotepadTextDashed, Pencil, Plus, RotateCw, Search, Shapes, Sparkles, Tag, Tags, Trash2, WandSparkles } from "lucide-react";
 import { useCallback, useContext, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "next-themes";
@@ -31,6 +31,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "./components/ui/tooltip
 import { ReloadResource } from "./dialog/reload-resource";
 import { AddImported } from "./dialog/add-imported";
 import { stopPropagation } from "./utils/events";
+import { ModifyTagsDialog } from "./dialog/modify-tags";
 
 export function lng(text: LanguageString | undefined): string | undefined {
   return text?.["cs"] ?? text?.["en"];
@@ -115,7 +116,7 @@ const Row = ({ iri, parentIri, onTagSelect }: { iri: string, parentIri?: string,
         </div>
       </div>
 
-      {resource.userMetadata?.tags?.toSorted((a, b) => a.localeCompare(b)).map(tag => <TagBadge key={tag} name={tag} onClick={() => onTagSelect(tag)} />)}
+      {resource.userMetadata?.tags?.toSorted((a, b) => a.localeCompare(b)).map(tag => <TagBadge key={tag} name={tag} onClick={() => onTagSelect(tag)} onRemove={() => modifyUserMetadata(iri, {tags: resource.userMetadata?.tags?.filter(value => value !== tag) ?? []})} />)}
 
       {resource.types.includes(APPLICATION_GRAPH) &&
         <Button asChild variant={"ghost"} onClick={stopPropagation()}>
@@ -246,7 +247,11 @@ const Row = ({ iri, parentIri, onTagSelect }: { iri: string, parentIri?: string,
             if (result) {
               await modifyUserMetadata(iri, {label: result.name, description: result.description});
             }
-          }}><Pencil className="mr-2 h-4 w-4" /> Rename</DropdownMenuItem>
+          }}><Pencil className="mr-2 h-4 w-4" /> {t("rename-resource.rename")}</DropdownMenuItem>
+          <DropdownMenuItem onClick={async () => {
+            const result = await openModal(ModifyTagsDialog, {tags: resource.userMetadata?.tags ?? []});
+            if (result) await modifyUserMetadata(iri, {tags: result});
+          }}><Tags className="mr-2 h-4 w-4" /> {t("modify-tags.title")}</DropdownMenuItem>
           {resource.types.includes(LOCAL_SEMANTIC_MODEL) && <DropdownMenuItem onClick={() => openModal(Autolayout, {iri, parentIri: parentIri!})}><Sparkles className="mr-2 h-4 w-4" /> {t("autolayout")}</DropdownMenuItem>}
           <DropdownMenuItem onClick={() => openModal(ModifyRawDialog, {iri})}><CircuitBoard className="mr-2 h-4 w-4" /> {t("modify raw data")}</DropdownMenuItem>
           <DropdownMenuItem className="bg-destructive text-destructive-foreground hover:bg-destructive" onClick={() => openModal(DeleteResource, {iri})}><Trash2 className="mr-2 h-4 w-4" /> {t("remove")}</DropdownMenuItem>
@@ -381,7 +386,7 @@ function RootPackage({iri}: {iri: string}) {
         onClick={() => openModal(AddImported, {id: iri})}>
         <Import className="mr-2 h-4 w-4" /> {t("import")}
       </Button>
-      <Button variant="default" size={"sm"} className="shrink-0 ml-4" onClick={() => openModal(ProjectWizard, {iri})}><WandSparkles className="mr-2 h-4 w-4" /> {t("project-wizard")}</Button>
+      <Button variant="default" size={"sm"} className="shrink-0 ml-4" onClick={() => openModal(ProjectWizard, {iri, defaultTag: selectedTag || undefined})}><WandSparkles className="mr-2 h-4 w-4" /> {t("project-wizard")}</Button>
     </div>
     {isOpen && <>
       {matchingResources.length > 0 ? <ul>
@@ -394,7 +399,7 @@ function RootPackage({iri}: {iri: string}) {
           <Button variant="outline" onClick={() => openModal(AddImported, {id: iri})}>
             <Import aria-hidden="true" className="mr-2 h-4 w-4" /> {t("import")}
           </Button>
-          <Button onClick={() => openModal(ProjectWizard, {iri})}>
+          <Button onClick={() => openModal(ProjectWizard, {iri, defaultTag: selectedTag || undefined})}>
             <WandSparkles aria-hidden="true" className="mr-2 h-4 w-4" /> {t("project-wizard")}
           </Button>
         </div>

@@ -50,7 +50,7 @@ export async function requestLoadPackage(iri: string, forceUpdate = false) {
     resourcesMemory.current = copiedResourcesMemory;
 }
 
-export async function modifyUserMetadata(iri: string, metadata: {label?: LanguageString, description?: LanguageString}) {
+export async function modifyUserMetadata(iri: string, metadata: {label?: LanguageString, description?: LanguageString, tags?: string[]}) {
     const pckg = await packageService.updatePackage(iri, { userMetadata: metadata });
     const copiedResourcesMemory = {...resourcesMemory.current};
     if (copiedResourcesMemory[iri]) {

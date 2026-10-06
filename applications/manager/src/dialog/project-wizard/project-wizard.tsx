@@ -11,24 +11,24 @@ import { Profile } from "./profile";
 import { Schema } from "./schema";
 import { Vocabulary } from "./vocabulary";
 
-export const ProjectWizard = ({ isOpen, resolve, iri }: { iri: string } & BetterModalProps) => {
+export const ProjectWizard = ({ isOpen, resolve, iri, defaultTag }: { iri: string; defaultTag?: string } & BetterModalProps) => {
   const {t} = useTranslation("project-wizard");
   const openModal = useBetterModal();
 
   const createVocabulary = async () => {
-    if (await openModal(Vocabulary, {iri})) {
+    if (await openModal(Vocabulary, {iri, defaultTag})) {
       resolve();
     }
   }
 
   const createProfile = async () => {
-    if (await openModal(Profile, {iri})) {
+    if (await openModal(Profile, {iri, defaultTag})) {
       resolve();
     }
   }
 
   const createSchema = async () => {
-    if (await openModal(Schema, {iri})) {
+    if (await openModal(Schema, {iri, defaultTag})) {
       resolve();
     }
   }

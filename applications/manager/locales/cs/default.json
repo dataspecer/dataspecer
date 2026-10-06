@@ -23,6 +23,10 @@
   "create first specification": "Začněte vytvořením své první datové specifikace.",
   "try other filters": "Zkuste jiné hledání nebo štítek.",
   "all tags": "Všechny štítky",
+  "tags": "Štítky",
+  "tags-instruction": "Zadejte štítky oddělené čárkou",
+  "remove-tag": "Odebrat štítek {{tag}}",
+  "confirm-remove-tag": "Odebrat štítek <tag>{{tag}}</tag> z tohoto projektu?",
   "changed": "Změněno {{val, datetime(dateStyle: short; timeStyle: short)}}",
   "changed-relative": "Změněno {{val}}",
   "created-relative": "Vytvořeno {{val}}",
@@ -120,6 +124,9 @@
     "warning-no-name": "Chystáte se aktualizovat tento zdroj z níže uvedené URL adresy (adres). Pokud aktualizace proběhne úspěšně, obsah bude kompletně přepsán."
   },
   "remove": "Odstranit",
+  "modify-tags": {
+    "title": "Upravit štítky"
+  },
   "resource-detail": {
     "edit": "Editovat",
     "modified": "Upraveno",
@@ -131,6 +138,7 @@
     "cancel": "Zrušit",
     "description": "Popis",
     "name": "Název",
+    "rename": "Přejmenovat",
     "save-changes": "Uložit změny",
     "subtitle-create": "Vyberte prosím název a popis prostředku.",
     "subtitle-edit": "Změňte prosím název a popis prostředku.",
