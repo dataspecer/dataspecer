@@ -13,6 +13,7 @@ import type { CoreResource } from "@dataspecer/core/core/core-resource";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
 import { DataSpecificationConfigurator } from "@dataspecer/core/data-specification/configuration";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
+import { reloadCachedSemanticModel } from "@dataspecer/specification/aggregator-builder";
 import { turtleStringToGeneratorConfiguration } from "@dataspecer/data-specification-vocabulary/generator-configuration";
 import { conceptualModelToEntityListContainer, rdfToConceptualModel } from "@dataspecer/data-specification-vocabulary/semantic-model";
 import { dsvMetadataWellKnown, rdfToDSVMetadata } from "@dataspecer/data-specification-vocabulary/specification-description";
@@ -722,6 +723,37 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
 
     response.send({ ...(await modelRepository.getResource(existingResource.iri)), evolutionBranchId });
     return;
+  }
+
+  // Todo better detection of a semantic model and its subtype
+  if (existingResource.types.includes(LOCAL_SEMANTIC_MODEL)) {
+    const previousEntities = await modelRepository.getModelEntities(existingResource.iri);
+    const mainEntity = previousEntities?.[existingResource.iri] as { caches?: unknown } | undefined;
+    if (mainEntity && "caches" in mainEntity) {
+      const nextEntities = await reloadCachedSemanticModel(previousEntities!);
+      const operations = diffModelEntitiesToOperations(
+        existingResource.iri,
+        LOCAL_SEMANTIC_MODEL,
+        previousEntities!,
+        nextEntities,
+      );
+
+      const projectIri = (await modelRepository.getProjectIri(existingResource.iri))!;
+      let evolutionBranchId: number | null = null;
+      if (query.apply) {
+        await modelRepository.applyTransactions(projectIri, [{ id: uuidv4(), operations }]);
+      } else {
+        evolutionBranchId = await modelRepository.recordEvolutionTransactions(
+          projectIri,
+          existingResource.iri,
+          [{ id: uuidv4(), operations }],
+          { [existingResource.iri]: previousEntities! },
+        );
+      }
+
+      response.send({ ...(await modelRepository.getResource(existingResource.iri)), evolutionBranchId });
+      return;
+    }
   }
 
   // Determine the URL to reload from
