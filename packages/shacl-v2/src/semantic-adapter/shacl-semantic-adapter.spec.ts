@@ -13,6 +13,7 @@ import {
 import type { Entity } from "@dataspecer/core-v2/entity-model";
 
 import { semanticModelsToShacl } from "./shacl-semantic-adapter.ts";
+import type { SemanticModelsToShaclConfiguration } from "./shacl-semantic-configuration.ts";
 import { shaclToRdf } from "../shacl-to-rdf.ts";
 import { ShaclSeverity } from "../shacl-model.ts";
 
@@ -149,6 +150,8 @@ describe("semanticModelsToShacl", () => {
         languages: [],
         noClassConstraints: false,
         splitPropertyShapesByConstraints: false,
+        controlledVocabularyPattern: true,
+        controlledVocabularyScheme: false,
       },
       { baseIri: "http://example/shacl.ttl" });
 
@@ -220,6 +223,8 @@ describe("semanticModelsToShacl", () => {
         languages: ["en"],
         noClassConstraints: false,
         splitPropertyShapesByConstraints: false,
+        controlledVocabularyPattern: true,
+        controlledVocabularyScheme: false,
       },
       { baseIri: "http://example/shacl.ttl" });
 
@@ -287,6 +292,8 @@ describe("semanticModelsToShacl", () => {
         languages: [],
         noClassConstraints: false,
         splitPropertyShapesByConstraints: false,
+        controlledVocabularyPattern: true,
+        controlledVocabularyScheme: false,
       },
       { baseIri: "http://example/shacl.ttl" });
 
@@ -350,6 +357,8 @@ describe("semanticModelsToShacl", () => {
         languages: [],
         noClassConstraints: false,
         splitPropertyShapesByConstraints: false,
+        controlledVocabularyPattern: true,
+        controlledVocabularyScheme: false,
       },
       { baseIri: "http://example/shacl.ttl" });
 
@@ -414,6 +423,8 @@ describe("semanticModelsToShacl", () => {
         languages: [],
         noClassConstraints: false,
         splitPropertyShapesByConstraints: false,
+        controlledVocabularyPattern: true,
+        controlledVocabularyScheme: false,
       },
       { baseIri: "http://example/shacl.ttl" });
 
@@ -461,6 +472,8 @@ describe("semanticModelsToShacl", () => {
         languages: [],
         noClassConstraints: false,
         splitPropertyShapesByConstraints: false,
+        controlledVocabularyPattern: true,
+        controlledVocabularyScheme: false,
       },
       { baseIri: "http://example/shacl.ttl" });
 
@@ -483,6 +496,8 @@ describe("semanticModelsToShacl - controlled vocabularies", () => {
     languages: [],
     noClassConstraints: false,
     splitPropertyShapesByConstraints: false,
+    controlledVocabularyPattern: true,
+    controlledVocabularyScheme: true,
   };
 
   test("must severity, single controlled vocabulary.", async () => {
@@ -786,12 +801,13 @@ describe("semanticModelsToShacl - controlled vocabulary concept schemes", () => 
 
   /**
    * Generates SHACL for a class `person` with a single assignment of
-   * a controlled vocabulary with given properties.
+   * a controlled vocabulary with given properties. Both controlled
+   * vocabulary checks are enabled unless the configuration says otherwise.
    */
   function generate(
     vocabularyOverrides: Partial<ControlledVocabulary>,
     qualifier: ControlledVocabularyAssignment["qualifier"],
-    splitPropertyShapesByConstraints: boolean = false,
+    configurationOverrides: Partial<SemanticModelsToShaclConfiguration> = {},
   ) {
     const vocabulary = createDefaultSemanticModelBuilder({
       baseIdentifier: "vocab:",
@@ -834,7 +850,10 @@ describe("semanticModelsToShacl - controlled vocabulary concept schemes", () => 
         policy: "semic-v1" as const,
         languages: [],
         noClassConstraints: false,
-        splitPropertyShapesByConstraints,
+        splitPropertyShapesByConstraints: false,
+        controlledVocabularyPattern: true,
+        controlledVocabularyScheme: true,
+        ...configurationOverrides,
       },
       { baseIri: "http://example/shacl.ttl" },
       [controlledVocabularies]);
@@ -956,7 +975,7 @@ describe("semanticModelsToShacl - controlled vocabulary concept schemes", () => 
       pattern: "^http://example\\.com/codes/.*$",
       references: "http://example.com/scheme",
       conformsToSkos: true,
-    }, "at-least-one", true);
+    }, "at-least-one", { splitPropertyShapesByConstraints: true });
 
     const shape = controlledVocabularyShapes(shacl)[0]!;
     expect(shape.propertyShapes.length).toBe(1);
@@ -968,6 +987,99 @@ describe("semanticModelsToShacl - controlled vocabulary concept schemes", () => 
 
     const rdf = await shaclToRdf(shacl, {});
     expect(rdf).toContain("sh:hasValue <http://example.com/scheme>");
+
+  });
+
+
+  const SKOS_VOCABULARY = {
+    pattern: "^http://example\\.com/codes/.*$",
+    references: "http://example.com/scheme",
+    conformsToSkos: true,
+  };
+
+  test("Only the pattern is checked when the scheme check is disabled.", async () => {
+
+    const shacl = generate(SKOS_VOCABULARY, "must", {
+      controlledVocabularyPattern: true,
+      controlledVocabularyScheme: false,
+    });
+
+    const shapes = controlledVocabularyShapes(shacl);
+    expect(shapes.length).toBe(1);
+    expect(shapes[0]!.pattern).toBe("^http://example\\.com/codes/.*$");
+    expect(shapes[0]!.propertyShapes).toStrictEqual([]);
+
+    const rdf = await shaclToRdf(shacl, {});
+    expect(rdf).toContain("sh:pattern");
+    expect(rdf).not.toContain("skos:inScheme");
+
+  });
+
+  test("Only the scheme is checked when the pattern check is disabled.", async () => {
+
+    const shacl = generate(SKOS_VOCABULARY, "must", {
+      controlledVocabularyPattern: false,
+      controlledVocabularyScheme: true,
+    });
+
+    const shapes = controlledVocabularyShapes(shacl);
+    expect(shapes.length).toBe(1);
+    expect(shapes[0]!.pattern).toBeNull();
+    expect(shapes[0]!.propertyShapes.length).toBe(1);
+    expect(shapes[0]!.propertyShapes[0]!.hasValue)
+      .toBe("http://example.com/scheme");
+
+    const rdf = await shaclToRdf(shacl, {});
+    expect(rdf).not.toContain("sh:pattern");
+    expect(rdf).toContain("sh:path skos:inScheme");
+
+  });
+
+  test("A configuration without the controlled vocabulary options checks only the pattern.", async () => {
+
+    // Configuration stored before the options existed.
+    const legacyConfiguration = {
+      policy: "semic-v1",
+      languages: [],
+      noClassConstraints: false,
+      splitPropertyShapesByConstraints: false,
+    } as unknown as Partial<SemanticModelsToShaclConfiguration>;
+    const shacl = generate(SKOS_VOCABULARY, "must", {
+      ...legacyConfiguration,
+      controlledVocabularyPattern: undefined,
+      controlledVocabularyScheme: undefined,
+    });
+
+    const shapes = controlledVocabularyShapes(shacl);
+    expect(shapes.length).toBe(1);
+    expect(shapes[0]!.pattern).toBe("^http://example\\.com/codes/.*$");
+    expect(shapes[0]!.propertyShapes).toStrictEqual([]);
+
+  });
+
+  test("There is no shape when both checks are disabled.", () => {
+
+    const shacl = generate(SKOS_VOCABULARY, "must", {
+      controlledVocabularyPattern: false,
+      controlledVocabularyScheme: false,
+    });
+
+    expect(controlledVocabularyShapes(shacl)).toStrictEqual([]);
+    expect(shacl.members.length).toBe(1);
+
+  });
+
+  test("There is no shape when only the scheme check is enabled for a vocabulary that is not SKOS-based.", () => {
+
+    const shacl = generate({
+      ...SKOS_VOCABULARY,
+      conformsToSkos: false,
+    }, "must", {
+      controlledVocabularyPattern: false,
+      controlledVocabularyScheme: true,
+    });
+
+    expect(controlledVocabularyShapes(shacl)).toStrictEqual([]);
 
   });
 
