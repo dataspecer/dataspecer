@@ -7,7 +7,7 @@ import { EmptyState } from "./empty-state"
 import { VocabularyCard } from "./vocabulary-card"
 import { useVocabulariesContext } from "@/contexts/vocabularies-context"
 import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model"
-import { createStringSelector } from "@dataspecer/core/core/utilities/string-selector"
+import { createStringSelector } from "@dataspecer/core/core"
 import { useConfig } from "@/contexts/config-context"
 
 interface VocabularyListPageProps {
