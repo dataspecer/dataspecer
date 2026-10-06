@@ -4,8 +4,8 @@ import {
   StructureModelComplexType,
   StructureModelProperty,
   StructureModelPrimitiveType,
-} from "@dataspecer/core/structure-model/model";
-import { ArtefactGeneratorContext } from "@dataspecer/core/generator";
+} from "@dataspecer/generators/structure-model/model";
+import { ArtefactGeneratorContext } from "@dataspecer/generators/generator";
 import { DataSpecificationArtefact} from "@dataspecer/core/data-specification/model";
 import {isUniqueClass, fixTurtleFileWithBaseShex, hasUniquePredicates, anyPredicateHasUniqueType, anyPredicateHasUniquePredicates,
   getAnyPredicateUniquePredicate, getAnyPredicateUniqueType} from "./shex-support.ts";
@@ -20,7 +20,7 @@ type classNameShapeTuple = [classShapeName: string, classObject: StructureModelC
 type StructureModelClassOrProperty = StructureModelClass | StructureModelProperty;
 
 export class ShexAdapter {
-  
+
   protected model: StructureModel;
   protected context: ArtefactGeneratorContext;
   protected artefact: DataSpecificationArtefact;
@@ -45,12 +45,12 @@ export class ShexAdapter {
 
     this.baseURL = this.artefact.configuration["publicBaseUrl"];
   }
-    
+
   /**
   * Function accessed from the frontend applications for generating the SHACL artifact.
   */
   public generate = async () => {
-    
+
     if (this.model.roots.length > 1) {
       console.warn("ShEx generator: Multiple schema roots not supported yet.");
     }
@@ -58,7 +58,7 @@ export class ShexAdapter {
     const rootClasses = this.model.roots[0].classes;
     // Iterate over all classes in root OR
     for (const root of rootClasses) {
-      this.rootShapeName = this.getIRIforShape(root);      
+      this.rootShapeName = this.getIRIforShape(root);
       this.root = root;
       this.decideHowToTarget(root, root.cimIri);
 
@@ -70,7 +70,7 @@ export class ShexAdapter {
     for(const part of this.shapes){
       resultString = resultString + part;
     }
-    
+
     var recordOfDataAndPrefixes = Support.prefixifyFinalOutput(resultString);
 
     resultString = (await Support.prependPrefixes(recordOfDataAndPrefixes)).toString();
@@ -88,7 +88,7 @@ export class ShexAdapter {
   generateClassConstraints(root: StructureModelClass): string {
     var newResult = "";
     var nodeName : string;
-    
+
     nodeName = this.getIRIforShape(root);
     const classNameIri = nodeName;
     if(this.sameClass.find(tuple => tuple[0] === nodeName) == null){
@@ -112,7 +112,7 @@ export class ShexAdapter {
    */
   prePropertyStatements(root: StructureModelClass): string {
     var newResult = "";
-    
+
     switch(root.instancesHaveIdentity){
       case "ALWAYS": newResult = newResult.concat(" IRI");
       break;
@@ -126,7 +126,7 @@ export class ShexAdapter {
       newResult = newResult.concat(" /" + root.regex + "/");
     }
     if(root.isClosed){
-      newResult = newResult.concat(" CLOSED");        
+      newResult = newResult.concat(" CLOSED");
     }
     return newResult;
   }
@@ -140,7 +140,7 @@ export class ShexAdapter {
     var newResult = "";
 
     switch(root.instancesSpecifyTypes){
-      case "ALWAYS":  newResult = newResult.concat("\ta [<" + root.cimIri + ">]" );     
+      case "ALWAYS":  newResult = newResult.concat("\ta [<" + root.cimIri + ">]" );
         break;
       case "OPTIONAL":  newResult = newResult.concat("\ta [<" + root.cimIri + ">] ?" );
       break;
@@ -148,7 +148,7 @@ export class ShexAdapter {
       break;
         default: newResult = newResult.concat("\ta [<" + root.cimIri + ">]" );
     }
-    
+
     return newResult;
   }
 
@@ -168,50 +168,50 @@ export class ShexAdapter {
         const cimiri = prop.cimIri;
         const datatypes = prop.dataTypes;
         const isReverse = prop.isReverse;
-        
+
         for (var dt of datatypes) {
 
 
           newResult = newResult.concat(" ;");
           newResult = newResult.concat("\n");
-          
+
           newResult = newResult.concat("\t");
           if(isReverse){
             newResult = newResult.concat("\u005E");
-          } 
-            
+          }
+
           newResult = newResult.concat("<" + cimiri + ">");
-          
+
 
           if(dt.isAttribute() == true){
             // If the datatype is set, try to match it to xsd datatypes. If unable, use its IRI.
             const dtcasted = <StructureModelPrimitiveType> dt;
             if(dtcasted != null){
               const datatypeFromMap = simpleTypeMapQName[dtcasted.dataType];
-              
+
               if(datatypeFromMap != undefined){
-                  newResult = newResult.concat(" <" + simpleTypeMapIRI[dtcasted.dataType] + ">"); 
+                  newResult = newResult.concat(" <" + simpleTypeMapIRI[dtcasted.dataType] + ">");
                 if((simpleTypeMapIRI[dtcasted.dataType] == "http://www.w3.org/2001/XMLSchema#anyURI") || (simpleTypeMapIRI[dtcasted.dataType] == "http://www.w3.org/2001/XMLSchema#string")){
                   if(dtcasted.regex != null && dtcasted.regex != undefined && dtcasted.regex != ""){
-                    newResult = newResult.concat(" /" + dtcasted.regex.toString() + "/" ); 
+                    newResult = newResult.concat(" /" + dtcasted.regex.toString() + "/" );
                   }
                 }
               } else{
                 if(dtcasted.dataType != null){
-                  newResult = newResult.concat(" <" + dtcasted.dataType + ">" ); 
+                  newResult = newResult.concat(" <" + dtcasted.dataType + ">" );
                 } else{
                   // Arbitrary datatype, datatype is not enforced by user
-                  newResult = newResult.concat(" ." ); 
+                  newResult = newResult.concat(" ." );
                 }
               }
-            
+
             }
           } else{
             for (var dt of datatypes) {
-              // create new Shape and tie this property to it     
+              // create new Shape and tie this property to it
               const dtcasted = <StructureModelComplexType> dt;
 
-              if(dtcasted.dataType == this.uniquePredicateClass){                
+              if(dtcasted.dataType == this.uniquePredicateClass){
                 this.pathToUniquePredicate = cimiri;
               } else if(this.uniquePredicatePredicate != null && (dtcasted.dataType == this.uniquePredicatePredicate.uniquepropclass)){
                 this.pathToUniquePredicate = cimiri;
@@ -221,10 +221,10 @@ export class ShexAdapter {
                 newResult = newResult.concat(this.createInnerShortConstraint(dtcasted.dataType));
 
               } else{
-                
+
               // Add datatype for the PopertyNode
               const nameForAnotherClass = this.generateClassConstraints(dtcasted.dataType);
-              newResult = newResult.concat(" @<" + nameForAnotherClass + ">"); 
+              newResult = newResult.concat(" @<" + nameForAnotherClass + ">");
 
               }
 
@@ -249,18 +249,18 @@ export class ShexAdapter {
           else if((cardinalitymin != 0 && cardinalitymin != 1) && (cardinalitymax == null)) {
             newResult = newResult.concat(" {" + cardinalitymin + ",}");
           }
-      
+
           newResult = newResult.concat(this.generateLanguageString(prop.humanLabel, "label"));
-          newResult = newResult.concat(this.generateLanguageString(prop.humanDescription,"comment"));              
+          newResult = newResult.concat(this.generateLanguageString(prop.humanDescription,"comment"));
         }
       }
     }
-    
+
     // FOR TARGETTING in lower levels
     if(root == this.uniquePredicateClass || (this.uniquePredicatePredicate != null && (root == this.uniquePredicatePredicate.uniquepropclass))){
-      newResult = newResult.concat(";\n\t\u005E<" + this.pathToUniquePredicate + ">" + " @<" + this.rootShapeName + ">");     
+      newResult = newResult.concat(";\n\t\u005E<" + this.pathToUniquePredicate + ">" + " @<" + this.rootShapeName + ">");
     }
-    
+
     return newResult;
   }
 
@@ -295,23 +295,23 @@ export class ShexAdapter {
     }
     */
     return newResult;
-  }  
+  }
 
   /**
    * Goes through the supplied language string and allignes properly the tags with the values for the wanted label/description graph nodes.
    * @param languageDescription Language string to be deconstructed.
    * @param attribute Attribute to which append the language values and tags. Either name or description.
-   */  
+   */
 generateLanguageString(languageDescription: LanguageString, attribute: string): string {
-  var newResult = "";  
+  var newResult = "";
   const predicate = "http://www.w3.org/2000/01/rdf-schema#" + attribute;
       for (const languageTag in languageDescription) {
         const language = languageDescription[languageTag];
         if(languageDescription != null){
-          newResult = newResult.concat("\n\t\t// <" + predicate + ">\t\"" + language + "\"");        
+          newResult = newResult.concat("\n\t\t// <" + predicate + ">\t\"" + language + "\"");
           break;
         }
-      }      
+      }
     return newResult;
   }
 
@@ -351,15 +351,15 @@ generateLanguageString(languageDescription: LanguageString, attribute: string): 
  */
   protected decideHowToTarget(cls : StructureModelClass, classNameIri : string): void {
     if((cls.instancesSpecifyTypes == "ALWAYS" && (isUniqueClass(cls))) || hasUniquePredicates(cls)){
-      // USE CASE #1 & #2 nothing needs to be done     
+      // USE CASE #1 & #2 nothing needs to be done
     }  else if(anyPredicateHasUniqueType(cls, this.root.cimIri)){
       // USE CASE #3
-      this.uniquePredicateClass = getAnyPredicateUniqueType(cls, this.root.cimIri);  
+      this.uniquePredicateClass = getAnyPredicateUniqueType(cls, this.root.cimIri);
     } else if(anyPredicateHasUniquePredicates(cls)){
       // USE CASE #4
-      this.uniquePredicatePredicate = getAnyPredicateUniquePredicate(cls); 
+      this.uniquePredicatePredicate = getAnyPredicateUniquePredicate(cls);
     } else{
-      // CANNOT TARGET THE SHAPE, fail to generate the artifact  
+      // CANNOT TARGET THE SHAPE, fail to generate the artifact
       throw new Error('Unable to create ShEx shape due to possible SHACL incompatibility. Either define at least one unique type of class with instance typing mandatory or define at least one unique attribute going from the root or its associations with cardinality bigger than 0.');
     }
   }

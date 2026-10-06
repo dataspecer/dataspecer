@@ -2,7 +2,7 @@ import { LocalEntityWrapped } from "@dataspecer/core-v2/hierarchical-semantic-ag
 import { SemanticModelClass } from "@dataspecer/core-v2/semantic-model/concepts";
 import { SemanticModelClassProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { clone } from "@dataspecer/core/core";
-import { StructureModel, StructureModelClass, StructureModelComplexType, StructureModelProperty } from "@dataspecer/core/structure-model/model";
+import { StructureModel, StructureModelClass, StructureModelComplexType, StructureModelProperty } from "@dataspecer/generators/structure-model/model";
 import { JsonConfiguration } from "../configuration.ts";
 import { getClassTypeKey } from "../json-ld/json-ld-adapter.ts";
 import type { JsonTypeStructureModelProperty } from "./json-schema-model-adapter.ts";

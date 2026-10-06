@@ -1,9 +1,9 @@
 import { assertFailed, assertNot } from "@dataspecer/core/core";
 import { DataSpecificationConfiguration, DataSpecificationConfigurator, DefaultDataSpecificationConfiguration } from "@dataspecer/core/data-specification/configuration";
 import { DataSpecification, DataSpecificationArtefact, DataSpecificationSchema } from "@dataspecer/core/data-specification/model";
-import { ArtefactGenerator, ArtefactGeneratorContext } from "@dataspecer/core/generator";
+import { ArtefactGenerator, ArtefactGeneratorContext } from "@dataspecer/generators/generator";
 import { StreamDictionary } from "@dataspecer/core/io/stream/stream-dictionary";
-import { structureModelAddDefaultValues, transformStructureModel } from "@dataspecer/core/structure-model/transformation";
+import { structureModelAddDefaultValues, transformStructureModel } from "@dataspecer/generators/structure-model/transformation";
 import { getAggregatedSemanticModel } from "../semantic-model.ts";
 import { JsonLdAdapter } from "./json-ld-adapter.ts";
 import { writeJsonLd } from "./json-ld-writer.ts";

@@ -10,7 +10,7 @@ import { isVisualDiagramNode,
   WritableVisualModel
 } from "@dataspecer/visual-model";
 import { VisualModelDiagramNode } from "../diagram";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { AnchorOverrideSetting, getDefaultUserGivenAlgorithmConfigurationsFull, XY } from "@dataspecer/layout";
 import { addVisualNode } from "../dataspecer/visual-model/operation/add-visual-node";
@@ -23,7 +23,7 @@ import {
   isVisualEdgeEnd,
   VisualEdgeEndPoint
 } from "./utilities";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import {
   SemanticModelClass,
   SemanticModelGeneralization,
@@ -42,13 +42,13 @@ import { layoutActiveVisualModelAction } from "./layout-visual-model";
  */
 export function putVisualDiagramNodeContentToVisualModelAction(
   notifications: UseNotificationServiceWriterType,
-  classesContext: ClassesContextType,
-  graph: ModelGraphContextType,
+  classesContext: ClassesContext,
+  graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   visualModel: WritableVisualModel,
   diagramNode: VisualModelDiagramNode,
 ): void {
-  const referencedVisualModel = graph.visualModels.get(diagramNode.externalIdentifier);
+  const referencedVisualModel = classesContext.visualModels.get(diagramNode.externalIdentifier);
   if(referencedVisualModel === undefined) {
     notifications.error("The referenced visual model does not exist");
     return;
@@ -58,7 +58,7 @@ export function putVisualDiagramNodeContentToVisualModelAction(
     return;
   }
 
-  const availableVisualModels = graph.aggregatorView.getAvailableVisualModels();
+  const availableVisualModels = classesContext.visualModels;
 
   const visualDiagramNode = visualModel.getVisualEntity(diagramNode.identifier);
   if(visualDiagramNode === null || !isVisualDiagramNode(visualDiagramNode)) {
@@ -73,19 +73,15 @@ export function putVisualDiagramNodeContentToVisualModelAction(
   // Ideally we would implement the rerouting for visual profile relationships somewhere down in this file,
   // but the validation in visual model handles it for us. So that seems like extra work,
   // which is not really that trivial.
-  refreshVisualModel(graph);
-}
-
-function refreshVisualModel (graph: ModelGraphContextType) {
-  graph.setAggregatorView(graph.aggregator.getView());
+  graph.reloadView();
 }
 
 function copyVisualEntitiesBetweenModels(
   notifications: UseNotificationServiceWriterType,
-  classesContext: ClassesContextType,
-  graph: ModelGraphContextType,
+  classesContext: ClassesContext,
+  graph: UseModelGraphContextType,
   diagram: UseDiagramType,
-  availableVisualModels: VisualModel[],
+  availableVisualModels: Map<string, WritableVisualModel>,
   copyFrom: VisualModel,
   copyTo: WritableVisualModel,
   centerPositionInNewModel: XY,
@@ -145,8 +141,8 @@ function copyVisualEntitiesBetweenModels(
  */
 function rerouteEdgesFromVisualDiagramNodeToItsContent(
   notifications: UseNotificationServiceWriterType,
-  classesContext: ClassesContextType,
-  availableVisualModels: VisualModel[],
+  classesContext: ClassesContext,
+  availableVisualModels: Map<string, WritableVisualModel>,
   diagramNodeToReroute: string,
   visualModelContainingDiagramNode: WritableVisualModel,
   modelReferencedByDiagramNode: VisualModel,
@@ -222,7 +218,7 @@ function rerouteToEntityInsideDiagramNode(
   notifications: UseNotificationServiceWriterType,
   allClasses: (SemanticModelClass | SemanticModelClassProfile)[],
   allRelationships: (SemanticModelRelationship | SemanticModelRelationshipProfile | SemanticModelGeneralization)[],
-  allAvailableVisualModels: VisualModel[],
+  allAvailableVisualModels: Map<string, WritableVisualModel>,
   visualModelWithDiagramNode: VisualModel,
   referencedVisualModel: VisualModel,
   visualRelationship: VisualRelationship,

@@ -1,5 +1,5 @@
-import { ClassesContextType } from "../context/classes-context";
-import { ModelGraphContextType } from "../context/model-context";
+import { ClassesContext } from "../context/classes-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseDiagramType } from "../diagram/diagram-hook";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import {
@@ -28,9 +28,9 @@ import { createExactNodeDimensionsQueryHandler, processLayoutResult } from "./la
  */
 export async function layoutGivenVisualEntities(
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   diagram: UseDiagramType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   configuration: UserGivenAlgorithmConfigurations,
   visualEntitiesToLayout: string[],
@@ -39,7 +39,7 @@ export async function layoutGivenVisualEntities(
   outsiders?: Record<string, XY | null>,
   shouldPutOutsidersInVisualModel?: boolean,
 ) {
-  const models = graph.models;
+  const models = classes.semanticModels;
 
   const reactflowDimensionQueryHandler = createExactNodeDimensionsQueryHandler(diagram);
 
@@ -93,9 +93,9 @@ export async function layoutGivenVisualEntities(
  */
 export async function layouGivenVisualEntitiesAction(
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   diagram: UseDiagramType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   configuration: UserGivenAlgorithmConfigurations,
   visualEntitiesToLayout: string[],

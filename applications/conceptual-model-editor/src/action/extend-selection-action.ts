@@ -1,5 +1,5 @@
-import { ClassesContextType } from "../context/classes-context";
-import { ModelGraphContextType } from "../context/model-context";
+import { ClassesContext } from "../context/classes-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { sourceModelOfEntity } from "../util/model-utils";
 import { Entity, EntityModel } from "@dataspecer/core-v2";
 import {
@@ -28,14 +28,7 @@ import { createLogger } from "../application";
 
 const LOG = createLogger(import.meta.url);
 
-export type ClassesContextEntities = {
-    classes: SemanticModelClass[],
-    relationships: SemanticModelRelationship[],
-    generalizations: SemanticModelGeneralization[],
-    classProfiles: SemanticModelClassProfile[],
-    relationshipProfiles: SemanticModelRelationshipProfile[],
-    rawEntities: (Entity | null)[],
-};
+export type ClassesContextEntities = ClassesContext;
 
 /**
  * Type representing all the possible extensions of the selection.
@@ -150,8 +143,8 @@ export type NodeSelection = {
  */
 export const extendSelectionAction = (
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
-  classesContext: ClassesContextType | null,
+  graph: UseModelGraphContextType,
+  classesContext: ClassesContext | null,
   nodeSelection: NodeSelection,
   extensionTypes: ExtensionType[],
   visibilityFilter: VisibilityFilter,
@@ -164,7 +157,7 @@ export const extendSelectionAction = (
   }
 
   const entities: ClassesContextEntities = JSON.parse(JSON.stringify(classesContext));
-  const visualModel = graph.aggregatorView.getActiveVisualModel();
+  const visualModel = graph.getActiveVisualModel();
 
   if(visualModel === null && nodeSelection.areIdentifiersFromVisualModel) {
     notifications.error("The identifiers are from visual model, but the visual model is null");
@@ -251,7 +244,7 @@ export const extendSelectionAction = (
   if(semanticModelFilter === null) {
     return selectionExtension;
   }
-  return filterExtensionUsingSemanticModelFilters(selectionExtension, semanticModelFilter, graph.models);
+  return filterExtensionUsingSemanticModelFilters(selectionExtension, semanticModelFilter, classesContext.semanticModels);
 };
 
 function getNewNodeSelectionExtendedByNodeDuplicates(

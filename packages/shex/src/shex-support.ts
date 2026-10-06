@@ -2,7 +2,7 @@ import {
     StructureModelClass,
     StructureModelComplexType,
     StructureModelProperty
-  } from "@dataspecer/core/structure-model/model";
+  } from "@dataspecer/generators/structure-model/model";
 
 /**
  * Tells whether the start class has unique cimIRI that does not occur anywhere else in the tree structure.
@@ -11,19 +11,19 @@ import {
  * @returns True if the cimIRI of the supplied class is unique in the whole data structure and is not the same as rootClass cimIRI.
  */
 export function anyPredicateHasUniqueType(cls : StructureModelClass , rootClass : string): boolean{
-    var uniqueCim = false;  
+    var uniqueCim = false;
     for (const [i, prop] of cls.properties.entries()) {
         for (var dt of prop.dataTypes) {
-            if(dt.isAssociation() == true){            
+            if(dt.isAssociation() == true){
                 const dtcasted = <StructureModelComplexType> dt;
                 if(isUniqueRecursive(dtcasted.dataType, dtcasted.dataType.cimIri, true) && dtcasted.dataType.instancesSpecifyTypes === "ALWAYS" && !(rootClass ===  dtcasted.dataType.cimIri) ){
                     uniqueCim = true;
-                }               
+                }
             }
         }
     }
     return uniqueCim;
-} 
+}
 
 /**
  * Returns whether any predicate going from the supplied class has a unique predicate cimIRI.
@@ -39,17 +39,17 @@ export function anyPredicateHasUniquePredicates(cls : StructureModelClass ): boo
     }
     for (const [i, prop] of cls.properties.entries()) {
         for (var dt of prop.dataTypes) {
-            if(dt.isAssociation() == true){             
+            if(dt.isAssociation() == true){
                 const dtcasted = <StructureModelComplexType> dt;
                 if(hasUniquePredicatesFromSecondLevel(dtcasted.dataType, propertiesIris) == true ){
                     return true;
-                }                  
+                }
             }
         }
     }
 
     return uniqueCim;
-} 
+}
 
 /**
  * Gets unique class whose cim does not occur anywhere else in the tree structure.
@@ -63,12 +63,12 @@ export function getAnyPredicateUniqueType(cls: StructureModelClass, rootClass : 
     for (const [i, prop] of cls.properties.entries()) {
         for (var dt of prop.dataTypes) {
             if(dt.isAssociation() == true){
-            const dtcasted = <StructureModelComplexType> dt;                     
+            const dtcasted = <StructureModelComplexType> dt;
                 if(isUniqueClass(dtcasted.dataType) && dtcasted.dataType.instancesSpecifyTypes == "ALWAYS" && !(dtcasted.dataType.cimIri === rootClass)){
-                    return dtcasted.dataType;                          
-                }                                         
+                    return dtcasted.dataType;
+                }
             }
-        }  
+        }
     }
 
     return uniqueClass;
@@ -89,19 +89,19 @@ export function getAnyPredicateUniquePredicate(cls: StructureModelClass): { [key
 
     for (const [i, prop] of cls.properties.entries()) {
         for (var dt of prop.dataTypes) {
-            if(dt.isAssociation() == true){        
+            if(dt.isAssociation() == true){
                 const dtcasted = <StructureModelComplexType> dt;
                 for (const [i, propInside] of dtcasted.dataType.properties.entries()) {
                     for (var dtInside of propInside.dataTypes) {
-                        //if(dtInside.isAssociation() == true){          
+                        //if(dtInside.isAssociation() == true){
                             if(hasUniquePredicatesProperty(propInside, propInside.cimIri, true) && propInside.cardinalityMin > 0 && !(propertiesIris.includes(propInside.cimIri))){
-                                return { uniquepropclass: dtcasted.dataType, predicate: propInside};                          
-                            }                             
-                        //}           
-                    }                   
-                }               
+                                return { uniquepropclass: dtcasted.dataType, predicate: propInside};
+                            }
+                        //}
+                    }
+                }
             }
-        }  
+        }
     }
     return uniqueProperty;
 }
@@ -122,7 +122,7 @@ export function getUniquePredicate(cls : StructureModelClass ): String{
     }
     return uniqueCim;
 
-} 
+}
 
 /**
  * Checks whether supplied StructureModelClass has predicates that have cim that does not occur anywhere else in the tree structure.
@@ -139,7 +139,7 @@ export function hasUniquePredicates(cls : StructureModelClass ): Boolean{
 
     return hasUnique;
 
-} 
+}
 
 /**
  * Returns whether the cimIRI of any of the properties is unique in the data structure.
@@ -157,7 +157,7 @@ function hasUniquePredicatesFromSecondLevel(cls : StructureModelClass, predicate
 
     return hasUnique;
 
-} 
+}
 
 /**
  * Returns whether the predicates cimIRIs are different on the same level inside one class
@@ -172,12 +172,12 @@ function hasUniquePredicatesSearchInClass(cls : StructureModelClass , cimIri : s
         if(prop.cimIri === cimIri){
             if(hasUniquePredicatesProperty(prop, cimIri, true) == false){
                 hasUnique = false;
-            } 
+            }
         } else {
             if(hasUniquePredicatesProperty(prop, cimIri, false) == false){
                 hasUnique = false;
             }
-        }        
+        }
     }
     return hasUnique;
 }
@@ -194,7 +194,7 @@ function hasUniquePredicatesProperty(prop: StructureModelProperty, cimIri : Stri
         return false;
     } else if(firstOccurrence && (prop.cimIri === cimIri)) {
         firstOccurrence = false;
-    } 
+    }
         // The cimIri of this class is not the same, check other classes, for each property check associations
         for (var dt of prop.dataTypes) {
             if(dt.isAssociation() == true){
@@ -202,11 +202,11 @@ function hasUniquePredicatesProperty(prop: StructureModelProperty, cimIri : Stri
                 for (const [i, propInside] of dtcasted.dataType.properties.entries()) {
                     if(hasUniquePredicatesProperty(propInside, cimIri, firstOccurrence) == false){
                         return false;
-                    }   
+                    }
                 }
             }
         }
-        return true; 
+        return true;
 }
 
 /**
@@ -218,7 +218,7 @@ export function isUniqueClass(cls : StructureModelClass ): Boolean{
 
     return isUniqueRecursive(cls, cls.cimIri, true);
 
-} 
+}
 
 /**
  * Returns whether the supplied class and its children are different from the supplied cimIRI.
@@ -234,12 +234,12 @@ function isUniqueRecursive(cls: StructureModelClass, cimIri : String, firstClass
         // The cimIri of this class is not the same, check other classes, for each property check associations
         for (const [i, prop] of cls.properties.entries()) {
             for (var dt of prop.dataTypes) {
-                if(dt.isAssociation() == true){              
+                if(dt.isAssociation() == true){
                     const dtcasted = <StructureModelComplexType> dt;
 
                     if(isUniqueRecursive(dtcasted.dataType, cimIri, false) == false){
                         return false;
-                    }                  
+                    }
                 }
             }
         }
@@ -250,7 +250,7 @@ function isUniqueRecursive(cls: StructureModelClass, cimIri : String, firstClass
 /**
  * Takes a record of prefixes and adds them to the beginning of the data string.
  * @param recordOfDataAndPrefixes Record containing data string at the first position and record of prefixes that need to be put at the beginning of the string in the second part of the record.
- * @returns String of data with prefixes at the beginning 
+ * @returns String of data with prefixes at the beginning
  */
 export async function prependPrefixes(recordOfDataAndPrefixes : Record<string, Record<string, string>>): Promise<string>{
     var data = "";
@@ -278,7 +278,7 @@ export function prefixifyFinalOutput(data : string): Record<string, Record<strin
     var prefixifiedString = data;
 
     var prefixes = recognizeStandardPrefixes(data);
-    
+
     prefixifiedString = prefixifyString(data, prefixes);
 
     const result: Record<string,Record<string, string>> = {};
@@ -292,12 +292,12 @@ export function prefixifyFinalOutput(data : string): Record<string, Record<strin
  * @returns Record of prefix tags and prefix IRIs encountered in the data string from parameter.
  */
 function recognizeStandardPrefixes(data : string): Record<string, string>{
-    var prefixes :Record<string, string> = {}; 
+    var prefixes :Record<string, string> = {};
 
     for(var key in usualPrefixes){
         if(data.search(usualPrefixes[key]) != -1){
             prefixes[key] = usualPrefixes[key];
-        }      
+        }
     }
     return prefixes;
 }
@@ -309,8 +309,8 @@ function recognizeStandardPrefixes(data : string): Record<string, string>{
  * @returns Data string modified to the prefix:rest shape for IRIs containing specified prefixes.
  */
 function prefixifyString(data : string, prefixes: Record<string, string>): string{
-    var prefixifiedString = data; 
-    
+    var prefixifiedString = data;
+
     for(var key in prefixes){
         prefixifiedString = prefixifiedString.replaceAll(/<[^<>]+>/g,function(match,offset,param2) {
             var prefixified = "";

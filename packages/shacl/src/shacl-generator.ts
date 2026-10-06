@@ -1,4 +1,4 @@
-import {ArtefactGenerator, ArtefactGeneratorContext} from "@dataspecer/core/generator";
+import {ArtefactGenerator, ArtefactGeneratorContext} from "@dataspecer/generators/generator";
 import {
   DataSpecification,
   DataSpecificationArtefact,
@@ -6,10 +6,10 @@ import {
 } from "@dataspecer/core/data-specification/model";
 import {StreamDictionary} from "@dataspecer/core/io/stream/stream-dictionary.js";
 import {assertFailed, assertNot} from "@dataspecer/core/core";
-import {transformStructureModel, structureModelAddDefaultValues} from "@dataspecer/core/structure-model/transformation";
+import {transformStructureModel, structureModelAddDefaultValues} from "@dataspecer/generators/structure-model/transformation";
 import {ShaclAdapter} from "./shacl-adapter.ts";
 import {DataSpecificationConfigurator, DefaultDataSpecificationConfiguration, DataSpecificationConfiguration} from "@dataspecer/core/data-specification/configuration";
-import {StructureModel} from "@dataspecer/core/structure-model/model";
+import {StructureModel} from "@dataspecer/generators/structure-model/model";
 import {clone} from "@dataspecer/core/core";
 
 interface ShaclGeneratorObject {
@@ -57,7 +57,7 @@ export class ShaclGenerator implements ArtefactGenerator {
         (model, conceptualModel) => transformStructureModel(conceptualModel, model, Object.values(context.specifications)),
         model
     );
-    
+
     model = structureModelAddDefaultValues(model, globalConfiguration);
 
     artefact.configuration["publicBaseUrl"] = globalConfiguration.publicBaseUrl;
@@ -88,7 +88,7 @@ export class ShaclGenerator implements ArtefactGenerator {
           classData.instancesHaveIdentity ??= configuration.instancesHaveIdentity;
           classData.instancesSpecifyTypes ??= configuration.instancesSpecifyTypes;
           classData.isClosed ??= configuration.dataPsmIsClosed == "CLOSED";
-          
+
       }
       return result;
   }

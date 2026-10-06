@@ -6,11 +6,11 @@ import {
 } from "@dataspecer/core-v2/semantic-model/concepts";
 import { WritableVisualModel, isWritableVisualModel } from "@dataspecer/visual-model";
 
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { DialogApiContextType } from "../dialog/dialog-service";
 import { Options } from "../configuration/options";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { UseDiagramType } from "../diagram/diagram-hook";
 import { addSemanticRelationshipProfileToVisualModelAction } from "./add-relationship-profile-to-visual-model";
 import { addSemanticClassProfileToVisualModelAction } from "./add-class-profile-to-visual-model";
@@ -55,8 +55,8 @@ export function openCreateProfileDialogAction(
   options: Options,
   dialogs: DialogApiContextType,
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContextType,
-  graph: ModelGraphContextType,
+  classes: ClassesContext,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   diagram: UseDiagramType,
   position: { x: number, y: number },
@@ -65,7 +65,7 @@ export function openCreateProfileDialogAction(
   labelResolver: LabelResolver,
   availableVocabularies: ControlledVocabulary[],
 ) {
-  const entity = graph.aggregatorView.getEntities()?.[identifier].aggregatedEntity;
+  const entity = graph.getEntities()?.[identifier].aggregatedEntity;
   if (entity === undefined) {
     notifications.error(`Can not find the entity with identifier '${identifier}'.`);
     return;

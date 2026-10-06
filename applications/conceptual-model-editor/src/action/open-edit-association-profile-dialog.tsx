@@ -2,7 +2,8 @@ import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-mem
 import { VisualModel } from "@dataspecer/visual-model";
 
 import { DialogApiContextType } from "../dialog/dialog-service";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
+import { ClassesContext } from "../context/classes-context";
 import { Options } from "../application";
 import {
   isSemanticModelRelationshipProfile,
@@ -31,14 +32,15 @@ export function openEditAssociationProfileDialogAction(
   cmeExecutor: CmeModelOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
-  graph: ModelGraphContextType,
+  classes: ClassesContext,
+  graph: UseModelGraphContextType,
   visualModel: VisualModel | null,
   model: InMemorySemanticModel,
   entity: SemanticModelRelationshipProfile,
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
 ) {
-  const aggregate = graph.aggregatorView.getEntities()?.[entity.id];
+  const aggregate = graph.getEntities()?.[entity.id];
   const rawEntity = aggregate?.rawEntity;
   const aggregatedEntity = aggregate?.aggregatedEntity;
   if (!isSemanticModelRelationshipProfile(rawEntity)
@@ -49,7 +51,7 @@ export function openEditAssociationProfileDialogAction(
 
   const initialState = createEditAssociationProfileDialogState(
     visualModel, options.language, model, rawEntity, aggregatedEntity,
-    graph.models, tracker, labelResolver);
+    classes.semanticModels, tracker, labelResolver);
 
   const onConfirm = (state: AssociationProfileDialogState) => {
     cmeExecutor.updateRelationshipProfile({

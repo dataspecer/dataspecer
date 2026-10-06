@@ -20,7 +20,8 @@ test("Test creating visual diagram node from existing visual model", () => {
   const {
     visualModel,
     firstModel,
-    graph
+    graph,
+    classesContext,
   } = ActionsTestSuite.prepareModelsWithSemanticData(0, TestedSemanticConnectionType.Association);
   const diagram = ActionsTestSuite.createTestDiagram();
 
@@ -28,11 +29,11 @@ test("Test creating visual diagram node from existing visual model", () => {
   const referencedVisualModel = createDefaultVisualModelFactory().createNewWritableVisualModelSync(null);
   ActionsTestSuite.createNewVisualNodeForTesting(referencedVisualModel, firstModel.getId(), "2");
   ActionsTestSuite.createNewVisualNodeForTesting(referencedVisualModel, firstModel.getId(), "3");
-  graph.aggregator.addModel(referencedVisualModel);
+  graph.addVisualModel(referencedVisualModel);
 
   // Perform action
   addVisualDiagramNodeForExistingModelToVisualModelAction(
-    notificationMockup, graph, diagram, visualModel, referencedVisualModel.getIdentifier());
+    notificationMockup, classesContext, diagram, visualModel, referencedVisualModel.getIdentifier());
 
   // Check results
   expect([...visualModel.getVisualEntities().keys()].length).toBe(1);

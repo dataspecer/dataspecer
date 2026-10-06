@@ -7,7 +7,7 @@ import {
 import {
   getViewportCenterForClassPlacement,
 } from "./utilities";
-import { ModelGraphContextType, UseModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { createNewVisualModelAction } from "./create-new-visual-model-from-source-visual-model";
 import { LanguageString } from "@dataspecer/core-v2/semantic-model/concepts";
@@ -19,7 +19,7 @@ import { UseDiagramType } from "../diagram/diagram-hook";
  */
 export function addVisualDiagramNodeForNewModelToVisualModelAction(
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   useGraph: UseModelGraphContextType,
   diagram: UseDiagramType,
   visualModel: WritableVisualModel,

@@ -4,14 +4,14 @@ import {
   DataSpecificationArtefact,
   DataSpecificationSchema,
 } from "@dataspecer/core/data-specification/model";
-import { ArtefactGenerator, ArtefactGeneratorContext } from "@dataspecer/core/generator";
+import { ArtefactGenerator, ArtefactGeneratorContext } from "@dataspecer/generators/generator";
 import { StreamDictionary } from "@dataspecer/core/io/stream/stream-dictionary";
-import { defaultStructureTransformations, structureModelTransformPrimitiveTypes, transformStructureModel } from "@dataspecer/core/structure-model/transformation";
+import { defaultStructureTransformations, structureModelTransformPrimitiveTypes, transformStructureModel } from "@dataspecer/generators/structure-model/transformation";
 import { structureModelAddXmlProperties } from "../xml-structure-model/add-xml-properties.ts";
 import { structureModelToXmlSchema } from "./xml-schema-model-adapter.ts";
 import { XML_SCHEMA } from "./xml-schema-vocabulary.ts";
 import { writeXmlSchema } from "./xml-schema-writer.ts";
-import { HandlebarsAdapter } from "../../../handlebars-adapter/lib/interface.js";
+import { HandlebarsAdapter } from "@dataspecer/handlebars-adapter";
 import { XmlSchemaDocumentationGenerator } from "../documentation/xml-schema-documentation.ts";
 import { structureModelMarkGmlLiteralAsReferencing, structureModelPopulateSfGeometry } from "./gml-support.ts";
 

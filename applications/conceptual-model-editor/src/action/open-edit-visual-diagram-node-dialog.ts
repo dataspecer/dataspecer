@@ -1,5 +1,6 @@
 import { Options } from "../application";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
+import { ClassesContext } from "../context/classes-context";
 import { DialogApiContextType } from "../dialog/dialog-service";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import {
@@ -24,24 +25,21 @@ export function openEditVisualDiagramNodeDialogAction(
   notifications: UseNotificationServiceWriterType,
   options: Options,
   dialogs: DialogApiContextType,
-  graph: ModelGraphContextType,
+  classes: ClassesContext,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   visualModelDiagramNode: VisualModelDiagramNode,
 ) {
 
   const dialogData = prepareDataForVisualDiagramNodeDialog(
-    notifications, options, graph, visualModel, visualModelDiagramNode);
+    notifications, options, classes, visualModel, visualModelDiagramNode);
   if (dialogData === null) {
     return;
   }
 
   const onConfirm = (nextState: EditVisualDiagramNodeDialogState) => {
     dialogData.referencedVisualModel.setLabel(nextState.representedVisualModelName);
-
-    // Hack to force update in the Header component
-    const activeViewId = graph.aggregatorView.getActiveViewId();
-    graph.aggregatorView.changeActiveVisualModel(activeViewId ?? null);
-    graph.setAggregatorView(graph.aggregator.getView());
+    graph.onVisualModelDidChange();
   };
 
   dialogs?.openDialog(createEditVisualDiagramNodeDialog(dialogData.state, onConfirm));
@@ -51,7 +49,7 @@ export function openEditVisualDiagramNodeDialogAction(
 export function prepareDataForVisualDiagramNodeDialog(
   notifications: UseNotificationServiceWriterType,
   options: Options,
-  graph: ModelGraphContextType,
+  classes: ClassesContext,
   visualModel: VisualModel,
   visualModelDiagramNode: VisualModelDiagramNode,
 ): {
@@ -65,8 +63,7 @@ export function prepareDataForVisualDiagramNodeDialog(
     return null;
   }
 
-  const referencedVisualModel = graph.aggregatorView.getAvailableVisualModels().find(
-    availableModel => availableModel.getIdentifier() === visualDiagramNode.representedVisualModel);
+  const referencedVisualModel = classes.visualModels.get(visualDiagramNode.representedVisualModel);
 
   if (referencedVisualModel === undefined) {
     notifications.error("The edited visual diagram node has missing the referenced visual model");

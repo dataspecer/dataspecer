@@ -5,7 +5,7 @@ import {
 } from "@dataspecer/visual-model";
 
 import type { UseNotificationServiceWriterType } from "../notification/notification-service-context";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import {
   SemanticModelRelationship,
   SemanticModelRelationshipEnd
@@ -24,7 +24,7 @@ import { SemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-m
  */
 export function removeAttributesFromVisualModelAction(
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   visualModel: WritableVisualModel,
   attributeIdentifiers: string[],
 ) {
@@ -81,7 +81,7 @@ function addAttributesToRemoveToTheMap(
 }
 
 function geDomainAndRangeForAttribute(
-  classes: ClassesContextType, attributeIdentifier: string,
+  classes: ClassesContext, attributeIdentifier: string,
 ): DomainAndRange<SemanticModelRelationshipEnd> | null {
   const attribute: SemanticModelRelationship | SemanticModelRelationshipProfile | undefined =
       classes.relationships.find(relationship => relationship.id === attributeIdentifier);

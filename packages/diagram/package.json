@@ -1,0 +1,24 @@
+{
+  "name": "@dataspecer/diagram",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": { ".": "./lib/index.js" },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck:test": "tsc --project tsconfig.test.json"
+  },
+  "dependencies": {
+    "@dataspecer/core": "*",
+    "@dataspecer/core-v2": "*",
+    "@dataspecer/visual-model": "*"
+  },
+  "devDependencies": {
+    "@xmldom/xmldom": "^0.8.11",
+    "@types/node": "^25.5.2",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.7"
+  }
+}

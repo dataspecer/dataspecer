@@ -1,7 +1,4 @@
 import { useMemo } from "react";
-import {
-  DialogProperties,
-} from "../../dialog-v2/dialog-presenter-api";
 import { AddVocabularyView } from "./add-vocabulary-view";
 import {
   createSelectControlledVocabulariesPresenter,
@@ -13,9 +10,11 @@ import {
 } from "./select-controlled-vocabularies-state";
 import { VocabularyItemView } from "./vocabulary-item-view";
 
-export function SelectControlledVocabulariesView(
-  props: DialogProperties<SelectControlledVocabulariesState>,
-) {
+export function SelectControlledVocabulariesView(props: {
+  state: SelectControlledVocabulariesState;
+  setState: (next: (prevState: SelectControlledVocabulariesState) =>
+    SelectControlledVocabulariesState) => void;
+}) {
   const presenter = useMemo(
     () => createSelectControlledVocabulariesPresenter(props.setState),
     [props.setState],

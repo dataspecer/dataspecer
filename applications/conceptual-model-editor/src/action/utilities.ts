@@ -20,8 +20,8 @@ import {
 } from "@dataspecer/visual-model";
 import { DiagramNodeTypes, Edge, EdgeType } from "../diagram";
 import { findSourceModelOfEntity } from "../service/model-service";
-import { ModelGraphContextType } from "../context/model-context";
-import { ClassesContextType } from "../context/classes-context";
+import { UseModelGraphContextType } from "../context/model-context";
+import { ClassesContext } from "../context/classes-context";
 import { ExtensionType, VisibilityFilter, extendSelectionAction } from "./extend-selection-action";
 import { Selections } from "./filter-selection-action";
 import { isSemanticModelAttribute, SemanticModelClass } from "@dataspecer/core-v2/semantic-model/concepts";
@@ -195,10 +195,10 @@ type ComputedPositionForNodePlacement = {
  */
 export const computeRelatedAssociationsBarycenterAction = (
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   diagram: UseDiagramType,
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   classToFindAssociationsFor: string,
 ): ComputedPositionForNodePlacement => {
   const associatedClasses: string[] = findAssociatedClassesAndClassProfiles(
@@ -258,8 +258,8 @@ const computeBarycenter = (positions: Position[], diagram: UseDiagramType): Comp
 
 const findAssociatedClassesAndClassProfiles = (
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
-  classesContext: ClassesContextType,
+  graph: UseModelGraphContextType,
+  classesContext: ClassesContext,
   classToFindAssociationsFor: string
 ) => {
   // Is synchronous for this case
@@ -319,7 +319,7 @@ export function findTopLevelGroupInVisualModel(
  *  (possibly multiple times if it the class is present in it more than once)
  */
 export function getVisualDiagramNodeMappingsByRepresented(
-  availableVisualModels: VisualModel[],
+  availableVisualModels: Map<string, WritableVisualModel>,
   visualModel: VisualModel
 ): {
   existingVisualDiagramNodes: Record<string, VisualDiagramNode>,
@@ -516,7 +516,7 @@ export const getOtherCoordinate = (coordinate: Coordinate): Coordinate => {
  * Checks if we can reach the {@link visualModelToAddTo} from {@link addedVisualModel}
  */
 export function doesAddingVisualModelCauseSelfReference(
-  availableVisualModels: VisualModel[],
+  availableVisualModels: Map<string, WritableVisualModel>,
   visualModelToAddTo: VisualModel,
   addedVisualModel: string,
 ) {
@@ -543,7 +543,7 @@ export function isVisualEdgeEnd(what: VisualEntity): what is VisualEdgeEndPoint 
  *          The visual diagram nodes are also contained in the output - those have the represented model's identifier
  */
 export function getClassesAndDiagramNodesModelsFromVisualModelRecursively(
-  availableVisualModels: VisualModel[],
+  availableVisualModels: Map<string, WritableVisualModel>,
   visualModel: string,
 ) {
   return getClassesAndDiagramNodesFromVisualModelInternal(
@@ -551,12 +551,11 @@ export function getClassesAndDiagramNodesModelsFromVisualModelRecursively(
 }
 
 function getClassesAndDiagramNodesFromVisualModelInternal(
-  availableVisualModels: VisualModel[],
+  availableVisualModels: Map<string, WritableVisualModel>,
   visualModel: string,
   result: string[],
 ) {
-  const linkedVisualModel = availableVisualModels.find(
-    availableVisualModel => visualModel === availableVisualModel.getIdentifier());
+  const linkedVisualModel = availableVisualModels.get(visualModel);
   if (linkedVisualModel !== undefined) {
     for (const [_, visualEntity] of linkedVisualModel.getVisualEntities()) {
       if (isVisualNode(visualEntity)) {
@@ -577,7 +576,7 @@ function getClassesAndDiagramNodesFromVisualModelInternal(
  *  that means all relevant attributes existing in semantic model.
  */
 export function getVisualNodeContentBasedOnExistingEntities(
-  classes: ClassesContextType,
+  classes: ClassesContext,
   entity: SemanticModelClass | SemanticModelClassProfile,
 ): string[] {
   const nodeContent: string[] = [];

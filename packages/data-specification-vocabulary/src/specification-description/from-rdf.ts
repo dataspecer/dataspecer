@@ -3,7 +3,7 @@ import jsonld from "jsonld";
 import { DSV_APPLICATION_PROFILE_TYPE, DSV_VOCABULARY_SPECIFICATION_DOCUMENT_TYPE, type ExternalSpecification, type ResourceDescriptor, type Specification } from "./model.ts";
 import { ADMS, DSV, OWL, PROF } from "./vocabulary.ts";
 import * as N3 from "n3";
-import type { LanguageString } from "@dataspecer/core/core/index";
+import type { LanguageString } from "@dataspecer/core/core";
 import { mimeToIriMap } from "./utils.ts";
 import { dsvMetadataWellKnown } from "./well-known.ts";
 

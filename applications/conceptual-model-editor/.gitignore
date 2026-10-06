@@ -1,6 +1,9 @@
 #
 .*
 
+# Source files
+!lib
+
 # Logs
 logs
 *.log

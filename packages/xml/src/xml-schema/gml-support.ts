@@ -1,17 +1,17 @@
-import { clone } from "@dataspecer/core/core/index";
-import { StructureModelClass } from "@dataspecer/core/structure-model/model/structure-model-class";
-import { StructureModelComplexType, StructureModelPrimitiveType } from "@dataspecer/core/structure-model/model/structure-model-type";
+import { clone } from "@dataspecer/core/core";
+import { StructureModelClass } from "@dataspecer/generators/structure-model/model/structure-model-class";
+import { StructureModelComplexType, StructureModelPrimitiveType } from "@dataspecer/generators/structure-model/model/structure-model-type";
 import type { XmlStructureModel } from "../xml-structure-model/model/xml-structure-model.ts";
 import type { GetReferencedSchema } from "./xml-schema-model-adapter.ts";
-import { StructureModelProperty } from "@dataspecer/core/structure-model/model/structure-model-property";
+import { StructureModelProperty } from "@dataspecer/generators/structure-model/model/structure-model-property";
 import { getDataPsmXmlGmlType } from "@dataspecer/core/data-psm/xml-extension/model/data-psm-property-extension";
-import type { StructureModel } from "@dataspecer/core/structure-model/model/index";
+import type { StructureModel } from "@dataspecer/generators/structure-model/model";
 
 export const DataPsmXmlBoundingShapeType = "http://www.opengis.net/gml/3.2#BoundingShapeType" as const;
 export const DataPsmXmlEnvelopeType = "http://www.opengis.net/gml/3.2#EnvelopeType" as const;
 export const DataPsmXmlGeometryPropertyType = "http://www.opengis.net/gml/3.2#GeometryPropertyType" as const;
 
-const RDF_GEOSPARQL_GML_LITERAL = "http://www.opengis.net/ont/geosparql#gmlLiteral";
+export const RDF_GEOSPARQL_GML_LITERAL = "http://www.opengis.net/ont/geosparql#gmlLiteral";
 const RDF_GEOSPARQL_WKT_LITERAL = "http://www.opengis.net/ont/geosparql#wktLiteral";
 export const XML_GML_NAMESPACE = "http://www.opengis.net/gml/3.2";
 const XML_GML_NAMESPACE_PREFIX = "gml";

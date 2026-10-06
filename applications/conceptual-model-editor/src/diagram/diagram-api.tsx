@@ -1,4 +1,6 @@
-import { AlignmentHorizontalPosition, AlignmentVerticalPosition } from "../action/align-nodes";
+import {
+  AlignmentHorizontalPosition, AlignmentVerticalPosition,
+} from "../action/align-nodes";
 import {
   type Node,
   type Edge,
@@ -228,15 +230,6 @@ export interface DiagramActions extends
    */
   openGroupMenu(groupIdentifier: string, canvasPosition: Position): void;
 
-  /**
-   * Sets correct highlighting values in context. We have to call it through the diagram API,
-   * because we have access to the rendering library (reactflow) only in diagram component.
-   * @param nodeIdentifiers are the identifiers of the nodes to highlight.
-   */
-  highlightNodesInExplorationModeFromCatalog(
-    nodeIdentifiers: string[],
-    modelOfClassWhichStartedHighlighting: string
-  ): void;
 }
 
 /**

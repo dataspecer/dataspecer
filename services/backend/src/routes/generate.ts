@@ -1,6 +1,6 @@
 import { CONTROLLED_VOCABULARY_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { CoreResourceReader } from "@dataspecer/core/core/core-reader";
-import { LanguageString } from "@dataspecer/core/core/index";
+import { LanguageString } from "@dataspecer/core/core";
 import { InputStream } from "@dataspecer/core/io/stream/input-stream";
 import { StreamDictionary } from "@dataspecer/core/io/stream/stream-dictionary";
 import type { ProjectModelEntity } from "@dataspecer/core/project-model";

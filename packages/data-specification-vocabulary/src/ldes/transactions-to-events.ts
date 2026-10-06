@@ -129,7 +129,7 @@ function transactionsToEvents(input: TransactionsToLdesInput, project: Projectio
       events.push({
         kind,
         iri,
-        memberIri: createVersionIri(iri, transaction.id, events.length),
+        memberIri: createVersionIri(iri, timestamp, events.length),
         transactionId: transaction.id,
         created: timestamp,
         issued: timestamp,
@@ -244,12 +244,11 @@ function defaultTransactionTime(transaction: Transaction): Date {
 
 /**
  * IRI of the member (version object) of a resource in a transaction. The
- * sequence keeps it unique even when one transaction retires and reissues the
- * same canonical IRI (e.g. deleting an entity and creating another with the
- * same IRI).
+ * timestamp makes it independent of transaction identifiers. The stream-wide
+ * sequence distinguishes events with the same timestamp and canonical IRI.
  */
-function createVersionIri(iri: string, transactionId: string, sequence: number): string {
-  return iri + (iri.includes("#") ? "-" : "#") + transactionId + "-" + sequence;
+function createVersionIri(iri: string, timestamp: string, sequence: number): string {
+  return iri + (iri.includes("#") ? "-" : "#") + timestamp + "-" + sequence;
 }
 
 function projectProfileModel(input: TransactionsToLdesInput, models: Record<string, EntityRecord>): Map<string, PublishedResource> {

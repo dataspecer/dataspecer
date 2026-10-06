@@ -2,8 +2,8 @@ import { isVisualNode, WritableVisualModel } from "@dataspecer/visual-model";
 import { EntityRepresentative, findRepresentative, findVocabularyForModel } from "../dialog/utilities/dialog-utilities";
 import { openCreateClassDialogWithModelDerivedFromClassAction } from "./open-create-class-dialog-with-derived-model";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
-import { ModelGraphContextType } from "../context/model-context";
-import { ClassesContextType } from "../context/classes-context";
+import { UseModelGraphContextType } from "../context/model-context";
+import { ClassesContext } from "../context/classes-context";
 import { Options } from "../application";
 import { DialogApiContextType } from "../dialog/dialog-service";
 import { UseDiagramType } from "../diagram/diagram-hook";
@@ -28,9 +28,9 @@ export function openCreateClassDialogAndCreateAssociationAction(
   cmeExecutor: CmeModelOperationExecutor,
   notifications: UseNotificationServiceWriterType,
   dialogs: DialogApiContextType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   options: Options,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   visualModel: WritableVisualModel,
   nodeIdentifier: string,
@@ -41,7 +41,7 @@ export function openCreateClassDialogAndCreateAssociationAction(
 ) {
   const onConfirm = (created: CmeReference, state: ClassDialogState) => {
     createAssociationToCreatedClass(
-      cmeExecutor, notifications, options, graph, visualModel,
+      cmeExecutor, notifications, options, graph, classes, visualModel,
       nodeIdentifier, isCreatedClassTarget, created, state, tracker,
       labelResolver);
   }
@@ -56,7 +56,8 @@ function createAssociationToCreatedClass(
   cmeExecutor: CmeModelOperationExecutor,
   notifications: UseNotificationServiceWriterType,
   options: Options,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
+  classesContext: ClassesContext,
   visualModel: WritableVisualModel,
   nodeIdentifier: string,
   isCreatedClassTarget: boolean,
@@ -80,7 +81,7 @@ function createAssociationToCreatedClass(
   const sourceClassIdentifier = node.representedEntity;
 
   const vocabularyForCreatedClass = findVocabularyForModel(
-    graph, visualModel, createdClassData.model);
+    classesContext, visualModel, createdClassData.model);
 
   const createdClassEntityRepresentative: EntityRepresentative = {
     identifier: createdClassData.identifier,

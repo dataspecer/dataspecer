@@ -22,7 +22,7 @@ import {
   createRelationship
 } from "@dataspecer/core-v2/semantic-model/operations";
 import { addSemanticRelationshipToVisualModelAction } from "./add-relationship-to-visual-model";
-import { ModelGraphContextType } from "../context/model-context";
+import { modelGraphContextToUse, UseModelGraphContextType } from "../context/model-context";
 import { SemanticModelAggregator, SemanticModelAggregatorView } from "@dataspecer/core-v2/semantic-model/aggregator";
 import { SetStateAction } from "react";
 import { createVisualEdgeEndpointDuplicateAction } from "./create-visual-edge-endpoint-duplicate";
@@ -409,22 +409,38 @@ const prepareVisualModelWithFourNodes = () => {
   const visualModels: Map<string, WritableVisualModel> = new Map(Object.entries({
     [visualModel.getIdentifier()]: visualModel
   }));
+  const visualModelsList = [...visualModels.values()];
 
-  const graph: ModelGraphContextType = {
-    aggregator,
+  const graph = modelGraphContextToUse({
     aggregatorView,
-    setAggregatorView: function (_value: SetStateAction<SemanticModelAggregatorView>): void {
-      throw new Error("Function not implemented.");
-    },
-    models: models,
-    setModels: function (_): void {
-      throw new Error("Function not implemented.");
-    },
+    models,
     visualModels,
-    setVisualModels: function (): void {
-      throw new Error("Function not implemented.");
+    addSemanticModel(model) {
+      aggregator.addModel(model);
+      models.set(model.getId(), model);
     },
-  };
+    addVisualModel(model) {
+      aggregator.addModel(model);
+      visualModels.set(model.getIdentifier(), model as WritableVisualModel);
+      visualModelsList.push(model as WritableVisualModel);
+    },
+    deleteModel(model) {
+      models.delete(model);
+    },
+    deleteVisualModel(model) {
+      visualModels.delete(model);
+      const index = visualModelsList.findIndex(item => item.getIdentifier());
+        if (index > -1) {
+          visualModelsList.splice(index, 1);
+        }
+    },
+    reloadView() {
+      throw Error("Not supported");
+    },
+    selectActiveVisualModel() {
+      throw Error("Not supported");
+    },
+  });
 
   return {
     visualModel,
@@ -544,7 +560,7 @@ enum RelationshipToTestType {
  * @returns
  */
 function createTestRelationshipOfGivenType(
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   models: Map<string, EntityModel>,
   modelDsIdentifier: string,
@@ -580,7 +596,7 @@ function createTestRelationshipOfGivenType(
 }
 
 function addTestRelationshipToVisualModel(
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   modelDsIdentifier: string,
   relationshipToTestType: RelationshipToTestType,

@@ -5,9 +5,9 @@ import {
   VisualRelationship,
 } from "@dataspecer/visual-model";
 import { getVisualDiagramNodeMappingsByRepresented, isVisualEdgeEnd } from "./utilities";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { findSourceModelOfEntity } from "../service/model-service";
 import { VisualModelDiagramNode } from "../diagram";
 import { createGetVisualEntitiesForRepresentedGlobalWrapper, VisualsForRepresentedWrapper } from "../util/utils";
@@ -20,8 +20,8 @@ import { getSemanticConnectionEndConcepts } from "../util/relationship-utils";
  */
 export function addAllRelationshipsForVisualDiagramNodeToVisualModelAction(
   notifications: UseNotificationServiceWriterType,
-  classesContext: ClassesContextType,
-  graph: ModelGraphContextType,
+  classesContext: ClassesContext,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   visualModelDiagramNode: VisualModelDiagramNode,
 ) {
@@ -31,12 +31,11 @@ export function addAllRelationshipsForVisualDiagramNodeToVisualModelAction(
     ...classesContext.relationshipProfiles,
   ];
 
-  const availableVisualModels: VisualModel[] = graph.aggregatorView.getAvailableVisualModels();
+  const availableVisualModels = classesContext.visualModels;
 
   const visualRelationshipsToAdd: Omit<VisualRelationship, "id" | "type">[] = [];
 
-  const representedVisualModel = availableVisualModels
-    .find(model => model.getIdentifier() === visualModelDiagramNode.externalIdentifier);
+  const representedVisualModel = availableVisualModels.get(visualModelDiagramNode.externalIdentifier);
   if (representedVisualModel === undefined) {
     notifications.error("Missing referenced visual model");
     return;
@@ -61,12 +60,12 @@ export function addAllRelationshipsForVisualDiagramNodeToVisualModelAction(
       // If domain is in the visual model diagram node
       if (source === cclass) {
         findRelationshipsForEnd(
-          notifications, graph, visualModel, getVisualEntitiesForRepresentedGlobal,
+          notifications, classesContext, visualModel, getVisualEntitiesForRepresentedGlobal,
           relationship, visualModelDiagramNode.identifier, target, false, visualRelationshipsToAdd);
       }
       if (target === cclass) {
         findRelationshipsForEnd(
-          notifications, graph, visualModel, getVisualEntitiesForRepresentedGlobal,
+          notifications, classesContext, visualModel, getVisualEntitiesForRepresentedGlobal,
           relationship, visualModelDiagramNode.identifier, source, true, visualRelationshipsToAdd);
       }
     }
@@ -86,7 +85,7 @@ export function addAllRelationshipsForVisualDiagramNodeToVisualModelAction(
  */
 function findRelationshipsForEnd(
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  classesContext: ClassesContext,
   visualModel: VisualModel,
   getVisualEntitiesForRepresentedGlobal: VisualsForRepresentedWrapper,
   relationship: SemanticModelRelationship | SemanticModelRelationshipProfile | SemanticModelGeneralization,
@@ -106,7 +105,7 @@ function findRelationshipsForEnd(
   // which are already covered by the relationship
   const availableVisualEnds = getVisualEntitiesForRepresentedGlobal(end);
   const visualRelationships = visualModel.getVisualEntitiesForRepresented(relationship.id);
-  const model = findSourceModelOfEntity(relationship.id, graph.models);
+  const model = findSourceModelOfEntity(relationship.id, classesContext.semanticModels);
   if (model === null) {
     return;
   }

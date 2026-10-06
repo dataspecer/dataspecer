@@ -15,6 +15,7 @@
     "@dataspecer/csv": "*",
     "@dataspecer/federated-observable-store": "*",
     "@dataspecer/federated-observable-store-react": "*",
+    "@dataspecer/generators": "^0.0.0",
     "@dataspecer/json": "*",
     "@dataspecer/json-example": "*",
     "@dataspecer/model-store": "^0.0.0",

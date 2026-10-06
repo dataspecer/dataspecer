@@ -14,7 +14,7 @@ import {
 } from "../../diagram";
 import { UseDiagramType } from "../../diagram/diagram-hook";
 import { UseNotificationServiceWriterType } from "../../notification/notification-service-context";
-import { ClassesContextType } from "../../context/classes-context";
+import { ClassesContext } from "../../context/classes-context";
 import {
   isSemanticModelAttribute,
   isSemanticModelClass,
@@ -44,7 +44,7 @@ import {
   SemanticModelAggregatorView
 } from "@dataspecer/core-v2/semantic-model/aggregator";
 import { XY } from "@dataspecer/layout";
-import { ModelGraphContextType, UseModelGraphContextType } from "../../context/model-context";
+import { modelGraphContextToUse, UseModelGraphContextType } from "../../context/model-context";
 import { CmeSpecialization } from "../../dataspecer/cme-model/model";
 import { addVisualDiagramNode } from "../../dataspecer/visual-model/operation/add-visual-diagram-node";
 import {
@@ -186,12 +186,6 @@ export class ActionsTestSuite {
           openGroupMenu: function (_groupIdentifier: string, _canvasPosition: Position): void {
             throw new Error("Function not implemented.");
           },
-          highlightNodesInExplorationModeFromCatalog: function (
-            _nodeIdentifiers: string[],
-            _modelOfClassWhichStartedHighlighting: string
-          ): void {
-            throw new Error("Function not implemented.");
-          },
           openAlignmentMenu: function (_sourceNode: Node, _canvasPosition: Position): void {
             throw new Error("Function not implemented.");
           }
@@ -275,7 +269,14 @@ export class ActionsTestSuite {
     givenRelationships: CreatedSemanticEntityData[],
     givenGeneralizations: CreatedSemanticEntityData[],
     givenRelationshipProfiles: CreatedSemanticEntityData[],
-  ): ClassesContextType {
+    models: Pick<ClassesContext,
+      "semanticModels" | "semanticModelsList" | "visualModels" | "visualModelsList"> = {
+      semanticModels: new Map(),
+      semanticModelsList: [],
+      visualModels: new Map(),
+      visualModelsList: [],
+    },
+  ): ClassesContext {
     const sourceModelOfEntityMap = new Map();
 
     const classesAsSemanticEntities: SemanticModelClass[] = [];
@@ -311,14 +312,13 @@ export class ActionsTestSuite {
       .concat(generalizationsAsSemanticEntities)
       .concat(relationshipProfilesAsSemanticEntities);
 
-    const classes: ClassesContextType = {
+    const classes: ClassesContext = {
+      ...models,
       classes: classesAsSemanticEntities,
-      allowedClasses: [],
-      setAllowedClasses: function (_) { },
       relationships: relationshipsAsSemanticEntities,
       generalizations: generalizationsAsSemanticEntities,
       sourceModelOfEntityMap,
-      rawEntities,
+      entities: rawEntities,
       classProfiles: [],
       relationshipProfiles: relationshipProfilesAsSemanticEntities
     };
@@ -402,22 +402,8 @@ export class ActionsTestSuite {
     const visualModels: Map<string, WritableVisualModel> = new Map(Object.entries({
       [visualModel.getIdentifier()]: visualModel
     }));
+    const visualModelsList = [...visualModels.values()];
 
-    const graph: ModelGraphContextType = {
-      aggregator,
-      aggregatorView,
-      setAggregatorView: function (): void {
-        // Do nothing
-      },
-      models: models,
-      setModels: function (): void {
-        throw new Error("Function not implemented.");
-      },
-      visualModels,
-      setVisualModels: function (): void {
-        throw new Error("Function not implemented.");
-      }
-    };
     for(let i = 0; i < modelCount; i++) {
       const model = new InMemorySemanticModel();
       if (i === 0) {
@@ -431,38 +417,36 @@ export class ActionsTestSuite {
       createdRelationships.push([]);
     }
 
-    const useGraph: UseModelGraphContextType = {
-      aggregator,
+    const graph = modelGraphContextToUse({
       aggregatorView,
-      setAggregatorView: function (_value: SetStateAction<SemanticModelAggregatorView>): void {
-        throw new Error("Function not implemented.");
-      },
       models,
       visualModels,
-      addModel: function (..._models: EntityModel[]): void {
-        throw new Error("Function not implemented.");
+      addSemanticModel(model) {
+        aggregator.addModel(model);
+        models.set(model.getId(), model);
       },
-      addVisualModel: function (...visualModels: WritableVisualModel[]): void {
-        for(const visualModel of visualModels) {
-          graph.aggregator.addModel(visualModel);
+      addVisualModel(model) {
+        aggregator.addModel(model);
+        visualModels.set(model.getIdentifier(), model as WritableVisualModel);
+        visualModelsList.push(model as WritableVisualModel);
+      },
+      deleteModel(model) {
+        models.delete(model);
+      },
+      deleteVisualModel(model) {
+        visualModels.delete(model);
+        const index = visualModelsList.findIndex(item => item.getIdentifier());
+        if (index > -1) {
+          visualModelsList.splice(index, 1);
         }
       },
-      setModelAlias: function (_alias: string | null, _model: EntityModel): void {
-        throw new Error("Function not implemented.");
+      reloadView() {
+        this.aggregatorView = aggregator.getView();
       },
-      setModelIri: function (_iri: string, _model: InMemorySemanticModel): void {
-        throw new Error("Function not implemented.");
+      selectActiveVisualModel() {
+        throw Error("Not supported");
       },
-      replaceModels: function (_entityModels: EntityModel[], _visualModels: WritableVisualModel[]): void {
-        throw new Error("Function not implemented.");
-      },
-      removeModel: function (_modelId: string): void {
-        throw new Error("Function not implemented.");
-      },
-      removeVisualModel: function (_modelId: string): void {
-        throw new Error("Function not implemented.");
-      }
-    }
+    });
 
     // Fill with data
 
@@ -516,6 +500,12 @@ export class ActionsTestSuite {
       connectionToTestType === TestedSemanticConnectionType.Association ? createdRelationships.flat() : [],
       connectionToTestType === TestedSemanticConnectionType.Generalization ? createdRelationships.flat() : [],
       connectionToTestType === TestedSemanticConnectionType.AssociationProfile ? createdRelationships.flat() : [],
+      {
+        semanticModels: models,
+        semanticModelsList: modelsAsArray,
+        visualModels,
+        visualModelsList,
+      },
     );
 
     return {
@@ -526,7 +516,6 @@ export class ActionsTestSuite {
       models,
       modelsAsArray,
       graph,
-      useGraph,
       classesContext
     };
   }
@@ -712,7 +701,7 @@ export class ActionsTestSuite {
   static createRelationshipProfileOfEveryRelationshipTestVariant(
     models: Map<string, EntityModel>,
     modelDsIdentifier: string,
-    classesContext: ClassesContextType,
+    classesContext: ClassesContext,
   ) {
     const createdIdentifiers = [];
     const model = models.get(modelDsIdentifier) as InMemorySemanticModel;
@@ -768,7 +757,7 @@ export class ActionsTestSuite {
   static createClassProfileOfEveryClassTestVariant(
     models: Map<string, EntityModel>,
     modelDsIdentifier: string,
-    classesContext: ClassesContextType,
+    classesContext: ClassesContext,
   ) {
     const createdIdentifiers: {
       profiledClass: string,
@@ -800,7 +789,7 @@ export class ActionsTestSuite {
    * Creates semantic attribute, adds it to the model and extends the classes context
    */
   static createSemanticAttributeTestVariant(
-    classesContext: ClassesContextType,
+    classesContext: ClassesContext,
     models: Map<string, EntityModel>,
     domainConceptIdentifier: string,
     ModelDsIdentifier: string,
@@ -836,7 +825,7 @@ export class ActionsTestSuite {
       throw new Error("Failed when creating attribute");
     }
     classesContext.relationships.push(attributeObject);
-    classesContext.rawEntities.push(attributeObject);
+    classesContext.entities.push(attributeObject);
 
     return {
       identifier: newAttribute.id,
@@ -845,7 +834,7 @@ export class ActionsTestSuite {
   }
 
   static createSemanticAttributeProfileTestVariant(
-    classesContext: ClassesContextType,
+    classesContext: ClassesContext,
     models: Map<string, EntityModel>,
     domainAttribute: string,
     domainConceptIdentifier: string,
@@ -990,7 +979,7 @@ export class ActionsTestSuite {
   }
 
   static addTestRelationshipToVisualModel(
-    graph: ModelGraphContextType,
+    graph: UseModelGraphContextType,
     visualModel: WritableVisualModel,
     modelDsIdentifier: string,
     relationshipToTestType: TestedSemanticConnectionType,

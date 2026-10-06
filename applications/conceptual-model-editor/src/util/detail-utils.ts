@@ -22,8 +22,8 @@ import type { Entity, EntityModel } from "@dataspecer/core-v2";
 
 import { sourceModelOfEntity } from "./model-utils";
 import { getIri, getModelIri } from "./iri-utils";
-import { ModelGraphContext, ModelGraphContextType } from "../context/model-context";
-import { ClassesContext, ClassesContextType } from "../context/classes-context";
+import { useModelGraphContext, UseModelGraphContextType } from "../context/model-context";
+import { ClassesContext, useClassesContext } from "../context/classes-context";
 import { getTheOriginalProfiledEntity } from "./profile-utils";
 import { cardinalityToHumanLabel, getDomainAndRange } from "../util/relationship-utils";
 import {
@@ -113,14 +113,14 @@ export const useEntityProxy = (
   viewedEntity: EntityDetailSupportedType,
   currentLang?: string,
 ) => {
-  const classes = useContext(ClassesContext);
-  const graph = useContext(ModelGraphContext);
+  const classes = useClassesContext();
+  const graph = useModelGraphContext();
   return createEntityProxy(classes, graph, viewedEntity, currentLang);
 }
 
 export const createEntityProxy = (
-  classesContext: ClassesContextType,
-  graph: ModelGraphContextType,
+  classesContext: ClassesContext,
+  graph: UseModelGraphContextType,
   viewedEntity: EntityDetailSupportedType,
   currentLang?: string,
 ) => {
@@ -130,10 +130,9 @@ export const createEntityProxy = (
     classProfiles,
     relationshipProfiles,
     generalizations,
-    rawEntities,
+    entities: rawEntities,
   } = classesContext;
-  const { models: modelsMap } = graph;
-  const models = [...modelsMap.values()];
+  const models = classesContext.semanticModelsList;
   const sourceModel = sourceModelOfEntity(viewedEntity.id, models);
   const profileSources = [...classes, ...relationships, ...classProfiles, ...relationshipProfiles];
 

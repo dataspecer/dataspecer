@@ -18,7 +18,6 @@ import {
 } from "@xyflow/react";
 
 import "./developer-tools.css";
-import { useExploration } from "../../context/highlighting-exploration-mode";
 import { t } from "../../application";
 import { useActions } from "../../action/actions-react-binding";
 
@@ -30,7 +29,6 @@ import { useActions } from "../../action/actions-react-binding";
 export function DeveloperTools() {
   const [changeLoggerActive, setChangeLoggerActive] = useState(false);
   const [viewportLoggerActive, setViewportLoggerActive] = useState(true);
-  const explorationMode = useExploration();
   const { openPerformLayoutVisualModelDialog } = useActions();
 
   return (
@@ -52,13 +50,6 @@ export function DeveloperTools() {
             Viewport
           </DevToolButton>
           <button onClick={_ => openPerformLayoutVisualModelDialog()}>{t("layout-dialog-open-button")}</button>
-          <DevToolButton
-            setActive={explorationMode.toggleHighlighting}
-            active={explorationMode.isHighlightingOn}
-            title={t("exploration-mode-button.title")}
-          >
-            {t("exploration-mode-button.name")}
-          </DevToolButton>
         </Panel>
         {changeLoggerActive && <ChangeLogger />}
         {viewportLoggerActive && <ViewportLogger />}

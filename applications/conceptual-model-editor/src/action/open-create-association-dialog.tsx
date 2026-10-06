@@ -2,7 +2,7 @@ import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-mem
 import { VisualModel, isWritableVisualModel } from "@dataspecer/visual-model";
 
 import { DialogApiContextType } from "../dialog/dialog-service";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { Options } from "../application";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { firstInMemorySemanticModel } from "../utilities/model";
@@ -20,6 +20,7 @@ import {
   associationDialogStateToNewCmeRelationship,
 } from "../dialog/association/edit-association-dialog-state-adapter";
 import { LabelResolver } from "../dependency-tracker";
+import { ClassesContext } from "../context/classes-context";
 
 /**
  * Open and handle create association dialog.
@@ -28,7 +29,7 @@ export function openCreateAssociationDialogAction(
   cmeExecutor: CmeModelOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
-  graph: ModelGraphContextType,
+  classes: ClassesContext,
   notifications: UseNotificationServiceWriterType,
   visualModel: VisualModel | null,
   defaultModel: InMemorySemanticModel | null,
@@ -36,7 +37,7 @@ export function openCreateAssociationDialogAction(
   labelResolver: LabelResolver,
 ) {
 
-  const model = defaultModel ?? firstInMemorySemanticModel(graph.models);
+  const model = defaultModel ?? firstInMemorySemanticModel(classes.semanticModels);
   if (model === null) {
     notifications.error("You have to create a writable vocabulary first!");
     return;

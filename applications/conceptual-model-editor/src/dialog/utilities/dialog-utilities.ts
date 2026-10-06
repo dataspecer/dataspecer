@@ -10,8 +10,8 @@ import { DataTypeURIs, isDataType } from "@dataspecer/core-v2/semantic-model/dat
 import { configuration, createLogger, t } from "../../application";
 import { getDomainAndRange } from "../../util/relationship-utils";
 import { EntityDsIdentifier } from "../../dataspecer/entity-model";
-import { ClassesContextType } from "../../context/classes-context";
-import { ModelGraphContextType } from "../../context/model-context";
+import { ClassesContext } from "../../context/classes-context";
+import { UseModelGraphContextType } from "../../context/model-context";
 import {
   isSemanticModelClassProfile,
   isSemanticModelRelationshipProfile,
@@ -183,12 +183,12 @@ function findOwnerVocabulary(
 };
 
 export function findVocabularyForModel(
-  graph: ModelGraphContextType,
+  classesContext: ClassesContext,
   visualModel: VisualModel,
   model: string,
 ): CmeSemanticModel | null {
   const vocabularies = semanticModelMapToCmeSemanticModel(
-    graph.models, visualModel,
+    classesContext.semanticModels, visualModel,
     configuration().defaultModelColor,
     identifier => t("model-service.model-label-from-id", identifier));
   const vocabulary = vocabularies.find(item => item.identifier === model);
@@ -241,16 +241,15 @@ export function representClassProfiles(
  * @returns owl:Thing, classes.
  */
 export function listRelationshipDomains(
-  classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
+  classesContext: ClassesContext,
   vocabularies: CmeSemanticModel[],
   labelResolver: LabelResolver,
 ): EntityRepresentative[] {
-  const models = [...graphContext.models.values()];
-
   return [
     representOwlThing(),
-    ...representClasses(models, vocabularies, classesContext.classes, labelResolver)
+    ...representClasses(
+      classesContext.semanticModelsList,
+      vocabularies, classesContext.classes, labelResolver)
   ]
 
 }
@@ -261,13 +260,13 @@ export function listRelationshipDomains(
  * @returns owl:Thing, classes, class profiles.
  */
 export function listRelationshipProfileDomains(
-  classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
+  classesContext: ClassesContext,
+  graphContext: UseModelGraphContextType,
   vocabularies: CmeSemanticModel[],
   labelResolver: LabelResolver,
 ): EntityRepresentative[] {
-  const entities = graphContext.aggregatorView.getEntities();
-  const models = [...graphContext.models.values()];
+  const entities = graphContext.getEntities();
+  const models = classesContext.semanticModelsList;
 
   return [
     representOwlThing(),
