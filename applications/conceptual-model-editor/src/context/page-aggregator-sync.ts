@@ -14,6 +14,7 @@ import {
   isSemanticModelRelationship,
 } from "@dataspecer/core-v2/semantic-model/concepts";
 import {
+  isControlledVocabularyAssignment,
   isSemanticModelClassProfile,
   isSemanticModelRelationshipProfile,
   SemanticModelClassProfile,
@@ -123,6 +124,18 @@ export function propagateAggregatorChangesToLocalState(
           updatedRawEntities: updatedRawEntities.concat(curr.rawEntity),
           updatedClassProfiles,
           updatedRelationshipProfiles: updatedRelationshipProfiles.concat(curr.aggregatedEntity),
+        };
+      } else if (isControlledVocabularyAssignment(curr.aggregatedEntity)) {
+        // Controlled vocabulary assignments have no dedicated local state -
+        // they are surfaced through their owning class profile's
+        // `controlledVocabularies` list. Just keep the raw entity around.
+        return {
+          updatedClasses,
+          updatedRelationships,
+          updatedGeneralizations,
+          updatedRawEntities: updatedRawEntities.concat(curr.rawEntity),
+          updatedClassProfiles,
+          updatedRelationshipProfiles,
         };
       } else {
         console.error("Unknown type of updated entity", curr.aggregatedEntity);

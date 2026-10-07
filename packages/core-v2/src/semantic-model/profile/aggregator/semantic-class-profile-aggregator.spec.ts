@@ -7,6 +7,7 @@ import {
   SEMANTIC_MODEL_CLASS_PROFILE,
   SemanticModelClassProfile,
 } from "../concepts/index.ts";
+import { assignmentFixture, classProfileFixture } from "../test-fixtures.ts";
 import { AggregatedProfiledSemanticModelClass } from "./index.ts";
 import {
   SemanticClassProfileAggregator,
@@ -230,6 +231,122 @@ describe("SemanticClassProfileAggregator", () => {
     expect(actual.conceptIris).toStrictEqual(["http://example.com/Dataset"]);
     // Concept identifiers should be deduplicated.
     expect(actual.conceptIdentifiers).toStrictEqual(["class-1"]);
+  });
+
+  it("Assignments of two ancestors for the same vocabulary are all kept.", () => {
+    const profile = classProfileFixture({ profiling: ["a", "b"] });
+    const profileA = classProfileFixture({
+      id: "a", controlledVocabularies: ["cv-a"] });
+    const profileB = classProfileFixture({
+      id: "b", controlledVocabularies: ["cv-b"] });
+    const controlledVocabularyA = assignmentFixture({
+      id: "cv-a", classProfile: "a", vocabulary: "voc-1", qualifier: "must" });
+    const controlledVocabularyB = assignmentFixture({
+      id: "cv-b", classProfile: "b", vocabulary: "voc-1", qualifier: "recommended" });
+    const actual = SemanticClassProfileAggregator.aggregate(
+      profile, [profileA, profileB, controlledVocabularyA, controlledVocabularyB]);
+    expect(actual.controlledVocabularies).toStrictEqual(["cv-a", "cv-b"]);
+  });
+
+  it("The same assignment inherited through two ancestors is listed once.", () => {
+    const profile = classProfileFixture({ profiling: ["a", "b"] });
+    const profileA = classProfileFixture({
+      id: "a", controlledVocabularies: ["cv-shared"] });
+    const profileB = classProfileFixture({
+      id: "b", controlledVocabularies: ["cv-shared"] });
+    const actual = SemanticClassProfileAggregator.aggregate(
+      profile, [profileA, profileB]);
+    expect(actual.controlledVocabularies).toStrictEqual(["cv-shared"]);
+  });
+
+  it("Own assignment does not remove the inherited one for the same vocabulary when it does not replace it.", () => {
+    const profile = classProfileFixture({
+      profiling: ["a"], controlledVocabularies: ["cv-own"] });
+    const profileA = classProfileFixture({
+      id: "a", controlledVocabularies: ["cv-a"] });
+    const controlledVocabularyA = assignmentFixture({
+      id: "cv-a", classProfile: "a", vocabulary: "voc-1", qualifier: "must" });
+    const cvOwn = assignmentFixture({
+      id: "cv-own", classProfile: "1", vocabulary: "voc-1", qualifier: "recommended" });
+    const actual = SemanticClassProfileAggregator.aggregate(
+      profile, [profileA, controlledVocabularyA, cvOwn]);
+    expect(actual.controlledVocabularies).toStrictEqual(["cv-a", "cv-own"]);
+  });
+
+  it("Own assignment removes the inherited one it replaces.", () => {
+    const profile = classProfileFixture({
+      profiling: ["a"], controlledVocabularies: ["cv-own"] });
+    const profileA = classProfileFixture({
+      id: "a", controlledVocabularies: ["cv-a"] });
+    const controlledVocabularyA = assignmentFixture({
+      id: "cv-a", classProfile: "a", vocabulary: "voc-1", qualifier: "must" });
+    const cvOwn = assignmentFixture({
+      id: "cv-own", classProfile: "1", vocabulary: "voc-1", qualifier: "recommended",
+      replaces: { kind: "local", target: "cv-a" } });
+    const actual = SemanticClassProfileAggregator.aggregate(
+      profile, [profileA, controlledVocabularyA, cvOwn]);
+    expect(actual.controlledVocabularies).toStrictEqual(["cv-own"]);
+  });
+
+  it("Own assignment removes the replaced inherited one, even for a different vocabulary.", () => {
+    const profile = classProfileFixture({
+      profiling: ["a"], controlledVocabularies: ["cv-own"] });
+    const profileA = classProfileFixture({
+      id: "a", controlledVocabularies: ["cv-a"] });
+    const controlledVocabularyA = assignmentFixture({
+      id: "cv-a", classProfile: "a", vocabulary: "voc-1" });
+    const cvOwn = assignmentFixture({
+      id: "cv-own", classProfile: "1", vocabulary: "voc-2",
+      replaces: { kind: "local", target: "cv-a" } });
+    const actual = SemanticClassProfileAggregator.aggregate(
+      profile, [profileA, controlledVocabularyA, cvOwn]);
+    expect(actual.controlledVocabularies).toStrictEqual(["cv-own"]);
+  });
+
+  it("Replacing an assignment that is not inherited removes nothing.", () => {
+    const profile = classProfileFixture({
+      profiling: ["a"], controlledVocabularies: ["cv-own"] });
+    const profileA = classProfileFixture({
+      id: "a", controlledVocabularies: ["cv-a"] });
+    const controlledVocabularyA = assignmentFixture({
+      id: "cv-a", classProfile: "a", vocabulary: "voc-1" });
+    const cvOwn = assignmentFixture({
+      id: "cv-own", classProfile: "1", vocabulary: "voc-2",
+      replaces: { kind: "local", target: "somewhere-else" } });
+    const actual = SemanticClassProfileAggregator.aggregate(
+      profile, [profileA, controlledVocabularyA, cvOwn]);
+    expect(actual.controlledVocabularies).toStrictEqual(["cv-a", "cv-own"]);
+  });
+
+  it("Replacing an imported assignment removes nothing.", () => {
+    const profile = classProfileFixture({
+      profiling: ["a"], controlledVocabularies: ["cv-own"] });
+    const profileA = classProfileFixture({
+      id: "a", controlledVocabularies: ["cv-a"] });
+    const controlledVocabularyA = assignmentFixture({
+      id: "cv-a", classProfile: "a", vocabulary: "voc-1", iri: "http://example.com/cv-a" });
+    const cvOwn = assignmentFixture({
+      id: "cv-own", classProfile: "1", vocabulary: "voc-1",
+      replaces: { kind: "imported", iri: "http://example.com/cv-a" } });
+    const actual = SemanticClassProfileAggregator.aggregate(
+      profile, [profileA, controlledVocabularyA, cvOwn]);
+    expect(actual.controlledVocabularies).toStrictEqual(["cv-a", "cv-own"]);
+  });
+
+  it("Dangling controlled vocabulary assignment ids are tolerated without throwing.", () => {
+    const profile = classProfileFixture({
+      profiling: ["a"], controlledVocabularies: ["missing-own"] });
+    const profileA = classProfileFixture({
+      id: "a", controlledVocabularies: ["missing-inherited"] });
+    expect(() => SemanticClassProfileAggregator.aggregate(
+      profile, [profileA])).not.toThrow();
+    const actual = SemanticClassProfileAggregator.aggregate(
+      profile, [profileA]);
+    // Assignments are not resolved when inherited, so a dangling inherited id
+    // is passed through, the same as a dangling own id and any other
+    // id-only reference elsewhere in this model.
+    expect(actual.controlledVocabularies).toStrictEqual(
+      ["missing-inherited", "missing-own"]);
   });
 
 });

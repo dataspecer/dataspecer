@@ -1,5 +1,9 @@
-import { LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
+import { CONTROLLED_VOCABULARY_MODEL, LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { applyOperationsToSemanticModel, semanticModelEntitiesToSerialization, serializationToSemanticModelEntities } from "@dataspecer/core-v2/semantic-model";
+import {
+  controlledVocabularyModelEntitiesToSerialization,
+  serializationToControlledVocabularyModelEntities,
+} from "@dataspecer/controlled-vocabulary-model";
 import { changesToSemanticModelOperations } from "@dataspecer/core-v2/semantic-model/operations";
 import { rdfsModelToSerialization, serializationToPimModelEntities } from "@dataspecer/core-v2/semantic-model/v1-adapters";
 import type { CoreResourceAndEntity } from "@dataspecer/core/core";
@@ -125,6 +129,15 @@ const MODEL_TYPES: Record<string, ModelTypeSupport> = {
       applyOperationsToSemanticModel(working, [operation]);
     },
     changesToOperations: changesToSemanticAndProfileOperations,
+  },
+  [CONTROLLED_VOCABULARY_MODEL]: {
+    deserialize: serializationToControlledVocabularyModelEntities,
+    serialize: controlledVocabularyModelEntitiesToSerialization,
+    applyOperation: () => {
+      // Only generic Set/Update/Remove-entity operations are used for this
+      // model type (it has exactly one entity); those are handled before
+      // reaching here, so this is never actually invoked.
+    },
   },
 };
 

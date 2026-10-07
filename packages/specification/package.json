@@ -20,6 +20,7 @@
     "./model-loader": "./lib/model-loader.js"
   },
   "dependencies": {
+    "@dataspecer/controlled-vocabulary-model": "*",
     "@dataspecer/core": "*",
     "@dataspecer/core-v2": "*",
     "@dataspecer/csv": "*",

@@ -3,6 +3,7 @@ import { SemanticModelClass } from "../../concepts/concepts.ts";
 import { isSemanticModelClass } from "../../concepts/index.ts";
 import {
   ControlledVocabularyAssignment,
+  isControlledVocabularyAssignment,
   isSemanticModelClassProfile,
   SemanticModelClassProfile,
 } from "../concepts/index.ts";
@@ -26,8 +27,7 @@ export const SemanticClassProfileAggregator = {
 function getDependencies(
   entity: SemanticModelClassProfile,
 ): EntityIdentifier[] {
-  // All dependencies are defined just by the values the profiles.
-  return entity.profiling;
+  return [...entity.profiling, ...(entity.controlledVocabularies ?? [])];
 }
 
 function aggregateSemanticModelClassProfile(
@@ -35,22 +35,25 @@ function aggregateSemanticModelClassProfile(
   dependencies: (
     SemanticModelClass |
     SemanticModelClassProfile |
-    AggregatedProfiledSemanticModelClass
+    AggregatedProfiledSemanticModelClass |
+    ControlledVocabularyAssignment
   )[],
 ): AggregatedProfiledSemanticModelClass {
 
-  // A helper for easy access to dependencies.
+  // A helper for easy access to dependencies. 
   const getProfiled = createProfiledGetter(dependencies);
 
   // We try to get an entity to get the name from.
   // Since all entities share name we just try to read it directly.
-  const nameProfiled = getProfiled(profile.nameFromProfiled);
+  const nameProfiled = getProfiled(profile.nameFromProfiled) as
+    SemanticModelClass | SemanticModelClassProfile | AggregatedProfiledSemanticModelClass | null;
   const name = nameProfiled?.name ?? profile.name;
   // We inherit the property only for vocabulary entities and already aggregated entities.
   const nameFromProperty = (nameProfiled as SemanticModelClass | AggregatedProfiledSemanticModelClass | null)?.nameProperty ?? null;
 
   // Description is similar to name in processing.
-  const descriptionProfiled = getProfiled(profile.descriptionFromProfiled);
+  const descriptionProfiled = getProfiled(profile.descriptionFromProfiled) as
+    SemanticModelClass | SemanticModelClassProfile | AggregatedProfiledSemanticModelClass | null;
   const description = descriptionProfiled?.description ?? profile.description;
   // We inherit the property only for vocabulary entities and already aggregated entities.
   const descriptionFromProperty = (descriptionProfiled  as SemanticModelClass | AggregatedProfiledSemanticModelClass | null)?.descriptionProperty ?? null;
@@ -73,9 +76,10 @@ function aggregateSemanticModelClassProfile(
   // The ideas is to merge even unknown properties into the result.
   const propertiesCollector: Record<string, unknown> = {};
 
-  // Controlled vocabularies inherited from the entities we profile.
-  const inheritedControlledVocabularies: ControlledVocabularyAssignment[] = [];
-  const inheritedControlledVocabularyIdentifiers = new Set<EntityIdentifier>();
+  // Ids of the assignments of the entities we profile, own and inheritedby them. 
+  // We do not resolve them, we treat assignments as opaque,
+  // only the assignments of this profile are read, see below.
+  const profiledAssignmentIds = new Set<EntityIdentifier>();
 
   // Iterate over all entities we profile.
   for (const identifier of profile.profiling) {
@@ -88,23 +92,11 @@ function aggregateSemanticModelClassProfile(
     if (isAggregatedProfiledSemanticModelClass(profiled)) {
       conceptIris.push(...profiled.conceptIris);
       conceptIdentifiers.push(...profiled.conceptIdentifiers);
-      // if multiple ancestors contain the same controlled vocabulary, only one is kept
-      // - this might be changed in the future to better resolve conflicts
-      for (const assignment of profiled.controlledVocabularies ?? []) {
-        if (!inheritedControlledVocabularyIdentifiers.has(assignment.identifier)) {
-          inheritedControlledVocabularyIdentifiers.add(assignment.identifier);
-          inheritedControlledVocabularies.push(assignment);
-        }
-      }
+      profiled.controlledVocabularies?.forEach(id => profiledAssignmentIds.add(id));
     } else if (isSemanticModelClassProfile(profiled)) {
       // conceptIris and conceptIdentifiers properties are not part of this type - do nothing
       // controlledVocabularies is available even when the dependency was not aggregated
-      for (const assignment of profiled.controlledVocabularies ?? []) {
-        if (!inheritedControlledVocabularyIdentifiers.has(assignment.identifier)) {
-          inheritedControlledVocabularyIdentifiers.add(assignment.identifier);
-          inheritedControlledVocabularies.push(assignment);
-        }
-      }
+      profiled.controlledVocabularies?.forEach(id => profiledAssignmentIds.add(id));
     } else if (isSemanticModelClass(profiled)) {
       if (profiled.iri !== null) {
         conceptIris.push(profiled.iri);
@@ -115,13 +107,17 @@ function aggregateSemanticModelClassProfile(
     Object.assign(propertiesCollector, profiled);
   }
 
-  // This profile's own assignments (additions/overrides) take precedence
-  // over anything inherited for the same vocabulary identifier.
-  const ownControlledVocabularyIdentifiers = new Set(
-    (profile.controlledVocabularies ?? []).map(assignment => assignment.identifier));
-  const controlledVocabularies: ControlledVocabularyAssignment[] = [
-    ...inheritedControlledVocabularies.filter(
-      assignment => !ownControlledVocabularyIdentifiers.has(assignment.identifier)),
+  // An own assignment removes the inherited assignment it replaces.
+  // An imported reference cannot be resolved locally, so it removes nothing.
+  const replacedAssignmentIds = new Set(
+    (profile.controlledVocabularies ?? [])
+      .map(id => getProfiled(id))
+      .filter(isControlledVocabularyAssignment)
+      .flatMap(assignment =>
+        assignment.replaces?.kind === "local" ? [assignment.replaces.target] : []));
+
+  const controlledVocabularies: EntityIdentifier[] = [
+    ...[...profiledAssignmentIds].filter(id => !replacedAssignmentIds.has(id)),
     ...(profile.controlledVocabularies ?? []),
   ];
 

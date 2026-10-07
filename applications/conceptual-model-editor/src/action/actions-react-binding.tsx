@@ -80,6 +80,8 @@ import {
   getSelectionForWholeSemanticModel,
 } from "./extend-selection-action";
 import { createFilterSelectionDialog } from "../dialog/selection/filter-selection-dialog";
+import { useAvailableControlledVocabulariesContext } from "../dialog/controlled-vocabularies/available-controlled-vocabularies-context";
+import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 import { EntityModel } from "@dataspecer/core-v2";
 import { openCreateAttributeForEntityDialogAction } from "./open-add-attribute-for-entity-dialog";
 import { addGroupToVisualModelAction } from "./add-group-to-visual-model";
@@ -526,6 +528,7 @@ export const ActionsContextProvider = (props: {
   const useClasses = useClassesContext();
   const notifications = useNotificationServiceWriter();
   const useGraph = useModelGraphContext();
+  const availableVocabularies = useAvailableControlledVocabulariesContext();
 
   const dialogTracker = useMemo(() => new DialogSemanticTracker(), []);
   useDependencyTrackers(useMemo(() => [dialogTracker], [dialogTracker]));
@@ -537,10 +540,12 @@ export const ActionsContextProvider = (props: {
   const actions = useMemo(
     () => createActionsContext(
       options, dialogs, useClasses, notifications, useGraph,
-      diagram, layoutConfiguration, queryParamsContext, dialogTracker),
+      diagram, layoutConfiguration, queryParamsContext, dialogTracker,
+      availableVocabularies),
     [
       options, dialogs, useClasses, notifications, useGraph,
-      diagram, layoutConfiguration, queryParamsContext, dialogTracker]
+      diagram, layoutConfiguration, queryParamsContext, dialogTracker,
+      availableVocabularies]
   );
 
   return (
@@ -571,6 +576,7 @@ function createActionsContext(
   layoutConfiguration: LayoutConfigurationContextType,
   queryParamsContext: QueryParamsContextType | null,
   dialogTracker: DialogSemanticTracker,
+  availableVocabularies: ControlledVocabulary[],
 ): ActionsContextType {
 
   if (options === null || dialogs === null || classes === null ||
@@ -600,7 +606,7 @@ function createActionsContext(
       openCreateProfileDialogAction(
         cmeExecutor, options, dialogs, notifications, classes, useGraph,
         visualModel, diagram, position, identifier, dialogTracker,
-        labelResolver);
+        labelResolver, availableVocabularies);
     });
   };
 
@@ -738,7 +744,8 @@ function createActionsContext(
     withVisualModel(notifications, useGraph, (visualModel) => {
       openModifyDialogAction(
         cmeExecutor, options, dialogs, notifications, classes, useGraph,
-        visualModel, identifier, dialogTracker, labelResolver);
+        visualModel, identifier, dialogTracker, labelResolver,
+        availableVocabularies);
     });
   };
 
@@ -1348,7 +1355,7 @@ function createActionsContext(
         createDefaultProfilesAction(
           cmeExecutor, notifications, useGraph, diagram, options, classes,
           visualModel, nodeSelection, edgeSelection, true, dialogTracker,
-          labelResolver);
+          labelResolver, availableVocabularies);
       });
     },
 

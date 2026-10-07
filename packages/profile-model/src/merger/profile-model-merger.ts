@@ -1,6 +1,7 @@
 import { createIriResolver } from "@dataspecer/utilities";
 
 import {
+  isControlledVocabularyAssignment,
   isProfileClass,
   isProfileGeneralization,
   isProfileRelationship,
@@ -28,10 +29,20 @@ export function margeProfileModels(
   policy?: ProfileModelMergePolicy,
 ): ProfileModel {
   policy = policy ?? createDefaultMergePolicy();
+  // All ControlledVocabularyAssignment entities across every model, keyed
+  // by id, collected up front so merging can resolve them in any order.
+  const assignmentEntities: ProfileEntityRecord = {};
+  for (const model of models) {
+    for (const [identifier, entity] of Object.entries(model.getEntities())) {
+      if (isControlledVocabularyAssignment(entity) && assignmentEntities[identifier] === undefined) {
+        assignmentEntities[identifier] = entity;
+      }
+    }
+  }
   const entities: ProfileEntityRecord = {};
   for (const model of models) {
     const urlResolver = prepareUrlResolver(model);
-    mergeModel(policy, urlResolver, model, entities);
+    mergeModel(policy, urlResolver, model, entities, assignmentEntities);
   }
   return {
     getId: () => identifier,
@@ -45,6 +56,7 @@ function mergeModel(
   urlResolver: UrlResolver,
   model: ProfileModel,
   entities: ProfileEntityRecord,
+  assignmentEntities: ProfileEntityRecord,
 ): void {
   for (const [identifier, entity] of Object.entries(model.getEntities())) {
     const previous = entities[identifier];
@@ -55,7 +67,7 @@ function mergeModel(
       }
       entities[identifier] = next;
     } else {
-      const next = handleConflict(policy, previous, entity);
+      const next = handleConflict(policy, previous, entity, assignmentEntities);
       if (next === null) {
         continue;
       }
@@ -97,9 +109,10 @@ function handleConflict(
   policy: ProfileModelMergePolicy,
   previous: ProfileEntity,
   next: ProfileEntity,
+  assignmentEntities: ProfileEntityRecord,
 ): ProfileEntity | null {
   if (isProfileClass(previous) && isProfileClass(next)) {
-    return policy.mergeClassProfile(previous, next);
+    return policy.mergeClassProfile(previous, next, assignmentEntities);
   } else if (isProfileRelationship(previous) && isProfileRelationship(next)) {
     return policy.mergeRelationshipProfile(previous, next);
   } else if (isProfileGeneralization(previous) && isProfileGeneralization(next)) {

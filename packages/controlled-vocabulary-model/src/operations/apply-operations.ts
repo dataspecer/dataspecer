@@ -1,3 +1,8 @@
+// Currently unused - see the comment at the top of ./operations.ts. Controlled
+// vocabulary models are one model per vocabulary and only ever use the
+// generic Set/Update/Remove-entity operations, not this catalog-style apply
+// function.
+
 import { type EntityRecord, type EntityChange, diffEntities, generateEntityId } from "@dataspecer/core/entity-model";
 import type { Operation } from "@dataspecer/core/operation";
 import type { ControlledVocabulary } from "../concepts/controlled-vocabulary.ts";

@@ -13,6 +13,8 @@
   "dependencies": {
     "@dataspecer/controlled-vocabulary-model": "*",
     "@dataspecer/core": "*",
+    "@dataspecer/core-v2": "*",
+    "@dataspecer/model-store": "*",
     "@radix-ui/react-label": "^2.0.2",
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-tooltip": "^1.1.5",

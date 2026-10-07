@@ -19,10 +19,10 @@ export function Breadcrumb({
             {index > 0 && <span className="text-caption text-border">/</span>}
             {isLast ? (
               <span className="text-caption text-foreground font-medium">{item.label}</span>
-            ) : item.href ? (
+            ) : item.href !== undefined ? (
               <a
                 className="text-caption text-muted-foreground hover:underline"
-                href={item.href}
+                href={item.href || "/"}
               >
                 {item.label}
               </a>

@@ -1,4 +1,5 @@
-import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, V1, RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
+import { CONTROLLED_VOCABULARY_MODEL, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, V1, RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
+import { controlledVocabulariesToDcatCatalog, controlledVocabularyCatalogIri, type ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 import { isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship, SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
 import { withAbsoluteIri } from "@dataspecer/core-v2/semantic-model/utils";
 import { LanguageString, type CoreResource } from "@dataspecer/core/core/core-resource";
@@ -127,6 +128,33 @@ export interface GenerateSpecificationOptions {
 }
 
 /**
+ * Writes a DCAT catalog of every controlled vocabulary model found in
+ * `projectModel` to `fileName`. Returns whether anything was written - false
+ * when there are no controlled vocabularies in the project, in which case
+ * the caller should not register the file anywhere.
+ */
+async function writeDcatCatalog(
+  projectModel: Record<string, ProjectModelEntity>,
+  allModels: Record<string, EntityRecord>,
+  writeFile: (path: string, data: string) => Promise<void>,
+  fileName: string,
+  catalogIri: string,
+): Promise<boolean> {
+  const vocabularies = Object.values(projectModel)
+    .filter((entity) => entity.modelType === CONTROLLED_VOCABULARY_MODEL)
+    .map((entity) => allModels[entity.id]?.[entity.id] as ControlledVocabulary | undefined)
+    .filter((vocabulary): vocabulary is ControlledVocabulary => vocabulary !== undefined);
+
+  if (vocabularies.length === 0) {
+    return false;
+  }
+
+  const catalog = await controlledVocabulariesToDcatCatalog(catalogIri, vocabularies);
+  await writeFile(fileName, catalog);
+  return true;
+}
+
+/**
  * Generates the specification with all the artifacts into the output stream.
  *
  * @todo The interface of this function is still not final. We need to properly
@@ -166,7 +194,16 @@ export async function generateSpecification(packageId: string, context: Generate
   // Find all models recursively and store them with their metadata
   const modelDescriptions = [] as ModelDescription[];
   const primaryStructureModels = [] as StructureModelDescription[];
+  // Maps each controlled vocabulary model to the package that is its direct parent
+  // In case of nested packages we want to serialize the CVs scoped to the directly owning package
+  // Mapping allows matching references to the CVs across borders of nested packages
+  const controlledVocabularyOwningPackage = new Map<string, string>();
+  const visitedPackages = new Set<string>();
   async function fillModels(packageIri: string, isRoot: boolean = false) {
+    if (visitedPackages.has(packageIri)) {
+      return;
+    }
+    visitedPackages.add(packageIri);
     const pckgEntity = projectModel[packageIri] as PackageEntity | undefined;
     if (!pckgEntity) {
       throw new Error("Package does not exist.");
@@ -222,6 +259,22 @@ export async function generateSpecification(packageId: string, context: Generate
         baseIri: null,
         title: null,
       });
+    }
+    const controlledVocabularyModels = children.filter((r) => r.modelType === CONTROLLED_VOCABULARY_MODEL);
+    for (const cvModel of controlledVocabularyModels) {
+      // Unlike the model types above, a CV model's own self-entity 
+      // (keyed by its own id) is the CV itself, not separate bookkeeping metadata 
+      // - it must stay in
+      const modelEntities = (allModels[cvModel.id] ?? {}) as Record<string, SemanticModelEntity>;
+      modelDescriptions.push({
+        id: cvModel.id,
+        entities: modelEntities,
+        isPrimary: false,
+        documentationUrl: null,
+        baseIri: null,
+        title: null,
+      });
+      controlledVocabularyOwningPackage.set(cvModel.id, packageIri);
     }
     if (isRoot) {
       const structureModels = children.filter((r) => r.modelType === V1.PSM);
@@ -316,6 +369,26 @@ export async function generateSpecification(packageId: string, context: Generate
   if (baseIri.length === 0) {
     baseIri = baseUrl;
   }
+
+  // Each controlled vocabulary is referenced by the IRI of the catalog owned
+  // by its own package - not necessarily this specification's own catalog,
+  // e.g. when this specification profiles a nested one that owns the CV.
+  const controlledVocabularyCatalogIris = new Map<string, string>();
+  for (const [cvModelId, ownerPackageId] of controlledVocabularyOwningPackage) {
+    controlledVocabularyCatalogIris.set(cvModelId, controlledVocabularyCatalogIri(baseIri, ownerPackageId));
+  }
+
+  // The catalog this specification's own dsv.ttl embeds - only the CVs it
+  // directly owns, mirroring how it never duplicates a nested specification's
+  // own class profiles either. Other CVs it references (owned by a nested
+  // specification) are resolved via controlledVocabularyCatalogIris above,
+  // but described in full only in that nested specification's own dsv.ttl -
+  // or, project-wide, in the standalone controlled_vocabulary_catalog.ttl.
+  const ownCatalogIri = controlledVocabularyCatalogIri(baseIri, packageId);
+  const vocabulariesToEmbed = Array.from(controlledVocabularyOwningPackage.entries())
+    .filter(([, ownerPackageId]) => ownerPackageId === packageId)
+    .map(([cvModelId]) => allModels[cvModelId]?.[cvModelId] as ControlledVocabulary | undefined)
+    .filter((vocabulary): vocabulary is ControlledVocabulary => vocabulary !== undefined);
 
   /**
    * Whether we are generating in the "production mode" or in the "preview
@@ -467,7 +540,10 @@ export async function generateSpecification(packageId: string, context: Generate
 
       // Serialize the model in DSV
 
-      const dsv = await generateDsvApplicationProfile([model], modelDescriptions, modelIri);
+      const dsv = await generateDsvApplicationProfile(
+        [model], modelDescriptions, modelIri,
+        controlledVocabularyCatalogIris, vocabulariesToEmbed, ownCatalogIri,
+      );
       idToIriMapping = {
         ...idToIriMapping,
         ...(await getIdToIriMapping([model])),
@@ -604,6 +680,34 @@ export async function generateSpecification(packageId: string, context: Generate
         URL: url,
       },
     ];
+  }
+
+  // Write a DCAT catalog of every controlled vocabulary in the project
+  {
+    const fileName = "controlled_vocabulary_catalog.ttl";
+    const url = baseUrl + fileName + queryParams;
+    const wrote = await writeDcatCatalog(projectModel, allModels, writeFile, fileName, ownCatalogIri);
+    if (wrote) {
+      const descriptor = {
+        iri: null,
+        url,
+
+        role: dsvMetadataWellKnown.role.vocabulary,
+        formatMime: dsvMetadataWellKnown.formatMime.turtle,
+        additionalRdfTypes: [],
+
+        conformsTo: [dsvMetadataWellKnown.conformsTo.dcat],
+      } satisfies ResourceDescriptor;
+      APHasResource?.push(descriptor);
+
+      externalArtifacts["catalog"] = [
+        ...(externalArtifacts["catalog"] ?? []),
+        {
+          type: fileName,
+          URL: url,
+        },
+      ];
+    }
   }
 
   // Process all SVGs. Because we do not know which svg belongs to which model,

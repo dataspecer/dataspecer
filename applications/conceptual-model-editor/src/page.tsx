@@ -15,6 +15,7 @@ import {
 
 import { ClassesContextProvider } from "./context/classes-context";
 import { ModelContextProvider } from "./context/model-context";
+import { AvailableControlledVocabulariesProvider } from "./dialog/controlled-vocabularies/available-controlled-vocabularies-context";
 import Header from "./header/header";
 import { useBackendConnection } from "./backend-connection";
 import { Catalog as CatalogV3 } from "./catalog-v3/catalog";
@@ -134,25 +135,27 @@ const Page = () => {
         visualModelsList={visualModels}
         source={aggregatorView}
       >
-        <LayoutConfigurationContext.Provider value={layoutConfigurationContext}>
-          <DialogContextProvider>
-            <ActionsContextProvider>
-              <Header />
-              <main className="w-full flex-grow bg-teal-50 md:h-[calc(100%-48px)]">
-                <VerticalSplitter
-                  className="h-full"
-                  initialSize={preferences().pageSplitterValue}
-                  onSizeChange={value => updatePreferences({ pageSplitterValue: value })}
-                >
-                  <Catalog />
-                  <Visualization />
-                </VerticalSplitter>
-              </main>
-              <NotificationList />
-              <DialogRenderer />
-            </ActionsContextProvider>
-          </DialogContextProvider>
-        </LayoutConfigurationContext.Provider>
+        <AvailableControlledVocabulariesProvider packageId={packageId}>
+          <LayoutConfigurationContext.Provider value={layoutConfigurationContext}>
+            <DialogContextProvider>
+              <ActionsContextProvider>
+                <Header />
+                <main className="w-full flex-grow bg-teal-50 md:h-[calc(100%-48px)]">
+                  <VerticalSplitter
+                    className="h-full"
+                    initialSize={preferences().pageSplitterValue}
+                    onSizeChange={value => updatePreferences({ pageSplitterValue: value })}
+                  >
+                    <Catalog />
+                    <Visualization />
+                  </VerticalSplitter>
+                </main>
+                <NotificationList />
+                <DialogRenderer />
+              </ActionsContextProvider>
+            </DialogContextProvider>
+          </LayoutConfigurationContext.Provider>
+        </AvailableControlledVocabulariesProvider>
       </ClassesContextProvider>
     </ModelContextProvider>
   );

@@ -70,6 +70,7 @@ class DefaultApplicationProfileBuilder implements ApplicationProfileBuilder {
       externalDocumentationUrl: null,
       profiledClassIri: [],
       classRole: ClassRole.undefined,
+      controlledVocabularyAssignments: [],
       ...value,
       iri: value?.iri ?? this.nextIri("classProfile"),
     };
