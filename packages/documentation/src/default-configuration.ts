@@ -491,18 +491,22 @@ export const defaultConfiguration: DocumentationConfiguration = {
   <thead>
     <tr>
       <th>{{#iflng "cs"}}Vlastnost{{lng}}Property{{/iflng}}</th>
+      <th>{{#iflng "cs"}}Definiční obor vlastnosti{{lng}}Property domain{{/iflng}}</th>
       <th>{{#iflng "cs"}}Použito pro profil třídy{{lng}}Used for class profile{{/iflng}}</th>
       <th>{{#iflng "cs"}}Řízený slovník{{lng}}Controlled vocabulary{{/iflng}}</th>
-      <th>{{#iflng "cs"}}Přepsáno{{lng}}Override{{/iflng}}</th>
     </tr>
   </thead>
   <tbody>
     {{#each rows}}
       <tr>
         <td>{{#with property}}{{relation}}{{/with}}</td>
-        <td>{{#semanticEntity property.ends.1.concept}}{{class}}{{else}}{{.}}{{/semanticEntity}}</td>
-        <td>{{> controlled-vocabulary-link}}</td>
-        <td>{{#if replaces}}{{#iflng "cs"}}ano{{lng}}yes{{/iflng}}{{/if}}</td>
+        <td>{{#each domains}}{{#semanticEntity .}}{{class}}{{else}}{{.}}{{/semanticEntity}}{{#unless @last}}, {{/unless}}{{/each}}</td>
+        <td>{{#semanticEntity range}}{{class}}{{else}}{{.}}{{/semanticEntity}}</td>
+        <td>
+          {{#each vocabularies}}
+            <div>{{> controlled-vocabulary-link}}{{#if replaces}} ({{#iflng "cs"}}přepsáno{{lng}}override{{/iflng}}){{/if}}</div>
+          {{/each}}
+        </td>
       </tr>
     {{/each}}
   </tbody>

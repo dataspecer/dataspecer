@@ -248,23 +248,44 @@ export async function generateDocumentation(
 
   const locallyDefinedSemanticEntityByTags = Object.groupBy(sortedSemanticModel, entity => (entity as SemanticModelClassProfile)?.tags?.[0] || "default");
 
-  // Reversed view of derived controlled vocabulary usages: for each
-  // qualifier, one entry per (vocabulary, property) pair, for the "which
-  // properties require this vocabulary" summary section.
-  const controlledVocabularyUsagesByQualifier: Record<string, (ControlledVocabularyAssignment & {
+  // Reversed view of derived controlled vocabulary usages 
+  // For each qualifier, one entry per property listing all controlled vocabularies connected to this property
+  // The property domains and controlled vocabularies are grouped by the property
+  type ControlledVocabularyUsage = {
+    // The first relationship of the row, used for the name and link of the property.
     property: RelationshipLike;
-  })[]> = {};
+    domains: string[];
+    range: string;
+    vocabularies: ControlledVocabularyAssignment[];
+  };
+  const usageRowsByQualifier = new Map<string, Map<string, ControlledVocabularyUsage>>();
   for (const entity of sortedSemanticModel) {
     if (!(isSemanticModelRelationship(entity) || isSemanticModelRelationshipProfile(entity))) {
       continue;
     }
     const assignments = (entity as RelationshipLike & {derivedControlledVocabularies?: ControlledVocabularyAssignment[]}).derivedControlledVocabularies;
+    const aggregated = (entity as WithAggregation).aggregation ?? entity;
+    const propertyKey = (aggregated as RelationshipLike).ends?.[1]?.iri || getLabel(aggregated, configuration.language) || entity.id;
+    const domain = entity.ends[0]?.concept;
+    const range = entity.ends[1]?.concept;
     for (const assignment of assignments ?? []) {
-      (controlledVocabularyUsagesByQualifier[assignment.qualifier] ??= []).push({
-        ...assignment,
-        property: entity,
-      });
+      const rows = usageRowsByQualifier.get(assignment.qualifier) ?? new Map<string, ControlledVocabularyUsage>();
+      usageRowsByQualifier.set(assignment.qualifier, rows);
+      const key = JSON.stringify([propertyKey, range]);
+      const row = rows.get(key) ?? {property: entity, domains: [], range, vocabularies: []};
+      rows.set(key, row);
+      if (domain && !row.domains.includes(domain)) {
+        row.domains.push(domain);
+      }
+      // The same vocabulary can be assigned through more relationships or class profiles.
+      if (!row.vocabularies.some(item => item.vocabulary === assignment.vocabulary)) {
+        row.vocabularies.push(assignment);
+      }
     }
+  }
+  const controlledVocabularyUsagesByQualifier: Record<string, ControlledVocabularyUsage[]> = {};
+  for (const [qualifier, rows] of usageRowsByQualifier) {
+    controlledVocabularyUsagesByQualifier[qualifier] = [...rows.values()];
   }
 
   // The controlled vocabularies used by the assignments in the specification,

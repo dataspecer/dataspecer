@@ -129,13 +129,104 @@ describe("generateDocumentation controlled vocabularies", () => {
       builder,
       [vocabulary("voc-a", "Vocabulary A")],
       `{{#each semanticEntitiesByType.relationshipProfiles}}[{{id}}:{{#each derivedControlledVocabularies}} {{id}}{{/each}}]{{/each}}
-      {{#each controlledVocabularyUsagesByQualifier.[at-least-one]}}<{{id}} {{property.id}}>{{/each}}
+      {{#each controlledVocabularyUsagesByQualifier.[at-least-one]}}<{{property.id}} {{#each vocabularies}}{{id}}{{/each}}>{{/each}}
       {{#if controlledVocabularyUsagesByQualifier.must}}unexpected{{/if}}`,
     );
 
     expect(html).toContain("[relationship: assignment]");
-    expect(html).toContain("<assignment relationship>");
+    expect(html).toContain("<relationship assignment>");
     expect(html).not.toContain("unexpected");
+  });
+
+  describe("usage rows", () => {
+
+    /**
+     * Lists the rows of the qualifier as `<domains > range : vocabularies>`.
+     */
+    const ROWS_TEMPLATE = (qualifier: string) =>
+      `{{#each controlledVocabularyUsagesByQualifier.${qualifier}}}<{{property.id}} [{{#each domains}}{{.}} {{/each}}]> {{range}} : {{#each vocabularies}}{{id}} {{/each}}>{{/each}}`;
+
+    function collapse(html: string): string {
+      return html.replace(/\s+/g, " ");
+    }
+
+    it("Merges the relationships of a property with different domains into one row.", async () => {
+      const builder = createBuilder();
+      const assignment = builder.controlledVocabularyAssignment({ id: "assignment", vocabulary: "voc-a", qualifier: "may" });
+      const range = builder.class({ id: "range", controlledVocabularies: [assignment.identifier] });
+      const domainA = builder.class({ id: "domain-a" });
+      const domainB = builder.class({ id: "domain-b" });
+      builder.property({ id: "relationship-a", iri: "http://example.com/coverage" }).domain(domainA).range(range);
+      builder.property({ id: "relationship-b", iri: "http://example.com/coverage" }).domain(domainB).range(range);
+
+      const html = collapse(await render(builder, [vocabulary("voc-a", "Vocabulary A")], ROWS_TEMPLATE("may")));
+
+      expect(html.match(/<relationship-/g)).toHaveLength(1);
+      expect(html).toContain("<relationship-a [domain-a domain-b ]> range : assignment >");
+    });
+
+    it("Keeps properties with different IRIs or different ranges in separate rows.", async () => {
+      const builder = createBuilder();
+      const assignment = builder.controlledVocabularyAssignment({ id: "assignment", vocabulary: "voc-a", qualifier: "may" });
+      const rangeA = builder.class({ id: "range-a", controlledVocabularies: [assignment.identifier] });
+      const rangeB = builder.class({ id: "range-b", controlledVocabularies: [assignment.identifier] });
+      const domain = builder.class({ id: "domain" });
+      builder.property({ id: "same-iri-a", iri: "http://example.com/one" }).domain(domain).range(rangeA);
+      builder.property({ id: "same-iri-b", iri: "http://example.com/one" }).domain(domain).range(rangeB);
+      builder.property({ id: "other-iri", iri: "http://example.com/two" }).domain(domain).range(rangeA);
+
+      const html = collapse(await render(builder, [vocabulary("voc-a", "Vocabulary A")], ROWS_TEMPLATE("may")));
+
+      expect(html.match(/<(same-iri-a|same-iri-b|other-iri) /g)).toHaveLength(3);
+    });
+
+    it("Lists all vocabularies of the range in the row and each one once.", async () => {
+      const builder = createBuilder();
+      const first = builder.controlledVocabularyAssignment({ id: "first", vocabulary: "voc-a", qualifier: "may" });
+      const second = builder.controlledVocabularyAssignment({ id: "second", vocabulary: "voc-b", qualifier: "may" });
+      const range = builder.class({ id: "range", controlledVocabularies: [first.identifier, second.identifier] });
+      const domainA = builder.class({ id: "domain-a" });
+      const domainB = builder.class({ id: "domain-b" });
+      builder.property({ id: "relationship-a", iri: "http://example.com/coverage" }).domain(domainA).range(range);
+      builder.property({ id: "relationship-b", iri: "http://example.com/coverage" }).domain(domainB).range(range);
+
+      const html = collapse(await render(
+        builder,
+        [vocabulary("voc-a", "Vocabulary A"), vocabulary("voc-b", "Vocabulary B")],
+        ROWS_TEMPLATE("may"),
+      ));
+
+      expect(html).toContain("range : first second >");
+      expect(html.match(/first/g)).toHaveLength(1);
+    });
+
+    it("Renders the domains, range and vocabularies with links, and marks overrides inline.", async () => {
+      const builder = createBuilder();
+      const parentAssignment = builder.controlledVocabularyAssignment({ id: "parent-assignment", classProfile: "parent-range", vocabulary: "voc-a", qualifier: "may" });
+      const childAssignment = builder.controlledVocabularyAssignment({
+        id: "child-assignment", classProfile: "range", vocabulary: "voc-b", qualifier: "may",
+        replaces: { kind: "local", target: parentAssignment.identifier },
+      });
+      const parentRange = builder.class({ id: "parent-range", controlledVocabularies: [parentAssignment.identifier] });
+      const range = builder.class({ id: "range", name: { en: "Range class" }, controlledVocabularies: [childAssignment.identifier] }).profile(parentRange);
+      const domainA = builder.class({ id: "domain-a", name: { en: "Domain A" } });
+      const domainB = builder.class({ id: "domain-b", name: { en: "Domain B" } });
+      builder.property({ id: "relationship-a", iri: "http://example.com/coverage", name: { en: "coverage" } }).domain(domainA).range(range);
+      builder.property({ id: "relationship-b", iri: "http://example.com/coverage", name: { en: "coverage" } }).domain(domainB).range(range);
+
+      const html = collapse(await render(
+        builder,
+        [vocabulary("voc-a", "Vocabulary A"), vocabulary("voc-b", "Vocabulary B")],
+        `{{> definitions}}{{> controlled-vocabulary-usage-table rows=controlledVocabularyUsagesByQualifier.may}}`,
+      ));
+
+      expect(html).toContain("Property domain");
+      expect(html.match(/<tr>/g)).toHaveLength(2);
+      expect(html).toMatch(/Domain A<\/a>, <a[^>]*>Domain B<\/a>/);
+      expect(html).toMatch(/<div><a href="#cv-Vocabulary-B">Vocabulary B<\/a> \(override\)<\/div>/);
+      expect(html).not.toContain("Override");
+    });
+
   });
 
   describe("chain of replaced assignments", () => {
@@ -463,19 +554,20 @@ describe("generateDocumentation controlled vocabularies", () => {
       )).replace(/\s+/g, " ");
     }
 
-    it("Shows the class profile that is the range of the property.", async () => {
+    // The domain and the range are separate columns of the row.
+    const DOMAIN_CELL = /<td><a[^>]*>Domain class<\/a><\/td> <td><a[^>]*>Range class<\/a><\/td>/;
+
+    it("Shows the domain and the class profile that is the range of the property.", async () => {
       const html = await renderUsageTable(false);
 
-      expect(html).toContain("Range class");
-      expect(html).not.toContain("Domain class");
+      expect(html).toMatch(DOMAIN_CELL);
     });
 
     it("Shows the range class profile, not the one that owns an inherited assignment.", async () => {
       const html = await renderUsageTable(true);
 
-      expect(html).toContain("Range class");
+      expect(html).toMatch(DOMAIN_CELL);
       expect(html).not.toContain("Owner class");
-      expect(html).not.toContain("Domain class");
     });
 
   });
