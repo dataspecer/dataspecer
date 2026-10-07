@@ -70,21 +70,25 @@ export function changesToEntityOperations(
 }
 
 /**
- * Creates a patch object so that `{...prev, ...patch}` would result
- * in `next`.
+ * Creates a patch object so that `{...prev, ...patch}` would result in `next`.
+ *
+ * @param dangerouslySkipUndefined If set to true, the patch will not contain
+ * properties that are undefined in `next`.
  */
-export function createPatch<T extends Entity>(prev: T, next: T): Partial<T> {
+export function createPatch<T extends Entity>(prev: T, next: T, dangerouslySkipUndefined?: boolean): Partial<T> {
   const patch: Partial<T> = {};
 
   for (const key in next) {
-    if (!deepEqual(prev[key], next[key])) {
+    if (!deepEqual(prev[key], next[key]) && (!dangerouslySkipUndefined || next[key] !== undefined)) {
       patch[key] = next[key];
     }
   }
 
-  for (const key in prev) {
-    if (!(key in next)) {
-      patch[key] = undefined as any;
+  if (!dangerouslySkipUndefined) {
+    for (const key in prev) {
+      if (!(key in next)) {
+        patch[key] = undefined as any;
+      }
     }
   }
 

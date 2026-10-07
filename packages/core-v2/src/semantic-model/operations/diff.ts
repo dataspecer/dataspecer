@@ -14,6 +14,9 @@ export interface SemanticModelOperationsResult {
  * not relevant to the semantic model (classes, relationships, generalizations).
  * Remaining changes are returned so another layer can handle them.
  *
+ * ! When change removes a property of an entity, this will not be reflected in
+ *   the operations.
+ *
  * Operations are ordered to avoid acting on non-existing entities: create
  * classes → create relationships/generalizations → modify all → delete
  * relationships/generalizations → delete classes.
@@ -37,7 +40,7 @@ export function changesToSemanticModelOperations(changes: EntityChange[]): Seman
       } else if (change.next === null) {
         deleteClassOps.push(deleteEntity(change.previous.id));
       } else {
-        const patch = createPatch(change.previous as SemanticModelClass, change.next as SemanticModelClass);
+        const patch = createPatch(change.previous as SemanticModelClass, change.next as SemanticModelClass, true);
         const { type: _, id: __, ...rest } = patch as Partial<SemanticModelClass>;
         if (Object.keys(rest).length > 0) {
           modifyOps.push(modifyClass(change.next.id, rest));
@@ -52,7 +55,7 @@ export function changesToSemanticModelOperations(changes: EntityChange[]): Seman
       } else {
         const previousRelationship = change.previous as SemanticModelRelationship;
         const nextRelationship = change.next as SemanticModelRelationship;
-        const patch = createPatch(previousRelationship, nextRelationship) as Partial<SemanticModelRelationship>;
+        const patch = createPatch(previousRelationship, nextRelationship, true) as Partial<SemanticModelRelationship>;
         const { type: _, id: __, ends, ...rest } = patch;
 
         if (Object.keys(rest).length > 0) {
@@ -71,7 +74,7 @@ export function changesToSemanticModelOperations(changes: EntityChange[]): Seman
                 continue;
               }
 
-              const endPatch = createPatch(previousEnd as unknown as Entity, nextEnd as unknown as Entity) as Partial<SemanticModelRelationshipEnd>;
+              const endPatch = createPatch(previousEnd as unknown as Entity, nextEnd as unknown as Entity, true) as Partial<SemanticModelRelationshipEnd>;
               if (Object.keys(endPatch).length > 0) {
                 modifyOps.push(modifyRelationEnd(nextRelationship.id, endIndex, endPatch));
               }
@@ -90,7 +93,7 @@ export function changesToSemanticModelOperations(changes: EntityChange[]): Seman
       } else if (change.next === null) {
         deleteRelGenOps.push(deleteEntity(change.previous.id));
       } else {
-        const patch = createPatch(change.previous as SemanticModelGeneralization, change.next as SemanticModelGeneralization);
+        const patch = createPatch(change.previous as SemanticModelGeneralization, change.next as SemanticModelGeneralization, true);
         const { type: _, id: __, ...rest } = patch as Partial<SemanticModelGeneralization>;
         if (Object.keys(rest).length > 0) {
           modifyOps.push(modifyGeneralization(change.next.id, rest));
