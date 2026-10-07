@@ -2,7 +2,8 @@ import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-mem
 import { isWritableVisualModel, VisualModel } from "@dataspecer/visual-model";
 
 import { DialogApiContextType } from "../dialog/dialog-service";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
+import { ClassesContext } from "../context/classes-context";
 import { Options } from "../application";
 import {
   isSemanticModelClassProfile,
@@ -24,6 +25,7 @@ import { InvalidState } from "../application/error";
 import { LabelResolver } from "../dependency-tracker";
 import { CmeReference } from "../dataspecer/cme-model/model";
 import { applyControlledVocabularySelection } from "./apply-controlled-vocabulary-selection";
+import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 
 const LOG = createLogger(import.meta.url);
 
@@ -31,14 +33,16 @@ export function openEditClassProfileDialogAction(
   cmeExecutor: CmeModelOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
-  graph: ModelGraphContextType,
+  classes: ClassesContext,
+  graph: UseModelGraphContextType,
   visualModel: VisualModel | null,
   model: InMemorySemanticModel,
   entity: SemanticModelClassProfile,
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
+  availableVocabularies: ControlledVocabulary[],
 ) {
-  const aggregate = graph.aggregatorView.getEntities()?.[entity.id];
+  const aggregate = graph.getEntities()?.[entity.id];
   const rawEntity = aggregate?.rawEntity;
   if (rawEntity === null || rawEntity === undefined || !isSemanticModelClassProfile(rawEntity)) {
     LOG.error("Missing raw entity for class profile.", { entity });
@@ -46,8 +50,8 @@ export function openEditClassProfileDialogAction(
   }
 
   const initialState = createEditClassProfileDialogState(
-    visualModel, options.language, model, rawEntity, graph.models, tracker,
-    labelResolver, graph);
+    visualModel, options.language, model, rawEntity, classes.semanticModels, tracker,
+    labelResolver, graph, availableVocabularies);
 
   const onConfirm = (state: ClassProfileDialogState) => {
     const classProfile: CmeReference = { identifier: entity.id, model: model.getId() };
@@ -69,9 +73,9 @@ export function openEditClassProfileDialogAction(
     if (isWritableVisualModel(visualModel)) {
       updateVisualNodeProfiles(
         visualModel, {
-          identifier: entity.id,
-          model: model.getId(),
-        },
+        identifier: entity.id,
+        model: model.getId(),
+      },
         state.profiles.map(item => ({
           identifier: item.identifier,
           model: item.model

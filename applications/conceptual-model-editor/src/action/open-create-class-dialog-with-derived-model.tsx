@@ -1,10 +1,10 @@
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { placePositionOnGrid } from "@dataspecer/layout";
 import { Options, configuration } from "../application";
 import { openCreateClassDialogAction } from "./open-create-class-dialog";
 import { isVisualNode, WritableVisualModel } from "@dataspecer/visual-model";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { DialogApiContextType } from "../dialog/dialog-service";
 import { Position } from "../diagram";
 import { UseDiagramType } from "../diagram/diagram-hook";
@@ -18,9 +18,9 @@ import { LabelResolver } from "../dependency-tracker";
 export function openCreateClassDialogWithModelDerivedFromClassAction(
   cmeExecutor: CmeModelOperationExecutor,
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   dialogs: DialogApiContextType,
-  classes: ClassesContextType,
+  classes: ClassesContext,
   options: Options,
   diagram: UseDiagramType,
   visualModel: WritableVisualModel,
@@ -41,7 +41,7 @@ export function openCreateClassDialogWithModelDerivedFromClassAction(
     return;
   }
 
-  const model = firstInMemorySemanticModel(graph.models);
+  const model = firstInMemorySemanticModel(classes.semanticModels);
   if (model === null) {
     notifications.error("You have to create a writable vocabulary first!");
     return;

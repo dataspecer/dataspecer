@@ -16,7 +16,7 @@ import { findSourceModelOfEntity } from "../service/model-service";
 import { addSemanticGeneralizationToVisualModelAction } from "./add-generalization-to-visual-model";
 import { addSemanticRelationshipToVisualModelAction } from "./add-relationship-to-visual-model";
 import { addSemanticRelationshipProfileToVisualModelAction } from "./add-relationship-profile-to-visual-model";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import {
   isSemanticModelClassProfile,
   isSemanticModelRelationshipProfile,
@@ -24,7 +24,7 @@ import {
   SemanticModelRelationshipProfile,
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { createVisualModelOperationExecutor } from "../dataspecer/visual-model/visual-model-operation-executor";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 
 /**
  * For given entity make sure, that all related entities
@@ -35,8 +35,8 @@ import { ClassesContextType } from "../context/classes-context";
  */
 export function addRelatedEntitiesAction(
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
-  classes: ClassesContextType,
+  graph: UseModelGraphContextType,
+  classes: ClassesContext,
   visualModel: WritableVisualModel,
   entities: AggregatedEntityWrapper[],
   models: Map<string, EntityModel>,

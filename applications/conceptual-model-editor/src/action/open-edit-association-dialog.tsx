@@ -2,7 +2,7 @@ import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-mem
 import { VisualModel } from "@dataspecer/visual-model";
 
 import { DialogApiContextType } from "../dialog/dialog-service";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { Options } from "../application";
 import { SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
 import {
@@ -16,6 +16,7 @@ import {
   associationDialogStateToNewCmeRelationship,
 } from "../dialog/association/edit-association-dialog-state-adapter";
 import { LabelResolver } from "../dependency-tracker";
+import { ClassesContext } from "../context/classes-context";
 
 /**
  * Open and handle edit association dialog.
@@ -24,7 +25,7 @@ export function openEditAssociationDialogAction(
   cmeExecutor: CmeModelOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
-  graph: ModelGraphContextType,
+  classes: ClassesContext,
   visualModel: VisualModel | null,
   model: InMemorySemanticModel,
   entity: SemanticModelRelationship,
@@ -32,7 +33,7 @@ export function openEditAssociationDialogAction(
   labelResolver: LabelResolver,
 ) {
   const initialState = createEditAssociationDialogState(
-    visualModel, options.language, model, entity, graph.models, tracker,
+    visualModel, options.language, model, entity, classes.semanticModels, tracker,
     labelResolver);
 
   const onConfirm = (state: AssociationDialogState) => {

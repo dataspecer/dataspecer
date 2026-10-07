@@ -1,5 +1,5 @@
 import { DialogApiContextType } from "../dialog/dialog-service";
-import { ModelGraphContextType } from "../context/model-context";
+import { ClassesContext } from "../context/classes-context";
 import {
   createSearchExternalSemanticDialog,
   createSearchExternalSemanticModelState,
@@ -17,12 +17,12 @@ const LOG = createLogger(import.meta.url);
 export function openSearchExternalSemanticModelDialogAction(
   notifications: UseNotificationServiceWriterType,
   dialogs: DialogApiContextType,
-  graph: ModelGraphContextType,
+  classes: ClassesContext,
   modelIdentifier: ModelDsIdentifier,
 ) {
   const initialState = createSearchExternalSemanticModelState();
 
-  const model = graph.models.get(modelIdentifier);
+  const model = classes.semanticModels.get(modelIdentifier);
   if (model === undefined || !(model instanceof ExternalSemanticModel)) {
     notifications.error("Invalid model to search.");
     return;

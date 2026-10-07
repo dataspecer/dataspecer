@@ -35,6 +35,12 @@ export {
   type SemanticModelGeneralization as SemanticModelGeneralizationProfile,
 } from "@dataspecer/core-v2/semantic-model/concepts"
 
+export {
+  CONTROLLED_VOCABULARY_ASSIGNMENT,
+  isControlledVocabularyAssignment,
+  type ControlledVocabularyAssignment,
+} from "@dataspecer/core-v2/semantic-model/profile/concepts";
+
 export interface ProfileModel {
 
   getId(): string;

@@ -1,13 +1,13 @@
 import { useTranslation, Trans } from "react-i18next"
 import { Breadcrumb } from "@/components/layout/breadcrumb"
 import { VocabularyForm } from "./vocabulary-form"
-import type { CvmControlledVocabulary } from "@/types/controlled-vocabulary"
+import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model"
 import { useConfig } from "@/contexts/config-context"
 
 interface VocabularyFormPageProps {
-  vocabulary?: CvmControlledVocabulary
+  vocabulary?: ControlledVocabulary
   onCancel: () => void
-  onConfirm: (vocabulary: CvmControlledVocabulary) => void
+  onConfirm: (vocabulary: Omit<ControlledVocabulary, 'id' | 'type'>) => void
 }
 
 export function VocabularyFormPage({

@@ -20,8 +20,8 @@ export function VocabularyItemView(props: {
     >
       <div className="flex items-start justify-between">
         <div className="flex items-baseline gap-2 min-w-0">
-          <p className="font-semibold shrink-0">{props.state.vocabulary.name}</p>
-          <p className="text-sm text-gray-500 truncate">{props.state.vocabulary.iri}</p>
+          <p className="font-semibold shrink-0">{props.state.vocabulary.title}</p>
+          <p className="text-sm text-gray-500 truncate">{props.state.vocabulary.references}</p>
         </div>
         {props.onRemove && (
           <button

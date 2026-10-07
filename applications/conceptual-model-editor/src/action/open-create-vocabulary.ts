@@ -1,7 +1,8 @@
 import { EntityModel } from "@dataspecer/core-v2";
 
 import { createLogger } from "../application";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
+import { ClassesContext } from "../context/classes-context";
 import { DialogApiContextType } from "../dialog/dialog-service";
 import { createAddModelDialog } from "../dialog/semantic-model/create-semantic-model/create-semantic-model-dialog";
 import {
@@ -20,14 +21,14 @@ const LOG = createLogger(import.meta.url);
 
 export function openCreateVocabularyAction(
   dialogs: DialogApiContextType,
-  graph: ModelGraphContextType,
+  classes: ClassesContext,
+  graph: UseModelGraphContextType,
 ) {
   const onConfirm = (state: CreateModelState) => {
     void (async () => {
       const models = await createSemanticModels(state);
-      addModelsToGraph(graph, models);
-      const aggregatedView = graph.aggregator.getView();
-      graph.setAggregatorView(aggregatedView);
+      addModelsToGraph(classes, graph, models);
+      graph.reloadView();
     })();
   };
   dialogs.openDialog(createAddModelDialog(onConfirm));
@@ -62,18 +63,21 @@ export async function createSemanticModels(
   return result;
 }
 
-function addModelsToGraph(graph: ModelGraphContextType, models: EntityModel[]) {
+function addModelsToGraph(
+  classes: ClassesContext,
+  graph: UseModelGraphContextType,
+  models: EntityModel[],
+) {
   // If there is no visual model, we create a default one.
-  if (graph.aggregatorView.getActiveVisualModel() === null) {
+  if (graph.getActiveVisualModel() === null) {
     LOG.warn("Creating default visual model.")
     const visualModel = createDefaultWritableVisualModel(models);
-    graph.aggregatorView.changeActiveVisualModel(visualModel.getId());
+    graph.selectActiveVisualModel(visualModel.getId());
   }
 
   for (const model of models) {
-    graph.aggregator.addModel(model);
-    graph.setModels((previous) => [...previous, model]);
-    for (const [_, visualModel] of graph.visualModels) {
+    graph.addSemanticModel(model);
+    for (const [_, visualModel] of classes.visualModels) {
       visualModel.setModelColor(model.getId(), randomColorFromPalette());
     }
   }

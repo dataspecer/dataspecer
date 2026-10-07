@@ -47,8 +47,7 @@ export const Catalog = () => {
 
   // Binding to global context.
   const modelGraphContext = useModelGraphContext();
-  const visualModel = modelGraphContext.aggregatorView
-    .getActiveVisualModel()?.getIdentifier() ?? null;
+  const visualModel = modelGraphContext.getActiveVisualModel()?.getIdentifier() ?? null;
 
   // Catalog state.
   const [state, setState] = useState<CatalogState>(createCatalogState());

@@ -1,6 +1,6 @@
 import { VisualModel } from "@dataspecer/visual-model";
-import { ClassesContextType } from "../../context/classes-context";
-import { ModelGraphContextType } from "../../context/model-context";
+import { ClassesContext } from "../../context/classes-context";
+import { UseModelGraphContextType } from "../../context/model-context";
 import {
   DataTypeRepresentative,
   filterByModel,
@@ -47,8 +47,8 @@ export interface AttributeProfileDialogState extends
  * State represents a newly created profile for given profiled entity.
  */
 export function createNewAttributeProfileDialogState(
-  classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
+  classesContext: ClassesContext,
+  graphContext: UseModelGraphContextType,
   visualModel: VisualModel | null,
   language: string,
   profilesIdentifiers: EntityDsIdentifier[],
@@ -56,7 +56,7 @@ export function createNewAttributeProfileDialogState(
 ): AttributeProfileDialogState {
 
   const allModels = semanticModelMapToCmeSemanticModel(
-    graphContext.models, visualModel,
+    classesContext.semanticModels, visualModel,
     configuration().defaultModelColor,
     identifier => t("model-service.model-label-from-id", identifier));
 
@@ -108,15 +108,15 @@ export function createNewAttributeProfileDialogState(
  * @throws InvalidState
  */
 export function createEditAttributeProfileDialogState(
-  classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
+  classesContext: ClassesContext,
+  graphContext: UseModelGraphContextType,
   visualModel: VisualModel | null,
   language: string,
   model: InMemorySemanticModel,
   entityIdentifier: string,
   labelResolver: LabelResolver,
 ): AttributeProfileDialogState {
-  const entities = graphContext.aggregatorView.getEntities();
+  const entities = graphContext.getEntities();
 
   const { rawEntity: entity, aggregatedEntity: aggregate } =
     entities[entityIdentifier];
@@ -142,7 +142,7 @@ export function createEditAttributeProfileDialogState(
   //
 
   const allModels = semanticModelMapToCmeSemanticModel(
-    graphContext.models, visualModel,
+    classesContext.semanticModels, visualModel,
     configuration().defaultModelColor,
     identifier => t("model-service.model-label-from-id", identifier));
 
@@ -164,7 +164,7 @@ export function createEditAttributeProfileDialogState(
   // EntityProfileState
 
   const entityProfileState = createEditBaseEntityProfileDialogState(
-    language, graphContext.models, allModels,
+    language, classesContext.semanticModels, allModels,
     { identifier: entity.id, model: model.getId() },
     allProfiles, range.profiling, noProfile, range.iri ?? "",
     range.name, range.nameFromProfiled,
@@ -194,12 +194,12 @@ export function createEditAttributeProfileDialogState(
 
 function listAttributesToProfile(
   labelResolver: LabelResolver,
-  classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
+  classesContext: ClassesContext,
+  graphContext: UseModelGraphContextType,
   vocabularies: CmeSemanticModel[],
 ) {
-  const entities = graphContext.aggregatorView.getEntities();
-  const models = [...graphContext.models.values()];
+  const entities = graphContext.getEntities();
+  const models = classesContext.semanticModelsList;
 
   const owlThing = representOwlThing();
 
@@ -216,12 +216,12 @@ function listAttributesToProfile(
 
 function listAttributesToSpecialize(
   labelResolver: LabelResolver,
-  classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
+  classesContext: ClassesContext,
+  graphContext: UseModelGraphContextType,
   vocabularies: CmeSemanticModel[],
 ) {
-  const entities = graphContext.aggregatorView.getEntities();
-  const models = [...graphContext.models.values()];
+  const entities = graphContext.getEntities();
+  const models = [...classesContext.semanticModels.values()];
   return [
     ...representRelationshipProfile(entities, models, vocabularies,
       classesContext.relationshipProfiles, labelResolver)
@@ -229,8 +229,8 @@ function listAttributesToSpecialize(
 }
 
 export function createAddAttributeProfileDialogState(
-  classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
+  classesContext: ClassesContext,
+  graphContext: UseModelGraphContextType,
   visualModel: VisualModel | null,
   language: string,
   domainIdentifier: EntityDsIdentifier,
@@ -238,7 +238,7 @@ export function createAddAttributeProfileDialogState(
 ): AttributeProfileDialogState {
 
   const allModels = semanticModelMapToCmeSemanticModel(
-    graphContext.models, visualModel,
+    classesContext.semanticModels, visualModel,
     configuration().defaultModelColor,
     identifier => t("model-service.model-label-from-id", identifier));
 

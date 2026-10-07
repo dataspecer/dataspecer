@@ -1,7 +1,7 @@
 
 import { VisualModel, isVisualNode, isWritableVisualModel } from "@dataspecer/visual-model";
-import { ClassesContextType } from "../context/classes-context";
-import { ModelGraphContextType } from "../context/model-context";
+import { ClassesContext } from "../context/classes-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { Options } from "../application";
 import {
@@ -40,6 +40,7 @@ import {
 import { DialogSemanticTracker } from "../dialog-v2/dialog-semantic-tracker";
 import { LabelResolver } from "../dependency-tracker";
 import { applyControlledVocabularySelection } from "./apply-controlled-vocabulary-selection";
+import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 
 /**
  * Creates default profiles of given {@link semanticClassesToProfile} and {@link semanticRelationshipsToProfile}.
@@ -48,18 +49,19 @@ import { applyControlledVocabularySelection } from "./apply-controlled-vocabular
 export async function createDefaultProfilesAction(
   cmeExecutor: CmeModelOperationExecutor,
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   options: Options,
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   visualModel: VisualModel | null,
   semanticClassesToProfile: string[],
   semanticRelationshipsToProfile: string[],
   shouldBeAddedToVisualModel: boolean,
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
+  availableVocabularies: ControlledVocabulary[],
 ): Promise<void> {
-  const writableSemanticModel = findAnyWritableModelFromRawInput(graph.models, visualModel);
+  const writableSemanticModel = findAnyWritableModelFromRawInput(classesContext.semanticModels, visualModel);
   if (writableSemanticModel === null) {
     notifications.error("There is no InMemorySemanticModel to put the profiles into.");
     return;
@@ -68,11 +70,12 @@ export async function createDefaultProfilesAction(
   const createdClassProfiles = await createDefaultClassProfiles(
     cmeExecutor, notifications, graph, diagram, options.language, classesContext,
     visualModel, semanticClassesToProfile, shouldBeAddedToVisualModel, tracker,
-    labelResolver);
+    labelResolver, availableVocabularies);
   createDefaultRelationshipProfiles(
     notifications, classesContext, graph, diagram, options.language, visualModel,
     writableSemanticModel, cmeExecutor, semanticRelationshipsToProfile,
-    createdClassProfiles, shouldBeAddedToVisualModel, tracker, labelResolver);
+    createdClassProfiles, shouldBeAddedToVisualModel, tracker, labelResolver,
+    availableVocabularies);
 };
 
 /**
@@ -85,22 +88,23 @@ export async function createDefaultProfilesAction(
 async function createDefaultClassProfiles(
   cmeExecutor: CmeModelOperationExecutor,
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   language: Language,
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   visualModel: VisualModel | null,
   classesAndClassProfilesToProfile: string[],
   shouldBeAddedToVisualModel: boolean,
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
+  availableVocabularies: ControlledVocabulary[],
 ): Promise<Record<string, (string | null)[]>> {
   const createdClassProfiles: Record<string, (string | null)[]> = {};
   for (const entityToProfile of classesAndClassProfilesToProfile) {
     const createdClassProfile = await createDefaultClassProfile(
       cmeExecutor, notifications, graph, diagram, language, classesContext,
       visualModel, entityToProfile, shouldBeAddedToVisualModel, tracker,
-      labelResolver);
+      labelResolver, availableVocabularies);
 
     if (createdClassProfiles[entityToProfile] === undefined) {
       createdClassProfiles[entityToProfile] = [];
@@ -119,17 +123,18 @@ async function createDefaultClassProfiles(
 async function createDefaultClassProfile(
   cmeExecutor: CmeModelOperationExecutor,
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   language: Language,
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   visualModel: VisualModel | null,
   entityToProfile: string,
   shouldBeAddedToVisualModel: boolean,
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
+  availableVocabularies: ControlledVocabulary[],
 ): Promise<string | null> {
-  const classOrClassProfileToBeProfiled = graph.aggregatorView.getEntities()?.[entityToProfile]?.aggregatedEntity;
+  const classOrClassProfileToBeProfiled = graph.getEntities()?.[entityToProfile]?.aggregatedEntity;
   if (classOrClassProfileToBeProfiled === undefined || classOrClassProfileToBeProfiled === null) {
     notifications.error("The entity (node) to be profiled from selection is not present in aggregatorView");
     return null;
@@ -143,7 +148,7 @@ async function createDefaultClassProfile(
 
   const profileClassState = createNewProfileClassDialogState(
     visualModel, language, [classOrClassProfileToBeProfiled.id], tracker,
-    labelResolver, graph);
+    labelResolver, graph, availableVocabularies);
   const createdClassProfile = createClassProfile(profileClassState, cmeExecutor);
   if (shouldBeAddedToVisualModel) {
     if (isWritableVisualModel(visualModel)) {
@@ -175,8 +180,8 @@ function createClassProfile(
 
 function createDefaultRelationshipProfiles(
   notifications: UseNotificationServiceWriterType,
-  classesContext: ClassesContextType,
-  graph: ModelGraphContextType,
+  classesContext: ClassesContext,
+  graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   language: Language,
   visualModel: VisualModel | null,
@@ -187,15 +192,16 @@ function createDefaultRelationshipProfiles(
   shouldBeAddedToVisualModel: boolean,
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
+  availableVocabularies: ControlledVocabulary[],
 ) {
   // Casting ... the correctness should be already validated
-  const writableSemanticModel = graph.models.get(writableCmeModel.identifier) as InMemorySemanticModel;
+  const writableSemanticModel = classesContext.semanticModels.get(writableCmeModel.identifier) as InMemorySemanticModel;
   for (const edgeToProfile of edgesToProfile) {
     createDefaultRelationshipProfile(
       notifications, classesContext, graph, diagram, language,
       writableSemanticModel, cmeExecutor, visualModel,
       edgeToProfile, createdClassProfiles, shouldBeAddedToVisualModel, tracker,
-      labelResolver);
+      labelResolver, availableVocabularies);
   }
 }
 
@@ -206,8 +212,8 @@ function createDefaultRelationshipProfiles(
  */
 async function createDefaultRelationshipProfile(
   notifications: UseNotificationServiceWriterType,
-  classesContext: ClassesContextType,
-  graph: ModelGraphContextType,
+  classesContext: ClassesContext,
+  graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   language: Language,
   model: InMemorySemanticModel,
@@ -218,6 +224,7 @@ async function createDefaultRelationshipProfile(
   shouldBeAddedToVisualModel: boolean,
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
+  availableVocabularies: ControlledVocabulary[],
 ) {
   const relationshipToProfile = getAndValidateRelationshipToBeProfiled(notifications, graph, entityToProfile);
   if (relationshipToProfile === null) {
@@ -240,7 +247,7 @@ async function createDefaultRelationshipProfile(
       const possibleEnd = await createDefaultClassProfile(
         cmeExecutor, notifications, graph, diagram, language, classesContext,
         visualModel, end.concept, shouldBeAddedToVisualModel, tracker,
-        labelResolver);
+        labelResolver, availableVocabularies);
 
       if (possibleEnd === null) {
         notifications.error("Can not create relationship profile end");
@@ -291,10 +298,10 @@ async function createDefaultRelationshipProfile(
 
 function getAndValidateRelationshipToBeProfiled(
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   entityToProfile: string
 ): SemanticModelRelationship | SemanticModelRelationshipProfile | null {
-  const relationshipToProfile = graph.aggregatorView.getEntities()?.[entityToProfile]?.aggregatedEntity;
+  const relationshipToProfile = graph.getEntities()?.[entityToProfile]?.aggregatedEntity;
   if (relationshipToProfile === undefined || relationshipToProfile === null) {
     notifications.error("The entity (edge) to be profiled from selection is not present in aggregatorView");
     return null;

@@ -1,7 +1,14 @@
+// Controlled vocabulary models are registered as one model per vocabulary,
+// whose single entity is set/updated/removed via the generic
+// Set/Update/Remove-entity operations (see packages/model-store and
+// services/backend/src/models/model-types.ts). The catalog-style CRUD
+// operations below are currently unused as a result - kept pending a
+// discussion on whether they're wanted for something like bulk-importing
+// externally identified vocabularies.
+
 import { generateEntityId } from "@dataspecer/core/entity-model";
 import { type Operation, generateOperationId } from "@dataspecer/core/operation";
 import type { ControlledVocabulary } from "../concepts/controlled-vocabulary.ts";
-import { CONTROLLED_VOCABULARY_TYPE } from "../concepts/controlled-vocabulary.ts";
 
 
 // Create vocabulary
@@ -82,16 +89,6 @@ export type VocabularyOperation =
   | ModifyVocabularyOperation
   | DeleteVocabularyOperation;
 
-// Default field values used when creating a vocabulary with missing fields
-
-export const DEFAULT_CONTROLLED_VOCABULARY: Omit<ControlledVocabulary, "id"> = {
-  type: [CONTROLLED_VOCABULARY_TYPE],
-  title: "",
-  pattern: "",
-  references: "",
-  documentation: "",
-  distribution: {
-    downloadUrl: "",
-    accessUrl: "",
-  },
-};
+// DEFAULT_CONTROLLED_VOCABULARY now lives in ../concepts/controlled-vocabulary.ts,
+// re-exported here for backward compatibility with this file's previous surface.
+export { DEFAULT_CONTROLLED_VOCABULARY } from "../concepts/controlled-vocabulary.ts";

@@ -6,11 +6,11 @@ import {
 } from "@dataspecer/core-v2/semantic-model/concepts";
 import { WritableVisualModel, isWritableVisualModel } from "@dataspecer/visual-model";
 
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { DialogApiContextType } from "../dialog/dialog-service";
 import { Options } from "../configuration/options";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { UseDiagramType } from "../diagram/diagram-hook";
 import { addSemanticRelationshipProfileToVisualModelAction } from "./add-relationship-profile-to-visual-model";
 import { addSemanticClassProfileToVisualModelAction } from "./add-class-profile-to-visual-model";
@@ -48,22 +48,24 @@ import {
 } from "../dialog/association-profile/edit-association-profile-dialog-state-adapter";
 import { LabelResolver } from "../dependency-tracker";
 import { applyControlledVocabularySelection } from "./apply-controlled-vocabulary-selection";
+import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 
 export function openCreateProfileDialogAction(
   cmeExecutor: CmeModelOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContextType,
-  graph: ModelGraphContextType,
+  classes: ClassesContext,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   diagram: UseDiagramType,
   position: { x: number, y: number },
   identifier: string,
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
+  availableVocabularies: ControlledVocabulary[],
 ) {
-  const entity = graph.aggregatorView.getEntities()?.[identifier].aggregatedEntity;
+  const entity = graph.getEntities()?.[identifier].aggregatedEntity;
   if (entity === undefined) {
     notifications.error(`Can not find the entity with identifier '${identifier}'.`);
     return;
@@ -72,7 +74,7 @@ export function openCreateProfileDialogAction(
   if (isSemanticModelClass(entity) || isSemanticModelClassProfile(entity)) {
     const initialState = createNewProfileClassDialogState(
       visualModel, options.language, [entity.id], tracker, labelResolver,
-      graph);
+      graph, availableVocabularies);
     const onConfirm = (state: ClassProfileDialogState) => {
 
       const result = cmeExecutor.createClassProfile(

@@ -2,7 +2,8 @@ import { isModelProfile } from "@dataspecer/core-v2/semantic-model/profile/conce
 import type { Entity } from "@dataspecer/core-v2";
 import { createDefaultConfigurationModelFromJsonObject } from "@dataspecer/core-v2/configuration-model";
 import { isSemanticModelClass, isSemanticModelRelationship, SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
-import { isSemanticModelClassProfile, isSemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
+import { isSemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
+import { isControlledVocabulary, type ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 import type { LanguageString } from "@dataspecer/core/core/core-resource";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { createSetEntityOperation, generateOperationId, type Transaction } from "@dataspecer/core/operation";
@@ -24,6 +25,14 @@ export function isModelVocabulary(model: Record<string, SemanticModelEntity>): b
   return Object.values(model).some((entity) => isSemanticModelClass(entity) || isSemanticModelRelationship(entity));
 }
 
+/**
+ * Helper function that checks whether the model is a single controlled
+ * vocabulary model - see fillModels in specification.ts.
+ */
+export function isModelControlledVocabulary(model: Record<string, SemanticModelEntity>): boolean {
+  return Object.values(model).some((entity) => isControlledVocabulary(entity));
+}
+
 export async function generateLightweightOwl(entities: Record<string, SemanticModelEntity>, baseIri: string, iri: string): Promise<string> {
   // @ts-ignore
   return await generateLightweightOwlInternal(Object.values(entities), { baseIri, iri });
@@ -31,8 +40,24 @@ export async function generateLightweightOwl(entities: Record<string, SemanticMo
 
 /**
  * Generates Application Profile DSV representation.
+ * @param controlledVocabularyCatalogIris Maps a controlled vocabulary's
+ *  entity id to the IRI of the catalog it is a direct member of - used to
+ *  resolve dsv:controlledVocabulary references. See createContext.
+ * @param controlledVocabulariesToEmbed Vocabularies to embed as a DCAT
+ *  catalog directly in the generated document, alongside the conceptual
+ *  model - only the ones directly owned by this specification's own
+ *  package, not the whole project. See embeddedCatalogIri.
+ * @param embeddedCatalogIri IRI of the catalog controlledVocabulariesToEmbed
+ *  are written as members of.
  */
-export async function generateDsvApplicationProfile(forExportModels: ModelDescription[], forContextModels: ModelDescription[], iri: string) {
+export async function generateDsvApplicationProfile(
+  forExportModels: ModelDescription[],
+  forContextModels: ModelDescription[],
+  iri: string,
+  controlledVocabularyCatalogIris?: Map<string, string>,
+  controlledVocabulariesToEmbed?: ControlledVocabulary[],
+  embeddedCatalogIri?: string,
+) {
   // Step 1: Prepare models in the required format.
 
   const modelMapping = (model: ModelDescription) => ({
@@ -44,6 +69,7 @@ export async function generateDsvApplicationProfile(forExportModels: ModelDescri
 
   const semanticsDependencies = forContextModels.filter((model) => isModelVocabulary(model.entities)).map(modelMapping);
   const profilesDependencies = forContextModels.filter((model) => isModelProfile(model.entities)).map(modelMapping);
+  const controlledVocabularyDependencies = forContextModels.filter((model) => isModelControlledVocabulary(model.entities)).map(modelMapping);
 
   // Step 2: Generate DSV.
 
@@ -51,16 +77,20 @@ export async function generateDsvApplicationProfile(forExportModels: ModelDescri
     {
       semantics: semanticsDependencies,
       profiles: profilesDependencies,
+      controlledVocabularies: controlledVocabularyDependencies,
     },
     profiles,
     {
       iri,
+      controlledVocabularyCatalogIris,
     },
   );
 
   const dsvString = await DataSpecificationVocabulary.conceptualModelToRdf(applicationProfile, {
     prettyPrint: true,
     prefixes: undefined, // todo
+    controlledVocabularies: controlledVocabulariesToEmbed,
+    controlledVocabularyCatalogIri: embeddedCatalogIri,
   });
 
   return dsvString;

@@ -38,6 +38,7 @@
     "./semantic-model/v1-adapters": "./lib/semantic-model/v1-adapters/index.js"
   },
   "dependencies": {
+    "@dataspecer/controlled-vocabulary-model": "*",
     "@dataspecer/core": "*",
     "@dataspecer/rdfs-adapter": "*",
     "@dataspecer/sgov-adapter": "*",

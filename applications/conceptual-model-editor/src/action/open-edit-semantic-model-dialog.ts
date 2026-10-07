@@ -11,7 +11,7 @@ import {
 import { ModelDsIdentifier } from "../dataspecer/entity-model";
 import { configuration, Options } from "../application";
 import { DialogApiContextType } from "../dialog/dialog-service";
-import { ModelGraphContextType } from "../context/model-context";
+import { ClassesContext } from "../context/classes-context";
 import { SemanticModel } from "../dataspecer/semantic-model";
 import {
   createEditSemanticModelDialog,
@@ -24,11 +24,11 @@ export function openEditSemanticModelDialogAction(
   cmeExecutor: CmeModelOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
-  graph: ModelGraphContextType,
+  classes: ClassesContext,
   visualModel: VisualModel | null,
   identifier: ModelDsIdentifier,
 ) {
-  const model: SemanticModel | undefined = graph.models.get(identifier);
+  const model: SemanticModel | undefined = classes.semanticModels.get(identifier);
   if (model === undefined) {
     return;
   }
