@@ -4,6 +4,7 @@ import { Entity, InMemoryEntityModel } from "@dataspecer/core-v2/entity-model";
 import { SemanticModelAggregator } from "@dataspecer/core-v2/semantic-model/aggregator";
 import { LanguageString, SemanticModelClass, SemanticModelEntity, SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
 import { ControlledVocabularyAssignment, Qualifier, isControlledVocabularyAssignment, isSemanticModelClassProfile, isSemanticModelRelationshipProfile, SemanticModelClassProfile, SemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
+import { ControlledVocabulary, isControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 import { getTranslation } from "@dataspecer/core-v2/utils/language";
 import { createHandlebarsAdapter, HandlebarsAdapter } from "@dataspecer/handlebars-adapter";
 import { StructureModel } from '@dataspecer/generators/structure-model/model/structure-model';
@@ -171,6 +172,26 @@ export async function generateDocumentation(
       .map(id => aggregatedEntities[id]?.aggregatedEntity ?? null)
       .filter(isControlledVocabularyAssignment);
 
+  /**
+   * Follows the chain of controlled vocabulary assignments replacements, strting from the given assignment.
+   * An assignment replaces at most one other assignment, so the result is a list.
+   */
+  const getReplacedAssignments = (assignment: ControlledVocabularyAssignment): ControlledVocabularyAssignment[] => {
+    const chain: ControlledVocabularyAssignment[] = [];
+    const visited = new Set<string>([assignment.id]);
+    let current = assignment;
+    while (current.replaces?.kind === "local") {
+      const replaced = aggregatedEntities[current.replaces.target]?.aggregatedEntity ?? null;
+      if (!isControlledVocabularyAssignment(replaced) || visited.has(replaced.id)) {
+        break;
+      }
+      visited.add(replaced.id);
+      chain.push(replaced);
+      current = replaced;
+    }
+    return chain;
+  };
+
   // Resolve the controlled vocabulary assignments on class pofiles,
   // attach the assignments directly so that the templates can read them.
   // The assignments are taken from the aggregated class profile, because
@@ -246,6 +267,47 @@ export async function generateDocumentation(
     }
   }
 
+  // The controlled vocabularies used by the assignments in the specification,
+  // own and inherited, including the replaced ones that the documentation links to.
+  // Vocabularies that are not assigned anywhere are not listed.
+  const usedVocabularyIds = new Set<string>();
+  for (const entity of sortedSemanticModel) {
+    if (!isSemanticModelClassProfile(entity)) {
+      continue;
+    }
+    const assignments = (entity as {resolvedControlledVocabularies?: ControlledVocabularyAssignment[]}).resolvedControlledVocabularies ?? [];
+    for (const assignment of assignments) {
+      usedVocabularyIds.add(assignment.vocabulary);
+      for (const replaced of getReplacedAssignments(assignment)) {
+        usedVocabularyIds.add(replaced.vocabulary);
+      }
+    }
+  }
+
+  const controlledVocabularies: ControlledVocabulary[] = [];
+  for (const vocabularyId of usedVocabularyIds) {
+    const vocabulary = models.map(model => model.entities[vocabularyId]).find(entity => entity !== undefined);
+    // A vocabulary that is not available among the models cannot be described.
+    if (vocabulary && isControlledVocabulary(vocabulary)) {
+      controlledVocabularies.push(vocabulary);
+    }
+  }
+  controlledVocabularies.sort((a, b) => a.title.localeCompare(b.title));
+
+  // The titles are free text, so the anchors are made unique.
+  // The prefix keeps them apart from the anchors of classes and relationships.
+  const controlledVocabularyAnchors = new Map<string, string>();
+  const takenAnchors = new Set<string>();
+  for (const vocabulary of controlledVocabularies) {
+    const slug = vocabulary.title.trim().replace(/[^\p{L}\p{N}_-]+/gu, "-").replace(/^-+|-+$/g, "") || "vocabulary";
+    let anchor = "cv-" + slug;
+    for (let suffix = 2; takenAnchors.has(anchor); suffix++) {
+      anchor = `cv-${slug}-${suffix}`;
+    }
+    takenAnchors.add(anchor);
+    controlledVocabularyAnchors.set(vocabulary.id, anchor);
+  }
+
   const handlebarsAdapter = createHandlebarsAdapter();
 
   const data = {
@@ -262,6 +324,8 @@ export async function generateDocumentation(
     },
 
     classProfilesByTags: Object.groupBy(sortedSemanticModel.filter(entity => isSemanticModelClassProfile(entity)), entity => (entity as SemanticModelClassProfile)?.tags?.[0] || "default"),
+
+    controlledVocabularies,
 
     controlledVocabularyUsagesByQualifier,
 
@@ -518,27 +582,14 @@ export async function generateDocumentation(
     return qualifier.toUpperCase().replaceAll("-", " ");
   };
 
+  data['replacedAssignments'] = getReplacedAssignments;
+
   /**
-   * Follows the chain of controlled vocabulary assignments replacements, strting from the given assignment.
-   * An assignment replaces at most one other assignment, so the result is a list.
-   * The list ends when the replaced assignment is not in the models, 
-   * when it is referenced by IRI from an imported specification
-   * or when it would repeat an assignment.
+   * Id of the section row of the given controlled vocabulary in the list of controlled vocabularies.
+   * It is the target of all links to the controlled vocabulary.
    */
-  data['replacedAssignments'] = function(assignment: ControlledVocabularyAssignment): ControlledVocabularyAssignment[] {
-    const chain: ControlledVocabularyAssignment[] = [];
-    const visited = new Set<string>([assignment.id]);
-    let current = assignment;
-    while (current.replaces?.kind === "local") {
-      const replaced = aggregatedEntities[current.replaces.target]?.aggregatedEntity ?? null;
-      if (!isControlledVocabularyAssignment(replaced) || visited.has(replaced.id)) {
-        break;
-      }
-      visited.add(replaced.id);
-      chain.push(replaced);
-      current = replaced;
-    }
-    return chain;
+  data['cvAnchor'] = function(vocabularyId: string): string {
+    return controlledVocabularyAnchors.get(vocabularyId) ?? "cv-" + vocabularyId;
   };
 
   const result = await handlebarsAdapter.render(configuration.template, data, configuration.partials);

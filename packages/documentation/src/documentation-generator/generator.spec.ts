@@ -65,7 +65,7 @@ describe("generateDocumentation controlled vocabularies", () => {
 
     const html = await render(builder, [vocabulary("voc-a", "Vocabulary A")], CLASS_PROFILE_TEMPLATE);
 
-    expect(html).toContain('<a href="https://example.com/voc-a">Vocabulary A</a> (RECOMMENDED)');
+    expect(html).toContain('<a href="#cv-Vocabulary-A">Vocabulary A</a> (RECOMMENDED)');
   });
 
   it("Includes assignments inherited from the profiled class profile.", async () => {
@@ -258,9 +258,131 @@ describe("generateDocumentation controlled vocabularies", () => {
 
   });
 
+  describe("list of controlled vocabularies", () => {
+
+    const LIST_TEMPLATE = "{{> controlled-vocabularies-table}}";
+
+    function collapse(html: string): string {
+      return html.replace(/\s+/g, " ");
+    }
+
+    it("Lists each used vocabulary once with its name, IRI and links.", async () => {
+      const builder = createBuilder();
+      const first = builder.controlledVocabularyAssignment({ vocabulary: "voc-a", qualifier: "must" });
+      const second = builder.controlledVocabularyAssignment({ vocabulary: "voc-a", qualifier: "may" });
+      builder.class({ id: "profile-1", controlledVocabularies: [first.identifier] });
+      builder.class({ id: "profile-2", controlledVocabularies: [second.identifier] });
+
+      const html = collapse(await render(
+        builder,
+        [{ ...vocabulary("voc-a", "Vocabulary A"), conformsToSkos: true, references: "https://example.com/scheme", documentation: "https://example.com/docs" }],
+        LIST_TEMPLATE,
+      ));
+
+      expect(html.match(/<tr id=/g)).toHaveLength(1);
+      expect(html).toContain('<tr id="cv-Vocabulary-A"> <td>Vocabulary A</td> <td>https://example.com/scheme</td>');
+      expect(html).toContain('<a href="https://example.com/voc-a">Access URL</a>');
+      expect(html).toContain('<a href="https://example.com/docs">Documentation</a>');
+    });
+
+    it("Shows the IRI only for vocabularies conforming to SKOS and the documentation link only when present.", async () => {
+      const builder = createBuilder();
+      const assignment = builder.controlledVocabularyAssignment({ vocabulary: "voc-a" });
+      builder.class({ id: "profile", controlledVocabularies: [assignment.identifier] });
+
+      const html = collapse(await render(
+        builder,
+        [{ ...vocabulary("voc-a", "Vocabulary A"), conformsToSkos: false, references: "https://example.com/download", documentation: null }],
+        LIST_TEMPLATE,
+      ));
+
+      expect(html).not.toContain("https://example.com/download");
+      expect(html).not.toContain("Documentation");
+    });
+
+    it("Lists a vocabulary of an assignment no relationship points to, and sorts by name.", async () => {
+      const builder = createBuilder();
+      const first = builder.controlledVocabularyAssignment({ vocabulary: "voc-b" });
+      const second = builder.controlledVocabularyAssignment({ vocabulary: "voc-a" });
+      builder.class({ id: "profile", controlledVocabularies: [first.identifier, second.identifier] });
+
+      const html = await render(
+        builder,
+        [vocabulary("voc-b", "Vocabulary B"), vocabulary("voc-a", "Vocabulary A")],
+        LIST_TEMPLATE,
+      );
+
+      expect(html.indexOf("Vocabulary A")).toBeGreaterThan(-1);
+      expect(html.indexOf("Vocabulary A")).toBeLessThan(html.indexOf("Vocabulary B"));
+    });
+
+    it("Does not list vocabularies that no assignment uses.", async () => {
+      const builder = createBuilder();
+      const assignment = builder.controlledVocabularyAssignment({ vocabulary: "voc-a" });
+      builder.class({ id: "profile", controlledVocabularies: [assignment.identifier] });
+
+      const html = await render(
+        builder,
+        [vocabulary("voc-a", "Vocabulary A"), vocabulary("voc-unused", "Unused vocabulary")],
+        LIST_TEMPLATE,
+      );
+
+      expect(html).toContain("Vocabulary A");
+      expect(html).not.toContain("Unused vocabulary");
+    });
+
+    it("Lists a vocabulary used only by a replaced assignment.", async () => {
+      const builder = createBuilder();
+      const parentAssignment = builder.controlledVocabularyAssignment({ id: "parent-assignment", classProfile: "parent", vocabulary: "voc-a" });
+      const childAssignment = builder.controlledVocabularyAssignment({
+        id: "child-assignment", classProfile: "child", vocabulary: "voc-b",
+        replaces: { kind: "local", target: parentAssignment.identifier },
+      });
+      const parent = builder.class({ id: "parent", controlledVocabularies: [parentAssignment.identifier] });
+      builder.class({ id: "child", controlledVocabularies: [childAssignment.identifier] }).profile(parent);
+
+      const html = await render(
+        builder,
+        [vocabulary("voc-a", "Vocabulary A"), vocabulary("voc-b", "Vocabulary B")],
+        LIST_TEMPLATE,
+      );
+
+      expect(html).toContain("Vocabulary A");
+      expect(html).toContain("Vocabulary B");
+    });
+
+    it("Makes the anchors of vocabularies with the same title unique.", async () => {
+      const builder = createBuilder();
+      const first = builder.controlledVocabularyAssignment({ vocabulary: "voc-a" });
+      const second = builder.controlledVocabularyAssignment({ vocabulary: "voc-b" });
+      builder.class({ id: "profile", controlledVocabularies: [first.identifier, second.identifier] });
+
+      const html = await render(
+        builder,
+        [vocabulary("voc-a", "Same title"), vocabulary("voc-b", "Same title")],
+        `{{#each controlledVocabularies}}[{{id}}={{cvAnchor id}}]{{/each}}`,
+      );
+
+      expect(html).toContain("[voc-a=cv-Same-title]");
+      expect(html).toContain("[voc-b=cv-Same-title-2]");
+    });
+
+    it("Links to the row of the vocabulary in the list.", async () => {
+      const builder = createBuilder();
+      const assignment = builder.controlledVocabularyAssignment({ vocabulary: "voc-a" });
+      builder.class({ id: "profile", controlledVocabularies: [assignment.identifier] });
+
+      const html = collapse(await render(builder, [vocabulary("voc-a", "Vocabulary A")], `${CLASS_PROFILE_TEMPLATE}${LIST_TEMPLATE}`));
+
+      expect(html).toContain('<a href="#cv-Vocabulary-A">Vocabulary A</a>');
+      expect(html).toContain('<tr id="cv-Vocabulary-A">');
+    });
+
+  });
+
   describe("usage sentences", () => {
 
-    const LINK = '<a href="https://example.com/voc-a">Vocabulary A</a>';
+    const LINK = '<a href="#cv-Vocabulary-A">Vocabulary A</a>';
 
     /**
      * Renders the usage of the assignment for the class profile, or for the

@@ -129,9 +129,14 @@ export const defaultConfiguration: DocumentationConfiguration = {
 
     {{> used-prefixes}}
 
-    {{#if (or controlledVocabularyUsagesByQualifier.must controlledVocabularyUsagesByQualifier.[at-least-one] controlledVocabularyUsagesByQualifier.recommended controlledVocabularyUsagesByQualifier.may)}}
+    {{#if controlledVocabularies.length}}
       <section>
         <h2>{{#iflng "cs"}}Řízené slovníky{{lng}}Controlled vocabularies{{/iflng}}</h2>
+
+        <section>
+          <h3>{{#iflng "cs"}}Seznam řízených slovníků{{lng}}List of controlled vocabularies{{/iflng}}</h3>
+          {{> controlled-vocabularies-table}}
+        </section>
 
         {{#if controlledVocabularyUsagesByQualifier.must}}
           <section>
@@ -409,7 +414,29 @@ export const defaultConfiguration: DocumentationConfiguration = {
   {{/each}}
 {{/if}}`,
 
-    "controlled-vocabulary-link": `{{#semanticEntity vocabulary}}<a href="{{{distribution.accessUrl}}}">{{title}}</a>{{else}}{{.}}{{/semanticEntity}}`,
+    "controlled-vocabulary-link": `{{#semanticEntity vocabulary}}<a href="#{{cvAnchor id}}">{{title}}</a>{{else}}{{.}}{{/semanticEntity}}`,
+
+    "controlled-vocabularies-table": `<table class="def">
+  <thead>
+    <tr>
+      <th>{{#iflng "cs"}}Název{{lng}}Name{{/iflng}}</th>
+      <th>IRI</th>
+      <th>{{#iflng "cs"}}Odkazy{{lng}}Links{{/iflng}}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{#each controlledVocabularies}}
+      <tr id="{{cvAnchor id}}">
+        <td>{{title}}</td>
+        <td>{{#if conformsToSkos}}{{references}}{{/if}}</td>
+        <td>
+          <a href="{{{distribution.accessUrl}}}">{{#iflng "cs"}}Přístupová adresa{{lng}}Access URL{{/iflng}}</a>
+          {{#if documentation}}<a href="{{{documentation}}}">{{#iflng "cs"}}Dokumentace{{lng}}Documentation{{/iflng}}</a>{{/if}}
+        </td>
+      </tr>
+    {{/each}}
+  </tbody>
+</table>`,
 
     "controlled-vocabulary-replaced-assignment": `{{#iflng "cs"}}nahrazuje přiřazení řízeného slovníku{{lng}}replaces controlled vocabulary assignment{{/iflng}}
 {{> controlled-vocabulary-link}} ({{qualifierLabel qualifier}}) {{#iflng "cs"}}profilu třídy{{lng}}of class profile{{/iflng}}
