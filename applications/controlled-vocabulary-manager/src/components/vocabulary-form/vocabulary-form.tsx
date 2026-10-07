@@ -202,6 +202,7 @@ export function VocabularyForm({
                     <LanguageStringInput
                       value={field.value}
                       onChange={field.onChange}
+                      onBlur={field.onBlur}
                       defaultLanguage={defaultLanguage}
                       placeholder={t("form.placeholder.name")}
                     />

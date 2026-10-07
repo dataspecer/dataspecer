@@ -22,6 +22,8 @@ export function createLanguageStringRow(lang: string, value: string = ""): Langu
 interface LanguageStringInputProps {
   value: LanguageStringRow[]
   onChange: (rows: LanguageStringRow[]) => void
+  /** Called when one of the inputs loses focus, so that the form validates the field. */
+  onBlur?: () => void
   /** Language tag of a newly added row. */
   defaultLanguage: string
   placeholder?: string
@@ -31,7 +33,7 @@ interface LanguageStringInputProps {
  * Edits a language string as rows of a language tag and a text. The last row
  * cannot be removed, a name is always required.
  */
-export function LanguageStringInput({ value, onChange, defaultLanguage, placeholder }: LanguageStringInputProps) {
+export function LanguageStringInput({ value, onChange, onBlur, defaultLanguage, placeholder }: LanguageStringInputProps) {
   const { t } = useTranslation()
 
   const updateRow = (key: string, changes: Partial<LanguageStringRow>) =>
@@ -46,11 +48,13 @@ export function LanguageStringInput({ value, onChange, defaultLanguage, placehol
             aria-label={t("form.placeholder.language")}
             placeholder={t("form.placeholder.language")}
             value={row.lang}
+            onBlur={onBlur}
             onChange={(event) => updateRow(row.key, { lang: event.target.value })}
           />
           <Input
             placeholder={placeholder}
             value={row.value}
+            onBlur={onBlur}
             onChange={(event) => updateRow(row.key, { value: event.target.value })}
           />
           <Button
