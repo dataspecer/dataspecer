@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model"
+import { selectName } from "@/lib/language"
 import { useConfig } from "@/contexts/config-context"
 
 interface VocabularyViewPageProps {
@@ -21,7 +22,7 @@ function Field({ label, value }: { label: string, value: string | null }) {
 }
 
 export function VocabularyViewPage({ vocabulary, onClose }: VocabularyViewPageProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { managerUrl } = useConfig()
 
   return (
@@ -38,7 +39,7 @@ export function VocabularyViewPage({ vocabulary, onClose }: VocabularyViewPagePr
       <p className="text-sm text-muted-foreground mb-4">{t("view.subtitle")}</p>
       <Card>
         <CardContent className="p-5 space-y-4">
-          <Field label={t("form.field.name")} value={vocabulary.title} />
+          <Field label={t("form.field.name")} value={selectName(vocabulary.title, i18n.language)} />
           <Field
             label={t("view.field.conformsToSkos")}
             value={vocabulary.conformsToSkos ? t("view.value.yes") : t("view.value.no")}

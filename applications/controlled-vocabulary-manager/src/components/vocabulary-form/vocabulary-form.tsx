@@ -6,6 +6,14 @@ import { z } from "zod"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { baseLanguage } from "@/lib/language"
+import {
+  LanguageStringInput,
+  createLanguageStringRow,
+  languageStringToRows,
+  rowsToLanguageString,
+  type LanguageStringRow,
+} from "./language-string-input"
 import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -26,7 +34,7 @@ import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-mod
 type ReferenceSource = "access" | "documentation"
 
 interface VocabularyFormValues {
-  title: string
+  title: LanguageStringRow[]
   conformsToSkos: boolean
   referenceSource: ReferenceSource
   references: string
@@ -74,11 +82,23 @@ export function VocabularyForm({
   onCancel,
   onConfirm,
 }: VocabularyFormProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const defaultLanguage = baseLanguage(i18n.language)
   const { vocabularies } = useVocabulariesContext()
 
   const schema = useMemo(() => z.object({
-    title: z.string().min(1, t("form.validation.requiredField")),
+    title: z.array(z.object({ key: z.string(), lang: z.string(), value: z.string() }))
+      .superRefine((rows, context) => {
+        if (rows.length === 0) {
+          context.addIssue({ code: "custom", message: t("form.validation.requiredField") })
+        } else if (rows.some((row) => row.lang.trim() === "" || row.value.trim() === "")) {
+          context.addIssue({ code: "custom", message: t("form.validation.nameIncomplete") })
+        } else if (rows.some((row) => row.lang.trim().length > 2)) {
+          context.addIssue({ code: "custom", message: t("form.validation.languageTooLong") })
+        } else if (new Set(rows.map((row) => row.lang.trim())).size !== rows.length) {
+          context.addIssue({ code: "custom", message: t("form.validation.duplicateLanguage") })
+        }
+      }),
     conformsToSkos: z.boolean(),
     referenceSource: z.enum(["access", "documentation"]),
     references: z.string(),
@@ -109,7 +129,9 @@ export function VocabularyForm({
     resolver: zodResolver(schema),
     mode: "onTouched",
     defaultValues: {
-      title: initialValues?.title ?? "",
+      title: initialValues && Object.keys(initialValues.title).length > 0
+        ? languageStringToRows(initialValues.title)
+        : [createLanguageStringRow(defaultLanguage)],
       conformsToSkos: initialValues?.conformsToSkos ?? true,
       referenceSource: initialReferenceSource(initialValues),
       references: initialValues?.references ?? "",
@@ -148,7 +170,7 @@ export function VocabularyForm({
     // vocabulary, so its iri (if it had one from an import) is reset to null -
     // a fresh one is generated on the next DSV export.
     const vocabulary: Omit<ControlledVocabulary, 'id' | 'type'> = {
-      title: values.title,
+      title: rowsToLanguageString(values.title),
       references,
       conformsToSkos: values.conformsToSkos,
       pattern: emptyToNull(values.pattern),
@@ -177,7 +199,12 @@ export function VocabularyForm({
                     <span className="text-destructive"> *</span>
                   </FormLabel>
                   <FormControl>
-                    <Input placeholder={t("form.placeholder.name")} {...field} />
+                    <LanguageStringInput
+                      value={field.value}
+                      onChange={field.onChange}
+                      defaultLanguage={defaultLanguage}
+                      placeholder={t("form.placeholder.name")}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
