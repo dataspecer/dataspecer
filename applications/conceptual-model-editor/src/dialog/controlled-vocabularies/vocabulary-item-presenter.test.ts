@@ -7,7 +7,7 @@ import { DEFAULT_CONTROLLED_VOCABULARY } from "@dataspecer/controlled-vocabulary
 const VOCABULARY: ControlledVocabulary = {
   ...DEFAULT_CONTROLLED_VOCABULARY,
   id: "v1",
-  title: "Vocabulary",
+  title: { en: "Vocabulary" },
   references: "http://example.com/v1",
 };
 

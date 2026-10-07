@@ -1,3 +1,5 @@
+import { useOptions } from "../../configuration/options";
+import { getLocalizedStringFromLanguageString } from "../../util/language-utils";
 import { SelectQualifier } from "../components/select-qualifier";
 import { VocabularyItemPresenter } from "./vocabulary-item-presenter";
 import { VocabularyItemState } from "./vocabulary-item-state";
@@ -8,6 +10,7 @@ export function VocabularyItemView(props: {
   onRemove?: () => void;
   isDuplicate?: boolean;
 }) {
+  const { language } = useOptions();
   const inherited = props.state.inherited;
   const qualifierDisabled = inherited !== null && !inherited.overrideEnabled;
   const effectiveQualifier = qualifierDisabled ? null : props.state.qualifier;
@@ -20,7 +23,7 @@ export function VocabularyItemView(props: {
     >
       <div className="flex items-start justify-between">
         <div className="flex items-baseline gap-2 min-w-0">
-          <p className="font-semibold shrink-0">{props.state.vocabulary.title}</p>
+          <p className="font-semibold shrink-0">{getLocalizedStringFromLanguageString(props.state.vocabulary.title, language)}</p>
           <p className="text-sm text-gray-500 truncate">{props.state.vocabulary.references}</p>
         </div>
         {props.onRemove && (

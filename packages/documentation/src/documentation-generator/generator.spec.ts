@@ -9,12 +9,12 @@ function createBuilder(): ProfileModelBuilder {
   return createDefaultProfileModelBuilder({ baseIdentifier: "test:", baseIri: null });
 }
 
-function vocabulary(id: string, title: string): ControlledVocabulary {
+function vocabulary(id: string, title: string | Record<string, string>): ControlledVocabulary {
   return {
     ...DEFAULT_CONTROLLED_VOCABULARY,
     id,
     type: [CONTROLLED_VOCABULARY_TYPE],
-    title,
+    title: typeof title === "string" ? { en: title } : title,
     distribution: { downloadUrl: `https://example.com/${id}.rdf`, accessUrl: `https://example.com/${id}` },
   };
 }
@@ -458,6 +458,35 @@ describe("generateDocumentation controlled vocabularies", () => {
 
       expect(html).toContain("[voc-a=cv-Same-title]");
       expect(html).toContain("[voc-b=cv-Same-title-2]");
+    });
+
+    it("Shows the name in the language of the documentation and uses it for the anchor.", async () => {
+      const builder = createBuilder();
+      const assignment = builder.controlledVocabularyAssignment({ vocabulary: "voc-a" });
+      builder.class({ id: "profile", controlledVocabularies: [assignment.identifier] });
+      const vocabularies = [vocabulary("voc-a", { cs: "Stát", en: "Country" })];
+      const template = `{{#each controlledVocabularies}}[{{cvTitle id}}={{cvAnchor id}}]{{/each}}`;
+
+      const czech = await render(builder, vocabularies, template, "cs");
+      const english = await render(builder, vocabularies, template, "en");
+
+      expect(czech).toContain("[Stát=cv-Stát]");
+      expect(english).toContain("[Country=cv-Country]");
+    });
+
+    it("Falls back to another language when the name is missing in the language of the documentation.", async () => {
+      const builder = createBuilder();
+      const assignment = builder.controlledVocabularyAssignment({ vocabulary: "voc-a" });
+      builder.class({ id: "profile", controlledVocabularies: [assignment.identifier] });
+
+      const html = await render(
+        builder,
+        [vocabulary("voc-a", { en: "Country" })],
+        `{{#each controlledVocabularies}}[{{cvTitle id}}]{{/each}}`,
+        "cs",
+      );
+
+      expect(html).toContain("[Country]");
     });
 
     it("Links to the row of the vocabulary in the list.", async () => {

@@ -313,14 +313,20 @@ export async function generateDocumentation(
       controlledVocabularies.push(vocabulary);
     }
   }
-  controlledVocabularies.sort((a, b) => a.title.localeCompare(b.title));
+  // The names are shown in the language of the documentation, or in any other
+  // language when there is no name in it.
+  const controlledVocabularyTitles = new Map<string, string>();
+  for (const vocabulary of controlledVocabularies) {
+    controlledVocabularyTitles.set(vocabulary.id, getTranslation(vocabulary.title, [configuration.language]).translation);
+  }
+  controlledVocabularies.sort((a, b) => controlledVocabularyTitles.get(a.id)!.localeCompare(controlledVocabularyTitles.get(b.id)!));
 
   // The titles are free text, so the anchors are made unique.
   // The prefix keeps them apart from the anchors of classes and relationships.
   const controlledVocabularyAnchors = new Map<string, string>();
   const takenAnchors = new Set<string>();
   for (const vocabulary of controlledVocabularies) {
-    const slug = vocabulary.title.trim().replace(/[^\p{L}\p{N}_-]+/gu, "-").replace(/^-+|-+$/g, "") || "vocabulary";
+    const slug = controlledVocabularyTitles.get(vocabulary.id)!.trim().replace(/[^\p{L}\p{N}_-]+/gu, "-").replace(/^-+|-+$/g, "") || "vocabulary";
     let anchor = "cv-" + slug;
     for (let suffix = 2; takenAnchors.has(anchor); suffix++) {
       anchor = `cv-${slug}-${suffix}`;
@@ -611,6 +617,13 @@ export async function generateDocumentation(
    */
   data['cvAnchor'] = function(vocabularyId: string): string {
     return controlledVocabularyAnchors.get(vocabularyId) ?? "cv-" + vocabularyId;
+  };
+
+  /**
+   * Name of the controlled vocabulary in the language of the documentation.
+   */
+  data['cvTitle'] = function(vocabularyId: string): string {
+    return controlledVocabularyTitles.get(vocabularyId) ?? "";
   };
 
   const result = await handlebarsAdapter.render(configuration.template, data, configuration.partials);

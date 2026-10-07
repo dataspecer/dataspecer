@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useOptions } from "../../configuration/options";
 import { AddVocabularyView } from "./add-vocabulary-view";
 import {
   createSelectControlledVocabulariesPresenter,
@@ -15,9 +16,10 @@ export function SelectControlledVocabulariesView(props: {
   setState: (next: (prevState: SelectControlledVocabulariesState) =>
     SelectControlledVocabulariesState) => void;
 }) {
+  const { language } = useOptions();
   const presenter = useMemo(
-    () => createSelectControlledVocabulariesPresenter(props.setState),
-    [props.setState],
+    () => createSelectControlledVocabulariesPresenter(props.setState, language),
+    [props.setState, language],
   );
   const state = props.state;
   const hasConflict = hasControlledVocabularyConflict(state);
