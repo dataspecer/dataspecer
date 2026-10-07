@@ -79,50 +79,47 @@ export const RenameResourceDialog = ({ inputLabel, inputDescription, isOpen, res
             {type === "create" ? t("rename-resource.subtitle-create") : t("rename-resource.subtitle-edit")}
           </ModalDescription>
         </ModalHeader>
-        <ModalBody>
-          <div className="flex justify-end">
-            <Button variant="ghost" onClick={() => setLabels([...labels, { lang: "cs", value: "", key: _uniqueId() }])}><Plus className="mr-2 h-4 w-4" /> {t("rename-resource.add-name")}</Button>
-            <Button variant="ghost" onClick={() => setDescription([...description, { lang: "cs", value: "", key: _uniqueId() }])}><Plus className="mr-2 h-4 w-4" /> {t("rename-resource.add-description")}</Button>
-          </div>
-          <div className="grid gap-4">
-            {labels.map(name => (
-              <div key={name.key}>
-                <Label htmlFor={name.key} className="flex grow-3 items-baseline gap-2 mb-2">
-                  <div>
-                    {t("rename-resource.name")}:
+        <form onSubmit={(event) => { event.preventDefault(); closeWithSuccess(); }}>
+          <ModalBody>
+            <div className="flex justify-end">
+              <Button type="button" variant="ghost" onClick={() => setLabels([...labels, { lang: "cs", value: "", key: _uniqueId() }])}><Plus className="mr-2 h-4 w-4" /> {t("rename-resource.add-name")}</Button>
+              <Button type="button" variant="ghost" onClick={() => setDescription([...description, { lang: "cs", value: "", key: _uniqueId() }])}><Plus className="mr-2 h-4 w-4" /> {t("rename-resource.add-description")}</Button>
+            </div>
+            <div className="grid gap-4">
+              {labels.map(name => (
+                <div key={name.key}>
+                  <div className="flex grow-3 items-baseline gap-2 mb-2">
+                    <Label htmlFor={name.key}>{t("rename-resource.name")}:</Label>
+                    <input aria-label={`${t("rename-resource.name")} language`} className="flex rounded-md border border-input bg-slate-300/30 px-3 bac text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 w-[1.5cm] text-center border-none p-0" value={name.lang} placeholder="xx" onChange={target => setLabels([...labels.map(n => n === name ? { ...n, lang: target.target.value } : n)])} />
+                    <div className="grow"></div>
+                    <Button type="button" aria-label={`${t("remove")} ${t("rename-resource.name")}`} variant="ghost" size="smallIcon" onClick={() => removeName(name.key)}>
+                      <X className="text-muted-foreground" size={16} />
+                    </Button>
                   </div>
-                  <input className="flex rounded-md border border-input bg-slate-300/30 px-3 bac text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 w-[1.5cm] text-center border-none p-0" value={name.lang} placeholder="xx" onChange={target => setLabels([...labels.map(n => n === name ? { ...n, lang: target.target.value } : n)])} />
-                  <div className="grow"></div>
-                  <Button variant={"ghost"} size="smallIcon" onClick={() => removeName(name.key)}>
-                    <X className="text-muted-foreground" size={16} />
-                  </Button>
-                </Label>
-                <Input id={name.key} value={name.value} className="grow" onChange={target => setLabels([...labels.map(n => n === name ? { ...n, value: target.target.value } : n)])} />
-              </div>
-            ))}
+                  <Input id={name.key} value={name.value} className="grow" onChange={target => setLabels([...labels.map(n => n === name ? { ...n, value: target.target.value } : n)])} />
+                </div>
+              ))}
 
-            {description.map(name => (
-              <div key={name.key}>
-                <Label htmlFor={name.key} className="flex grow-3 items-baseline gap-2 mb-2">
-                  <div>
-                    {t("rename-resource.description")}:
+              {description.map(name => (
+                <div key={name.key}>
+                  <div className="flex grow-3 items-baseline gap-2 mb-2">
+                    <Label htmlFor={name.key}>{t("rename-resource.description")}:</Label>
+                    <input aria-label={`${t("rename-resource.description")} language`} className="flex rounded-md border border-input bg-slate-300/30 px-3 bac text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 w-[1.5cm] text-center border-none p-0" value={name.lang} placeholder="xx" onChange={target => setDescription([...description.map(n => n === name ? { ...n, lang: target.target.value } : n)])} />
+                    <div className="grow"></div>
+                    <Button type="button" aria-label={`${t("remove")} ${t("rename-resource.description")}`} variant="ghost" size="smallIcon" onClick={() => removeDescription(name.key)}>
+                      <X className="text-muted-foreground" size={16} />
+                    </Button>
                   </div>
-                  <input className="flex rounded-md border border-input bg-slate-300/30 px-3 bac text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 w-[1.5cm] text-center border-none p-0" value={name.lang} placeholder="xx" onChange={target => setDescription([...description.map(n => n === name ? { ...n, lang: target.target.value } : n)])} />                
-                  <div className="grow"></div>
-                  <Button variant={"ghost"} size="smallIcon" onClick={() => removeDescription(name.key)}>
-                    <X className="text-muted-foreground" size={16} />
-                  </Button>
-                </Label>
-                <Textarea id={name.key} value={name.value} className="grow" onChange={target => setDescription([...description.map(n => n === name ? { ...n, value: target.target.value } : n)])} />
-              </div>
-            ))}
-            <button type="submit" className="hidden" />
-          </div>
-        </ModalBody>
-        <ModalFooter className="flex flex-row">
-          <Button variant="outline" onClick={() => resolve(null)}>{t("rename-resource.cancel")}</Button>
-          <Button type="submit" onClick={closeWithSuccess}>{t("rename-resource.save-changes")}</Button>
-        </ModalFooter>
+                  <Textarea id={name.key} value={name.value} className="grow" onChange={target => setDescription([...description.map(n => n === name ? { ...n, value: target.target.value } : n)])} />
+                </div>
+              ))}
+            </div>
+          </ModalBody>
+          <ModalFooter className="flex flex-row">
+            <Button type="button" variant="outline" onClick={() => resolve(null)}>{t("rename-resource.cancel")}</Button>
+            <Button type="submit">{t("rename-resource.save-changes")}</Button>
+          </ModalFooter>
+        </form>
       </ModalContent>
     </Modal>
   );

@@ -104,47 +104,49 @@ export const ReloadResource = ({ id, parentId, isOpen, resolve }: ReloadResource
           <ModalTitle>{t("reload-resource.title")}</ModalTitle>
           <ModalDescription>{name ? t("reload-resource.warning", { name }) : t("reload-resource.warning-no-name")}</ModalDescription>
         </ModalHeader>
-        <ModalBody className="space-y-4">
-          {isMultiUrl ? (
-            <div className="grid gap-2">
-              <Label htmlFor={textareaId}>{t("reload-resource.urls")}</Label>
-              <Textarea id={textareaId} ref={textareaRef} defaultValue={currentUrls} key={currentUrls} rows={5} />
+        <form onSubmit={(event) => { event.preventDefault(); void doReload(false); }}>
+          <ModalBody className="space-y-4">
+            {isMultiUrl ? (
+              <div className="grid gap-2">
+                <Label htmlFor={textareaId}>{t("reload-resource.urls")}</Label>
+                <Textarea id={textareaId} ref={textareaRef} defaultValue={currentUrls} key={currentUrls} rows={5} />
+              </div>
+            ) : (
+              <div className="grid gap-2">
+                <Label htmlFor={urlInputFormId}>{t("reload-resource.url")}</Label>
+                <Input id={urlInputFormId} defaultValue={importedUrl} />
+              </div>
+            )}
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircleIcon />
+                <AlertTitle>{t("reload-resource.error-title")}</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+          </ModalBody>
+          <ModalFooter>
+            <div className="flex">
+              <Button type="submit" variant="default" className="rounded-r-none" disabled={isLoading}>
+                {isLoading && <Loader className="mr-2 h-4 w-4 animate-spin" />}
+                {t("reload-resource.reload")}
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button type="button" variant="default" className="rounded-l-none border-l border-l-destructive-foreground/30 px-2" disabled={isLoading}>
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => doReload(true)}>{t("reload-resource.reload-apply")}</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-          ) : (
-            <div className="grid gap-2">
-              <Label htmlFor={urlInputFormId}>{t("reload-resource.url")}</Label>
-              <Input id={urlInputFormId} defaultValue={importedUrl} />
-            </div>
-          )}
-          {error && (
-            <Alert variant="destructive">
-              <AlertCircleIcon />
-              <AlertTitle>{t("reload-resource.error-title")}</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-        </ModalBody>
-        <ModalFooter>
-          <div className="flex">
-            <Button variant="default" className="rounded-r-none" onClick={() => doReload(false)} disabled={isLoading}>
-              {isLoading && <Loader className="mr-2 h-4 w-4 animate-spin" />}
-              {t("reload-resource.reload")}
+            <Button type="button" variant="outline" onClick={() => resolve(false)} disabled={isLoading}>
+              {t("close")}
             </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="default" className="rounded-l-none border-l border-l-destructive-foreground/30 px-2" disabled={isLoading}>
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => doReload(true)}>{t("reload-resource.reload-apply")}</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-          <Button variant="outline" onClick={() => resolve(false)} disabled={isLoading}>
-            {t("close")}
-          </Button>
-        </ModalFooter>
+          </ModalFooter>
+        </form>
       </ModalContent>
     </Modal>
   );

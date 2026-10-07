@@ -34,7 +34,7 @@ export async function generateApplicationProfileSvg(
   layoutConfiguration.main.elk_stress.run_node_overlap_removal_after = true;
   layoutConfiguration.main.elk_stress.interactive = true;
   layoutConfiguration.main.elk_stress.number_of_new_algorithm_runs = 1;
-  layoutConfiguration.main.elk_stress.stress_edge_len = 500;
+  layoutConfiguration.main.elk_stress.stress_edge_len = 400;
   const result = await performLayoutOfSemanticModel(layoutModel, modelId, layoutConfiguration, new ReactflowDimensionsEstimator());
   const visualModel = createApplicationProfileVisualModel(
     Object.values(result).map(({ visualEntity }) => visualEntity),
@@ -52,7 +52,12 @@ export async function generateApplicationProfileSvg(
     ...diagramModels[modelId],
     ...Object.fromEntries(Object.entries(layoutModel).map(([id, entity]) => [id, aggregatedEntities[id]?.aggregatedEntity ?? entity])),
   };
-  return generateVisualModelSvg(visualModel, diagramModels, { prefixes });
+  return generateVisualModelSvg(visualModel, diagramModels, {
+    prefixes,
+    profileOfMode: "hidden",
+    language: "cs",
+    showIris: false,
+  });
 }
 
 /** Keeps profile entities and reconnects their relationships to profile nodes. */

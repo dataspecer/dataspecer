@@ -17,16 +17,18 @@ export const ModifyTagsDialog = ({ tags = [], isOpen, resolve }: { tags?: string
         <ModalHeader>
           <ModalTitle>{t("modify-tags.title")}</ModalTitle>
         </ModalHeader>
-        <ModalBody className="grid gap-2">
-          <Label htmlFor="resource-tags">{t("tags")}</Label>
-          <Input id="resource-tags" value={value} onChange={(event) => setValue(event.target.value)} placeholder={t("tags-instruction")} />
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="outline" onClick={() => resolve(null)}>
-            {t("rename-resource.cancel")}
-          </Button>
-          <Button onClick={() => resolve(parseTags(value))}>{t("rename-resource.save-changes")}</Button>
-        </ModalFooter>
+        <form onSubmit={(event) => { event.preventDefault(); resolve(parseTags(value)); }}>
+          <ModalBody className="grid gap-2">
+            <Label htmlFor="resource-tags">{t("tags")}</Label>
+            <Input id="resource-tags" value={value} onChange={(event) => setValue(event.target.value)} placeholder={t("tags-instruction")} />
+          </ModalBody>
+          <ModalFooter>
+            <Button type="button" variant="outline" onClick={() => resolve(null)}>
+              {t("rename-resource.cancel")}
+            </Button>
+            <Button type="submit">{t("rename-resource.save-changes")}</Button>
+          </ModalFooter>
+        </form>
       </ModalContent>
     </Modal>
   );
