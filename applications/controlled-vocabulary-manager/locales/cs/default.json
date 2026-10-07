@@ -46,7 +46,7 @@
   "form.validation.required": "Povinné: Název slovníku, IRI skos:ConceptScheme a URL pro přístup.",
   "form.validation.requiredField": "Toto pole je povinné.",
   "form.validation.nameIncomplete": "Každý název musí mít jazykový kód a text.",
-  "form.validation.languageTooLong": "Jazykový kód může mít nejvýše 2 znaky.",
+  "form.validation.languageLength": "Jazykový kód musí mít přesně 2 znaky.",
   "form.validation.duplicateLanguage": "Každý jazyk může mít jen jeden název.",
   "form.validation.invalidUrl": "Zadejte prosím platnou URL adresu.",
   "form.validation.invalidRegex": "Zadejte prosím platný regulární výraz.",

@@ -46,7 +46,7 @@
   "form.validation.required": "Required: Vocabulary name, IRI of skos:ConceptScheme, and Access URL.",
   "form.validation.requiredField": "This field is required.",
   "form.validation.nameIncomplete": "Every name needs a language tag and a text.",
-  "form.validation.languageTooLong": "A language tag can have at most 2 characters.",
+  "form.validation.languageLength": "A language tag must have exactly 2 characters.",
   "form.validation.duplicateLanguage": "Each language can have only one name.",
   "form.validation.invalidUrl": "Please enter a valid URL.",
   "form.validation.invalidRegex": "Please enter a valid regular expression.",

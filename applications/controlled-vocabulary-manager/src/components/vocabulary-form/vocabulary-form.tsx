@@ -93,8 +93,8 @@ export function VocabularyForm({
           context.addIssue({ code: "custom", message: t("form.validation.requiredField") })
         } else if (rows.some((row) => row.lang.trim() === "" || row.value.trim() === "")) {
           context.addIssue({ code: "custom", message: t("form.validation.nameIncomplete") })
-        } else if (rows.some((row) => row.lang.trim().length > 2)) {
-          context.addIssue({ code: "custom", message: t("form.validation.languageTooLong") })
+        } else if (rows.some((row) => row.lang.trim().length !== 2)) {
+          context.addIssue({ code: "custom", message: t("form.validation.languageLength") })
         } else if (new Set(rows.map((row) => row.lang.trim())).size !== rows.length) {
           context.addIssue({ code: "custom", message: t("form.validation.duplicateLanguage") })
         }
