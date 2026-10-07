@@ -372,8 +372,8 @@ describe("generateDocumentation controlled vocabularies", () => {
 
       expect(html.match(/<tr id=/g)).toHaveLength(1);
       expect(html).toContain('<tr id="cv-Vocabulary-A"> <td>Vocabulary A</td> <td>https://example.com/scheme</td>');
-      expect(html).toContain('<a href="https://example.com/voc-a">Access URL</a>');
-      expect(html).toContain('<a href="https://example.com/docs">Documentation</a>');
+      expect(html).toMatch(/<a class="cv-link" href="https:\/\/example.com\/voc-a" title="Access URL" aria-label="Access URL"><svg /);
+      expect(html).toMatch(/<a class="cv-link" href="https:\/\/example.com\/docs" title="Documentation" aria-label="Documentation"><svg /);
     });
 
     it("Shows the IRI only for vocabularies conforming to SKOS and the documentation link only when present.", async () => {
@@ -388,7 +388,8 @@ describe("generateDocumentation controlled vocabularies", () => {
       ));
 
       expect(html).not.toContain("https://example.com/download");
-      expect(html).not.toContain("Documentation");
+      expect(html).toContain('title="Access URL"');
+      expect(html).not.toContain('title="Documentation"');
     });
 
     it("Lists a vocabulary of an assignment no relationship points to, and sorts by name.", async () => {

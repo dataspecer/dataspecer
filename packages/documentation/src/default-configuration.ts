@@ -416,6 +416,10 @@ export const defaultConfiguration: DocumentationConfiguration = {
 
     "controlled-vocabulary-link": `{{#semanticEntity vocabulary}}<a href="#{{cvAnchor id}}">{{title}}</a>{{else}}{{.}}{{/semanticEntity}}`,
 
+    "controlled-vocabulary-access-link": `<a class="cv-link" href="{{{distribution.accessUrl}}}" title="{{#iflng "cs"}}Přístupová adresa{{lng}}Access URL{{/iflng}}" aria-label="{{#iflng "cs"}}Přístupová adresa{{lng}}Access URL{{/iflng}}"><svg class="cv-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></a>`,
+
+    "controlled-vocabulary-documentation-link": `<a class="cv-link" href="{{{documentation}}}" title="{{#iflng "cs"}}Dokumentace{{lng}}Documentation{{/iflng}}" aria-label="{{#iflng "cs"}}Dokumentace{{lng}}Documentation{{/iflng}}"><svg class="cv-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg></a>`,
+
     "controlled-vocabularies-table": `<table class="def">
   <thead>
     <tr>
@@ -430,8 +434,8 @@ export const defaultConfiguration: DocumentationConfiguration = {
         <td>{{title}}</td>
         <td>{{#if conformsToSkos}}{{references}}{{/if}}</td>
         <td>
-          <a href="{{{distribution.accessUrl}}}">{{#iflng "cs"}}Přístupová adresa{{lng}}Access URL{{/iflng}}</a>
-          {{#if documentation}}<a href="{{{documentation}}}">{{#iflng "cs"}}Dokumentace{{lng}}Documentation{{/iflng}}</a>{{/if}}
+          {{> controlled-vocabulary-access-link}}
+          {{#if documentation}}{{> controlled-vocabulary-documentation-link}}{{/if}}
         </td>
       </tr>
     {{/each}}
@@ -768,6 +772,14 @@ var respecConfig = {
   table.simple td {
     border-top: 1px solid #ddd;
     padding: 3px 10px;
+  }
+
+  a.cv-link + a.cv-link {
+    margin-left: 0.5em;
+  }
+
+  .cv-icon {
+    vertical-align: -0.2em;
   }
 </style>`,
   },
