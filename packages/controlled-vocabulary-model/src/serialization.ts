@@ -1,3 +1,4 @@
+import type { LanguageString } from "@dataspecer/core/core/core-resource";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import {
   CONTROLLED_VOCABULARY_TYPE,
@@ -14,6 +15,17 @@ function emptyToNull(value: unknown): string | null {
 }
 
 /**
+ * Vocabularies stored before names became multilingual hold the title as a
+ * plain string, which is read as an English name.
+ */
+function normalizeTitle(value: unknown): LanguageString {
+  if (typeof value === "string") {
+    return value === "" ? {} : { en: value };
+  }
+  return (value as LanguageString | null | undefined) ?? {};
+}
+
+/**
  * Converts the stored JSON serialization of a controlled vocabulary model to
  * its entities. A controlled vocabulary model has exactly one entity - the
  * vocabulary itself - keyed by the model's own id. Missing data (a freshly
@@ -24,6 +36,7 @@ export function serializationToControlledVocabularyModelEntities(modelId: string
   const entity: ControlledVocabulary = {
     ...DEFAULT_CONTROLLED_VOCABULARY,
     ...stored,
+    title: normalizeTitle(stored.title),
     pattern: emptyToNull(stored.pattern),
     documentation: emptyToNull(stored.documentation),
     distribution: {

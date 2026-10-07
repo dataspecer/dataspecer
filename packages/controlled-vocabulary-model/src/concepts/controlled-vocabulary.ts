@@ -1,10 +1,11 @@
+import type { LanguageString } from "@dataspecer/core/core/core-resource";
 import type { Entity } from "@dataspecer/core/entity-model";
 
 export const CONTROLLED_VOCABULARY_TYPE = "controlled-vocabulary" as const;
 
 /**
  * Interface representing metadata identified about a controlled vocabulary
- * - title = name of the controlled vocabulary (CV)
+ * - title = name of the controlled vocabulary (CV) per language tag
  * - pattern = regex pattern of the IRIs of CV values, null if not known
  * - references = main reference to the CV: the IRI of its skos:ConceptScheme
  *   when conformsToSkos is true, otherwise its download or documentation URL
@@ -14,7 +15,7 @@ export const CONTROLLED_VOCABULARY_TYPE = "controlled-vocabulary" as const;
  */
 export interface ControlledVocabulary extends Entity {
   type: [typeof CONTROLLED_VOCABULARY_TYPE];
-  title: string;
+  title: LanguageString;
   pattern: string | null;
   references: string;
   conformsToSkos: boolean;
@@ -49,7 +50,7 @@ export function isControlledVocabulary(entity: Entity): entity is ControlledVoca
  */
 export const DEFAULT_CONTROLLED_VOCABULARY: Omit<ControlledVocabulary, "id"> = {
   type: [CONTROLLED_VOCABULARY_TYPE],
-  title: "",
+  title: {},
   pattern: null,
   references: "",
   conformsToSkos: true,

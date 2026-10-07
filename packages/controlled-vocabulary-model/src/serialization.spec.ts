@@ -35,6 +35,21 @@ test("Reads empty strings stored for optional fields as null.", () => {
   expect(entity.references).toBe("http://example.com/scheme");
 });
 
+test("Reads a legacy plain string title as an English name.", () => {
+  const entities = serializationToControlledVocabularyModelEntities("cv-1", { title: "Legacy" });
+  expect((entities["cv-1"] as ControlledVocabulary).title).toStrictEqual({ en: "Legacy" });
+});
+
+test("Reads an empty legacy title as no name.", () => {
+  const entities = serializationToControlledVocabularyModelEntities("cv-1", { title: "" });
+  expect((entities["cv-1"] as ControlledVocabulary).title).toStrictEqual({});
+});
+
+test("Keeps a multilingual title.", () => {
+  const entities = serializationToControlledVocabularyModelEntities("cv-1", { title: { cs: "Stát", en: "Country" } });
+  expect((entities["cv-1"] as ControlledVocabulary).title).toStrictEqual({ cs: "Stát", en: "Country" });
+});
+
 test("Keeps filled optional fields and round-trips through the serialization.", () => {
   const original = serializationToControlledVocabularyModelEntities("cv-1", {
     title: "Filled",
