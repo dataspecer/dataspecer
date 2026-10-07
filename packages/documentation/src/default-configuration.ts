@@ -135,12 +135,18 @@ export const defaultConfiguration: DocumentationConfiguration = {
 
         <section>
           <h3>{{#iflng "cs"}}Seznam řízených slovníků{{lng}}List of controlled vocabularies{{/iflng}}</h3>
+          <p>
+            {{#iflng "cs"}}Seznam obsahuje všechny řízené slovníky, které tato specifikace používá, s odkazy na dokumenaci a ke stažení.{{lng}}The list contains all controlled vocabularies used by this specification, with links to its access URL and documentation.{{/iflng}}
+          </p>
           {{> controlled-vocabularies-table}}
         </section>
 
         {{#if (or controlledVocabularyUsagesByQualifier.must controlledVocabularyUsagesByQualifier.[at-least-one] controlledVocabularyUsagesByQualifier.recommended controlledVocabularyUsagesByQualifier.may)}}
           <section>
             <h3>{{#iflng "cs"}}Použití řízených slovníků{{lng}}Controlled vocabularies usage{{/iflng}}</h3>
+            <p>
+              {{#iflng "cs"}}Tabulky níže uvádějí použití řízených slovníků pro vlastnosti, seskupené podle očekávané kvalifikace.{{lng}}The tables below show the usage of the controlled vocabularies with properties grouped by the expected qualification.{{/iflng}}
+            </p>
 
             {{#if controlledVocabularyUsagesByQualifier.must}}
               <section>
@@ -426,7 +432,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
 
     "controlled-vocabulary-documentation-link": `<a class="cv-link" href="{{{documentation}}}" title="{{#iflng "cs"}}Dokumentace{{lng}}Documentation{{/iflng}}" aria-label="{{#iflng "cs"}}Dokumentace{{lng}}Documentation{{/iflng}}"><svg class="cv-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg></a>`,
 
-    "controlled-vocabularies-table": `<table class="def cv-list">
+    "controlled-vocabularies-table": `<table class="def cv-table cv-list">
   <thead>
     <tr>
       <th>{{#iflng "cs"}}Název{{lng}}Name{{/iflng}}</th>
@@ -499,7 +505,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
   </p>
 {{/each}}`,
 
-    "controlled-vocabulary-usage-table": `<table class="def">
+    "controlled-vocabulary-usage-table": `<table class="def cv-table">
   <thead>
     <tr>
       <th>{{#iflng "cs"}}Vlastnost{{lng}}Property{{/iflng}}</th>
@@ -785,6 +791,14 @@ var respecConfig = {
   /* An IRI has no spaces to break at, so it may wrap anywhere instead of widening the table. */
   table.def.cv-list .cv-iri {
     overflow-wrap: anywhere;
+  }
+
+  /* ReSpec shows the header row of a definition table as an italic body row, so it is marked out as a header. */
+  table.def.cv-table thead th {
+    font-style: normal;
+    font-weight: bold;
+    background: color-mix(in srgb, currentColor 8%, transparent);
+    border-bottom: 2px solid color-mix(in srgb, currentColor 35%, transparent);
   }
 
   table.def.cv-list .cv-center {
