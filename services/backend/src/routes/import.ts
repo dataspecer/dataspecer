@@ -430,12 +430,12 @@ async function importRdfsAndDsv(repository: ModelRepositoryType, parentIri: stri
     }
 
     // Parse and materialize this document's own embedded controlled
-    // vocabulary catalog before resolving the rest of the DSV below, so
-    // ControlledVocabularyAssignment references can already find them.
+    // vocabulary catalog before resolving the rest of the DSV below, 
+    // so ControlledVocabularyAssignment references can already find them.
     const parsedVocabularies = parseControlledVocabularyCatalog(new N3.Parser().parse(data));
     for (const vocabulary of parsedVocabularies) {
       const cvModelId = parentIri + "/controlled-vocabulary/" + uuidv4();
-      await ensureResource(repository, parentIri, cvModelId, CONTROLLED_VOCABULARY_MODEL, { label: { en: vocabulary.title } });
+      await ensureResource(repository, parentIri, cvModelId, CONTROLLED_VOCABULARY_MODEL, { label: vocabulary.title });
       touchedModelIds?.add(cvModelId);
       // Mirrors controlledVocabularyModelEntitiesToSerialization's own
       // stored shape (the entity minus id/type, which the model's own id

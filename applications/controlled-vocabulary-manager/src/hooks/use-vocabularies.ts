@@ -169,7 +169,7 @@ export function useVocabularies() {
     const entity: ControlledVocabulary = { ...vocabulary, id, type: [CONTROLLED_VOCABULARY_TYPE] }
     const createModel = createCreateModelOperation(packageIri, CONTROLLED_VOCABULARY_MODEL, id)
     // set model label for package manager
-    createModel.label = { en: vocabulary.title }
+    createModel.label = vocabulary.title
     modelStore.transaction(
       [
         { modelId: PROJECT_MODEL_ID, operation: createModel },
@@ -188,7 +188,7 @@ export function useVocabularies() {
         // Keeps the resource's own label (shown in the package manager) in
         // sync with the vocabulary's title - the backend persists label
         // changes on a model's project-model entity into its resource metadata 
-        { modelId: PROJECT_MODEL_ID, operation: createUpdateEntityOperation(id, { label: { en: vocabulary.title } }) },
+        { modelId: PROJECT_MODEL_ID, operation: createUpdateEntityOperation(id, { label: vocabulary.title }) },
       ],
       {},
     )
