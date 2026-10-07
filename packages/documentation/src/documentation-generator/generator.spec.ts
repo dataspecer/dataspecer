@@ -357,7 +357,7 @@ describe("generateDocumentation controlled vocabularies", () => {
       return html.replace(/\s+/g, " ");
     }
 
-    it("Lists each used vocabulary once with its name, IRI and links.", async () => {
+    it("Lists each used vocabulary once with its name, concept scheme, SKOS flag and links.", async () => {
       const builder = createBuilder();
       const first = builder.controlledVocabularyAssignment({ vocabulary: "voc-a", qualifier: "must" });
       const second = builder.controlledVocabularyAssignment({ vocabulary: "voc-a", qualifier: "may" });
@@ -371,12 +371,12 @@ describe("generateDocumentation controlled vocabularies", () => {
       ));
 
       expect(html.match(/<tr id=/g)).toHaveLength(1);
-      expect(html).toContain('<tr id="cv-Vocabulary-A"> <td>Vocabulary A</td> <td>https://example.com/scheme</td>');
+      expect(html).toContain('<tr id="cv-Vocabulary-A"> <td>Vocabulary A</td> <td class="cv-center">yes</td> <td class="cv-iri">https://example.com/scheme</td>');
       expect(html).toMatch(/<a class="cv-link" href="https:\/\/example.com\/voc-a" title="Access URL" aria-label="Access URL"><svg /);
       expect(html).toMatch(/<a class="cv-link" href="https:\/\/example.com\/docs" title="Documentation" aria-label="Documentation"><svg /);
     });
 
-    it("Shows the IRI only for vocabularies conforming to SKOS and the documentation link only when present.", async () => {
+    it("Shows the concept scheme only for vocabularies conforming to SKOS and the documentation link only when present.", async () => {
       const builder = createBuilder();
       const assignment = builder.controlledVocabularyAssignment({ vocabulary: "voc-a" });
       builder.class({ id: "profile", controlledVocabularies: [assignment.identifier] });
@@ -388,6 +388,7 @@ describe("generateDocumentation controlled vocabularies", () => {
       ));
 
       expect(html).not.toContain("https://example.com/download");
+      expect(html).toContain('<td class="cv-center">no</td> <td class="cv-iri">–</td>');
       expect(html).toContain('title="Access URL"');
       expect(html).not.toContain('title="Documentation"');
     });
@@ -468,6 +469,46 @@ describe("generateDocumentation controlled vocabularies", () => {
 
       expect(html).toContain('<a href="#cv-Vocabulary-A">Vocabulary A</a>');
       expect(html).toContain('<tr id="cv-Vocabulary-A">');
+    });
+
+  });
+
+  describe("controlled vocabularies section", () => {
+
+    const MAIN_TEMPLATE = defaultConfiguration.partials["specification"]!;
+
+    it("Has the list and the usage subsections with the qualifier tables nested below the usage.", async () => {
+      const builder = createBuilder();
+      const may = builder.controlledVocabularyAssignment({ id: "may", vocabulary: "voc-a", qualifier: "may" });
+      const must = builder.controlledVocabularyAssignment({ id: "must", vocabulary: "voc-a", qualifier: "must" });
+      const rangeMay = builder.class({ id: "range-may", controlledVocabularies: [may.identifier] });
+      const rangeMust = builder.class({ id: "range-must", controlledVocabularies: [must.identifier] });
+      const domain = builder.class({ id: "domain" });
+      builder.property({ id: "p-may", name: { en: "may property" } }).domain(domain).range(rangeMay);
+      builder.property({ id: "p-must", name: { en: "must property" } }).domain(domain).range(rangeMust);
+
+      const html = (await render(builder, [vocabulary("voc-a", "Vocabulary A")], MAIN_TEMPLATE)).replace(/\s+/g, " ");
+
+      const headings = [...html.matchAll(/<h([234])>([^<]*)<\/h\1>/g)].map(match => `${match[1]}:${match[2]}`);
+      const section = headings.slice(headings.findIndex(item => item === "2:Controlled vocabularies"));
+      expect(section.slice(0, 5)).toEqual([
+        "2:Controlled vocabularies",
+        "3:List of controlled vocabularies",
+        "3:Controlled vocabularies usage",
+        "4:Properties with controlled vocabularies that MUST be used",
+        "4:Properties with controlled vocabularies that MAY be used",
+      ]);
+    });
+
+    it("Omits the usage subsection when no property uses a vocabulary.", async () => {
+      const builder = createBuilder();
+      const assignment = builder.controlledVocabularyAssignment({ vocabulary: "voc-a" });
+      builder.class({ id: "profile", controlledVocabularies: [assignment.identifier] });
+
+      const html = await render(builder, [vocabulary("voc-a", "Vocabulary A")], MAIN_TEMPLATE);
+
+      expect(html).toContain("List of controlled vocabularies");
+      expect(html).not.toContain("Controlled vocabularies usage");
     });
 
   });
