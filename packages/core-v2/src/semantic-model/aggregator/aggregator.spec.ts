@@ -43,7 +43,7 @@ describe("SemanticModelAggregator", () => {
     const vocabulary: ControlledVocabulary = {
       ...DEFAULT_CONTROLLED_VOCABULARY,
       id: "cv-1",
-      title: "Vocabulary",
+      title: {"en": "Vocabulary"},
     };
     const actual = getAggregatedEntities([vocabulary])[vocabulary.id];
 
