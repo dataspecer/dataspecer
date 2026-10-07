@@ -1,3 +1,4 @@
+import type { LanguageString } from "@dataspecer/core/core/core-resource";
 import * as N3 from "n3";
 import { DataFactory } from "n3";
 import { v4 as uuidv4 } from "uuid";
@@ -5,6 +6,9 @@ import { DEFAULT_CONTROLLED_VOCABULARY, type ControlledVocabulary } from "./conc
 
 const IRI = DataFactory.namedNode;
 const Literal = DataFactory.literal;
+
+/** Language of a dct:title that carries no language tag. */
+const DEFAULT_TITLE_LANGUAGE = "en";
 
 const RDF_PREFIX = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
 const RDF = {
@@ -71,8 +75,10 @@ export function writeControlledVocabularyCatalogQuads(
     writer.addQuad(IRI(catalogIri), DCAT.dataset, datasetIri);
     writer.addQuad(datasetIri, RDF.type, DCAT.Dataset);
 
-    if (vocabulary.title) {
-      writer.addQuad(datasetIri, DCT.title, Literal(vocabulary.title));
+    for (const [language, title] of Object.entries(vocabulary.title)) {
+      if (title) {
+        writer.addQuad(datasetIri, DCT.title, Literal(title, language));
+      }
     }
     if (vocabulary.references) {
       // Links this metadata record to the vocabulary it describes 
@@ -147,7 +153,11 @@ export function parseControlledVocabularyCatalog(quads: N3.Quad[]): ControlledVo
   const result: ControlledVocabulary[] = [];
 
   for (const datasetSubject of store.getSubjects(RDF.type, DCAT.Dataset, null)) {
-    const title = store.getObjects(datasetSubject, DCT.title, null)[0]?.value ?? "";
+    const title: LanguageString = {};
+    for (const object of store.getObjects(datasetSubject, DCT.title, null)) {
+      const language = (object as N3.Literal).language || DEFAULT_TITLE_LANGUAGE;
+      title[language] ??= object.value;
+    }
     const references = store.getObjects(datasetSubject, DCT.references, null)[0]?.value ?? "";
     const conformsToSkos = store.countQuads(datasetSubject, DCT.conformsTo, SKOS_CORE, null) > 0;
     const documentation = store.getObjects(datasetSubject, DCAT.landingPage, null)[0]?.value ?? null;
