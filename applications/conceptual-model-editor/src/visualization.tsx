@@ -203,7 +203,7 @@ function propagateVisualModelColorChangesToVisualization(
  */
 function onChangeVisualModel(
   options: ExtendedOptions,
-  visualModel: VisualModel | null,
+  visualModel: VisualModel | null | undefined,
   diagram: UseDiagramType | null,
   classesContext: ClassesContext,
   graphContext: UseModelGraphContextType,
@@ -212,7 +212,7 @@ function onChangeVisualModel(
     LOG.warn("Visual model change is ignored as the diagram is not ready!");
     return;
   }
-  if (visualModel === null) {
+  if (visualModel === null || visualModel === undefined) {
     // We just set content to nothing and return.
     void diagram.actions().setContent([], [], []);
     return;
