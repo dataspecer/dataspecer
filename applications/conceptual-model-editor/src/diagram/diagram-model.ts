@@ -37,7 +37,7 @@ export type Node = {
   iri: string | null;
 
   /**
-   * Color to use for given entity.
+   * Final color to use for given entity, the diagram uses it as it is.
    */
   color: string;
 
@@ -347,7 +347,7 @@ export type Edge = {
   cardinalityTarget: string | null;
 
   /**
-   * Color to use for given entity.
+   * Final color to use for given entity, the diagram uses it as it is.
    */
   color: string;
 

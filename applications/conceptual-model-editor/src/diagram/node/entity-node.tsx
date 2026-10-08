@@ -9,7 +9,6 @@ import {
 
 import {
   DiagramOptions,
-  EntityColor,
   LabelVisual,
   ProfileOfVisual,
 } from "../model";
@@ -63,7 +62,7 @@ export const EntityNode = (props: NodeProps<Node<ApiNode>>) => {
   // When we use IRI instead of a label we do not show the IRI again.
   const hideIri = data.options.labelVisual === LabelVisual.Iri;
   const label = prepareLabel(data.options, data);
-  const mainColor = prepareColor(data);
+  const mainColor = data.color;
   const isSingleNodeSelected = context?.getShownNodeMenuType() === NodeMenuType.SingleNodeMenu;
 
   return (
@@ -148,19 +147,6 @@ function prepareLabel(
       .map(item => item.label)
       .filter(item => item !== null)
       .join(", ");
-  }
-}
-
-function prepareColor(data: ApiNode) {
-  switch (data.options.entityMainColor) {
-  case EntityColor.Entity:
-    return data.color;
-  case EntityColor.VocabularyOrEntity:
-    if (data.vocabulary.length === 0) {
-      return data.color;
-    }
-    // Just use the first one.
-    return data.vocabulary[0].color;
   }
 }
 

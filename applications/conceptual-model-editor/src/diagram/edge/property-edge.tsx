@@ -12,7 +12,6 @@ import { createLogger } from "../../application/";
 
 import {
   DiagramOptions,
-  EntityColor,
   LabelVisual,
   ProfileOfVisual,
 } from "../model";
@@ -65,7 +64,7 @@ export const PropertyEdge = (props: EdgeProps<Edge<ApiEdge>>) => {
 
   const style = { ...props.style };
   if (data !== undefined) {
-    style.stroke = prepareColor(data);
+    style.stroke = data.color;
   }
 
   let missingLabel =
@@ -219,19 +218,6 @@ function selectProfileLabel(
     return "";
   }
   return "\n(" + filteredLabels.join(", ") + ")";
-}
-
-function prepareColor(data: ApiEdge) {
-  switch (data.options.entityMainColor) {
-  case EntityColor.Entity:
-    return data.color;
-  case EntityColor.VocabularyOrEntity:
-    if (data.vocabulary.length === 0) {
-      return data.color;
-    }
-    // Just use the first one.
-    return data.vocabulary[0].color;
-  }
 }
 
 /**

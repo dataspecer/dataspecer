@@ -37,7 +37,7 @@ import { type UseModelGraphContextType, useModelGraphContext } from "./context/m
 import { type ClassesContext, useClassesContext } from "./context/classes-context";
 import { cardinalityToHumanLabel, getDomainAndRange } from "./util/relationship-utils";
 import { useActions } from "./action/actions-react-binding";
-import { DiagramOptions } from "./diagram/model";
+import { DiagramOptions, EntityColor } from "./diagram/model";
 import {
   Diagram, type Edge, EdgeType, Group, type NodeItem, type Node, NodeType,
   NODE_ITEM_TYPE, NodeRelationshipItem, NodeTitleItem, NODE_TITLE_ITEM_TYPE,
@@ -360,6 +360,9 @@ function createDiagramNode(
 ): Node {
 
   const isProfile = isSemanticModelClassProfile(entity);
+  const vocabulary = prepareVocabulary(
+    options, visualModel, semanticModels, entities, entity.id);
+  const modelColor = visualModel.getModelColor(visualNode.model) ?? DEFAULT_MODEL_COLOR;
 
   return {
     options,
@@ -368,7 +371,7 @@ function createDiagramNode(
     externalIdentifier: entity.id,
     label: getEntityLabelToShowInDiagram(options.language, entity),
     iri: prepareIri(semanticModels, null, entity),
-    color: visualModel.getModelColor(visualNode.model) ?? DEFAULT_MODEL_COLOR,
+    color: selectColor(options, visualNode.color, modelColor, vocabulary),
     description: getEntityDescription(options.language, entity),
     group,
     position: {
@@ -378,8 +381,7 @@ function createDiagramNode(
       options, semanticModels, entities, entity),
     items: prepareItems(
       options, visualModel, semanticModels, entities, visualNode),
-    vocabulary: prepareVocabulary(
-      options, visualModel, semanticModels, entities, entity.id),
+    vocabulary,
   };
 }
 
@@ -683,6 +685,9 @@ function createDiagramEdgeForRelationship(
 ): Edge {
   const language = options.language;
   const { domain, range } = getDomainAndRange(entity);
+  const vocabulary = prepareVocabulary(
+    options, visualModel, semanticModels, entities, entity.id);
+  const modelColor = visualModel.getModelColor(visualRelationship.model) ?? DEFAULT_MODEL_COLOR;
   return {
     options,
     type: EdgeType.Association,
@@ -693,11 +698,10 @@ function createDiagramEdgeForRelationship(
     cardinalitySource: cardinalityToHumanLabel(domain?.cardinality),
     target: visualRelationship.visualTarget,
     cardinalityTarget: cardinalityToHumanLabel(range?.cardinality),
-    color: visualModel.getModelColor(visualRelationship.model) ?? DEFAULT_MODEL_COLOR,
+    color: selectColor(options, visualRelationship.color, modelColor, vocabulary),
     waypoints: visualRelationship.waypoints,
     profileOf: [],
-    vocabulary: prepareVocabulary(
-      options, visualModel, semanticModels, entities, entity.id),
+    vocabulary,
     iri: prepareIri(semanticModels, semanticModel, entity),
     mandatoryLevelLabel: null,
   };
@@ -715,7 +719,9 @@ function createDiagramEdgeForRelationshipProfile(
   const { domain, range } = getDomainAndRange(entity);
   const label = getEntityLabelToShowInDiagram(options.language, entity);
   const iri = prepareIri(semanticModels, semanticModel, entity);
-  const color = visualModel.getModelColor(visualRelationship.model) ?? DEFAULT_MODEL_COLOR;
+  const vocabulary = prepareVocabulary(
+    options, visualModel, semanticModels, entities, entity.id);
+  const modelColor = visualModel.getModelColor(visualRelationship.model) ?? DEFAULT_MODEL_COLOR;
   return {
     options,
     type: EdgeType.AssociationProfile,
@@ -727,12 +733,11 @@ function createDiagramEdgeForRelationshipProfile(
     cardinalitySource: cardinalityToHumanLabel(domain?.cardinality),
     target: visualRelationship.visualTarget,
     cardinalityTarget: cardinalityToHumanLabel(range?.cardinality),
-    color,
+    color: selectColor(options, visualRelationship.color, modelColor, vocabulary),
     waypoints: visualRelationship.waypoints,
     profileOf: prepareProfileOf(
       options, semanticModels, entities, entity),
-    vocabulary: prepareVocabulary(
-      options, visualModel, semanticModels, entities, entity.id),
+    vocabulary,
     mandatoryLevelLabel: selectMandatoryLevel(asMandatoryLevel(range?.tags ?? []), options.language),
   };
 }
@@ -743,7 +748,12 @@ function createDiagramEdgeForGeneralization(
   visualRelationship: VisualRelationship,
   entity: SemanticModelGeneralization,
 ): Edge {
-  const color = visualModel.getModelColor(visualRelationship.model) ?? DEFAULT_MODEL_COLOR;
+  const modelColor = visualModel.getModelColor(visualRelationship.model) ?? DEFAULT_MODEL_COLOR;
+  const vocabulary = [{
+    label: null,
+    iri: null,
+    color: modelColor,
+  }];
   return {
     type: EdgeType.Generalization,
     identifier: visualRelationship.id,
@@ -753,16 +763,12 @@ function createDiagramEdgeForGeneralization(
     cardinalitySource: null,
     target: visualRelationship.visualTarget,
     cardinalityTarget: null,
-    color,
+    color: selectColor(diagramOptions, visualRelationship.color, modelColor, vocabulary),
     waypoints: visualRelationship.waypoints,
     profileOf: [],
     iri: null,
     options: diagramOptions,
-    vocabulary: [{
-      label: null,
-      iri: null,
-      color,
-    }],
+    vocabulary,
     mandatoryLevelLabel: null,
   };
 }
@@ -786,7 +792,7 @@ function createDiagramEdgeForClassUsageOrProfile(
     cardinalitySource: null,
     target: visualProfileRelationship.visualTarget,
     cardinalityTarget: null,
-    color: "#000000",
+    color: selectColor(diagramOptions, visualProfileRelationship.color, "#000000", []),
     waypoints: visualProfileRelationship.waypoints,
     profileOf: [],
     iri: null,
@@ -794,6 +800,45 @@ function createDiagramEdgeForClassUsageOrProfile(
     vocabulary: [],
     mandatoryLevelLabel: null,
   };
+}
+
+/**
+ * Select the final color of a diagram node or edge.
+ *
+ * Order of precedence:
+ * 1. Custom color of the visual entity, see issue #1536.
+ * 2. Color of the first vocabulary, only for {@link EntityColor.VocabularyOrEntity}.
+ * 3. Color of the model.
+ *
+ * Previously the diagram components resolved the {@link EntityColor} option
+ * on their own, each in a function named "prepareColor".
+ * We moved the decision here, so the diagram gets a single final color.
+ * The reasons are:
+ * - The custom color must override the vocabulary color as well.
+ *   Without moving the decision, the diagram model would need a second color field.
+ * - The logic is in one place, instead of being duplicated across diagram components.
+ * - A change of the options already rebuilds the whole diagram, so the color is never stale.
+ *
+ * Behaviour change: with {@link EntityColor.VocabularyOrEntity}, the arrowheads of
+ * relationship and relationship profile edges and the minimap nodes now use
+ * the vocabulary color.
+ * Before they always used the model color, while the node header and edge line
+ * used the vocabulary color.
+ */
+function selectColor(
+  options: DiagramOptions,
+  customColor: string | null | undefined,
+  modelColor: string,
+  vocabulary: { color: string }[],
+): string {
+  if (customColor !== null && customColor !== undefined) {
+    return customColor;
+  }
+  if (options.entityMainColor === EntityColor.VocabularyOrEntity && vocabulary.length > 0) {
+    // Just use the first one.
+    return vocabulary[0].color;
+  }
+  return modelColor;
 }
 
 function createGroupNode(visualGroup: VisualGroup): Group {
