@@ -34,11 +34,12 @@ export function GeneralizationEdgeToolbar({ value }: { value: EdgeToolbarProps |
 
   // Calculate SVG lines for connecting buttons to center
   const { svgSize, lines } = calculateEdgeToolbarLines();
-  const activeLines = [lines[2], lines[3], lines[4]];
+  const activeLines = [lines[0], lines[2], lines[3], lines[4]];
 
   const position = computeScreenPosition(value.x, value.y, { x, y, zoom });
 
   const onDetail = () => context?.callbacks().onShowEdgeDetail(data);
+  const onEdit = () => context?.callbacks().onEditEdge(data);
   const onHide = () => context?.callbacks().onHideEdge(data);
   const onDelete = () => context?.callbacks().onDeleteEdge(data);
   const addWaypoint = () => onAddWaypoint(
@@ -76,7 +77,9 @@ export function GeneralizationEdgeToolbar({ value }: { value: EdgeToolbarProps |
           <div className="property-edge">
             <button onClick={onDetail}>ℹ</button>
             <ul className="edge-toolbar">
-              <li></li>
+              <li>
+                <button onClick={onEdit}>✏️</button>
+              </li>
               <li></li>
               <li>
                 <button onClick={onHide}>🕶</button>

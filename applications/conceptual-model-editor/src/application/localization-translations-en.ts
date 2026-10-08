@@ -74,6 +74,14 @@ const dialogClassProfile = prefix(
   "ok-create": "✅ Create",
 });
 
+const dialogGeneralization = prefix(
+  "dialog.generalization.", {
+  "cancel": "❌ Cancel",
+  // Edit
+  "label-edit": "Edit a generalization",
+  "ok-edit": "✅ Save changes",
+});
+
 const dialogLayoutVisualModel = prefix(
   "dialog.layout-visual-model.", {
   "cancel": "❌ Cancel",
@@ -229,6 +237,7 @@ export const english: Record<string, string | Function> = {
   ...dialogAttributeProfile,
   ...dialogClass,
   ...dialogClassProfile,
+  ...dialogGeneralization,
   ...dialogVisualDiagramNode,
   ...dialogVisualModel,
   ...dialogLayoutVisualModel,
