@@ -15,7 +15,10 @@ const DCT_PREFIX = "http://purl.org/dc/terms/";
 const DCT = {
   "title": IRI(DCT_PREFIX + "title"),
   "references": IRI(DCT_PREFIX + "references"),
+  "conformsTo": IRI(DCT_PREFIX + "conformsTo"),
 };
+
+const SKOS_CORE = IRI("http://www.w3.org/2004/02/skos/core");
 
 const DCAT_PREFIX = "http://www.w3.org/ns/dcat#";
 const DCAT = {
@@ -72,9 +75,13 @@ export function writeControlledVocabularyCatalogQuads(
       writer.addQuad(datasetIri, DCT.title, Literal(vocabulary.title));
     }
     if (vocabulary.references) {
-      // Links this metadata record to the vocabulary (skos:ConceptScheme)
-      // it describes - the same IRI a dsv:ControlledVocabularyAssignment's dsv:controlledVocabulary
+      // Links this metadata record to the vocabulary it describes 
+      // - its skos:ConceptScheme when the vocabulary conforms to SKOS,
+      // otherwise its main download or documentation URL.
       writer.addQuad(datasetIri, DCT.references, IRI(vocabulary.references));
+    }
+    if (vocabulary.conformsToSkos) {
+      writer.addQuad(datasetIri, DCT.conformsTo, SKOS_CORE);
     }
     if (vocabulary.pattern) {
       writer.addQuad(datasetIri, SHACL.pattern, Literal(vocabulary.pattern));
@@ -97,7 +104,9 @@ export function writeControlledVocabularyCatalogQuads(
 /**
  * Serializes a project's controlled vocabularies as a standalone DCAT
  * catalog in Turtle. Each vocabulary becomes a dcat:Dataset - metadata entry
- * about the CV. dct:references points to the CV's skos:ConceptScheme.
+ * about the CV. dct:references points to the CV's skos:ConceptScheme,
+ * or to its main download/documentation URL when the CV does not conform to SKOS.
+ * dct:conformsTo skos marks the CVs that do conform to SKOS.
  */
 export function controlledVocabulariesToDcatCatalog(
   catalogIri: string,
@@ -140,12 +149,14 @@ export function parseControlledVocabularyCatalog(quads: N3.Quad[]): ControlledVo
   for (const datasetSubject of store.getSubjects(RDF.type, DCAT.Dataset, null)) {
     const title = store.getObjects(datasetSubject, DCT.title, null)[0]?.value ?? "";
     const references = store.getObjects(datasetSubject, DCT.references, null)[0]?.value ?? "";
-    const documentation = store.getObjects(datasetSubject, DCAT.landingPage, null)[0]?.value ?? "";
-    const pattern = store.getObjects(datasetSubject, SHACL.pattern, null)[0]?.value ?? "";
+    const conformsToSkos = store.countQuads(datasetSubject, DCT.conformsTo, SKOS_CORE, null) > 0;
+    const documentation = store.getObjects(datasetSubject, DCAT.landingPage, null)[0]?.value ?? null;
+    const pattern = store.getObjects(datasetSubject, SHACL.pattern, null)[0]?.value ?? null;
 
     const distributionNode = store.getObjects(datasetSubject, DCAT.distribution, null)[0];
-    const downloadUrl = distributionNode ? (store.getObjects(distributionNode, DCAT.downloadURL, null)[0]?.value ?? "") : "";
-    const accessUrl = distributionNode ? (store.getObjects(distributionNode, DCAT.accessURL, null)[0]?.value ?? "") : "";
+    const downloadUrl = distributionNode ? (store.getObjects(distributionNode, DCAT.downloadURL, null)[0]?.value ?? null) : null;
+    // The access URL is required, a file that can be downloaded can be accessed there.
+    const accessUrl = distributionNode ? (store.getObjects(distributionNode, DCAT.accessURL, null)[0]?.value ?? downloadUrl ?? "") : "";
 
     result.push({
       ...DEFAULT_CONTROLLED_VOCABULARY,
@@ -153,6 +164,7 @@ export function parseControlledVocabularyCatalog(quads: N3.Quad[]): ControlledVo
       iri: datasetSubject.value,
       title,
       references,
+      conformsToSkos,
       documentation,
       pattern,
       distribution: { downloadUrl, accessUrl },

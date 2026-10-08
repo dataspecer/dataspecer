@@ -8,17 +8,22 @@ import {
   isComplexType,
   isPrimitiveType,
 } from "@dataspecer/core-v2/semantic-model/datatypes";
+import { Qualifier } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 
 import {
   createStructureModelForProfile,
+  EntityContainer,
   StructureClass,
+  StructureControlledVocabularyAssignment,
   StructureProperty,
 } from "./structure-model/index.ts";
 import {
+  createShaclPropertyShape,
   ShaclModel,
   ShaclNodeKind,
   ShaclNodeShape,
   ShaclPropertyShape,
+  ShaclSeverity,
 } from "../shacl-model.ts";
 import {
   createSemicShaclStylePolicy,
@@ -27,6 +32,7 @@ import {
 import {
   SemanticModelsToShaclConfiguration,
 } from "./shacl-semantic-configuration.ts";
+import { SKOS } from "../vocabulary.ts";
 import {
   applyNoClassConstraint,
   filterLanguageStrings,
@@ -55,6 +61,7 @@ export function semanticModelsToShacl(
   topProfileModel: ProfileModel,
   configuration: SemanticModelsToShaclConfiguration,
   options: SemanticModelsToShaclConfigurationOptions,
+  controlledVocabularies: SemanticModel[] = [],
 ): ShaclModel {
   const policy = createPolicy(configuration, options);
 
@@ -71,7 +78,11 @@ export function semanticModelsToShacl(
   // the full hierarchy.
 
   const dsv = createDataSpecificationVocabulary(
-    { semantics: semanticModels, profiles: profileModels, },
+    {
+      semantics: semanticModels,
+      profiles: profileModels,
+      controlledVocabularies,
+    },
     // Here we need to pass all models as we need the full hierarchy.
     // Without it we do not have the connection to OWL classes.
     // We know that the top model is part of the profile models.
@@ -84,12 +95,23 @@ export function semanticModelsToShacl(
   // different levels and then aggregate them or mark from which model
   // they are.
   const topDsv = createDataSpecificationVocabulary(
-    { semantics: semanticModels, profiles: profileModels, },
+    {
+      semantics: semanticModels,
+      profiles: profileModels,
+      controlledVocabularies,
+    },
     [topProfileModel],
     { iri: "http://example.com/" });
   const topClassesByIri = topDsv.classProfiles.map(item => item.iri);
 
-  const structure = createStructureModelForProfile(owl, dsv);
+  const controlledVocabularyContainers: EntityContainer[] =
+    controlledVocabularies.map(item => ({
+      baseIri: item.getBaseIri(),
+      entities: Object.values(item.getEntities()),
+    }));
+
+  const structure = createStructureModelForProfile(
+    owl, dsv, controlledVocabularyContainers);
   const classMap: Record<string, StructureClass> = {};
   structure.classes.forEach(item => classMap[item.iri] = item);
 
@@ -135,6 +157,21 @@ export function semanticModelsToShacl(
         ...shape,
         propertyShapes: properties,
       })
+    }
+
+    // Controlled vocabulary constraints are emitted as separate node
+    // shapes (one per effective assignment), not merged into the primary shape above
+    const controlledVocabularyAssignments =
+      buildEffectiveControlledVocabularyAssignments(
+        entity, parents, classMap);
+    for (const type of entity.rdfTypes) {
+      for (const assignment of controlledVocabularyAssignments) {
+        const controlledVocabularyShape = buildControlledVocabularyNodeShape(
+          entity, type, assignment, policy, configuration);
+        if (controlledVocabularyShape !== null) {
+          members.push(controlledVocabularyShape);
+        }
+      }
     }
   }
 
@@ -234,6 +271,8 @@ function buildPropertyShapeTemplateForPrimitiveType(
     maxCount: property.rangeCardinality.max,
     datatype: range,
     class: null,
+    hasValue: null,
+    severity: null,
   };
 }
 
@@ -280,6 +319,8 @@ function buildPropertyShapeForTemplateComplexType(
     maxCount: property.rangeCardinality.max,
     datatype: null,
     class: range,
+    hasValue: null,
+    severity: null,
   };
 }
 
@@ -305,8 +346,112 @@ function buildShaclNodeShape(
       maxCount: property.maxCount,
       datatype: property.datatype,
       class: property.class,
-    } satisfies ShaclPropertyShape))
+      hasValue: property.hasValue,
+      severity: property.severity,
+    } satisfies ShaclPropertyShape)),
+    pattern: null,
+    severity: null,
   }
+}
+
+/**
+ * Resolves the controlled vocabulary assignments that should apply to
+ * {@link entity}: its own assignments plus every ancestor's own
+ * assignments, with any assignment excluded whose IRI is targeted by
+ * a {@link StructureControlledVocabularyAssignment.replaces} present
+ * anywhere in that combined set.
+ */
+function buildEffectiveControlledVocabularyAssignments(
+  entity: StructureClass,
+  parents: string[],
+  classMap: Record<string, StructureClass>,
+): StructureControlledVocabularyAssignment[] {
+  const candidates = [
+    ...entity.controlledVocabularyAssignments,
+    ...parents
+      .map(iri => classMap[iri])
+      .flatMap(item => item?.controlledVocabularyAssignments ?? []),
+  ];
+  const replacedIris = new Set(
+    candidates
+      .map(item => item.replaces)
+      .filter((iri): iri is string => iri !== null));
+  return candidates.filter(item => !replacedIris.has(item.iri));
+}
+
+/**
+ * Maps DCAT-AP's controlled vocabulary usage expectation to a SHACL
+ * severity: "must" closes the value space (a violation), while
+ * "at-least-one"/"recommended"/"may" are all reported as warnings.
+ *
+ * @see https://github.com/SEMICeu/DCAT-AP/blob/master/releases/3.0.0/dcat-ap_final.md
+ */
+function qualifierToSeverity(qualifier: Qualifier | null): ShaclSeverity | null {
+  switch (qualifier) {
+    case "must":
+      return ShaclSeverity.Violation;
+    case "at-least-one":
+    case "recommended":
+    case "may":
+      return ShaclSeverity.Warning;
+    case null:
+      return null;
+  }
+}
+
+/**
+ * Builds a node shape validating a single controlled vocabulary
+ * assignment, sharing {@link entity}'s primary shape's target class.
+ * When enabled by the {@link configuration}, the IRI of the value must
+ * match the pattern of the vocabulary, and when the vocabulary is
+ * SKOS-based, the value must be in its concept scheme.
+ * Both are reported with the severity of the assignment.
+ * Returns `null` when there is nothing to validate, that is when no
+ * enabled check applies to the vocabulary: it has neither a pattern nor
+ * a scheme (see {@link StructureControlledVocabularyAssignment.pattern}
+ * and {@link StructureControlledVocabularyAssignment.schemeIri}), for
+ * example when it could not be resolved.
+ */
+function buildControlledVocabularyNodeShape(
+  entity: StructureClass,
+  type: string,
+  assignment: StructureControlledVocabularyAssignment,
+  policy: SemanticModelsToShaclPolicy,
+  configuration: SemanticModelsToShaclConfiguration,
+): ShaclNodeShape | null {
+  // The checks are explicit comparisons rather than truthiness tests for
+  // backwards compatibility. A configuration stored before these options
+  // existed does not have them, in which case only the pattern is checked.
+  const checkPattern = configuration.controlledVocabularyPattern !== false;
+  const checkScheme = configuration.controlledVocabularyScheme === true;
+  const pattern = checkPattern ? assignment.pattern : null;
+  const schemeIri = checkScheme ? assignment.schemeIri : null;
+  if (pattern === null && schemeIri === null) {
+    return null;
+  }
+  const severity = qualifierToSeverity(assignment.usageExpectation);
+  const propertyShapes: ShaclPropertyShape[] = [];
+  if (schemeIri !== null) {
+    // Severity of a node shape does not apply to its property shapes.
+    propertyShapes.push(createShaclPropertyShape({
+      iri: policy.shaclControlledVocabularySchemeShape(
+        entity.iri, type, assignment.controlledVocabularyIri),
+      seeAlso: entity.iri,
+      path: SKOS.inScheme.value,
+      hasValue: schemeIri,
+      severity,
+    }));
+  }
+  return {
+    iri: policy.shaclControlledVocabularyShape(
+      entity.iri, type, assignment.controlledVocabularyIri),
+    seeAlso: entity.iri,
+    targetClass: type,
+    closed: false,
+    propertyShapes,
+    pattern,
+    severity,
+  };
 }
 
 function buildFullParentMap(

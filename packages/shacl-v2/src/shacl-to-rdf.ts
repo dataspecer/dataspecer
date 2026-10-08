@@ -10,6 +10,7 @@ import {
   ShaclNodeKind,
   ShaclNodeShape,
   ShaclPropertyShape,
+  ShaclSeverity,
 } from "./shacl-model.ts"
 import { RDFS, SHACL } from "./vocabulary.ts";
 
@@ -58,10 +59,20 @@ function createDefaultConfiguration(): ShaclModelToRdfConfiguration {
       "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
       "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
       "sh": "http://www.w3.org/ns/shacl#",
+      "skos": "http://www.w3.org/2004/02/skos/core#",
       "xsd": "http://www.w3.org/2001/XMLSchema#",
     },
     "prettyPrint": true,
   };
+}
+
+function severityToIri(severity: ShaclSeverity) {
+  switch (severity) {
+    case ShaclSeverity.Violation:
+      return SHACL.Violation;
+    case ShaclSeverity.Warning:
+      return SHACL.Warning;
+  }
 }
 
 class ShaclModelWriter {
@@ -91,6 +102,12 @@ class ShaclModelWriter {
     this.builder.addIri(iri, RDFS.seeAlso, shape.seeAlso);
     this.builder.addLiteral(iri, SHACL.closed, shape.closed);
     this.builder.addIri(iri, SHACL.targetClass, shape.targetClass);
+    if (shape.pattern !== null) {
+      this.builder.addLiteral(iri, SHACL.pattern, shape.pattern);
+    }
+    if (shape.severity !== null) {
+      this.builder.addIri(iri, SHACL.severity, severityToIri(shape.severity));
+    }
     for (const propertyShape of shape.propertyShapes) {
       const propertyIri = this.writePropertyShape(propertyShape);
       this.builder.addIri(iri, SHACL.property, propertyIri);
@@ -136,6 +153,10 @@ class ShaclModelWriter {
     }
     this.builder.addIri(iri, SHACL.class, shape.class);
     this.builder.addIri(iri, SHACL.datatype, shape.datatype);
+    this.builder.addIri(iri, SHACL.hasValue, shape.hasValue);
+    if (shape.severity !== null) {
+      this.builder.addIri(iri, SHACL.severity, severityToIri(shape.severity));
+    }
     return iri;
   }
 

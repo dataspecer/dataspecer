@@ -5,7 +5,9 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc -w",
-    "prebuild": "node -e \"fs.rmSync('lib', { recursive: true, force: true })\""
+    "prebuild": "node -e \"fs.rmSync('lib', { recursive: true, force: true })\"",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "exports": {
     ".": "./lib/index.js",
@@ -45,6 +47,7 @@
     "@dataspecer/xml": "*"
   },
   "devDependencies": {
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.7"
   }
 }

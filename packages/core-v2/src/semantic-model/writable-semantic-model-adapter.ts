@@ -8,6 +8,7 @@ import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { LOCAL_SEMANTIC_MODEL } from "../model/known-models.ts";
 import type { Operation } from "@dataspecer/core/operation";
 import { applyOperationsToSemanticModel } from "./apply-operations.ts";
+import { normalizeLegacyAssignment } from "./profile/concepts/index.ts";
 
 export type EntityGetter = (identifier: string) => Entity | undefined;
 
@@ -43,12 +44,26 @@ export class WritableSemanticModelAdapter extends SemanticModelAdapter {
 }
 
 /**
+ * Replaces legacy qualifiers of controlled vocabulary assignments.
+ */
+function normalizeAssignments(entities: EntityRecord | undefined): EntityRecord | undefined {
+    if (entities === undefined) {
+        return entities;
+    }
+    const result: EntityRecord = {...entities};
+    for (const [identifier, entity] of Object.entries(result)) {
+        result[identifier] = normalizeLegacyAssignment(entity);
+    }
+    return result;
+}
+
+/**
  * Returns entities that represent the semantic model based on the provided serialization.
  */
 export function serializationToSemanticModelEntities(serialization: unknown): EntityRecord {
     const modelDescriptor = {...(serialization as any)};
 
-    const entities = modelDescriptor.entities;
+    const entities = normalizeAssignments(modelDescriptor.entities);
     delete modelDescriptor.entities;
 
     const mainEntity = {

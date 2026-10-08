@@ -29,7 +29,7 @@ export interface RdfBuilder<NodeType, PredicateType, NamedNode, Quad> {
   addLiteral(
     subject: string,
     predicate: PredicateType,
-    object: boolean | number | null,
+    object: boolean | number | string | null,
   ): void;
 
   asQuads(): Quad[];

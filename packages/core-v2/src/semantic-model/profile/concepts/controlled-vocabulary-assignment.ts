@@ -13,6 +13,25 @@ import { EntityIdentifier } from "../../../entity-model/entity.ts";
 export type Qualifier = "must" | "at-least-one" | "recommended" | "may";
 
 /**
+ * Assignments stored before the qualifiers became lowercase hold the
+ * original uppercase values.
+ */
+const LEGACY_QUALIFIERS: Record<string, Qualifier> = {
+  "MUST": "must",
+  "AT_LEAST_1": "at-least-one",
+  "RECOMMENDED": "recommended",
+  "MAY": "may",
+};
+
+/**
+ * @returns The current qualifier for a legacy uppercase one, otherwise the
+ * value as it is.
+ */
+export function normalizeQualifier(value: string): string {
+  return LEGACY_QUALIFIERS[value] ?? value;
+}
+
+/**
  * Represents a reference to a local controlled vocabulary assignment
  * where the assignment is an entity local to this package,
  * so it can be referenced by an EntityIdentifier
@@ -89,4 +108,17 @@ export function isControlledVocabularyAssignment(
   entity: Entity | null,
 ): entity is ControlledVocabularyAssignment {
   return entity?.type.includes(CONTROLLED_VOCABULARY_ASSIGNMENT) ?? false;
+}
+
+/**
+ * @returns The entity with a legacy qualifier replaced, see
+ * {@link normalizeQualifier}. Anything that is not a controlled vocabulary
+ * assignment with a legacy qualifier is returned as it is.
+ */
+export function normalizeLegacyAssignment(entity: Entity): Entity {
+  if (!isControlledVocabularyAssignment(entity)) {
+    return entity;
+  }
+  const qualifier = normalizeQualifier(entity.qualifier);
+  return qualifier === entity.qualifier ? entity : { ...entity, qualifier } as Entity;
 }

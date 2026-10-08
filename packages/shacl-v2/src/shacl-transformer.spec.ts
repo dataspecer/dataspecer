@@ -8,6 +8,7 @@ import {
   createShaclPropertyShape,
   ShaclModel,
   ShaclNodeKind,
+  ShaclSeverity,
 } from "./shacl-model.ts";
 import { shaclToRdf } from "./shacl-to-rdf.ts";
 
@@ -22,6 +23,8 @@ describe("applyNoClassConstraint", () => {
         closed: false,
         seeAlso: "http://localhost/does-not-matter",
         targetClass: "http://example.com/vocabulary#object",
+        pattern: null,
+        severity: null,
         propertyShapes: [{
           iri: "",
           seeAlso: null,
@@ -33,6 +36,8 @@ describe("applyNoClassConstraint", () => {
           maxCount: null,
           datatype: null,
           class: "http://to-be-removed",
+          hasValue: null,
+          severity: null,
         }],
       }]
     };
@@ -58,6 +63,8 @@ describe("filterLanguageStrings", () => {
         closed: false,
         seeAlso: "http://localhost/does-not-matter",
         targetClass: "http://localhost/does-not-matter",
+        pattern: null,
+        severity: null,
         propertyShapes: [createShaclPropertyShape({
           iri: "http://localhost/does-not-matter",
           path: "http://spdx.org/rdf/terms#checksum",
@@ -89,6 +96,8 @@ describe("splitConstraints", () => {
         closed: false,
         seeAlso: "http://localhost/does-not-matter",
         targetClass: "http://www.w3.org/ns/dcat#Dataset",
+        pattern: null,
+        severity: null,
         propertyShapes: [{
           iri: "http://example/shape",
           seeAlso: null,
@@ -100,6 +109,8 @@ describe("splitConstraints", () => {
           maxCount: 2,
           datatype: "http://www.w3.org/2001/XMLSchema#hexBinary",
           class: "http://spdx.org/rdf/terms#Checksum",
+          hasValue: null,
+          severity: null,
         }],
       }]
     };
@@ -117,6 +128,8 @@ describe("splitConstraints", () => {
         closed: false,
         seeAlso: "http://localhost/does-not-matter",
         targetClass: "http://www.w3.org/ns/dcat#Dataset",
+        pattern: null,
+        severity: null,
         propertyShapes: [createShaclPropertyShape({
           iri: "http://example/shape/nodeKind",
           description: { en: "Description.." },
@@ -172,6 +185,8 @@ describe("splitConstraints", () => {
         closed: false,
         seeAlso: "http://localhost/does-not-matter",
         targetClass: "http://www.w3.org/ns/dcat#Dataset",
+        pattern: null,
+        severity: null,
         propertyShapes: [{
           iri: "http://example/shape",
           seeAlso: null,
@@ -183,6 +198,8 @@ describe("splitConstraints", () => {
           maxCount: null,
           datatype: null,
           class: null,
+          hasValue: null,
+          severity: null,
         }],
       }]
     };
@@ -200,6 +217,8 @@ describe("splitConstraints", () => {
         closed: false,
         seeAlso: "http://localhost/does-not-matter",
         targetClass: "http://www.w3.org/ns/dcat#Dataset",
+        pattern: null,
+        severity: null,
         propertyShapes: [],
       }]
     };
@@ -207,6 +226,40 @@ describe("splitConstraints", () => {
     //
 
     expect(actual).toStrictEqual(expected);
+
+  });
+
+
+  test("Keeps a hasValue constraint and the severity on the split shape.", () => {
+
+    const input: ShaclModel = {
+      iri: "http://localhost/does-not-matter",
+      members: [{
+        iri: "http://localhost/does-not-matter",
+        closed: false,
+        seeAlso: "http://localhost/does-not-matter",
+        targetClass: "http://example.com/vocabulary#concept",
+        pattern: null,
+        severity: ShaclSeverity.Warning,
+        propertyShapes: [createShaclPropertyShape({
+          iri: "http://example/shape",
+          path: "http://www.w3.org/2004/02/skos/core#inScheme",
+          hasValue: "http://example.com/scheme",
+          severity: ShaclSeverity.Warning,
+        })],
+      }]
+    };
+
+    const actual = splitConstraints(input);
+
+    expect(actual.members[0]!.propertyShapes).toStrictEqual([
+      createShaclPropertyShape({
+        iri: "http://example/shape/hasValue",
+        path: "http://www.w3.org/2004/02/skos/core#inScheme",
+        hasValue: "http://example.com/scheme",
+        severity: ShaclSeverity.Warning,
+      }),
+    ]);
 
   });
 

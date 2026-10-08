@@ -6,6 +6,8 @@ import { z } from "zod"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Switch } from "@/components/ui/switch"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Form,
   FormControl,
@@ -17,11 +19,24 @@ import {
 import { useVocabulariesContext } from "@/contexts/vocabularies-context"
 import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model"
 
+/**
+ * Which of the vocabulary's URLs is used as its main reference when it is not SKOS-based.
+ * Only exists in the form - the chosen URL is what gets stored as `references`.
+ */
+type ReferenceSource = "access" | "documentation"
+
 interface VocabularyFormValues {
   title: string
+  conformsToSkos: boolean
+  referenceSource: ReferenceSource
   references: string
   pattern: string
-  downloadUrl: string
+  accessUrl: string
+  /**
+   * Only exists in the form - when checked, the access URL is also stored as
+   * the download URL.
+   */
+  accessUrlIsDownload: boolean
   documentation: string
 }
 
@@ -30,6 +45,27 @@ interface VocabularyFormProps {
   currentVocabularyId?: string
   onCancel: () => void
   onConfirm: (vocabulary: Omit<ControlledVocabulary, 'id' | 'type'>) => void
+}
+
+/**
+ * Fields that are not filled in are empty in the form, but null in the
+ * controlled vocabulary.
+ */
+function emptyToNull(value: string): string | null {
+  return value === "" ? null : value
+}
+
+function initialReferenceSource(vocabulary?: ControlledVocabulary): ReferenceSource {
+  if (
+    vocabulary !== undefined
+    && !vocabulary.conformsToSkos
+    && vocabulary.references !== ""
+    && vocabulary.references === vocabulary.documentation
+    && vocabulary.references !== vocabulary.distribution.accessUrl
+  ) {
+    return "documentation"
+  }
+  return "access"
 }
 
 export function VocabularyForm({
@@ -43,7 +79,9 @@ export function VocabularyForm({
 
   const schema = useMemo(() => z.object({
     title: z.string().min(1, t("form.validation.requiredField")),
-    references: z.string().min(1, t("form.validation.requiredField")).url(t("form.validation.invalidUrl")),
+    conformsToSkos: z.boolean(),
+    referenceSource: z.enum(["access", "documentation"]),
+    references: z.string(),
     pattern: z.string().refine(
       (val) => {
         if (!val) return true;
@@ -51,8 +89,20 @@ export function VocabularyForm({
       },
       { message: t("form.validation.invalidRegex") }
     ),
-    downloadUrl: z.string().min(1, t("form.validation.requiredField")).url(t("form.validation.invalidUrl")),
+    accessUrl: z.string().min(1, t("form.validation.requiredField")).url(t("form.validation.invalidUrl")),
+    accessUrlIsDownload: z.boolean(),
     documentation: z.union([z.literal(""), z.string().url(t("form.validation.invalidUrl"))]),
+  }).superRefine((values, context) => {
+    if (values.conformsToSkos) {
+      // The scheme IRI is only entered for SKOS-based vocabularies.
+      if (values.references === "") {
+        context.addIssue({ code: "custom", path: ["references"], message: t("form.validation.requiredField") })
+      } else if (!z.string().url().safeParse(values.references).success) {
+        context.addIssue({ code: "custom", path: ["references"], message: t("form.validation.invalidUrl") })
+      }
+    } else if (values.referenceSource === "documentation" && values.documentation === "") {
+      context.addIssue({ code: "custom", path: ["documentation"], message: t("form.validation.requiredField") })
+    }
   }), [t])
 
   const form = useForm<VocabularyFormValues>({
@@ -60,21 +110,36 @@ export function VocabularyForm({
     mode: "onTouched",
     defaultValues: {
       title: initialValues?.title ?? "",
+      conformsToSkos: initialValues?.conformsToSkos ?? true,
+      referenceSource: initialReferenceSource(initialValues),
       references: initialValues?.references ?? "",
       pattern: initialValues?.pattern ?? "",
-      downloadUrl: initialValues?.distribution.downloadUrl ?? "",
+      accessUrl: initialValues?.distribution.accessUrl ?? "",
+      // A new vocabulary is assumed to be a downloadable file. Of an existing
+      // one, only a download URL equal to the access URL is kept by this form.
+      accessUrlIsDownload: initialValues === undefined
+        || initialValues.distribution.downloadUrl === initialValues.distribution.accessUrl,
       documentation: initialValues?.documentation ?? "",
     },
   })
 
+  const conformsToSkos = form.watch("conformsToSkos")
+  const referenceSource = form.watch("referenceSource")
+
   const handleSubmit = (values: VocabularyFormValues) => {
-    // Check if the vocabulary's IRI already exists in other vocabularies
-    const existingVocab = vocabularies.find((v) => v.references === values.references)
+    // SKOS-based vocabularies are referenced by their scheme IRI, others by
+    // the URL chosen as their main reference.
+    const references = values.conformsToSkos
+      ? values.references
+      : values.referenceSource === "documentation" ? values.documentation : values.accessUrl
+
+    // Check if the vocabulary's reference already exists in other vocabularies
+    const existingVocab = vocabularies.find((v) => v.references === references)
     if (existingVocab && existingVocab.id !== currentVocabularyId) {
-      form.setError("references", {
-        type: "manual",
-        message: t("form.validation.duplicateIri"),
-      })
+      form.setError(
+        values.conformsToSkos ? "references" : values.referenceSource === "documentation" ? "documentation" : "accessUrl",
+        { type: "manual", message: t("form.validation.duplicateIri") },
+      )
       return
     }
 
@@ -84,12 +149,13 @@ export function VocabularyForm({
     // a fresh one is generated on the next DSV export.
     const vocabulary: Omit<ControlledVocabulary, 'id' | 'type'> = {
       title: values.title,
-      references: values.references,
-      pattern: values.pattern,
-      documentation: values.documentation,
+      references,
+      conformsToSkos: values.conformsToSkos,
+      pattern: emptyToNull(values.pattern),
+      documentation: emptyToNull(values.documentation),
       distribution: {
-        downloadUrl: values.downloadUrl,
-        accessUrl: values.downloadUrl,
+        downloadUrl: values.accessUrlIsDownload ? values.accessUrl : null,
+        accessUrl: values.accessUrl,
       },
       iri: null,
     }
@@ -119,27 +185,79 @@ export function VocabularyForm({
             />
             <FormField
               control={form.control}
-              name="references"
+              name="conformsToSkos"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>
-                    {t("form.field.iri")}
-                    <span className="text-destructive"> *</span>
-                  </FormLabel>
-                  <FormControl>
-                    <Input placeholder={t("form.placeholder.iri")} {...field} />
-                  </FormControl>
-                  <FormMessage />
+                  <div className="flex items-center gap-3">
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={(checked) =>
+                          form.setValue("conformsToSkos", checked, { shouldValidate: true })
+                        }
+                      />
+                    </FormControl>
+                    <FormLabel>{t("form.field.conformsToSkos")}</FormLabel>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{t("form.field.conformsToSkos.hint")}</p>
                 </FormItem>
               )}
             />
+            {/*
+              Both variants stay mounted and only the applicable one is shown:
+              react-hook-form drops the value of an unmounted field, which
+              would leave it missing from the values the schema validates.
+            */}
+            <div className={conformsToSkos ? undefined : "hidden"}>
+              <FormField
+                control={form.control}
+                name="references"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t("form.field.iri")}
+                      <span className="text-destructive"> *</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input placeholder={t("form.placeholder.iri")} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className={conformsToSkos ? "hidden" : undefined}>
+              <FormField
+                control={form.control}
+                name="referenceSource"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("form.field.referenceSource")}</FormLabel>
+                    <div className="flex gap-2">
+                      {(["access", "documentation"] as const).map((source) => (
+                        <Button
+                          key={source}
+                          type="button"
+                          size="xsm"
+                          variant={field.value === source ? "default" : "outline"}
+                          aria-pressed={field.value === source}
+                          onClick={() => form.setValue("referenceSource", source, { shouldValidate: true })}
+                        >
+                          {t(source === "access" ? "form.field.accessUrl" : "form.field.docsUrl")}
+                        </Button>
+                      ))}
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </div>
             <FormField
               control={form.control}
               name="pattern"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    {t("form.field.regex")}
+                    {t(conformsToSkos ? "form.field.regex" : "form.field.regexOther")}
                   </FormLabel>
                   <FormControl>
                     <Input placeholder={t("form.placeholder.regex")} {...field} />
@@ -150,17 +268,34 @@ export function VocabularyForm({
             />
             <FormField
               control={form.control}
-              name="downloadUrl"
+              name="accessUrl"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    {t("form.field.downloadUrl")}
+                    {t("form.field.accessUrl")}
                     <span className="text-destructive"> *</span>
                   </FormLabel>
                   <FormControl>
-                    <Input placeholder={t("form.placeholder.downloadUrl")} {...field} />
+                    <Input placeholder={t("form.placeholder.accessUrl")} {...field} />
                   </FormControl>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="accessUrlIsDownload"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center gap-2">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onChange={(event) => field.onChange(event.target.checked)}
+                      />
+                    </FormControl>
+                    <FormLabel>{t("form.field.accessUrlIsDownload")}</FormLabel>
+                  </div>
                 </FormItem>
               )}
             />
@@ -171,6 +306,9 @@ export function VocabularyForm({
                 <FormItem>
                   <FormLabel>
                     {t("form.field.docsUrl")}
+                    {!conformsToSkos && referenceSource === "documentation" && (
+                      <span className="text-destructive"> *</span>
+                    )}
                   </FormLabel>
                   <FormControl>
                     <Input placeholder={t("form.placeholder.docsUrl")} {...field} />

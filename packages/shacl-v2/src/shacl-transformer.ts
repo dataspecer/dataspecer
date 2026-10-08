@@ -93,6 +93,7 @@ function splitShaclPropertyShape(
     description: shape.description,
     name: shape.name,
     path: shape.path,
+    severity: shape.severity,
   });
 
   if (shape.nodeKind !== null) {
@@ -130,6 +131,13 @@ function splitShaclPropertyShape(
       ...template,
       iri: shape.iri + "/class",
       class: shape.class,
+    });
+  }
+  if (shape.hasValue !== null) {
+    result.push({
+      ...template,
+      iri: shape.iri + "/hasValue",
+      hasValue: shape.hasValue,
     });
   }
   return result;

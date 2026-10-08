@@ -56,9 +56,10 @@ test("Embeds a DCAT catalog of controlled vocabularies in the output when given 
   const catalogIri = "http://example.com/model/controlled-vocabulary-catalog";
   const vocabulary: ControlledVocabulary = {
     id: "voc-1", type: ["controlled-vocabulary"],
-    title: "Dublin Core", pattern: "", references: "http://purl.org/dc/terms/",
+    title: "Dublin Core", pattern: null, references: "http://purl.org/dc/terms/",
+    conformsToSkos: true,
     documentation: "https://www.dublincore.org/terms/",
-    distribution: { downloadUrl: "https://www.dublincore.org/terms.rdf", accessUrl: "" },
+    distribution: { downloadUrl: "https://www.dublincore.org/terms.rdf", accessUrl: "https://www.dublincore.org/terms.rdf" },
     iri: null,
   };
 
@@ -76,6 +77,7 @@ test("Embeds a DCAT catalog of controlled vocabularies in the output when given 
   expect(parsedVocabularies).toHaveLength(1);
   expect(parsedVocabularies[0]!.title).toBe(vocabulary.title);
   expect(parsedVocabularies[0]!.references).toBe(vocabulary.references);
+  expect(parsedVocabularies[0]!.conformsToSkos).toBe(true);
 });
 
 test("Writes no catalog and no dcat/sh prefixes when there are no controlled vocabularies to embed.", async () => {
