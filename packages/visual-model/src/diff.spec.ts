@@ -21,7 +21,7 @@ function apply(entities: EntityRecord, operations: Operation[]): EntityRecord {
   return working;
 }
 
-test("diffing two states built by operations produces operations that transform one into the other", () => {
+test("Diffing two states built by operations produces operations that transform one into the other.", () => {
   const previous = apply({}, [
     createAddVisualNodeOperation({
       id: "n1", representedEntity: "e1", model: "m1",
@@ -62,9 +62,27 @@ test("diffing two states built by operations produces operations that transform 
   expect(apply(previous, operations)).toEqual(next);
 });
 
-test("deleting a model color entity produces a delete-model-color operation", () => {
+test("Deleting a model color entity produces a delete-model-color operation.", () => {
   const previous = apply({}, [createSetModelColorOperation("m1", "#ff0000")]);
   const next = apply(previous, [createDeleteModelColorOperation("m1")]);
+
+  const changes = diffEntities(previous, next);
+  const { operations, remainingChanges } = changesToVisualModelOperations(changes);
+
+  expect(remainingChanges).toEqual([]);
+  expect(apply(previous, operations)).toEqual(next);
+});
+
+test("Changing a visual entity color produces an update operation.", () => {
+  const previous = apply({}, [
+    createAddVisualNodeOperation({
+      id: "n1", representedEntity: "e1", model: "m1",
+      position: { x: 0, y: 0, anchored: null }, content: [], visualModels: [],
+    }),
+  ]);
+  const next = apply(previous, [
+    createUpdateVisualEntityOperation("n1", { color: "#00ff00" }),
+  ]);
 
   const changes = diffEntities(previous, next);
   const { operations, remainingChanges } = changesToVisualModelOperations(changes);
