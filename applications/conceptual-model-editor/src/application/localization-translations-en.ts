@@ -117,6 +117,12 @@ const dialogVisualNode = prefix(
   "level-recommended": "recommended",
 });
 
+const dialogVisualColor = prefix(
+  "dialog.visual-color.", {
+  "label": "Color",
+  "reset": "Use model color",
+});
+
 const editSemanticModelDialog = prefix(
   "edit-semantic-model-dialog.", {
   "title": "Edit semantic model",
@@ -228,6 +234,7 @@ export const english: Record<string, string | Function> = {
   ...dialogLayoutVisualModel,
   ...dataspecer,
   ...dialogVisualNode,
+  ...dialogVisualColor,
   ...editSemanticModelDialog,
   ...searchExternalSemanticModelDialog,
   ...profileModelDialog,

@@ -11,10 +11,15 @@ import {
   createBaseRelationshipDialogController,
 } from "../base-relationship/base-relationship-dialog-controller";
 import { EntityRepresentative } from "../utilities/dialog-utilities";
+import {
+  createVisualColorDialogController,
+  type VisualColorDialogController,
+} from "../visual-color/visual-color-dialog-controller";
 
 export interface EditAssociationDialogController extends
   BaseEntityDialogController,
-  BaseRelationshipDialogController<EntityRepresentative> { }
+  BaseRelationshipDialogController<EntityRepresentative>,
+  VisualColorDialogController { }
 
 export function useAssociationDialogController(
   { changeState }: DialogProps<AssociationDialogState>,
@@ -30,6 +35,7 @@ export function useAssociationDialogController(
     return {
       ...entityController,
       ...relationshipController,
+      ...createVisualColorDialogController(changeState),
     };
   }, [changeState]);
 }

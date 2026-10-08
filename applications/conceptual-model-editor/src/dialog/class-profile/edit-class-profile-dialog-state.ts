@@ -18,6 +18,11 @@ import { semanticModelTrackerToCmeSemanticModel } from "../../dataspecer/cme-mod
 import { configuration } from "../../application";
 import { LabelResolver } from "../../dependency-tracker";
 import {
+  createNoVisualColorDialogState,
+  createVisualColorDialogState,
+  type VisualColorDialogState,
+} from "../visual-color/visual-color-dialog-state";
+import {
   ControlledVocabularyAssignment,
   isControlledVocabularyAssignment,
   isSemanticModelClassProfile,
@@ -34,7 +39,8 @@ import {
 import { CmeClassProfileRole } from "../../dataspecer/cme-model/model";
 
 export interface ClassProfileDialogState
-  extends BaseEntityProfileDialogState<EntityRepresentative> {
+  extends BaseEntityProfileDialogState<EntityRepresentative>,
+  VisualColorDialogState {
 
   availableRoles: {
 
@@ -177,6 +183,7 @@ export function createNewProfileClassDialogState(
     role: ROLES[0].value,
     controlledVocabularies: createClassProfileControlledVocabulariesState(
       graph, profilesIdentifiers, undefined, availableVocabularies),
+    ...createNoVisualColorDialogState(),
   };
 }
 
@@ -228,5 +235,6 @@ export function createEditClassProfileDialogState(
       ?? ROLES[0].value,
     controlledVocabularies: createClassProfileControlledVocabulariesState(
       graph, entity.profiling, entity.controlledVocabularies, availableVocabularies),
+    ...createVisualColorDialogState(visualModel, entity.id),
   };
 }

@@ -10,6 +10,7 @@ import { ValidationMessage } from "../components/validation-message";
 import { ClassDialogState } from "./edit-class-dialog-state";
 import { isValid } from "../utilities/validation-utilities";
 import { InputText } from "../components/input-text";
+import { VisualColorRow } from "../visual-color/visual-color-row";
 
 const ClassDialog = (props: DialogProps<ClassDialogState>) => {
   const controller = useClassDialogController(props);
@@ -79,6 +80,11 @@ const ClassDialog = (props: DialogProps<ClassDialogState>) => {
             onChange={controller.setOrder}
           />
         </DialogDetailRow>
+        <VisualColorRow
+          state={state}
+          controller={controller}
+          modelColor={state.model.color}
+        />
       </div>
     </>
   );

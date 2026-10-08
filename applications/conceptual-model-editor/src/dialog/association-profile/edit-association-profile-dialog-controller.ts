@@ -14,10 +14,15 @@ import {
   createBaseRelationshipProfileDialogController,
 } from "../base-relationship-profile/base-relationship-profile-dialog-controller";
 import { validateBaseEntityDialogState } from "../base-entity/base-entity-dialog-validation";
+import {
+  createVisualColorDialogController,
+  type VisualColorDialogController,
+} from "../visual-color/visual-color-dialog-controller";
 
 export interface EditAssociationProfileDialogController extends
   BaseEntityProfileDialogController<RelationshipRepresentative>,
-  BaseRelationshipProfileDialogController<EntityRepresentative> { }
+  BaseRelationshipProfileDialogController<EntityRepresentative>,
+  VisualColorDialogController { }
 
 export function useEditAssociationProfileDialogController(
   { changeState }: DialogProps<AssociationProfileDialogState>,
@@ -58,6 +63,7 @@ export function useEditAssociationProfileDialogController(
     return {
       ...entityProfileController,
       ...relationshipProfileController,
+      ...createVisualColorDialogController(changeState),
       setModel,
       setName,
       setDomain,

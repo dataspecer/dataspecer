@@ -12,6 +12,7 @@ import { AssociationDialogState } from "./edit-association-dialog-state";
 import { useAssociationDialogController } from "./edit-association-dialog-controller";
 import { SpecializationSelect } from "../components/select-specialization";
 import { InputText } from "../components/input-text";
+import { VisualColorRow } from "../visual-color/visual-color-row";
 
 export const EditAssociationDialog = (props: DialogProps<AssociationDialogState>) => {
   const controller = useAssociationDialogController(props);
@@ -117,6 +118,11 @@ export const EditAssociationDialog = (props: DialogProps<AssociationDialogState>
             onChange={controller.setOrder}
           />
         </DialogDetailRow>
+        <VisualColorRow
+          state={state}
+          controller={controller}
+          modelColor={state.model.color}
+        />
       </div>
     </>
   );

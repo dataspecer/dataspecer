@@ -7,8 +7,13 @@ import {
   type BaseEntityDialogController,
   createBaseEntityDialogController,
 } from "../base-entity/base-entity-dialog-controller";
+import {
+  createVisualColorDialogController,
+  type VisualColorDialogController,
+} from "../visual-color/visual-color-dialog-controller";
 
-export type ClassDialogController = BaseEntityDialogController;
+export type ClassDialogController =
+  BaseEntityDialogController & VisualColorDialogController;
 
 export function useClassDialogController(
   { changeState }: DialogProps<ClassDialogState>,
@@ -17,6 +22,7 @@ export function useClassDialogController(
     return {
       ...createBaseEntityDialogController(
         changeState, configuration().classNameToIri),
+      ...createVisualColorDialogController(changeState),
     };
   }, [changeState]);
 }

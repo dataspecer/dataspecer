@@ -22,6 +22,7 @@ import {
 import { createLogger } from "../application";
 import { InvalidState } from "../application/error";
 import { LabelResolver } from "../dependency-tracker";
+import { applyVisualColorFromDialog } from "./utilities/visual-color-utilities";
 
 const LOG = createLogger(import.meta.url);
 
@@ -62,6 +63,9 @@ export function openEditAssociationProfileDialogAction(
       { identifier: entity.id, model: model.getId() },
       state.model.identifier,
       initialState.specializations, state.specializations);
+
+    applyVisualColorFromDialog(
+      classes, visualModel, entity.id, initialState, state);
   };
 
   dialogs.openDialog(createEditAssociationProfileDialog(initialState, onConfirm));

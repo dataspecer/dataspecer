@@ -7,12 +7,17 @@ import {
   type BaseEntityProfileDialogController,
   createBaseEntityProfileDialogController,
 } from "../base-entity-profile/base-entity-profile-dialog-controller";
+import {
+  createVisualColorDialogController,
+  type VisualColorDialogController,
+} from "../visual-color/visual-color-dialog-controller";
 import { ClassProfileDialogState } from "./edit-class-profile-dialog-state";
 import { CmeSemanticModel } from "../../dataspecer/cme-model";
 import { sanitizeDuplicitiesInRepresentativeLabels } from "../../utilities/label";
 
 export interface ClassProfileDialogController
-  extends BaseEntityProfileDialogController<EntityRepresentative> {
+  extends BaseEntityProfileDialogController<EntityRepresentative>,
+  VisualColorDialogController {
 
     setRole: (value: string) => void;
 
@@ -55,6 +60,7 @@ export function useClassProfileDialogController(
 
     return {
       ...profileController,
+      ...createVisualColorDialogController(changeState),
       setModel,
       setRole,
     };

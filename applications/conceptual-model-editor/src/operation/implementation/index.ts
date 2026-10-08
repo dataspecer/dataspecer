@@ -6,4 +6,5 @@ export * from "./profile-model/profile-entities";
 
 export * from "./semantic-model/create-semantic-class";
 
+export * from "./visual-model/set-visual-entity-color";
 export * from "./visual-model/show-semantic-class";
