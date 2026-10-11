@@ -26,6 +26,9 @@ import {
 import "./application.css";
 import { Catalog } from "../shell/catalog/catalog";
 import { WithApplicationState } from "../core/application/application-react";
+import { DialogContextProvider } from "../shared/dialog/dialog-context";
+import { DialogRenderer } from "../shared/dialog/dialog-renderer";
+import { useRegisterSimpleDialogToWindow } from "../shared/dialog/instances/simple-dialog";
 import { EntityView } from "../shell/entity-view/entity-view";
 
 /**
@@ -160,7 +163,11 @@ function WithProviders(props: {
             application={application}
           >
             <WithApplicationState>
-              {children}
+              <DialogContextProvider>
+                <DialogRegistrar />
+                <DialogRenderer />
+                {children}
+              </DialogContextProvider>
             </WithApplicationState>
           </WithCmeCommandExecutor>
         </WithCmeProviders>
@@ -168,3 +175,14 @@ function WithProviders(props: {
     </WithLogger>
   )
 }
+
+/**
+ * TODO: REMOVE!!
+ * Registers window.openSimpleDialog() so the dialog can be invoked from
+ * the browser console. Must be rendered inside DialogContextProvider.
+ */
+function DialogRegistrar() {
+  useRegisterSimpleDialogToWindow();
+  return null;
+}
+

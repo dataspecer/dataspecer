@@ -10,7 +10,7 @@ export function LanguageBar(props: {
 }) {
   const { state } = props;
   return (
-    <ul className="flex text-base [&>*]:mx-1 h-[2em]">
+    <ul className="flex items-center gap-1 mb-2 text-xs">
       {state.values.map((value, index) => (
         <LanguageItem
           key={value.language}
@@ -36,21 +36,32 @@ function LanguageItem(props: {
   onRemoveLanguage: (language: string) => void,
   disabled?: boolean,
 }) {
-  const label = props.value === "" ? "\"\"" : props.value;
+  const label = props.value === "" ? "default" : props.value;
   return (
     <li
-      className={props.selected ? "font-bold" : ""}
+      className={[
+        "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors border",
+        props.selected
+          ? "border-ring bg-accent text-accent-foreground font-semibold shadow-xs"
+          : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
+      ].join(" ")}
       onClick={() => props.onSelect(props.value)}
     >
+      <span>{label}</span>
       {props.selected && !props.disabled ? (
-        <button onClick={(event) => {
-          props.onRemoveLanguage(props.value)
-          event.stopPropagation();
-        }}>🗑</button>
+        <button
+          className="text-muted-foreground hover:text-destructive text-[11px] leading-none ml-0.5 cursor-pointer"
+          onClick={(event) => {
+            props.onRemoveLanguage(props.value);
+            event.stopPropagation();
+          }}
+          title="Remove language"
+        >
+          ✕
+        </button>
       ) : null}
-      {label}
     </li>
-  )
+  );
 }
 
 function NewLanguageItem(props: {

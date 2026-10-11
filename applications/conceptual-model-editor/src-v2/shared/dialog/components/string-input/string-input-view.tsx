@@ -19,7 +19,7 @@ export function StringInput(props: {
       disabled={props.disabled}
       type="text"
       value={props.state.value ?? ""}
-      className="w-full"
+      className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 outline-none disabled:cursor-not-allowed disabled:opacity-50"
       onChange={event => props.presenter.onChange(event.target.value)}
     />
   )
