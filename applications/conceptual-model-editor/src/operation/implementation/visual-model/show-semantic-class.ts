@@ -1,28 +1,26 @@
-import { isWritableVisualModel } from "@dataspecer/visual-model";
-
 import {
   EntityDsIdentifier,
   ModelDsIdentifier,
 } from "../../../dataspecer/entity-model";
 import {
+  CmeExecutionContext,
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
-import {
-  CmeExecutionContext,
-  register,
-} from "../../operation-registry";
-import { findModel } from "../operation-utilities";
+import { cmeOperationExecutorRegistry } from "../../operation-registry";
+import { findVisualModel } from "../operation-utilities";
+
+export function showSemanticClassOperation(
+  args: Omit<ShowSemanticClassArguments, "type">,
+): ShowSemanticClassArguments {
+  return {
+    type: ShowSemanticClassType,
+    ...args,
+  };
+}
 
 const ShowSemanticClassType =
   "show-semantic-class-operation";
-
-register(
-  ShowSemanticClassType,
-  showSemanticClassExecutor,
-  "Show semantic class",
-  "Add semantic class to current visual model."
-);
 
 interface ShowSemanticClassArguments extends CmeOperationArguments {
 
@@ -43,15 +41,15 @@ interface ShowSemanticClassArguments extends CmeOperationArguments {
 type ShowSemanticClassResult =
   CmeOperationResult<ShowSemanticClassArguments>;
 
-export type ShowSemanticClassOperation = [
-  ShowSemanticClassArguments, ShowSemanticClassResult];
+cmeOperationExecutorRegistry.register(
+  ShowSemanticClassType,
+  { execute: showSemanticClassExecutor });
 
 async function showSemanticClassExecutor(
   context: CmeExecutionContext,
   args: ShowSemanticClassArguments,
 ): Promise<ShowSemanticClassResult> {
-  const model = findModel(
-    context.visualModels, isWritableVisualModel, args.visualModel);
+  const model = findVisualModel(context, args.visualModel);
 
   // TODO: Provided content here.
   //    getVisualNodeContentBasedOnExistingEntities

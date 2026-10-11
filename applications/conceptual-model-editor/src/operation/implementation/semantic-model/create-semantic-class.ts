@@ -9,27 +9,26 @@ import {
   ModelDsIdentifier,
 } from "../../../dataspecer/entity-model";
 import {
+  CmeExecutionContext,
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
 import {
-  CmeExecutionContext,
-  register,
+  cmeOperationExecutorRegistry
 } from "../../operation-registry";
 import {
   executeCreateSemanticOperation,
   findSemanticModel,
 } from "../operation-utilities";
 
-const CreateSemanticClassType =
-  "create-semantic-class-operation";
-
-register(
-  CreateSemanticClassType,
-  createSemanticClassExecutor,
-  "Create a semantic class",
-  "Create a semantic class in the given model."
-);
+export function createSemanticClassOperation(
+  args: Omit<CreateSemanticClassArguments, "type">,
+): CreateSemanticClassArguments {
+  return {
+    type: CreateSemanticClassType,
+    ...args,
+  };
+}
 
 interface CreateSemanticClassArguments extends CmeOperationArguments {
 
@@ -47,6 +46,9 @@ interface CreateSemanticClassArguments extends CmeOperationArguments {
 
 }
 
+const CreateSemanticClassType =
+  "create-semantic-class-operation";
+
 interface CreateSemanticClassResult
   extends CmeOperationResult<CreateSemanticClassArguments> {
 
@@ -54,8 +56,10 @@ interface CreateSemanticClassResult
 
 }
 
-export type CreateSemanticClassOperation = [
-  CreateSemanticClassArguments, CreateSemanticClassResult];
+cmeOperationExecutorRegistry.register(
+  CreateSemanticClassType,
+  { execute: createSemanticClassExecutor },
+)
 
 /**
  * @throws DataspecerError
@@ -64,7 +68,7 @@ export async function createSemanticClassExecutor(
   context: CmeExecutionContext,
   args: CreateSemanticClassArguments,
 ): Promise<CreateSemanticClassResult> {
-  const model = findSemanticModel(context, args);
+  const model = findSemanticModel(context, args.semanticModel);
 
   const operation = createClass({
     iri: args.iri,

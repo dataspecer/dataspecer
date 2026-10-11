@@ -4,8 +4,10 @@ import { createLogger } from "../../application";
 import { ClassesContext } from "../../context/classes-context";
 import {
   createCmeOperationExecutor,
-  SetVisualEntityColorOperation,
+  setVisualEntityColorOperation,
 } from "../../operation";
+import { cmeOperationExecutorRegistry } from "../../operation/operation-registry";
+import { createNewEntityIdentifier } from "./create-new-entity-identifier";
 import {
   selectColorableVisualEntities,
   VisualColorDialogState,
@@ -36,11 +38,15 @@ export function applyVisualColorFromDialog(
   const visualEntities = selectColorableVisualEntities(visualModel, represented)
     .map(item => item.id);
   const executor = createCmeOperationExecutor(
-    classes.semanticModelsList, classes.visualModelsList);
-  executor.execute<SetVisualEntityColorOperation>({
-    type: "set-visual-entity-color-operation",
+    cmeOperationExecutorRegistry, classes.semanticModelsList,
+    classes.visualModelsList, createNewEntityIdentifier);
+  executor.execute(setVisualEntityColorOperation({
     visualModel: visualModel.getId(),
     visualEntities,
     color: state.visualColor,
-  }).catch(error => LOG.error("Can not set visual entity color.", error));
+  })).then(result => {
+    if (result.exception !== undefined) {
+      LOG.error("Can not set visual entity color.", result.exception);
+    }
+  });
 }

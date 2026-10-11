@@ -1,37 +1,57 @@
 import { EntityModel } from "@dataspecer/core-v2";
 import { VisualModel } from "@dataspecer/visual-model";
 
-import {
-  CmeExecutionContext,
-  registeredCmeOperationExecutors,
-} from "./operation-registry";
-import { CmeOperationExecutor, UnknownCmeOperation } from "./operation";
 import { isInMemorySemanticModel } from "../dataspecer/semantic-model";
+import { RegistryEntry } from "./operation-registry";
+import {
+  CmeExecutionContext, CmeOperationArguments, CmeOperationResult,
+  MissingCmeExecutor,
+} from "./operation";
+import { EntityDsIdentifier } from "../dataspecer/entity-model";
 
 export function createCmeOperationExecutor(
+  registry: {
+    get(type: string): RegistryEntry | undefined;
+  },
   entityModels: EntityModel[],
   visualModels: VisualModel[],
-): CmeOperationExecutor {
+  createNewEntityIdentifier: () => EntityDsIdentifier,
+): CmeOperationsExecutor {
+  const entityModelRecord = Object.fromEntries(
+    entityModels.map(model => [model.getId(), wrapLegacyEntityModel(model)]));
 
   const context: CmeExecutionContext = {
-    semanticModels: entityModels.map(wrapLegacyEntityModel),
-    profileModels: entityModels.map(wrapLegacyEntityModel),
-    visualModels,
+    semanticModels: entityModelRecord,
+    profileModels: entityModelRecord,
+    visualModels: Object.fromEntries(
+      visualModels.map(model => [model.getIdentifier(), model])),
+    createNewEntityIdentifier,
   };
-
-  const registry = registeredCmeOperationExecutors();
   //
   return {
-    execute: async (operation) => {
-      const executor = registry[operation.type];
-      if (executor === undefined) {
-        throw new UnknownCmeOperation();
+    execute: async (args) => {
+      const registered = registry.get(args.type);
+      if (registered === undefined) {
+        return { args, exception: new MissingCmeExecutor() };
       }
-      const result = await executor.executor(context, operation);
-      console.info("[OPERATION]", result);
-      return result;
+      try {
+        return await registered.executor.execute(context, args);
+      } catch (exception) {
+        return { args, exception };
+      }
     },
   };
+}
+
+export interface CmeOperationsExecutor {
+
+  /**
+   * Executes given operation.
+   * This method must never throw.
+   */
+  execute(args: CmeOperationArguments):
+    Promise<CmeOperationResult<CmeOperationArguments>>;
+
 }
 
 function wrapLegacyEntityModel(model: EntityModel): any {

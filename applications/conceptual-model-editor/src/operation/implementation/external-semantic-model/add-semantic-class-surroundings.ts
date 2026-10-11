@@ -3,23 +3,22 @@ import {
   ModelDsIdentifier,
 } from "../../../dataspecer/entity-model";
 
-import { CmeOperationArguments, CmeOperationResult } from "../../operation";
-import { findModel } from "../operation-utilities";
-import {
-  CmeExecutionContext,
-  register,
-} from "../../operation-registry";
 import { isExternalSemanticModel } from "../../../dataspecer/semantic-model";
+import { cmeOperationExecutorRegistry } from "../../operation-registry";
+import { findSemanticModel } from "../operation-utilities";
+import {
+  CmeExecutionContext, CmeOperationArguments, CmeOperationResult,
+  ModelIsNotWritable,
+} from "../../operation";
 
-const AddSemanticClassSurroundingsType =
-  "add-class-surroundings-operation";
-
-register(
-  AddSemanticClassSurroundingsType,
-  addSemanticClassSurroundingsExecutor,
-  "Add semantic class surrounding",
-  "For given semantic class adds its surrounding to its semantic model."
-);
+export function addSemanticClassSurroundingsOperation(
+  args: Omit<AddSemanticClassSurroundingsArguments, "type">,
+): AddSemanticClassSurroundingsArguments {
+  return {
+    type: AddSemanticClassSurroundingsType,
+    ...args,
+  };
+}
 
 interface AddSemanticClassSurroundingsArguments extends CmeOperationArguments {
 
@@ -31,19 +30,25 @@ interface AddSemanticClassSurroundingsArguments extends CmeOperationArguments {
 
 }
 
+const AddSemanticClassSurroundingsType =
+  "add-class-surroundings-operation";
+
 type AddClassSurroundingsResult =
   CmeOperationResult<AddSemanticClassSurroundingsArguments>;
 
-export type AddSemanticClassSurroundingsOperation = [
-  AddSemanticClassSurroundingsArguments, AddClassSurroundingsResult];
+cmeOperationExecutorRegistry.register(
+  AddSemanticClassSurroundingsType,
+  { execute: addSemanticClassSurroundingsExecutor },
+)
 
 export async function addSemanticClassSurroundingsExecutor(
   context: CmeExecutionContext,
   args: AddSemanticClassSurroundingsArguments,
 ): Promise<AddClassSurroundingsResult> {
-  const model = findModel(
-    context.semanticModels, isExternalSemanticModel, args.semanticModel);
-  //
+  const model = findSemanticModel(context, args.semanticModel);
+  if (!isExternalSemanticModel(model)) {
+    throw new ModelIsNotWritable();
+  }
   await model.allowClassSurroundings(args.entity);
   return { args };
 }

@@ -1,62 +1,82 @@
-import { ModelDsIdentifier } from "../dataspecer/entity-model";
+import { ProfileModel } from "@dataspecer/profile-model";
+import { SemanticModel } from "@dataspecer/semantic-model";
+import { VisualModel } from "@dataspecer/visual-model";
+import { EntityDsIdentifier, ModelDsIdentifier } from "../dataspecer/entity-model";
 
+/**
+ * Base interface of any operation arguments.
+ */
 export interface CmeOperationArguments {
 
-  type: string
-
-}
-
-export interface CmeOperationResult<OperationType> {
-
-  args: OperationType,
+  type: string;
 
 }
 
 /**
- * Operation is a tuple of arguments and results.
+ * Base interface for an operation results.
+ * The result of the operation also contains the arguments so it can be
+ * stored as a single package.
  */
-export type CmeOperationTuple<
-  ArgumentType extends CmeOperationArguments,
-  ResultType extends CmeOperationResult<ArgumentType>
-> = [ArgumentType, ResultType];
+export interface CmeOperationResult<ArgumentType> {
 
-export interface CmeOperationExecutor {
+  args: ArgumentType;
 
   /**
-   * @throws CmeOperationExecutionFailed
+   * Undefined if operation has passed.
    */
-  execute: <Type extends CmeOperationTuple<any, any>>(
-    args: Type[0]
-  ) => Promise<Type[1]>;
+  exception?: CmeOperationExecutionFailed;
 
 }
 
+/**
+ * Base error class to use by operations to report failure.
+ */
 export class CmeOperationExecutionFailed extends Error { }
 
 /**
- * There is no operation for given operation.
+ * Each operation has assigned executor.
  */
-export class UnknownCmeOperation extends CmeOperationExecutionFailed { }
+export interface CmeOperationExecutor<
+  ArgumentType extends CmeOperationArguments,
+  ResultType extends CmeOperationResult<ArgumentType>,
+> {
 
-/**
- * There is no model with given identifier.
- */
-export class MissingModel extends CmeOperationExecutionFailed {
-
-  constructor(models: any, identifier: ModelDsIdentifier) {
-    super();
-    console.error("Missing model.", { models, identifier });
-  }
+  /**
+   * @throws CmeOperationExecutionFailed When operation fails.
+   */
+  execute: (context: CmeExecutionContext, args: ArgumentType)
+    => Promise<ResultType>;
 
 }
 
 /**
- * Model exists but is not of an expected type.
+ * Context given to each executor.
  */
-export class InvalidModel extends CmeOperationExecutionFailed { }
+export interface CmeExecutionContext {
 
-/**
- * Use when Dataspecer call failed.
- */
-export class DataspecerOperationFailed extends CmeOperationExecutionFailed { }
+  semanticModels: Record<ModelDsIdentifier, SemanticModel>;
 
+  profileModels: Record<ModelDsIdentifier, ProfileModel>;
+
+  visualModels: Record<ModelDsIdentifier, VisualModel>;
+
+  /**
+   * Create and return new identifier for an entity.
+   */
+  createNewEntityIdentifier(model: ModelDsIdentifier): EntityDsIdentifier;
+
+}
+
+export class MissingCmeExecutor extends CmeOperationExecutionFailed { }
+
+export class MissingModel extends CmeOperationExecutionFailed { }
+
+export class ModelIsNotWritable extends CmeOperationExecutionFailed {}
+
+export class DataspecerOperationFailed extends CmeOperationExecutionFailed {}
+
+export class MissingEntity extends CmeOperationExecutionFailed {}
+
+export class InvalidEntity extends CmeOperationExecutionFailed {}
+
+export class InvalidOperationArguments extends CmeOperationExecutionFailed {}

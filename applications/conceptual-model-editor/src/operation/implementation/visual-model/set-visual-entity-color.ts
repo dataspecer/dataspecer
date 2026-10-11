@@ -1,35 +1,28 @@
 import {
   HexColor,
-  isWritableVisualModel,
   VisualNode,
   VisualProfileRelationship,
   VisualRelationship,
 } from "@dataspecer/visual-model";
 
 import {
-  EntityDsIdentifier,
-  ModelDsIdentifier,
+  EntityDsIdentifier, ModelDsIdentifier,
 } from "../../../dataspecer/entity-model";
 import {
-  CmeOperationArguments,
-  CmeOperationExecutionFailed,
-  CmeOperationResult,
+  CmeExecutionContext, CmeOperationArguments,
+  CmeOperationExecutionFailed, CmeOperationResult,
 } from "../../operation";
-import {
-  CmeExecutionContext,
-  register,
-} from "../../operation-registry";
-import { findModel } from "../operation-utilities";
+import { cmeOperationExecutorRegistry } from "../../operation-registry";
+import { findVisualModel } from "../operation-utilities";
 
-const SetVisualEntityColorType =
-  "set-visual-entity-color-operation";
-
-register(
-  SetVisualEntityColorType,
-  setVisualEntityColorExecutor,
-  "Set visual entity color",
-  "Set custom color of visual entities, overriding the model color."
-);
+export function setVisualEntityColorOperation(
+  args: Omit<SetVisualEntityColorArguments, "type">,
+): SetVisualEntityColorArguments {
+  return {
+    type: SetVisualEntityColorType,
+    ...args,
+  };
+}
 
 interface SetVisualEntityColorArguments extends CmeOperationArguments {
 
@@ -43,12 +36,14 @@ interface SetVisualEntityColorArguments extends CmeOperationArguments {
   visualEntities: EntityDsIdentifier[];
 
   /**
-   * Hexadecimal color, for example "#ff0000".
    * Use null to remove the custom color and use the model color.
    */
   color: HexColor | null;
 
 }
+
+const SetVisualEntityColorType =
+  "set-visual-entity-color-operation";
 
 type ColorableVisualEntity =
   VisualNode | VisualRelationship | VisualProfileRelationship;
@@ -56,8 +51,9 @@ type ColorableVisualEntity =
 type SetVisualEntityColorResult =
   CmeOperationResult<SetVisualEntityColorArguments>;
 
-export type SetVisualEntityColorOperation = [
-  SetVisualEntityColorArguments, SetVisualEntityColorResult];
+cmeOperationExecutorRegistry.register(
+  SetVisualEntityColorType,
+  { execute: setVisualEntityColorExecutor });
 
 /**
  * @throws CmeOperationExecutionFailed
@@ -66,14 +62,12 @@ export async function setVisualEntityColorExecutor(
   context: CmeExecutionContext,
   args: SetVisualEntityColorArguments,
 ): Promise<SetVisualEntityColorResult> {
-  const model = findModel(
-    context.visualModels, isWritableVisualModel, args.visualModel);
+  const model = findVisualModel(context, args.visualModel);
 
   // Check all entities first, so we do not change only some of them.
   for (const identifier of args.visualEntities) {
     if (model.getVisualEntity(identifier) === null) {
-      throw new CmeOperationExecutionFailed(
-        `Missing visual entity '${identifier}'.`);
+      throw new CmeOperationExecutionFailed();
     }
   }
 
@@ -81,5 +75,6 @@ export async function setVisualEntityColorExecutor(
     model.updateVisualEntity<ColorableVisualEntity>(
       identifier, { color: args.color });
   }
+
   return { args };
 }

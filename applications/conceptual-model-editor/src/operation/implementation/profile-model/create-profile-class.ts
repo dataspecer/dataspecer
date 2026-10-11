@@ -11,27 +11,27 @@ import {
   ModelDsIdentifier,
 } from "../../../dataspecer/entity-model";
 import {
+  CmeExecutionContext,
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
-import {
-  CmeExecutionContext,
-  register,
-} from "../../operation-registry";
+import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   executeCreateProfileOperation,
   findProfileModel,
 } from "../operation-utilities";
 
+export function createProfileClassOperation(
+  args: Omit<CreateProfileClassArguments, "type">,
+): CreateProfileClassArguments {
+  return {
+    type: CreateProfileClassType,
+    ...args,
+  };
+}
+
 const CreateProfileClassType =
   "create-profile-class-operation";
-
-register(
-  CreateProfileClassType,
-  createProfileClassExecutor,
-  "Create a class profile",
-  "Create a class profile in the given model."
-);
 
 interface CreateProfileClassArguments extends CmeOperationArguments {
 
@@ -68,8 +68,9 @@ interface CreateProfileClassResult
 
 }
 
-export type CreateProfileClassOperation = [
-  CreateProfileClassArguments, CreateProfileClassResult];
+cmeOperationExecutorRegistry.register(
+  CreateProfileClassType,
+  { execute: createProfileClassExecutor });
 
 const factory = createDefaultSemanticModelProfileOperationFactory();
 
@@ -80,7 +81,7 @@ export async function createProfileClassExecutor(
   context: CmeExecutionContext,
   args: CreateProfileClassArguments,
 ): Promise<CreateProfileClassResult> {
-  const model = findProfileModel(context, args);
+  const model = findProfileModel(context, args.profileModel);
 
   const operation = factory.createClassProfile({
     iri: args.iri,
