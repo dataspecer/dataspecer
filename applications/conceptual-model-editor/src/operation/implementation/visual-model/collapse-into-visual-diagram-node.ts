@@ -6,6 +6,7 @@ import {
 import { ModelDsIdentifier } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
   InvalidOperationArguments,
@@ -23,7 +24,7 @@ import { copyVisualEntities } from "./copy-visual-entities";
 
 export function collapseIntoVisualDiagramNodeOperation(
   args: Omit<CollapseIntoVisualDiagramNodeArguments, "type">,
-): CollapseIntoVisualDiagramNodeArguments {
+): CmeOperation<CollapseIntoVisualDiagramNodeArguments, CollapseIntoVisualDiagramNodeResult> {
   return {
     type: CollapseIntoVisualDiagramNodeType,
     ...args,
@@ -72,6 +73,7 @@ interface CollapseIntoVisualDiagramNodeResult
 
 cmeOperationExecutorRegistry.register(
   CollapseIntoVisualDiagramNodeType,
+  collapseIntoVisualDiagramNodeOperation,
   { execute: collapseIntoVisualDiagramNodeExecutor });
 
 /**

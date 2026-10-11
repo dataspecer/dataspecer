@@ -1,6 +1,7 @@
 import { ModelDsIdentifier } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
   MissingModel,
@@ -21,7 +22,7 @@ import {
 
 export function hideSemanticModelOperation(
   args: Omit<HideSemanticModelArguments, "type">,
-): HideSemanticModelArguments {
+): CmeOperation<HideSemanticModelArguments, HideSemanticModelResult> {
   return {
     type: HideSemanticModelType,
     ...args,
@@ -46,6 +47,7 @@ type HideSemanticModelResult =
 
 cmeOperationExecutorRegistry.register(
   HideSemanticModelType,
+  hideSemanticModelOperation,
   { execute: hideSemanticModelExecutor });
 
 /**

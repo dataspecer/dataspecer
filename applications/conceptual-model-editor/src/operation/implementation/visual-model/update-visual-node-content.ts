@@ -4,6 +4,7 @@ import {
 } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
@@ -15,7 +16,7 @@ import {
 
 export function updateVisualNodeContentOperation(
   args: Omit<UpdateVisualNodeContentArguments, "type">,
-): UpdateVisualNodeContentArguments {
+): CmeOperation<UpdateVisualNodeContentArguments, UpdateVisualNodeContentResult> {
   return {
     type: UpdateVisualNodeContentType,
     ...args,
@@ -45,6 +46,7 @@ type UpdateVisualNodeContentResult =
 
 cmeOperationExecutorRegistry.register(
   UpdateVisualNodeContentType,
+  updateVisualNodeContentOperation,
   { execute: updateVisualNodeContentExecutor });
 
 /**

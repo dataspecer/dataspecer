@@ -8,6 +8,7 @@ import { ModelDsIdentifier } from "../../../dataspecer/entity-model";
 import { getDomainAndRangeConcepts } from "../../../util/relationship-utils";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
   MissingModel,
@@ -25,7 +26,7 @@ import { EntityToShow, showEntities } from "./show-entities";
 
 export function showSemanticModelOperation(
   args: Omit<ShowSemanticModelArguments, "type">,
-): ShowSemanticModelArguments {
+): CmeOperation<ShowSemanticModelArguments, ShowSemanticModelResult> {
   return {
     type: ShowSemanticModelType,
     ...args,
@@ -60,6 +61,7 @@ type ShowSemanticModelResult =
 
 cmeOperationExecutorRegistry.register(
   ShowSemanticModelType,
+  showSemanticModelOperation,
   { execute: showSemanticModelExecutor });
 
 /**

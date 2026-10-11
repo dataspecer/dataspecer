@@ -1,6 +1,7 @@
 import { ModelDsIdentifier } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
@@ -14,7 +15,7 @@ import { setAnchor } from "./toggle-anchor";
 
 export function createVisualGroupOperation(
   args: Omit<CreateVisualGroupArguments, "type">,
-): CreateVisualGroupArguments {
+): CmeOperation<CreateVisualGroupArguments, CreateVisualGroupResult> {
   return {
     type: CreateVisualGroupType,
     ...args,
@@ -46,6 +47,7 @@ interface CreateVisualGroupResult
 
 cmeOperationExecutorRegistry.register(
   CreateVisualGroupType,
+  createVisualGroupOperation,
   { execute: createVisualGroupExecutor });
 
 /**

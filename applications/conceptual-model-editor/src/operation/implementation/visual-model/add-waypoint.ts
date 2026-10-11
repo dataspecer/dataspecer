@@ -3,6 +3,7 @@ import { Waypoint } from "@dataspecer/visual-model";
 import { ModelDsIdentifier } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
@@ -12,7 +13,7 @@ import { getVisualEdge } from "./visual-edge-utilities";
 
 export function addWaypointOperation(
   args: Omit<AddWaypointArguments, "type">,
-): AddWaypointArguments {
+): CmeOperation<AddWaypointArguments, AddWaypointResult> {
   return {
     type: AddWaypointType,
     ...args,
@@ -46,6 +47,7 @@ type AddWaypointResult =
 
 cmeOperationExecutorRegistry.register(
   AddWaypointType,
+  addWaypointOperation,
   { execute: addWaypointExecutor });
 
 /**

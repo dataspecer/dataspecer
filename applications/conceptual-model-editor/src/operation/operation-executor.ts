@@ -4,8 +4,8 @@ import { VisualModel } from "@dataspecer/visual-model";
 import { isInMemorySemanticModel } from "../dataspecer/semantic-model";
 import { RegistryEntry } from "./operation-registry";
 import {
-  CmeExecutionContext, CmeOperationArguments, CmeOperationResult,
-  MissingCmeExecutor,
+  CmeExecutionContext, CmeOperationArguments, CmeOperationExecutionFailed,
+  CmeOperationOutcome, MissingCmeExecutor,
 } from "./operation";
 import { EntityDsIdentifier } from "../dataspecer/entity-model";
 
@@ -29,7 +29,9 @@ export function createCmeOperationExecutor(
   };
   //
   return {
-    execute: async (args) => {
+    execute: async <ArgumentType extends CmeOperationArguments>(
+      args: ArgumentType,
+    ): Promise<CmeOperationOutcome<ArgumentType>> => {
       const registered = registry.get(args.type);
       if (registered === undefined) {
         return { args, exception: new MissingCmeExecutor() };
@@ -37,10 +39,22 @@ export function createCmeOperationExecutor(
       try {
         return await registered.executor.execute(context, args);
       } catch (exception) {
-        return { args, exception };
+        return { args, exception: asExecutionFailed(exception) };
       }
     },
   };
+}
+
+/**
+ * Operations should throw only {@link CmeOperationExecutionFailed},
+ * anything else is wrapped.
+ */
+function asExecutionFailed(exception: unknown): CmeOperationExecutionFailed {
+  if (exception instanceof CmeOperationExecutionFailed) {
+    return exception;
+  }
+  return new CmeOperationExecutionFailed(
+    "Unexpected exception.", { cause: exception });
 }
 
 export interface CmeOperationsExecutor {
@@ -48,9 +62,12 @@ export interface CmeOperationsExecutor {
   /**
    * Executes given operation.
    * This method must never throw.
+   *
+   * When the arguments are created using an operation factory function,
+   * the outcome contains the typed result of the operation.
    */
-  execute(args: CmeOperationArguments):
-    Promise<CmeOperationResult<CmeOperationArguments>>;
+  execute<ArgumentType extends CmeOperationArguments>(args: ArgumentType):
+    Promise<CmeOperationOutcome<ArgumentType>>;
 
 }
 

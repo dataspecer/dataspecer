@@ -3,6 +3,7 @@ import { isVisualGroup, WritableVisualModel } from "@dataspecer/visual-model";
 import { ModelDsIdentifier } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
   InvalidEntity,
@@ -16,7 +17,7 @@ import {
 
 export function toggleAnchorOperation(
   args: Omit<ToggleAnchorArguments, "type">,
-): ToggleAnchorArguments {
+): CmeOperation<ToggleAnchorArguments, ToggleAnchorResult> {
   return {
     type: ToggleAnchorType,
     ...args,
@@ -49,6 +50,7 @@ type ToggleAnchorResult =
 
 cmeOperationExecutorRegistry.register(
   ToggleAnchorType,
+  toggleAnchorOperation,
   { execute: toggleAnchorExecutor });
 
 /**

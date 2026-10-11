@@ -9,15 +9,18 @@ import {
   EntityDsIdentifier, ModelDsIdentifier,
 } from "../../../dataspecer/entity-model";
 import {
-  CmeExecutionContext, CmeOperationArguments,
-  CmeOperationExecutionFailed, CmeOperationResult,
+  CmeExecutionContext,
+  CmeOperation,
+  CmeOperationArguments,
+  CmeOperationExecutionFailed,
+  CmeOperationResult,
 } from "../../operation";
 import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import { findVisualModel } from "../operation-utilities";
 
 export function setVisualEntityColorOperation(
   args: Omit<SetVisualEntityColorArguments, "type">,
-): SetVisualEntityColorArguments {
+): CmeOperation<SetVisualEntityColorArguments, SetVisualEntityColorResult> {
   return {
     type: SetVisualEntityColorType,
     ...args,
@@ -53,6 +56,7 @@ type SetVisualEntityColorResult =
 
 cmeOperationExecutorRegistry.register(
   SetVisualEntityColorType,
+  setVisualEntityColorOperation,
   { execute: setVisualEntityColorExecutor });
 
 /**

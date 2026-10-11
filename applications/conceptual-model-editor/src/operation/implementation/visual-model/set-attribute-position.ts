@@ -4,6 +4,7 @@ import {
 } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
   InvalidOperationArguments,
@@ -16,7 +17,7 @@ import {
 
 export function setAttributePositionOperation(
   args: Omit<SetAttributePositionArguments, "type">,
-): SetAttributePositionArguments {
+): CmeOperation<SetAttributePositionArguments, SetAttributePositionResult> {
   return {
     type: SetAttributePositionType,
     ...args,
@@ -45,6 +46,7 @@ type SetAttributePositionResult =
 
 cmeOperationExecutorRegistry.register(
   SetAttributePositionType,
+  setAttributePositionOperation,
   { execute: setAttributePositionExecutor });
 
 /**

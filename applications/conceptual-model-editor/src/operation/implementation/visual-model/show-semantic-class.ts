@@ -4,6 +4,7 @@ import {
 } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
@@ -12,7 +13,7 @@ import { findVisualModel } from "../operation-utilities";
 
 export function showSemanticClassOperation(
   args: Omit<ShowSemanticClassArguments, "type">,
-): ShowSemanticClassArguments {
+): CmeOperation<ShowSemanticClassArguments, ShowSemanticClassResult> {
   return {
     type: ShowSemanticClassType,
     ...args,
@@ -43,6 +44,7 @@ type ShowSemanticClassResult =
 
 cmeOperationExecutorRegistry.register(
   ShowSemanticClassType,
+  showSemanticClassOperation,
   { execute: showSemanticClassExecutor });
 
 async function showSemanticClassExecutor(

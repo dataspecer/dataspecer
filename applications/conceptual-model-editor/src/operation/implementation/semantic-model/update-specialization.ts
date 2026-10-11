@@ -10,6 +10,7 @@ import {
 } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
   DataspecerOperationFailed,
@@ -21,7 +22,7 @@ import { isInMemorySemanticModel } from "../../../dataspecer/semantic-model";
 
 export function updateSpecializationOperation(
   args: Omit<UpdateSpecializationArguments, "type">,
-): UpdateSpecializationArguments {
+): CmeOperation<UpdateSpecializationArguments, UpdateSpecializationResult> {
   return {
     type: UpdateSpecializationType,
     ...args,
@@ -99,6 +100,7 @@ interface UpdateSpecializationResult
 
 cmeOperationExecutorRegistry.register(
   UpdateSpecializationType,
+  updateSpecializationOperation,
   { execute: updateSpecializationExecutor });
 
 /**

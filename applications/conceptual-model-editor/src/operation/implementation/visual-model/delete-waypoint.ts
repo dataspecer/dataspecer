@@ -1,6 +1,7 @@
 import { ModelDsIdentifier } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
@@ -10,7 +11,7 @@ import { getVisualEdge } from "./visual-edge-utilities";
 
 export function deleteWaypointOperation(
   args: Omit<DeleteWaypointArguments, "type">,
-): DeleteWaypointArguments {
+): CmeOperation<DeleteWaypointArguments, DeleteWaypointResult> {
   return {
     type: DeleteWaypointType,
     ...args,
@@ -37,6 +38,7 @@ type DeleteWaypointResult =
 
 cmeOperationExecutorRegistry.register(
   DeleteWaypointType,
+  deleteWaypointOperation,
   { execute: deleteWaypointExecutor });
 
 /**

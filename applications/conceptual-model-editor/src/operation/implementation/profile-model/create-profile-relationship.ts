@@ -11,6 +11,7 @@ import {
 } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
@@ -26,7 +27,7 @@ import {
 
 export function createProfileRelationshipOperation(
   args: Omit<CreateProfileRelationshipArguments, "type">,
-): CreateProfileRelationshipArguments {
+): CmeOperation<CreateProfileRelationshipArguments, CreateProfileRelationshipResult> {
   return {
     type: CreateProfileRelationshipType,
     ...args,
@@ -54,6 +55,7 @@ interface CreateProfileRelationshipResult
 
 cmeOperationExecutorRegistry.register(
   CreateProfileRelationshipType,
+  createProfileRelationshipOperation,
   { execute: createProfileRelationshipExecutor });
 
 const factory = createDefaultSemanticModelProfileOperationFactory();

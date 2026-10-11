@@ -8,6 +8,7 @@ import {
 } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
@@ -32,7 +33,7 @@ const LOG = createLogger(import.meta.url);
 
 export function showEntitiesOperation(
   args: Omit<ShowEntitiesArguments, "type">,
-): ShowEntitiesArguments {
+): CmeOperation<ShowEntitiesArguments, ShowEntitiesResult> {
   return {
     type: ShowEntitiesType,
     ...args,
@@ -88,6 +89,7 @@ interface ShowEntitiesResult
 
 cmeOperationExecutorRegistry.register(
   ShowEntitiesType,
+  showEntitiesOperation,
   { execute: showEntitiesExecutor });
 
 /**

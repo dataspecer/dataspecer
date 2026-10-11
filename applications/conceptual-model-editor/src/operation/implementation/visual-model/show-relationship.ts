@@ -11,6 +11,7 @@ import {
 } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
   InvalidEntity,
@@ -24,7 +25,7 @@ import { addVisualConnection } from "./visual-model-additions";
 
 export function showRelationshipOperation(
   args: Omit<ShowRelationshipArguments, "type">,
-): ShowRelationshipArguments {
+): CmeOperation<ShowRelationshipArguments, ShowRelationshipResult> {
   return {
     type: ShowRelationshipType,
     ...args,
@@ -59,6 +60,7 @@ interface ShowRelationshipResult
 
 cmeOperationExecutorRegistry.register(
   ShowRelationshipType,
+  showRelationshipOperation,
   { execute: showRelationshipExecutor });
 
 /**

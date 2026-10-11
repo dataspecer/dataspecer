@@ -7,13 +7,16 @@ import { isExternalSemanticModel } from "../../../dataspecer/semantic-model";
 import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import { findSemanticModel } from "../operation-utilities";
 import {
-  CmeExecutionContext, CmeOperationArguments, CmeOperationResult,
+  CmeExecutionContext,
+  CmeOperation,
+  CmeOperationArguments,
+  CmeOperationResult,
   ModelIsNotWritable,
 } from "../../operation";
 
 export function releaseSemanticClassSurroundingsOperation(
   args: Omit<ReleaseSemanticClassSurroundingsArguments, "type">,
-): ReleaseSemanticClassSurroundingsArguments {
+): CmeOperation<ReleaseSemanticClassSurroundingsArguments, ReleaseClassSurroundingsResult> {
   return {
     type: ReleaseSemanticClassSurroundingsType,
     ...args,
@@ -39,6 +42,7 @@ type ReleaseClassSurroundingsResult =
 
 cmeOperationExecutorRegistry.register(
   ReleaseSemanticClassSurroundingsType,
+  releaseSemanticClassSurroundingsOperation,
   { execute: releaseClassSurroundingsExecutor },
 )
 

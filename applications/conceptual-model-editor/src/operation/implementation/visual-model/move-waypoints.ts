@@ -3,6 +3,7 @@ import { XY } from "@dataspecer/layout";
 import { ModelDsIdentifier } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
@@ -12,7 +13,7 @@ import { getVisualEdge } from "./visual-edge-utilities";
 
 export function moveWaypointsOperation(
   args: Omit<MoveWaypointsArguments, "type">,
-): MoveWaypointsArguments {
+): CmeOperation<MoveWaypointsArguments, MoveWaypointsResult> {
   return {
     type: MoveWaypointsType,
     ...args,
@@ -40,6 +41,7 @@ type MoveWaypointsResult =
 
 cmeOperationExecutorRegistry.register(
   MoveWaypointsType,
+  moveWaypointsOperation,
   { execute: moveWaypointsExecutor });
 
 /**

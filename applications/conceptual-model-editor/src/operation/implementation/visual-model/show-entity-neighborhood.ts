@@ -18,6 +18,7 @@ import { isSemanticModelAttributeProfile } from "../../../dataspecer/semantic-mo
 import { getDomainAndRangeConcepts } from "../../../util/relationship-utils";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
   InvalidEntity,
@@ -44,7 +45,7 @@ import {
 
 export function showEntityNeighborhoodOperation(
   args: Omit<ShowEntityNeighborhoodArguments, "type">,
-): ShowEntityNeighborhoodArguments {
+): CmeOperation<ShowEntityNeighborhoodArguments, ShowEntityNeighborhoodResult> {
   return {
     type: ShowEntityNeighborhoodType,
     ...args,
@@ -79,6 +80,7 @@ type ShowEntityNeighborhoodResult =
 
 cmeOperationExecutorRegistry.register(
   ShowEntityNeighborhoodType,
+  showEntityNeighborhoodOperation,
   { execute: showEntityNeighborhoodExecutor });
 
 /**

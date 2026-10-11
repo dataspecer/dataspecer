@@ -8,6 +8,7 @@ import { ModelDsIdentifier } from "../../../dataspecer/entity-model";
 import { getSemanticConnectionEndConcepts } from "../../../util/relationship-utils";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
   InvalidEntity,
@@ -26,7 +27,7 @@ import { isSemanticConnection } from "./visual-model-additions";
 
 export function showDiagramNodeRelationshipsOperation(
   args: Omit<ShowDiagramNodeRelationshipsArguments, "type">,
-): ShowDiagramNodeRelationshipsArguments {
+): CmeOperation<ShowDiagramNodeRelationshipsArguments, ShowDiagramNodeRelationshipsResult> {
   return {
     type: ShowDiagramNodeRelationshipsType,
     ...args,
@@ -54,6 +55,7 @@ type ShowDiagramNodeRelationshipsResult =
 
 cmeOperationExecutorRegistry.register(
   ShowDiagramNodeRelationshipsType,
+  showDiagramNodeRelationshipsOperation,
   { execute: showDiagramNodeRelationshipsExecutor });
 
 /**

@@ -4,6 +4,7 @@ import {
 } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
@@ -12,7 +13,7 @@ import { findWritableVisualModel } from "./visual-model-utilities";
 
 export function updateVisualModelLabelOperation(
   args: Omit<UpdateVisualModelLabelArguments, "type">,
-): UpdateVisualModelLabelArguments {
+): CmeOperation<UpdateVisualModelLabelArguments, UpdateVisualModelLabelResult> {
   return {
     type: UpdateVisualModelLabelType,
     ...args,
@@ -37,6 +38,7 @@ type UpdateVisualModelLabelResult =
 
 cmeOperationExecutorRegistry.register(
   UpdateVisualModelLabelType,
+  updateVisualModelLabelOperation,
   { execute: updateVisualModelLabelExecutor });
 
 /**

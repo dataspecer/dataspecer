@@ -4,6 +4,7 @@ import {
 } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
@@ -21,7 +22,7 @@ import {
 
 export function hideByRepresentedOperation(
   args: Omit<HideByRepresentedArguments, "type">,
-): HideByRepresentedArguments {
+): CmeOperation<HideByRepresentedArguments, HideByRepresentedResult> {
   return {
     type: HideByRepresentedType,
     ...args,
@@ -49,6 +50,7 @@ type HideByRepresentedResult =
 
 cmeOperationExecutorRegistry.register(
   HideByRepresentedType,
+  hideByRepresentedOperation,
   { execute: hideByRepresentedExecutor });
 
 /**

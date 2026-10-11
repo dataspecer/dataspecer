@@ -21,6 +21,7 @@ import { ModelDsIdentifier } from "../../../dataspecer/entity-model";
 import { getSemanticConnectionEndConcepts } from "../../../util/relationship-utils";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
   InvalidEntity,
@@ -51,7 +52,7 @@ const LOG = createLogger(import.meta.url);
 
 export function dissolveVisualDiagramNodeOperation(
   args: Omit<DissolveVisualDiagramNodeArguments, "type">,
-): DissolveVisualDiagramNodeArguments {
+): CmeOperation<DissolveVisualDiagramNodeArguments, DissolveVisualDiagramNodeResult> {
   return {
     type: DissolveVisualDiagramNodeType,
     ...args,
@@ -82,6 +83,7 @@ type DissolveVisualDiagramNodeResult =
 
 cmeOperationExecutorRegistry.register(
   DissolveVisualDiagramNodeType,
+  dissolveVisualDiagramNodeOperation,
   { execute: dissolveVisualDiagramNodeExecutor });
 
 /**

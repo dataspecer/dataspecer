@@ -1,6 +1,7 @@
 import { ModelDsIdentifier } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
   InvalidOperationArguments,
@@ -14,7 +15,7 @@ import {
 
 export function createVisualDiagramNodeOperation(
   args: Omit<CreateVisualDiagramNodeArguments, "type">,
-): CreateVisualDiagramNodeArguments {
+): CmeOperation<CreateVisualDiagramNodeArguments, CreateVisualDiagramNodeResult> {
   return {
     type: CreateVisualDiagramNodeType,
     ...args,
@@ -50,6 +51,7 @@ interface CreateVisualDiagramNodeResult
 
 cmeOperationExecutorRegistry.register(
   CreateVisualDiagramNodeType,
+  createVisualDiagramNodeOperation,
   { execute: createVisualDiagramNodeExecutor });
 
 /**

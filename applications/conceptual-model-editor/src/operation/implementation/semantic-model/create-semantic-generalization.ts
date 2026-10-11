@@ -9,6 +9,7 @@ import {
 } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
@@ -20,7 +21,7 @@ import {
 
 export function createSemanticGeneralizationOperation(
   args: Omit<CreateSemanticGeneralizationArguments, "type">,
-): CreateSemanticGeneralizationArguments {
+): CmeOperation<CreateSemanticGeneralizationArguments, CreateSemanticGeneralizationResult> {
   return {
     type: CreateSemanticGeneralizationType,
     ...args,
@@ -53,6 +54,7 @@ interface CreateSemanticGeneralizationResult
 
 cmeOperationExecutorRegistry.register(
   CreateSemanticGeneralizationType,
+  createSemanticGeneralizationOperation,
   { execute: createSemanticGeneralizationExecutor });
 
 /**

@@ -2,6 +2,7 @@ import { ModelDsIdentifier } from "../../../dataspecer/entity-model";
 import { isInMemorySemanticModel } from "../../../dataspecer/semantic-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
   ModelIsNotWritable,
@@ -11,7 +12,7 @@ import { findSemanticModel } from "../operation-utilities";
 
 export function updateSemanticModelOperation(
   args: Omit<UpdateSemanticModelArguments, "type">,
-): UpdateSemanticModelArguments {
+): CmeOperation<UpdateSemanticModelArguments, UpdateSemanticModelResult> {
   return {
     type: UpdateSemanticModelType,
     ...args,
@@ -38,6 +39,7 @@ type UpdateSemanticModelResult =
 
 cmeOperationExecutorRegistry.register(
   UpdateSemanticModelType,
+  updateSemanticModelOperation,
   { execute: updateSemanticModelExecutor });
 
 /**

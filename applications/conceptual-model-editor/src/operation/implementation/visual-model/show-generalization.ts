@@ -8,6 +8,7 @@ import {
 } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
   InvalidEntity,
@@ -21,7 +22,7 @@ import { addVisualConnection } from "./visual-model-additions";
 
 export function showGeneralizationOperation(
   args: Omit<ShowGeneralizationArguments, "type">,
-): ShowGeneralizationArguments {
+): CmeOperation<ShowGeneralizationArguments, ShowGeneralizationResult> {
   return {
     type: ShowGeneralizationType,
     ...args,
@@ -53,6 +54,7 @@ interface ShowGeneralizationResult
 
 cmeOperationExecutorRegistry.register(
   ShowGeneralizationType,
+  showGeneralizationOperation,
   { execute: showGeneralizationExecutor });
 
 /**

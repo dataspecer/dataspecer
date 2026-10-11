@@ -9,6 +9,7 @@ import { WritableVisualModel } from "@dataspecer/visual-model";
 import { ModelDsIdentifier } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
@@ -22,7 +23,7 @@ import {
 
 export function layoutVisualModelOperation(
   args: Omit<LayoutVisualModelArguments, "type">,
-): LayoutVisualModelArguments {
+): CmeOperation<LayoutVisualModelArguments, LayoutVisualModelResult> {
   return {
     type: LayoutVisualModelType,
     ...args,
@@ -62,6 +63,7 @@ interface LayoutVisualModelResult
 
 cmeOperationExecutorRegistry.register(
   LayoutVisualModelType,
+  layoutVisualModelOperation,
   { execute: layoutVisualModelExecutor });
 
 /**

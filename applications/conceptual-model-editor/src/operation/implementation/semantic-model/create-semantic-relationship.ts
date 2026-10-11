@@ -10,6 +10,7 @@ import {
 } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
@@ -21,7 +22,7 @@ import {
 
 export function createSemanticRelationshipOperation(
   args: Omit<CreateSemanticRelationshipArguments, "type">,
-): CreateSemanticRelationshipArguments {
+): CmeOperation<CreateSemanticRelationshipArguments, CreateSemanticRelationshipResult> {
   return {
     type: CreateSemanticRelationshipType,
     ...args,
@@ -66,6 +67,7 @@ interface CreateSemanticRelationshipResult
 
 cmeOperationExecutorRegistry.register(
   CreateSemanticRelationshipType,
+  createSemanticRelationshipOperation,
   { execute: createSemanticRelationshipExecutor });
 
 /**

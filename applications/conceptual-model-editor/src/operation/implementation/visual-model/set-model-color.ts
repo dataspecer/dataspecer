@@ -1,6 +1,7 @@
 import { ModelDsIdentifier } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
@@ -9,7 +10,7 @@ import { findWritableVisualModel } from "./visual-model-utilities";
 
 export function setModelColorOperation(
   args: Omit<SetModelColorArguments, "type">,
-): SetModelColorArguments {
+): CmeOperation<SetModelColorArguments, SetModelColorResult> {
   return {
     type: SetModelColorType,
     ...args,
@@ -42,6 +43,7 @@ type SetModelColorResult =
 
 cmeOperationExecutorRegistry.register(
   SetModelColorType,
+  setModelColorOperation,
   { execute: setModelColorExecutor });
 
 /**

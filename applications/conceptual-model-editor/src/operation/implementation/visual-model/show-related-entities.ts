@@ -4,6 +4,7 @@ import {
 } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
@@ -17,7 +18,7 @@ import { addRelatedEntities } from "./visual-model-additions";
 
 export function showRelatedEntitiesOperation(
   args: Omit<ShowRelatedEntitiesArguments, "type">,
-): ShowRelatedEntitiesArguments {
+): CmeOperation<ShowRelatedEntitiesArguments, ShowRelatedEntitiesResult> {
   return {
     type: ShowRelatedEntitiesType,
     ...args,
@@ -45,6 +46,7 @@ type ShowRelatedEntitiesResult =
 
 cmeOperationExecutorRegistry.register(
   ShowRelatedEntitiesType,
+  showRelatedEntitiesOperation,
   { execute: showRelatedEntitiesExecutor });
 
 /**

@@ -9,6 +9,7 @@ import {
 } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
@@ -18,7 +19,7 @@ import { addVisualProfileRelationships } from "./visual-model-additions";
 
 export function updateVisualNodeProfilesOperation(
   args: Omit<UpdateVisualNodeProfilesArguments, "type">,
-): UpdateVisualNodeProfilesArguments {
+): CmeOperation<UpdateVisualNodeProfilesArguments, UpdateVisualNodeProfilesResult> {
   return {
     type: UpdateVisualNodeProfilesType,
     ...args,
@@ -61,6 +62,7 @@ type UpdateVisualNodeProfilesResult =
 
 cmeOperationExecutorRegistry.register(
   UpdateVisualNodeProfilesType,
+  updateVisualNodeProfilesOperation,
   { execute: updateVisualNodeProfilesExecutor });
 
 /**

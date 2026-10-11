@@ -19,7 +19,9 @@ import {
   CmeOperationsExecutor, createCmeOperationExecutor,
 } from "../operation-executor";
 import { cmeOperationExecutorRegistry } from "../operation-registry";
-import { CmeOperationArguments } from "../operation";
+import {
+  CmeOperationArguments, CmeOperationResultOf, MissingCmeExecutor, MissingModel,
+} from "../operation";
 import {
   copyVisualEntitiesOperation,
   createProfileClassOperation,
@@ -66,9 +68,10 @@ function createContext(): TestContext {
 
 /**
  * Executes the operation and fails when it reports an exception.
- * The executor does not expose typed results, so we return any.
  */
-async function run(context: TestContext, args: CmeOperationArguments): Promise<any> {
+async function run<ArgumentType extends CmeOperationArguments>(
+  context: TestContext, args: ArgumentType,
+): Promise<CmeOperationResultOf<ArgumentType>> {
   const result = await context.executor.execute(args);
   if (result.exception !== undefined) {
     throw result.exception;
@@ -77,13 +80,17 @@ async function run(context: TestContext, args: CmeOperationArguments): Promise<a
 }
 
 async function createClass(context: TestContext, name: string): Promise<string> {
-  const result = await run(context, createSemanticClassOperation({
+  // Create semantic class has a typed result, no need for the run helper.
+  const result = await context.executor.execute(createSemanticClassOperation({
     semanticModel: context.semanticModel.getId(),
     iri: name,
     name: { en: name },
     description: null,
     externalDocumentationUrl: null,
   }));
+  if (result.exception !== undefined) {
+    throw result.exception;
+  }
   return result.created;
 }
 
@@ -123,6 +130,29 @@ function visualRelationships(visualModel: WritableVisualModel) {
     .filter(isVisualRelationship);
 }
 
+describe("Operation executor", () => {
+
+  test("Failure is reported as an outcome with exception.", async () => {
+    const context = createContext();
+    const result = await context.executor.execute(createSemanticClassOperation({
+      semanticModel: "missing-model",
+      iri: null,
+      name: null,
+      description: null,
+      externalDocumentationUrl: null,
+    }));
+    expect(result.exception).toBeInstanceOf(MissingModel);
+    expect(result.args.semanticModel).toBe("missing-model");
+  });
+
+  test("Unknown operation is reported as missing executor.", async () => {
+    const context = createContext();
+    const result = await context.executor.execute({ type: "unknown" });
+    expect(result.exception).toBeInstanceOf(MissingCmeExecutor);
+  });
+
+});
+
 describe("Semantic operations", () => {
 
   test("Update specialization creates and removes generalizations.", async () => {
@@ -147,9 +177,7 @@ describe("Semantic operations", () => {
     const removed = await run(context, updateSpecializationOperation({
       entity: child,
       model: context.semanticModel.getId(),
-      previous: created.created.map((item: {
-        identifier: string, model: string, parent: string,
-      }) => ({
+      previous: created.created.map(item => ({
         iri: null,
         specializationOf: item.parent,
         generalization: { identifier: item.identifier, model: item.model },

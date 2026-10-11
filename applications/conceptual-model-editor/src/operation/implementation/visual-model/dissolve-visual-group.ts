@@ -1,6 +1,7 @@
 import { ModelDsIdentifier } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
   InvalidEntity,
@@ -14,7 +15,7 @@ import { removeGroup } from "./visual-model-removal";
 
 export function dissolveVisualGroupOperation(
   args: Omit<DissolveVisualGroupArguments, "type">,
-): DissolveVisualGroupArguments {
+): CmeOperation<DissolveVisualGroupArguments, DissolveVisualGroupResult> {
   return {
     type: DissolveVisualGroupType,
     ...args,
@@ -46,6 +47,7 @@ interface DissolveVisualGroupResult
 
 cmeOperationExecutorRegistry.register(
   DissolveVisualGroupType,
+  dissolveVisualGroupOperation,
   { execute: dissolveVisualGroupExecutor });
 
 /**

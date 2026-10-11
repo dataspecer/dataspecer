@@ -13,6 +13,7 @@ import {
 import { getDomainAndRangeConcepts } from "../../../util/relationship-utils";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
   InvalidEntity,
@@ -26,7 +27,7 @@ import {
 
 export function showAttributeOperation(
   args: Omit<ShowAttributeArguments, "type">,
-): ShowAttributeArguments {
+): CmeOperation<ShowAttributeArguments, ShowAttributeResult> {
   return {
     type: ShowAttributeType,
     ...args,
@@ -73,6 +74,7 @@ interface ShowAttributeResult
 
 cmeOperationExecutorRegistry.register(
   ShowAttributeType,
+  showAttributeOperation,
   { execute: showAttributeExecutor });
 
 /**

@@ -10,6 +10,7 @@ import {
 } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
@@ -21,9 +22,13 @@ import {
   findSemanticModel,
 } from "../operation-utilities";
 
+/**
+ * The returned arguments carry the result type,
+ * so the executor returns {@link CreateSemanticClassResult}.
+ */
 export function createSemanticClassOperation(
   args: Omit<CreateSemanticClassArguments, "type">,
-): CreateSemanticClassArguments {
+): CmeOperation<CreateSemanticClassArguments, CreateSemanticClassResult> {
   return {
     type: CreateSemanticClassType,
     ...args,
@@ -58,6 +63,7 @@ interface CreateSemanticClassResult
 
 cmeOperationExecutorRegistry.register(
   CreateSemanticClassType,
+  createSemanticClassOperation,
   { execute: createSemanticClassExecutor },
 )
 

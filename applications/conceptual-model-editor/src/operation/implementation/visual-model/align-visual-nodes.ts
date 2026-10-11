@@ -4,6 +4,7 @@ import { configuration } from "../../../application";
 import { ModelDsIdentifier } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
@@ -21,7 +22,7 @@ import {
 
 export function alignVisualNodesOperation(
   args: Omit<AlignVisualNodesArguments, "type">,
-): AlignVisualNodesArguments {
+): CmeOperation<AlignVisualNodesArguments, AlignVisualNodesResult> {
   return {
     type: AlignVisualNodesType,
     ...args,
@@ -62,6 +63,7 @@ type AlignVisualNodesResult =
 
 cmeOperationExecutorRegistry.register(
   AlignVisualNodesType,
+  alignVisualNodesOperation,
   { execute: alignVisualNodesExecutor });
 
 /**

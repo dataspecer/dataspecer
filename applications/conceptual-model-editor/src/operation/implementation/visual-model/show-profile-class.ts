@@ -8,6 +8,7 @@ import {
 } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
   InvalidEntity,
@@ -25,7 +26,7 @@ import {
 
 export function showProfileClassOperation(
   args: Omit<ShowProfileClassArguments, "type">,
-): ShowProfileClassArguments {
+): CmeOperation<ShowProfileClassArguments, ShowProfileClassResult> {
   return {
     type: ShowProfileClassType,
     ...args,
@@ -58,6 +59,7 @@ interface ShowProfileClassResult
 
 cmeOperationExecutorRegistry.register(
   ShowProfileClassType,
+  showProfileClassOperation,
   { execute: showProfileClassExecutor });
 
 /**

@@ -7,6 +7,7 @@ import {
 import { ExternalSemanticModel } from "@dataspecer/core-v2/semantic-model/simplified";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
@@ -16,7 +17,7 @@ import { cmeOperationExecutorRegistry } from "../../operation-registry";
 
 export function deleteSemanticEntitiesOperation(
   args: Omit<DeleteSemanticEntitiesArguments, "type">,
-): DeleteSemanticEntitiesArguments {
+): CmeOperation<DeleteSemanticEntitiesArguments, DeleteSemanticEntitiesResult> {
   return {
     type: DeleteSemanticEntitiesType,
     ...args,
@@ -58,6 +59,7 @@ interface DeleteSemanticEntitiesResult
 
 cmeOperationExecutorRegistry.register(
   DeleteSemanticEntitiesType,
+  deleteSemanticEntitiesOperation,
   { execute: deleteSemanticEntitiesExecutor });
 
 /**

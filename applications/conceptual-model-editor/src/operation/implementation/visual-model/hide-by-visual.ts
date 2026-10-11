@@ -1,6 +1,7 @@
 import { ModelDsIdentifier } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
@@ -13,7 +14,7 @@ import {
 
 export function hideByVisualOperation(
   args: Omit<HideByVisualArguments, "type">,
-): HideByVisualArguments {
+): CmeOperation<HideByVisualArguments, HideByVisualResult> {
   return {
     type: HideByVisualType,
     ...args,
@@ -41,6 +42,7 @@ type HideByVisualResult =
 
 cmeOperationExecutorRegistry.register(
   HideByVisualType,
+  hideByVisualOperation,
   { execute: hideByVisualExecutor });
 
 /**

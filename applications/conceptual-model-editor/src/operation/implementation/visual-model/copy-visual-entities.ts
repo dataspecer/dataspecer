@@ -10,6 +10,7 @@ import {
 import { ModelDsIdentifier } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
   InvalidOperationArguments,
@@ -23,7 +24,7 @@ import {
 
 export function copyVisualEntitiesOperation(
   args: Omit<CopyVisualEntitiesArguments, "type">,
-): CopyVisualEntitiesArguments {
+): CmeOperation<CopyVisualEntitiesArguments, CopyVisualEntitiesResult> {
   return {
     type: CopyVisualEntitiesType,
     ...args,
@@ -68,6 +69,7 @@ interface CopyVisualEntitiesResult
 
 cmeOperationExecutorRegistry.register(
   CopyVisualEntitiesType,
+  copyVisualEntitiesOperation,
   { execute: copyVisualEntitiesExecutor });
 
 /**

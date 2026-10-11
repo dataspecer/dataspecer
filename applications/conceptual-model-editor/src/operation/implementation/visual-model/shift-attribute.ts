@@ -4,6 +4,7 @@ import {
 } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
   InvalidOperationArguments,
@@ -16,7 +17,7 @@ import {
 
 export function shiftAttributeOperation(
   args: Omit<ShiftAttributeArguments, "type">,
-): ShiftAttributeArguments {
+): CmeOperation<ShiftAttributeArguments, ShiftAttributeResult> {
   return {
     type: ShiftAttributeType,
     ...args,
@@ -49,6 +50,7 @@ type ShiftAttributeResult =
 
 cmeOperationExecutorRegistry.register(
   ShiftAttributeType,
+  shiftAttributeOperation,
   { execute: shiftAttributeExecutor });
 
 /**

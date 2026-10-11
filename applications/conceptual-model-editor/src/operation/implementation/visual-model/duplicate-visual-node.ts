@@ -17,6 +17,7 @@ import {
 } from "../../../dataspecer/visual-model/operation/add-visual-relationships";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
   InvalidEntity,
@@ -33,7 +34,7 @@ import {
 
 export function duplicateVisualNodeOperation(
   args: Omit<DuplicateVisualNodeArguments, "type">,
-): DuplicateVisualNodeArguments {
+): CmeOperation<DuplicateVisualNodeArguments, DuplicateVisualNodeResult> {
   return {
     type: DuplicateVisualNodeType,
     ...args,
@@ -70,6 +71,7 @@ interface DuplicateVisualNodeResult
 
 cmeOperationExecutorRegistry.register(
   DuplicateVisualNodeType,
+  duplicateVisualNodeOperation,
   { execute: duplicateVisualNodeExecutor });
 
 /**

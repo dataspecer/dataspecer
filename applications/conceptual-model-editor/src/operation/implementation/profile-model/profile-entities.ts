@@ -8,14 +8,17 @@ import { Entity } from "@dataspecer/core-v2";
 import { findProfileModel } from "../operation-utilities";
 import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
-  CmeExecutionContext, CmeOperationArguments, CmeOperationResult,
+  CmeExecutionContext,
+  CmeOperation,
+  CmeOperationArguments,
+  CmeOperationResult,
   ModelIsNotWritable,
 } from "../../operation";
 import { isInMemoryProfileModel } from "../../../dataspecer/profile-model";
 
 export function profileEntitiesOperation(
   args: Omit<ProfileEntitiesArguments, "type">,
-): ProfileEntitiesArguments {
+): CmeOperation<ProfileEntitiesArguments, ProfileEntitiesResult> {
   return {
     type: ProfileEntitiesType,
     ...args,
@@ -53,6 +56,7 @@ interface ProfileEntitiesResult
 
 cmeOperationExecutorRegistry.register(
   ProfileEntitiesType,
+  profileEntitiesOperation,
   { execute: createProfilesExecutor },
 )
 

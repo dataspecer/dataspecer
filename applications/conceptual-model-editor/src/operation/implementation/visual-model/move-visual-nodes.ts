@@ -3,6 +3,7 @@ import { XY } from "@dataspecer/layout";
 import { ModelDsIdentifier } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
   InvalidEntity,
@@ -16,7 +17,7 @@ import {
 
 export function moveVisualNodesOperation(
   args: Omit<MoveVisualNodesArguments, "type">,
-): MoveVisualNodesArguments {
+): CmeOperation<MoveVisualNodesArguments, MoveVisualNodesResult> {
   return {
     type: MoveVisualNodesType,
     ...args,
@@ -44,6 +45,7 @@ type MoveVisualNodesResult =
 
 cmeOperationExecutorRegistry.register(
   MoveVisualNodesType,
+  moveVisualNodesOperation,
   { execute: moveVisualNodesExecutor });
 
 /**

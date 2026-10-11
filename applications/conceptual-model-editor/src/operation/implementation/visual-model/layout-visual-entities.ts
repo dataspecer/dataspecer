@@ -13,6 +13,7 @@ import {
 import { ModelDsIdentifier } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
@@ -28,7 +29,7 @@ import { applyLayout } from "./layout-visual-model";
 
 export function layoutVisualEntitiesOperation(
   args: Omit<LayoutVisualEntitiesArguments, "type">,
-): LayoutVisualEntitiesArguments {
+): CmeOperation<LayoutVisualEntitiesArguments, LayoutVisualEntitiesResult> {
   return {
     type: LayoutVisualEntitiesType,
     ...args,
@@ -63,6 +64,7 @@ interface LayoutVisualEntitiesResult
 
 cmeOperationExecutorRegistry.register(
   LayoutVisualEntitiesType,
+  layoutVisualEntitiesOperation,
   { execute: layoutVisualEntitiesExecutor });
 
 /**

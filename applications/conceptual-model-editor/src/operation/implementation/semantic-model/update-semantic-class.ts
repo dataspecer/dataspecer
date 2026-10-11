@@ -7,6 +7,7 @@ import {
 } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
@@ -18,7 +19,7 @@ import {
 
 export function updateSemanticClassOperation(
   args: Omit<UpdateSemanticClassArguments, "type">,
-): UpdateSemanticClassArguments {
+): CmeOperation<UpdateSemanticClassArguments, UpdateSemanticClassResult> {
   return {
     type: UpdateSemanticClassType,
     ...args,
@@ -53,6 +54,7 @@ type UpdateSemanticClassResult =
 
 cmeOperationExecutorRegistry.register(
   UpdateSemanticClassType,
+  updateSemanticClassOperation,
   { execute: updateSemanticClassExecutor });
 
 /**

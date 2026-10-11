@@ -1,6 +1,7 @@
 import { ModelDsIdentifier } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
@@ -9,7 +10,7 @@ import { getWritableVisualModels } from "./visual-model-utilities";
 
 export function removeSemanticModelFromVisualModelsOperation(
   args: Omit<RemoveSemanticModelFromVisualModelsArguments, "type">,
-): RemoveSemanticModelFromVisualModelsArguments {
+): CmeOperation<RemoveSemanticModelFromVisualModelsArguments, RemoveSemanticModelFromVisualModelsResult> {
   return {
     type: RemoveSemanticModelFromVisualModelsType,
     ...args,
@@ -36,6 +37,7 @@ type RemoveSemanticModelFromVisualModelsResult =
 
 cmeOperationExecutorRegistry.register(
   RemoveSemanticModelFromVisualModelsType,
+  removeSemanticModelFromVisualModelsOperation,
   { execute: removeSemanticModelFromVisualModelsExecutor });
 
 /**

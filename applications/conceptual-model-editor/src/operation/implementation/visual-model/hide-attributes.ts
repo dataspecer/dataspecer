@@ -13,6 +13,7 @@ import {
 import { getDomainAndRangeConcepts } from "../../../util/relationship-utils";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
@@ -25,7 +26,7 @@ import {
 
 export function hideAttributesOperation(
   args: Omit<HideAttributesArguments, "type">,
-): HideAttributesArguments {
+): CmeOperation<HideAttributesArguments, HideAttributesResult> {
   return {
     type: HideAttributesType,
     ...args,
@@ -59,6 +60,7 @@ type HideAttributesResult =
 
 cmeOperationExecutorRegistry.register(
   HideAttributesType,
+  hideAttributesOperation,
   { execute: hideAttributesExecutor });
 
 /**

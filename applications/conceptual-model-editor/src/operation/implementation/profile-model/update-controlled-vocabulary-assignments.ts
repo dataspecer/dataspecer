@@ -15,6 +15,7 @@ import {
 } from "../../../dataspecer/entity-model";
 import {
   CmeExecutionContext,
+  CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
@@ -26,7 +27,7 @@ import {
 
 export function updateControlledVocabularyAssignmentsOperation(
   args: Omit<UpdateControlledVocabularyAssignmentsArguments, "type">,
-): UpdateControlledVocabularyAssignmentsArguments {
+): CmeOperation<UpdateControlledVocabularyAssignmentsArguments, UpdateControlledVocabularyAssignmentsResult> {
   return {
     type: UpdateControlledVocabularyAssignmentsType,
     ...args,
@@ -94,6 +95,7 @@ interface UpdateControlledVocabularyAssignmentsResult
 
 cmeOperationExecutorRegistry.register(
   UpdateControlledVocabularyAssignmentsType,
+  updateControlledVocabularyAssignmentsOperation,
   { execute: updateControlledVocabularyAssignmentsExecutor });
 
 const factory = createDefaultSemanticModelProfileOperationFactory();
