@@ -76,9 +76,7 @@ export const ClassProfileCreateDialog = (props: DialogProps<ClassProfileCreateDi
         <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
           External documentation URL
         </label>
-        <div className="rounded-md border border-input bg-background/50 px-3 py-2 shadow-xs transition-colors focus-within:border-ring focus-within:ring-1 focus-within:ring-ring">
-          <StringInput state={state?.externalDocumentationUrl} presenter={presenter.externalDocumentationUrl} placeholder="https://..." />
-        </div>
+        <StringInput state={state?.externalDocumentationUrl} presenter={presenter.externalDocumentationUrl} placeholder="https://..." />
       </div>
 
       {/* Order */}
@@ -86,9 +84,7 @@ export const ClassProfileCreateDialog = (props: DialogProps<ClassProfileCreateDi
         <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
           Order
         </label>
-        <div className="rounded-md border border-input bg-background/50 px-3 py-2 shadow-xs transition-colors focus-within:border-ring focus-within:ring-1 focus-within:ring-ring">
-          <StringInput state={state?.order} presenter={presenter.order} placeholder="Order identifier" />
-        </div>
+        <StringInput state={state?.order} presenter={presenter.order} placeholder="Order identifier" />
       </div>
 
       {/* Role (no matching component) */}
