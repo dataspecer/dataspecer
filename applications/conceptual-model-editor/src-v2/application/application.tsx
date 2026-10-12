@@ -28,11 +28,16 @@ import { Catalog } from "../shell/catalog/catalog";
 import { WithApplicationState } from "../core/application/application-react";
 import { DialogContextProvider } from "../shared/dialog/dialog-context";
 import { DialogRenderer } from "../shared/dialog/dialog-renderer";
+import { EntityView } from "../shell/entity-view/entity-view";
+
 import { useRegisterSimpleDialogToWindow } from "../shared/dialog/instances/simple-dialog";
 import { useRegisterClassProfileCreateDialogToWindow } from "../shared/dialog/instances/class-profile-create-dialog";
 import { useRegisterRelationshipProfileCreateDialogToWindow } from "../shared/dialog/instances/relationship-profile-create-dialog";
-import { useRegisterAttributeProfileCreateDialogToWindow } from    "../shared/dialog/instances/attribute-profile-create-dialog";
-import { EntityView } from "../shell/entity-view/entity-view";
+import { useRegisterAttributeProfileCreateDialogToWindow } from "../shared/dialog/instances/attribute-profile-create-dialog";
+import { useRegisterClassCreateDialogToWindow } from "../shared/dialog/instances/class-create-dialog";
+import { useRegisterRelationshipCreateDialogToWindow } from "../shared/dialog/instances/relationship-create-dialog";
+import { useRegisterAttributeCreateDialogToWindow } from "../shared/dialog/instances/attribute-create-dialog";
+import { useRegisterShowcaseDialogsToWindow } from "../shared/dialog/instances/showcase-dialogs-service";
 
 /**
  * The main application entry point.
@@ -189,6 +194,10 @@ function DialogRegistrar() {
   useRegisterClassProfileCreateDialogToWindow();
   useRegisterRelationshipProfileCreateDialogToWindow();
   useRegisterAttributeProfileCreateDialogToWindow();
+  useRegisterClassCreateDialogToWindow();
+  useRegisterRelationshipCreateDialogToWindow();
+  useRegisterAttributeCreateDialogToWindow();
+  useRegisterShowcaseDialogsToWindow();
   return null;
 }
 
