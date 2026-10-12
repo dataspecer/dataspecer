@@ -30,7 +30,9 @@ export function initializeSemanticModelRelationshipEnd(end: SemanticModelRelatio
     nameProperty: null,
     descriptionProperty: null,
     order: null,
-    cardinality: [0, null],
+    // Undefined cardinality is unknown
+    // Many semantic models do not specify cardinality
+    cardinality: undefined! satisfies SemanticModelRelationshipEnd["cardinality"],
     concept: null,
     externalDocumentationUrl: null,
 
