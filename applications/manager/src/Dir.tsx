@@ -282,7 +282,8 @@ function RootPackage({iri}: {iri: string}) {
   // Whether the package is open or not
   const isOpen = true;
   const [search, setSearch] = useState("");
-  const [selectedTag, setSelectedTag] = useLocalStorage("filter-by-tag", "");
+  const [selectedTagRaw, setSelectedTag] = useLocalStorage("filter-by-tag", "");
+  const selectedTag = typeof selectedTagRaw === "string" ? selectedTagRaw : "";
   const deferredTag = useDeferredValue(selectedTag);
   const deferredSearch = useDeferredValue(search);
   const searchPattern = useMemo(() => {
