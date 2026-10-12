@@ -197,16 +197,17 @@ function renderNode(node: NodeLayout, drawing: SvgDrawing): string {
   }
   const background = drawing.rect(node.rect, palette.body, { stroke: palette.border });
   const foreground = headerText(node.color);
+  const textOffset = drawing.options.fontSize * 0.1;
   let header = drawing.rect({ x: x + 0.5, y: y + 0.5, width: width - 1, height: node.headerHeight - 0.5 }, node.color);
   let nextY = y + 4;
   for (const row of node.header) {
-    header += drawing.text(row.text, x + 4, nextY, row.muted && foreground === "#000000" ? "#4b5563" : foreground);
+    header += drawing.text(row.text, x + 4, nextY + textOffset, row.muted && foreground === "#000000" ? "#4b5563" : foreground);
     nextY += rowHeight([row], drawing.lineHeight);
   }
   const body: string[] = [background, drawing.link(node.link, header)];
   nextY = y + node.headerHeight;
   for (const row of node.rows) {
-    const text = drawing.text(row.text, x + 4, nextY, row.muted ? palette.muted : palette.text);
+    const text = drawing.text(row.text, x + 4, nextY + textOffset, row.muted ? palette.muted : palette.text);
     if (row.link) {
       const hit = drawing.rect({ x: x + 1, y: nextY, width: width - 2, height: rowHeight([row], drawing.lineHeight) }, "transparent");
       body.push(drawing.link(row.link, text, { hitArea: hit }));

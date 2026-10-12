@@ -1,6 +1,7 @@
+import { isModelProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { CONTROLLED_VOCABULARY_MODEL, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, V1, RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { controlledVocabulariesToDcatCatalog, controlledVocabularyCatalogIri, type ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
-import { isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship, SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
+import { isMainSemanticModelEntity, isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship, SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
 import { withAbsoluteIri } from "@dataspecer/core-v2/semantic-model/utils";
 import { LanguageString, type CoreResource } from "@dataspecer/core/core/core-resource";
 import { DataSpecificationArtefact } from "@dataspecer/core/data-specification/model/data-specification-artefact";
@@ -32,11 +33,11 @@ import {
   generateLightweightOwl,
   generateShaclApplicationProfile,
   getIdToIriMapping,
-  isModelProfile,
   isModelVocabulary,
 } from "./utils.ts";
 import { artefactToDsv } from "./v1/artefact-to-dsv.ts";
 import { MainEntity as RdfsModelMainEntity } from "@dataspecer/model-store/implementation";
+import { generateApplicationProfileSvg } from "./application-profile-diagram.ts";
 
 /**
  * Id under which the project model (the package hierarchy) is stored in the
@@ -212,18 +213,18 @@ export async function generateSpecification(packageId: string, context: Generate
     const semanticModels = children.filter((r) => r.modelType === LOCAL_SEMANTIC_MODEL);
     for (const semanticModel of semanticModels) {
       const modelEntities = allModels[semanticModel.id] ?? {};
-      const mainEntity = modelEntities[semanticModel.id] as any;
-      const baseIri = mainEntity?.baseIri ?? null;
+      const mainEntity = modelEntities[semanticModel.id];
+      const baseIri = mainEntity && isMainSemanticModelEntity(mainEntity) ? mainEntity.baseIri ?? null : null;
       const entities = Object.fromEntries(Object.entries(modelEntities).filter(([id]) => id !== semanticModel.id));
 
       const modelName = semanticModel.label?.en ?? semanticModel.label?.cs;
-      if (modelName && modelName.length > 0 && modelName.match(/^[a-z]+$/)) {
+      if (modelName && modelName.length > 0 && modelName.match(/^[a-z]+$/) && baseIri) {
         prefixMap[baseIri] = modelName;
       }
 
       modelDescriptions.push({
         id: semanticModel.id,
-        entities: Object.fromEntries(Object.entries(entities).map(([id, entity]) => [id, withAbsoluteIri(entity as SemanticModelEntity, baseIri)])),
+        entities: Object.fromEntries(Object.entries(entities).map(([id, entity]) => [id, withAbsoluteIri(entity as SemanticModelEntity, baseIri ?? undefined)])),
         isPrimary: isRoot,
         documentationUrl: (pckgEntity as any).documentBaseUrl ?? null,
         baseIri,
@@ -262,8 +263,8 @@ export async function generateSpecification(packageId: string, context: Generate
     }
     const controlledVocabularyModels = children.filter((r) => r.modelType === CONTROLLED_VOCABULARY_MODEL);
     for (const cvModel of controlledVocabularyModels) {
-      // Unlike the model types above, a CV model's own self-entity 
-      // (keyed by its own id) is the CV itself, not separate bookkeeping metadata 
+      // Unlike the model types above, a CV model's own self-entity
+      // (keyed by its own id) is the CV itself, not separate bookkeeping metadata
       // - it must stay in
       const modelEntities = (allModels[cvModel.id] ?? {}) as Record<string, SemanticModelEntity>;
       modelDescriptions.push({
@@ -736,6 +737,37 @@ export async function generateSpecification(packageId: string, context: Generate
         iri: null,
         url: resourceUrl,
 
+        role: dsvMetadataWellKnown.role.guidance,
+        formatMime: dsvMetadataWellKnown.formatMime.svg,
+        conformsTo: [dsvMetadataWellKnown.conformsTo.svg],
+        additionalRdfTypes: [],
+      } satisfies ResourceDescriptor;
+      allModelsHasResource.forEach((hasResource) => hasResource.push(descriptor));
+    }
+  }
+
+  if (visualModels.length === 0 && hasApplicationProfile) {
+    const applicationProfile = modelDescriptions.find((model) => model.isPrimary && isModelProfile(model.entities));
+    if (applicationProfile?.id) {
+      const svg = await generateApplicationProfileSvg(
+        packageId,
+        applicationProfile.id,
+        applicationProfile.entities,
+        allModels,
+        prefixMap,
+      );
+      const resourceFileName = packageId + ".svg";
+      const resourceUrl = baseUrl + resourceFileName + queryParams;
+
+      await writeFile(resourceFileName, svg);
+      externalArtifacts["svg"] = [
+        ...(externalArtifacts["svg"] ?? []),
+        { type: "svg", URL: resourceUrl, label: rootPackageEntity.label },
+      ];
+
+      const descriptor = {
+        iri: null,
+        url: resourceUrl,
         role: dsvMetadataWellKnown.role.guidance,
         formatMime: dsvMetadataWellKnown.formatMime.svg,
         conformsTo: [dsvMetadataWellKnown.conformsTo.svg],

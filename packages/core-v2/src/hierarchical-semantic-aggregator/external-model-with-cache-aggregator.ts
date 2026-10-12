@@ -1,9 +1,9 @@
 import { Entity } from "../entity-model/index.ts";
-import { isSemanticModelClass, SemanticModelClass, SemanticModelEntity, SemanticModelRelationship } from "../semantic-model/concepts/index.ts";
+import { isMainSemanticModelEntity, isSemanticModelClass, SemanticModelClass, SemanticModelEntity, SemanticModelRelationship } from "../semantic-model/concepts/index.ts";
 import { createClass, createRelationship } from "../semantic-model/operations/index.ts";
 import { copyInheritanceToModel } from "./utils/copy-inheritance-to-model.ts";
 import { ExternalEntityWrapped, SemanticModelAggregator, LocalEntityWrapped } from "./interfaces.ts";
-import { EntityModel, getModelAlias, isMainEntity, splitEntityChanges } from "./utils/entity-model.ts";
+import { EntityModel, getModelAlias, splitEntityChanges } from "./utils/entity-model.ts";
 
 const EXTERNAL_MODEL_WITH_CACHE_AGGREGATOR_TYPE = "external-model-with-cache-aggregator";
 
@@ -56,7 +56,7 @@ export class ExternalModelWithCacheAggregator implements SemanticModelAggregator
     const toRemoved: string[] = [];
 
     for (const entity of Object.values(updated)) {
-      if (isMainEntity(entity)) {
+      if (isMainSemanticModelEntity(entity)) {
         continue;
       }
       const update = {

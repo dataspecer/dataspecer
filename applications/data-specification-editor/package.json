@@ -18,6 +18,7 @@
     "@dataspecer/generators": "^0.0.0",
     "@dataspecer/json": "*",
     "@dataspecer/json-example": "*",
+    "@dataspecer/model-hierarchy": "*",
     "@dataspecer/model-store": "^0.0.0",
     "@dataspecer/openapi": "*",
     "@dataspecer/shacl": "*",

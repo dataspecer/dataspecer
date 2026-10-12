@@ -1,5 +1,6 @@
 import { LOCAL_SEMANTIC_MODEL } from '@dataspecer/core-v2/model/known-models';
-import { PrismaClient } from '@prisma/client';
+import { createDatabase } from '../../database/database.ts';
+import { migrateDatabase } from '../../migration-utils/migrate-database.ts';
 import cliProgress from 'cli-progress';
 import { readFileSync } from 'fs';
 import { Parser, Store } from 'n3';
@@ -55,81 +56,86 @@ const filename = "./lov.nq";
 
     const LOD_ROOT = "https://dataspecer.com/resources/import/lod";
 
-    const prisma = new PrismaClient();
-    const storeModel = new LocalStoreModel("./database/stores");
-    const modelRepository = new ModelRepository(new ResourceModel(storeModel, prisma), new TransactionModel(prisma));
+    const databasePath = new URL("../../../database/database.db", import.meta.url);
+    await migrateDatabase(databasePath);
+    const database = createDatabase(databasePath);
+    try {
+        const storeModel = new LocalStoreModel("./database/stores");
+        const modelRepository = new ModelRepository(new ResourceModel(storeModel, database), new TransactionModel(database));
 
-    // Override the package
-    if (await modelRepository.getPackage(LOD_ROOT)) {
-        console.log("Root package for LOD already exists. Removing.");
-        await modelRepository.deleteResource(LOD_ROOT);
-    }
-
-    await modelRepository.createPackage(null, LOD_ROOT, {
-        label: {
-            cs: "Propojené otevřené slovníky",
-            en: "Linked Open Vocabularies"
-        },
-        description: {
-            cs: "Tato složka obsahuje import slovníků z Linked Open Vocabularies lov.linkeddata.es",
-            en: "This folder contains imports of vocabularies from Linked Open Vocabularies lov.linkeddata.es"
+        // Override the package
+        if (await modelRepository.getPackage(LOD_ROOT)) {
+            console.log("Root package for LOD already exists. Removing.");
+            await modelRepository.deleteResource(LOD_ROOT);
         }
-    });
 
-
-    let loading = new cliProgress.SingleBar({}, cliProgress.Presets.legacy);
-    loading.start(subjects.length, 0);
-    for (const subject of subjects) {
-        const namespaceUri = store.getQuads(subject, "http://purl.org/vocab/vann/preferredNamespaceUri", null, LOV)[0]?.object.value;
-
-        const entityStore = new Store();
-        entityStore.addQuads(store.getQuads(null, null, null, subject.value));
-
-        // const adapter = new RdfsAdapter();
-        // adapter.load(entityStore);
-        // const entities = adapter.getEntities();
-        const entities = [] as SemanticModelEntity[]; // todo
-
-        const vocabulary =  {
-            id: subject.value,
-            namespaceUri,
-            namespaceUriPrefix: store.getQuads(subject, "http://purl.org/vocab/vann/preferredNamespacePrefix", null, LOV)[0]?.object.value,
-            title: objectsToLanguageString(store.getQuads(subject, "http://purl.org/dc/terms/title", null, LOV).map(x => x.object)),
-            description: objectsToLanguageString(store.getQuads(subject, "http://purl.org/dc/terms/description", null, LOV).map(x => x.object)),
-            entities
-        };
-
-        // Save to db
-
-        const label = Object.fromEntries(Object.entries(vocabulary.title).map(([lang, value]) => [lang, `[${vocabulary.namespaceUriPrefix}] ${value}`]));
-
-        const packageIri = "https://dataspecer.com/resources/import/lod?vocabulary=" + encodeURIComponent(vocabulary.id);
-
-        await modelRepository.createPackage(LOD_ROOT, packageIri, {
-            label,
-            description: vocabulary.description,
+        await modelRepository.createPackage(null, LOD_ROOT, {
+            label: {
+                cs: "Propojené otevřené slovníky",
+                en: "Linked Open Vocabularies"
+            },
+            description: {
+                cs: "Tato složka obsahuje import slovníků z Linked Open Vocabularies lov.linkeddata.es",
+                en: "This folder contains imports of vocabularies from Linked Open Vocabularies lov.linkeddata.es"
+            }
         });
 
-        // Create semantic model
-        {
-            await modelRepository.createResource(packageIri, vocabulary.id, LOCAL_SEMANTIC_MODEL, {
+
+        let loading = new cliProgress.SingleBar({}, cliProgress.Presets.legacy);
+        loading.start(subjects.length, 0);
+        for (const subject of subjects) {
+            const namespaceUri = store.getQuads(subject, "http://purl.org/vocab/vann/preferredNamespaceUri", null, LOV)[0]?.object.value;
+
+            const entityStore = new Store();
+            entityStore.addQuads(store.getQuads(null, null, null, subject.value));
+
+            // const adapter = new RdfsAdapter();
+            // adapter.load(entityStore);
+            // const entities = adapter.getEntities();
+            const entities = [] as SemanticModelEntity[]; // todo
+
+            const vocabulary =  {
+                id: subject.value,
+                namespaceUri,
+                namespaceUriPrefix: store.getQuads(subject, "http://purl.org/vocab/vann/preferredNamespacePrefix", null, LOV)[0]?.object.value,
+                title: objectsToLanguageString(store.getQuads(subject, "http://purl.org/dc/terms/title", null, LOV).map(x => x.object)),
+                description: objectsToLanguageString(store.getQuads(subject, "http://purl.org/dc/terms/description", null, LOV).map(x => x.object)),
+                entities
+            };
+
+            // Save to db
+
+            const label = Object.fromEntries(Object.entries(vocabulary.title).map(([lang, value]) => [lang, `[${vocabulary.namespaceUriPrefix}] ${value}`]));
+
+            const packageIri = "https://dataspecer.com/resources/import/lod?vocabulary=" + encodeURIComponent(vocabulary.id);
+
+            await modelRepository.createPackage(LOD_ROOT, packageIri, {
                 label,
                 description: vocabulary.description,
-                tags: ["imported"]
             });
-            await modelRepository.setResourceStoreJson(vocabulary.id, {
-                baseIri: vocabulary.namespaceUri,
-                entities: Object.fromEntries(vocabulary.entities.map(e => [e.id, e])),
-                modelAlias: label[Object.keys(label)[0]],
-                modelId: vocabulary.id,
-                type: LOCAL_SEMANTIC_MODEL
-            });
+
+            // Create semantic model
+            {
+                await modelRepository.createResource(packageIri, vocabulary.id, LOCAL_SEMANTIC_MODEL, {
+                    label,
+                    description: vocabulary.description,
+                    tags: ["imported"]
+                });
+                await modelRepository.setResourceStoreJson(vocabulary.id, {
+                    baseIri: vocabulary.namespaceUri,
+                    entities: Object.fromEntries(vocabulary.entities.map(e => [e.id, e])),
+                    modelAlias: label[Object.keys(label)[0]],
+                    modelId: vocabulary.id,
+                    type: LOCAL_SEMANTIC_MODEL
+                });
+            }
+
+            loading.increment();
         }
+        loading.stop();
 
-        loading.increment();
+        console.log("Done.");
+    } finally {
+        await database.destroy();
     }
-    loading.stop();
-
-    console.log("Done.");
-    await prisma.$disconnect();
 })();

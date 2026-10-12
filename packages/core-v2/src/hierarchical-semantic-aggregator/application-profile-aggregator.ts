@@ -4,6 +4,7 @@ import {
   isSemanticModelGeneralization,
   isSemanticModelRelationPrimitive,
   isSemanticModelRelationship,
+  isMainSemanticModelEntity,
   SemanticModelClass,
   SemanticModelEntity,
   SemanticModelGeneralization,
@@ -26,7 +27,7 @@ import { ExternalEntityWrapped, SemanticModelAggregator, LocalEntityWrapped } fr
 import { getSearchRelevance } from "./utils/get-search-relevance.ts";
 import { TupleSet } from "./utils/tuple-set.ts";
 import { withAbsoluteIri } from "../semantic-model/utils/index.ts";
-import { EntityModel, getModelAlias, getModelBaseIri, getModelId, isMainEntity, splitEntityChanges } from "./utils/entity-model.ts";
+import { EntityModel, getModelAlias, getModelBaseIri, getModelId, splitEntityChanges } from "./utils/entity-model.ts";
 
 const APPLICATION_PROFILE_AGGREGATOR_TYPE = "application-profile-aggregator";
 
@@ -185,7 +186,7 @@ export class ApplicationProfileAggregator implements SemanticModelAggregator {
    */
   private updateLocalEntities(updated: Record<string, Entity>, removed: string[]) {
     for (const entity of Object.values(updated)) {
-      if (isMainEntity(entity)) {
+      if (isMainSemanticModelEntity(entity)) {
         continue;
       }
       this.profileEntities[entity.id] = withAbsoluteIri(entity as SemanticModelEntity, this.profileBaseIri);

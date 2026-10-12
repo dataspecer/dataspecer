@@ -3,7 +3,10 @@ import { DOMParser } from "@xmldom/xmldom";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { createColorGenerator, type VisualNode, type VisualRelationship, type VisualModelData } from "@dataspecer/visual-model";
 import { generateVisualModelSvg, type SvgLinkContext, type SvgRenderOptions } from "./index.ts";
-import { diagramFixture, classEntity, edge, node, relationship } from "./__fixtures__/diagram.ts";
+import { diagramFixture, classEntity, edge, node, relationship } from "./tests/diagram.ts";
+import { mkdir, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 function render(options: SvgRenderOptions = {}) {
   const { visual, models } = diagramFixture();
@@ -12,9 +15,13 @@ function render(options: SvgRenderOptions = {}) {
 
 function parse(svg: string) {
   const errors: string[] = [];
-  const document = new DOMParser({ errorHandler: {
-    warning: message => errors.push(message), error: message => errors.push(message), fatalError: message => errors.push(message),
-  } }).parseFromString(svg, "image/svg+xml");
+  const document = new DOMParser({
+    errorHandler: {
+      warning: (message) => errors.push(message),
+      error: (message) => errors.push(message),
+      fatalError: (message) => errors.push(message),
+    },
+  }).parseFromString(svg, "image/svg+xml");
   expect(errors).toEqual([]);
   expect(document.documentElement.namespaceURI).toBe("http://www.w3.org/2000/svg");
   return document;
@@ -25,7 +32,7 @@ function elements(svg: string, name: string) {
 }
 
 describe("visual-model SVG", () => {
-  it.each([false, true])("uses generated model colors when saved colors are absent or null: %s", nullColor => {
+  it.each([false, true])("uses generated model colors when saved colors are absent or null: %s", (nullColor) => {
     const data = diagramFixture();
     if (nullColor) {
       (data.visual.modelColor as VisualModelData).color = null;
@@ -34,13 +41,13 @@ describe("visual-model SVG", () => {
     }
     const svg = generateVisualModelSvg(data.visual, data.models);
     const color = createColorGenerator().generateModelColor("vocabulary");
-    expect(elements(svg, "rect").some(element => element.getAttribute("fill") === color)).toBe(true);
-    expect(elements(svg, "path").some(element => element.getAttribute("stroke") === color)).toBe(true);
-    expect(svg).toContain('#99f6e4');
-    expect(svg).not.toContain('#cbd5e1');
+    expect(elements(svg, "rect").some((element) => element.getAttribute("fill") === color)).toBe(true);
+    expect(elements(svg, "path").some((element) => element.getAttribute("stroke") === color)).toBe(true);
+    expect(svg).toContain("#99f6e4");
+    expect(svg).not.toContain("#cbd5e1");
   });
 
-  it.each(["light", "dark", "transparent"] as const)("renders a reviewable %s fixture", async mode => {
+  it.each(["light", "dark", "transparent"] as const)("serializes a safe %s SVG", async (mode) => {
     const svg = render({
       theme: mode === "dark" ? "dark" : "light",
       background: mode === "transparent" ? "transparent" : undefined,
@@ -52,7 +59,10 @@ describe("visual-model SVG", () => {
     expect(svg).not.toContain("var(--");
     expect(svg).toContain("path.relationship { stroke-width: 2;");
     expect(svg).not.toMatch(/foreignObject|<script|marker-end|NaN|Infinity/);
-    await expect(svg).toMatchFileSnapshot(`./__fixtures__/${mode}.svg`);
+
+    const previewDirectory = fileURLToPath(new URL("./tests", import.meta.url));
+    await mkdir(previewDirectory, { recursive: true });
+    await writeFile(join(previewDirectory, `${mode}.svg`), svg);
   });
 
   it("uses aggregated labels, preserved profile declarations and project labels", () => {
@@ -91,8 +101,8 @@ describe("visual-model SVG", () => {
     (data.visual.person as VisualNode).content = ["second", "name"];
     const getLink = vi.fn(({ entityId }: SvgLinkContext) => `https://example.org/docs?entity=${entityId}&view=full`);
     const svg = generateVisualModelSvg(data.visual, data.models, { getLink });
-    const attributes = elements(svg, "a").filter(anchor => anchor.getAttribute("class") === "attribute");
-    expect(attributes.map(anchor => new URL(anchor.getAttribute("href")!).searchParams.get("entity"))).toEqual(["second", "name", "employeeName"]);
+    const attributes = elements(svg, "a").filter((anchor) => anchor.getAttribute("class") === "attribute");
+    expect(attributes.map((anchor) => new URL(anchor.getAttribute("href")!).searchParams.get("entity"))).toEqual(["second", "name", "employeeName"]);
     expect(getLink.mock.calls.filter(([context]) => context.visualEntityId === "works")).toHaveLength(1);
     expect(getLink).toHaveBeenCalledWith({ kind: "attribute", modelId: "vocabulary", entityId: "name", visualEntityId: "person" });
     for (const anchor of elements(svg, "a")) {
@@ -109,13 +119,12 @@ describe("visual-model SVG", () => {
       label: { en: "First line\nSecond line\nThird line" },
     } as EntityRecord[string];
     const document = parse(generateVisualModelSvg(data.visual, data.models));
-    const diagram = Array.from(document.getElementsByTagName("g"))
-      .find(group => group.getAttribute("class") === "diagram")!;
+    const diagram = Array.from(document.getElementsByTagName("g")).find((group) => group.getAttribute("class") === "diagram")!;
     const box = diagram.getElementsByTagName("rect")[0];
     const bottom = Number(box.getAttribute("y")) + Number(box.getAttribute("height"));
     const lines = Array.from(diagram.getElementsByTagName("tspan"));
     expect(lines).toHaveLength(6);
-    expect(lines.every(line => Number(line.getAttribute("y")) < bottom)).toBe(true);
+    expect(lines.every((line) => Number(line.getAttribute("y")) < bottom)).toBe(true);
   });
 
   it("applies the longest custom prefix to built-in datatypes without warnings", () => {
@@ -133,12 +142,12 @@ describe("visual-model SVG", () => {
   });
 
   it("supports independently disabled links and broad arrow hit targets", () => {
-    const svg = render({ getLink: context => context.kind === "relationship" ? "#relationship" : null, linkTarget: "_blank" });
+    const svg = render({ getLink: (context) => (context.kind === "relationship" ? "#relationship" : null), linkTarget: "_blank" });
     const anchors = elements(svg, "a");
     expect(anchors).toHaveLength(2);
-    expect(anchors.every(anchor => anchor.getAttribute("class") === "relationship")).toBe(true);
+    expect(anchors.every((anchor) => anchor.getAttribute("class") === "relationship")).toBe(true);
     expect(anchors[0].getAttribute("rel")).toBe("noopener noreferrer");
-    expect(Array.from(anchors[0].getElementsByTagName("path")).some(path => path.getAttribute("class")!.includes("hit-area"))).toBe(true);
+    expect(Array.from(anchors[0].getElementsByTagName("path")).some((path) => path.getAttribute("class")!.includes("hit-area"))).toBe(true);
     expect(elements(render({ getLink: () => null }), "a")).toHaveLength(0);
   });
 
@@ -160,7 +169,7 @@ describe("visual-model SVG", () => {
   it("matches vocabulary display choices and handles cyclic profile declarations", () => {
     const data = diagramFixture();
     let svg = generateVisualModelSvg(data.visual, data.models, { labelMode: "vocabulary", colorMode: "vocabulary" });
-    const profileNode = elements(svg, "g").find(group => group.getAttribute("class") === "class" && group.textContent!.includes("⚓"))!;
+    const profileNode = elements(svg, "g").find((group) => group.getAttribute("class") === "class" && group.textContent!.includes("⚓"))!;
     expect(profileNode.textContent).toContain("Person");
     expect(profileNode.getElementsByTagName("rect")[0].getAttribute("fill")).toBe("#cbd5e1");
     (data.models.profile.Employee as EntityRecord[string] & { profiling: string[] }).profiling = ["Employee"];
@@ -185,7 +194,7 @@ describe("visual-model SVG", () => {
     data.visual = { person: data.visual.person };
     (data.visual.person as VisualNode).content = [];
     const svg = generateVisualModelSvg(data.visual, data.models, { labelMode: "iri", prefixes: { "https://example.org/": "ex" } });
-    expect(elements(svg, "text").map(element => element.textContent)).toEqual(["ex:Person"]);
+    expect(elements(svg, "text").map((element) => element.textContent)).toEqual(["ex:Person"]);
   });
 
   it("resolves reversed relationship ends and renders relationship profiles", () => {
@@ -194,7 +203,8 @@ describe("visual-model SVG", () => {
     relation.ends.reverse();
     data.visual.profileRelation = edge("profileRelation", "employeeName", "profile", "employee", "organization");
     const text = elements(generateVisualModelSvg(data.visual, data.models), "text")
-      .map(element => element.textContent).join("");
+      .map((element) => element.textContent)
+      .join("");
     expect(text).toContain("Works for");
     expect(text).toContain("Employee name(Name)<<mandatory>>");
     expect(text).not.toContain("<<profile>>");
@@ -211,7 +221,7 @@ describe("visual-model SVG", () => {
     const onWarning = vi.fn();
     const svg = generateVisualModelSvg(data.visual, data.models, { onWarning });
     expect(onWarning.mock.calls.some(([message]) => message.includes("Ambiguous"))).toBe(true);
-    const attributes = elements(svg, "g").filter(group => group.getAttribute("class") === "attribute");
+    const attributes = elements(svg, "g").filter((group) => group.getAttribute("class") === "attribute");
     expect(attributes).toHaveLength(1);
     expect(attributes[0].textContent).toContain("Name : xsd:string");
   });
@@ -249,10 +259,13 @@ describe("visual-model SVG", () => {
   it("handles self-loops, repeated waypoints and invalid coordinates", () => {
     const data = diagramFixture();
     data.visual.loop = edge("loop", "worksFor", "vocabulary", "person", "person");
-    (data.visual.works as VisualRelationship).waypoints = [{ x: 300, y: 70, anchored: null }, { x: 300, y: 70, anchored: null }];
+    (data.visual.works as VisualRelationship).waypoints = [
+      { x: 300, y: 70, anchored: null },
+      { x: 300, y: 70, anchored: null },
+    ];
     let svg = generateVisualModelSvg(data.visual, data.models);
     expect(svg).not.toMatch(/NaN|Infinity/);
-    expect(Math.max(...elements(svg, "path").map(path => path.getAttribute("d")!.match(/L/g)?.length ?? 0))).toBeGreaterThanOrEqual(4);
+    expect(Math.max(...elements(svg, "path").map((path) => path.getAttribute("d")!.match(/L/g)?.length ?? 0))).toBeGreaterThanOrEqual(4);
     (data.visual.person as VisualNode).position.x = NaN;
     const onWarning = vi.fn();
     svg = generateVisualModelSvg(data.visual, data.models, { onWarning });

@@ -4,17 +4,16 @@ import type { ModelIdentifier } from "@dataspecer/core/model";
 
 export const MODEL_HIERARCHY_VOCABULARY = "vocabulary";
 export const MODEL_HIERARCHY_APPLICATION_PROFILE = "application-profile";
+export const MODEL_HIERARCHY_SPECIFICATION = "specification";
 
 /**
- * A node in model hierarchy tree that represents a model. This model can be a
- * vocabulary, application profile or other helper models such as imported RDFS
- * Vocabulary.
+ * A hierarchy entity representing a semantic model or a package.
  *
  * ID of such entity matches ID of the represented model.
  */
 interface BaseModelHierarchyEntity extends Entity {
   /**
-   * Same id as the semantic model in the project that this entity represents.
+   * Identifier of the represented model or package.
    */
   id: ModelIdentifier;
 
@@ -23,6 +22,11 @@ interface BaseModelHierarchyEntity extends Entity {
    * this is RDFS model, SGOV model, or regular semantic model.
    */
   modelType: string;
+
+  /**
+   * Identifier of the specification containing this model; not a dependency edge.
+   */
+  specificationId: ModelIdentifier;
 
   label: LanguageString;
 
@@ -51,28 +55,11 @@ interface BaseModelHierarchyEntity extends Entity {
  */
 export interface VocabularyHierarchyEntity extends BaseModelHierarchyEntity {
   type: [typeof MODEL_HIERARCHY_VOCABULARY];
-
-  /**
-   * Whether this session can write to the model (by applying operations).
-   */
-  writable: boolean;
-
-  /**
-   * List of models in the hierarchy that this model uses, e.g. vocabularies
-   * that it imports. These are the only models that this models sees.
-   */
-  imports: ModelIdentifier[];
-
-  /**
-   * Whether imported vocabularies should be merged together with this model.
-   */
-  passThrough: boolean;
 }
 
 /**
  * A semantic model that profiles (some of) the entities of other models.
- * Instead of imports field, it has profiles field that specifies other
- * vocabularies or profiles that this model profiles.
+ * Its dependencies can be vocabularies or entire specifications.
  *
  * Examples:
  * - A local, writable, semantic model that contain profiling entities.
@@ -82,27 +69,50 @@ export interface VocabularyHierarchyEntity extends BaseModelHierarchyEntity {
 export interface ApplicationProfileHierarchyEntity extends BaseModelHierarchyEntity {
   type: [typeof MODEL_HIERARCHY_APPLICATION_PROFILE];
 
-  writable: boolean;
-
   /**
-   * IDs of the other models in the hierarchy that this application profile
-   * profiles/uses.
+   * Local vocabulary IDs followed by directly used external vocabulary and
+   * specification IDs. Referenced specifications are not expanded.
    */
   profiles: ModelIdentifier[];
-
-  /**
-   * Whether entities from {@link profiles} that are not themselves profiled by
-   * this model are still visible through it.
-   */
-  passThrough: boolean;
 }
 
-export type ModelHierarchyEntity = VocabularyHierarchyEntity | ApplicationProfileHierarchyEntity;
+/**
+ * This represents a specification - the end product that data modeller exposes
+ * to the world. Specification defines vocabularies, application profiles and
+ * structure models. Each specification roots a semantic-model dependency graph.
+ */
+export interface SpecificationHierarchyEntity extends BaseModelHierarchyEntity {
+  type: [typeof MODEL_HIERARCHY_SPECIFICATION];
 
-export function isVocabularyHierarchyEntity(entity: Entity | null | undefined): entity is ApplicationProfileHierarchyEntity {
+  /**
+   * Locally defined vocabulary identifiers in merge order.
+   */
+  vocabularies: ModelIdentifier[];
+
+  /**
+   * The exposed application profile, or null for a vocabulary-only package.
+   */
+  applicationProfile: ModelIdentifier | null;
+
+  /**
+   * Direct child specification and external vocabulary IDs in dependency order.
+   * Transitive dependencies are represented by the referenced specifications.
+   */
+  usedExternalSpecifications: ModelIdentifier[];
+
+  // todo: list of structure models as a future work
+}
+
+export type ModelHierarchyEntity = VocabularyHierarchyEntity | ApplicationProfileHierarchyEntity | SpecificationHierarchyEntity;
+
+export function isVocabularyHierarchyEntity(entity: Entity | null | undefined): entity is VocabularyHierarchyEntity {
   return entity?.type.includes(MODEL_HIERARCHY_VOCABULARY) ?? false;
 }
 
 export function isApplicationProfileHierarchyEntity(entity: Entity | null | undefined): entity is ApplicationProfileHierarchyEntity {
   return entity?.type.includes(MODEL_HIERARCHY_APPLICATION_PROFILE) ?? false;
+}
+
+export function isSpecificationHierarchyEntity(entity: Entity | null | undefined): entity is SpecificationHierarchyEntity {
+  return entity?.type.includes(MODEL_HIERARCHY_SPECIFICATION) ?? false;
 }
