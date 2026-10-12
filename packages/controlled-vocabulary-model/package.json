@@ -14,12 +14,12 @@
   },
   "dependencies": {
     "@dataspecer/core": "*",
-    "n3": "^1.25.1",
-    "uuid": "^14.0.0"
+    "n3": "^2.13.7",
+    "uuid": "^14.0.2"
   },
   "devDependencies": {
-    "@types/node": "^25.5.2",
+    "@types/node": "^26.6.4",
     "typescript": "^7.0.2",
-    "vitest": "^4.1.7"
+    "vitest": "^5.0.3"
   }
 }

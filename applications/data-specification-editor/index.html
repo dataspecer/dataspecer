@@ -1,6 +1,21 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <script>
+      try {
+        const storedTheme = localStorage.getItem("theme");
+        const theme = storedTheme === "light" || storedTheme === "dark" || storedTheme === "system"
+          ? storedTheme
+          : "system";
+        const resolvedTheme = theme === "system"
+          ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+          : theme;
+        document.documentElement.classList.add(resolvedTheme);
+        document.documentElement.style.colorScheme = resolvedTheme;
+      } catch {
+        document.documentElement.classList.add("light");
+      }
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta content="#3F51B5" name="theme-color" />

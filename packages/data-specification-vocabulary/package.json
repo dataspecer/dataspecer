@@ -27,14 +27,14 @@
     "@dataspecer/semantic-model": "*",
     "@dataspecer/utilities": "*",
     "@rdfjs/types": "^2.0.1",
-    "jsonld": "^8.3.3",
-    "n3": "^1.25.1"
+    "jsonld": "^9.0.0",
+    "n3": "^2.13.7"
   },
   "devDependencies": {
     "@types/jsonld": "^1.5.15",
-    "@types/n3": "~1.24.2",
-    "@vitest/coverage-istanbul": "^4.1.10",
+    "@types/n3": "~1.26.4",
+    "@vitest/coverage-istanbul": "^5.0.3",
     "typescript": "^7.0.2",
-    "vitest": "^4.1.7"
+    "vitest": "^5.0.3"
   }
 }

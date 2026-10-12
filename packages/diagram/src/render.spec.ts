@@ -16,15 +16,13 @@ function render(options: SvgRenderOptions = {}) {
 function parse(svg: string) {
   const errors: string[] = [];
   const document = new DOMParser({
-    errorHandler: {
-      warning: (message) => errors.push(message),
-      error: (message) => errors.push(message),
-      fatalError: (message) => errors.push(message),
-    },
+    onError: (_level, message) => errors.push(message),
   }).parseFromString(svg, "image/svg+xml");
   expect(errors).toEqual([]);
-  expect(document.documentElement.namespaceURI).toBe("http://www.w3.org/2000/svg");
-  return document;
+  const root = document.documentElement;
+  if (root === null) throw new Error("SVG document has no root element.");
+  expect(root.namespaceURI).toBe("http://www.w3.org/2000/svg");
+  return document as unknown as typeof document & { documentElement: NonNullable<typeof root> };
 }
 
 function elements(svg: string, name: string) {
