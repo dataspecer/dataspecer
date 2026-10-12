@@ -1,6 +1,7 @@
 import { Entity } from "../../entity-model/entity.ts";
 import { SEMANTIC_MODEL_CLASS, SEMANTIC_MODEL_GENERALIZATION, SEMANTIC_MODEL_RELATIONSHIP } from "./concepts-utils.ts";
 import { OrderedThing } from "./ordered-thing.ts";
+import { LOCAL_SEMANTIC_MODEL } from "../../model/known-models.ts";
 
 /**
  * A human text that is translated into multiple languages.
@@ -18,6 +19,29 @@ export interface SemanticModelEntity extends Entity {
      * IRI may be relative to the base IRI of the model.
      */
     iri: string | null;
+}
+
+/**
+ * This is the main entity that each semantic model should have. It carries the
+ * metadata about the model itself and other instructions how to interpret the
+ * model.
+ */
+export interface MainSemanticModelEntity extends Entity {
+    type: [typeof LOCAL_SEMANTIC_MODEL];
+
+    modelAlias?: string;
+
+    /**
+     * Base IRI used for resolving relative IRIs used in this model.
+     * @todo We want to deprecate this property as it brings complexity to the model.
+     */
+    baseIri?: string | null;
+
+    /**
+     * For models that are used as a cache for remote models.
+     * @todo This property is historical artifact and should be refactored.
+     */
+    caches?: string[];
 }
 
 /**

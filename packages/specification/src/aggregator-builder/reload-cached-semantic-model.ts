@@ -1,5 +1,4 @@
-import { LOCAL_SEMANTIC_MODEL } from "@dataspecer/core-v2/model/known-models";
-import { isSemanticModelClass } from "@dataspecer/core-v2/semantic-model/concepts";
+import { getMainEntity, isSemanticModelClass } from "@dataspecer/core-v2/semantic-model/concepts";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { getProvidedSourceSemanticModel } from "./cim-adapter.ts";
 
@@ -12,12 +11,12 @@ import { getProvidedSourceSemanticModel } from "./cim-adapter.ts";
  * obtain the list of changes.
  */
 export async function reloadCachedSemanticModel(oldEntities: EntityRecord): Promise<EntityRecord> {
-  const mainEntity = Object.values(oldEntities).find((entity) => entity.type?.includes(LOCAL_SEMANTIC_MODEL));
+  const mainEntity = getMainEntity(oldEntities);
   if (!mainEntity) {
     throw new Error("Cached semantic model has no main entity.");
   }
 
-  const sourceModel = getProvidedSourceSemanticModel((mainEntity as unknown as { caches: string[] }).caches);
+  const sourceModel = getProvidedSourceSemanticModel(mainEntity.caches ?? []);
   const classes = Object.values(oldEntities).filter(isSemanticModelClass);
   const refreshed = [];
 

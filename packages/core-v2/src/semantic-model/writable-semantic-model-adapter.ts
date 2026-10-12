@@ -3,7 +3,13 @@ import type { Operation } from "@dataspecer/core/operation";
 import { Entity, InMemoryEntityModel } from "../entity-model/index.ts";
 import { LOCAL_SEMANTIC_MODEL } from "../model/known-models.ts";
 import { applyOperationsToSemanticModel } from "./apply-operations.ts";
-import { isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship } from "./concepts/index.ts";
+import {
+  getMainEntity,
+  isSemanticModelClass,
+  isSemanticModelGeneralization,
+  isSemanticModelRelationship,
+  type MainSemanticModelEntity,
+} from "./concepts/index.ts";
 import { initializeSemanticModelClass, initializeSemanticModelGeneralization, initializeSemanticModelRelationship } from "./entity-initializers.ts";
 import { CreatedEntityOperationResult, OperationResult } from "./operations/index.ts";
 import { SemanticModelAdapter } from "./semantic-model-adapter.ts";
@@ -62,7 +68,7 @@ export function serializationToSemanticModelEntities(serialization: unknown): En
     ...modelDescriptor,
     id: modelDescriptor.modelId,
     type: [LOCAL_SEMANTIC_MODEL],
-  } as Entity;
+  } as MainSemanticModelEntity;
 
   return {
     ...initializedEntities,
@@ -74,13 +80,13 @@ export function serializationToSemanticModelEntities(serialization: unknown): En
  * Serializes entities that represent single semantic model.
  */
 export function semanticModelEntitiesToSerialization(entities: EntityRecord): unknown {
-  const mainEntity = Object.values(entities).find((e) => e.type?.includes(LOCAL_SEMANTIC_MODEL));
+  const mainEntity = getMainEntity(entities);
 
   if (!mainEntity) {
     throw new Error("Semantic model must contain an entity with type " + LOCAL_SEMANTIC_MODEL);
   }
 
-  const restEntities = { ...entities };
+  const restEntities: EntityRecord = { ...entities };
   delete restEntities[mainEntity.id];
 
   return {

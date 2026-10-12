@@ -1,7 +1,7 @@
 import { isModelProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { CONTROLLED_VOCABULARY_MODEL, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, V1, RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { controlledVocabulariesToDcatCatalog, controlledVocabularyCatalogIri, type ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
-import { isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship, SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
+import { isMainSemanticModelEntity, isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship, SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
 import { withAbsoluteIri } from "@dataspecer/core-v2/semantic-model/utils";
 import { LanguageString, type CoreResource } from "@dataspecer/core/core/core-resource";
 import { DataSpecificationArtefact } from "@dataspecer/core/data-specification/model/data-specification-artefact";
@@ -213,18 +213,18 @@ export async function generateSpecification(packageId: string, context: Generate
     const semanticModels = children.filter((r) => r.modelType === LOCAL_SEMANTIC_MODEL);
     for (const semanticModel of semanticModels) {
       const modelEntities = allModels[semanticModel.id] ?? {};
-      const mainEntity = modelEntities[semanticModel.id] as any;
-      const baseIri = mainEntity?.baseIri ?? null;
+      const mainEntity = modelEntities[semanticModel.id];
+      const baseIri = mainEntity && isMainSemanticModelEntity(mainEntity) ? mainEntity.baseIri ?? null : null;
       const entities = Object.fromEntries(Object.entries(modelEntities).filter(([id]) => id !== semanticModel.id));
 
       const modelName = semanticModel.label?.en ?? semanticModel.label?.cs;
-      if (modelName && modelName.length > 0 && modelName.match(/^[a-z]+$/)) {
+      if (modelName && modelName.length > 0 && modelName.match(/^[a-z]+$/) && baseIri) {
         prefixMap[baseIri] = modelName;
       }
 
       modelDescriptions.push({
         id: semanticModel.id,
-        entities: Object.fromEntries(Object.entries(entities).map(([id, entity]) => [id, withAbsoluteIri(entity as SemanticModelEntity, baseIri)])),
+        entities: Object.fromEntries(Object.entries(entities).map(([id, entity]) => [id, withAbsoluteIri(entity as SemanticModelEntity, baseIri ?? undefined)])),
         isPrimary: isRoot,
         documentationUrl: (pckgEntity as any).documentBaseUrl ?? null,
         baseIri,
