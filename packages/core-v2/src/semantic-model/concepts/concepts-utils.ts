@@ -15,7 +15,7 @@ export function isMainSemanticModelEntity(resource: Entity | null | undefined): 
     return resource?.type?.includes(LOCAL_SEMANTIC_MODEL) ?? false;
 }
 
-export function getMainEntity(entities: EntityRecord): MainSemanticModelEntity | null {
+export function getSemanticModelMainEntity(entities: EntityRecord): MainSemanticModelEntity | null {
     return Object.values(entities).find(isMainSemanticModelEntity) ?? null;
 }
 

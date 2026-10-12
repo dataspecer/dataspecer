@@ -6,7 +6,7 @@ import {
   SemanticModelAggregator,
   VocabularyAggregator,
 } from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
-import { getMainEntity } from "@dataspecer/core-v2/semantic-model/concepts";
+import { getSemanticModelMainEntity } from "@dataspecer/core-v2/semantic-model/concepts";
 import type { Entity, EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import { isApplicationProfileHierarchyEntity, isSpecificationHierarchyEntity, isVocabularyHierarchyEntity, type ModelHierarchyEntity, type SpecificationHierarchyEntity } from "@dataspecer/model-hierarchy";
@@ -244,7 +244,7 @@ class SemanticModelAggregatorBuilder {
 
   private buildVocabulary(modelId: ModelIdentifier): SemanticModelAggregator {
     const model = this.getSemanticModel(modelId);
-    const mainEntity = getMainEntity(model.getEntities());
+    const mainEntity = getSemanticModelMainEntity(model.getEntities());
 
     if (mainEntity?.caches) {
       const cimAdapter = getProvidedSourceSemanticModel(mainEntity.caches);

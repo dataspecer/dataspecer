@@ -4,7 +4,7 @@ import { Entity, InMemoryEntityModel } from "../entity-model/index.ts";
 import { LOCAL_SEMANTIC_MODEL } from "../model/known-models.ts";
 import { applyOperationsToSemanticModel } from "./apply-operations.ts";
 import {
-  getMainEntity,
+  getSemanticModelMainEntity,
   isSemanticModelClass,
   isSemanticModelGeneralization,
   isSemanticModelRelationship,
@@ -80,7 +80,7 @@ export function serializationToSemanticModelEntities(serialization: unknown): En
  * Serializes entities that represent single semantic model.
  */
 export function semanticModelEntitiesToSerialization(entities: EntityRecord): unknown {
-  const mainEntity = getMainEntity(entities);
+  const mainEntity = getSemanticModelMainEntity(entities);
 
   if (!mainEntity) {
     throw new Error("Semantic model must contain an entity with type " + LOCAL_SEMANTIC_MODEL);

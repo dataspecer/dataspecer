@@ -1,6 +1,6 @@
 import type { Entity, EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { Operation } from "@dataspecer/core/operation";
-import { getMainEntity, isMainSemanticModelEntity } from "../../semantic-model/concepts/index.ts";
+import { getSemanticModelMainEntity, isMainSemanticModelEntity } from "../../semantic-model/concepts/index.ts";
 
 /**
  * Simplified model used across the hierarchical semantic aggregator.
@@ -33,16 +33,16 @@ export interface EntityModel {
  * Id of the model is the id of its main entity.
  */
 export function getModelId(entities: EntityRecord): string | null {
-  return getMainEntity(entities)?.id ?? null;
+  return getSemanticModelMainEntity(entities)?.id ?? null;
 }
 
 export function getModelAlias(entities: EntityRecord): string | null {
-  const alias = getMainEntity(entities)?.modelAlias;
+  const alias = getSemanticModelMainEntity(entities)?.modelAlias;
   return typeof alias === "string" ? alias : null;
 }
 
 export function getModelBaseIri(entities: EntityRecord): string {
-  const baseIri = getMainEntity(entities)?.baseIri;
+  const baseIri = getSemanticModelMainEntity(entities)?.baseIri;
   return typeof baseIri === "string" ? baseIri : "";
 }
 

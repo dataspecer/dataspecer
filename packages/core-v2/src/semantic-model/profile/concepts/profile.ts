@@ -1,4 +1,13 @@
 import { LanguageString } from "@dataspecer/core/core";
+import { isModelProfile } from "./is-model-profile.ts";
+
+/**
+ * Use this for `subType` of the main entity of the semantic model to explicitly
+ * mark the model as an application profile.
+ *
+ * @see {@link isModelProfile}
+ */
+export const SEMANTIC_MODEL_APPLICATION_PROFILE_SUBTYPE = "https://w3id.org/dsv#ApplicationProfile";
 
 /**
  * The idea of profile is to use an entity in a user defined context.
