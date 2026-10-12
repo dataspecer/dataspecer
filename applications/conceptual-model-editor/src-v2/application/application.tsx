@@ -30,6 +30,8 @@ import { DialogContextProvider } from "../shared/dialog/dialog-context";
 import { DialogRenderer } from "../shared/dialog/dialog-renderer";
 import { useRegisterSimpleDialogToWindow } from "../shared/dialog/instances/simple-dialog";
 import { useRegisterClassProfileCreateDialogToWindow } from "../shared/dialog/instances/class-profile-create-dialog";
+import { useRegisterRelationshipProfileCreateDialogToWindow } from "../shared/dialog/instances/relationship-profile-create-dialog";
+import { useRegisterAttributeProfileCreateDialogToWindow } from    "../shared/dialog/instances/attribute-profile-create-dialog";
 import { EntityView } from "../shell/entity-view/entity-view";
 
 /**
@@ -185,6 +187,8 @@ function WithProviders(props: {
 function DialogRegistrar() {
   useRegisterSimpleDialogToWindow();
   useRegisterClassProfileCreateDialogToWindow();
+  useRegisterRelationshipProfileCreateDialogToWindow();
+  useRegisterAttributeProfileCreateDialogToWindow();
   return null;
 }
 
