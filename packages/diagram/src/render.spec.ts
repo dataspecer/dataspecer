@@ -3,6 +3,7 @@ import { DOMParser } from "@xmldom/xmldom";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { createColorGenerator, type VisualNode, type VisualRelationship, type VisualModelData } from "@dataspecer/visual-model";
 import { generateVisualModelSvg, type SvgLinkContext, type SvgRenderOptions } from "./index.ts";
+import { escapeXml } from "./svg.ts";
 import { diagramFixture, classEntity, edge, node, relationship } from "./tests/diagram.ts";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -149,19 +150,23 @@ describe("visual-model SVG", () => {
     expect(elements(render({ getLink: () => null }), "a")).toHaveLength(0);
   });
 
-  it("escapes content and URLs and rejects executable links", () => {
+  it("escapes markup in content and URLs and rejects executable links", () => {
     const data = diagramFixture();
-    data.models.vocabulary.Person = classEntity("Person", '<script>alert("x")</script> & Ω\u0000');
+    data.models.vocabulary.Person = classEntity("Person", '<script>alert("x")</script> & Ω');
     const svg = generateVisualModelSvg(data.visual, data.models, { getLink: () => '#a" onload="alert(1)&value=<x>' });
     const document = parse(svg);
     expect(document.getElementsByTagName("script").length).toBe(0);
-    expect(document.documentElement.textContent).toContain('<script>alert("x")</script> & Ω�');
-    expect(elements(svg, "a")[0].getAttribute("onload")).toBe("");
+    expect(document.documentElement.textContent).toContain('<script>alert("x")</script> & Ω');
+    expect(elements(svg, "a")[0].getAttribute("onload")).toBeNull();
     for (const url of ["javascript:alert(1)", " JavaScript:alert(1)", "java\nscript:alert(1)", "data:text/html,x", "vbscript:x"]) {
       const onWarning = vi.fn();
       expect(elements(render({ getLink: () => url, onWarning }), "a")).toHaveLength(0);
       expect(onWarning).toHaveBeenCalled();
     }
+  });
+
+  it("replaces XML-forbidden characters", () => {
+    expect(escapeXml("before\u0000after")).toBe("before�after");
   });
 
   it("matches vocabulary display choices and handles cyclic profile declarations", () => {
