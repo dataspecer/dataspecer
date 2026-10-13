@@ -1,5 +1,5 @@
 import { AggregatorAsEntityModel, type ApplicationProfileAggregator, type SemanticModelAggregator } from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
-import { LOCAL_PACKAGE, V1 } from "@dataspecer/core-v2/model/known-models";
+import { CONTROLLED_VOCABULARY_MODEL, LOCAL_PACKAGE, V1 } from "@dataspecer/core-v2/model/known-models";
 import { BaseResource, Package } from "@dataspecer/core-v2/project";
 import { DataSpecification as LegacyDataSpecification } from "@dataspecer/core/data-specification/model";
 import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
@@ -36,10 +36,11 @@ export function getDataSpecificationWithModels(
   }
   const store = new FederatedObservableStore(addOperationForTransaction, commitTransaction);
   const dataStructureIds: string[] = [];
+  const controlledVocabularyIds: string[] = [];
 
   onChange?.((change) => {
     for (const [modelId, changesForModel] of Object.entries(change)) {
-      if (dataStructureIds.includes(modelId)) {
+      if (dataStructureIds.includes(modelId) || controlledVocabularyIds.includes(modelId)) {
         store.updateModel(modelId, changesForModel);
       }
     }
@@ -49,6 +50,12 @@ export function getDataSpecificationWithModels(
 
   const projectModel = models[PROJECT_MODEL_ID] as EntityRecord<ProjectModelEntity>;
   const dataSpecifications = loadDataSpecifications(projectId, projectModel, models);
+
+  // Register controlled vocabulary models in the store, so that they can be read by their ids (same as model ids).
+  for (const vocabularyId of listControlledVocabularyModels(projectId, projectModel)) {
+    store.addModel(vocabularyId, models[vocabularyId] ?? {});
+    controlledVocabularyIds.push(vocabularyId);
+  }
 
   for (const specification of Object.values(dataSpecifications)) {
     for (const structures of specification.dataStructures) {
@@ -183,6 +190,24 @@ function listPackages(rootPackageId: ModelIdentifier, projectModel: EntityRecord
   }
 
   return packages;
+}
+
+/**
+ * Identifiers of the controlled vocabulary models contained in the package and
+ * in all packages nested in it.
+ */
+function listControlledVocabularyModels(rootPackageId: ModelIdentifier, projectModel: EntityRecord<ProjectModelEntity>): ModelIdentifier[] {
+  const vocabularies = new Set<ModelIdentifier>();
+
+  for (const packageId of listPackages(rootPackageId, projectModel)) {
+    for (const subModelId of (projectModel[packageId] as PackageEntity).subModels) {
+      if (projectModel[subModelId]?.modelType === CONTROLLED_VOCABULARY_MODEL) {
+        vocabularies.add(subModelId);
+      }
+    }
+  }
+
+  return [...vocabularies];
 }
 
 /**

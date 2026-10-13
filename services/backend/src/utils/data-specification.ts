@@ -1,4 +1,5 @@
 import { SemanticModelClass, SemanticModelGeneralization, SemanticModelRelationship, type SemanticModelRelationshipEnd } from "@dataspecer/core-v2/semantic-model/concepts";
+import { isControlledVocabularyAssignment } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import type { DataPsmResource } from "@dataspecer/core/data-psm/model/data-psm-resource";
 import { getDataSpecificationWithModels } from "@dataspecer/specification/specification";
 import { modelRepository } from "../main.ts";
@@ -50,7 +51,14 @@ export async function getSpecification(projectId: string): Promise<{
 
   // Aggregated semantic model is a single model containing entities.
   const aggregatedWrappedEntities = specification.semanticModelAggregator.getAggregatedEntities();
-  const unwrappedEntities = Object.values(aggregatedWrappedEntities).map((entity) => entity.aggregatedEntity);
+  // The returned model is documented to contain only classes, relationships and
+  // generalizations, see AggregatedSemanticModel. Controlled vocabulary
+  // assignments are aggregated as well, but they are not part of that contract,
+  // so a consumer that expects only those three kinds of entities would
+  // receive an unexpected one.
+  const unwrappedEntities = Object.values(aggregatedWrappedEntities)
+    .map((entity) => entity.aggregatedEntity)
+    .filter((entity) => !isControlledVocabularyAssignment(entity));
   const aggregatedSemanticModel = unwrappedEntities as AggregatedSemanticModel;
 
   // Now process structure models
