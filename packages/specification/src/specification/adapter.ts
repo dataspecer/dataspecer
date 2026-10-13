@@ -107,6 +107,14 @@ export function getDataSpecificationWithModels(
   return {
     dataSpecifications,
     semanticModelAggregator,
+    /**
+     * Aggregators of the specification and of all packages nested in it,
+     * the aggregator of the specification being the first one. The aggregator
+     * of the specification contains the entities of its own profile, while
+     * the entities it takes over from the packages nested in it are provided
+     * only by the aggregators of those packages.
+     */
+    projectSemanticModels,
     store,
 
     structureModels: {} as Record<string, MemoryStore>,
