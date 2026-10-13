@@ -1,6 +1,5 @@
 import { ConceptualModel } from "../../conceptual-model/index.ts";
 import { propagateCardinality } from "./propagate-cardinality.ts";
-import { structureModelAddCodelists } from "./add-codelists.ts";
 import { structureModelFlattenInheritance } from "./instantiate-properties.ts";
 import { structureModelDematerialize } from "./dematerialize.ts";
 import { propagateLabel } from "./propagate-label.ts";
@@ -27,9 +26,7 @@ type StructureTransformation = (
  * Default transformation pipeline at the conceptual level.
  */
 export const defaultConceptualTransformations: ConceptualTransformation[] = [
-  structureModelAddCodelists,
   propagateCardinality,
-  structureModelAddCodelists,
   propagateLabel,
   propagateCimIri,
   propagateReverse,

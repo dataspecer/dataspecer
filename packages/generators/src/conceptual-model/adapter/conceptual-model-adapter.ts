@@ -152,8 +152,6 @@ class ConceptualModelAdapter {
     model.humanLabel = classData.name;
     model.humanDescription = classData.description;
     model.usageNote = (classData as any).usageNote ?? null;
-    model.isCodelist = classData.isCodelist;
-    model.codelistUrl = classData.codelistUrl;
     // model.extends = classData.pimExtends.map((iri) => this.getClass(iri));
     model.regex = classData.regex ?? null;
     model.example = classData.example ?? null;
