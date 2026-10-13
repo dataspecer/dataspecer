@@ -59,24 +59,14 @@ const ControlledVocabularyItem: React.FC<{
         </Field>
 
         {vocabulary !== null && <>
-            <Field label={t(vocabulary.conformsToSkos ? "controlled vocabularies.scheme" : "controlled vocabularies.reference")}>
-                <UrlText value={vocabulary.references} />
-            </Field>
-            <Field label={t("controlled vocabularies.iri")}>
-                <UrlText value={vocabulary.iri} />
-            </Field>
+            <UrlField label={t(vocabulary.conformsToSkos ? "controlled vocabularies.scheme" : "controlled vocabularies.reference")} value={vocabulary.references} />
+            <UrlField label={t("controlled vocabularies.iri")} value={vocabulary.iri} />
             <Field label={t("controlled vocabularies.pattern")}>
-                {vocabulary.pattern === null ? null : <code>{vocabulary.pattern}</code>}
+                {vocabulary.pattern === null || vocabulary.pattern === "" ? null : <code>{vocabulary.pattern}</code>}
             </Field>
-            <Field label={t("controlled vocabularies.documentation")}>
-                <UrlText value={vocabulary.documentation} />
-            </Field>
-            <Field label={t("controlled vocabularies.access url")}>
-                <UrlText value={vocabulary.distribution.accessUrl} />
-            </Field>
-            <Field label={t("controlled vocabularies.download url")}>
-                <UrlText value={vocabulary.distribution.downloadUrl} />
-            </Field>
+            <UrlField label={t("controlled vocabularies.documentation")} value={vocabulary.documentation} />
+            <UrlField label={t("controlled vocabularies.access url")} value={vocabulary.distribution.accessUrl} />
+            <UrlField label={t("controlled vocabularies.download url")} value={vocabulary.distribution.downloadUrl} />
         </>}
     </CardContent></Card>;
 };
@@ -94,15 +84,17 @@ const Field: React.FC<{label: string, children: React.ReactNode}> = ({label, chi
 };
 
 /**
- * Shows the value as a link when it is a web address, otherwise as a plain text.
- * The values are free text, so only http and https addresses are linked.
+ * A labeled value that is shown as a link when it is a web address, otherwise
+ * as a plain text. The values are free text, so only http and https addresses
+ * are linked. The field is not shown when there is no value.
  */
-const UrlText: React.FC<{value: string | null}> = ({value}) => {
+const UrlField: React.FC<{label: string, value: string | null}> = ({label, value}) => {
     if (value === null || value === "") {
         return null;
     }
-    if (/^https?:\/\//i.test(value)) {
-        return <Link href={value} target="_blank" rel="noopener noreferrer">{value}</Link>;
-    }
-    return <>{value}</>;
+    return <Field label={label}>
+        {/^https?:\/\//i.test(value)
+            ? <Link href={value} target="_blank" rel="noopener noreferrer">{value}</Link>
+            : value}
+    </Field>;
 };
