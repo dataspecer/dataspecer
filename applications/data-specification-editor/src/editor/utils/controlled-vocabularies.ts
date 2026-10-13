@@ -1,6 +1,7 @@
 /**
  * Aggregated class profiles carry identifiers of all controlled vocabulary
- * assignments that apply to them, both their own and the inherited ones.
+ * assignments that apply to them, both their own and the ones assigned from
+ * the profiled entities.
  */
 interface WithControlledVocabularies {
   controlledVocabularies?: string[];
@@ -11,5 +12,13 @@ interface WithControlledVocabularies {
  * regardless of the assignment qualifier.
  */
 export function hasControlledVocabulary(entity: object | null | undefined): boolean {
-  return ((entity as WithControlledVocabularies)?.controlledVocabularies?.length ?? 0) > 0;
+  return getControlledVocabularyAssignmentIds(entity).length > 0;
+}
+
+/**
+ * Returns identifiers of all controlled vocabulary assignments that apply to
+ * the given semantic model entity, both its own and the ones assigned from the profiled entities.
+ */
+export function getControlledVocabularyAssignmentIds(entity: object | null | undefined): string[] {
+  return (entity as WithControlledVocabularies)?.controlledVocabularies ?? [];
 }

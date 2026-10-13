@@ -16,6 +16,29 @@
     "yes": "nepovoleno"
   },
   "confirm": "potvrdit",
+  "controlled vocabularies": {
+    "access url": "URL pro přístup",
+    "assigned from profiled": "přiřazeno z profilovaného",
+    "assignment not found": "Přiřazení řízeného slovníku nenalezeno:",
+    "documentation": "Dokumentace",
+    "download url": "URL ke stažení",
+    "help": "Řízené slovníky přiřazené tomuto profilu třídy, včetně těch přiřazených z profilovaného. Spravují se v konceptuálním editoru.",
+    "iri": "IRI",
+    "no title": "bez názvu",
+    "pattern": "Vzor IRI hodnot",
+    "qualifier": {
+      "at-least-one": "Alespoň jedna hodnota musí pocházet ze slovníku",
+      "may": "Hodnoty mohou pocházet ze slovníku",
+      "must": "Hodnoty musí pocházet ze slovníku",
+      "recommended": "Hodnoty by měly pocházet ze slovníku"
+    },
+    "reference": "Odkaz",
+    "replaces assigned from profiled": "nahrazuje přiřazení z profilovaného",
+    "scheme": "Schéma konceptů",
+    "title": "Řízené slovníky",
+    "usage": "Použití",
+    "vocabulary not found": "Řízený slovník nenalezen:"
+  },
   "dematerialization": {
     "cardinality restriction": "Dematerializovat lze pouze ty asociace, které nemají kardinalitu vyšší než 1.",
     "checkbox": "dematerializovat asociaci",

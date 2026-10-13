@@ -28,7 +28,9 @@ import { SetIsClosed } from "../../../operations/set-is-closed";
 import { SetPimDatatype } from "../../../operations/set-pim-datatype";
 import { SetRegex } from "../../../operations/set-regex";
 import { SetTechnicalLabel } from "../../../operations/set-technical-label";
+import { getControlledVocabularyAssignmentIds } from "../../../utils/controlled-vocabularies";
 import { knownDatatypes } from "../../../utils/known-datatypes";
+import { ControlledVocabularies } from "./controlled-vocabularies";
 import { Cardinality, CardinalitySelector, cardinalityFromPim, cardinalityFromPsm, defaultCardinality } from "../../helper/cardinality-selector";
 import { DatatypeSelector, DatatypeSelectorValueType, getIriFromDatatypeSelectorValue } from "../../helper/datatype-selector";
 import { RegexField } from "../../helper/regex-field";
@@ -58,6 +60,7 @@ export const RightPanel: React.FC<{ iri: string, close: () => void }> = memo(({i
     const isContainer = DataPsmContainer.is(resource);
     const isInterpreted = resource.dataPsmInterpretation !== null;
     const isOr = DataPsmOr.is(resource);
+    const controlledVocabularyAssignmentIds = getControlledVocabularyAssignmentIds(pimResource);
 
     const readOnly = false;
     const pimReadOnly = false;
@@ -362,6 +365,16 @@ export const RightPanel: React.FC<{ iri: string, close: () => void }> = memo(({i
                     control={<Checkbox checked={!emptyAsComplex} onChange={e => setEmptyAsComplex(!e.target.checked)} />}
                     label={t('empty as complex.checkbox')}
                 />
+            </Box>
+        }
+
+        {isClass && controlledVocabularyAssignmentIds.length > 0 &&
+            <Box sx={{mb: 3}}>
+                <Typography variant="subtitle1" component="h2">
+                    {t('controlled vocabularies.title')} <InfoHelp text={t('controlled vocabularies.help')} />
+                </Typography>
+
+                <ControlledVocabularies classProfileId={pimResource!.id} assignmentIds={controlledVocabularyAssignmentIds} />
             </Box>
         }
 

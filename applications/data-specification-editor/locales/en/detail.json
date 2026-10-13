@@ -16,6 +16,29 @@
     "yes": "disallowed"
   },
   "confirm": "confirm",
+  "controlled vocabularies": {
+    "access url": "Access URL",
+    "assigned from profiled": "assigned from profiled",
+    "assignment not found": "Controlled vocabulary assignment not found:",
+    "documentation": "Documentation",
+    "download url": "Download URL",
+    "help": "Controlled vocabularies assigned to this class profile, including the ones assigned from profiled. They are managed in the Conceptual Model Editor.",
+    "iri": "IRI",
+    "no title": "no title",
+    "pattern": "Pattern of value IRIs",
+    "qualifier": {
+      "at-least-one": "At least one value must come from the vocabulary",
+      "may": "Values may come from the vocabulary",
+      "must": "Values must come from the vocabulary",
+      "recommended": "Values should come from the vocabulary"
+    },
+    "reference": "Reference",
+    "replaces assigned from profiled": "replaces assignment from profiled",
+    "scheme": "Concept scheme",
+    "title": "Controlled vocabularies",
+    "usage": "Usage",
+    "vocabulary not found": "Controlled vocabulary not found:"
+  },
   "dematerialization": {
     "cardinality restriction": "Only those associations that do not have a cardinality higher than 1 can be dematerialized.",
     "checkbox": "dematerialize",
