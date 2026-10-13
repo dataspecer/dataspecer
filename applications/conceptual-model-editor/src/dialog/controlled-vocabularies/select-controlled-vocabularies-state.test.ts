@@ -9,14 +9,14 @@ import { DEFAULT_CONTROLLED_VOCABULARY } from "@dataspecer/controlled-vocabulary
 const EDUCATION_VOCABULARY = {
   ...DEFAULT_CONTROLLED_VOCABULARY,
   id: "education",
-  title: "Education vocabulary",
+  title: { en: "Education vocabulary" },
   references: "http://example.com/education",
 };
 
 const GEOGRAPHY_VOCABULARY = {
   ...DEFAULT_CONTROLLED_VOCABULARY,
   id: "geography",
-  title: "Geography vocabulary",
+  title: { en: "Geography vocabulary" },
   references: "http://example.com/geography",
 };
 

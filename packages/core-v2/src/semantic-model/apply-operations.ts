@@ -30,6 +30,7 @@ import {
   type ModifyRelationOperation,
   type OperationResult,
 } from "./operations/operations.ts";
+import { normalizeLegacyAssignment } from "./profile/concepts/index.ts";
 import { createDefaultSemanticModelProfileOperationExecutor } from "./profile/operations/operations-executor.ts";
 import { type ChangeCollector, type EntityGetter } from "./writable-semantic-model-adapter.ts";
 
@@ -53,7 +54,9 @@ export function applyOperationsToSemanticModel(
 
   const getEntity: EntityGetter = (identifier) => semanticModel[identifier];
   const change: ChangeCollector = (updated, removed) => {
-    for (const [id, entity] of Object.entries(updated)) {
+    for (const [id, written] of Object.entries(updated)) {
+      // Operations recorded before the qualifiers became lowercase carry the legacy ones
+      const entity = normalizeLegacyAssignment(written);
       changes.push({
         previous: semanticModel[id] ?? null,
         next: entity,

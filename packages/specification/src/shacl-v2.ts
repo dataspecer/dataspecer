@@ -28,6 +28,8 @@ export const DefaultShaclConfiguration: ShaclConfiguration = {
       languages: [],
       noClassConstraints: false,
       splitPropertyShapesByConstraints: false,
+      controlledVocabularyPattern: true,
+      controlledVocabularyScheme: false,
     },
   },
 };

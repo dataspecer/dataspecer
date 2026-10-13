@@ -38,6 +38,7 @@ export interface SelectControlledVocabulariesPresenter {
 export function createSelectControlledVocabulariesPresenter(
   setState: (next: (state: SelectControlledVocabulariesState)
     => SelectControlledVocabulariesState) => void,
+  language: string = "en",
 ): SelectControlledVocabulariesPresenter {
   return {
     getItemPresenter(itemId) {
@@ -68,7 +69,7 @@ export function createSelectControlledVocabulariesPresenter(
           vocabulary => !usedVocabularyIds.has(vocabulary.id));
         return {
           ...state,
-          addForm: createAddVocabularyState(selectableVocabularies),
+          addForm: createAddVocabularyState(selectableVocabularies, language),
         };
       });
     },

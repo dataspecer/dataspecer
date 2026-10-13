@@ -1,5 +1,6 @@
 import type { Qualifier } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { SelectState } from "../fields/select";
+import { getLocalizedStringFromLanguageString } from "../../util/language-utils";
 import { ControlledVocabulary } from "./controlled-vocabulary-model";
 
 
@@ -17,6 +18,7 @@ export interface AddVocabularyState {
 
 export function createAddVocabularyState(
   availableVocabularies: ControlledVocabulary[],
+  language: string = "en",
 ): AddVocabularyState {
   return {
     availableVocabularies,
@@ -24,7 +26,7 @@ export function createAddVocabularyState(
       value: null,
       items: availableVocabularies.map(vocabulary => ({
         id: vocabulary.id,
-        label: vocabulary.title,
+        label: getLocalizedStringFromLanguageString(vocabulary.title, language) ?? "",
       })),
     },
     qualifier: DEFAULT_QUALIFIER_OPTION,
