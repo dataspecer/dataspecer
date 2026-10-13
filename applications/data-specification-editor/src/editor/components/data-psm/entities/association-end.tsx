@@ -19,6 +19,7 @@ import RemoveIcon from "@mui/icons-material/Remove";
 import { useResource } from "@dataspecer/federated-observable-store-react/use-resource";
 import { ProfileInformation } from "../profiling/profile-information";
 import { isGeometryTypeObject } from "@/editor/utils/known-datatypes";
+import { hasControlledVocabulary } from "@/editor/utils/controlled-vocabularies";
 
 const StrikeOut: React.FC<{
   children: React.ReactNode,
@@ -45,7 +46,7 @@ export const DataPsmAssociationEndItem: React.FC<{iri: string} & RowSlots & Clas
   const {resource: pimClass} = useResource<ExtendedSemanticModelClass>(DataPsmClass.is(psmClassOrReference) ? psmClassOrReference.dataPsmInterpretation : null);
 
   const isGeometry = pimClass ? isGeometryTypeObject(pimClass) : false;
-  const isCodelist = pimClass?.isCodelist ?? false;
+  const hasAssignedControlledVocabulary = hasControlledVocabulary(pimClass);
   let isPrimitive = DataPsmClass.is(psmClassOrReference) && psmClassOrReference?.dataPsmParts.length === 0 && psmClassOrReference?.dataPsmEmptyAsComplex !== true;
   isPrimitive ||= isGeometry;
 
@@ -124,7 +125,7 @@ export const DataPsmAssociationEndItem: React.FC<{iri: string} & RowSlots & Clas
       iri={associationPointsToIri}
       startRow={startRow}
       endRow={endRow}
-      icon={isCodelist ? <ListRoundedIcon style={{verticalAlign: "middle"}} /> : (isPrimitive ? <RemoveIcon style={{verticalAlign: "middle"}} /> : <AccountTreeTwoToneIcon style={{verticalAlign: "middle"}} />)}
+      icon={hasAssignedControlledVocabulary ? <ListRoundedIcon style={{verticalAlign: "middle"}} /> : (isPrimitive ? <RemoveIcon style={{verticalAlign: "middle"}} /> : <AccountTreeTwoToneIcon style={{verticalAlign: "middle"}} />)}
       menu={menu}
       iris={iris}
     />
