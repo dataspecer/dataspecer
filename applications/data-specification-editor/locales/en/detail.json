@@ -15,8 +15,6 @@
     "title": "Additional class properties",
     "yes": "disallowed"
   },
-  "codelist": "codelist",
-  "codelist url": "codelist url",
   "confirm": "confirm",
   "dematerialization": {
     "cardinality restriction": "Only those associations that do not have a cardinality higher than 1 can be dematerialized.",
@@ -51,7 +49,6 @@
   },
   "IRI": "IRI",
   "iri parameters help": "Class instances (data) can be identified by their specific IRI. For example, Prague, as a city instance, can have its IRI http://example.com/Praha. This option sets whether such an identifier is required in the data, which affects the validation of the data and its representation in RDF, for example, where resources without IRIs appear as blank nodes.",
-  "is codelist": "is codelist",
   "json": {
     "use key value for lang string": "Use JSON-LD language map format."
   },
@@ -81,7 +78,6 @@
     "gml:EnvelopeType": "has the same type as <gml:Envelope> element",
     "gml:GeometryPropertyType": "must contain any geometry element, e.g. <gml:Point>, <gml:Polygon>, etc."
   },
-  "no codelist url": "No codelist URL set",
   "no description": "no description",
   "no label": "no label",
   "no translations": "no translations are available",

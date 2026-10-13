@@ -15,8 +15,6 @@
     "title": "Další vlastnosti tříd",
     "yes": "nepovoleno"
   },
-  "codelist": "Číselník",
-  "codelist url": "URL číselníku",
   "confirm": "potvrdit",
   "dematerialization": {
     "cardinality restriction": "Dematerializovat lze pouze ty asociace, které nemají kardinalitu vyšší než 1.",
@@ -51,7 +49,6 @@
   },
   "IRI": "IRI",
   "iri parameters help": "Instance tříd (data) můžou být identifikována svým konkrétním IRI. Například Praha, jako instance města, může mít své IRI http://example.com/Praha. Tato možnost nastavuje, zdali je takový identifikátor v datech vyžadován, což má vliv na validaci dat a jejich reprezetaci například v RDF, kdy se resourcy bez IRI projevují jako blank nodes.",
-  "is codelist": "je číselníkem",
   "json": {
     "use key value for lang string": "Použít formát JSON-LD language map."
   },
@@ -81,7 +78,6 @@
     "gml:EnvelopeType": "má stejný typ jako element <gml:Envelope>",
     "gml:GeometryPropertyType": "musí obsahovat libovolný geometrický element, např. <gml:Point>, <gml:Polygon>, atd."
   },
-  "no codelist url": "Neobsahuje žádná URL číselníku",
   "no description": "bez popisku",
   "no label": "bez názvu",
   "no translations": "žádné překlady nejsou k dispozici",
