@@ -22,7 +22,7 @@ export interface ProfileEvolutionInput {
   /**
    * Builds an aggregator over the given models whose aggregated entities
    * represent the upstream profile with inherited values resolved. Typically
-   * `build` from `@dataspecer/specification/model-hierarchy` (this package
+   * `build` from `@dataspecer/specification/aggregator-builder` (this package
    * cannot depend on it directly, the dependency would be circular).
    */
   buildAggregator: (models: Record<string, EntityRecord>) => SemanticModelAggregator;

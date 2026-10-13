@@ -1,6 +1,7 @@
 import { ModelIdentifier } from "@dataspecer/core/model";
 import { VisualEntity } from "./visual-entity.ts";
 import { Waypoint } from "./waypoint.ts";
+import { HexColor } from "./color.ts";
 import { Entity, EntityIdentifier } from "@dataspecer/core/entity-model";
 
 /**
@@ -32,6 +33,12 @@ export interface VisualRelationship extends VisualEntity {
      * Target visual entity.
      */
     visualTarget: EntityIdentifier;
+
+    /**
+     * Custom color, overrides the color of the {@link model}.
+     * When null or missing the model color is used.
+     */
+    color?: HexColor | null;
 
 }
 

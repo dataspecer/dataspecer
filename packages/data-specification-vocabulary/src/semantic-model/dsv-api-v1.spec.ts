@@ -391,19 +391,17 @@ test("Issue #1005", async () => {
 ];
     a dsv:ClassProfile;
     dsv:class :bulkyForce.
-
-<http://dcat/model/BulkyForce.juicyWork> dct:isPartOf <http://dcat/model/>;
+:BulkyForce.juicyWork dct:isPartOf <http://dcat/model/>;
     a dsv:TermProfile;
     skos:prefLabel "Juicy Work"@en;
     dsv:property :juicyWork;
     dsv:domain :bulkyForceProfile;
     a dsv:ObjectPropertyProfile;
     dsv:objectPropertyRange :juicyBusinessProfile.
-
-<http://dcat/model/JuicyBusiness.juicyWorkSpecial> dct:isPartOf <http://dcat/model/>;
+:JuicyBusiness.juicyWorkSpecial dct:isPartOf <http://dcat/model/>;
     a dsv:TermProfile;
     skos:prefLabel "Juicy Work"@en;
-    dsv:specializes <http://dcat/model/BulkyForce.juicyWork>;
+    dsv:specializes :BulkyForce.juicyWork;
     dsv:property :juicyWork;
     dsv:domain :bulkyForceProfile;
     a dsv:ObjectPropertyProfile;

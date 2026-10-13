@@ -14,8 +14,13 @@ import {
 import { configuration } from "../../application";
 import { LabelResolver } from "../../dependency-tracker";
 import { DialogSemanticTracker } from "../../dialog-v2/dialog-semantic-tracker";
+import {
+  createNoVisualColorDialogState,
+  createVisualColorDialogState,
+  type VisualColorDialogState,
+} from "../visual-color/visual-color-dialog-state";
 
-export type ClassDialogState = BaseEntityDialogState;
+export type ClassDialogState = BaseEntityDialogState & VisualColorDialogState;
 
 export function createNewClassDialogState(
   visualModel: VisualModel | null,
@@ -41,6 +46,7 @@ export function createNewClassDialogState(
 
   return {
     ...entityState,
+    ...createNoVisualColorDialogState(),
   };
 }
 
@@ -72,5 +78,6 @@ export function createEditClassDialogState(
 
   return {
     ...entityState,
+    ...createVisualColorDialogState(visualModel, entity.id),
   };
 }

@@ -1,9 +1,9 @@
 import { getDefaultConfiguration, mergeConfigurations } from "@dataspecer/core/configuration/utils";
 import { createTheme, CssBaseline, ThemeProvider } from "@mui/material";
-import { ThemeProvider as NextThemesProvider, useTheme as useNextTheme } from "next-themes";
 import { SnackbarProvider } from "notistack";
 import React, { createContext, StrictMode, useEffect, useMemo, useState } from "react";
 import { BrowserRouter, useRoutes } from "react-router-dom";
+import { AppThemeProvider, useAppTheme } from "./components/theme-context";
 import { getDefaultConfigurators } from "./configurators";
 import EditorPage from "./editor/components/App";
 import ManagerPage from "./manager/app";
@@ -31,7 +31,7 @@ export const Application = () => {
 
   return (
     <StrictMode>
-      <NextThemesProvider attribute="class" defaultTheme="system" enableSystem>
+      <AppThemeProvider>
         <MuiThemeWrapper>
           <SnackbarProvider maxSnack={3}>
             <DefaultConfigurationContext.Provider value={defaultConfiguration}>
@@ -42,7 +42,7 @@ export const Application = () => {
             </DefaultConfigurationContext.Provider>
           </SnackbarProvider>
         </MuiThemeWrapper>
-      </NextThemesProvider>
+      </AppThemeProvider>
     </StrictMode>
   );
 };
@@ -66,10 +66,10 @@ const MainRouter = () => {
 };
 
 /**
- * Wrapper that provides MUI theme based on the next-themes theme mode
+ * Wrapper that provides MUI theme based on the selected color scheme
  */
 const MuiThemeWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { resolvedTheme } = useNextTheme();
+  const { resolvedTheme } = useAppTheme();
   const mode = resolvedTheme === "dark" ? "dark" : "light";
 
   const theme = useMemo(

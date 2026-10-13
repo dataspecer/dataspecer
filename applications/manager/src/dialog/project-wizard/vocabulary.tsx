@@ -13,6 +13,7 @@ import { createCreateModelOperation, createCreateProjectOperation } from "@datas
 import { createSetLabelOperation } from "@dataspecer/visual-model";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { TagField, parseTags } from "@/components/tag-field";
 
 /**
  * Model id the backend uses to address operations that change the project
@@ -25,9 +26,10 @@ const PROJECT_MODEL_ID = "_project_model";
  * Creates a new project for a vocabulary with a semantic model and a view.
  * The location of a project is fixed, hence the parent package is not used.
  */
-export const Vocabulary = ({ isOpen, resolve }: { iri: string } & BetterModalProps<boolean>) => {
+export const Vocabulary = ({ isOpen, resolve, defaultTag }: { iri: string; defaultTag?: string } & BetterModalProps<boolean>) => {
   const {t, i18n} = useTranslation();
   const [loading, setLoading] = useState(false);
+  const [tags, setTags] = useState(defaultTag ?? "");
 
   const formSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -38,6 +40,7 @@ export const Vocabulary = ({ isOpen, resolve }: { iri: string } & BetterModalPro
       const name = (event.target as any)["name"].value;
       const description = (event.target as any)["description"].value;
       const baseIri = (event.target as any)["base-url"].value;
+      const selectedTags = parseTags(tags);
 
       //
 
@@ -58,6 +61,7 @@ export const Vocabulary = ({ isOpen, resolve }: { iri: string } & BetterModalPro
       // The models and their initial content are created by a single transaction.
       const operations: OperationInModel[] = [
         { modelId: PROJECT_MODEL_ID, operation: createProject },
+        { modelId: PROJECT_MODEL_ID, operation: createSetEntityOperation({ id: projectId, type: [], tags: selectedTags } as Entity) },
         { modelId: PROJECT_MODEL_ID, operation: createSemanticModel },
         { modelId: PROJECT_MODEL_ID, operation: createVisualModel },
         {
@@ -108,6 +112,7 @@ export const Vocabulary = ({ isOpen, resolve }: { iri: string } & BetterModalPro
               <Label htmlFor="base-url">{t("form.base-iri.name")}</Label>
               <Input id="base-url" placeholder={t("form.base-iri.instruction")} defaultValue="https://example.com/vocabulary#" />
             </div>
+            <TagField value={tags} onChange={setTags} />
             {/* <div className="grid gap-2">
               <Label htmlFor="documentation-url">{t("form.documentation-base-url.name")}</Label>
               <Input id="documentation-url" placeholder={t("form.documentation-base-url.instruction")} defaultValue="https://example.com/" />

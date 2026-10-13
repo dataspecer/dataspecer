@@ -1,4 +1,5 @@
 import { LOCAL_SEMANTIC_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { SEMANTIC_MODEL_APPLICATION_PROFILE_SUBTYPE } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { BackendPackageService } from "@dataspecer/core-v2/project";
 import type { LanguageString } from "@dataspecer/core/core/core-resource";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
@@ -65,6 +66,7 @@ export class StructureEditorBackendService extends BackendPackageService {
           id: createPim.modelId,
           type: [LOCAL_SEMANTIC_MODEL],
           modelAlias,
+          subType: SEMANTIC_MODEL_APPLICATION_PROFILE_SUBTYPE,
         } as Entity),
       },
       {

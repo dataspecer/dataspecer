@@ -15,6 +15,7 @@ import { AssociationProfileDialogState } from "./edit-association-profile-dialog
 import { SpecializationSelect } from "../components/select-specialization";
 import { InputText } from "../components/input-text";
 import { SelectBuildIn } from "../components/select-build-in";
+import { VisualColorRow } from "../visual-color/visual-color-row";
 
 export const EditAssociationProfileDialog = (props: DialogProps<AssociationProfileDialogState>) => {
   const controller = useEditAssociationProfileDialogController(props);
@@ -191,6 +192,11 @@ export const EditAssociationProfileDialog = (props: DialogProps<AssociationProfi
             onChange={controller.setMandatoryLevel}
           />
         </DialogDetailRow>
+        <VisualColorRow
+          state={state}
+          controller={controller}
+          modelColor={state.model.color}
+        />
       </div>
     </>
   );

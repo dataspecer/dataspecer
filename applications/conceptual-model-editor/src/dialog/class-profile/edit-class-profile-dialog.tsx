@@ -12,6 +12,7 @@ import { isValid } from "../utilities/validation-utilities";
 import { ClassProfileDialogState } from "./edit-class-profile-dialog-state";
 import { useClassProfileDialogController } from "./edit-class-profile-dialog-controller";
 import { InputText } from "../components/input-text";
+import { VisualColorRow } from "../visual-color/visual-color-row";
 import { SelectBuildIn } from "../components/select-build-in";
 import {
   findDuplicateVocabularyItemIds,
@@ -154,6 +155,11 @@ export const EditClassProfileDialog = (props: DialogProps<ClassProfileDialogStat
             }))}
           />
         </DialogDetailRow>
+        <VisualColorRow
+          state={state}
+          controller={controller}
+          modelColor={state.model.color}
+        />
       </div>
     </>
   );

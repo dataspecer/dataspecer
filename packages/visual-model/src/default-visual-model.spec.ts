@@ -90,3 +90,25 @@ test("Create and set visual view.", () => {
   });
   expect(model.getVisualEntities().size).toBe(1);
 });
+
+test("Set, serialize and reset visual node color.", () => {
+  const model = createModel("abc");
+  const identifier = model.addVisualNode({
+    representedEntity: "entity",
+    model: "model",
+    content: [],
+    visualModels: [],
+    position: { x: 100, y: 200, anchored: null },
+  });
+  // By default we do not have data about color due to a missing migration.
+  expect((model.getVisualEntity(identifier) as VisualNode).color).toBeUndefined();
+  //
+  model.updateVisualEntity<VisualNode>(identifier, { color: "#ff0000" });
+  expect((model.getVisualEntity(identifier) as VisualNode).color).toBe("#ff0000");
+  // Make sure it is stored properly.
+  const loaded = createModel("abc").deserializeModel(model.serializeModel());
+  expect((loaded.getVisualEntity(identifier) as VisualNode).color).toBe("#ff0000");
+  //
+  model.updateVisualEntity<VisualNode>(identifier, { color: null });
+  expect((model.getVisualEntity(identifier) as VisualNode).color).toBeNull();
+});

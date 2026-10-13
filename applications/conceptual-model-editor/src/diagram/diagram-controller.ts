@@ -1864,7 +1864,7 @@ const edgeToEdgeType = (edge: ApiEdge): EdgeType => {
     label: edge.label,
     // We need to assign the marker here as the value is transformed.
     // In addition reactflow use this value.
-    markerEnd: selectMarkerEnd(edge, null),
+    markerEnd: selectMarkerEnd(edge),
     style: {
       strokeWidth: 2,
       stroke: edge.color,
@@ -1891,16 +1891,16 @@ function selectEdgeType(edge: ApiEdge) {
 /**
  * @param color If null is given then the original edge color is used
  */
-export function selectMarkerEnd(edge: ApiEdge, color: string | null) {
+export function selectMarkerEnd(edge: ApiEdge) {
   switch (edge.type) {
   case ApiEdgeType.Association:
-    return { type: MarkerType.Arrow, height: 20, width: 20, color: color ?? edge.color };
+    return { type: MarkerType.Arrow, height: 20, width: 20, color: edge.color };
   case ApiEdgeType.AssociationProfile:
-    return { type: MarkerType.Arrow, height: 20, width: 20, color: color ?? edge.color };
+    return { type: MarkerType.Arrow, height: 20, width: 20, color: edge.color };
   case ApiEdgeType.Generalization:
-    return { type: MarkerType.ArrowClosed, height: 20, width: 20, color: color ?? edge.color };
+    return { type: MarkerType.ArrowClosed, height: 20, width: 20, color: edge.color };
   case ApiEdgeType.ClassProfile:
-    return { type: MarkerType.ArrowClosed, height: 20, width: 20, color: color ?? edge.color };
+    return { type: MarkerType.ArrowClosed, height: 20, width: 20, color: edge.color };
   }
 }
 

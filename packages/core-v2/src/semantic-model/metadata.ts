@@ -1,13 +1,13 @@
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier, ModelMetadata } from "@dataspecer/core/model";
-import { LOCAL_SEMANTIC_MODEL } from "../model/known-models.ts";
+import { isMainSemanticModelEntity } from "./concepts/index.ts";
 
 export function getSemanticModelMetadata(entities: EntityRecord, modelId: ModelIdentifier): ModelMetadata | null {
   const mainEntity = entities[modelId];
-  if (!mainEntity || !mainEntity.type?.includes(LOCAL_SEMANTIC_MODEL)) {
+  if (!mainEntity || !isMainSemanticModelEntity(mainEntity)) {
     return null;
   }
-  const alias = (mainEntity as { modelAlias?: string }).modelAlias;
+  const alias = mainEntity.modelAlias;
   return {
     label: alias ? { en: alias } : {},
     description: {},

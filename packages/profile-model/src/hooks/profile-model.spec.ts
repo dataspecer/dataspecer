@@ -140,7 +140,7 @@ function asEntityModel(entities: EntityRecord): EntityModel {
 
 /**
  * Stands in for the aggregator built by
- * `@dataspecer/specification/model-hierarchy` in production: the parent
+ * `@dataspecer/specification/aggregator-builder` in production: the parent
  * application profile on top of the vocabulary.
  */
 function buildAggregator(models: Record<string, EntityRecord>): SemanticModelAggregator {

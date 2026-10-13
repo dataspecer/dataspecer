@@ -17,6 +17,7 @@ import {
 } from "../dialog/association/edit-association-dialog-state-adapter";
 import { LabelResolver } from "../dependency-tracker";
 import { ClassesContext } from "../context/classes-context";
+import { applyVisualColorFromDialog } from "./utilities/visual-color-utilities";
 
 /**
  * Open and handle edit association dialog.
@@ -45,6 +46,9 @@ export function openEditAssociationDialogAction(
       { identifier: entity.id, model: model.getId() },
       state.model.identifier,
       initialState.specializations, state.specializations);
+
+    applyVisualColorFromDialog(
+      classes, visualModel, entity.id, initialState, state);
   };
 
   dialogs.openDialog(createEditAssociationDialog(initialState, onConfirm));

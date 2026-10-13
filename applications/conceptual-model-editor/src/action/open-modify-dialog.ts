@@ -19,6 +19,7 @@ import { openEditAttributeDialogAction } from "./open-edit-attribute-dialog";
 import { openEditAttributeProfileDialogAction } from "./open-edit-attribute-profile-dialog";
 import { openEditClassDialogAction } from "./open-edit-class-dialog";
 import { openEditClassProfileDialogAction } from "./open-edit-class-profile-dialog";
+import { openEditGeneralizationDialogAction } from "./open-edit-generalization-dialog";
 import { createLogger } from "../application";
 import {
   isSemanticModelClassProfile,
@@ -95,7 +96,8 @@ export function openModifyDialogAction(
       labelResolver);
     return;
   } else if (isSemanticModelGeneralization(entity)) {
-    notifications.error("Generalization modification is not supported!");
+    openEditGeneralizationDialogAction(
+      dialogs, notifications, classes, visualModel, model, entity);
     return;
   } else {
     LOG.error("Can not open modify dialog for unknown entity type.", { entity })

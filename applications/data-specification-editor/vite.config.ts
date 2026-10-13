@@ -28,10 +28,14 @@ export default defineConfig(({ mode }) => {
       sourcemap: true,
     },
     resolve: {
-      alias: {
-        "@": path.resolve(__dirname, "./src"),
-        "fs": "path", // Hack to make polyfill to null
-      },
+      alias: [
+        {
+          find: /^@mui\/icons-material\/(.+)$/,
+          replacement: "@mui/icons-material/esm/$1",
+        },
+        { find: "@", replacement: path.resolve(import.meta.dirname, "./src") },
+        { find: "fs", replacement: "path" }, // Hack to make polyfill to null
+      ],
     },
     // https://github.com/mui/material-ui/issues/32727#issuecomment-1697253782
     optimizeDeps: {

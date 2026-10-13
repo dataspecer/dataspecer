@@ -16,9 +16,9 @@
     "@dataspecer/visual-model": "*"
   },
   "devDependencies": {
-    "@xmldom/xmldom": "^0.8.11",
-    "@types/node": "^25.5.2",
+    "@xmldom/xmldom": "^0.9.12",
+    "@types/node": "^26.6.4",
     "typescript": "^7.0.2",
-    "vitest": "^4.1.7"
+    "vitest": "^5.0.3"
   }
 }
