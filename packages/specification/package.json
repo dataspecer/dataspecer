@@ -5,13 +5,14 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc -w",
-    "prebuild": "node -e \"fs.rmSync('lib', { recursive: true, force: true })\""
+    "prebuild": "node -e \"fs.rmSync('lib', { recursive: true, force: true })\"",
+    "test": "vitest run src"
   },
   "exports": {
     ".": "./lib/index.js",
+    "./aggregator-builder": "./lib/aggregator-builder/index.js",
     "./documentation": "./lib/documentation/index.js",
     "./dsv": "./lib/dsv/index.js",
-    "./model-hierarchy": "./lib/model-hierarchy/index.js",
     "./model-repository": "./lib/model-repository/index.js",
     "./shacl-v2": "./lib/shacl-v2.js",
     "./specification": "./lib/specification/index.js",
@@ -25,12 +26,15 @@
     "@dataspecer/core-v2": "*",
     "@dataspecer/csv": "*",
     "@dataspecer/data-specification-vocabulary": "*",
+    "@dataspecer/diagram": "*",
     "@dataspecer/documentation": "*",
     "@dataspecer/federated-observable-store": "*",
     "@dataspecer/json": "*",
     "@dataspecer/json-example": "*",
+    "@dataspecer/layout": "*",
     "@dataspecer/generators": "^0.0.0",
     "@dataspecer/lightweight-owl": "*",
+    "@dataspecer/model-hierarchy": "*",
     "@dataspecer/model-store": "*",
     "@dataspecer/openapi": "*",
     "@dataspecer/rdfs-adapter": "*",
@@ -45,6 +49,7 @@
     "@dataspecer/xml": "*"
   },
   "devDependencies": {
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
   }
 }

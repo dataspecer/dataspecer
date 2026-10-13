@@ -12,19 +12,18 @@
   "dependencies": {
     "@dataspecer/core": "*",
     "@dataspecer/generators": "^0.0.0",
-    "@rdfjs/parser-n3": "^2.0.1",
-    "json-schema-faker": "^0.5.3",
-    "jsonld": "^8.3.1",
+    "@rdfjs/parser-n3": "^2.2.0",
+    "json-schema-faker": "^0.6.3",
+    "jsonld": "^9.0.0",
     "md5": "^2.3.0",
-    "n3": "^1.25.1",
-    "rdf-ext": "^2.2.0",
-    "rdf-validate-shacl": "^0.4.5"
+    "n3": "^2.13.7",
+    "rdf-ext": "^2.6.0",
+    "rdf-validate-shacl": "^0.6.5"
   },
   "devDependencies": {
-    "@types/n3": "^1.24.2",
-    "@types/rdf-ext": "^2.0.1",
-    "@types/rdf-validate-shacl": "^0.4.2",
+    "@types/n3": "^1.26.4",
+    "@types/rdf-ext": "^2.5.2",
     "typescript": "^7.0.2",
-    "vitest": "^4.1.7"
+    "vitest": "^5.0.3"
   }
 }

@@ -1,9 +1,11 @@
 import { Modal, ModalBody, ModalContent, ModalHeader, ModalTitle } from "@/components/modal";
-import { MonacoEditor } from "@/components/monaco-editor";
+import { MonacoDiffEditor, MonacoEditor } from "@/components/monaco-editor";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import { Switch } from "@/components/ui/switch";
 import { BetterModalProps } from "@/lib/better-modal";
 import { packageService, requestLoadPackage } from "@/package";
 import { preventDefault, stopPropagation } from "@/utils/events";
@@ -17,6 +19,7 @@ import { useOnBeforeUnload } from "@/hooks/use-on-before-unload";
 import { useOnKeyDown } from "@/hooks/use-on-key-down";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { useLocalStorage } from "usehooks-ts";
 
 type PartialState = "UNCHANGED" | "MODIFIED" | "LOCAL" | "REMOVED";
 const MAIN_TEMPLATE = DOCUMENTATION_MAIN_TEMPLATE_PARTIAL;
@@ -68,7 +71,7 @@ function PartialButton(props: {
 }) {
   return (
     <button
-      onClick={props.state !== "REMOVED" ? props.onSelect : undefined}
+      onClick={props.onSelect}
       // disabled={props.state === "REMOVED"}
       role="radio"
       className={
@@ -119,8 +122,8 @@ function getNewPartialsState(defaultPartials: Record<string, string>, current: R
 }
 
 export const ModifyDocumentationTemplate = ({ isOpen, resolve, iri }: { iri: string } & BetterModalProps) => {
-  const monaco = useRef<{ editor: monaco.editor.IStandaloneCodeEditor }>(undefined);
   const { t } = useTranslation();
+  const editor = useRef<{ editor: monaco.editor.IStandaloneCodeEditor } | undefined>(undefined);
 
   useOnBeforeUnload(true);
   useOnKeyDown(e => {
@@ -146,6 +149,10 @@ export const ModifyDocumentationTemplate = ({ isOpen, resolve, iri }: { iri: str
 
   const [isLoading, setIsLoading] = useState(true);
   const currentPartials = useRef<Record<string, string | false>>({});
+  const [selectedPartial, setSelectedPartial] = useState<string>(MAIN_TEMPLATE);
+  const [editorValue, setEditorValue] = useState("");
+  const [showDiff, setShowDiff] = useLocalStorage("documentation-template-show-diff", false);
+  const [inlineDiff, setInlineDiff] = useLocalStorage("documentation-template-inline-diff", false);
   useEffect(() => {
     (async () => {
       const data = (await packageService.getResourceJsonData(iri)) ?? {};
@@ -160,12 +167,11 @@ export const ModifyDocumentationTemplate = ({ isOpen, resolve, iri }: { iri: str
 
 
   const [partialsState, setPartialsState] = useState<Record<string, PartialState>>(() => getNewPartialsState(defaultPartials, currentPartials.current));
-  let [selectedPartial, setSelectedPartial] = useState<string>(MAIN_TEMPLATE);
 
   const selectNewPartial = (name: string) => {
     setSelectedPartial(name);
-    selectedPartial = name; // todo hack
-    monaco.current?.editor.setValue((currentPartials.current[name] as string) ?? defaultPartials[name]);
+    const current = currentPartials.current[name];
+    setEditorValue(current === false ? "" : current ?? defaultPartials[name] ?? "");
   };
 
   const addNewPartial = (name: string) => {
@@ -198,6 +204,7 @@ export const ModifyDocumentationTemplate = ({ isOpen, resolve, iri }: { iri: str
   const editorValueUpdated = (value: string | undefined) => {
     if (value === undefined) return;
     currentPartials.current[selectedPartial] = value;
+    setEditorValue(value);
     const newState = getNewPartialsState(defaultPartials, currentPartials.current);
     // todo compare with previous state
     setPartialsState(newState);
@@ -294,7 +301,17 @@ export const ModifyDocumentationTemplate = ({ isOpen, resolve, iri }: { iri: str
             </ResizablePanel>
             <ResizableHandle withHandle autoFocus={false} />
             <ResizablePanel className="overflow-hidden flex flex-col pt-1">
-              {!isLoading && <MonacoEditor refs={monaco} defaultValue={(currentPartials.current[selectedPartial] === false || currentPartials.current[selectedPartial] === undefined) ? defaultPartials[selectedPartial] : currentPartials.current[selectedPartial] as string} language="handlebars" onChange={editorValueUpdated} />}
+              <div className="flex items-center justify-end gap-2 px-3 py-2">
+                {showDiff && <>
+                  <Label htmlFor="template-inline-diff-switch">{t("modify-documentation-template-dialog.inline-diff")}</Label>
+                  <Switch id="template-inline-diff-switch" checked={inlineDiff} onCheckedChange={setInlineDiff} />
+                </>}
+                <Label htmlFor="template-diff-switch">{t("modify-documentation-template-dialog.show-diff")}</Label>
+                <Switch id="template-diff-switch" checked={showDiff} onCheckedChange={setShowDiff} />
+              </div>
+              {!isLoading && (showDiff
+                ? <MonacoDiffEditor key={selectedPartial} original={defaultPartials[selectedPartial] ?? ""} modified={editorValue} language="handlebars" onModifiedChange={editorValueUpdated} renderSideBySide={!inlineDiff} />
+                : <MonacoEditor key={selectedPartial} refs={editor} defaultValue={editorValue} language="handlebars" onChange={editorValueUpdated} />)}
             </ResizablePanel>
           </ResizablePanelGroup>
         </ModalBody>

@@ -6,7 +6,7 @@ import SettingsBrightnessIcon from "@mui/icons-material/SettingsBrightness";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useTranslation } from "react-i18next";
 import { useToggle } from "../editor/hooks/use-toggle";
-import { useTheme } from "next-themes";
+import { useAppTheme } from "./theme-context";
 
 /**
  * The button in top application bar which allows switching between light and dark themes.
@@ -15,9 +15,9 @@ export const ThemeSelector: React.FC = () => {
   const { t } = useTranslation("ui");
   const ref = useRef(null);
   const { isOpen, open, close } = useToggle();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme } = useAppTheme();
 
-  const selectTheme = (newTheme: string) => {
+  const selectTheme = (newTheme: "light" | "dark" | "system") => {
     close();
     setTheme(newTheme);
   };

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Github, Info } from "lucide-react";
+import { Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -7,6 +7,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useTranslation } from "react-i18next";
+import { Github } from "./github-link";
 
 const commit: string | null = import.meta.env.VITE_GIT_COMMIT ?? null;
 const ref: string | null = import.meta.env.VITE_GIT_REF ?? null;

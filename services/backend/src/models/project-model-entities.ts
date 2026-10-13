@@ -11,8 +11,6 @@ import type { BaseResource, Package } from "./resource-model.ts";
  */
 export function createRegularResourceEntity(resource: BaseResource, projectId: string): ProjectModelEntity {
   return {
-    // Resources may carry arbitrary extra metadata fields (e.g. documentBaseUrl,
-    // importedFromUrl) beyond label/description, which callers rely on.
     ...((resource.userMetadata as object) ?? {}),
     id: resource.iri,
     type: [PROJECT_MODEL_MODEL_ENTITY],

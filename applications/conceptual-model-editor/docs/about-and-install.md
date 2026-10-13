@@ -50,7 +50,6 @@ npm --prefix applications/conceptual-model-editor run dev
 
 ```
 npx turbo run build --scope=backend
-npm --prefix services/backend run update-database
 npm --prefix services/backend run start
 ```
 

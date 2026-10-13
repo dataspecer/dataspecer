@@ -12,11 +12,11 @@
   },
   "dependencies": {
     "@dataspecer/core": "*",
-    "ajv": "^8.18.0",
-    "handlebars": "^4.7.8"
+    "ajv": "^8.20.0",
+    "handlebars": "^4.7.9"
   },
   "devDependencies": {
-    "@types/node": "^25.5.2",
+    "@types/node": "^26.6.4",
     "typescript": "^7.0.2"
   }
 }

@@ -12,7 +12,7 @@
     "@dataspecer/core": "*",
     "@dataspecer/json": "*",
     "@dataspecer/generators": "^0.0.0",
-    "json-schema-faker": "^0.6.1"
+    "json-schema-faker": "^0.6.3"
   },
   "devDependencies": {
     "typescript": "^7.0.2"
