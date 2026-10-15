@@ -1,9 +1,11 @@
 import { DeepPartial } from "@dataspecer/core/core/utilities/deep-partial"
-import { FormGroup, Grid, Typography } from "@mui/material"
-import { FC } from "react"
+import { FormGroup, Grid, Typography, Button, Box, Checkbox, FormControlLabel, List, ListItem } from "@mui/material"
+import { FC, useContext, useState } from "react"
 import { ClientConfiguration } from "../../../../configuration"
 import { CASINGS } from "../../../../editor/operations/context/operation-context"
 import { SelectWithDefault, TextFieldWithDefault } from "../ui-components/index"
+import { SpecificationContext } from "../../../routes/specification/specification"
+import { BulkUpdateDialog } from "./bulk-update-dialog"
 
 const casingsOptions = Object.fromEntries(CASINGS.map(c => [c, c]));
 
@@ -18,6 +20,10 @@ export const Modeling: FC<{
     defaultObject?: ClientConfiguration
     onChange: (options: DeepPartial<ClientConfiguration>) => void,
   }> = ({input, onChange, defaultObject}) => {
+    const specificationContext = useContext(SpecificationContext);
+    const specification = specificationContext?.[0];
+    const [bulkUpdateDialogOpen, setBulkUpdateDialogOpen] = useState(false);
+    
     return <FormGroup>
       <Typography variant="h6">Technical label naming options</Typography>
       <Grid container spacing={2}>
@@ -55,5 +61,26 @@ export const Modeling: FC<{
         Set how technical labels should be generated from class names.
       </Typography>
 
+      {specification?.dataStructures && specification.dataStructures.length > 0 && (
+        <Box sx={{mt: 3}}>
+          <Typography variant="h6">Apply to existing data structures</Typography>
+          <Typography variant="body2" sx={{mt: 1, mb: 2}}>
+            Apply the current naming conventions to all existing technical labels in your data structures.
+          </Typography>
+          <Button 
+            variant="outlined" 
+            onClick={() => setBulkUpdateDialogOpen(true)}
+          >
+            Bulk update labels...
+          </Button>
+          <BulkUpdateDialog 
+            open={bulkUpdateDialogOpen}
+            onClose={() => setBulkUpdateDialogOpen(false)}
+            dataStructures={specification.dataStructures}
+            currentConfiguration={input ?? {}}
+            defaultConfiguration={defaultObject}
+          />
+        </Box>
+      )}
     </FormGroup>
   }
