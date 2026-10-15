@@ -22,7 +22,9 @@
 
     /* https://ui.shadcn.com/docs/installation/vite */
     "paths": {
-      "@user-interface/*": ["./src/user-interface/*"],
+      "@src/*": ["./src/*"],
+      "@src/dialog/*": ["./src/dialog/*"],
+      "@user-interface/*": ["./src/user-interface/*"]
     },
 
     "types": ["vitest/globals"]

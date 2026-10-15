@@ -30,6 +30,8 @@ export default defineConfig({
       "fs": "path",
       // https://ui.shadcn.com/docs/installation/vite
       "@user-interface": path.resolve(import.meta.dirname, "./src/user-interface/"),
+      // Allow src-v2 code to import from src via @src/* (mirrors tsconfig paths).
+      "@src": path.resolve(__dirname, "./src"),
     },
   },
 });
