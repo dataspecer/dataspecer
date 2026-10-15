@@ -184,11 +184,6 @@ if (configuration.staticFilesPath) {
   if (!(await modelRepository.getResource(configuration.localRootIri))) {
     await modelRepository.createPackage(null, configuration.localRootIri, configuration.localRootMetadata);
   }
-  // Create root models for the common use and for the v1 adapter.
-  if (!(await modelRepository.getResource(configuration.v1RootIri))) {
-    console.log("There is no root package for data specifications from v1 dataspecer. Creating one...");
-    await modelRepository.createPackage(null, configuration.v1RootIri, configuration.v1RootMetadata);
-  }
 
   application.listen(Number(configuration.port), () => {
     if (configuration.inDocker) {
