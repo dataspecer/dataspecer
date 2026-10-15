@@ -160,13 +160,16 @@ export async function migrateUp(database: DatabaseSync, migrations: readonly Mig
     transactionStarted = true;
     prepareHistory(database);
     const pending = pendingMigrations(database, ordered);
-    if (pending.length > 0) {
+    const isFreshDatabase = pending[0]?.number === 0;
+    if (!isFreshDatabase && pending.length > 0) {
       console.log(`${pending.length} pending migration(s) to be applied.`);
     }
     const insert = database.prepare("INSERT INTO migrations (number, name) VALUES (?, ?)");
     for (const migration of pending) {
       try {
-        console.log(`applying migration ${migration.name}...`);
+        if (!isFreshDatabase) {
+          console.log(`applying migration ${migration.name}...`);
+        }
         await migration.up({ nodeDatabaseSync: database, storeModel });
         insert.run(migration.number, migration.name);
       } catch (cause) {
@@ -178,6 +181,9 @@ export async function migrateUp(database: DatabaseSync, migrations: readonly Mig
     }
     database.exec("COMMIT");
     transactionStarted = false;
+    if (isFreshDatabase) {
+      console.log("Database is ready.");
+    }
   } catch (error) {
     if (transactionStarted) {
       database.exec("ROLLBACK");

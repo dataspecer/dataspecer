@@ -182,7 +182,6 @@ if (configuration.staticFilesPath) {
 
   // Create local root
   if (!(await modelRepository.getResource(configuration.localRootIri))) {
-    console.log("There is no default root package. Creating one...");
     await modelRepository.createPackage(null, configuration.localRootIri, configuration.localRootMetadata);
   }
   // Create root models for the common use and for the v1 adapter.

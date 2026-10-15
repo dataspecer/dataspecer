@@ -66,7 +66,7 @@ function printBanner(): void {
   if (ref === "refs/heads/stable") {
     console.log("\x1b[0;32mThis is a stable build of Dataspecer, suitable for production.\x1b[0m");
   } else if (ref) {
-    console.log("\x1b[0;33mIt seems that this is not a stable build. To use stable version of Dataspecer suitable for production, use ghcr.io/dataspecer/ws image.\x1b[0m");
+    console.log('\x1b[0;33mThis is not a stable build. We recommend using the "latest" tag for production as other versions may contain unstable features.\x1b[0m');
   }
 }
 
