@@ -9,6 +9,7 @@ import {
   type SemanticModelClass,
   type SemanticModelGeneralization,
   type SemanticModelRelationship,
+  isMainSemanticModelEntity,
   isSemanticModelClass,
   isSemanticModelGeneralization,
   isSemanticModelRelationship,
@@ -129,6 +130,16 @@ export function propagateAggregatorChangesToLocalState(
         // Controlled vocabulary assignments have no dedicated local state -
         // they are surfaced through their owning class profile's
         // `controlledVocabularies` list. Just keep the raw entity around.
+        return {
+          updatedClasses,
+          updatedRelationships,
+          updatedGeneralizations,
+          updatedRawEntities: updatedRawEntities.concat(curr.rawEntity),
+          updatedClassProfiles,
+          updatedRelationshipProfiles,
+        };
+      } else if (isMainSemanticModelEntity(curr.aggregatedEntity)) {
+        // Nothing needs to be done
         return {
           updatedClasses,
           updatedRelationships,

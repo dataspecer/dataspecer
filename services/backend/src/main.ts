@@ -178,7 +178,7 @@ if (configuration.staticFilesPath) {
 
 (async () => {
   // Run migrations or throw
-  await migrateDatabase(databasePath);
+  await migrateDatabase(databasePath, storeModel);
 
   // Create local root
   if (!(await modelRepository.getResource(configuration.localRootIri))) {

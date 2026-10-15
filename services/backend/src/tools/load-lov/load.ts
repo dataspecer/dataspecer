@@ -57,10 +57,10 @@ const filename = "./lov.nq";
     const LOD_ROOT = "https://dataspecer.com/resources/import/lod";
 
     const databasePath = new URL("../../../database/database.db", import.meta.url);
-    await migrateDatabase(databasePath);
+    const storeModel = new LocalStoreModel("./database/stores");
+    await migrateDatabase(databasePath, storeModel);
     const database = createDatabase(databasePath);
     try {
-        const storeModel = new LocalStoreModel("./database/stores");
         const modelRepository = new ModelRepository(new ResourceModel(storeModel, database), new TransactionModel(database));
 
         // Override the package
@@ -124,7 +124,7 @@ const filename = "./lov.nq";
                 await modelRepository.setResourceStoreJson(vocabulary.id, {
                     baseIri: vocabulary.namespaceUri,
                     entities: Object.fromEntries(vocabulary.entities.map(e => [e.id, e])),
-                    modelAlias: label[Object.keys(label)[0]],
+                    label,
                     modelId: vocabulary.id,
                     type: LOCAL_SEMANTIC_MODEL
                 });

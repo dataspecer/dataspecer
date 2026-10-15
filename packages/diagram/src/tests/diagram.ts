@@ -48,12 +48,12 @@ export function diagramFixture() {
   };
   const models: Record<string, EntityRecord> = {
     vocabulary: {
-      vocabulary: { id: "vocabulary", type: ["http://dataspecer.com/resources/local/semantic-model"], baseIri: "https://example.org/", modelAlias: "Vocabulary" } as EntityRecord[string],
+      vocabulary: { id: "vocabulary", type: ["http://dataspecer.com/resources/local/semantic-model"], baseIri: "https://example.org/", label: { cs: "Vocabulary" } } as EntityRecord[string],
       Person: person, Organization: organization, name, worksFor,
       generalization: { id: "generalization", type: ["generalization"], child: person.id, parent: organization.id } as EntityRecord[string],
     },
     profile: {
-      profile: { id: "profile", type: ["http://dataspecer.com/resources/local/semantic-model"], baseIri: "https://example.org/profile/", modelAlias: "Profile" } as EntityRecord[string],
+      profile: { id: "profile", type: ["http://dataspecer.com/resources/local/semantic-model"], baseIri: "https://example.org/profile/", label: { cs: "Profile" } } as EntityRecord[string],
       Employee: profile, employeeName: profileName,
     },
     detail: {

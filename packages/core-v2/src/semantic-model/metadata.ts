@@ -7,9 +7,8 @@ export function getSemanticModelMetadata(entities: EntityRecord, modelId: ModelI
   if (!mainEntity || !isMainSemanticModelEntity(mainEntity)) {
     return null;
   }
-  const alias = mainEntity.modelAlias;
   return {
-    label: alias ? { en: alias } : {},
+    label: mainEntity.label ?? {},
     description: {},
   };
 }

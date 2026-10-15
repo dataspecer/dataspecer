@@ -41,7 +41,7 @@ export interface MainSemanticModelEntity extends Entity {
    */
   subType?: string;
 
-  modelAlias?: string;
+  label: LanguageString;
 
   /**
    * Base IRI used for resolving relative IRIs used in this model.

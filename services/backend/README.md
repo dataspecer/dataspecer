@@ -17,7 +17,7 @@ Database access uses Kysely with native `node:sqlite` through the adapter in
 no generated client or external SQLite driver is required. The existing custom
 SQLite migration runner manages the schema.
 The server applies migrations before accepting requests.
-Code can call `migrateDatabase(databasePath)` from `src/migration-utils/migrate-database.ts`
+Code can call `migrateDatabase(databasePath, storeModel)` from `src/migration-utils/migrate-database.ts`.
 with a filesystem path or file URL. The caller selects the database; the runner
 creates its parent directory if necessary.
 

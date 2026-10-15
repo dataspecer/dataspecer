@@ -69,7 +69,7 @@ export const Vocabulary = ({ isOpen, resolve, defaultTag }: { iri: string; defau
           operation: createSetEntityOperation({
             id: createSemanticModel.modelId,
             type: [LOCAL_SEMANTIC_MODEL],
-            modelAlias: name,
+            label: { en: name },
             baseIri,
           } as Entity),
         },

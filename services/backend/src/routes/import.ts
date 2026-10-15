@@ -361,7 +361,7 @@ async function importRdfsAndDsv(repository: ModelRepositoryType, parentIri: stri
 
     const result = {
       modelId: id,
-      modelAlias: userMetadata?.label?.en ?? userMetadata?.label?.cs,
+      label: userMetadata?.label ?? {},
       entities: Object.fromEntries(entities.map((e) => [e.id, e])),
       baseIri: bestPrefix,
     } as any;

@@ -48,6 +48,13 @@ export class WritableSemanticModelAdapter extends SemanticModelAdapter {
 export function serializationToSemanticModelEntities(serialization: unknown): EntityRecord {
   const modelDescriptor = { ...(serialization as any) };
 
+  const modelAlias = modelDescriptor.modelAlias;
+  delete modelDescriptor.modelAlias;
+  if (typeof modelAlias === "string") {
+    modelDescriptor.label = { cs: modelAlias };
+  }
+  modelDescriptor.label ??= {};
+
   const entities = modelDescriptor.entities;
   delete modelDescriptor.entities;
 
@@ -89,8 +96,11 @@ export function semanticModelEntitiesToSerialization(entities: EntityRecord): un
   const restEntities: EntityRecord = { ...entities };
   delete restEntities[mainEntity.id];
 
+  const serializedMainEntity = { ...mainEntity } as MainSemanticModelEntity & { modelAlias?: string };
+  delete serializedMainEntity.modelAlias;
+
   return {
-    ...mainEntity,
+    ...serializedMainEntity,
 
     // Required fields
 

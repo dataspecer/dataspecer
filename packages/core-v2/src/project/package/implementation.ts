@@ -154,7 +154,12 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
             // @ts-ignore
             const modelSerialization = visualModel.serializeModel();
             const iri = visualModel.getId();
-            const name = modelSerialization.modelAlias ?? modelSerialization.alias;
+            const semanticLabel = modelSerialization.type === LOCAL_SEMANTIC_MODEL
+                ? modelSerialization.label as Record<string, string> | undefined
+                : undefined;
+            const name = semanticLabel
+                ? Object.values(semanticLabel)[0]
+                : modelSerialization.modelAlias ?? modelSerialization.alias;
 
             if (modelSerialization.type === RDFS_MODEL) {
                 modelSerialization.label = {en: name};
@@ -163,7 +168,9 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
             }
 
             const response = await this.httpFetch(this.getResourceUrl(iri));
-            const userMetadata = name ? { label: { en: name } } : {};
+            const userMetadata = semanticLabel
+                ? { label: semanticLabel }
+                : name ? { label: { en: name } } : {};
             if (response.status !== 200) {
                 const createdResponse = await this.httpFetch(this.getResourceUrl(packageId, true), {
                     method: "POST",
@@ -315,7 +322,7 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
                 const modelData = (await (
                     await this.httpFetch(this.getBlobUrl(resource.iri).toString())
                 ).json()) as any;
-                modelData.modelAlias = name;
+                modelData.label ??= resource.userMetadata.label ?? {};
                 const model = createInMemorySemanticModel().deserializeModel(modelData);
                 entityModels.push(model);
             }

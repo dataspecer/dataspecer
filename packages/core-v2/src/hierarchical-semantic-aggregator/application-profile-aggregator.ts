@@ -27,7 +27,7 @@ import { ExternalEntityWrapped, SemanticModelAggregator, LocalEntityWrapped } fr
 import { getSearchRelevance } from "./utils/get-search-relevance.ts";
 import { TupleSet } from "./utils/tuple-set.ts";
 import { withAbsoluteIri } from "../semantic-model/utils/index.ts";
-import { EntityModel, getModelAlias, getModelBaseIri, getModelId, splitEntityChanges } from "./utils/entity-model.ts";
+import { EntityModel, getModelLabel, getModelBaseIri, getModelId, splitEntityChanges } from "./utils/entity-model.ts";
 
 const APPLICATION_PROFILE_AGGREGATOR_TYPE = "application-profile-aggregator";
 
@@ -138,7 +138,7 @@ export class ApplicationProfileAggregator implements SemanticModelAggregator {
     });
 
     this.thisVocabularyChain = {
-      name: getModelAlias(this.profile.getEntities()) ?? "AP",
+      name: getModelLabel(this.profile.getEntities()) ?? "AP",
     };
 
     const profileId = getModelId(this.profile.getEntities());

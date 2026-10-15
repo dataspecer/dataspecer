@@ -36,9 +36,9 @@ export function getModelId(entities: EntityRecord): string | null {
   return getSemanticModelMainEntity(entities)?.id ?? null;
 }
 
-export function getModelAlias(entities: EntityRecord): string | null {
-  const alias = getSemanticModelMainEntity(entities)?.modelAlias;
-  return typeof alias === "string" ? alias : null;
+export function getModelLabel(entities: EntityRecord): string | null {
+  const label = getSemanticModelMainEntity(entities)?.label;
+  return label ? Object.values(label)[0] ?? null : null;
 }
 
 export function getModelBaseIri(entities: EntityRecord): string {

@@ -197,7 +197,7 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
     operations.push(
       ...diffModelEntitiesToOperations(semanticModelIri, LOCAL_SEMANTIC_MODEL, {}, {
         // A semantic model describes itself by its main entity.
-        [semanticModelIri]: { id: semanticModelIri, type: [LOCAL_SEMANTIC_MODEL], modelAlias: profileLabel || "Profile", baseIri: body.baseIri },
+        [semanticModelIri]: { id: semanticModelIri, type: [LOCAL_SEMANTIC_MODEL], label: { en: profileLabel || "Profile" }, baseIri: body.baseIri },
         ...profiledEntities,
       } as EntityRecord),
     );
