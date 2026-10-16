@@ -2,8 +2,11 @@
 
 # BACKEND - URL to the backend server
 # BASE_PATH - Should not end with a slash (keep empty for root)
+# SLOVNIKY_AI - URL of the modeling assistant (defaults to /slovniky-ai on the same origin)
 
 set -e # Exit with nonzero exit code if anything fails
+
+SLOVNIKY_AI="${SLOVNIKY_AI:-/slovniky-ai}"
 
 # Paths configuration
 
@@ -35,9 +38,11 @@ printf "VITE_BACKEND=$BACKEND\nVITE_DEBUG_VERSION=$CF_PAGES_BRANCH@$(echo $CF_PA
 
 printf "VITE_PUBLIC_BASE_PATH=$CONCEPTUAL_MODEL_EDITOR_URL\nVITE_PUBLIC_APP_BACKEND=$BACKEND\nVITE_PUBLIC_APP_BACKEND_PACKAGE_ROOT=http://dataspecer.com/packages/local-root\nVITE_PUBLIC_MANAGER_PATH=$MANAGER_URL/\nVITE_PUBLIC_DSCME_LOGO_LINK=$MANAGER_URL/\n" > applications/conceptual-model-editor/.env.local
 printf "VITE_PUBLIC_APP_AUTOSAVE_ENABLED_BY_DEFAULT=0\n" >> applications/conceptual-model-editor/.env.local
+printf "VITE_SLOVNIKY_AI=$SLOVNIKY_AI\n" >> applications/conceptual-model-editor/.env.local
 
 printf "VITE_DATA_SPECIFICATION_EDITOR=$DATA_SPECIFICATION_EDITOR_URL\nVITE_BACKEND=$BACKEND\nVITE_CME=$CONCEPTUAL_MODEL_EDITOR_URL\nVITE_API_SPECIFICATION_APPLICATION=$API_SPECIFICATION_URL\nVITE_HISTORY=$HISTORY_URL\nVITE_CONTROLLED_VOCABULARY_MANAGER=$CONTROLLED_VOCABULARY_MANAGER_URL\nVITE_BASE_PATH=$MANAGER_BASE_PATH\n" > applications/manager/.env.local
 printf "VITE_GIT_COMMIT=$GIT_COMMIT\nVITE_GIT_REF=$GIT_REF\nVITE_GIT_COMMIT_DATE=$GIT_COMMIT_DATE\nVITE_GIT_COMMIT_NUMBER=$GIT_COMMIT_NUMBER\n" >> applications/manager/.env.local
+printf "VITE_SLOVNIKY_AI=$SLOVNIKY_AI\n" >> applications/manager/.env.local
 
 printf "VITE_BACKEND=$BACKEND\n" > applications/api-specification/.env.local
 
