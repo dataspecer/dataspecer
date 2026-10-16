@@ -20,6 +20,11 @@ export const API_SPECIFICATION_MODEL = "http://dataspecer.com/resources/local/ap
 export const APPLICATION_GRAPH = "http://dataspecer.com/resources/local/application-graph";
 
 /**
+ * Link from a package to the knowledge base in the local slovníky application.
+ */
+export const KNOWLEDGE_BASE = "http://dataspecer.com/resources/local/knowledge-base";
+
+/**
  * Model that can be queried. Currently used only for SGOV, hence the iri.
  */
 export const QUERYABLE_MODEL = "https://dataspecer.com/core/model-descriptor/sgov";

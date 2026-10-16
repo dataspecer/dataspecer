@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { getCMELink } from "@/known-models";
 import { BetterModalProps } from "@/lib/better-modal";
 import { packageService } from "@/package";
-import { LOCAL_SEMANTIC_MODEL, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
+import { KNOWLEDGE_BASE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { generateEntityId, type Entity } from "@dataspecer/core/entity-model";
 import { createSetEntityOperation, generateOperationId, type OperationInModel } from "@dataspecer/core/operation";
 import { createCreateModelOperation, createCreateProjectOperation } from "@dataspecer/core/project-model";
@@ -58,12 +58,17 @@ export const Vocabulary = ({ isOpen, resolve, defaultTag }: { iri: string; defau
       createVisualModel.label = {en: "Main view"};
       createVisualModel.description = {en: "View model for the vocabulary"};
 
+      const createKnowledgeBase = createCreateModelOperation(projectId, KNOWLEDGE_BASE);
+      createKnowledgeBase.label = {en: "Knowledge base"};
+      createKnowledgeBase.description = {en: "Knowledge base for the vocabulary"};
+
       // The models and their initial content are created by a single transaction.
       const operations: OperationInModel[] = [
         { modelId: PROJECT_MODEL_ID, operation: createProject },
         { modelId: PROJECT_MODEL_ID, operation: createSetEntityOperation({ id: projectId, type: [], tags: selectedTags } as Entity) },
         { modelId: PROJECT_MODEL_ID, operation: createSemanticModel },
         { modelId: PROJECT_MODEL_ID, operation: createVisualModel },
+        { modelId: PROJECT_MODEL_ID, operation: createKnowledgeBase },
         {
           modelId: createSemanticModel.modelId,
           operation: createSetEntityOperation({

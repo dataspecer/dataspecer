@@ -3,6 +3,7 @@ import React from "react";
 import { PackageSection } from "./package-section";
 import { ViewManagement } from "./view-management";
 import { ExportManagement } from "./export-management";
+import { DomainMapLink } from "./domain-map-link";
 import { LanguageManagement } from "./language-management";
 import { getManagerLink } from "./header.service";
 
@@ -26,7 +27,8 @@ const Header = () => {
             <LanguageManagement />
           </div>
         </div>
-        <div className="my-2 flex flex-row px-2 md:my-0 md:justify-end md:px-0">
+        <div className="my-2 flex flex-row items-center px-2 md:my-0 md:justify-end md:px-0">
+          <DomainMapLink />
           <ExportManagement />
         </div>
       </header>

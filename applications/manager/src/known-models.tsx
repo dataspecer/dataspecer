@@ -1,4 +1,4 @@
-import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, CONTROLLED_VOCABULARY_MODEL, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, KNOWLEDGE_BASE, CONTROLLED_VOCABULARY_MODEL, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
 import { AppWindowMac, BookOpen, Code, Cog, Eye, Folder, Globe2, LibraryBig } from "lucide-react";
 import { v4 as uuidv4 } from 'uuid';
@@ -15,6 +15,11 @@ export function getSchemaLink(packageId: string) {
 
 export function getHistoryLink(packageId: string) {
   return (import.meta.env.VITE_HISTORY ?? "") + "/evolution?packageIri=" + encodeURIComponent(packageId);
+}
+
+export function getKnowledgeBaseLink(packageId: string, modelId: string) {
+  const base = import.meta.env.VITE_SLOVNIKY_AI ?? "http://localhost:5180";
+  return base + "/project?package-iri=" + encodeURIComponent(packageId) + "&model-iri=" + encodeURIComponent(modelId);
 }
 
 export function getEvolutionReviewLink(packageId: string, branch: number) {
@@ -149,6 +154,13 @@ export const createModelInstructions = {
       needsNaming: false,
       createHook: getHookForStandardModel(V1.GENERATOR_CONFIGURATION, () => ({})),
     },
+  [KNOWLEDGE_BASE]: {
+    needsNaming: false,
+    createHook: getHookForStandardModel(KNOWLEDGE_BASE, (id) => ({
+      id,
+      label: "Knowledge base",
+    })),
+  },
   }
 
 export const modelTypeToName = {
@@ -162,6 +174,7 @@ export const modelTypeToName = {
     [API_SPECIFICATION_MODEL]: "OpenAPI Specification",
     [APPLICATION_GRAPH]: "Application graph",
     [CONTROLLED_VOCABULARY_MODEL]: "Controlled vocabulary",
+    [KNOWLEDGE_BASE]: "Knowledge base",
   };
 
 export const ModelIcon = ({ type, className }: { type: string[], className?: string }) => {
@@ -194,5 +207,8 @@ export const ModelIcon = ({ type, className }: { type: string[], className?: str
   }
   if (type.includes(CONTROLLED_VOCABULARY_MODEL)) {
     return <BookOpen className={cn("text-teal-400", className)} />;
+  }
+  if (type.includes(KNOWLEDGE_BASE)) {
+    return <BookOpen className={cn("text-sky-600", className)} />;
   }
 };
