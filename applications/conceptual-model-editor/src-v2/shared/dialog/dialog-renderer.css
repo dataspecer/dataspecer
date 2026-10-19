@@ -1,0 +1,7 @@
+/**
+ * In the base-dialog we need the last element,
+ * often the button bar to be aligned to the bottom.
+ */
+ dialog.base-dialog > *:last-child {
+  margin-top: auto;
+}
