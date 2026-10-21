@@ -140,6 +140,8 @@ export interface ShaclPropertyShape {
   /**
    * Value that must be among the values of the property.
    *
+   * `null` means there is no such constraint. No `sh:hasValue` is written.
+   *
    * @lc-identifier shacl:hasValue
    */
   hasValue: Node | null;
