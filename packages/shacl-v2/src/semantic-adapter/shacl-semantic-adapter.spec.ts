@@ -1,77 +1,20 @@
-import { describe, test, expect } from "vitest";
+import { beforeEach, describe, test, expect } from "vitest";
 
 import { createDefaultSemanticModelBuilder, SemanticModel } from "@dataspecer/semantic-model";
-import { createDefaultProfileModelBuilder, ProfileModel } from "@dataspecer/profile-model";
 import {
-  CONTROLLED_VOCABULARY_TYPE,
+  createDefaultProfileModelBuilder,
+  ProfileClassBuilder,
+  ProfileModelBuilder,
+} from "@dataspecer/profile-model";
+import {
+  DEFAULT_CONTROLLED_VOCABULARY,
   ControlledVocabulary,
 } from "@dataspecer/controlled-vocabulary-model";
-import {
-  CONTROLLED_VOCABULARY_ASSIGNMENT,
-  ControlledVocabularyAssignment,
-} from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import type { Entity } from "@dataspecer/core-v2/entity-model";
 
 import { semanticModelsToShacl } from "./shacl-semantic-adapter.ts";
 import type { SemanticModelsToShaclConfiguration } from "./shacl-semantic-configuration.ts";
 import { shaclToRdf } from "../shacl-to-rdf.ts";
-import { ShaclSeverity } from "../shacl-model.ts";
-
-/**
- * Adds extra entities to a built model - used to attach a standalone
- * ControlledVocabularyAssignment/ControlledVocabulary, which the
- * fluent builders have no dedicated method for. Wraps each accessor
- * explicitly rather than spreading `model` - it is a class instance,
- * so its methods live on the prototype and a spread would drop them.
- */
-function withExtraEntities(
-  model: ProfileModel, entities: Entity[],
-): ProfileModel {
-  const extra: Record<string, Entity> = {};
-  entities.forEach(entity => { extra[entity.id] = entity; });
-  return {
-    getId: () => model.getId(),
-    getBaseIri: () => model.getBaseIri(),
-    getEntities: () => ({ ...model.getEntities(), ...extra }),
-  };
-}
-
-/**
- * A minimal semantic-model-shaped container for standalone entities,
- * such as a ControlledVocabulary, that have no dedicated builder.
- */
-function entityModel(baseIri: string, entities: Entity[]): SemanticModel {
-  const record: Record<string, Entity> = {};
-  entities.forEach(entity => { record[entity.id] = entity; });
-  return {
-    getId: () => baseIri,
-    getBaseIri: () => baseIri,
-    getEntities: () => record,
-  } as SemanticModel;
-}
-
-function controlledVocabularyFixture(
-  overrides: Partial<ControlledVocabulary>,
-): ControlledVocabulary {
-  return {
-    id: "cv", type: [CONTROLLED_VOCABULARY_TYPE],
-    title: {}, pattern: null, references: "", conformsToSkos: true, documentation: null,
-    distribution: { downloadUrl: null, accessUrl: "" },
-    iri: null,
-    ...overrides,
-  };
-}
-
-function assignmentFixture(
-  overrides: Partial<ControlledVocabularyAssignment>,
-): ControlledVocabularyAssignment {
-  return {
-    id: "cv-assignment", type: [CONTROLLED_VOCABULARY_ASSIGNMENT],
-    classProfile: "", vocabulary: "", qualifier: "must",
-    replaces: null, iri: null,
-    ...overrides,
-  };
-}
+import { ShaclModel, ShaclSeverity } from "../shacl-model.ts";
 
 describe("semanticModelsToShacl", () => {
 
@@ -509,13 +452,12 @@ describe("semanticModelsToShacl - controlled vocabularies", () => {
 
     const person = vocabulary.class({ iri: "person" });
 
-    const controlledVocabulary = controlledVocabularyFixture({
+    const controlledVocabularies = entityModel("http://example.com/cv#", [{
+      ...DEFAULT_CONTROLLED_VOCABULARY,
       id: "cv-1",
       iri: "http://example.com/vocabularies/cv-1",
       pattern: "^http://example\\.com/codes/.*$",
-    });
-    const controlledVocabularies = entityModel(
-      "http://example.com/cv#", [controlledVocabulary]);
+    }]);
 
     const profileBuilder = createDefaultProfileModelBuilder({
       baseIdentifier: "profile:",
@@ -527,13 +469,14 @@ describe("semanticModelsToShacl - controlled vocabularies", () => {
       controlledVocabularies: ["assignment-1"],
     }).profile(person);
 
-    const profile = withExtraEntities(profileBuilder.build(), [assignmentFixture({
+    profileBuilder.controlledVocabularyAssignment({
       id: "assignment-1",
       iri: "http://example.com/assignments/1",
       classProfile: personProfile.identifier,
       vocabulary: "cv-1",
       qualifier: "must",
-    })]);
+    });
+    const profile = profileBuilder.build();
 
     const shacl = semanticModelsToShacl(
       [vocabulary.build()],
@@ -574,16 +517,18 @@ describe("semanticModelsToShacl - controlled vocabularies", () => {
     const person = vocabulary.class({ iri: "person" });
 
     const controlledVocabularies = entityModel("http://example.com/cv#", [
-      controlledVocabularyFixture({
+      {
+        ...DEFAULT_CONTROLLED_VOCABULARY,
         id: "cv-a",
         iri: "http://example.com/vocabularies/cv-a",
         pattern: "^http://example\\.com/a/.*$",
-      }),
-      controlledVocabularyFixture({
+      },
+      {
+        ...DEFAULT_CONTROLLED_VOCABULARY,
         id: "cv-b",
         iri: "http://example.com/vocabularies/cv-b",
         pattern: "^http://example\\.com/b/.*$",
-      }),
+      },
     ]);
 
     const profileBuilder = createDefaultProfileModelBuilder({
@@ -596,22 +541,21 @@ describe("semanticModelsToShacl - controlled vocabularies", () => {
       controlledVocabularies: ["assignment-a", "assignment-b"],
     }).profile(person);
 
-    const profile = withExtraEntities(profileBuilder.build(), [
-      assignmentFixture({
-        id: "assignment-a",
-        iri: "http://example.com/assignments/a",
-        classProfile: personProfile.identifier,
-        vocabulary: "cv-a",
-        qualifier: "at-least-one",
-      }),
-      assignmentFixture({
-        id: "assignment-b",
-        iri: "http://example.com/assignments/b",
-        classProfile: personProfile.identifier,
-        vocabulary: "cv-b",
-        qualifier: "recommended",
-      }),
-    ]);
+    profileBuilder.controlledVocabularyAssignment({
+      id: "assignment-a",
+      iri: "http://example.com/assignments/a",
+      classProfile: personProfile.identifier,
+      vocabulary: "cv-a",
+      qualifier: "at-least-one",
+    });
+    profileBuilder.controlledVocabularyAssignment({
+      id: "assignment-b",
+      iri: "http://example.com/assignments/b",
+      classProfile: personProfile.identifier,
+      vocabulary: "cv-b",
+      qualifier: "recommended",
+    });
+    const profile = profileBuilder.build();
 
     const shacl = semanticModelsToShacl(
       [vocabulary.build()],
@@ -655,13 +599,12 @@ describe("semanticModelsToShacl - controlled vocabularies", () => {
     const baseClass = vocabulary.class({ iri: "base" });
     const derivedClass = vocabulary.class({ iri: "derived" });
 
-    const controlledVocabularies = entityModel("http://example.com/cv#", [
-      controlledVocabularyFixture({
-        id: "cv-1",
-        iri: "http://example.com/vocabularies/cv-1",
-        pattern: "^http://example\\.com/codes/.*$",
-      }),
-    ]);
+    const controlledVocabularies = entityModel("http://example.com/cv#", [{
+      ...DEFAULT_CONTROLLED_VOCABULARY,
+      id: "cv-1",
+      iri: "http://example.com/vocabularies/cv-1",
+      pattern: "^http://example\\.com/codes/.*$",
+    }]);
 
     const profileBuilder = createDefaultProfileModelBuilder({
       baseIdentifier: "profile:",
@@ -678,13 +621,14 @@ describe("semanticModelsToShacl - controlled vocabularies", () => {
 
     profileBuilder.generalization(baseProfile, derivedProfile);
 
-    const profile = withExtraEntities(profileBuilder.build(), [assignmentFixture({
+    profileBuilder.controlledVocabularyAssignment({
       id: "assignment-1",
       iri: "http://example.com/assignments/1",
       classProfile: baseProfile.identifier,
       vocabulary: "cv-1",
       qualifier: "must",
-    })]);
+    });
+    const profile = profileBuilder.build();
 
     const shacl = semanticModelsToShacl(
       [vocabulary.build()],
@@ -721,16 +665,18 @@ describe("semanticModelsToShacl - controlled vocabularies", () => {
     const derivedClass = vocabulary.class({ iri: "derived" });
 
     const controlledVocabularies = entityModel("http://example.com/cv#", [
-      controlledVocabularyFixture({
+      {
+        ...DEFAULT_CONTROLLED_VOCABULARY,
         id: "cv-base",
         iri: "http://example.com/vocabularies/cv-base",
         pattern: "^http://example\\.com/base/.*$",
-      }),
-      controlledVocabularyFixture({
+      },
+      {
+        ...DEFAULT_CONTROLLED_VOCABULARY,
         id: "cv-override",
         iri: "http://example.com/vocabularies/cv-override",
         pattern: "^http://example\\.com/override/.*$",
-      }),
+      },
     ]);
 
     const profileBuilder = createDefaultProfileModelBuilder({
@@ -750,23 +696,22 @@ describe("semanticModelsToShacl - controlled vocabularies", () => {
 
     profileBuilder.generalization(baseProfile, derivedProfile);
 
-    const profile = withExtraEntities(profileBuilder.build(), [
-      assignmentFixture({
-        id: "assignment-base",
-        iri: "http://example.com/assignments/base",
-        classProfile: baseProfile.identifier,
-        vocabulary: "cv-base",
-        qualifier: "must",
-      }),
-      assignmentFixture({
-        id: "assignment-override",
-        iri: "http://example.com/assignments/override",
-        classProfile: derivedProfile.identifier,
-        vocabulary: "cv-override",
-        qualifier: "must",
-        replaces: { kind: "local", target: "assignment-base" },
-      }),
-    ]);
+    profileBuilder.controlledVocabularyAssignment({
+      id: "assignment-base",
+      iri: "http://example.com/assignments/base",
+      classProfile: baseProfile.identifier,
+      vocabulary: "cv-base",
+      qualifier: "must",
+    });
+    profileBuilder.controlledVocabularyAssignment({
+      id: "assignment-override",
+      iri: "http://example.com/assignments/override",
+      classProfile: derivedProfile.identifier,
+      vocabulary: "cv-override",
+      qualifier: "must",
+      replaces: { kind: "local", target: "assignment-base" },
+    });
+    const profile = profileBuilder.build();
 
     const shacl = semanticModelsToShacl(
       [vocabulary.build()],
@@ -799,80 +744,63 @@ describe("semanticModelsToShacl - controlled vocabulary concept schemes", () => 
 
   const SKOS_IN_SCHEME = "http://www.w3.org/2004/02/skos/core#inScheme";
 
-  /**
-   * Generates SHACL for a class `person` with a single assignment of
-   * a controlled vocabulary with given properties. Both controlled
-   * vocabulary checks are enabled unless the configuration says otherwise.
-   */
-  function generate(
-    vocabularyOverrides: Partial<ControlledVocabulary>,
-    qualifier: ControlledVocabularyAssignment["qualifier"],
-    configurationOverrides: Partial<SemanticModelsToShaclConfiguration> = {},
-  ) {
-    const vocabulary = createDefaultSemanticModelBuilder({
-      baseIdentifier: "vocab:",
-      baseIri: "http://example.com/vocabulary#",
-    });
+  // The vocabulary is not changed by the tests.
+  const vocabulary = createDefaultSemanticModelBuilder({
+    baseIdentifier: "vocab:",
+    baseIri: "http://example.com/vocabulary#",
+  });
 
-    const person = vocabulary.class({ iri: "person" });
+  const person = vocabulary.class({ iri: "person" });
 
-    const controlledVocabularies = entityModel("http://example.com/cv#", [
-      controlledVocabularyFixture({
-        id: "cv-1",
-        iri: "http://example.com/vocabularies/cv-1",
-        ...vocabularyOverrides,
-      }),
-    ]);
+  // Each test adds its own assignment to the profile.
+  let profileBuilder: ProfileModelBuilder;
+  let personProfile: ProfileClassBuilder;
 
-    const profileBuilder = createDefaultProfileModelBuilder({
+  beforeEach(() => {
+    profileBuilder = createDefaultProfileModelBuilder({
       baseIdentifier: "profile:",
       baseIri: "http://example.com/profile#",
     });
-
-    const personProfile = profileBuilder.class({
+    personProfile = profileBuilder.class({
       iri: "person",
       controlledVocabularies: ["assignment-1"],
     }).profile(person);
+  });
 
-    const profile = withExtraEntities(profileBuilder.build(), [assignmentFixture({
+  test("A SKOS-based vocabulary with a pattern checks both the pattern and the scheme.", async () => {
+
+    const controlledVocabularies = entityModel("http://example.com/cv#", [{
+      ...DEFAULT_CONTROLLED_VOCABULARY,
+      id: "cv-1",
+      iri: "http://example.com/vocabularies/cv-1",
+      pattern: "^http://example\\.com/codes/.*$",
+      references: "http://example.com/scheme",
+      conformsToSkos: true,
+    }]);
+
+    profileBuilder.controlledVocabularyAssignment({
       id: "assignment-1",
       iri: "http://example.com/assignments/1",
       classProfile: personProfile.identifier,
       vocabulary: "cv-1",
-      qualifier,
-    })]);
+      qualifier: "must",
+    });
+    const profile = profileBuilder.build();
 
-    return semanticModelsToShacl(
+    const shacl = semanticModelsToShacl(
       [vocabulary.build()],
       [profile],
       profile,
       {
-        policy: "semic-v1" as const,
+        policy: "semic-v1",
         languages: [],
         noClassConstraints: false,
         splitPropertyShapesByConstraints: false,
         controlledVocabularyPattern: true,
         controlledVocabularyScheme: true,
-        ...configurationOverrides,
       },
       { baseIri: "http://example/shacl.ttl" },
       [controlledVocabularies]);
-  }
-
-  /**
-   * @returns Shapes other than the primary shape of the class.
-   */
-  function controlledVocabularyShapes(shacl: ReturnType<typeof generate>) {
-    return shacl.members.filter(item => item.iri.includes("/cv-"));
-  }
-
-  test("A SKOS-based vocabulary with a pattern checks both the pattern and the scheme.", async () => {
-
-    const shacl = generate({
-      pattern: "^http://example\\.com/codes/.*$",
-      references: "http://example.com/scheme",
-      conformsToSkos: true,
-    }, "must");
 
     // The primary shape and a single shape for the vocabulary.
     expect(shacl.members.length).toBe(2);
@@ -901,11 +829,38 @@ describe("semanticModelsToShacl - controlled vocabulary concept schemes", () => 
 
   test("A SKOS-based vocabulary without a pattern checks only the scheme, reported as a warning.", async () => {
 
-    const shacl = generate({
+    const controlledVocabularies = entityModel("http://example.com/cv#", [{
+      ...DEFAULT_CONTROLLED_VOCABULARY,
+      id: "cv-1",
+      iri: "http://example.com/vocabularies/cv-1",
       pattern: null,
       references: "http://example.com/scheme",
       conformsToSkos: true,
-    }, "recommended");
+    }]);
+
+    profileBuilder.controlledVocabularyAssignment({
+      id: "assignment-1",
+      iri: "http://example.com/assignments/1",
+      classProfile: personProfile.identifier,
+      vocabulary: "cv-1",
+      qualifier: "recommended",
+    });
+    const profile = profileBuilder.build();
+
+    const shacl = semanticModelsToShacl(
+      [vocabulary.build()],
+      [profile],
+      profile,
+      {
+        policy: "semic-v1",
+        languages: [],
+        noClassConstraints: false,
+        splitPropertyShapesByConstraints: false,
+        controlledVocabularyPattern: true,
+        controlledVocabularyScheme: true,
+      },
+      { baseIri: "http://example/shacl.ttl" },
+      [controlledVocabularies]);
 
     const shapes = controlledVocabularyShapes(shacl);
     expect(shapes.length).toBe(1);
@@ -928,11 +883,38 @@ describe("semanticModelsToShacl - controlled vocabulary concept schemes", () => 
 
   test("A vocabulary that is not SKOS-based checks only the pattern.", async () => {
 
-    const shacl = generate({
+    const controlledVocabularies = entityModel("http://example.com/cv#", [{
+      ...DEFAULT_CONTROLLED_VOCABULARY,
+      id: "cv-1",
+      iri: "http://example.com/vocabularies/cv-1",
       pattern: "^https://www\\.iana\\.org/assignments/media-types/.*$",
       references: "https://www.iana.org/assignments/media-types/media-types.xml",
       conformsToSkos: false,
-    }, "must");
+    }]);
+
+    profileBuilder.controlledVocabularyAssignment({
+      id: "assignment-1",
+      iri: "http://example.com/assignments/1",
+      classProfile: personProfile.identifier,
+      vocabulary: "cv-1",
+      qualifier: "must",
+    });
+    const profile = profileBuilder.build();
+
+    const shacl = semanticModelsToShacl(
+      [vocabulary.build()],
+      [profile],
+      profile,
+      {
+        policy: "semic-v1",
+        languages: [],
+        noClassConstraints: false,
+        splitPropertyShapesByConstraints: false,
+        controlledVocabularyPattern: true,
+        controlledVocabularyScheme: true,
+      },
+      { baseIri: "http://example/shacl.ttl" },
+      [controlledVocabularies]);
 
     const shapes = controlledVocabularyShapes(shacl);
     expect(shapes.length).toBe(1);
@@ -947,35 +929,121 @@ describe("semanticModelsToShacl - controlled vocabulary concept schemes", () => 
 
   });
 
-  test("There is no shape when there is nothing to check.", () => {
+  test("There is no shape for a SKOS-based vocabulary without a pattern and without a scheme.", () => {
 
-    // SKOS-based without a pattern and without a scheme.
-    const withoutScheme = generate({
+    const controlledVocabularies = entityModel("http://example.com/cv#", [{
+      ...DEFAULT_CONTROLLED_VOCABULARY,
+      id: "cv-1",
+      iri: "http://example.com/vocabularies/cv-1",
       pattern: null,
       references: "",
       conformsToSkos: true,
-    }, "must");
-    expect(controlledVocabularyShapes(withoutScheme)).toStrictEqual([]);
-    expect(withoutScheme.members.length).toBe(1);
+    }]);
 
-    // Not SKOS-based and without a pattern, the reference is not a scheme.
-    const withoutPattern = generate({
+    profileBuilder.controlledVocabularyAssignment({
+      id: "assignment-1",
+      iri: "http://example.com/assignments/1",
+      classProfile: personProfile.identifier,
+      vocabulary: "cv-1",
+      qualifier: "must",
+    });
+    const profile = profileBuilder.build();
+
+    const shacl = semanticModelsToShacl(
+      [vocabulary.build()],
+      [profile],
+      profile,
+      {
+        policy: "semic-v1",
+        languages: [],
+        noClassConstraints: false,
+        splitPropertyShapesByConstraints: false,
+        controlledVocabularyPattern: true,
+        controlledVocabularyScheme: true,
+      },
+      { baseIri: "http://example/shacl.ttl" },
+      [controlledVocabularies]);
+
+    expect(controlledVocabularyShapes(shacl)).toStrictEqual([]);
+    expect(shacl.members.length).toBe(1);
+
+  });
+
+  test("There is no shape for a vocabulary that is not SKOS-based and has no pattern.", () => {
+
+    // The reference is not a scheme.
+    const controlledVocabularies = entityModel("http://example.com/cv#", [{
+      ...DEFAULT_CONTROLLED_VOCABULARY,
+      id: "cv-1",
+      iri: "http://example.com/vocabularies/cv-1",
       pattern: null,
       references: "https://example.com/vocabulary.rdf",
       conformsToSkos: false,
-    }, "must");
-    expect(controlledVocabularyShapes(withoutPattern)).toStrictEqual([]);
-    expect(withoutPattern.members.length).toBe(1);
+    }]);
+
+    profileBuilder.controlledVocabularyAssignment({
+      id: "assignment-1",
+      iri: "http://example.com/assignments/1",
+      classProfile: personProfile.identifier,
+      vocabulary: "cv-1",
+      qualifier: "must",
+    });
+    const profile = profileBuilder.build();
+
+    const shacl = semanticModelsToShacl(
+      [vocabulary.build()],
+      [profile],
+      profile,
+      {
+        policy: "semic-v1",
+        languages: [],
+        noClassConstraints: false,
+        splitPropertyShapesByConstraints: false,
+        controlledVocabularyPattern: true,
+        controlledVocabularyScheme: true,
+      },
+      { baseIri: "http://example/shacl.ttl" },
+      [controlledVocabularies]);
+
+    expect(controlledVocabularyShapes(shacl)).toStrictEqual([]);
+    expect(shacl.members.length).toBe(1);
 
   });
 
   test("The scheme check is a separate property shape when constraints are split.", async () => {
 
-    const shacl = generate({
+    const controlledVocabularies = entityModel("http://example.com/cv#", [{
+      ...DEFAULT_CONTROLLED_VOCABULARY,
+      id: "cv-1",
+      iri: "http://example.com/vocabularies/cv-1",
       pattern: "^http://example\\.com/codes/.*$",
       references: "http://example.com/scheme",
       conformsToSkos: true,
-    }, "at-least-one", { splitPropertyShapesByConstraints: true });
+    }]);
+
+    profileBuilder.controlledVocabularyAssignment({
+      id: "assignment-1",
+      iri: "http://example.com/assignments/1",
+      classProfile: personProfile.identifier,
+      vocabulary: "cv-1",
+      qualifier: "at-least-one",
+    });
+    const profile = profileBuilder.build();
+
+    const shacl = semanticModelsToShacl(
+      [vocabulary.build()],
+      [profile],
+      profile,
+      {
+        policy: "semic-v1",
+        languages: [],
+        noClassConstraints: false,
+        splitPropertyShapesByConstraints: true,
+        controlledVocabularyPattern: true,
+        controlledVocabularyScheme: true,
+      },
+      { baseIri: "http://example/shacl.ttl" },
+      [controlledVocabularies]);
 
     const shape = controlledVocabularyShapes(shacl)[0]!;
     expect(shape.propertyShapes.length).toBe(1);
@@ -991,18 +1059,40 @@ describe("semanticModelsToShacl - controlled vocabulary concept schemes", () => 
   });
 
 
-  const SKOS_VOCABULARY = {
-    pattern: "^http://example\\.com/codes/.*$",
-    references: "http://example.com/scheme",
-    conformsToSkos: true,
-  };
-
   test("Only the pattern is checked when the scheme check is disabled.", async () => {
 
-    const shacl = generate(SKOS_VOCABULARY, "must", {
-      controlledVocabularyPattern: true,
-      controlledVocabularyScheme: false,
+    const controlledVocabularies = entityModel("http://example.com/cv#", [{
+      ...DEFAULT_CONTROLLED_VOCABULARY,
+      id: "cv-1",
+      iri: "http://example.com/vocabularies/cv-1",
+      pattern: "^http://example\\.com/codes/.*$",
+      references: "http://example.com/scheme",
+      conformsToSkos: true,
+    }]);
+
+    profileBuilder.controlledVocabularyAssignment({
+      id: "assignment-1",
+      iri: "http://example.com/assignments/1",
+      classProfile: personProfile.identifier,
+      vocabulary: "cv-1",
+      qualifier: "must",
     });
+    const profile = profileBuilder.build();
+
+    const shacl = semanticModelsToShacl(
+      [vocabulary.build()],
+      [profile],
+      profile,
+      {
+        policy: "semic-v1",
+        languages: [],
+        noClassConstraints: false,
+        splitPropertyShapesByConstraints: false,
+        controlledVocabularyPattern: true,
+        controlledVocabularyScheme: false,
+      },
+      { baseIri: "http://example/shacl.ttl" },
+      [controlledVocabularies]);
 
     const shapes = controlledVocabularyShapes(shacl);
     expect(shapes.length).toBe(1);
@@ -1017,10 +1107,38 @@ describe("semanticModelsToShacl - controlled vocabulary concept schemes", () => 
 
   test("Only the scheme is checked when the pattern check is disabled.", async () => {
 
-    const shacl = generate(SKOS_VOCABULARY, "must", {
-      controlledVocabularyPattern: false,
-      controlledVocabularyScheme: true,
+    const controlledVocabularies = entityModel("http://example.com/cv#", [{
+      ...DEFAULT_CONTROLLED_VOCABULARY,
+      id: "cv-1",
+      iri: "http://example.com/vocabularies/cv-1",
+      pattern: "^http://example\\.com/codes/.*$",
+      references: "http://example.com/scheme",
+      conformsToSkos: true,
+    }]);
+
+    profileBuilder.controlledVocabularyAssignment({
+      id: "assignment-1",
+      iri: "http://example.com/assignments/1",
+      classProfile: personProfile.identifier,
+      vocabulary: "cv-1",
+      qualifier: "must",
     });
+    const profile = profileBuilder.build();
+
+    const shacl = semanticModelsToShacl(
+      [vocabulary.build()],
+      [profile],
+      profile,
+      {
+        policy: "semic-v1",
+        languages: [],
+        noClassConstraints: false,
+        splitPropertyShapesByConstraints: false,
+        controlledVocabularyPattern: false,
+        controlledVocabularyScheme: true,
+      },
+      { baseIri: "http://example/shacl.ttl" },
+      [controlledVocabularies]);
 
     const shapes = controlledVocabularyShapes(shacl);
     expect(shapes.length).toBe(1);
@@ -1043,12 +1161,33 @@ describe("semanticModelsToShacl - controlled vocabulary concept schemes", () => 
       languages: [],
       noClassConstraints: false,
       splitPropertyShapesByConstraints: false,
-    } as unknown as Partial<SemanticModelsToShaclConfiguration>;
-    const shacl = generate(SKOS_VOCABULARY, "must", {
-      ...legacyConfiguration,
-      controlledVocabularyPattern: undefined,
-      controlledVocabularyScheme: undefined,
+    } as unknown as SemanticModelsToShaclConfiguration;
+
+    const controlledVocabularies = entityModel("http://example.com/cv#", [{
+      ...DEFAULT_CONTROLLED_VOCABULARY,
+      id: "cv-1",
+      iri: "http://example.com/vocabularies/cv-1",
+      pattern: "^http://example\\.com/codes/.*$",
+      references: "http://example.com/scheme",
+      conformsToSkos: true,
+    }]);
+
+    profileBuilder.controlledVocabularyAssignment({
+      id: "assignment-1",
+      iri: "http://example.com/assignments/1",
+      classProfile: personProfile.identifier,
+      vocabulary: "cv-1",
+      qualifier: "must",
     });
+    const profile = profileBuilder.build();
+
+    const shacl = semanticModelsToShacl(
+      [vocabulary.build()],
+      [profile],
+      profile,
+      legacyConfiguration,
+      { baseIri: "http://example/shacl.ttl" },
+      [controlledVocabularies]);
 
     const shapes = controlledVocabularyShapes(shacl);
     expect(shapes.length).toBe(1);
@@ -1059,10 +1198,38 @@ describe("semanticModelsToShacl - controlled vocabulary concept schemes", () => 
 
   test("There is no shape when both checks are disabled.", () => {
 
-    const shacl = generate(SKOS_VOCABULARY, "must", {
-      controlledVocabularyPattern: false,
-      controlledVocabularyScheme: false,
+    const controlledVocabularies = entityModel("http://example.com/cv#", [{
+      ...DEFAULT_CONTROLLED_VOCABULARY,
+      id: "cv-1",
+      iri: "http://example.com/vocabularies/cv-1",
+      pattern: "^http://example\\.com/codes/.*$",
+      references: "http://example.com/scheme",
+      conformsToSkos: true,
+    }]);
+
+    profileBuilder.controlledVocabularyAssignment({
+      id: "assignment-1",
+      iri: "http://example.com/assignments/1",
+      classProfile: personProfile.identifier,
+      vocabulary: "cv-1",
+      qualifier: "must",
     });
+    const profile = profileBuilder.build();
+
+    const shacl = semanticModelsToShacl(
+      [vocabulary.build()],
+      [profile],
+      profile,
+      {
+        policy: "semic-v1",
+        languages: [],
+        noClassConstraints: false,
+        splitPropertyShapesByConstraints: false,
+        controlledVocabularyPattern: false,
+        controlledVocabularyScheme: false,
+      },
+      { baseIri: "http://example/shacl.ttl" },
+      [controlledVocabularies]);
 
     expect(controlledVocabularyShapes(shacl)).toStrictEqual([]);
     expect(shacl.members.length).toBe(1);
@@ -1071,16 +1238,64 @@ describe("semanticModelsToShacl - controlled vocabulary concept schemes", () => 
 
   test("There is no shape when only the scheme check is enabled for a vocabulary that is not SKOS-based.", () => {
 
-    const shacl = generate({
-      ...SKOS_VOCABULARY,
+    const controlledVocabularies = entityModel("http://example.com/cv#", [{
+      ...DEFAULT_CONTROLLED_VOCABULARY,
+      id: "cv-1",
+      iri: "http://example.com/vocabularies/cv-1",
+      pattern: "^http://example\\.com/codes/.*$",
+      references: "http://example.com/scheme",
       conformsToSkos: false,
-    }, "must", {
-      controlledVocabularyPattern: false,
-      controlledVocabularyScheme: true,
+    }]);
+
+    profileBuilder.controlledVocabularyAssignment({
+      id: "assignment-1",
+      iri: "http://example.com/assignments/1",
+      classProfile: personProfile.identifier,
+      vocabulary: "cv-1",
+      qualifier: "must",
     });
+    const profile = profileBuilder.build();
+
+    const shacl = semanticModelsToShacl(
+      [vocabulary.build()],
+      [profile],
+      profile,
+      {
+        policy: "semic-v1",
+        languages: [],
+        noClassConstraints: false,
+        splitPropertyShapesByConstraints: false,
+        controlledVocabularyPattern: false,
+        controlledVocabularyScheme: true,
+      },
+      { baseIri: "http://example/shacl.ttl" },
+      [controlledVocabularies]);
 
     expect(controlledVocabularyShapes(shacl)).toStrictEqual([]);
 
   });
 
+  /**
+   * @returns Shapes other than the primary shape of the class.
+   */
+  function controlledVocabularyShapes(shacl: ShaclModel) {
+    return shacl.members.filter(item => item.iri.includes("/cv-"));
+  }
+
 });
+
+/**
+ * A minimal semantic-model-shaped container for controlled vocabularies,
+ * which have no dedicated model builder.
+ */
+function entityModel(
+  baseIri: string, entities: ControlledVocabulary[],
+): SemanticModel {
+  const record: Record<string, ControlledVocabulary> = {};
+  entities.forEach(entity => { record[entity.id] = entity; });
+  return {
+    getId: () => baseIri,
+    getBaseIri: () => baseIri,
+    getEntities: () => record,
+  } as SemanticModel;
+}

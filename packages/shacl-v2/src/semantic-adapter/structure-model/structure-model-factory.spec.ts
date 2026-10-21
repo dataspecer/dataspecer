@@ -1,82 +1,23 @@
-import { describe, test, expect } from "vitest";
+import { beforeEach, describe, test, expect } from "vitest";
 
 import {
   createDataSpecificationVocabulary,
   RequirementLevel,
-  resolveControlledVocabularyIri,
 } from "@dataspecer/data-specification-vocabulary/semantic-model";
-import { createDefaultProfileModelBuilder, ProfileModel } from "@dataspecer/profile-model";
+import {
+  createDefaultProfileModelBuilder,
+  ProfileClassBuilder,
+  ProfileModelBuilder,
+} from "@dataspecer/profile-model";
 import { createDefaultSemanticModelBuilder, SemanticModel } from "@dataspecer/semantic-model";
 import { semanticModelToLightweightOwl } from "@dataspecer/lightweight-owl";
 import {
-  CONTROLLED_VOCABULARY_TYPE,
+  DEFAULT_CONTROLLED_VOCABULARY,
   ControlledVocabulary,
-  isControlledVocabulary,
 } from "@dataspecer/controlled-vocabulary-model";
-import {
-  CONTROLLED_VOCABULARY_ASSIGNMENT,
-  ControlledVocabularyAssignment,
-} from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import type { Entity } from "@dataspecer/core-v2/entity-model";
 
 import { createStructureModelForProfile } from "./structure-model-factory.ts";
 import { createStructureModelBuilder } from "./structure-model-builder.ts";
-
-/**
- * Adds extra entities to a built model - used to attach a standalone
- * ControlledVocabularyAssignment/ControlledVocabulary, which the
- * fluent builders have no dedicated method for. Wraps each accessor
- * explicitly rather than spreading `model` - it is a class instance,
- * so its methods live on the prototype and a spread would drop them.
- */
-function withExtraEntities(
-  model: ProfileModel, entities: Entity[],
-): ProfileModel {
-  const extra: Record<string, Entity> = {};
-  entities.forEach(entity => { extra[entity.id] = entity; });
-  return {
-    getId: () => model.getId(),
-    getBaseIri: () => model.getBaseIri(),
-    getEntities: () => ({ ...model.getEntities(), ...extra }),
-  };
-}
-
-function controlledVocabularyFixture(
-  overrides: Partial<ControlledVocabulary>,
-): ControlledVocabulary {
-  return {
-    id: "cv", type: [CONTROLLED_VOCABULARY_TYPE],
-    title: {}, pattern: null, references: "", conformsToSkos: true, documentation: null,
-    distribution: { downloadUrl: null, accessUrl: "" },
-    iri: null,
-    ...overrides,
-  };
-}
-
-function assignmentFixture(
-  overrides: Partial<ControlledVocabularyAssignment>,
-): ControlledVocabularyAssignment {
-  return {
-    id: "cv-assignment", type: [CONTROLLED_VOCABULARY_ASSIGNMENT],
-    classProfile: "", vocabulary: "", qualifier: "must",
-    replaces: null, iri: null,
-    ...overrides,
-  };
-}
-
-/**
- * A minimal semantic-model-shaped container for standalone entities,
- * such as a ControlledVocabulary, that have no dedicated builder.
- */
-function entityModel(baseIri: string, entities: Entity[]): SemanticModel {
-  const record: Record<string, Entity> = {};
-  entities.forEach(entity => { record[entity.id] = entity; });
-  return {
-    getId: () => baseIri,
-    getBaseIri: () => baseIri,
-    getEntities: () => record,
-  } as SemanticModel;
-}
 
 describe("createStructureModel", () => {
 
@@ -181,60 +122,62 @@ describe("createStructureModel", () => {
 
   });
 
-  /**
-   * Resolves a single "must" assignment of the given controlled vocabulary
-   * on a class profile and returns the structure assignments of that class.
-   * When `resolvable` is false the vocabulary is left out of the models,
-   * as if the assignment pointed to a vocabulary that is not available.
-   */
-  function resolveAssignments(
-    vocabularyOverrides: Partial<ControlledVocabulary>,
-    resolvable: boolean = true,
-  ) {
+});
 
-    // Vocabulary
+describe("createStructureModel - controlled vocabularies", () => {
 
-    const vocabulary = createDefaultSemanticModelBuilder({
-      baseIdentifier: "vocab:",
-      baseIri: "http://example.com/vocabulary#",
-    });
+  // The vocabulary is not changed by the tests.
+  const vocabulary = createDefaultSemanticModelBuilder({
+    baseIdentifier: "vocab:",
+    baseIri: "http://example.com/vocabulary#",
+  });
 
-    const person = vocabulary.class({ iri: "person" });
+  const person = vocabulary.class({ iri: "person" });
 
-    // Controlled vocabulary
+  // Each test adds its own assignment to the profile.
+  let profileBuilder: ProfileModelBuilder;
+  let personProfile: ProfileClassBuilder;
 
-    const controlledVocabulary = controlledVocabularyFixture({
-      id: "cv-1",
-      iri: "http://example.com/vocabularies/cv-1",
-      ...vocabularyOverrides,
-    });
-    const controlledVocabularies = entityModel(
-      "http://example.com/cv#", resolvable ? [controlledVocabulary] : []);
-
-    // Profile
-
-    const profileBuilder = createDefaultProfileModelBuilder({
+  beforeEach(() => {
+    profileBuilder = createDefaultProfileModelBuilder({
       baseIdentifier: "profile:",
       baseIri: "http://example.com/profile#",
     });
-
-    profileBuilder.class({
+    personProfile = profileBuilder.class({
       iri: "person",
       controlledVocabularies: ["assignment-1"],
     }).profile(person);
+  });
 
-    const profile: ProfileModel = withExtraEntities(profileBuilder.build(), [assignmentFixture({
+  test("Resolves the pattern and scheme of a SKOS-based controlled vocabulary.", () => {
+
+    // Controlled vocabulary
+
+    const controlledVocabulary = {
+      ...DEFAULT_CONTROLLED_VOCABULARY,
+      id: "cv-1",
+      iri: "http://example.com/vocabularies/cv-1",
+      pattern: "^http://example\\.com/codes/.*$",
+      references: "http://example.com/scheme",
+      conformsToSkos: true,
+    };
+    const controlledVocabularies = entityModel("http://example.com/cv#", [controlledVocabulary]);
+
+    // Profile
+
+    profileBuilder.controlledVocabularyAssignment({
       id: "assignment-1",
       iri: "http://example.com/assignments/1",
-      classProfile: "profile:001",
+      classProfile: personProfile.identifier,
       vocabulary: "cv-1",
       qualifier: "must",
-    })]);
+    });
+    const profile = profileBuilder.build();
 
     // DSV
 
     const dsv = createDataSpecificationVocabulary({
-      semantics: [xsd.build(), vocabulary.build()],
+      semantics: [vocabulary.build()],
       profiles: [profile],
       controlledVocabularies: [controlledVocabularies],
     }, [profile], { iri: "http://example.com/" });
@@ -242,30 +185,12 @@ describe("createStructureModel", () => {
     // Structure model
 
     const owl = semanticModelToLightweightOwl(
-      [], [xsd.build(), vocabulary.build()], { baseIri: "", idDefinedBy: "" });
+      [], [vocabulary.build()], { baseIri: "", idDefinedBy: "" });
 
-    const actual = createStructureModelForProfile(
-      owl, dsv, Object.values(controlledVocabularies.getEntities())
-        .filter(isControlledVocabulary)
-        .map(entity => ({
-          ...entity,
-          iri: resolveControlledVocabularyIri(
-            entity, controlledVocabularies.getBaseIri() ?? ""),
-        })));
+    const actual = createStructureModelForProfile(owl, dsv, [controlledVocabulary]);
 
-    expect(actual.classes.length).toBe(1);
-    return actual.classes[0]!.controlledVocabularyAssignments;
-  }
-
-  test("Resolves the pattern and scheme of a SKOS-based controlled vocabulary.", () => {
-
-    const actual = resolveAssignments({
-      pattern: "^http://example\\.com/codes/.*$",
-      references: "http://example.com/scheme",
-      conformsToSkos: true,
-    });
-
-    expect(actual).toStrictEqual([{
+    expect(actual.classes).toHaveLength(1);
+    expect(actual.classes[0]!.controlledVocabularyAssignments).toStrictEqual([{
       iri: "http://example.com/assignments/1",
       controlledVocabularyIri: "http://example.com/vocabularies/cv-1",
       pattern: "^http://example\\.com/codes/.*$",
@@ -278,43 +203,156 @@ describe("createStructureModel", () => {
 
   test("Does not resolve a scheme of a vocabulary that is not SKOS-based.", () => {
 
-    const actual = resolveAssignments({
+    // Controlled vocabulary
+
+    const controlledVocabulary = {
+      ...DEFAULT_CONTROLLED_VOCABULARY,
+      id: "cv-1",
+      iri: "http://example.com/vocabularies/cv-1",
       pattern: "^http://example\\.com/codes/.*$",
       references: "http://example.com/download",
       conformsToSkos: false,
-    });
+    };
+    const controlledVocabularies = entityModel("http://example.com/cv#", [controlledVocabulary]);
 
-    expect(actual).toHaveLength(1);
-    expect(actual[0]!.pattern).toBe("^http://example\\.com/codes/.*$");
-    expect(actual[0]!.schemeIri).toBeNull();
+    // Profile
+
+    profileBuilder.controlledVocabularyAssignment({
+      id: "assignment-1",
+      iri: "http://example.com/assignments/1",
+      classProfile: personProfile.identifier,
+      vocabulary: "cv-1",
+      qualifier: "must",
+    });
+    const profile = profileBuilder.build();
+
+    // DSV
+
+    const dsv = createDataSpecificationVocabulary({
+      semantics: [vocabulary.build()],
+      profiles: [profile],
+      controlledVocabularies: [controlledVocabularies],
+    }, [profile], { iri: "http://example.com/" });
+
+    // Structure model
+
+    const owl = semanticModelToLightweightOwl(
+      [], [vocabulary.build()], { baseIri: "", idDefinedBy: "" });
+
+    const actual = createStructureModelForProfile(owl, dsv, [controlledVocabulary]);
+
+    expect(actual.classes).toHaveLength(1);
+    const assignments = actual.classes[0]!.controlledVocabularyAssignments;
+    expect(assignments).toHaveLength(1);
+    expect(assignments[0]!.pattern).toBe("^http://example\\.com/codes/.*$");
+    expect(assignments[0]!.schemeIri).toBeNull();
 
   });
 
   test("Resolves a vocabulary without a pattern or reference as missing.", () => {
 
-    const actual = resolveAssignments({
+    // Controlled vocabulary
+
+    const controlledVocabulary = {
+      ...DEFAULT_CONTROLLED_VOCABULARY,
+      id: "cv-1",
+      iri: "http://example.com/vocabularies/cv-1",
       pattern: null,
       references: "",
       conformsToSkos: true,
-    });
+    };
+    const controlledVocabularies = entityModel("http://example.com/cv#", [controlledVocabulary]);
 
-    expect(actual).toHaveLength(1);
-    expect(actual[0]!.pattern).toBeNull();
-    expect(actual[0]!.schemeIri).toBeNull();
+    // Profile
+
+    profileBuilder.controlledVocabularyAssignment({
+      id: "assignment-1",
+      iri: "http://example.com/assignments/1",
+      classProfile: personProfile.identifier,
+      vocabulary: "cv-1",
+      qualifier: "must",
+    });
+    const profile = profileBuilder.build();
+
+    // DSV
+
+    const dsv = createDataSpecificationVocabulary({
+      semantics: [vocabulary.build()],
+      profiles: [profile],
+      controlledVocabularies: [controlledVocabularies],
+    }, [profile], { iri: "http://example.com/" });
+
+    // Structure model
+
+    const owl = semanticModelToLightweightOwl(
+      [], [vocabulary.build()], { baseIri: "", idDefinedBy: "" });
+
+    const actual = createStructureModelForProfile(owl, dsv, [controlledVocabulary]);
+
+    expect(actual.classes).toHaveLength(1);
+    const assignments = actual.classes[0]!.controlledVocabularyAssignments;
+    expect(assignments).toHaveLength(1);
+    expect(assignments[0]!.pattern).toBeNull();
+    expect(assignments[0]!.schemeIri).toBeNull();
 
   });
 
   test("Resolves nothing for a controlled vocabulary that is not available.", () => {
 
-    const actual = resolveAssignments({
-      pattern: "^http://example\\.com/codes/.*$",
-      references: "http://example.com/scheme",
-    }, false);
+    // Controlled vocabulary
 
-    expect(actual).toHaveLength(1);
-    expect(actual[0]!.pattern).toBeNull();
-    expect(actual[0]!.schemeIri).toBeNull();
+    // The assignment below points to a vocabulary "cv-1" that is not
+    // part of any model.
+    const controlledVocabularies = entityModel("http://example.com/cv#", []);
+
+    // Profile
+
+    profileBuilder.controlledVocabularyAssignment({
+      id: "assignment-1",
+      iri: "http://example.com/assignments/1",
+      classProfile: personProfile.identifier,
+      vocabulary: "cv-1",
+      qualifier: "must",
+    });
+    const profile = profileBuilder.build();
+
+    // DSV
+
+    const dsv = createDataSpecificationVocabulary({
+      semantics: [vocabulary.build()],
+      profiles: [profile],
+      controlledVocabularies: [controlledVocabularies],
+    }, [profile], { iri: "http://example.com/" });
+
+    // Structure model
+
+    const owl = semanticModelToLightweightOwl(
+      [], [vocabulary.build()], { baseIri: "", idDefinedBy: "" });
+
+    const actual = createStructureModelForProfile(owl, dsv, []);
+
+    expect(actual.classes).toHaveLength(1);
+    const assignments = actual.classes[0]!.controlledVocabularyAssignments;
+    expect(assignments).toHaveLength(1);
+    expect(assignments[0]!.pattern).toBeNull();
+    expect(assignments[0]!.schemeIri).toBeNull();
 
   });
 
 });
+
+/**
+ * A minimal semantic-model-shaped container for controlled vocabularies,
+ * which have no dedicated model builder.
+ */
+function entityModel(
+  baseIri: string, entities: ControlledVocabulary[],
+): SemanticModel {
+  const record: Record<string, ControlledVocabulary> = {};
+  entities.forEach(entity => { record[entity.id] = entity; });
+  return {
+    getId: () => baseIri,
+    getBaseIri: () => baseIri,
+    getEntities: () => record,
+  } as SemanticModel;
+}
