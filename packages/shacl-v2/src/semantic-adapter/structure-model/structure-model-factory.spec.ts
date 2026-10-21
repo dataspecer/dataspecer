@@ -1,12 +1,17 @@
 import { describe, test, expect } from "vitest";
 
-import { createDataSpecificationVocabulary, RequirementLevel } from "@dataspecer/data-specification-vocabulary/semantic-model";
+import {
+  createDataSpecificationVocabulary,
+  RequirementLevel,
+  resolveControlledVocabularyIri,
+} from "@dataspecer/data-specification-vocabulary/semantic-model";
 import { createDefaultProfileModelBuilder, ProfileModel } from "@dataspecer/profile-model";
 import { createDefaultSemanticModelBuilder, SemanticModel } from "@dataspecer/semantic-model";
 import { semanticModelToLightweightOwl } from "@dataspecer/lightweight-owl";
 import {
   CONTROLLED_VOCABULARY_TYPE,
   ControlledVocabulary,
+  isControlledVocabulary,
 } from "@dataspecer/controlled-vocabulary-model";
 import {
   CONTROLLED_VOCABULARY_ASSIGNMENT,
@@ -239,10 +244,14 @@ describe("createStructureModel", () => {
     const owl = semanticModelToLightweightOwl(
       [], [xsd.build(), vocabulary.build()], { baseIri: "", idDefinedBy: "" });
 
-    const actual = createStructureModelForProfile(owl, dsv, [{
-      baseIri: controlledVocabularies.getBaseIri(),
-      entities: Object.values(controlledVocabularies.getEntities()),
-    }]);
+    const actual = createStructureModelForProfile(
+      owl, dsv, Object.values(controlledVocabularies.getEntities())
+        .filter(isControlledVocabulary)
+        .map(entity => ({
+          ...entity,
+          iri: resolveControlledVocabularyIri(
+            entity, controlledVocabularies.getBaseIri() ?? ""),
+        })));
 
     expect(actual.classes.length).toBe(1);
     return actual.classes[0]!.controlledVocabularyAssignments;

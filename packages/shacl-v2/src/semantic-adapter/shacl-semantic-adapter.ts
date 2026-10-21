@@ -3,7 +3,9 @@ import { SemanticModel } from "@dataspecer/semantic-model";
 import { semanticModelToLightweightOwl } from "@dataspecer/lightweight-owl";
 import {
   createDataSpecificationVocabulary,
+  resolveControlledVocabularyIri,
 } from "@dataspecer/data-specification-vocabulary/semantic-model";
+import { isControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 import {
   isComplexType,
   isPrimitiveType,
@@ -12,7 +14,7 @@ import { Qualifier } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 
 import {
   createStructureModelForProfile,
-  EntityContainer,
+  ResolvedControlledVocabulary,
   StructureClass,
   StructureControlledVocabularyAssignment,
   StructureProperty,
@@ -104,14 +106,20 @@ export function semanticModelsToShacl(
     { iri: "http://example.com/" });
   const topClassesByIri = topDsv.classProfiles.map(item => item.iri);
 
-  const controlledVocabularyContainers: EntityContainer[] =
-    controlledVocabularies.map(item => ({
-      baseIri: item.getBaseIri(),
-      entities: Object.values(item.getEntities()),
-    }));
+  // The IRIs of controlled vocabularies may be relative to the base IRI of
+  // the model they come from, so we resolve them here. 
+  // Once the entities carry absolute IRIs this can be dropped.
+  const resolvedControlledVocabularies: ResolvedControlledVocabulary[] =
+    controlledVocabularies.flatMap(model =>
+      Object.values(model.getEntities())
+        .filter(isControlledVocabulary)
+        .map(entity => ({
+          ...entity,
+          iri: resolveControlledVocabularyIri(entity, model.getBaseIri() ?? ""),
+        })));
 
   const structure = createStructureModelForProfile(
-    owl, dsv, controlledVocabularyContainers);
+    owl, dsv, resolvedControlledVocabularies);
   const classMap: Record<string, StructureClass> = {};
   structure.classes.forEach(item => classMap[item.iri] = item);
 

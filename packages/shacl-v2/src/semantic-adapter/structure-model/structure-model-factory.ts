@@ -1,4 +1,3 @@
-import { Entity } from "@dataspecer/core-v2/entity-model";
 import {
   Cardinality,
   ClassProfile,
@@ -12,17 +11,13 @@ import {
   ObjectPropertyProfile,
   DatatypePropertyProfile,
   iriToUsageExpectation,
-  resolveControlledVocabularyIri,
 } from "@dataspecer/data-specification-vocabulary/semantic-model";
 import {
   OwlClass,
   OwlOntology,
   OwlProperty,
 } from "@dataspecer/lightweight-owl";
-import {
-  ControlledVocabulary,
-  isControlledVocabulary,
-} from "@dataspecer/controlled-vocabulary-model";
+import { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 
 import {
   LanguageString,
@@ -34,16 +29,13 @@ import {
 } from "./structure-model.ts";
 
 /**
- * A container of entities together with the IRI used to resolve any
- * relative IRIs among them, as used by {@link resolveControlledVocabularyIri}.
+ * A {@link ControlledVocabulary} with its IRI resolved to an absolute IRI,
+ * so it can be matched with the IRI referenced by an assignment.
+ * Once the entities carry absolute IRIs this can be refactored.
  */
-export interface EntityContainer {
-
-  baseIri: string | null;
-
-  entities: Entity[];
-
-}
+export type ResolvedControlledVocabulary = ControlledVocabulary & {
+  iri: string;
+};
 
 interface Context {
 
@@ -67,7 +59,7 @@ interface Context {
  */
 export function createStructureModelForProfile(
   owl: OwlOntology, dsv: ApplicationProfile,
-  controlledVocabularies: EntityContainer[] = [],
+  controlledVocabularies: ResolvedControlledVocabulary[] = [],
 ): StructureModel {
   const context = createContext(owl, dsv, controlledVocabularies);
   // We know the output is defined by the ApplicationProfile.
@@ -104,7 +96,7 @@ export function createStructureModelForProfile(
 
 function createContext(
   owl: OwlOntology, dsv: ApplicationProfile,
-  controlledVocabularies: EntityContainer[],
+  controlledVocabularies: ResolvedControlledVocabulary[],
 ): Context {
 
   const addOrMerge = function <Type>(
@@ -203,11 +195,8 @@ function createContext(
       mergeObjectPropertyProfile,
       item, item.iri));
   // Convert controlled vocabularies.
-  controlledVocabularies.forEach(container =>
-    container.entities.filter(isControlledVocabulary).forEach(entity => {
-      const iri = resolveControlledVocabularyIri(entity, container.baseIri ?? "");
-      result.controlledVocabularies[iri] = entity;
-    }));
+  controlledVocabularies.forEach(item =>
+    result.controlledVocabularies[item.iri] = item);
   return result;
 }
 
