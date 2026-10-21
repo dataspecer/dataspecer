@@ -28,7 +28,6 @@ export interface createModelContext {
   label?: LanguageString;
   description?: LanguageString;
   baseIri?: string;
-  modelAlias?: string;
   caches?: string[];
 }
 
@@ -141,7 +140,7 @@ export const createModelInstructions = {
     createHook: getHookForStandardModel(LOCAL_SEMANTIC_MODEL, (iri, context) => ({
       "type": LOCAL_SEMANTIC_MODEL,
       "modelId": iri,
-      "modelAlias": context.modelAlias ?? "",
+      "label": context.label ?? {},
       "baseIri": context.baseIri ?? iri,
       "entities": {}
     })),

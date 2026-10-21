@@ -8,9 +8,10 @@ import { ResourceModel } from "../models/resource-model.ts";
 it("uses the migrated in-memory database for resource and document operations", async () => {
   const connection = new DatabaseSync(":memory:");
   const database = createDatabase(connection);
+  const storeModel = new InMemoryStoreModel();
   try {
-    await migrateDatabase(connection);
-    const resources = new ResourceModel(new InMemoryStoreModel(), database);
+    await migrateDatabase(connection, storeModel);
+    const resources = new ResourceModel(storeModel, database);
     await resources.createPackage(null, "urn:test:root", {});
     expect(await resources.getResourceStoreBuffer("urn:test:root")).toBeNull();
     await resources.setResourceStoreJson("urn:test:root", { label: "Příliš" });

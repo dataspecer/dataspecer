@@ -3,7 +3,7 @@ import { isMainSemanticModelEntity, isSemanticModelClass, SemanticModelClass, Se
 import { createClass, createRelationship } from "../semantic-model/operations/index.ts";
 import { copyInheritanceToModel } from "./utils/copy-inheritance-to-model.ts";
 import { ExternalEntityWrapped, SemanticModelAggregator, LocalEntityWrapped } from "./interfaces.ts";
-import { EntityModel, getModelAlias, splitEntityChanges } from "./utils/entity-model.ts";
+import { EntityModel, getModelLabel, splitEntityChanges } from "./utils/entity-model.ts";
 
 const EXTERNAL_MODEL_WITH_CACHE_AGGREGATOR_TYPE = "external-model-with-cache-aggregator";
 
@@ -44,7 +44,7 @@ export class ExternalModelWithCacheAggregator implements SemanticModelAggregator
     });
 
     this.thisVocabularyChain = {
-      name: getModelAlias(this.cacheSemanticModel.getEntities()) ?? "Vocabulary",
+      name: getModelLabel(this.cacheSemanticModel.getEntities()) ?? "Vocabulary",
     };
   }
 

@@ -13,10 +13,10 @@ import JSZip from "jszip";
 import { composeModelId, PROJECT_MODEL_ID } from "../models/model-id.ts";
 import { ModelRepository } from "../models/model-repository.ts";
 import { deserializeModelEntities, resolveStoreModelType } from "../models/model-types.ts";
+import { addJsonFileToBackup, createInMemoryBackup, type InMemoryBackupDirectory, type JsonObject } from "./import-backup.ts";
+import { migrateInMemoryBackup } from "./migrations.ts";
 
-const FILE_EXTENSION_REGEX = /^\.([-0-9a-zA-Z]+)\.json$/;
-const RESOURCE_IN_PACKAGE_REGEX = /^([-0-9a-zA-Z]+)\.meta\.json$/;
-const PACKAGES_IN_PACKAGE_REGEX = /^([-0-9a-zA-Z]+\/)\.meta\.json$/;
+const RESOURCE_METADATA_REGEX = /^([-0-9a-zA-Z]+)\.meta\.json$/;
 
 /**
  * Metadata of one exported resource, see PackageExporter.
@@ -28,6 +28,21 @@ interface ResourceMetadata {
   userMetadata?: Record<string, unknown> & { label?: LanguageString; description?: LanguageString };
 }
 
+const STORE_FILE_REGEX = /^\.([-0-9a-zA-Z]+)\.json$/;
+const RESOURCE_STORE_FILE_REGEX = /^([-0-9a-zA-Z]+)\.([-0-9a-zA-Z]+)\.json$/;
+
+/** Returns the name of an exported store file, if the file is a store. */
+function getStoreName(fileName: string): string | null {
+  const match = STORE_FILE_REGEX.exec(fileName) ?? RESOURCE_STORE_FILE_REGEX.exec(fileName);
+  return match?.[match.length - 1] ?? null;
+}
+
+/** Returns the resource prefix for a store file stored beside its metadata. */
+function getResourcePrefix(fileName: string): string | null {
+  const match = RESOURCE_STORE_FILE_REGEX.exec(fileName);
+  return match?.[1] ?? null;
+}
+
 /**
  * Creates the projects stored in an exported zip. The export is a snapshot
  * without any history, so each project is created by a single transaction of
@@ -36,7 +51,6 @@ interface ResourceMetadata {
  */
 export class PackageImporter {
   private readonly modelRepository: ModelRepository;
-  private zip!: JSZip;
 
   constructor(modelRepository: ModelRepository) {
     this.modelRepository = modelRepository;
@@ -46,21 +60,19 @@ export class PackageImporter {
    * Imports the zip and returns the identifiers of the created projects.
    */
   async doImport(buffer: Buffer): Promise<string[]> {
-    this.zip = new JSZip();
-    await this.zip.loadAsync(buffer);
+    const backup = await this.loadArchive(buffer);
+    migrateInMemoryBackup(backup);
 
-    // Projects are the directories on the top level of the zip.
-    const rootPackagePaths = Object.keys(this.zip.files)
-      .filter((file) => file.endsWith("/.meta.json") && file.split("/").length === 2)
-      .map((file) => file.split("/")[0] + "/");
+    // Projects are the directories on the top level of the archive.
+    const rootPackageDirectories = [...backup.directories.values()].filter((directory) => directory.files.has(".meta.json"));
 
     const transactions: Transaction[] = [];
-    for (const packagePath of rootPackagePaths) {
-      const metadata = await this.readMetadata(packagePath);
+    for (const directory of rootPackageDirectories) {
+      const metadata = this.readMetadata(directory.files.get(".meta.json"));
       transactions.push({
         id: generateOperationId(),
         time: metadata.metadata?.modificationDate,
-        operations: await this.createResourceOperations(packagePath, null),
+        operations: await this.createDirectoryOperations(directory, null),
       });
     }
 
@@ -81,19 +93,49 @@ export class PackageImporter {
   }
 
   /**
-   * Operations that create the resource exported under the given path, set the
-   * content of all its stores and, for a package, create its sub-resources.
-   *
-   * @param resourcePath Path the resource is exported under; packages are
-   * exported as directories, so their path ends with a slash.
-   * @param parentPackageId Package to create the resource in. Null creates the
-   * resource as a project.
+   * Creates operations for a package directory and recursively imports its
+   * direct resources and sub-packages. A null parent means this is a project.
    */
-  private async createResourceOperations(resourcePath: string, parentPackageId: string | null): Promise<OperationInModel[]> {
-    const isPackage = resourcePath.endsWith("/");
-    const metadata = await this.readMetadata(resourcePath);
+  private async createDirectoryOperations(directory: InMemoryBackupDirectory, parentPackageId: string | null): Promise<OperationInModel[]> {
+    const metadata = this.readMetadata(directory.files.get(".meta.json"));
+    const stores = [...directory.files.entries()]
+      .filter(([fileName]) => getResourcePrefix(fileName) === null)
+      .flatMap(([fileName, data]) => {
+        const storeName = getStoreName(fileName);
+        return storeName === null || storeName === "meta" ? [] : [{ storeName, data }];
+      });
+    const operations = this.createResourceOperations(metadata, parentPackageId, stores, true);
+
+    for (const [fileName, resourceMetadata] of directory.files) {
+      const prefix = RESOURCE_METADATA_REGEX.exec(fileName)?.[1];
+      if (prefix !== undefined) {
+        const resourceStores = [...directory.files.entries()]
+          .filter(([candidate]) => getResourcePrefix(candidate) === prefix)
+          .flatMap(([candidate, data]) => {
+            const storeName = getStoreName(candidate);
+            return storeName === null || storeName === "meta" ? [] : [{ storeName, data }];
+          });
+        operations.push(...this.createResourceOperations(this.readMetadata(resourceMetadata), metadata.iri, resourceStores, false));
+      }
+    }
+
+    for (const child of directory.directories.values()) {
+      if (child.files.has(".meta.json")) {
+        operations.push(...(await this.createDirectoryOperations(child, metadata.iri)));
+      }
+    }
+
+    return operations;
+  }
+
+  private createResourceOperations(
+    metadata: ResourceMetadata,
+    parentPackageId: string | null,
+    stores: { storeName: string; data: JsonObject }[],
+    isPackageDirectory: boolean,
+  ): OperationInModel[] {
     const iri = metadata.iri;
-    const modelType = isPackage ? LOCAL_PACKAGE : (metadata.types?.[0] ?? "");
+    const modelType = isPackageDirectory ? LOCAL_PACKAGE : (metadata.types?.[0] ?? "");
     const { label, description, ...otherMetadata } = metadata.userMetadata ?? {};
 
     const createOperation = parentPackageId === null ? createCreateProjectOperation(iri) : createCreateModelOperation(parentPackageId, modelType, iri);
@@ -109,38 +151,7 @@ export class PackageImporter {
       operations.push({ modelId: PROJECT_MODEL_ID, operation: createSetEntityOperation(entity) });
     }
 
-    operations.push(...(await this.createStoreOperations(resourcePath, iri, modelType)));
-
-    if (isPackage) {
-      for (const subResourcePath of this.subResourcePaths(resourcePath)) {
-        operations.push(...(await this.createResourceOperations(subResourcePath, iri)));
-      }
-    }
-
-    return operations;
-  }
-
-  /**
-   * Operations that set the entities of every store exported for the resource.
-   * A store is read as a model of the resource type and its entities are set
-   * as they are - the export holds only the resulting state, so there is
-   * nothing model specific operations could be derived from.
-   */
-  private async createStoreOperations(resourcePath: string, iri: string, modelType: string): Promise<OperationInModel[]> {
-    const operations: OperationInModel[] = [];
-
-    for (const file of Object.keys(this.zip.files)) {
-      if (!file.startsWith(resourcePath)) {
-        continue;
-      }
-
-      const storeName = FILE_EXTENSION_REGEX.exec(file.substring(resourcePath.length))?.[1];
-      // meta is a special for metadata, it is not a store per se
-      if (storeName === undefined || storeName === "meta") {
-        continue;
-      }
-
-      const data = JSON.parse(await this.zip.file(file)!.async("text"));
+    for (const { storeName, data } of stores) {
       const modelId = composeModelId(iri, storeName);
       const entities = deserializeModelEntities(modelId, resolveStoreModelType(modelType, storeName), data);
       for (const entity of Object.values(entities)) {
@@ -151,30 +162,35 @@ export class PackageImporter {
     return operations;
   }
 
-  /**
-   * Paths of the resources exported directly in the given package,
-   * sub-packages included.
-   */
-  private subResourcePaths(packagePath: string): string[] {
-    const paths: string[] = [];
-
-    for (const file of Object.keys(this.zip.files)) {
-      if (!file.startsWith(packagePath)) {
-        continue;
-      }
-
-      const restPath = file.substring(packagePath.length);
-      const name = RESOURCE_IN_PACKAGE_REGEX.exec(restPath)?.[1] ?? PACKAGES_IN_PACKAGE_REGEX.exec(restPath)?.[1];
-      if (name !== undefined) {
-        paths.push(packagePath + name);
-      }
+  private readMetadata(data: unknown): ResourceMetadata {
+    if (!data || typeof (data as any).iri !== "string") {
+      throw new Error("Import backup is missing resource metadata.");
     }
-
-    return paths;
+    return data as unknown as ResourceMetadata;
   }
 
-  private async readMetadata(resourcePath: string): Promise<ResourceMetadata> {
-    return JSON.parse(await this.zip.file(resourcePath + ".meta.json")!.async("text"));
+  /**
+   * Loads and parses every archive file into the in-memory backup before
+   * migrations or import operations run.
+   */
+  private async loadArchive(buffer: Buffer): Promise<InMemoryBackupDirectory> {
+    const zip = new JSZip();
+    await zip.loadAsync(buffer);
+
+    const backup = createInMemoryBackup();
+    await Promise.all(
+      Object.entries(zip.files).map(async ([path, source]) => {
+        if (source.dir) {
+          return;
+        }
+        const parsed = JSON.parse(await source.async("text")) as unknown;
+        if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+          throw new Error(`Import file "${path}" must contain a JSON object.`);
+        }
+        addJsonFileToBackup(backup, path, parsed as JsonObject);
+      }),
+    );
+    return backup;
   }
 
   /**

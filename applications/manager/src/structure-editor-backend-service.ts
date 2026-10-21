@@ -43,8 +43,6 @@ export class StructureEditorBackendService extends BackendPackageService {
     // transaction - the first one of the project's own history.
     const projectId = generateEntityId();
 
-    const modelAlias = set?.label?.en ?? set?.label?.cs ?? "";
-
     const createProject = createCreateProjectOperation(projectId);
     createProject.label = set.label;
 
@@ -65,7 +63,7 @@ export class StructureEditorBackendService extends BackendPackageService {
         operation: createSetEntityOperation({
           id: createPim.modelId,
           type: [LOCAL_SEMANTIC_MODEL],
-          modelAlias,
+          label: set.label ?? {},
           subType: SEMANTIC_MODEL_APPLICATION_PROFILE_SUBTYPE,
         } as Entity),
       },
@@ -74,7 +72,7 @@ export class StructureEditorBackendService extends BackendPackageService {
         operation: createSetEntityOperation({
           id: createSgov.modelId,
           type: [LOCAL_SEMANTIC_MODEL],
-          modelAlias,
+          label: set.label ?? {},
           caches: ["https://dataspecer.com/adapters/sgov"],
         } as Entity),
       },

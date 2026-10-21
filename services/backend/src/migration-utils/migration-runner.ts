@@ -1,9 +1,15 @@
 import type { DatabaseSync } from "node:sqlite";
+import type { StoreModel } from "../models/store-model.ts";
+
+export type MigrationContext = {
+  nodeDatabaseSync: DatabaseSync;
+  storeModel?: StoreModel;
+};
 
 export type Migration = {
   number: number;
   name: string;
-  up: (context: { nodeDatabaseSync: DatabaseSync }) => void | Promise<void>;
+  up: (context: MigrationContext) => void | Promise<void>;
 };
 
 export function parseMigrationFiles(files: readonly string[], strict: boolean = false): { file: string; number: number; name: string }[] {
@@ -142,7 +148,7 @@ function pendingMigrations(database: DatabaseSync, migrations: readonly Migratio
 }
 
 /** Apply schema and history changes atomically while holding the SQLite write lock. */
-export async function migrateUp(database: DatabaseSync, migrations: readonly Migration[]): Promise<void> {
+export async function migrateUp(database: DatabaseSync, migrations: readonly Migration[], storeModel?: StoreModel): Promise<void> {
   const ordered = [...migrations].sort((a, b) => a.number - b.number);
   validateMigrationSequence(ordered);
   const foreignKeys = database.prepare("PRAGMA foreign_keys").get()!.foreign_keys;
@@ -161,7 +167,7 @@ export async function migrateUp(database: DatabaseSync, migrations: readonly Mig
     for (const migration of pending) {
       try {
         console.log(`applying migration ${migration.name}...`);
-        await migration.up({ nodeDatabaseSync: database });
+        await migration.up({ nodeDatabaseSync: database, storeModel });
         insert.run(migration.number, migration.name);
       } catch (cause) {
         throw new Error(`Migration ${migration.number}_${migration.name} failed.`, { cause });

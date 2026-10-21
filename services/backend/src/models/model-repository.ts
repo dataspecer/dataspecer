@@ -143,6 +143,7 @@ export class ModelRepository implements ModelRepositoryType {
 
     const modelId = composeModelId(modelIdentifier, storeName);
     const modelType = resolveStoreModelType(resource.types[0] ?? "", storeName);
+    let nextEntities: EntityRecord | null = null;
 
     try {
       // The history is recorded before the snapshot is written: if the write
@@ -151,7 +152,7 @@ export class ModelRepository implements ModelRepositoryType {
       // after the write would lose the operations on retry.
       const previousData = await this.resourceModel.getResourceStoreJson(modelIdentifier, storeName);
       const previousEntities = deserializeModelEntities(modelId, modelType, previousData);
-      const nextEntities = deserializeModelEntities(modelId, modelType, data);
+      nextEntities = deserializeModelEntities(modelId, modelType, data);
 
       const operations = diffModelEntitiesToOperations(modelId, modelType, previousEntities, nextEntities);
       if (operations.length > 0) {
@@ -166,6 +167,9 @@ export class ModelRepository implements ModelRepositoryType {
     }
 
     await this.resourceModel.setResourceStoreJson(modelIdentifier, data, storeName);
+    if (nextEntities !== null) {
+      await this.synchronizeSemanticModelMetadata(modelId, modelType, nextEntities);
+    }
   }
 
   /**
@@ -540,6 +544,26 @@ export class ModelRepository implements ModelRepositoryType {
       const { iri, storeName } = splitModelId(modelId);
       const nextData = serializeModelEntities(modelId, model.modelType, model.entities, model.storedData ?? undefined);
       await this.resourceModel.setResourceStoreJson(iri, nextData, storeName);
+      await this.synchronizeSemanticModelMetadata(modelId, model.modelType, model.entities);
+    }
+  }
+
+  /** Keeps the resource metadata cache aligned with the semantic model label. */
+  private async synchronizeSemanticModelMetadata(modelId: string, modelType: string, entities: EntityRecord): Promise<void> {
+    const { iri, storeName } = splitModelId(modelId);
+    if (modelType !== LOCAL_SEMANTIC_MODEL || storeName !== "model") {
+      return;
+    }
+
+    const resource = await this.resourceModel.getResource(iri);
+    const mainEntity = entities[iri] as (Entity & { label?: LanguageString }) | undefined;
+    if (resource === null || mainEntity === undefined) {
+      return;
+    }
+
+    const label = mainEntity.label ?? {};
+    if (!deepEqual(resource.userMetadata.label ?? {}, label)) {
+      await this.resourceModel.updateResource(iri, { label });
     }
   }
 
@@ -959,7 +983,7 @@ export class ModelRepository implements ModelRepositoryType {
       const currentModel = await this.getModelEntities(resourceId);
       const labelChanged = !deepEqual((currentModel?.[resourceId] as MainEntity)?.label, toLegacyResourceMetadata.label);
 
-      if (resource.types[0] === RDFS_MODEL) {
+      if (resource.types[0] === RDFS_MODEL || resource.types[0] === LOCAL_SEMANTIC_MODEL) {
         if (labelChanged) {
           const update: Partial<Omit<MainEntity, "id" | "type">> = { label: (toLegacyResourceMetadata.label as LanguageString | undefined) ?? {} };
           operations.push({ modelId: resourceId, operation: createUpdateEntityOperation(resourceId, update) });
