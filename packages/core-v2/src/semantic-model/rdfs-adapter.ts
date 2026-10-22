@@ -221,3 +221,7 @@ export class RdfsSemanticModelAdapter {
     return [{}, null];
   }
 }
+
+export function createRdfsSemanticModelAdapter(store: Store, options: Partial<RdfsSemanticModelAdapterOptions> = {}) {
+  return new RdfsSemanticModelAdapter(store, options);
+}

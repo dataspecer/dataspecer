@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "declaration": true,
+    "declarationMap": true,
+    "isolatedModules": true,
+    "lib": ["ESNext", "DOM"],
+    "module": "NodeNext",
+    "moduleDetection": "force",
+    "moduleResolution": "nodenext",
+    "rootDir": "src",
+    "outDir": "lib",
+    "rewriteRelativeImportExtensions": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ESNext",
+    "types": ["vitest/globals"],
+    "useDefineForClassFields": true
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "src/**/*.test.ts"]
+}
