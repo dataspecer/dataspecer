@@ -22,7 +22,7 @@ test("Round-trips controlled vocabularies with no prior iri through a DCAT catal
   const original = [
     vocabulary({
       id: "voc-1",
-      title: { cs: "Dublinské jádro", en: "Dublin Core" },
+      title: { cs: "Dublin Core", en: "Dublin Core" },
       pattern: "^http://purl\\.org/dc/terms/.+$",
       references: "http://purl.org/dc/terms/",
       documentation: "https://www.dublincore.org/terms/",
