@@ -20,6 +20,7 @@
     "./semantic-model": "./lib/semantic-model/index.js",
     "./semantic-model/aggregator": "./lib/semantic-model/aggregator/index.js",
     "./semantic-model/concepts": "./lib/semantic-model/concepts/index.js",
+    "./semantic-model/rdfs": "./lib/semantic-model/rdfs-adapter.js",
     "./semantic-model/simplified": "./lib/semantic-model/simplified/index.js",
     "./semantic-model/lightweight-owl": "./lib/semantic-model/lightweight-owl/index.js",
     "./semantic-model/merge/merger": "./lib/semantic-model/merge/merger/index.js",
@@ -44,6 +45,7 @@
     "@dataspecer/sgov-adapter": "*",
     "@dataspecer/utilities": "*",
     "@dataspecer/visual-model": "*",
+    "n3": "^2.13.12",
     "uuid": "^14.0.2"
   },
   "devDependencies": {
