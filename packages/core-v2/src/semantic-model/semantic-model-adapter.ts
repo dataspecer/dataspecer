@@ -20,6 +20,10 @@ export class SemanticModelAdapter implements EntityModel {
         return this.entityModel.getId();
     }
 
+    getMainEntity() {
+        return getSemanticModelMainEntity(this.entityModel.getEntities());
+    }
+
     getAlias(): string | null {
         const label = getSemanticModelMainEntity(this.entityModel.getEntities())?.label;
         return label ? (label["en"] ?? Object.values(label)[0]) ?? null : null;
@@ -34,6 +38,9 @@ export class SemanticModelAdapter implements EntityModel {
         }
 
         const current = getSemanticModelMainEntity(entityModel.getEntities());
+        if (current?.source) {
+            throw new Error("Semantic models having source specified cannot be directly modified.");
+        }
         const mainEntity = current ?? { id: this.getId(), type: [LOCAL_SEMANTIC_MODEL] };
         const nextEntity = Object.assign({}, mainEntity, {
             label: alias === null ? {} : { cs: alias },

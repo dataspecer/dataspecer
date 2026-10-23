@@ -6,6 +6,7 @@ import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import { generateEntityId, type Entity } from "@dataspecer/core/entity-model";
 import { createSetEntityOperation, generateOperationId, type OperationInModel } from "@dataspecer/core/operation";
 import { createCreateModelOperation, createCreateProjectOperation } from "@dataspecer/core/project-model";
+import type { CachedSubgraph } from "@dataspecer/core-v2/semantic-model/concepts";
 
 /**
  * Model id the backend uses to address operations that change the project
@@ -73,7 +74,11 @@ export class StructureEditorBackendService extends BackendPackageService {
           id: createSgov.modelId,
           type: [LOCAL_SEMANTIC_MODEL],
           label: set.label ?? {},
-          caches: ["https://dataspecer.com/adapters/sgov"],
+          source: {
+            type: "subgraph",
+            provider: "sgov",
+            endpoint: "https://slovník.gov.cz/sparql",
+          } satisfies CachedSubgraph,
         } as Entity),
       },
       {

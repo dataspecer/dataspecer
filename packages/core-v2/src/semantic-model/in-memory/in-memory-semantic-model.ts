@@ -25,6 +25,9 @@ export class InMemorySemanticModel extends WritableSemanticModelAdapter {
     }
 
     setBaseIri(iri: string) {
+        if (this.getMainEntity()?.source) {
+            throw new Error("Semantic models having source specified cannot be directly modified.");
+        }
         this.baseIri = iri;
     }
 

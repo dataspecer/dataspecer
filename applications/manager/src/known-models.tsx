@@ -4,6 +4,7 @@ import { AppWindowMac, BookOpen, Code, Cog, Eye, Folder, Globe2, LibraryBig } fr
 import { v4 as uuidv4 } from 'uuid';
 import { cn } from "./lib/utils";
 import { packageService, requestLoadPackage } from "./package";
+import type { VocabularySource } from "@dataspecer/core-v2/semantic-model/concepts";
 
 export function getCMELink(packageId: string, viewId: string) {
   return import.meta.env.VITE_CME + "/diagram?package-id=" + encodeURIComponent(packageId) + "&view-id=" + encodeURIComponent(viewId)
@@ -28,7 +29,7 @@ export interface createModelContext {
   label?: LanguageString;
   description?: LanguageString;
   baseIri?: string;
-  caches?: string[];
+  source?: VocabularySource;
 }
 
 function getHookForStandardModel(type: string, initialContent: (iri: string, context: createModelContext) => any) {

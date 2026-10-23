@@ -1,9 +1,11 @@
 import { CONTROLLED_VOCABULARY_MODEL, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import {
+  isCachedSubgraph,
   isSemanticModelClass,
   isSemanticModelRelationPrimitive,
   isSemanticModelRelationship,
-  SemanticModelEntity
+  SemanticModelEntity,
+  type MainSemanticModelEntity
 } from "@dataspecer/core-v2/semantic-model/concepts";
 import { isControlledVocabularyAssignment } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { DataTypeURIs, isDataType } from "@dataspecer/core-v2/semantic-model/datatypes";
@@ -772,8 +774,9 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
   // Todo better detection of a semantic model and its subtype
   if (existingResource.types.includes(LOCAL_SEMANTIC_MODEL)) {
     const previousEntities = await modelRepository.getModelEntities(existingResource.iri);
-    const mainEntity = previousEntities?.[existingResource.iri] as { caches?: unknown } | undefined;
-    if (mainEntity && "caches" in mainEntity) {
+    const mainEntity = previousEntities?.[existingResource.iri] as MainSemanticModelEntity | undefined;
+    const source = mainEntity?.source;
+    if (isCachedSubgraph(source)) {
       const nextEntities = await reloadCachedSemanticModel(previousEntities!);
       const operations = diffModelEntitiesToOperations(
         existingResource.iri,

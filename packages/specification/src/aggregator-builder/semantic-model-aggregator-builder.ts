@@ -6,8 +6,8 @@ import {
   SemanticModelAggregator,
   VocabularyAggregator,
 } from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
-import { getSemanticModelMainEntity } from "@dataspecer/core-v2/semantic-model/concepts";
-import type { Entity, EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
+import { getSemanticModelMainEntity, isCachedSubgraph } from "@dataspecer/core-v2/semantic-model/concepts";
+import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import { isApplicationProfileHierarchyEntity, isSpecificationHierarchyEntity, isVocabularyHierarchyEntity, type ModelHierarchyEntity, type SpecificationHierarchyEntity } from "@dataspecer/model-hierarchy";
 import { getProvidedSourceSemanticModel } from "./cim-adapter.ts";
@@ -246,8 +246,10 @@ class SemanticModelAggregatorBuilder {
     const model = this.getSemanticModel(modelId);
     const mainEntity = getSemanticModelMainEntity(model.getEntities());
 
-    if (mainEntity?.caches) {
-      const cimAdapter = getProvidedSourceSemanticModel(mainEntity.caches);
+    const vocabularySource = mainEntity?.source;
+
+    if (isCachedSubgraph(vocabularySource)) {
+      const cimAdapter = getProvidedSourceSemanticModel(vocabularySource);
       const aggregator = new ExternalModelWithCacheAggregator(model, cimAdapter);
       (aggregator.thisVocabularyChain as any)["color"] = DEFAULT_VOCABULARY_COLOR;
       return aggregator;

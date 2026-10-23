@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL } from "@dataspecer/core-v2/model/known-models";
-import { SEMANTIC_MODEL_CLASS, type SemanticModelClass } from "@dataspecer/core-v2/semantic-model/concepts";
+import { SEMANTIC_MODEL_CLASS, type CachedSubgraph, type SemanticModelClass } from "@dataspecer/core-v2/semantic-model/concepts";
 import { SEMANTIC_MODEL_CLASS_PROFILE, type SemanticModelClassProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import type { Entity, EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { ApplicationProfileHierarchyEntity, ModelHierarchyEntity, SpecificationHierarchyEntity, VocabularyHierarchyEntity } from "@dataspecer/model-hierarchy";
@@ -170,7 +170,11 @@ describe("aggregation from hierarchy entities", () => {
 
   it("forwards external cache writes when adding a root profile", async () => {
     const source = semanticClass("source");
-    const adapter = cimAdapter.getProvidedSourceSemanticModel([]);
+    const adapter = cimAdapter.getProvidedSourceSemanticModel({
+      type: "subgraph",
+      provider: "sgov",
+      endpoint: "https://slovník.gov.cz/sparql",
+    } satisfies CachedSubgraph);
     vi.spyOn(adapter, "search").mockResolvedValue([source]);
     vi.spyOn(cimAdapter, "getProvidedSourceSemanticModel").mockReturnValue(adapter);
     try {
@@ -180,7 +184,11 @@ describe("aggregation from hierarchy entities", () => {
       };
       const models = {
         profile: semanticModel("profile"),
-        cache: { cache: { id: "cache", type: [LOCAL_SEMANTIC_MODEL], caches: [] } },
+        cache: { cache: { id: "cache", type: [LOCAL_SEMANTIC_MODEL], source: {
+          type: "subgraph",
+          provider: "sgov",
+          endpoint: "https://slovník.gov.cz/sparql",
+        } satisfies CachedSubgraph } },
       };
       const listeners: ((changes: Record<string, EntityChange[]>) => void)[] = [];
       const executeOperation = vi.fn((modelId, operation) => {

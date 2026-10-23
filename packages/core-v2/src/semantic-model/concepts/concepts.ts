@@ -50,10 +50,48 @@ export interface MainSemanticModelEntity extends Entity {
   baseIri?: string | null;
 
   /**
-   * For models that are used as a cache for remote models.
-   * @todo This property is historical artifact and should be refactored.
+   * This property describes the source of the model if the model is not created
+   * manually by the user, but loaded from a remote source or cached.
+   *
+   * In such case, the entities in the model are more like a snapshot or a cache
+   * of the original source. They should not be modified directly unless the
+   * client understands the implications (e.g. reloading the model,
+   * synchronizing with the source, etc.).
    */
-  caches?: string[];
+  source?: VocabularySource;
+}
+
+export interface VocabularySource {
+  type: string;
+}
+
+/**
+ * For vocabularies that function as a cache but only for a used subgraph of the
+ * vocabulary. The only current provider is SGOV, which is a huge vocabulary
+ * (behind a SPARQL endpoint) and we only want to cache the part of it that is
+ * used in the model.
+ */
+export interface CachedSubgraph extends VocabularySource {
+  type: "subgraph";
+  provider: "sgov";
+
+  /** SPARQL Endpoint */
+  endpoint: string;
+}
+
+export function isCachedSubgraph(source: VocabularySource | null | undefined): source is CachedSubgraph {
+  return source?.type === "subgraph";
+}
+
+export interface VocabularySourceOFN extends VocabularySource {
+  type: "snapshot";
+  provider: "ofn";
+
+  /** SPARQL Endpoint */
+  endpoint: string;
+
+  /** IRI of the vocabulary being imported */
+  vocabularyIri: string;
 }
 
 /**

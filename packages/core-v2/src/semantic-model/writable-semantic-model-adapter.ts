@@ -36,6 +36,9 @@ export class WritableSemanticModelAdapter extends SemanticModelAdapter {
   }
 
   public executeOperations(operations: Operation[]): (OperationResult | CreatedEntityOperationResult)[] {
+    if (getSemanticModelMainEntity(this.entityModel.entities)?.source) {
+      throw new Error("Vocabularies having source specified cannot be directly modified.");
+    }
     const entities = { ...this.entityModel.entities };
     const { result, updated, removed } = applyOperationsToSemanticModel(entities, operations);
     this.entityModel.change(updated, removed);

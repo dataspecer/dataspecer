@@ -1,4 +1,4 @@
-import { getSemanticModelMainEntity, isSemanticModelClass } from "@dataspecer/core-v2/semantic-model/concepts";
+import { getSemanticModelMainEntity, isSemanticModelClass, type CachedSubgraph } from "@dataspecer/core-v2/semantic-model/concepts";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { getProvidedSourceSemanticModel } from "./cim-adapter.ts";
 
@@ -9,6 +9,9 @@ import { getProvidedSourceSemanticModel } from "./cim-adapter.ts";
  *
  * It is expected to run the output of this function through diff function to
  * obtain the list of changes.
+ *
+ * @todo Right now it only works for CachedSubgraph, but this should be extended
+ *  to other types of sources as well.
  */
 export async function reloadCachedSemanticModel(oldEntities: EntityRecord): Promise<EntityRecord> {
   const mainEntity = getSemanticModelMainEntity(oldEntities);
@@ -16,7 +19,7 @@ export async function reloadCachedSemanticModel(oldEntities: EntityRecord): Prom
     throw new Error("Cached semantic model has no main entity.");
   }
 
-  const sourceModel = getProvidedSourceSemanticModel(mainEntity.caches ?? []);
+  const sourceModel = getProvidedSourceSemanticModel(mainEntity.source as CachedSubgraph);
   const classes = Object.values(oldEntities).filter(isSemanticModelClass);
   const refreshed = [];
 
