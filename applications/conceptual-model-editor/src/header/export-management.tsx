@@ -117,6 +117,8 @@ export const ExportManagement = () => {
         languages: [],
         noClassConstraints: false,
         splitPropertyShapesByConstraints: false,
+        controlledVocabularyPattern: true,
+        controlledVocabularyScheme: false,
       }, { baseIri: iri, defaultPrefixes: {} },);
 
     shaclToRdf(shacl, {

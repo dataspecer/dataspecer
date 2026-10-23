@@ -54,6 +54,7 @@ class DefaultStructureModelBuilder implements StructureModelBuilder {
       specializationOf: [],
       properties: [],
       rdfTypes: [iri],
+      controlledVocabularyAssignments: [],
     };
   }
 

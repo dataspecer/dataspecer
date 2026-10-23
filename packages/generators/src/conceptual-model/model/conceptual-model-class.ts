@@ -17,8 +17,14 @@ export class ConceptualModelClass {
 
   usageNote: LanguageString | null = null;
 
+  /**
+   * @deprecated Not populated. Controlled vocabularies are assigned to class profiles using controlled vocabulary assignments.
+   */
   isCodelist = false;
 
+  /**
+   * @deprecated Not populated. Controlled vocabularies are assigned to class profiles using controlled vocabulary assignments.
+   */
   codelistUrl: string[] = [];
 
   extends: ConceptualModelClass[] = [];

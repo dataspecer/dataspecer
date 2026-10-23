@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model"
+import { selectName } from "@/lib/language"
 import { useConfig } from "@/contexts/config-context"
 
 interface VocabularyViewPageProps {
@@ -11,7 +12,7 @@ interface VocabularyViewPageProps {
   onClose: () => void
 }
 
-function Field({ label, value }: { label: string, value: string }) {
+function Field({ label, value }: { label: string, value: string | null }) {
   return (
     <div>
       <Label>{label}</Label>
@@ -21,7 +22,7 @@ function Field({ label, value }: { label: string, value: string }) {
 }
 
 export function VocabularyViewPage({ vocabulary, onClose }: VocabularyViewPageProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { managerUrl } = useConfig()
 
   return (
@@ -38,9 +39,20 @@ export function VocabularyViewPage({ vocabulary, onClose }: VocabularyViewPagePr
       <p className="text-sm text-muted-foreground mb-4">{t("view.subtitle")}</p>
       <Card>
         <CardContent className="p-5 space-y-4">
-          <Field label={t("form.field.name")} value={vocabulary.title} />
-          <Field label={t("form.field.iri")} value={vocabulary.references} />
-          <Field label={t("form.field.regex")} value={vocabulary.pattern} />
+          <Field label={t("form.field.name")} value={selectName(vocabulary.title, i18n.language)} />
+          <Field
+            label={t("view.field.conformsToSkos")}
+            value={vocabulary.conformsToSkos ? t("view.value.yes") : t("view.value.no")}
+          />
+          <Field
+            label={vocabulary.conformsToSkos ? t("form.field.iri") : t("view.field.mainReference")}
+            value={vocabulary.references}
+          />
+          <Field
+            label={t(vocabulary.conformsToSkos ? "form.field.regex" : "form.field.regexOther")}
+            value={vocabulary.pattern}
+          />
+          <Field label={t("form.field.accessUrl")} value={vocabulary.distribution.accessUrl} />
           <Field label={t("form.field.downloadUrl")} value={vocabulary.distribution.downloadUrl} />
           <Field label={t("form.field.docsUrl")} value={vocabulary.documentation} />
           <Field

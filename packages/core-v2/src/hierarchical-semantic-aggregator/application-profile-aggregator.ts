@@ -228,7 +228,7 @@ export class ApplicationProfileAggregator implements SemanticModelAggregator {
           // Controlled vocabulary assignments are not aggregated
           // themselves (unlike profiling dependencies), so they are
           // resolved directly from the raw profile entities instead of
-          // through the this.entities/this.sourceEntities wrapping.
+          // through the wrapped entities.
           const controlledVocabularyAssignments = (entity.controlledVocabularies ?? [])
             .map((id) => this.profileEntities[id] ?? null)
             .filter(isControlledVocabularyAssignment);
@@ -251,10 +251,19 @@ export class ApplicationProfileAggregator implements SemanticModelAggregator {
           toUpdate.push(...this.dependsOn.getBySecond(entity.id));
           updated[entity.id] = updatedEntity;
         } else if (isControlledVocabularyAssignment(entity)) {
-          // Not aggregated on its own - only the owning class profile is.
-          // Propagate to the owning class profile so it gets re-aggregated when the assignment changes.
-          // This happens when the CV assignment is edited (no change in profile itself)
+          // add controlled vocabulary entities into the aggregation result
+          const updatedEntity = {
+            id: entity.id,
+            type: APPLICATION_PROFILE_AGGREGATOR_TYPE,
+            aggregatedEntity: entity,
+            vocabularyChain: [],
+          } satisfies LocalEntityWrapped;
+          this.entities[entity.id] = updatedEntity;
+          this.dependsOn.deleteFirst(entity.id); // assignment is profile-independent
+          // The class profile that owns the assignment is re-aggregated when the assignment is edited,
+          // which is not a change of the profile itself.
           toUpdate.push(...this.dependsOn.getBySecond(entity.id));
+          updated[entity.id] = updatedEntity;
         } else if (isSemanticModelRelationshipProfile(entity)) {
           // todo: we need to handle the case with local relations!
           const dependsOnWrappedEntities = entity.ends

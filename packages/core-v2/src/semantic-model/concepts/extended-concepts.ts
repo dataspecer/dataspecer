@@ -7,9 +7,16 @@ export interface EntityWithTechnicalLabel {
 }
 
 export interface ExtendedSemanticModelClass extends SemanticModelClass, EntityWithTechnicalLabel {
-  isCodelist: boolean;
+  /**
+   * @deprecated Ignored. Controlled vocabularies are assigned to class profiles using controlled vocabulary assignments.
+   * Kept for backward compatibility for existing specifications.
+   */
+  isCodelist?: boolean;
 
-  codelistUrl: string[];
+  /**
+   * @deprecated Ignored, see {@link isCodelist}.
+   */
+  codelistUrl?: string[];
 
   regex: string | null;
 

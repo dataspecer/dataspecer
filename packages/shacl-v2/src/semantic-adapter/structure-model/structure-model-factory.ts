@@ -1,6 +1,7 @@
 import {
   Cardinality,
   ClassProfile,
+  ControlledVocabularyAssignmentProfile,
   DSV_REUSE_DESCRIPTION,
   DSV_REUSE_LABEL,
   DSV_REUSE_USAGE_NOTE,
@@ -9,20 +10,32 @@ import {
   PropertyValueReuse,
   ObjectPropertyProfile,
   DatatypePropertyProfile,
+  iriToUsageExpectation,
 } from "@dataspecer/data-specification-vocabulary/semantic-model";
 import {
   OwlClass,
   OwlOntology,
   OwlProperty,
 } from "@dataspecer/lightweight-owl";
+import { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 
 import {
   LanguageString,
   StructureClass,
+  StructureControlledVocabularyAssignment,
   StructureModel,
   StructureProperty,
   StructurePropertyType,
 } from "./structure-model.ts";
+
+/**
+ * A {@link ControlledVocabulary} with its IRI resolved to an absolute IRI,
+ * so it can be matched with the IRI referenced by an assignment.
+ * Once the entities carry absolute IRIs this can be refactored.
+ */
+export type ResolvedControlledVocabulary = ControlledVocabulary & {
+  iri: string;
+};
 
 interface Context {
 
@@ -36,6 +49,8 @@ interface Context {
 
   dsvDatatypeProperties: { [iri: string]: DatatypePropertyProfile };
 
+  controlledVocabularies: { [iri: string]: ControlledVocabulary };
+
 }
 
 /**
@@ -44,8 +59,9 @@ interface Context {
  */
 export function createStructureModelForProfile(
   owl: OwlOntology, dsv: ApplicationProfile,
+  controlledVocabularies: ResolvedControlledVocabulary[] = [],
 ): StructureModel {
-  const context = createContext(owl, dsv);
+  const context = createContext(owl, dsv, controlledVocabularies);
   // We know the output is defined by the ApplicationProfile.
   // We just need to pull the details.
   const classes: StructureClass[] = [];
@@ -78,7 +94,10 @@ export function createStructureModelForProfile(
   return { classes };
 }
 
-function createContext(owl: OwlOntology, dsv: ApplicationProfile): Context {
+function createContext(
+  owl: OwlOntology, dsv: ApplicationProfile,
+  controlledVocabularies: ResolvedControlledVocabulary[],
+): Context {
 
   const addOrMerge = function <Type>(
     map: Record<string, Type>,
@@ -154,6 +173,7 @@ function createContext(owl: OwlOntology, dsv: ApplicationProfile): Context {
     dsvClasses: {},
     dsvDatatypeProperties: {},
     dsvObjectProperties: {},
+    controlledVocabularies: {},
   };
 
   // Convert OWL.
@@ -174,6 +194,9 @@ function createContext(owl: OwlOntology, dsv: ApplicationProfile): Context {
       result.dsvObjectProperties,
       mergeObjectPropertyProfile,
       item, item.iri));
+  // Convert controlled vocabularies.
+  controlledVocabularies.forEach(item =>
+    result.controlledVocabularies[item.iri] = item);
   return result;
 }
 
@@ -201,6 +224,10 @@ function classProfileToStructureClass(
     item => item.profileOfIri, item => item.profiledClassIri,
     context.dsvClasses, profile);
 
+  const controlledVocabularyAssignments = profile.controlledVocabularyAssignments
+    .map(assignment => controlledVocabularyAssignmentProfileToStructure(
+      context, assignment));
+
   return {
     iri: profile.iri,
     name,
@@ -215,6 +242,25 @@ function classProfileToStructureClass(
     specializationOf: profile.specializationOfIri,
     // We add properties later.
     properties: [],
+    controlledVocabularyAssignments,
+  };
+}
+
+function controlledVocabularyAssignmentProfileToStructure(
+  context: Context, assignment: ControlledVocabularyAssignmentProfile,
+): StructureControlledVocabularyAssignment {
+  const vocabulary =
+    context.controlledVocabularies[assignment.controlledVocabularyIri];
+  return {
+    iri: assignment.iri,
+    controlledVocabularyIri: assignment.controlledVocabularyIri,
+    pattern: vocabulary?.pattern ?? null,
+    // The reference is a required field, so it is only empty for a
+    // vocabulary that was imported without one.
+    schemeIri: vocabulary?.conformsToSkos === true
+      ? (vocabulary.references || null) : null,
+    usageExpectation: iriToUsageExpectation(assignment.usageExpectationIri),
+    replaces: assignment.replacesIri,
   };
 }
 

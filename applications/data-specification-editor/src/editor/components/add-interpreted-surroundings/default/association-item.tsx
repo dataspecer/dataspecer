@@ -1,4 +1,5 @@
-import { ExtendedSemanticModelClass, SemanticModelClass, SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
+import { SemanticModelClass, SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
+import { hasControlledVocabulary } from "@/editor/utils/controlled-vocabularies";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import InfoTwoToneIcon from "@mui/icons-material/InfoTwoTone";
@@ -12,7 +13,7 @@ import { SlovnikGovCzGlossary } from "../../slovnik.gov.cz/SlovnikGovCzGlossary"
 import { ExternalEntityWrapped } from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
 import { ExternalEntityBadge } from "../../entity-badge";
 
-const CodelistSpan = styled("span")(({theme}) => ({
+const ControlledVocabularySpan = styled("span")(({theme}) => ({
     fontWeight: "bold",
     color: theme.palette.primary.main,
 }));
@@ -30,7 +31,7 @@ export const AssociationItem: React.FC<{
     const relationship = props.relationship.aggregatedEntity;
     const correctEnd = relationship.ends[props.orientation ? 1 : 0];
     const cls = props.allEntities.find(e => e.aggregatedEntity.id === correctEnd.concept) as ExternalEntityWrapped<SemanticModelClass>;
-    const isCodelist = (cls?.aggregatedEntity as Partial<ExtendedSemanticModelClass>)?.isCodelist ?? false;
+    const hasAssignedControlledVocabulary = hasControlledVocabulary(cls?.aggregatedEntity);
 
 
     return <ListItem role={undefined} dense button onClick={props.onClick}>
@@ -44,7 +45,7 @@ export const AssociationItem: React.FC<{
         </ListItemIcon>
         <ListItemText secondary={
             <Box style={{display: "flex", gap: "1em"}}>
-            {isCodelist && <CodelistSpan style={{flexShrink: 0}}><ListRoundedIcon fontSize={"small"} sx={{verticalAlign: "top", mr: ".0rem"}} /> {t("codelist")} </CodelistSpan>}
+            {hasAssignedControlledVocabulary && <ControlledVocabularySpan style={{flexShrink: 0}}><ListRoundedIcon fontSize={"small"} sx={{verticalAlign: "top", mr: ".0rem"}} /> {t("controlled vocabulary")} </ControlledVocabularySpan>}
                 <LanguageStringUndefineable from={relationship.ends[1].description}>
                     {text =>
                         text !== undefined ? <Typography variant="body2" color="textSecondary" component={"span"} noWrap title={text}>{text}</Typography> : <></>

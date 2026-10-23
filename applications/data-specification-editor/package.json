@@ -10,6 +10,7 @@
     "i18n": "i18next-cli extract"
   },
   "dependencies": {
+    "@dataspecer/controlled-vocabulary-model": "*",
     "@dataspecer/core": "*",
     "@dataspecer/core-v2": "*",
     "@dataspecer/csv": "*",
