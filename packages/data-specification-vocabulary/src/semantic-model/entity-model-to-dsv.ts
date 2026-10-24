@@ -16,7 +16,7 @@ import {
   SemanticModelRelationshipProfile,
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { isPrimitiveType } from "@dataspecer/core-v2/semantic-model/datatypes";
-import { controlledVocabularyDatasetIri, isControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
+import { ControlledVocabulary, controlledVocabularyDatasetIri, isControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 
 import { EntityListContainer } from "./entity-model.ts";
 import {
@@ -70,6 +70,27 @@ interface EntityListContainerToDsvContext {
 }
 
 /**
+ * Resolves a {@link ControlledVocabulary} entity's own IRI: reuses its
+ * stored `iri` when present, otherwise mints one from the catalog it is a
+ * direct member of, falling back to its local identifier - then
+ * absolutizes the result against `baseIri` if it is not already absolute.
+ * @param catalogIri IRI of the catalog this CV is a direct member of (its
+ * owning package's own catalog, not necessarily whichever package is
+ * currently being exported) - used to mint a dataset IRI when the CV has
+ * none of its own yet.
+ */
+export function resolveControlledVocabularyIri(
+  entity: ControlledVocabulary,
+  baseIri: string,
+  catalogIri?: string,
+): string {
+  const iri = entity.iri
+    ?? (catalogIri ? controlledVocabularyDatasetIri(catalogIri, entity.id) : null)
+    ?? entity.id;
+  return iri.includes("://") ? iri : baseIri + iri;
+}
+
+/**
  * Helper function to create {@link EntityListContainerToDsvContext}.
  * Provides defaults, functionality can be changed using the arguments.
  * @param controlledVocabularyCatalogIris Maps a controlled vocabulary's
@@ -104,17 +125,17 @@ export function createContext(
   const entityToIri = (
     entity: Entity
   ): string => {
+    const baseIri = entityMap[entity.id]?.container.baseIri ?? "";
+    if (isControlledVocabulary(entity)) {
+      const catalogIri = controlledVocabularyCatalogIris?.get(entity.id);
+      return resolveControlledVocabularyIri(entity, baseIri, catalogIri);
+    }
     // Relations store IRI in the range.
     let iri: string | null = null;
     if (isSemanticModelRelationship(entity)
       || isSemanticModelRelationshipProfile(entity)) {
       const [_, range] = entity.ends;
       iri = range?.iri ?? iri;
-    } else if (isControlledVocabulary(entity)) {
-      // Reuse this CV's own iri when it has one,
-      // otherwise mint one from the catalog it is a direct member of.
-      const catalogIri = controlledVocabularyCatalogIris?.get(entity.id);
-      iri = entity.iri ?? (catalogIri ? controlledVocabularyDatasetIri(catalogIri, entity.id) : null);
     } else {
       // This can by anything, we just try to graph the IRI.
       iri = (entity as any).iri;
@@ -127,7 +148,6 @@ export function createContext(
       return iri;
     } else {
       // Relative IRI.
-      const baseIri = entityMap[entity.id]?.container.baseIri ?? "";
       return baseIri + iri;
     }
   };

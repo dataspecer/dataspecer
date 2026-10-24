@@ -28,8 +28,6 @@ export interface createModelContext {
   label?: LanguageString;
   description?: LanguageString;
   baseIri?: string;
-  modelAlias?: string;
-  documentBaseUrl?: string;
   caches?: string[];
 }
 
@@ -47,7 +45,6 @@ function getHookForStandardModel(type: string, initialContent: (iri: string, con
         userMetadata: {
           label: context.label,
           description: context.description,
-          documentBaseUrl: context.documentBaseUrl,
         }
       }),
     });
@@ -73,8 +70,6 @@ export const createModelInstructions = {
         userMetadata: {
           label: context.label,
           description: context.description,
-          // @ts-ignore
-          documentBaseUrl: context.documentBaseUrl,
         }
       });
       await fetch(import.meta.env.VITE_BACKEND + "/resources/blob?iri=" + encodeURIComponent(iri), {
@@ -145,7 +140,7 @@ export const createModelInstructions = {
     createHook: getHookForStandardModel(LOCAL_SEMANTIC_MODEL, (iri, context) => ({
       "type": LOCAL_SEMANTIC_MODEL,
       "modelId": iri,
-      "modelAlias": context.modelAlias ?? "",
+      "label": context.label ?? {},
       "baseIri": context.baseIri ?? iri,
       "entities": {}
     })),

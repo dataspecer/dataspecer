@@ -3,11 +3,11 @@ import {
   isSemanticModelClass,
   isSemanticModelRelationPrimitive,
   isSemanticModelRelationship,
-  LanguageString,
-  SemanticModelEntity,
+  SemanticModelEntity
 } from "@dataspecer/core-v2/semantic-model/concepts";
 import { isControlledVocabularyAssignment } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { DataTypeURIs, isDataType } from "@dataspecer/core-v2/semantic-model/datatypes";
+import { isModelProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { createRdfsModel } from "@dataspecer/core-v2/semantic-model/simplified";
 import { PimStoreWrapper, serializationToPimModelEntities } from "@dataspecer/core-v2/semantic-model/v1-adapters";
 import { parseControlledVocabularyCatalog, type ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
@@ -15,6 +15,7 @@ import type { CoreResource } from "@dataspecer/core/core/core-resource";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
 import { DataSpecificationConfigurator } from "@dataspecer/core/data-specification/configuration";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
+import { reloadCachedSemanticModel } from "@dataspecer/specification/aggregator-builder";
 import { turtleStringToGeneratorConfiguration } from "@dataspecer/data-specification-vocabulary/generator-configuration";
 import { conceptualModelToEntityListContainer, rdfToConceptualModel } from "@dataspecer/data-specification-vocabulary/semantic-model";
 import { dsvMetadataWellKnown, rdfToDSVMetadata } from "@dataspecer/data-specification-vocabulary/specification-description";
@@ -22,7 +23,7 @@ import { turtleStringToStructureModel } from "@dataspecer/data-specification-voc
 import { canonicalizeIds } from "@dataspecer/structure-model";
 import express from "express";
 import * as jsonld from "jsonld";
-import N3, { Quad_Object } from "n3";
+import N3 from "n3";
 import { parse } from "node-html-parser";
 import { v4 as uuidv4 } from "uuid";
 import z from "zod";
@@ -34,19 +35,6 @@ import { BaseResource } from "../models/resource-model.ts";
 import { StagingModelRepository } from "../models/staging-model-repository.ts";
 import { getModelsForPackage } from "../utils/backend-model-store.ts";
 import { asyncHandler } from "./../utils/async-handler.ts";
-
-
-function jsonLdLiteralToLanguageString(literal: Quad_Object[]): LanguageString {
-  const result: LanguageString = {};
-  if (literal) {
-    for (const entry of literal) {
-      if (entry.termType === "Literal" && entry.language) {
-        result[entry.language] = entry.value;
-      }
-    }
-  }
-  return result;
-}
 
 /**
  * Fetches a URL (following redirects, as fetch does by default) and rejects
@@ -312,6 +300,21 @@ function splitIri(iri: string | null | undefined): [string, string] {
  * import.
  */
 async function importRdfsAndDsv(repository: ModelRepositoryType, parentIri: string, rdfsUrl: string | null, dsvUrl: string | null, userMetadata: any, allImportedEntities: SemanticModelEntity[], touchedModelIds?: Set<string>) {
+  const existingPackage = await repository.getPackage(parentIri);
+  let vocabularyModelId: string | undefined;
+  let profileModelId: string | undefined;
+  for (const model of existingPackage?.subResources ?? []) {
+    if (!model.types.includes(LOCAL_SEMANTIC_MODEL)) {
+      continue;
+    }
+    const entities = await repository.getModelEntities(model.iri);
+    if (isModelProfile(entities ?? {})) {
+      profileModelId ??= model.iri;
+    } else {
+      vocabularyModelId ??= model.iri;
+    }
+  }
+
   async function createModelFromEntities(entities: SemanticModelEntity[], id: string, userMetadata: any) {
     await ensureResource(repository, parentIri, id, LOCAL_SEMANTIC_MODEL, userMetadata);
     touchedModelIds?.add(id);
@@ -358,7 +361,7 @@ async function importRdfsAndDsv(repository: ModelRepositoryType, parentIri: stri
 
     const result = {
       modelId: id,
-      modelAlias: userMetadata?.label?.en ?? userMetadata?.label?.cs,
+      label: userMetadata?.label ?? {},
       entities: Object.fromEntries(entities.map((e) => [e.id, e])),
       baseIri: bestPrefix,
     } as any;
@@ -403,7 +406,7 @@ async function importRdfsAndDsv(repository: ModelRepositoryType, parentIri: stri
   }
   allImportedEntities.push(...vocabularyEntities.map((e) => ({ ...e }))); // We need to clone because the following function modifies iris
   if (vocabularyEntities.length > 0) {
-    await createModelFromEntities(vocabularyEntities, parentIri + "/" + "vocabulary", userMetadata);
+    await createModelFromEntities(vocabularyEntities, vocabularyModelId ?? uuidv4(), userMetadata);
   }
 
   // DSV
@@ -430,12 +433,12 @@ async function importRdfsAndDsv(repository: ModelRepositoryType, parentIri: stri
     }
 
     // Parse and materialize this document's own embedded controlled
-    // vocabulary catalog before resolving the rest of the DSV below, so
-    // ControlledVocabularyAssignment references can already find them.
+    // vocabulary catalog before resolving the rest of the DSV below, 
+    // so ControlledVocabularyAssignment references can already find them.
     const parsedVocabularies = parseControlledVocabularyCatalog(new N3.Parser().parse(data));
     for (const vocabulary of parsedVocabularies) {
       const cvModelId = parentIri + "/controlled-vocabulary/" + uuidv4();
-      await ensureResource(repository, parentIri, cvModelId, CONTROLLED_VOCABULARY_MODEL, { label: { en: vocabulary.title } });
+      await ensureResource(repository, parentIri, cvModelId, CONTROLLED_VOCABULARY_MODEL, { label: vocabulary.title });
       touchedModelIds?.add(cvModelId);
       // Mirrors controlledVocabularyModelEntitiesToSerialization's own
       // stored shape (the entity minus id/type, which the model's own id
@@ -470,74 +473,8 @@ async function importRdfsAndDsv(repository: ModelRepositoryType, parentIri: stri
     }
   }
   if (profileEntities.length > 0) {
-    await createModelFromEntities(profileEntities, parentIri + "/" + "profile", userMetadata);
+    await createModelFromEntities(profileEntities, profileModelId ?? uuidv4(), userMetadata);
   }
-}
-
-/**
- * @deprecated drop support anytime it would require changes
- */
-async function legacyDsvImport(repository: ModelRepositoryType, store: N3.Store, url: string, baseIri: string, parentIri: string): Promise<[BaseResource | null, SemanticModelEntity[]]> {
-  const name = jsonLdLiteralToLanguageString(store.getObjects(baseIri, "http://purl.org/dc/terms/title", null));
-  const description = jsonLdLiteralToLanguageString(store.getObjects(baseIri, "http://www.w3.org/2000/01/rdf-schema#comment", null));
-
-  // Create package
-  const newPackageIri = parentIri + "/" + uuidv4();
-  await repository.createPackage(parentIri, newPackageIri, {
-    label: name,
-    description,
-    importedFromUrl: url,
-    documentBaseUrl: url,
-  });
-
-  let rdfsUrl = null;
-  let dsvUrl = null;
-
-  const artefacts = [
-    ...store.getObjects(baseIri, "https://w3id.org/dsv#artefact", null), // TODO: remove when every known specification contains prof:hasResource
-    ...store.getObjects(baseIri, "http://www.w3.org/ns/dx/prof/hasResource", null),
-  ];
-
-  for (const artefact of artefacts) {
-    const artefactUrl = store.getObjects(artefact, "http://www.w3.org/ns/dx/prof/hasArtifact", null)[0].id;
-    const role = store.getObjects(artefact, "http://www.w3.org/ns/dx/prof/hasRole", null)[0].id;
-
-    if (role === "http://www.w3.org/ns/dx/prof/role/vocabulary") {
-      rdfsUrl = artefactUrl;
-    } else if (role === "http://www.w3.org/ns/dx/prof/role/schema") {
-      dsvUrl = artefactUrl;
-    }
-  }
-
-  const vocabularies = [
-    ...new Set([
-      ...store.getObjects(baseIri, "https://w3id.org/dsv#usedVocabularies", null).map((v) => v.id), // TODO: remove when every known specification contains prof:isProfileOF
-      ...store.getObjects(baseIri, "http://purl.org/dc/terms/references", null).map((v) => v.id), // TODO: remove when every known specification contains prof:isProfileOF
-      ...store.getObjects(baseIri, "http://www.w3.org/ns/dx/prof/isProfileOf", null).map((v) => v.id),
-    ]),
-  ];
-  const entities: SemanticModelEntity[] = [];
-  for (const vocabularyId of vocabularies) {
-    const urlToImport = vocabularyId;
-    const [, e] = await importFromUrl(newPackageIri, urlToImport, undefined, undefined, repository);
-    entities.push(...e);
-  }
-
-  await importRdfsAndDsv(
-    repository,
-    newPackageIri,
-    rdfsUrl,
-    dsvUrl,
-    {
-      label: {
-        en: name.en ?? name.cs,
-      },
-      documentBaseUrl: url,
-    },
-    entities,
-  );
-
-  return [(await repository.getResource(newPackageIri))!, entities];
 }
 
 /**
@@ -551,7 +488,7 @@ async function dsvImport(repository: ModelRepositoryType, store: N3.Store, url: 
 
   // Create or reuse package
 
-  const rootPackageId = existingPackageIri ?? parentIri + "/" + uuidv4();
+  const rootPackageId = existingPackageIri ?? uuidv4();
   touchedModelIds?.add(rootPackageId);
 
   await ensurePackage(repository, parentIri, rootPackageId, {
@@ -579,13 +516,15 @@ async function dsvImport(repository: ModelRepositoryType, store: N3.Store, url: 
       rootHref = rootHref.substring(0, rootHref.length - 3);
     }
 
-    await ensureResource(repository, rootPackageId, rootPackageId + "/generator-configuration", V1.GENERATOR_CONFIGURATION, {});
-    touchedModelIds?.add(rootPackageId + "/generator-configuration");
+    const existingPackage = await repository.getPackage(rootPackageId);
+    const configurationModelId = existingPackage?.subResources?.find((model) => model.types.includes(V1.GENERATOR_CONFIGURATION))?.iri ?? uuidv4();
+    await ensureResource(repository, rootPackageId, configurationModelId, V1.GENERATOR_CONFIGURATION, {});
+    touchedModelIds?.add(configurationModelId);
     const configuration = DataSpecificationConfigurator.setToObject(configurationModel, {
       ...DataSpecificationConfigurator.getFromObject(configurationModel),
       publicBaseUrl: rootHref,
     });
-    await repository.setModelJson(rootPackageId + "/generator-configuration", configuration);
+    await repository.setModelJson(configurationModelId, configuration);
   }
 
   // Identify important resources to import
@@ -666,7 +605,7 @@ async function dsvImport(repository: ModelRepositoryType, store: N3.Store, url: 
       claimedExistingIris.add(existingMatchIri);
     }
 
-    const targetIri = existingMatchIri ?? rootPackageId + "/" + uuidv4();
+    const targetIri = existingMatchIri ?? uuidv4();
     touchedModelIds?.add(targetIri);
     const name = deriveNameFromUrl(profile.url);
     const e = await persistRdfsModel(repository, rootPackageId, wrapper, targetIri, {
@@ -733,16 +672,11 @@ export async function importFromUrl(
     const quads = (await jsonld.toRDF(jsonLd)) as N3.Quad[];
     const store = new N3.Store(quads);
 
-    if (store.getObjects(baseIri, "https://w3id.org/dsv#artefact", null).length > 0) {
-      // This is a legacy DSV model
-      return legacyDsvImport(repository, store, url, baseIri, parentIri);
-    } else {
-      return dsvImport(repository, store, url, baseIri, parentIri, existingIri, touchedModelIds);
-    }
+    return dsvImport(repository, store, url, baseIri, parentIri, existingIri, touchedModelIds);
   } else {
     const name = deriveNameFromUrl(url);
 
-    const newIri = existingIri ?? parentIri + "/" + uuidv4();
+    const newIri = existingIri ?? uuidv4();
     touchedModelIds?.add(newIri);
     return [
       null,
@@ -833,6 +767,37 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
 
     response.send({ ...(await modelRepository.getResource(existingResource.iri)), evolutionBranchId });
     return;
+  }
+
+  // Todo better detection of a semantic model and its subtype
+  if (existingResource.types.includes(LOCAL_SEMANTIC_MODEL)) {
+    const previousEntities = await modelRepository.getModelEntities(existingResource.iri);
+    const mainEntity = previousEntities?.[existingResource.iri] as { caches?: unknown } | undefined;
+    if (mainEntity && "caches" in mainEntity) {
+      const nextEntities = await reloadCachedSemanticModel(previousEntities!);
+      const operations = diffModelEntitiesToOperations(
+        existingResource.iri,
+        LOCAL_SEMANTIC_MODEL,
+        previousEntities!,
+        nextEntities,
+      );
+
+      const projectIri = (await modelRepository.getProjectIri(existingResource.iri))!;
+      let evolutionBranchId: number | null = null;
+      if (query.apply) {
+        await modelRepository.applyTransactions(projectIri, [{ id: uuidv4(), operations }]);
+      } else {
+        evolutionBranchId = await modelRepository.recordEvolutionTransactions(
+          projectIri,
+          existingResource.iri,
+          [{ id: uuidv4(), operations }],
+          { [existingResource.iri]: previousEntities! },
+        );
+      }
+
+      response.send({ ...(await modelRepository.getResource(existingResource.iri)), evolutionBranchId });
+      return;
+    }
   }
 
   // Determine the URL to reload from

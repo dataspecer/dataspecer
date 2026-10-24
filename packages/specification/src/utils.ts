@@ -1,7 +1,8 @@
+import { isModelProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import type { Entity } from "@dataspecer/core-v2";
 import { createDefaultConfigurationModelFromJsonObject } from "@dataspecer/core-v2/configuration-model";
 import { isSemanticModelClass, isSemanticModelRelationship, SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
-import { isSemanticModelClassProfile, isSemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
+import { isSemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { isControlledVocabulary, type ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 import type { LanguageString } from "@dataspecer/core/core/core-resource";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
@@ -23,12 +24,7 @@ import { semanticModelsToShacl, shaclToRdf, type SemanticModelsToShaclConfigurat
 export function isModelVocabulary(model: Record<string, SemanticModelEntity>): boolean {
   return Object.values(model).some((entity) => isSemanticModelClass(entity) || isSemanticModelRelationship(entity));
 }
-/**
- * Helper function that check whether the model is an application profile. If not, it is probably a vocabulary.
- */
-export function isModelProfile(model: Record<string, SemanticModelEntity>): boolean {
-  return Object.values(model).some((entity) => isSemanticModelClassProfile(entity) || isSemanticModelRelationshipProfile(entity));
-}
+
 /**
  * Helper function that checks whether the model is a single controlled
  * vocabulary model - see fillModels in specification.ts.
@@ -210,6 +206,7 @@ export async function generateShaclApplicationProfile(forExportModel: ModelDescr
     forContextModels.filter((model) => isModelProfile(model.entities)).map(mapModel),
     mapModel(forExportModel),
     configuration, { baseIri: iri, defaultPrefixes: prefixesForIriConstruction },
+    forContextModels.filter((model) => isModelControlledVocabulary(model.entities)).map(mapModel),
   );
 
   const rdf = await shaclToRdf(shacl, {});

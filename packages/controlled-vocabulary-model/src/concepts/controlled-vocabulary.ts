@@ -1,21 +1,25 @@
+import type { LanguageString } from "@dataspecer/core/core/core-resource";
 import type { Entity } from "@dataspecer/core/entity-model";
 
 export const CONTROLLED_VOCABULARY_TYPE = "controlled-vocabulary" as const;
 
 /**
  * Interface representing metadata identified about a controlled vocabulary
- * - title = name of the controlled vocabulary (CV)
- * - pattern = regex pattern of the IRIs of CV values
- * - references = IRI of the CV that the metadata references (IRI of skos:ConceptScheme)
- * - documentation = documentation URL
+ * - title = name of the controlled vocabulary (CV) per language tag
+ * - pattern = regex pattern of the IRIs of CV values, null if not known
+ * - references = main reference to the CV: the IRI of its skos:ConceptScheme
+ *   when conformsToSkos is true, otherwise its download or documentation URL
+ * - conformsToSkos = whether the CV values are skos:Concepts of the skos:ConceptScheme
+ * - documentation = documentation URL, null if there is none
  * - distribution = reference to the CV distribution
  */
 export interface ControlledVocabulary extends Entity {
   type: [typeof CONTROLLED_VOCABULARY_TYPE];
-  title: string;
-  pattern: string;
+  title: LanguageString;
+  pattern: string | null;
   references: string;
-  documentation: string;
+  conformsToSkos: boolean;
+  documentation: string | null;
   distribution: ControlledVocabularyDistribution;
 
   /**
@@ -29,10 +33,10 @@ export interface ControlledVocabulary extends Entity {
  * Represents the CV distribution - point of access to the CV raw data
  * Based on DCAT specification - accessUrl is a required parameter
  * (distribution can be not downloadable - like endpoint)
- * for most CVs downloadableUrl will match accessUrl
+ * for most CVs downloadableUrl will match accessUrl, otherwise it is null
  */
 export interface ControlledVocabularyDistribution {
-  downloadUrl: string;
+  downloadUrl: string | null;
   accessUrl: string;
 }
 
@@ -46,12 +50,13 @@ export function isControlledVocabulary(entity: Entity): entity is ControlledVoca
  */
 export const DEFAULT_CONTROLLED_VOCABULARY: Omit<ControlledVocabulary, "id"> = {
   type: [CONTROLLED_VOCABULARY_TYPE],
-  title: "",
-  pattern: "",
+  title: {},
+  pattern: null,
   references: "",
-  documentation: "",
+  conformsToSkos: true,
+  documentation: null,
   distribution: {
-    downloadUrl: "",
+    downloadUrl: null,
     accessUrl: "",
   },
   iri: null,

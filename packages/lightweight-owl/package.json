@@ -16,11 +16,11 @@
     "@dataspecer/core-v2": "*",
     "@dataspecer/semantic-model": "*",
     "@dataspecer/utilities": "*",
-    "n3": "^1.25.1"
+    "n3": "^2.13.7"
   },
   "devDependencies": {
-    "@types/n3": "~1.24.2",
+    "@types/n3": "~1.26.4",
     "typescript": "^7.0.2",
-    "vitest": "^4.1.7"
+    "vitest": "^5.0.3"
   }
 }

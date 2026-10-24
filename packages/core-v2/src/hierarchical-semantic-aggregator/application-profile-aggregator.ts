@@ -4,6 +4,7 @@ import {
   isSemanticModelGeneralization,
   isSemanticModelRelationPrimitive,
   isSemanticModelRelationship,
+  isMainSemanticModelEntity,
   SemanticModelClass,
   SemanticModelEntity,
   SemanticModelGeneralization,
@@ -26,7 +27,7 @@ import { ExternalEntityWrapped, SemanticModelAggregator, LocalEntityWrapped } fr
 import { getSearchRelevance } from "./utils/get-search-relevance.ts";
 import { TupleSet } from "./utils/tuple-set.ts";
 import { withAbsoluteIri } from "../semantic-model/utils/index.ts";
-import { EntityModel, getModelAlias, getModelBaseIri, getModelId, isMainEntity, splitEntityChanges } from "./utils/entity-model.ts";
+import { EntityModel, getModelLabel, getModelBaseIri, getModelId, splitEntityChanges } from "./utils/entity-model.ts";
 
 const APPLICATION_PROFILE_AGGREGATOR_TYPE = "application-profile-aggregator";
 
@@ -137,7 +138,7 @@ export class ApplicationProfileAggregator implements SemanticModelAggregator {
     });
 
     this.thisVocabularyChain = {
-      name: getModelAlias(this.profile.getEntities()) ?? "AP",
+      name: getModelLabel(this.profile.getEntities()) ?? "AP",
     };
 
     const profileId = getModelId(this.profile.getEntities());
@@ -185,7 +186,7 @@ export class ApplicationProfileAggregator implements SemanticModelAggregator {
    */
   private updateLocalEntities(updated: Record<string, Entity>, removed: string[]) {
     for (const entity of Object.values(updated)) {
-      if (isMainEntity(entity)) {
+      if (isMainSemanticModelEntity(entity)) {
         continue;
       }
       this.profileEntities[entity.id] = withAbsoluteIri(entity as SemanticModelEntity, this.profileBaseIri);
@@ -227,7 +228,7 @@ export class ApplicationProfileAggregator implements SemanticModelAggregator {
           // Controlled vocabulary assignments are not aggregated
           // themselves (unlike profiling dependencies), so they are
           // resolved directly from the raw profile entities instead of
-          // through the this.entities/this.sourceEntities wrapping.
+          // through the wrapped entities.
           const controlledVocabularyAssignments = (entity.controlledVocabularies ?? [])
             .map((id) => this.profileEntities[id] ?? null)
             .filter(isControlledVocabularyAssignment);
@@ -250,10 +251,19 @@ export class ApplicationProfileAggregator implements SemanticModelAggregator {
           toUpdate.push(...this.dependsOn.getBySecond(entity.id));
           updated[entity.id] = updatedEntity;
         } else if (isControlledVocabularyAssignment(entity)) {
-          // Not aggregated on its own - only the owning class profile is.
-          // Propagate to the owning class profile so it gets re-aggregated when the assignment changes.
-          // This happens when the CV assignment is edited (no change in profile itself)
+          // add controlled vocabulary entities into the aggregation result
+          const updatedEntity = {
+            id: entity.id,
+            type: APPLICATION_PROFILE_AGGREGATOR_TYPE,
+            aggregatedEntity: entity,
+            vocabularyChain: [],
+          } satisfies LocalEntityWrapped;
+          this.entities[entity.id] = updatedEntity;
+          this.dependsOn.deleteFirst(entity.id); // assignment is profile-independent
+          // The class profile that owns the assignment is re-aggregated when the assignment is edited,
+          // which is not a change of the profile itself.
           toUpdate.push(...this.dependsOn.getBySecond(entity.id));
+          updated[entity.id] = updatedEntity;
         } else if (isSemanticModelRelationshipProfile(entity)) {
           // todo: we need to handle the case with local relations!
           const dependsOnWrappedEntities = entity.ends

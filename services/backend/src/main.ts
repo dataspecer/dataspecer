@@ -1,9 +1,11 @@
-import { PrismaClient } from "@prisma/client";
+import { createDatabase } from "./database/database.ts";
+import { DatabaseSync } from "node:sqlite";
 import cors from "cors";
 import express from "express";
 import multer from "multer";
 import configuration from "./configuration.ts";
-import { Migrate } from "./migrations/migrate.ts";
+import { migrateDatabase } from "./migration-utils/migrate-database.ts";
+import { InMemoryStoreModel } from "./models/in-memory-store-model.ts";
 import { LocalStoreModel } from "./models/local-store-model.ts";
 import { ModelRepository } from "./models/model-repository.ts";
 import { ResourceModel } from "./models/resource-model.ts";
@@ -33,12 +35,17 @@ import { applyTransactions, deleteEvolutionBranch, getTransactionsDiff, listBran
 
 // Create application models
 
-const storeModel = new LocalStoreModel("./database/stores");
-export const prismaClient = new PrismaClient();
-const resourceModel = new ResourceModel(storeModel, prismaClient);
-export const transactionModel = new TransactionModel(prismaClient);
+const args = process.argv.slice(2);
+const inMemoryDbArg = args.includes("--in-memory-db");
+
+const storeModel = inMemoryDbArg ? new InMemoryStoreModel() : new LocalStoreModel("./database/stores");
+const databasePath = inMemoryDbArg
+  ? new DatabaseSync(":memory:", { enableForeignKeyConstraints: true })
+  : new URL("../database/database.db", import.meta.url);
+const database = createDatabase(databasePath);
+const resourceModel = new ResourceModel(storeModel, database);
+export const transactionModel = new TransactionModel(database);
 export const modelRepository = new ModelRepository(resourceModel, transactionModel);
-const migration = new Migrate(prismaClient);
 
 let apiBasename: string;
 let basename: string | null = null;
@@ -171,33 +178,24 @@ if (configuration.staticFilesPath) {
 
 (async () => {
   // Run migrations or throw
-  await migration.tryUp();
+  await migrateDatabase(databasePath, storeModel);
 
-  // Command-line arguments
-  if (process.argv.length > 2) {
-    // if (process.argv[2] === "...") {
-      //   process.exit(0);
-    // }
-      console.error("Unknown command line arguments.");
-      process.exit(0);
-      } else {
-    // Create local root
-    if (!(await modelRepository.getResource(configuration.localRootIri))) {
-      console.log("There is no default root package. Creating one...");
-      await modelRepository.createPackage(null, configuration.localRootIri, configuration.localRootMetadata);
-    }
-    // Create root models for the common use and for the v1 adapter.
-    if (!(await modelRepository.getResource(configuration.v1RootIri))) {
-      console.log("There is no root package for data specifications from v1 dataspecer. Creating one...");
-      await modelRepository.createPackage(null, configuration.v1RootIri, configuration.v1RootMetadata);
-    }
-
-    application.listen(Number(configuration.port), () => {
-      if (configuration.inDocker) {
-        console.log(`Dataspecer is running! Try opening your browser at http://localhost:port/ where port is the port you mapped to the container's port ${configuration.port}.`);
-      } else {
-        console.log(`Server is listening on port ${Number(configuration.port)}.`);
-      }
-    });
+  // Create local root
+  if (!(await modelRepository.getResource(configuration.localRootIri))) {
+    console.log("There is no default root package. Creating one...");
+    await modelRepository.createPackage(null, configuration.localRootIri, configuration.localRootMetadata);
   }
+  // Create root models for the common use and for the v1 adapter.
+  if (!(await modelRepository.getResource(configuration.v1RootIri))) {
+    console.log("There is no root package for data specifications from v1 dataspecer. Creating one...");
+    await modelRepository.createPackage(null, configuration.v1RootIri, configuration.v1RootMetadata);
+  }
+
+  application.listen(Number(configuration.port), () => {
+    if (configuration.inDocker) {
+      console.log(`Dataspecer is running! Try opening your browser at http://localhost:port/ where port is the port you mapped to the container's port ${configuration.port}.`);
+    } else {
+      console.log(`Server is listening on port ${Number(configuration.port)}.`);
+    }
+  });
 })();

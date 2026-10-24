@@ -381,7 +381,6 @@ This section provides steps for local build of the entire Dataspecer repository.
    1. Please refer to [backend service documentation](https://github.com/dataspecer/dataspecer/blob/main/services/backend/README.md) or run the following commands:
       ```
       npx turbo run build --filter=backend
-      npm --prefix services/backend run update-database
       npm --prefix services/backend run start
       ```
     2. Build Dataspecer manager by running (from monorepository root directory):

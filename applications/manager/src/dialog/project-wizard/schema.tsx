@@ -9,11 +9,13 @@ import { BetterModalProps } from "@/lib/better-modal";
 import { getSpecificationService } from "@/package";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { TagField, parseTags } from "@/components/tag-field";
 
 
-export const Schema = ({ isOpen, resolve, iri }: { iri: string } & BetterModalProps<boolean>) => {
+export const Schema = ({ isOpen, resolve, iri, defaultTag }: { iri: string; defaultTag?: string } & BetterModalProps<boolean>) => {
   const {t, i18n} = useTranslation();
   const [loading, setLoading] = useState(false);
+  const [tags, setTags] = useState(defaultTag ?? "");
 
   const formSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -28,7 +30,7 @@ export const Schema = ({ isOpen, resolve, iri }: { iri: string } & BetterModalPr
 
       const dataSpecificationId = await specService.createDataSpecification({
         label: {[i18n.language]: name},
-        tags: [],
+        tags: parseTags(tags),
       });
 
       // Redirect to url
@@ -58,6 +60,7 @@ export const Schema = ({ isOpen, resolve, iri }: { iri: string } & BetterModalPr
               <Label htmlFor="description">{t("form.description.name")}</Label>
               <Textarea id="description" placeholder={t("form.description.instruction")} />
             </div>
+            <TagField value={tags} onChange={setTags} />
             <div className="grid gap-2">
               <Label htmlFor="description">{t("form.description.preset")}</Label>
               <RadioGroup defaultValue="sgov" className="">

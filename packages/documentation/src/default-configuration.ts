@@ -129,35 +129,52 @@ export const defaultConfiguration: DocumentationConfiguration = {
 
     {{> used-prefixes}}
 
-    {{#if (or controlledVocabularyUsagesByQualifier.must controlledVocabularyUsagesByQualifier.[at-least-one] controlledVocabularyUsagesByQualifier.recommended controlledVocabularyUsagesByQualifier.may)}}
+    {{#if controlledVocabularies.length}}
       <section>
         <h2>{{#iflng "cs"}}Řízené slovníky{{lng}}Controlled vocabularies{{/iflng}}</h2>
 
-        {{#if controlledVocabularyUsagesByQualifier.must}}
-          <section>
-            <h3>{{#iflng "cs"}}Vlastnosti s řízenými slovníky, které MUSÍ být použity{{lng}}Properties with controlled vocabularies that MUST be used{{/iflng}}</h3>
-            {{> controlled-vocabulary-usage-table rows=controlledVocabularyUsagesByQualifier.must}}
-          </section>
-        {{/if}}
+        <section>
+          <h3>{{#iflng "cs"}}Seznam řízených slovníků{{lng}}List of controlled vocabularies{{/iflng}}</h3>
+          <p>
+            {{#iflng "cs"}}Seznam obsahuje všechny řízené slovníky, které tato specifikace používá, s odkazy na dokumenaci a ke stažení.{{lng}}The list contains all controlled vocabularies used by this specification, with links to its access URL and documentation.{{/iflng}}
+          </p>
+          {{> controlled-vocabularies-table}}
+        </section>
 
-        {{#if controlledVocabularyUsagesByQualifier.[at-least-one]}}
+        {{#if (or controlledVocabularyUsagesByQualifier.must controlledVocabularyUsagesByQualifier.[at-least-one] controlledVocabularyUsagesByQualifier.recommended controlledVocabularyUsagesByQualifier.may)}}
           <section>
-            <h3>{{#iflng "cs"}}Vlastnosti s řízenými slovníky, ze kterých MUSÍ být použit alespoň jeden{{lng}}Properties with controlled vocabularies where AT LEAST ONE must be used{{/iflng}}</h3>
-            {{> controlled-vocabulary-usage-table rows=controlledVocabularyUsagesByQualifier.[at-least-one]}}
-          </section>
-        {{/if}}
+            <h3>{{#iflng "cs"}}Použití řízených slovníků{{lng}}Controlled vocabularies usage{{/iflng}}</h3>
+            <p>
+              {{#iflng "cs"}}Tabulky níže uvádějí použití řízených slovníků pro vlastnosti, seskupené podle očekávané kvalifikace.{{lng}}The tables below show the usage of the controlled vocabularies with properties grouped by the expected qualification.{{/iflng}}
+            </p>
 
-        {{#if controlledVocabularyUsagesByQualifier.recommended}}
-          <section>
-            <h3>{{#iflng "cs"}}Vlastnosti s DOPORUČENÝMI řízenými slovníky{{lng}}Properties with RECOMMENDED controlled vocabularies{{/iflng}}</h3>
-            {{> controlled-vocabulary-usage-table rows=controlledVocabularyUsagesByQualifier.recommended}}
-          </section>
-        {{/if}}
+            {{#if controlledVocabularyUsagesByQualifier.must}}
+              <section>
+                <h4>{{#iflng "cs"}}Vlastnosti s řízenými slovníky, které MUSÍ být použity{{lng}}Properties with controlled vocabularies that MUST be used{{/iflng}}</h4>
+                {{> controlled-vocabulary-usage-table rows=controlledVocabularyUsagesByQualifier.must}}
+              </section>
+            {{/if}}
 
-        {{#if controlledVocabularyUsagesByQualifier.may}}
-          <section>
-            <h3>{{#iflng "cs"}}Vlastnosti s řízenými slovníky, které MOHOU být použity{{lng}}Properties with controlled vocabularies that MAY be used{{/iflng}}</h3>
-            {{> controlled-vocabulary-usage-table rows=controlledVocabularyUsagesByQualifier.may}}
+            {{#if controlledVocabularyUsagesByQualifier.[at-least-one]}}
+              <section>
+                <h4>{{#iflng "cs"}}Vlastnosti s řízenými slovníky, ze kterých MUSÍ být použit alespoň jeden{{lng}}Properties with controlled vocabularies where AT LEAST ONE must be used{{/iflng}}</h4>
+                {{> controlled-vocabulary-usage-table rows=controlledVocabularyUsagesByQualifier.[at-least-one]}}
+              </section>
+            {{/if}}
+
+            {{#if controlledVocabularyUsagesByQualifier.recommended}}
+              <section>
+                <h4>{{#iflng "cs"}}Vlastnosti s DOPORUČENÝMI řízenými slovníky{{lng}}Properties with RECOMMENDED controlled vocabularies{{/iflng}}</h4>
+                {{> controlled-vocabulary-usage-table rows=controlledVocabularyUsagesByQualifier.recommended}}
+              </section>
+            {{/if}}
+
+            {{#if controlledVocabularyUsagesByQualifier.may}}
+              <section>
+                <h4>{{#iflng "cs"}}Vlastnosti s řízenými slovníky, které MOHOU být použity{{lng}}Properties with controlled vocabularies that MAY be used{{/iflng}}</h4>
+                {{> controlled-vocabulary-usage-table rows=controlledVocabularyUsagesByQualifier.may}}
+              </section>
+            {{/if}}
           </section>
         {{/if}}
       </section>
@@ -409,7 +426,35 @@ export const defaultConfiguration: DocumentationConfiguration = {
   {{/each}}
 {{/if}}`,
 
-    "controlled-vocabulary-link": `{{#semanticEntity vocabulary}}<a href="{{{distribution.accessUrl}}}">{{title}}</a>{{else}}{{.}}{{/semanticEntity}}`,
+    "controlled-vocabulary-link": `{{#semanticEntity vocabulary}}<a href="#{{cvAnchor id}}">{{cvTitle id}}</a>{{else}}{{.}}{{/semanticEntity}}`,
+
+    "controlled-vocabulary-access-link": `<a class="cv-link" href="{{{distribution.accessUrl}}}" title="{{#iflng "cs"}}Přístupová adresa{{lng}}Access URL{{/iflng}}" aria-label="{{#iflng "cs"}}Přístupová adresa{{lng}}Access URL{{/iflng}}"><svg class="cv-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></a>`,
+
+    "controlled-vocabulary-documentation-link": `<a class="cv-link" href="{{{documentation}}}" title="{{#iflng "cs"}}Dokumentace{{lng}}Documentation{{/iflng}}" aria-label="{{#iflng "cs"}}Dokumentace{{lng}}Documentation{{/iflng}}"><svg class="cv-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg></a>`,
+
+    "controlled-vocabularies-table": `<table class="def cv-table cv-list">
+  <thead>
+    <tr>
+      <th>{{#iflng "cs"}}Název{{lng}}Name{{/iflng}}</th>
+      <th class="cv-center">SKOS</th>
+      <th>{{#iflng "cs"}}IRI schématu konceptů{{lng}}Concept Scheme IRI{{/iflng}}</th>
+      <th>{{#iflng "cs"}}Odkazy{{lng}}Links{{/iflng}}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{#each controlledVocabularies}}
+      <tr id="{{cvAnchor id}}">
+        <td>{{cvTitle id}}</td>
+        <td class="cv-center">{{#if conformsToSkos}}{{#iflng "cs"}}ano{{lng}}yes{{/iflng}}{{else}}{{#iflng "cs"}}ne{{lng}}no{{/iflng}}{{/if}}</td>
+        <td class="cv-iri">{{#if conformsToSkos}}{{references}}{{else}}–{{/if}}</td>
+        <td>
+          {{> controlled-vocabulary-access-link}}
+          {{#if documentation}}{{> controlled-vocabulary-documentation-link}}{{/if}}
+        </td>
+      </tr>
+    {{/each}}
+  </tbody>
+</table>`,
 
     "controlled-vocabulary-replaced-assignment": `{{#iflng "cs"}}nahrazuje přiřazení řízeného slovníku{{lng}}replaces controlled vocabulary assignment{{/iflng}}
 {{> controlled-vocabulary-link}} ({{qualifierLabel qualifier}}) {{#iflng "cs"}}profilu třídy{{lng}}of class profile{{/iflng}}
@@ -460,22 +505,26 @@ export const defaultConfiguration: DocumentationConfiguration = {
   </p>
 {{/each}}`,
 
-    "controlled-vocabulary-usage-table": `<table class="def">
+    "controlled-vocabulary-usage-table": `<table class="def cv-table">
   <thead>
     <tr>
       <th>{{#iflng "cs"}}Vlastnost{{lng}}Property{{/iflng}}</th>
+      <th>{{#iflng "cs"}}Definiční obor vlastnosti{{lng}}Property domain{{/iflng}}</th>
       <th>{{#iflng "cs"}}Použito pro profil třídy{{lng}}Used for class profile{{/iflng}}</th>
       <th>{{#iflng "cs"}}Řízený slovník{{lng}}Controlled vocabulary{{/iflng}}</th>
-      <th>{{#iflng "cs"}}Přepsáno{{lng}}Override{{/iflng}}</th>
     </tr>
   </thead>
   <tbody>
     {{#each rows}}
       <tr>
         <td>{{#with property}}{{relation}}{{/with}}</td>
-        <td>{{#semanticEntity property.ends.1.concept}}{{class}}{{else}}{{.}}{{/semanticEntity}}</td>
-        <td>{{> controlled-vocabulary-link}}</td>
-        <td>{{#if replaces}}{{#iflng "cs"}}ano{{lng}}yes{{/iflng}}{{/if}}</td>
+        <td>{{#each domains}}{{#semanticEntity .}}{{class}}{{else}}{{.}}{{/semanticEntity}}{{#unless @last}}, {{/unless}}{{/each}}</td>
+        <td>{{#semanticEntity range}}{{class}}{{else}}{{.}}{{/semanticEntity}}</td>
+        <td>
+          {{#each vocabularies}}
+            <div>{{> controlled-vocabulary-link}}{{#if replaces}} ({{#iflng "cs"}}přepsáno{{lng}}override{{/iflng}}){{/if}}</div>
+          {{/each}}
+        </td>
       </tr>
     {{/each}}
   </tbody>
@@ -737,6 +786,31 @@ var respecConfig = {
   table.simple td {
     border-top: 1px solid #ddd;
     padding: 3px 10px;
+  }
+
+  /* An IRI has no spaces to break at, so it may wrap anywhere instead of widening the table. */
+  table.def.cv-list .cv-iri {
+    overflow-wrap: anywhere;
+  }
+
+  /* ReSpec shows the header row of a definition table as an italic body row, so it is marked out as a header. */
+  table.def.cv-table thead th {
+    font-style: normal;
+    font-weight: bold;
+    background: color-mix(in srgb, currentColor 8%, transparent);
+    border-bottom: 2px solid color-mix(in srgb, currentColor 35%, transparent);
+  }
+
+  table.def.cv-list .cv-center {
+    text-align: center;
+  }
+
+  a.cv-link + a.cv-link {
+    margin-left: 0.5em;
+  }
+
+  .cv-icon {
+    vertical-align: -0.2em;
   }
 </style>`,
   },

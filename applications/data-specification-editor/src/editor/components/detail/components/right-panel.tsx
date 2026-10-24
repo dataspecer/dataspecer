@@ -4,34 +4,22 @@ import { useFederatedObservableStore } from "@dataspecer/federated-observable-st
 import {
     Alert,
     Box,
-    Button,
     Card,
     Checkbox,
     Collapse,
     FormControl,
     FormControlLabel,
-    FormGroup,
-    Grid,
-    IconButton, Radio, RadioGroup,
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableRow,
+    Radio, RadioGroup,
     TextField,
     Typography,
-    useTheme
 } from "@mui/material";
 import { isEqual } from "lodash";
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { TransitionGroup } from "react-transition-group";
 import { InfoHelp } from "../../../../components/info-help";
 import { useDataPsmAndInterpretedPim } from "../../../hooks/use-data-psm-and-interpreted-pim";
-import { Icons, IconsTwoTone } from "../../../icons";
 import { CardContent } from "../../../mui-overrides";
 import { SetCardinality, SetCardinalityPsm } from "../../../operations/set-cardinality";
-import { SetClassCodelist } from "../../../operations/set-class-codelist";
 import { SetDataPsmDatatype } from "../../../operations/set-data-psm-datatype";
 import { SetDematerialize } from "../../../operations/set-dematerialize";
 import { SetExample } from "../../../operations/set-example";
@@ -40,7 +28,9 @@ import { SetIsClosed } from "../../../operations/set-is-closed";
 import { SetPimDatatype } from "../../../operations/set-pim-datatype";
 import { SetRegex } from "../../../operations/set-regex";
 import { SetTechnicalLabel } from "../../../operations/set-technical-label";
+import { getControlledVocabularyAssignmentIds } from "../../../utils/controlled-vocabularies";
 import { knownDatatypes } from "../../../utils/known-datatypes";
+import { ControlledVocabularies } from "./controlled-vocabularies";
 import { Cardinality, CardinalitySelector, cardinalityFromPim, cardinalityFromPsm, defaultCardinality } from "../../helper/cardinality-selector";
 import { DatatypeSelector, DatatypeSelectorValueType, getIriFromDatatypeSelectorValue } from "../../helper/datatype-selector";
 import { RegexField } from "../../helper/regex-field";
@@ -61,11 +51,6 @@ import { SetXmlGmlType } from "@/editor/operations/set-xml-gml-type";
 
 export const RightPanel: React.FC<{ iri: string, close: () => void }> = memo(({iri}) => {
     const store = useFederatedObservableStore();
-    const theme = useTheme();
-
-    // Use TwoTone icons in light mode, regular icons in dark mode
-    const iconSet = theme.palette.mode === 'dark' ? Icons : IconsTwoTone;
-
     const {dataPsmResource: resource, pimResource} = useDataPsmAndInterpretedPim<DataPsmAttribute | DataPsmAssociationEnd | DataPsmClass, ExtendedSemanticModelRelationship | ExtendedSemanticModelClass | null>(iri);
     // pim resource may not exist if the entity has no interpretation
 
@@ -75,7 +60,7 @@ export const RightPanel: React.FC<{ iri: string, close: () => void }> = memo(({i
     const isContainer = DataPsmContainer.is(resource);
     const isInterpreted = resource.dataPsmInterpretation !== null;
     const isOr = DataPsmOr.is(resource);
-    //const isCodelist = (isClass && (pimResource as PimClass)?.pimIsCodelist) ?? false;
+    const controlledVocabularyAssignmentIds = getControlledVocabularyAssignmentIds(pimResource);
 
     const readOnly = false;
     const pimReadOnly = false;
@@ -84,16 +69,6 @@ export const RightPanel: React.FC<{ iri: string, close: () => void }> = memo(({i
     const [regex, setRegex] = useState<string>("");
     const [examples, setExamples] = useState<string[]|null>([]);
     const [datatype, setDatatype] = useState<DatatypeSelectorValueType>("");
-    const [codelistUrl, setCodelistUrl] = useState<string[] | false>(false);
-    const [codelistUrlAddString, setCodelistUrlAddString] = useState<string>("");
-    const addCodeListItem = useCallback(() => {
-        if (codelistUrl !== false && codelistUrlAddString.length > 0) {
-            if (!codelistUrl.includes(codelistUrlAddString)) {
-                setCodelistUrl([...codelistUrl, codelistUrlAddString]);
-            }
-            setCodelistUrlAddString("");
-        }
-    }, [codelistUrl, codelistUrlAddString]);
 
     /**
      * The correct end of the relationship that is being edited.
@@ -119,12 +94,6 @@ export const RightPanel: React.FC<{ iri: string, close: () => void }> = memo(({i
             setDatatype(foundDatatype ?? datatype);
         }
     }, [resource, isAttribute]);
-
-    useEffect(() => {
-        if (isClass && pimResource) {
-            setCodelistUrl((pimResource as ExtendedSemanticModelClass)?.isCodelist ? ((pimResource as ExtendedSemanticModelClass)?.codelistUrl ?? []) : false);
-        }
-    }, [pimResource, isClass]);
 
     useEffect(() => {
         const entity = semanticRelationshipEnd ?? pimResource as ExtendedSemanticModelClass;
@@ -174,14 +143,6 @@ export const RightPanel: React.FC<{ iri: string, close: () => void }> = memo(({i
                 }
             }
         }, [resource, store, datatype, pimResource, datatypeLangsArray]),
-    );
-
-    useSaveHandler(
-        isClass && !isEqual(codelistUrl, (pimResource as ExtendedSemanticModelClass)?.isCodelist ? ((pimResource as ExtendedSemanticModelClass)?.codelistUrl ?? []) : false),
-        useCallback(
-            async () => pimResource && await store.executeComplexOperation(new SetClassCodelist(pimResource.id as string, codelistUrl !== false, codelistUrl === false ? [] : codelistUrl)),
-            [pimResource, codelistUrl, store]
-        ),
     );
 
     // region json key value for lang string
@@ -404,87 +365,16 @@ export const RightPanel: React.FC<{ iri: string, close: () => void }> = memo(({i
                     control={<Checkbox checked={!emptyAsComplex} onChange={e => setEmptyAsComplex(!e.target.checked)} />}
                     label={t('empty as complex.checkbox')}
                 />
+            </Box>
+        }
 
-                <Typography variant="subtitle1" component="h2" sx={{mt: 2}}>
-                    {t('codelist')}
+        {isClass && controlledVocabularyAssignmentIds.length > 0 &&
+            <Box sx={{mb: 3}}>
+                <Typography variant="subtitle1" component="h2">
+                    {t('controlled vocabularies.title')} <InfoHelp text={t('controlled vocabularies.help')} />
                 </Typography>
 
-                <Card>
-                    <CardContent>
-                        <FormGroup>
-                            <FormControlLabel control={<Checkbox checked={codelistUrl !== false} onChange={() => setCodelistUrl(codelistUrl !== false ? false : [])} />}
-                                              label={t('is codelist') as string} />
-                        </FormGroup>
-                        <TransitionGroup>
-                            {codelistUrl !== false &&
-                                <Collapse>
-                                <Box sx={{mb: 3}}>
-                                    <Table size="small">
-                                        <TableHead>
-                                            <TableRow>
-                                                <TableCell>{t('codelist url')}</TableCell>
-                                                <TableCell align="right"/>
-                                            </TableRow>
-                                        </TableHead>
-                                        <TableBody>
-                                            {codelistUrl.map((url) => (
-                                                <TableRow key={url}>
-                                                    <TableCell component="th" scope="row">
-                                                        {url}
-                                                    </TableCell>
-                                                    <TableCell align="right">
-                                                        {pimReadOnly ||
-                                                            <IconButton size="small" onClick={() => setCodelistUrl(codelistUrl.filter(u => u !== url))}>
-                                                                <iconSet.Tree.Delete/>
-                                                            </IconButton>
-                                                        }
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                            {codelistUrl.length === 0 &&
-                                                <TableRow>
-                                                    <TableCell colSpan={2}>
-                                                        <Typography variant="body2" color="textSecondary">
-                                                            {t('no codelist url')}
-                                                        </Typography>
-                                                    </TableCell>
-                                                </TableRow>
-                                            }
-                                        </TableBody>
-                                    </Table>
-                                    {pimReadOnly || <>
-                                        <Grid container sx={{alignItems: "center", mt: 1}} spacing={2}>
-                                            <Grid item xs={9}>
-                                                <TextField
-                                                    margin="dense"
-                                                    hiddenLabel
-                                                    size="small"
-                                                    fullWidth
-                                                    variant="filled"
-                                                    value={codelistUrlAddString}
-                                                    onChange={event => setCodelistUrlAddString(event.target.value)}
-                                                    onKeyDown={event => {
-                                                        if (event.key === "Enter") {
-                                                            event.preventDefault();
-                                                            addCodeListItem();
-                                                        }
-                                                    }}
-                                                />
-                                            </Grid>
-                                            <Grid item xs={3}>
-                                                <Button variant="contained" fullWidth onClick={addCodeListItem} disabled={codelistUrlAddString.length === 0}>
-                                                    {t('add')}
-                                                </Button>
-                                            </Grid>
-                                        </Grid>
-                                    </>
-                                    }
-                                </Box>
-                            </Collapse>
-                            }
-                        </TransitionGroup>
-                    </CardContent>
-                </Card>
+                <ControlledVocabularies classProfileId={pimResource!.id} assignmentIds={controlledVocabularyAssignmentIds} />
             </Box>
         }
 

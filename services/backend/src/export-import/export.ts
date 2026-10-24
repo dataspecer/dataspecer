@@ -2,7 +2,6 @@ import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
 import { ZipStreamDictionary } from "../utils/zip-stream-dictionary.ts";
 import { BaseResource } from "../models/resource-model.ts";
 import { ModelRepository } from "../models/model-repository.ts";
-import { currentVersion } from "../tools/migrations/index.ts";
 import configuration from "../configuration.ts";
 import crypto from 'node:crypto';
 
@@ -57,7 +56,7 @@ export class PackageExporter {
       types: resource.types,
       userMetadata: resource.userMetadata,
       metadata: resource.metadata,
-      _version: currentVersion,
+      _version: 1,
       _exportVersion: 1,
       _exportedAt: new Date().toISOString(),
       _exportedBy: configuration.host,

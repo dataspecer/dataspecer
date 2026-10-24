@@ -64,7 +64,7 @@ export class StructureModelClass {
   specification: string | null = null;
 
   /**
-   * True if class represents a codelist.
+   * @deprecated Not populated. Controlled vocabularies are assigned to class profiles by controlled vocabulary assignments.
    */
   isCodelist = false;
 
@@ -81,8 +81,7 @@ export class StructureModelClass {
   isClosed: boolean | null = null;
 
   /**
-   * If class represents codelist this property holds URLs of the datasets
-   * with the codelists.
+   * @deprecated Not populated. Controlled vocabularies are assigned to class profiles by controlled vocabulary assignments.
    */
   codelistUrl: string[] = [];
 

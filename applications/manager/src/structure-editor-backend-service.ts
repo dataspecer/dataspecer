@@ -1,4 +1,5 @@
 import { LOCAL_SEMANTIC_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { SEMANTIC_MODEL_APPLICATION_PROFILE_SUBTYPE } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { BackendPackageService } from "@dataspecer/core-v2/project";
 import type { LanguageString } from "@dataspecer/core/core/core-resource";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
@@ -42,8 +43,6 @@ export class StructureEditorBackendService extends BackendPackageService {
     // transaction - the first one of the project's own history.
     const projectId = generateEntityId();
 
-    const modelAlias = set?.label?.en ?? set?.label?.cs ?? "";
-
     const createProject = createCreateProjectOperation(projectId);
     createProject.label = set.label;
 
@@ -64,7 +63,8 @@ export class StructureEditorBackendService extends BackendPackageService {
         operation: createSetEntityOperation({
           id: createPim.modelId,
           type: [LOCAL_SEMANTIC_MODEL],
-          modelAlias,
+          label: set.label ?? {},
+          subType: SEMANTIC_MODEL_APPLICATION_PROFILE_SUBTYPE,
         } as Entity),
       },
       {
@@ -72,7 +72,7 @@ export class StructureEditorBackendService extends BackendPackageService {
         operation: createSetEntityOperation({
           id: createSgov.modelId,
           type: [LOCAL_SEMANTIC_MODEL],
-          modelAlias,
+          label: set.label ?? {},
           caches: ["https://dataspecer.com/adapters/sgov"],
         } as Entity),
       },

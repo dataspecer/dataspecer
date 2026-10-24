@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Entity } from "@dataspecer/core/entity-model";
+import type { Entity, EntityChange } from "@dataspecer/core/entity-model";
 import { LOCAL_SEMANTIC_MODEL } from "../model/known-models.ts";
 import { assignmentFixture, classProfileFixture } from "../semantic-model/profile/test-fixtures.ts";
 import { ApplicationProfileAggregator } from "./application-profile-aggregator.ts";
@@ -89,6 +89,71 @@ describe("ApplicationProfileAggregator", () => {
       ]);
       expect(controlledVocabulariesOf(entities, "child"))
         .toStrictEqual(["parent-assignment", "child-assignment"]);
+    });
+
+  });
+
+  describe("controlled vocabulary assignments as aggregated entities", () => {
+
+    it("Provides the assignment next to the class profile that owns it.", () => {
+      const entities = getAggregatedEntities([
+        classProfileFixture({ id: "profile", controlledVocabularies: ["assignment"] }),
+        assignmentFixture({ id: "assignment", classProfile: "profile", qualifier: "must" }),
+      ]);
+      expect(entities["assignment"]?.aggregatedEntity).toMatchObject({
+        id: "assignment",
+        classProfile: "profile",
+        qualifier: "must",
+      });
+    });
+
+    it("Provides the inherited assignment under its own identifier.", () => {
+      const entities = getAggregatedEntities([
+        classProfileFixture({ id: "parent", controlledVocabularies: ["parent-assignment"] }),
+        classProfileFixture({ id: "child", profiling: ["parent"] }),
+        assignmentFixture({ id: "parent-assignment", classProfile: "parent" }),
+      ]);
+      for (const id of controlledVocabulariesOf(entities, "child")) {
+        expect(entities[id]).toBeDefined();
+      }
+    });
+
+    it("Notifies about the assignment and its class profile when the assignment changes.", () => {
+      let notifyModel: (changes: EntityChange[]) => void = () => { };
+      const model = createModel("profile-model", [
+        classProfileFixture({ id: "profile", controlledVocabularies: ["assignment"] }),
+        assignmentFixture({ id: "assignment", classProfile: "profile", qualifier: "may" }),
+      ]);
+      model.subscribeToChanges = callback => { notifyModel = callback; };
+      const aggregator = new ApplicationProfileAggregator(
+        model, new VocabularyAggregator(createModel("vocabulary-model", [])));
+      const updatedIds: string[] = [];
+      aggregator.subscribeToChanges(updated => updatedIds.push(...Object.keys(updated)));
+
+      const previous = assignmentFixture({ id: "assignment", classProfile: "profile", qualifier: "may" });
+      const next = assignmentFixture({ id: "assignment", classProfile: "profile", qualifier: "must" });
+      notifyModel([{ previous, next }]);
+
+      expect(updatedIds).toContain("assignment");
+      expect(updatedIds).toContain("profile");
+      expect(aggregator.getAggregatedEntities()["assignment"]?.aggregatedEntity)
+        .toMatchObject({ qualifier: "must" });
+    });
+
+    it("Removes the assignment from the result when it is deleted.", () => {
+      let notifyModel: (changes: EntityChange[]) => void = () => { };
+      const assignment = assignmentFixture({ id: "assignment", classProfile: "profile" });
+      const model = createModel("profile-model", [
+        classProfileFixture({ id: "profile", controlledVocabularies: ["assignment"] }),
+        assignment,
+      ]);
+      model.subscribeToChanges = callback => { notifyModel = callback; };
+      const aggregator = new ApplicationProfileAggregator(
+        model, new VocabularyAggregator(createModel("vocabulary-model", [])));
+
+      notifyModel([{ previous: assignment, next: null }]);
+
+      expect(aggregator.getAggregatedEntities()["assignment"]).toBeUndefined();
     });
 
   });

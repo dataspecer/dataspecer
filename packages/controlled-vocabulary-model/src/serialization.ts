@@ -1,3 +1,4 @@
+import type { LanguageString } from "@dataspecer/core/core/core-resource";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import {
   CONTROLLED_VOCABULARY_TYPE,
@@ -6,15 +7,42 @@ import {
 } from "./concepts/controlled-vocabulary.ts";
 
 /**
+ * Vocabularies stored before the optional fields became nullable hold an
+ * empty string instead of null.
+ */
+function emptyToNull(value: unknown): string | null {
+  return typeof value === "string" && value !== "" ? value : null;
+}
+
+/**
+ * Vocabularies stored before names became multilingual hold the title as a
+ * plain string, which is read as an English name.
+ */
+function normalizeTitle(value: unknown): LanguageString {
+  if (typeof value === "string") {
+    return value === "" ? {} : { en: value };
+  }
+  return (value as LanguageString | null | undefined) ?? {};
+}
+
+/**
  * Converts the stored JSON serialization of a controlled vocabulary model to
  * its entities. A controlled vocabulary model has exactly one entity - the
  * vocabulary itself - keyed by the model's own id. Missing data (a freshly
  * created model) yields the default vocabulary fields.
  */
 export function serializationToControlledVocabularyModelEntities(modelId: string, data: unknown): EntityRecord {
+  const stored = (data as Partial<ControlledVocabulary> | null) ?? {};
   const entity: ControlledVocabulary = {
     ...DEFAULT_CONTROLLED_VOCABULARY,
-    ...((data as object) ?? {}),
+    ...stored,
+    title: normalizeTitle(stored.title),
+    pattern: emptyToNull(stored.pattern),
+    documentation: emptyToNull(stored.documentation),
+    distribution: {
+      downloadUrl: emptyToNull(stored.distribution?.downloadUrl),
+      accessUrl: stored.distribution?.accessUrl ?? DEFAULT_CONTROLLED_VOCABULARY.distribution.accessUrl,
+    },
     id: modelId,
     type: [CONTROLLED_VOCABULARY_TYPE],
   };

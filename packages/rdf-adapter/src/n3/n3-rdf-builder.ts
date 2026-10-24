@@ -76,7 +76,7 @@ class DefaultN3RdfBuilder implements N3RdfBuilder {
   addLiteral(
     subject: string,
     predicate: N3.NamedNode,
-    object: boolean | number | null,
+    object: boolean | number | string | null,
   ) {
     if (object === null) {
       return this;
@@ -85,6 +85,9 @@ class DefaultN3RdfBuilder implements N3RdfBuilder {
       this.addQuad(
         IRI(subject), predicate,
         Literal(String(object), XSD.boolean));
+    } else if (typeof object === "string") {
+      // Defaults to xsd:string when no datatype/language is given.
+      this.addQuad(IRI(subject), predicate, Literal(object));
     } else if (Number.isInteger(object)) {
       this.addQuad(
         IRI(subject), predicate,

@@ -12,8 +12,15 @@ export class PimClass extends PimResource {
 
   pimExtends: string[] = [];
 
+  /**
+   * @deprecated Ignored. Controlled vocabularies are assigned to class profiles using controlled vocabulary assignments.
+   * Kept for backward compatibility for existing specifications.
+   */
   pimIsCodelist = false;
 
+  /**
+   * @deprecated Ignored, see {@link pimIsCodelist}.
+   */
   pimCodelistUrl: string[] = [];
 
   pimRegex: string | null = null;

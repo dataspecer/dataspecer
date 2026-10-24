@@ -104,6 +104,7 @@ export function createDSEModelStore(params: {
       [RDFS_MODEL]: createPimModel,
       [V1.PSM]: createStructureModel,
       [V1.GENERATOR_CONFIGURATION]: createBlobModel,
+      [CONTROLLED_VOCABULARY_MODEL]: createControlledVocabularyModel,
     },
     packageService: packageService,
     httpFetch: params.httpFetch,

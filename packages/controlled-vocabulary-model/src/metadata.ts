@@ -8,7 +8,7 @@ export function getControlledVocabularyModelMetadata(entities: EntityRecord, mod
     return null;
   }
   return {
-    label: mainEntity.title ? { en: mainEntity.title } : {},
+    label: mainEntity.title ?? {},
     description: {},
   };
 }

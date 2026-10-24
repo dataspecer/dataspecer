@@ -9,7 +9,7 @@ import {
   VISUAL_MODEL,
 } from "@dataspecer/core-v2/model/known-models";
 import { isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
-import { isSemanticModelClassProfile, isSemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
+import { isModelProfile, isSemanticModelClassProfile, isSemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import type { Entity, EntityRecord } from "@dataspecer/core/entity-model";
 import type { DefaultFrontendModelStore } from "@dataspecer/model-store/implementation";
 import type { ProjectModelEntity } from "@dataspecer/core/project-model";
@@ -157,8 +157,7 @@ export function resolveModelDisplay(modelStore: DefaultFrontendModelStore, model
 
   let display = modelTypeDisplay(entity?.modelType);
   if (entity?.modelType === LOCAL_SEMANTIC_MODEL) {
-    const entities = Object.values(allEntities[baseId] ?? {});
-    if (entities.some((e) => isSemanticModelClassProfile(e) || isSemanticModelRelationshipProfile(e))) {
+    if (isModelProfile(allEntities[baseId] ?? {})) {
       display = PROFILE_DISPLAY;
     }
   }

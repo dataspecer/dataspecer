@@ -7,7 +7,7 @@ import {
 } from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
 import { LOCAL_SEMANTIC_MODEL, RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship, type LanguageString } from "@dataspecer/core-v2/semantic-model/concepts";
-import { isSemanticModelClassProfile, isSemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
+import { isModelProfile, isSemanticModelClassProfile, isSemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { diffEntities, type Entity, type EntityRecord } from "@dataspecer/core/entity-model";
 import type { Operation } from "@dataspecer/core/operation";
 import { getModelMetadata, type DefaultFrontendModelStore } from "@dataspecer/model-store/implementation";
@@ -257,11 +257,6 @@ export function semanticModelRecords(modelStore: DefaultFrontendModelStore): Rec
   return result;
 }
 
-/** A model is an application profile when it contains profile entities. */
-export function isProfileModel(entities: EntityRecord): boolean {
-  return Object.values(entities).some((entity) => isSemanticModelClassProfile(entity) || isSemanticModelRelationshipProfile(entity));
-}
-
 /** Ids of all entities the profile entities of the model profile. */
 function profiledEntityIds(entities: EntityRecord): string[] {
   const ids = new Set<string>();
@@ -299,7 +294,7 @@ export interface EvolutionEdge {
 export function findEvolutionEdges(models: Record<string, EntityRecord>, sourceModelId: string): EvolutionEdge[] {
   const source = models[sourceModelId];
   if (!source) return [];
-  const kind: EvolutionEdgeKind = isProfileModel(source) ? "profile-to-profile" : "semantic-to-profile";
+  const kind: EvolutionEdgeKind = isModelProfile(source) ? "profile-to-profile" : "semantic-to-profile";
 
   return Object.keys(models)
     .filter((targetModelId) => modelDependencies(models, targetModelId).includes(sourceModelId))
@@ -337,13 +332,13 @@ function asEntityModel(entities: EntityRecord): EntityModel {
 /**
  * Builds the aggregation hierarchy of a model bottom-up by following the
  * profiling references between models. A stand-in for the
- * configuration-driven builder of `@dataspecer/specification/model-hierarchy`,
+ * configuration-driven builder of `@dataspecer/specification/aggregator-builder`,
  * which needs a package composition configuration these proof-of-concept
  * projects do not have.
  */
 export function buildAggregatorForModel(models: Record<string, EntityRecord>, modelId: string, visited: Set<string> = new Set()): SemanticModelAggregator {
   const entities = models[modelId] ?? {};
-  if (!isProfileModel(entities)) {
+  if (!isModelProfile(entities)) {
     return new VocabularyAggregator(asEntityModel(entities));
   }
 

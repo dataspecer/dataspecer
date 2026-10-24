@@ -1,4 +1,6 @@
+import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { Entity } from "../../entity-model/index.ts";
+import { LOCAL_SEMANTIC_MODEL } from "../../model/known-models.ts";
 import { isDataType } from "../datatypes/index.ts";
 import {
     LanguageString,
@@ -6,7 +8,16 @@ import {
     SemanticModelGeneralization,
     SemanticModelRelationship,
     SemanticModelRelationshipEnd,
+    type MainSemanticModelEntity,
 } from "./concepts.ts";
+
+export function isMainSemanticModelEntity(resource: Entity | null | undefined): resource is MainSemanticModelEntity {
+    return resource?.type?.includes(LOCAL_SEMANTIC_MODEL) ?? false;
+}
+
+export function getSemanticModelMainEntity(entities: EntityRecord): MainSemanticModelEntity | null {
+    return Object.values(entities).find(isMainSemanticModelEntity) ?? null;
+}
 
 export const SEMANTIC_MODEL_CLASS = "class"; // todo use proper IRI
 export function isSemanticModelClass(resource: Entity | null): resource is SemanticModelClass {

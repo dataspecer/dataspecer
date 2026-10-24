@@ -22,7 +22,7 @@ test("Round-trips controlled vocabularies with no prior iri through a DCAT catal
   const original = [
     vocabulary({
       id: "voc-1",
-      title: "Dublin Core",
+      title: { cs: "Dublin Core", en: "Dublin Core" },
       pattern: "^http://purl\\.org/dc/terms/.+$",
       references: "http://purl.org/dc/terms/",
       documentation: "https://www.dublincore.org/terms/",
@@ -30,11 +30,12 @@ test("Round-trips controlled vocabularies with no prior iri through a DCAT catal
     }),
     vocabulary({
       id: "voc-2",
-      title: "Geonames",
-      pattern: "",
+      title: { en: "Geonames" },
+      pattern: null,
       references: "http://www.geonames.org/",
-      documentation: "",
-      distribution: { downloadUrl: "", accessUrl: "https://example.com/geonames" },
+      conformsToSkos: false,
+      documentation: null,
+      distribution: { downloadUrl: null, accessUrl: "https://example.com/geonames" },
     }),
   ];
 
@@ -45,8 +46,9 @@ test("Round-trips controlled vocabularies with no prior iri through a DCAT catal
   for (const source of original) {
     const match = parsed.find((v) => v.references === source.references);
     expect(match).toBeDefined();
-    expect(match!.title).toBe(source.title);
+    expect(match!.title).toStrictEqual(source.title);
     expect(match!.pattern).toBe(source.pattern);
+    expect(match!.conformsToSkos).toBe(source.conformsToSkos);
     expect(match!.documentation).toBe(source.documentation);
     expect(match!.distribution).toStrictEqual(source.distribution);
     // Freshly minted on parse - unrelated to the source id, but stable and non-empty.
@@ -58,11 +60,83 @@ test("Round-trips controlled vocabularies with no prior iri through a DCAT catal
   }
 });
 
+test("Writes dct:conformsTo skos only for vocabularies that conform to SKOS.", async () => {
+  const turtle = await controlledVocabulariesToDcatCatalog(CATALOG_IRI, [
+    vocabulary({ id: "skos", references: "http://example.com/scheme", conformsToSkos: true }),
+    vocabulary({ id: "other", references: "http://example.com/download", conformsToSkos: false }),
+  ]);
+
+  const quads = turtleToQuads(turtle);
+  const conformsTo = quads.filter((q) => q.predicate.value === "http://purl.org/dc/terms/conformsTo");
+  expect(conformsTo).toHaveLength(1);
+  expect(conformsTo[0]!.subject.value).toBe(controlledVocabularyDatasetIri(CATALOG_IRI, "skos"));
+  expect(conformsTo[0]!.object.value).toBe("http://www.w3.org/2004/02/skos/core");
+});
+
+test("Writes each title with its language tag.", async () => {
+  const turtle = await controlledVocabulariesToDcatCatalog(CATALOG_IRI, [
+    vocabulary({ id: "voc-1", title: { cs: "Stát", en: "Country", de: "" } }),
+  ]);
+
+  const titles = turtleToQuads(turtle).filter((q) => q.predicate.value === "http://purl.org/dc/terms/title");
+  const tagged = titles.map((q) => [q.object.value, (q.object as N3.Literal).language]).sort();
+  expect(tagged).toStrictEqual([
+    ["Country", "en"],
+    ["Stát", "cs"],
+  ]);
+});
+
+test("Parses all titles and reads an untagged title as English.", () => {
+  const quads = turtleToQuads(`
+    @prefix dcat: <http://www.w3.org/ns/dcat#> .
+    @prefix dct: <http://purl.org/dc/terms/> .
+    <http://example.com/dataset> a dcat:Dataset ;
+      dct:title "Stát"@cs, "Země" .
+  `);
+
+  const parsed = parseControlledVocabularyCatalog(quads);
+
+  expect(parsed).toHaveLength(1);
+  expect(parsed[0]!.title).toStrictEqual({ cs: "Stát", en: "Země" });
+});
+
+test("Parses a record with only an access URL without a download URL.", () => {
+  const quads = turtleToQuads(`
+    @prefix dcat: <http://www.w3.org/ns/dcat#> .
+    <http://example.com/dataset> a dcat:Dataset ;
+      dcat:distribution [ a dcat:Distribution ; dcat:accessURL <http://example.com/access> ] .
+  `);
+
+  const parsed = parseControlledVocabularyCatalog(quads);
+
+  expect(parsed).toHaveLength(1);
+  expect(parsed[0]!.distribution).toStrictEqual({
+    downloadUrl: null,
+    accessUrl: "http://example.com/access",
+  });
+});
+
+test("Parses the download URL as the access URL when the record has no access URL.", () => {
+  const quads = turtleToQuads(`
+    @prefix dcat: <http://www.w3.org/ns/dcat#> .
+    <http://example.com/dataset> a dcat:Dataset ;
+      dcat:distribution [ a dcat:Distribution ; dcat:downloadURL <http://example.com/file.rdf> ] .
+  `);
+
+  const parsed = parseControlledVocabularyCatalog(quads);
+
+  expect(parsed).toHaveLength(1);
+  expect(parsed[0]!.distribution).toStrictEqual({
+    downloadUrl: "http://example.com/file.rdf",
+    accessUrl: "http://example.com/file.rdf",
+  });
+});
+
 test("A vocabulary with an existing iri keeps it through export instead of minting a new one.", async () => {
   const importedIri = "http://other-catalog.example.com/dataset/imported-cv";
   const original = vocabulary({
     id: "voc-imported",
-    title: "Imported Vocabulary",
+    title: { en: "Imported Vocabulary" },
     references: "http://example.com/scheme",
     iri: importedIri,
   });
@@ -84,7 +158,7 @@ test("writeControlledVocabularyCatalogQuads merges into an existing writer witho
 
   const turtle = await new Promise<string>((resolve, reject) => {
     writeControlledVocabularyCatalogQuads(writer, CATALOG_IRI, [
-      vocabulary({ id: "voc-1", title: "Dublin Core", references: "http://purl.org/dc/terms/" }),
+      vocabulary({ id: "voc-1", title: { en: "Dublin Core" }, references: "http://purl.org/dc/terms/" }),
     ]);
     writer.end((error, result) => (error ? reject(error) : resolve(result)));
   });
@@ -97,5 +171,5 @@ test("writeControlledVocabularyCatalogQuads merges into an existing writer witho
 
   const parsed = parseControlledVocabularyCatalog(quads);
   expect(parsed).toHaveLength(1);
-  expect(parsed[0]!.title).toBe("Dublin Core");
+  expect(parsed[0]!.title).toStrictEqual({ en: "Dublin Core" });
 });

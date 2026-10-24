@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
+    "test": "vitest run src",
     "prebuild": "node -e \"fs.rmSync('lib', { recursive: true, force: true })\""
   },
   "exports": {
@@ -13,11 +14,10 @@
   "dependencies": {
     "@dataspecer/core": "*",
     "@dataspecer/core-v2": "*",
-    "@dataspecer/model-store": "*",
-    "@dataspecer/specification": "*"
+    "@dataspecer/model-store": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2",
-    "vitest": "^4.1.10"
+    "vitest": "^5.0.3"
   }
 }

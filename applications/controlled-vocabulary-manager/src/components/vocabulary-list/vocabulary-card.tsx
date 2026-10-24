@@ -1,5 +1,7 @@
 import { Eye, Pencil, Trash2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { Badge } from "@/components/ui/badge"
+import { selectName } from "@/lib/language"
 import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model"
 
 interface VocabularyCardProps {
@@ -10,13 +12,23 @@ interface VocabularyCardProps {
 }
 
 export function VocabularyCard({ vocabulary, onView, onEdit, onDelete }: VocabularyCardProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
 
   return (
     <div className="px-4 py-3 flex items-center justify-between">
-      <div className="flex-1">
-        <div className="font-medium">{vocabulary.title}</div>
-        <div className="text-caption text-muted-foreground font-mono">{vocabulary.references}</div>
+      <div className="flex-1 min-w-0">
+        <div className="font-medium">
+          {selectName(vocabulary.title, i18n.language)}
+          {vocabulary.conformsToSkos && (
+            <Badge variant="secondary" className="ml-2">{t("list.badge.skos")}</Badge>
+          )}
+        </div>
+        <div
+          className="text-caption text-muted-foreground font-mono truncate"
+          title={vocabulary.references}
+        >
+          {vocabulary.references}
+        </div>
       </div>
       <div className="flex items-center gap-3 ml-4">
         <button
