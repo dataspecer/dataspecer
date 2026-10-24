@@ -58,7 +58,7 @@ const renderInput = (props: {
         value={props.state.value}
         onChange={(event) => props.presenter.onChange(event.target.value)}
         disabled={props.disabled}
-        className="flex-grow"
+        className="w-full rounded-md border border-input bg-background/50 px-3 py-1.5 text-sm text-foreground shadow-xs transition-colors focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
       />
     </div>
   )
