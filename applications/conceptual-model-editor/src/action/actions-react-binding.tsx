@@ -1017,11 +1017,10 @@ function createActionsContext(
     edgeSelection: string[],
     shouldSwitchToCreatedModel: boolean
   ) => {
-    withVisualModel(notifications, useGraph, (visualModel) => {
-      openCreateVisualModelDialogAction(
-        notifications, options, dialogs, useGraph, useGraph, queryParamsContext,
-        visualModel, nodeSelection, edgeSelection, shouldSwitchToCreatedModel);
-    });
+    const visualModel = useGraph.getActiveVisualModel();
+    openCreateVisualModelDialogAction(
+      notifications, options, dialogs, useGraph, useGraph, queryParamsContext,
+      visualModel, nodeSelection, edgeSelection, shouldSwitchToCreatedModel);
   };
 
   const changeVisualModel = (newVisualModel: string) => {
