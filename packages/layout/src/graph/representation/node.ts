@@ -504,7 +504,7 @@ export const isNodeInVisualModel = (
   classIdentifier: string | undefined | null
 ): boolean => {
   if(visualModel === null) {
-      return true;
+      return classIdentifier != null && entitiesToLayout.outsiders[classIdentifier] !== undefined;
   }
   if(node !== null) {
     return true;
