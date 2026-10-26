@@ -4,6 +4,8 @@ import { BaseResource } from "../models/resource-model.ts";
 import { ModelRepository } from "../models/model-repository.ts";
 import configuration from "../configuration.ts";
 import crypto from 'node:crypto';
+import { loadMigrations } from "../migration-utils/load-migrations.ts";
+import { BACKUP_MIGRATIONS_FILE } from "../migration-utils/migrate-backup.ts";
 
 export class PackageExporter {
   modelRepository: ModelRepository;
@@ -15,6 +17,10 @@ export class PackageExporter {
 
   async doExport(iri: string): Promise<Buffer> {
     this.zipStreamDictionary = new ZipStreamDictionary();
+    const migrations = await loadMigrations();
+    const manifest = this.zipStreamDictionary.writePath(BACKUP_MIGRATIONS_FILE);
+    await manifest.write(JSON.stringify({ version: migrations[migrations.length - 1].number }, null, 2));
+    await manifest.close();
     await this.exportResource(iri, "");
     return await this.zipStreamDictionary.save();
   }

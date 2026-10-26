@@ -7,9 +7,9 @@ const files = (await readdir(migrationDirectory, { withFileTypes: true }))
   .filter(entry => entry.isFile()).map(entry => entry.name);
 const migrations = parseMigrationFiles(files);
 const imports = migrations.map(({ file }, index) =>
-  `import { up as up${index} } from ${JSON.stringify(fileURLToPath(new URL(file, migrationDirectory)))};`);
+  `import * as migration${index} from ${JSON.stringify(fileURLToPath(new URL(file, migrationDirectory)))};`);
 const entries = migrations.map(({ number, name }, index) =>
-  `  { number: ${number}, name: ${JSON.stringify(name)}, up: up${index} },`);
+  `  createMigration(${number}, ${JSON.stringify(name)}, migration${index}),`);
 
 const result = await Bun.build({
   entrypoints: [fileURLToPath(new URL("src/docker-main.ts", import.meta.url))],
@@ -22,6 +22,7 @@ const result = await Bun.build({
   external: ["./main.config.js"],
   files: {
     [fileURLToPath(new URL("src/migration-utils/load-migrations.ts", import.meta.url))]: `${imports.join("\n")}
+import { createMigration } from "./migration-runner.ts";
 export async function loadMigrations() {
   return [
 ${entries.join("\n")}

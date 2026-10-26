@@ -22,6 +22,7 @@ export const AddImported = ({ id, urlOnly, isOpen, resolve }: AddImportedProps &
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
 
   const formSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -80,24 +81,33 @@ export const AddImported = ({ id, urlOnly, isOpen, resolve }: AddImportedProps &
 
   const fileSubmit = async (file: File) => {
     setLoading(true);
+    setFileError(null);
 
-    const formData = new FormData();
-    formData.append('file', file);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
 
-    const result = await fetch(import.meta.env.VITE_BACKEND + "/resources/import-zip", {
-      method: "POST",
-      body: formData,
-    });
+      const result = await fetch(import.meta.env.VITE_BACKEND + "/resources/import-zip", {
+        method: "POST",
+        body: formData,
+      });
 
-    if (result.ok) {
-      toast.success(t("add-imported.success"));
-      requestLoadPackage("http://dataspecer.com/packages/local-root", true);
-      resolve(true);
-    } else {
-      toast.error(t("add-imported.error"));
+      if (result.ok) {
+        toast.success(t("add-imported.success"));
+        requestLoadPackage("http://dataspecer.com/packages/local-root", true);
+        resolve(true);
+      } else {
+        const data = await result.json().catch(() => null) as { code?: unknown } | null;
+        setFileError(data?.code === "BACKUP_VERSION_TOO_NEW"
+          ? t("add-imported.backup-version-too-new")
+          : t("add-imported.error"));
+      }
+    } catch (error) {
+      console.error(error);
+      setFileError(t("add-imported.error"));
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
@@ -167,9 +177,17 @@ export const AddImported = ({ id, urlOnly, isOpen, resolve }: AddImportedProps &
                   "application/x-zip-compressed": [],
                 }}
                 isLoading={loading}
+                disabled={loading}
                 maxFiles={1}
-                onDrop={(files) => fileSubmit(files[0])}
+                onDrop={(files) => { if (files[0]) void fileSubmit(files[0]); }}
               />
+              {fileError && (
+                <Alert variant="destructive" className="mt-4">
+                  <AlertCircleIcon />
+                  <AlertTitle>{t("add-imported.error-title")}</AlertTitle>
+                  <AlertDescription>{fileError}</AlertDescription>
+                </Alert>
+              )}
             </TabsContent>
           </Tabs>
           )}

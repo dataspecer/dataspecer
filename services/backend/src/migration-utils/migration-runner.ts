@@ -1,5 +1,6 @@
 import type { DatabaseSync } from "node:sqlite";
 import type { StoreModel } from "../models/store-model.ts";
+import type { InMemoryBackupDirectory } from "../export-import/import-backup.ts";
 
 export type MigrationContext = {
   nodeDatabaseSync: DatabaseSync;
@@ -9,8 +10,21 @@ export type MigrationContext = {
 export type Migration = {
   number: number;
   name: string;
-  up: (context: MigrationContext) => void | Promise<void>;
+  up?: (context: MigrationContext) => void | Promise<void>;
+  upBackupFile?: (backup: InMemoryBackupDirectory) => void | Promise<void>;
 };
+
+export function createMigration(number: number, name: string, module: { up?: unknown; upBackupFile?: unknown }): Migration {
+  for (const hook of ["up", "upBackupFile"] as const) {
+    if (module[hook] !== undefined && typeof module[hook] !== "function") {
+      throw new Error(`Migration ${number}_${name} exports an invalid ${hook} hook.`);
+    }
+  }
+  if (typeof module.up !== "function" && typeof module.upBackupFile !== "function") {
+    throw new Error(`Migration ${number}_${name} must export an up or upBackupFile function.`);
+  }
+  return { number, name, up: module.up as Migration["up"], upBackupFile: module.upBackupFile as Migration["upBackupFile"] };
+}
 
 export function parseMigrationFiles(files: readonly string[], strict: boolean = false): { file: string; number: number; name: string }[] {
   if (!strict) {
@@ -31,7 +45,7 @@ export function parseMigrationFiles(files: readonly string[], strict: boolean = 
   return migrations;
 }
 
-function validateMigrationSequence(migrations: readonly { number: number; name: string }[]): void {
+export function validateMigrationSequence(migrations: readonly { number: number; name: string }[]): void {
   if (migrations[0]?.number !== 0 || migrations[0]?.name !== "init") {
     throw new Error("Missing init migration.");
   }
@@ -170,7 +184,7 @@ export async function migrateUp(database: DatabaseSync, migrations: readonly Mig
         if (!isFreshDatabase) {
           console.log(`applying migration ${migration.name}...`);
         }
-        await migration.up({ nodeDatabaseSync: database, storeModel });
+        await migration.up?.({ nodeDatabaseSync: database, storeModel });
         insert.run(migration.number, migration.name);
       } catch (cause) {
         throw new Error(`Migration ${migration.number}_${migration.name} failed.`, { cause });

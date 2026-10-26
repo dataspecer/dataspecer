@@ -21,8 +21,11 @@ Code can call `migrateDatabase(databasePath, storeModel)` from `src/migration-ut
 with a filesystem path or file URL. The caller selects the database; the runner
 creates its parent directory if necessary.
 
-Add schema changes as TypeScript files in `src/migrations`, such as `012_add_index.ts`,
-exporting `up(context: { nodeDatabaseSync: DatabaseSync })`. Keep the table types
+Add migrations as TypeScript files in `src/migrations`, such as `013_add_index.ts`,
+exporting `up(context: MigrationContext)` for database changes and/or
+`upBackupFile(backup: InMemoryBackupDirectory)` for ZIP backup changes. Both hooks
+may be asynchronous; the backup hook modifies the parsed archive in place. At
+least one hook is required. Keep the table types
 in `src/database/schema.ts` in sync with schema changes.
 Migration numbers must be unique and sequential. Use at least three digits in
 filenames; leading zeroes do not affect comparison. Do not rename or modify
@@ -48,6 +51,25 @@ Migration functions must not start or commit transactions themselves. The runner
 temporarily disables foreign-key enforcement for table rebuilds and checks
 references before commit. Only database changes share this transaction; file or
 network changes made by a migration cannot be rolled back by SQLite.
+
+Database and backup migrations share one numbering sequence. Each runner skips
+hooks for the other target while still advancing its version; database history
+therefore also records ZIP-only migrations. Both Node.js and bundled Bun builds
+load the same hooks.
+
+New ZIP exports contain a root `.migrations.json` with `{ "version": N }`, where
+`N` is the latest migration number. Resource `_version` and `_exportVersion`
+fields are independent of this archive version. Exports require an up-to-date
+database, as ensured by server startup. Archives without the manifest are treated
+as version 11 and run migration 012 onward. This also supports unversioned exports
+created after database migration 012: without a legacy `modelAlias`, the backup
+hook preserves the existing label, including all translations. Imports await all pending backup hooks
+before creating resources. `init` is only for database initialization and is not
+run on backups. Invalid or newer archive versions are rejected. Removing a prefix
+of migration files also prevents direct import of backups missing those steps;
+upgrade and re-export them with an older release first. If a backup hook fails,
+the import is aborted without writing resources and the in-memory archive is
+discarded.
 
 All data are stored in the `database` directory.
 

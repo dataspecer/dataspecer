@@ -1,7 +1,11 @@
 import { readdir } from "node:fs/promises";
-import { parseMigrationFiles, type Migration } from "./migration-runner.ts";
+import { createMigration, parseMigrationFiles, type Migration } from "./migration-runner.ts";
 
-// Bun builds replace this module with static imports of the migration files.
+/**
+ * Loads all migration files from the ../migrations/ directory.
+ * Please note that this file is replaced during build with statically inlined imports.
+ * Any changes should correspond to services/backend/bun-build.mjs.
+ */
 export async function loadMigrations(
   directory = new URL("../migrations/", import.meta.url),
 ): Promise<Migration[]> {
@@ -9,9 +13,6 @@ export async function loadMigrations(
   const migrations = parseMigrationFiles(files);
   return Promise.all(migrations.map(async migration => {
     const module = await import(new URL(migration.file, directory).href);
-    if (typeof module.up !== "function") {
-      throw new Error(`Migration ${migration.file} does not export an up function.`);
-    }
-    return { ...migration, up: module.up };
+    return createMigration(migration.number, migration.name, module);
   }));
 }

@@ -2,6 +2,7 @@
   "--lang-name": "English",
   "$datetime": "{{val, datetime(dateStyle: long; timeStyle: short)}}",
   "add-imported": {
+    "backup-version-too-new": "This backup file was generated with a newer version of Dataspecer and thus cannot be imported. Consider updating your Dataspecer.",
     "error": "An error occurred while importing some specifications",
     "error-title": "Import failed",
     "file-description": "Use this dialog to drop a Dataspecer ZIP archive.",

@@ -1,6 +1,7 @@
 import { LOCAL_SEMANTIC_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { deepEqual } from "@dataspecer/utilities";
 import type { MigrationContext } from "../migration-utils/migration-runner.ts";
+import type { InMemoryBackupDirectory } from "../export-import/import-backup.ts";
 
 /**
  * Moves semantic model names from the serialized `modelAlias` property to the
@@ -24,9 +25,8 @@ import type { MigrationContext } from "../migration-utils/migration-runner.ts";
  * migration is retried after a partial run, already-migrated documents remain
  * valid and the remaining metadata caches can be brought into sync.
  *
- * ZIP imports use the corresponding import-migration stage before resources
- * are written; this database migration handles models already persisted in a
- * backend store.
+ * ZIP imports apply the same transformation through upBackupFile before
+ * resources are written.
  */
 export async function up({ nodeDatabaseSync, storeModel }: MigrationContext): Promise<void> {
   const resources = nodeDatabaseSync.prepare(`
@@ -57,12 +57,10 @@ export async function up({ nodeDatabaseSync, storeModel }: MigrationContext): Pr
 
     const serialized = JSON.parse(stored.toString("utf8")) as Record<string, unknown>;
     const hadAlias = Object.hasOwn(serialized, "modelAlias");
-    const label = typeof serialized.modelAlias === "string"
-      ? { cs: serialized.modelAlias }
-      : serialized.label ?? {};
-    if (hadAlias || !Object.hasOwn(serialized, "label") || !deepEqual(serialized.label, label)) {
-      delete serialized.modelAlias;
-      serialized.label = label;
+    const previousLabel = serialized.label;
+    migrateModelLabel(serialized);
+    const label = serialized.label;
+    if (hadAlias || !deepEqual(previousLabel, label)) {
       await storeModel.set(storeId, JSON.stringify(serialized));
     }
 
@@ -71,4 +69,33 @@ export async function up({ nodeDatabaseSync, storeModel }: MigrationContext): Pr
       updateMetadata.run(JSON.stringify({ ...userMetadata, label }), resource.id);
     }
   }
+}
+
+export function upBackupFile(directory: InMemoryBackupDirectory): void {
+  const metadata = directory.files.get(".meta.json");
+  if (metadata !== undefined) {
+    migrateBackupResource(metadata as Record<string, unknown>, directory.files.get(".model.json") as Record<string, unknown> | undefined);
+  }
+  for (const [fileName, resourceMetadata] of directory.files) {
+    const match = /^([-0-9a-zA-Z]+)\.meta\.json$/.exec(fileName);
+    if (match !== null) {
+      migrateBackupResource(resourceMetadata as Record<string, unknown>, directory.files.get(`${match[1]}.model.json`) as Record<string, unknown> | undefined);
+    }
+  }
+  for (const child of directory.directories.values()) {
+    upBackupFile(child);
+  }
+}
+
+function migrateBackupResource(metadata: Record<string, unknown>, model: Record<string, unknown> | undefined): void {
+  if (model === undefined || !Array.isArray(metadata.types) || !metadata.types.includes(LOCAL_SEMANTIC_MODEL)) {
+    return;
+  }
+  migrateModelLabel(model);
+  metadata.userMetadata = { ...(metadata.userMetadata as Record<string, unknown> | undefined), label: model.label };
+}
+
+function migrateModelLabel(model: Record<string, unknown>): void {
+  model.label = typeof model.modelAlias === "string" ? { cs: model.modelAlias } : model.label ?? {};
+  delete model.modelAlias;
 }

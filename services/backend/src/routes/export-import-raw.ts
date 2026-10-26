@@ -6,6 +6,7 @@ import z from "zod";
 import { PackageImporter } from "../export-import/import.ts";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
 import { getContentDispositionAttachmentHeaderValue, safeAsciiFileName, safeUnicodeFileName } from "../utils/safe-file-name.ts";
+import { BackupVersionTooNewError } from "../migration-utils/migrate-backup.ts";
 
 function getName(name: LanguageString | undefined, defaultName: string) {
   return name?.["cs"] || name?.["en"] || defaultName;
@@ -39,7 +40,19 @@ export const importPackageResource = asyncHandler(async (request: express.Reques
   const file = request.file!.buffer;
 
   const importer = new PackageImporter(modelRepository);
-  const imported = await importer.doImport(file);
+  let imported: string[];
+  try {
+    imported = await importer.doImport(file);
+  } catch (error) {
+    if (error instanceof BackupVersionTooNewError) {
+      response.status(400).json({
+        code: error.code,
+        error: "This backup file was generated with a newer version of Dataspecer and cannot be imported. Consider updating your version of Dataspecer.",
+      });
+      return;
+    }
+    throw error;
+  }
 
   response.send(await Promise.all(imported.map(iri => modelRepository.getPackage(iri))));
 });

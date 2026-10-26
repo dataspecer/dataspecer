@@ -2,6 +2,7 @@
   "--lang-name": "Čeština",
   "$datetime": "{{val, datetime(dateStyle: long; timeStyle: short)}}",
   "add-imported": {
+    "backup-version-too-new": "Tento záložní soubor byl vytvořen v novější verzi Dataspeceru a tudíž jej nelze importovat. Zvažte aktualizaci Dataspeceru.",
     "error": "Při importu některých specifikací nastala chyba",
     "error-title": "Import selhal",
     "file-description": "V tomto dialogu můžete obnovit specifikaci ze záložního ZIP souboru.",

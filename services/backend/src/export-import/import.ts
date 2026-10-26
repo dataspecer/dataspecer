@@ -14,7 +14,8 @@ import { composeModelId, PROJECT_MODEL_ID } from "../models/model-id.ts";
 import { ModelRepository } from "../models/model-repository.ts";
 import { deserializeModelEntities, resolveStoreModelType } from "../models/model-types.ts";
 import { addJsonFileToBackup, createInMemoryBackup, type InMemoryBackupDirectory, type JsonObject } from "./import-backup.ts";
-import { migrateInMemoryBackup } from "./migrations.ts";
+import { migrateInMemoryBackup } from "../migration-utils/migrate-backup.ts";
+import { loadMigrations } from "../migration-utils/load-migrations.ts";
 
 const RESOURCE_METADATA_REGEX = /^([-0-9a-zA-Z]+)\.meta\.json$/;
 
@@ -61,7 +62,7 @@ export class PackageImporter {
    */
   async doImport(buffer: Buffer): Promise<string[]> {
     const backup = await this.loadArchive(buffer);
-    migrateInMemoryBackup(backup);
+    await migrateInMemoryBackup(backup, await loadMigrations());
 
     // Projects are the directories on the top level of the archive.
     const rootPackageDirectories = [...backup.directories.values()].filter((directory) => directory.files.has(".meta.json"));
