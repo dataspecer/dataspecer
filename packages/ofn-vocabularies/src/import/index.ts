@@ -1,3 +1,9 @@
-export { listOfnVocabularies, type ListOfnVocabulariesOptions } from "./list.ts";
-export { loadOfnVocabularyConcepts, type LoadOfnVocabularyConceptsOptions } from "./load-vocabulary-concepts.ts";
 export type { OfnVocabulary } from "./concepts.ts";
+export { listOfnVocabularies, type ListOfnVocabulariesOptions } from "./list.ts";
+export {
+  loadOfnVocabularyAsSemanticModel,
+  loadOfnVocabularyAsSemanticModelConcepts,
+  loadOfnVocabularyConcepts,
+  type LoadOfnVocabularyConceptsOptions,
+  type LoadOfnVocabularySemanticModelOptions,
+} from "./load-vocabulary-concepts.ts";

@@ -4,13 +4,14 @@
   "type": "module",
   "exports": {
     ".": "./lib/index.js",
-    "import": "./lib/import/index.js"
+    "./import": "./lib/import/index.js"
   },
   "scripts": {
     "build": "tsc",
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@dataspecer/core": "*",
     "@dataspecer/core-v2": "*",
     "n3": "^2.13.12"
   },

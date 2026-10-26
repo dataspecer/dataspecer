@@ -25,5 +25,18 @@
       "title": "Vocabulary"
     }
   },
-  "start-new-project": "Create new data specification"
+  "start-new-project": "Create new data specification",
+  "ofn": {
+    "title": "OFN vocabularies",
+    "description": "Czech vocabularies published in data.gov.cz using OFN Vocabularies specification.",
+    "choose": "Choose vocabularies",
+    "choose-help": "Select the vocabularies you want to use in your project.",
+    "search": "Search by name, description or IRI",
+    "loading": "Loading…",
+    "empty": "No vocabularies found.",
+    "retry": "Try again",
+    "provenance": "Vocabulary source",
+    "include": "Choose OFN vocabularies",
+    "cleanup-error": "Could not remove the newly created project"
+  }
 }

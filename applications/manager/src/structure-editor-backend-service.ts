@@ -39,7 +39,7 @@ export class StructureEditorBackendService extends BackendPackageService {
    * Creates new package with empty semantic model as PIM.
    * @returns Data specification ID
    */
-  public async createDataSpecification(set: { tags?: string[]; label?: LanguageString } = {}): Promise<string> {
+  public async createDataSpecification(set: { tags?: string[]; label?: LanguageString; includeSgov?: boolean } = {}): Promise<string> {
     // The project, its models and their content are created by a single
     // transaction - the first one of the project's own history.
     const projectId = generateEntityId();
@@ -57,7 +57,6 @@ export class StructureEditorBackendService extends BackendPackageService {
     const operations: OperationInModel[] = [
       { modelId: PROJECT_MODEL_ID, operation: createProject },
       { modelId: PROJECT_MODEL_ID, operation: createPim },
-      { modelId: PROJECT_MODEL_ID, operation: createSgov },
       { modelId: PROJECT_MODEL_ID, operation: createConfiguration },
       {
         modelId: createPim.modelId,
@@ -66,19 +65,6 @@ export class StructureEditorBackendService extends BackendPackageService {
           type: [LOCAL_SEMANTIC_MODEL],
           label: set.label ?? {},
           subType: SEMANTIC_MODEL_APPLICATION_PROFILE_SUBTYPE,
-        } as Entity),
-      },
-      {
-        modelId: createSgov.modelId,
-        operation: createSetEntityOperation({
-          id: createSgov.modelId,
-          type: [LOCAL_SEMANTIC_MODEL],
-          label: set.label ?? {},
-          source: {
-            type: "subgraph",
-            provider: "sgov",
-            endpoint: "https://slovník.gov.cz/sparql",
-          } satisfies CachedSubgraph,
         } as Entity),
       },
       {
@@ -101,6 +87,25 @@ export class StructureEditorBackendService extends BackendPackageService {
         } as Entity),
       },
     ];
+
+    if (set.includeSgov !== false) {
+      operations.push(
+        { modelId: PROJECT_MODEL_ID, operation: createSgov },
+        {
+          modelId: createSgov.modelId,
+          operation: createSetEntityOperation({
+            id: createSgov.modelId,
+            type: [LOCAL_SEMANTIC_MODEL],
+            label: set.label ?? {},
+            source: {
+              type: "subgraph",
+              provider: "sgov",
+              endpoint: "https://slovník.gov.cz/sparql",
+            } satisfies CachedSubgraph,
+          } as Entity),
+        },
+      );
+    }
 
     if (set.tags !== undefined) {
       // Tags are not part of the create operation, they are set as metadata of

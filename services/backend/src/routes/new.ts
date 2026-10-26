@@ -1,4 +1,4 @@
-import type { Entity } from "@dataspecer/core-v2";
+import type { Entity } from "@dataspecer/core/entity-model";
 import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import type { CoreResource } from "@dataspecer/core/core/core-resource";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
@@ -19,7 +19,9 @@ import { deserializeModelEntities } from "../models/model-types.ts";
 import { asyncHandler } from "../utils/async-handler.ts";
 import { importFromUrl } from "./import.ts";
 import { PimStoreWrapper } from "@dataspecer/core-v2/semantic-model/v1-adapters";
-import { isSemanticModelClass, isSemanticModelRelationship, type SemanticModelClass } from "@dataspecer/core-v2/semantic-model/concepts";
+import { getSemanticModelMainEntity, isMainSemanticModelEntity, isSemanticModelClass, isSemanticModelRelationship, type SemanticModelClass } from "@dataspecer/core-v2/semantic-model/concepts";
+import { SEMANTIC_MODEL_APPLICATION_PROFILE_SUBTYPE } from "@dataspecer/core-v2/semantic-model/profile/concepts";
+import { createOfnVocabularyModelOperations, loadOfnVocabularyModels } from "../utils/ofn-vocabularies.ts";
 
 /**
  * Creates a new application profile by importing specifications and setting up
@@ -41,7 +43,9 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
           url: z.url(),
         }),
       )
-      .min(1),
+      .default([]),
+
+    ofnVocabularies: z.array(z.url()).default([]),
 
     // Whether to automatically profile everything
     autoProfile: z.boolean().optional().default(true),
@@ -50,6 +54,8 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
     description: z.string().optional(),
 
     baseIri: z.url().min(1),
+  }).refine((body) => body.specifications.length > 0 || body.ofnVocabularies.length > 0, {
+    message: "Select at least one specification or OFN vocabulary",
   });
 
   const query = querySchema.parse(request.query);
@@ -67,6 +73,8 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
     if (projectIri === null) {
       throw new Error(`Parent package "${query.parentIri}" was not found.`);
     }
+
+    const ofnModels = await loadOfnVocabularyModels(body.ofnVocabularies);
 
     // Create package. The models are created later, once their content is
     // known. Only the project root can be expressed by the create project
@@ -108,11 +116,18 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
       profileLabel = "Profile of " + (metadata?.label?.en || metadata?.label?.cs || "specification");
     }
 
+    if (!profileLabel && Object.keys(ofnModels).length > 0) {
+      const label = getSemanticModelMainEntity(Object.values(ofnModels)[0])?.label ?? {};
+      profileLabel = "Profile of " + (label.en || label.cs || Object.values(label)[0] || body.ofnVocabularies[0]);
+    }
+
     // Now we want the auto profiling functionality
     let profiledEntities: Record<string, Entity> = {};
     if (body.autoProfile) {
       // We need to inspect all sub-packages and read semantic models from them
-      const entitiesToProfile: Entity[] = [];
+      const entitiesToProfile: Entity[] = Object.values(ofnModels)
+        .flatMap((entities) => Object.values(entities))
+        .filter((entity) => !isMainSemanticModelEntity(entity));
       const otherEntities: Entity[] = [];
       for (const importedPackage of importResults) {
         const thisSpecificationEntities: Entity[] = [];
@@ -179,7 +194,7 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
           targetModel: profileModel,
         },
         {
-          entities: entitiesToProfile,
+          entities: [...new Map(entitiesToProfile.filter((entity) => !isMainSemanticModelEntity(entity)).map((entity) => [entity.id, entity])).values()],
         },
       );
 
@@ -188,7 +203,7 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
 
     // Everything created from here on is known upfront, so it is created by a
     // single transaction: the models of the profile together with their content.
-    const operations: OperationInModel[] = [];
+    const operations: OperationInModel[] = createOfnVocabularyModelOperations(packageIri, ofnModels);
 
     const createSemanticModel = createCreateModelOperation(packageIri, LOCAL_SEMANTIC_MODEL, semanticModelIri);
     createSemanticModel.label = { en: profileLabel || "Profile" };
@@ -197,8 +212,14 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
     operations.push(
       ...diffModelEntitiesToOperations(semanticModelIri, LOCAL_SEMANTIC_MODEL, {}, {
         // A semantic model describes itself by its main entity.
-        [semanticModelIri]: { id: semanticModelIri, type: [LOCAL_SEMANTIC_MODEL], label: { en: profileLabel || "Profile" }, baseIri: body.baseIri },
         ...profiledEntities,
+        [semanticModelIri]: {
+          id: semanticModelIri,
+          type: [LOCAL_SEMANTIC_MODEL],
+          subType: SEMANTIC_MODEL_APPLICATION_PROFILE_SUBTYPE,
+          label: { en: profileLabel || "Profile" },
+          baseIri: body.baseIri,
+        },
       } as EntityRecord),
     );
 

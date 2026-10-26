@@ -31,6 +31,7 @@ import { getSimplifiedSemanticModel, setSimplifiedSemanticModel } from "./routes
 import { getSystemData } from "./routes/system.ts";
 import { useStaticSpaHandler } from "./static.ts";
 import { newApplicationProfile } from "./routes/new.ts";
+import { getOfnVocabularies } from "./routes/ofn-vocabularies.ts";
 import { applyTransactions, deleteEvolutionBranch, getTransactionsDiff, listBranches } from "./routes/transaction.ts";
 
 // Create application models
@@ -111,6 +112,7 @@ application.delete(apiBasename + "/transactions/branches/:branchId", deleteEvolu
 application.get(apiBasename + "/transactions/log/:range", getTransactionsDiff);
 
 application.post(apiBasename + "/new/application-profile", newApplicationProfile);
+application.get(apiBasename + "/ofn-vocabularies/vocabularies", getOfnVocabularies);
 
 /**
  * Import: Import endpoint is a wizard that allows you to import specific package/model from a remote source.

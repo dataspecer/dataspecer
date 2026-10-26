@@ -10,16 +10,22 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { TagField, parseTags } from "@/components/tag-field";
 import { packageService } from "@/package";
+import { OfnVocabularies } from "./ofn-vocabularies";
 
 export const Profile = ({ isOpen, resolve, iri, defaultTag }: { iri: string; defaultTag?: string } & BetterModalProps<boolean>) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [tags, setTags] = useState(defaultTag ?? "");
+  const [showOfn, setShowOfn] = useState(false);
+  const [selection, setSelection] = useState<string[]>([]);
+  const [error, setError] = useState("");
 
   const formSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     event.stopPropagation();
+    if (loading) return;
     setLoading(true);
+    setError("");
 
     const formData = new FormData(event.target as HTMLFormElement);
 
@@ -29,7 +35,7 @@ export const Profile = ({ isOpen, resolve, iri, defaultTag }: { iri: string; def
         .map((url: string) => url.trim())
         .filter((url: string) => url.length > 0);
 
-      if (urls.length === 0) {
+      if (urls.length === 0 && selection.length === 0) {
         setLoading(false);
         return;
       }
@@ -47,6 +53,7 @@ export const Profile = ({ isOpen, resolve, iri, defaultTag }: { iri: string; def
         },
         body: JSON.stringify({
           specifications: urls.map((url: string) => ({ url })),
+          ofnVocabularies: selection,
           label: label || undefined,
           description: description || undefined,
           baseIri: baseIri,
@@ -56,9 +63,7 @@ export const Profile = ({ isOpen, resolve, iri, defaultTag }: { iri: string; def
 
       if (!response.ok) {
         const error = await response.json();
-        console.error("API Error:", error);
-        setLoading(false);
-        return;
+        throw new Error(error.error ?? response.statusText);
       }
 
       const result = await response.json();
@@ -74,56 +79,86 @@ export const Profile = ({ isOpen, resolve, iri, defaultTag }: { iri: string; def
       // resolve(true);
     } catch (error) {
       console.error(error);
+      setError(String(error));
       setLoading(false);
     }
   };
 
   return (
     <Modal open={isOpen} onOpenChange={(value: boolean) => (value ? null : resolve(false))}>
-      <ModalContent className="max-w-lg">
+      <ModalContent
+        className={`max-h-[90vh] overflow-y-auto [--profile-form-width:calc(var(--container-lg)-3rem-2px)] ${showOfn ? "md:max-w-[min(64rem,calc(100%-2rem))]" : "sm:max-w-lg"}`}
+      >
         <ModalHeader>
           <ModalTitle>{t("project-wizard:projects.profile.create-title")}</ModalTitle>
         </ModalHeader>
         <ModalDescription>{t("project-wizard:projects.profile.help")}</ModalDescription>
         <ModalBody className="mt-auto flex flex-col gap-2 p-4">
           <form className="grid gap-4" onSubmit={formSubmit}>
-            <div className="grid gap-2">
-              <Label htmlFor="url">
-                {t("form.url.name")}
-                <span className="text-red-500">*</span>
-              </Label>
-              <Textarea id="url" name="url" placeholder={t("form.url.instruction")} required />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="auto-profile" className="grow">
-                {t("project-wizard:projects.profile.auto-profile-title")}
-              </Label>
-              <div className="flex items-center space-x-5">
-                <Switch id="auto-profile" name="auto-profile" defaultChecked />
-                <p className="text-muted-foreground text-sm">{t("project-wizard:projects.profile.auto-profile-description")}</p>
+            <fieldset
+              disabled={loading}
+              className={`grid min-w-0 gap-6 ${showOfn ? "md:grid-cols-[var(--profile-form-width)_minmax(0,1fr)]" : ""}`}
+            >
+              <div className="grid content-start gap-4 md:w-(--profile-form-width)">
+                <div className="grid gap-2">
+                  <Label htmlFor="url">
+                    {t("form.url.name")}
+                    {selection.length === 0 && <span className="text-red-500">*</span>}
+                  </Label>
+                  <Textarea id="url" name="url" placeholder={t("form.url.instruction")} required={selection.length === 0} />
+                </div>
+                <Label htmlFor="show-ofn" className="flex items-center gap-2">
+                  <input
+                    id="show-ofn"
+                    type="checkbox"
+                    className="size-4 accent-primary"
+                    checked={showOfn}
+                    onChange={(event) => {
+                      setShowOfn(event.target.checked);
+                      if (!event.target.checked) setSelection([]);
+                      setError("");
+                    }}
+                  />
+                  {t("project-wizard:ofn.include")}
+                </Label>
+                <div className="grid gap-2">
+                  <Label htmlFor="auto-profile" className="grow">
+                    {t("project-wizard:projects.profile.auto-profile-title")}
+                  </Label>
+                  <div className="flex items-center space-x-5">
+                    <Switch id="auto-profile" name="auto-profile" disabled={loading} defaultChecked />
+                    <p className="text-muted-foreground text-sm">{t("project-wizard:projects.profile.auto-profile-description")}</p>
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="name">{t("form.name.name")}</Label>
+                  <Input id="name" name="name" placeholder={t("form.name.instruction")} />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="description">{t("form.description.name")}</Label>
+                  <Textarea id="description" name="description" placeholder={t("form.description.instruction")} />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="base-url">
+                    {t("form.base-iri.name")}
+                    <span className="text-red-500">*</span>
+                  </Label>
+                  <Input id="base-url" name="base-url" placeholder={t("form.base-iri.instruction")} defaultValue="https://example.com/profile/vocabulary#" />
+                </div>
+                <TagField value={tags} onChange={setTags} />
+                {/* <div className="grid gap-2">
+                  <Label htmlFor="documentation-url">{t("form.documentation-base-url.name")}</Label>
+                  <Input id="documentation-url" name="documentation-url" placeholder={t("form.documentation-base-url.instruction")} defaultValue="https://example.com/profile/" />
+                </div> */}
               </div>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="name">{t("form.name.name")}</Label>
-              <Input id="name" name="name" placeholder={t("form.name.instruction")} />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="description">{t("form.description.name")}</Label>
-              <Textarea id="description" name="description" placeholder={t("form.description.instruction")} />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="base-url">
-                {t("form.base-iri.name")}
-                <span className="text-red-500">*</span>
-              </Label>
-              <Input id="base-url" name="base-url" placeholder={t("form.base-iri.instruction")} defaultValue="https://example.com/profile/vocabulary#" />
-            </div>
-            <TagField value={tags} onChange={setTags} />
-            {/* <div className="grid gap-2">
-              <Label htmlFor="documentation-url">{t("form.documentation-base-url.name")}</Label>
-              <Input id="documentation-url" name="documentation-url" placeholder={t("form.documentation-base-url.instruction")} defaultValue="https://example.com/profile/" />
-            </div> */}
-            <LoadingButton type="submit" loading={loading}>
+              {showOfn && (
+                <div className="min-w-0 border-t pt-6 md:border-t-0 md:border-l md:pt-0 md:pl-6">
+                  <OfnVocabularies selected={selection} onChange={setSelection} disabled={loading} />
+                </div>
+              )}
+            </fieldset>
+            {error && <p role="alert" className="text-red-600 md:max-w-(--profile-form-width)">{error}</p>}
+            <LoadingButton className="w-full md:max-w-(--profile-form-width)" type="submit" loading={loading}>
               {t("form.create-button.name")}
             </LoadingButton>
           </form>

@@ -25,5 +25,18 @@
       "title": "Slovník"
     }
   },
-  "start-new-project": "Vytvořit novou datovou specifikaci"
+  "start-new-project": "Vytvořit novou datovou specifikaci",
+  "ofn": {
+    "title": "Slovníky dle OFN",
+    "description": "Slovníky publikované na data.gov.cz dle OFN Slovníky.",
+    "choose": "Vyberte slovníky",
+    "choose-help": "Vyberte slovníky, které chcete použít ve svém projektu.",
+    "search": "Hledat podle názvu, popisu nebo IRI",
+    "loading": "Načítání…",
+    "empty": "Nebyly nalezeny žádné slovníky.",
+    "retry": "Zkusit znovu",
+    "provenance": "Zdroj slovníku",
+    "include": "Vybrat slovníky dle OFN",
+    "cleanup-error": "Nepodařilo se odstranit nově vytvořený projekt"
+  }
 }

@@ -37,6 +37,7 @@ import { BaseResource } from "../models/resource-model.ts";
 import { StagingModelRepository } from "../models/staging-model-repository.ts";
 import { getModelsForPackage } from "../utils/backend-model-store.ts";
 import { asyncHandler } from "./../utils/async-handler.ts";
+import { createOfnVocabularyModelOperations, loadOfnVocabularyModels } from "../utils/ofn-vocabularies.ts";
 
 /**
  * Fetches a URL (following redirects, as fetch does by default) and rejects
@@ -698,12 +699,35 @@ export const importResource = asyncHandler(async (request: express.Request, resp
     // Parent package IRI
     parentIri: z.string().min(1),
     // Url from which to import the resource
-    url: z.string().url(),
+    url: z.string().url().optional(),
   });
 
   const query = querySchema.parse(request.query);
 
-  const [result] = await importFromUrl(query.parentIri, query.url);
+  if (request.body?.ofnVocabularies !== undefined) {
+    const body = z.object({ ofnVocabularies: z.array(z.url()).min(1) }).parse(request.body);
+    if (query.url) {
+      response.status(400).json({ error: "Specify either a URL or OFN vocabularies" });
+      return;
+    }
+    const parent = await modelRepository.getPackage(query.parentIri);
+    const projectIri = parent && await modelRepository.getProjectIri(query.parentIri);
+    if (!projectIri) {
+      response.status(404).json({ error: "Parent project or package not found" });
+      return;
+    }
+    const models = await loadOfnVocabularyModels(body.ofnVocabularies);
+    await modelRepository.applyTransactions(projectIri, [{
+      id: uuidv4(),
+      operations: createOfnVocabularyModelOperations(query.parentIri, models),
+    }]);
+    response.json(await Promise.all(Object.keys(models).map((modelId) => modelRepository.getResource(modelId))));
+    return;
+  }
+
+  const url = z.url().parse(query.url);
+
+  const [result] = await importFromUrl(query.parentIri, url);
 
   response.send(result);
   return;
