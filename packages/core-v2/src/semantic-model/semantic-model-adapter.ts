@@ -22,7 +22,7 @@ export class SemanticModelAdapter implements EntityModel {
 
     getAlias(): string | null {
         const label = getSemanticModelMainEntity(this.entityModel.getEntities())?.label;
-        return label ? Object.values(label)[0] ?? null : null;
+        return label ? (label["en"] ?? Object.values(label)[0]) ?? null : null;
     }
 
     setAlias(alias: string | null): void {
