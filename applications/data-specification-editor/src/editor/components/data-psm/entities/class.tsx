@@ -13,7 +13,7 @@ import { AddClassSurroundings } from "../../../operations/add-class-surroundings
 import { CreateNonInterpretedAssociationToClass } from "../../../operations/create-non-interpreted-association";
 import { CreateContainer } from "../../../operations/create-container";
 import { CreateInclude } from "../../../operations/create-include";
-import { AddInterpretedSurroundingsDialog, WikidataAddInterpretedSurroundingsDialog } from "../../add-interpreted-surroundings";
+import { AddInterpretedSurroundingsDialog } from "../../add-interpreted-surroundings";
 import { ConfigurationContext } from "../../App";
 import { AddSpecializationDialog } from "../add-specialization/add-specialization-dialog";
 import { DataPsmBaseRow, RowSlots } from "../base-row";
@@ -58,9 +58,7 @@ export const DataPsmClassItem: React.FC<{
   const readOnly = isGeometry;
   const isPrimitive = dataPsmClass?.dataPsmParts.length === 0 && dataPsmClass?.dataPsmEmptyAsComplex !== true;
 
-  // @ts-ignore
-  const unwrappedAdapter = {}; //sourceSemanticModel?.model?.cimAdapter ?? {};
-  const AddSurroundings = useDialog(false ? WikidataAddInterpretedSurroundingsDialog : AddInterpretedSurroundingsDialog, ["dataPsmClassIri", "forPimClassIri"]); // isWikidataAdapter(unwrappedAdapter)
+  const AddSurroundings = useDialog(AddInterpretedSurroundingsDialog, ["dataPsmClassIri", "forPimClassIri"]);
 
   const store = useFederatedObservableStore();
   const include = useCallback(() =>

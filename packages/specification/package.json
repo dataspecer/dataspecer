@@ -45,7 +45,6 @@
     "@dataspecer/sparql-query": "*",
     "@dataspecer/structure-model": "*",
     "@dataspecer/visual-model": "*",
-    "@dataspecer/wikidata-experimental-adapter": "*",
     "@dataspecer/xml": "*"
   },
   "devDependencies": {

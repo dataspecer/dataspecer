@@ -1,2 +1,1 @@
 export {AddInterpretedSurroundingsDialog} from "./default/add-interpreted-surroundings-dialog";
-export {WikidataAddInterpretedSurroundingsDialog} from "./wikidata/wikidata-add-interpreted-surroundings-dialog"

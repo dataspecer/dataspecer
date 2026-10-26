@@ -3,7 +3,6 @@ declare global {
         interface ProcessEnv {
             // URL of services/backend
             REACT_APP_BACKEND: string;
-            REACT_APP_WIKIDATA_ONTOLOGY_BACKEND: string;
 
             // Current version string that will be shown in footer
             // @optional

@@ -2,28 +2,5 @@
   "info panel nothing found": "Nebylo nic nalezeno. Zkontrolujte dotaz.",
   "info panel start typing": "Začněte psát do vyhledávacího pole a zde se zobrazí výsledky.",
   "placeholder": "Vložte IRI, nebo hledejte podle titulku. Lze používat regulární výrazy.",
-  "title": "Vyhledání třídy",
-  "wikidata": {
-    "add property": "Přidat vlastnost",
-    "boost classes": "Zvýhodnit hojně užívané třídy",
-    "boost classes tooltip": "Zvýhodní třídy, které mají větší množství instancí a mapování na externí ontologie. ",
-    "boost common tooltip": "Posuvník definuje množství finálního skóre, které je přiděleno \"boost\" skóre. Levá strana značí zádné zvýhodnění, pravá pak maximum 90% (90% finálního skóre je tvořeno \"boost\" skóre, zbylých 10% je \"query\" skóre). Krok posuvníku je 10%.",
-    "boost properties": "Zvýhodnit hojně užívané vlastnosti",
-    "boost properties tooltip": "Zvýhodní vlastnosti, které jsou hojně užívané na instancích tříd a vlastnosti, jež mají vetší množství mapování na externí ontologie.",
-    "class description": "Popis třídy",
-    "max boost": "Maximální zvýhodnění",
-    "method selection": "Výběr metody",
-    "metod config": "Metoda",
-    "no boost": "Žádné zvyhodnění",
-    "placeholder": "Popište třídu klíčovými slovy, krátkým popisem, nebo použijte obojí. Také můžete vložit IRI.",
-    "properties": "Třída má obsahovat tyto vlastnosti",
-    "property description": "Popis vlastnosti",
-    "property input": "Vložte IRI, nebo hledejte podle názvu.",
-    "search": "Hledat",
-    "search error": "Během hledání nastala chyba.",
-    "search results": "Výsledky hledání",
-    "select as root": "Vybrat jako kořen",
-    "select property": "Vybrat vlastnost",
-    "title property": "Vyhledání vlastnosti"
-  }
+  "title": "Vyhledání třídy"
 }
