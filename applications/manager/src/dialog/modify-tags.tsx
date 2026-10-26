@@ -17,7 +17,7 @@ export const ModifyTagsDialog = ({ tags = [], isOpen, resolve }: { tags?: string
         <ModalHeader>
           <ModalTitle>{t("modify-tags.title")}</ModalTitle>
         </ModalHeader>
-        <form onSubmit={(event) => { event.preventDefault(); resolve(parseTags(value)); }}>
+        <form className="contents" onSubmit={(event) => { event.preventDefault(); resolve(parseTags(value)); }}>
           <ModalBody className="grid gap-2">
             <Label htmlFor="resource-tags">{t("tags")}</Label>
             <Input id="resource-tags" value={value} onChange={(event) => setValue(event.target.value)} placeholder={t("tags-instruction")} />

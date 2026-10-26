@@ -104,7 +104,7 @@ export const ReloadResource = ({ id, parentId, isOpen, resolve }: ReloadResource
           <ModalTitle>{t("reload-resource.title")}</ModalTitle>
           <ModalDescription>{name ? t("reload-resource.warning", { name }) : t("reload-resource.warning-no-name")}</ModalDescription>
         </ModalHeader>
-        <form onSubmit={(event) => { event.preventDefault(); void doReload(false); }}>
+        <form className="contents" onSubmit={(event) => { event.preventDefault(); void doReload(false); }}>
           <ModalBody className="space-y-4">
             {isMultiUrl ? (
               <div className="grid gap-2">

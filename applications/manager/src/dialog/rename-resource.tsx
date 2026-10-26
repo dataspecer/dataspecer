@@ -79,7 +79,7 @@ export const RenameResourceDialog = ({ inputLabel, inputDescription, isOpen, res
             {type === "create" ? t("rename-resource.subtitle-create") : t("rename-resource.subtitle-edit")}
           </ModalDescription>
         </ModalHeader>
-        <form onSubmit={(event) => { event.preventDefault(); closeWithSuccess(); }}>
+        <form className="contents" onSubmit={(event) => { event.preventDefault(); closeWithSuccess(); }}>
           <ModalBody>
             <div className="flex justify-end">
               <Button type="button" variant="ghost" onClick={() => setLabels([...labels, { lang: "cs", value: "", key: _uniqueId() }])}><Plus className="mr-2 h-4 w-4" /> {t("rename-resource.add-name")}</Button>
