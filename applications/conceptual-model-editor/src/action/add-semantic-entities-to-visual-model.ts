@@ -1,5 +1,5 @@
 import { WritableVisualModel } from "@dataspecer/visual-model";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { UseDiagramType } from "../diagram/diagram-hook";
 import { sourceModelOfEntity } from "../util/model-utils";
@@ -14,7 +14,7 @@ import { addSemanticRelationshipToVisualModelAction } from "./add-relationship-t
 import { addSemanticRelationshipProfileToVisualModelAction } from "./add-relationship-profile-to-visual-model";
 import { addSemanticGeneralizationToVisualModelAction } from "./add-generalization-to-visual-model";
 import { Entity, EntityModel } from "@dataspecer/core-v2";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { XY } from "@dataspecer/layout";
 import { findPositionForNewNodesUsingLayouting } from "./layout-visual-model";
 import {
@@ -42,14 +42,14 @@ type ValidatedDataAboutEntity = {
 
 export async function addSemanticEntitiesToVisualModelAction(
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContextType,
-  graph: ModelGraphContextType,
+  classes: ClassesContext,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   diagram: UseDiagramType,
   entities: EntityToAddToVisualModel[],
 ) {
   const validatedEntitiesToAddToVisualModel: ValidatedDataAboutEntity[] = validateEntities(
-    notifications, graph, visualModel, entities);
+    notifications, classes, visualModel, entities);
   const { nodes, edges } = await updatePositionsAndSplitIntoNodesAndEdges(
     notifications, classes, graph, visualModel, diagram, validatedEntitiesToAddToVisualModel);
   // Add to visual model
@@ -59,8 +59,8 @@ export async function addSemanticEntitiesToVisualModelAction(
 
 async function updatePositionsAndSplitIntoNodesAndEdges(
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContextType,
-  graph: ModelGraphContextType,
+  classes: ClassesContext,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   diagram: UseDiagramType,
   validatedEntitiesToAddToVisualModel: ValidatedDataAboutEntity[]
@@ -118,7 +118,7 @@ async function updatePositionsAndSplitIntoNodesAndEdges(
 
 function validateEntities(
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  classes: ClassesContext,
   visualModel: WritableVisualModel,
   entities: EntityToAddToVisualModel[]
 ) {
@@ -132,7 +132,7 @@ function validateEntities(
       continue;
     }
 
-    const model = sourceModelOfEntity(entityIdentifier, [...graph.models.values()]);
+    const model = sourceModelOfEntity(entityIdentifier, [...classes.semanticModels.values()]);
     if(model === undefined) {
       // Note that we continue, therefore if one entity fails, the addition of rest is not affected.
       notifications.error(
@@ -153,8 +153,8 @@ function validateEntities(
 
 async function addClassesAndClassProfilesToVisualModel(
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContextType,
-  graph: ModelGraphContextType,
+  classes: ClassesContext,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   diagram: UseDiagramType,
   validatedNodesData: ValidatedDataAboutEntity[]
@@ -184,7 +184,7 @@ async function addClassesAndClassProfilesToVisualModel(
 
 function addConnectionsToVisualModel(
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   validatedEdgesData: ValidatedDataAboutEntity[]
 ) {

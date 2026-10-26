@@ -6,6 +6,7 @@ export const httpFetch: HttpFetch = function fetch(
   url: string,
   options: FetchOptions
 ): Promise<FetchResponse> {
+  console.log("fetch: ", url);
   if (url.startsWith("file://")) {
     const path = url.match(/file:\/\/(.+)/)[1];
     const stream = createReadStream(path);

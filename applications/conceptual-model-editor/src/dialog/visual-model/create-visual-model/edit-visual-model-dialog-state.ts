@@ -1,8 +1,5 @@
-import { VisualModelOptions } from "@/configuration/options";
+import { VisualModelOptions } from "../../../configuration/options";
 import { LanguageString } from "../../../dataspecer/entity-model";
-import {
-  EntityColor, LabelVisual, ProfileOfVisual,
-} from "../../../diagram/model";
 
 export interface EditVisualModelDialogState {
 

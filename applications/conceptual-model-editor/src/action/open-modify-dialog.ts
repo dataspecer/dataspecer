@@ -5,11 +5,11 @@ import {
   isSemanticModelRelationship,
 } from "@dataspecer/core-v2/semantic-model/concepts";
 
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { DialogApiContextType } from "../dialog/dialog-service";
 import { Options } from "../configuration/options";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { findSourceModelOfEntity } from "../service/model-service";
 import { VisualModel } from "@dataspecer/visual-model";
 import { isInMemorySemanticModel } from "../dataspecer/semantic-model";
@@ -19,6 +19,7 @@ import { openEditAttributeDialogAction } from "./open-edit-attribute-dialog";
 import { openEditAttributeProfileDialogAction } from "./open-edit-attribute-profile-dialog";
 import { openEditClassDialogAction } from "./open-edit-class-dialog";
 import { openEditClassProfileDialogAction } from "./open-edit-class-profile-dialog";
+import { openEditGeneralizationDialogAction } from "./open-edit-generalization-dialog";
 import { createLogger } from "../application";
 import {
   isSemanticModelClassProfile,
@@ -29,6 +30,7 @@ import { isSemanticModelAttributeProfile } from "../dataspecer/semantic-model";
 import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
 import { DialogSemanticTracker } from "../dialog-v2/dialog-semantic-tracker";
 import { LabelResolver } from "../dependency-tracker";
+import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 
 const LOG = createLogger(import.meta.url);
 
@@ -37,21 +39,22 @@ export function openModifyDialogAction(
   options: Options,
   dialogs: DialogApiContextType,
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContextType,
-  graph: ModelGraphContextType,
+  classes: ClassesContext,
+  graph: UseModelGraphContextType,
   visualModel: VisualModel | null,
   identifier: string,
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
+  availableVocabularies: ControlledVocabulary[],
 ) {
-  const aggregate = graph.aggregatorView.getEntities()?.[identifier];
+  const aggregate = graph.getEntities()?.[identifier];
 
   const entity = aggregate.aggregatedEntity;
   if (entity === undefined || entity === null) {
     notifications.error(`Can not find the entity with identifier '${identifier}'.`);
     return;
   }
-  const model = findSourceModelOfEntity(entity.id, graph.models);
+  const model = findSourceModelOfEntity(entity.id, classes.semanticModels);
   if (model === null || !isInMemorySemanticModel(model)) {
     notifications.error("Model is not writable, can not modify entity.");
     return;
@@ -61,13 +64,14 @@ export function openModifyDialogAction(
   // we just fall through to a single dialog for all.
   if (isSemanticModelClass(entity)) {
     openEditClassDialogAction(
-      cmeExecutor, options, dialogs, graph, visualModel, model,
+      cmeExecutor, options, dialogs, classes, visualModel, model,
       entity, tracker, labelResolver);
     return;
   } else if (isSemanticModelClassProfile(entity)) {
     openEditClassProfileDialogAction(
-      cmeExecutor, options, dialogs, graph,
-      visualModel, model, entity, tracker, labelResolver);
+      cmeExecutor, options, dialogs, classes, graph,
+      visualModel, model, entity, tracker, labelResolver,
+      availableVocabularies);
     return;
   } else if (isSemanticModelAttribute(entity)) {
     openEditAttributeDialogAction(
@@ -82,17 +86,18 @@ export function openModifyDialogAction(
     return;
   } else if (isSemanticModelRelationship(entity)) {
     openEditAssociationDialogAction(
-      cmeExecutor, options, dialogs, graph,
+      cmeExecutor, options, dialogs, classes,
       visualModel, model, entity, tracker, labelResolver);
     return;
   } else if (isSemanticModelRelationshipProfile(entity)) {
     openEditAssociationProfileDialogAction(
-      cmeExecutor, options, dialogs, graph, visualModel,
+      cmeExecutor, options, dialogs, classes, graph, visualModel,
       model, aggregate.rawEntity as SemanticModelRelationshipProfile, tracker,
       labelResolver);
     return;
   } else if (isSemanticModelGeneralization(entity)) {
-    notifications.error("Generalization modification is not supported!");
+    openEditGeneralizationDialogAction(
+      dialogs, notifications, classes, visualModel, model, entity);
     return;
   } else {
     LOG.error("Can not open modify dialog for unknown entity type.", { entity })

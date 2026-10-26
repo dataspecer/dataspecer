@@ -23,7 +23,7 @@ export class MakeConcrete implements ComplexOperation {
     const dataPsmSchema = this.store.getSchemaForResource(this.dataPsmOrIri) as string;
 
     const dataPsmSetChoice = new DataPsmSetChoice();
-    dataPsmSetChoice.dataPsmOr = this.dataPsmOrIri;
+    dataPsmSetChoice.entityId = this.dataPsmOrIri;
     dataPsmSetChoice.dataPsmChoice = this.classId;
     this.store.applyOperation(dataPsmSchema, dataPsmSetChoice);
   }

@@ -1,18 +1,22 @@
-import { CoreOperation, CoreResource } from "../../core/index.ts";
+import { generateOperationId, type Operation } from "../../operation/index.ts";
 import { SET_JSON_ENFORCE_CONTEXT } from "../data-psm-vocabulary.ts";
 
-export class DataPsmSetJsonEnforceContext extends CoreOperation {
+export class DataPsmSetJsonEnforceContext implements Operation {
   static readonly TYPE = SET_JSON_ENFORCE_CONTEXT;
 
-  dataPsmEntity: string | null = null;
+  id: string;
+
+  type: string;
+
+  entityId: string | null = null;
   jsonEnforceContext?: "no" | "as-is" | "with-extensions";
 
   constructor() {
-    super();
-    this.types.push(DataPsmSetJsonEnforceContext.TYPE);
+    this.id = generateOperationId();
+    this.type = DataPsmSetJsonEnforceContext.TYPE;
   }
 
-  static is(resource: CoreResource | null): resource is DataPsmSetJsonEnforceContext {
-    return resource?.types.includes(DataPsmSetJsonEnforceContext.TYPE);
+  static is(operation: Operation | null | undefined): operation is DataPsmSetJsonEnforceContext {
+    return operation?.type === DataPsmSetJsonEnforceContext.TYPE;
   }
 }

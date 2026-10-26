@@ -45,6 +45,8 @@ export interface SemanticClassBuilder extends IdentifiableBuilder {
     iri?: string,
     name?: LanguageString,
     description?: LanguageString,
+    nameProperty?: string | null,
+    descriptionProperty?: string | null,
     range: IdentifiableBuilder,
   }): SemanticRelationshipBuilder;
 
@@ -90,6 +92,10 @@ export interface SemanticModelProperty {
   description: LanguageString;
 
   externalDocumentationUrl: string | null;
+
+  nameProperty?: string | null;
+
+  descriptionProperty?: string | null;
 
 }
 

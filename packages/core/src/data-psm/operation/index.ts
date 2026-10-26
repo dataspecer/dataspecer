@@ -1,3 +1,4 @@
+export * from "./data-psm-operation-result.ts";
 export * from "./data-psm-create-association-end.ts";
 export * from "./data-psm-create-attribute.ts";
 export * from "./data-psm-create-class.ts";

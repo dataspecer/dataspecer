@@ -8,10 +8,10 @@ import {
   VisualRelationship,
   WritableVisualModel
 } from "@dataspecer/visual-model";
-import { ModelGraphContextType, UseModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
-import { createWritableVisualModel } from "@/dataspecer/visual-model/visual-model-factory";
+import { createWritableVisualModel } from "../dataspecer/visual-model/visual-model-factory";
 
 /**
  *
@@ -23,7 +23,7 @@ import { createWritableVisualModel } from "@/dataspecer/visual-model/visual-mode
  */
 export function createNewVisualModelAction(
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   useGraph: UseModelGraphContextType,
   sourceVisualModel: VisualModel | null,
   newVisualModelName: LanguageString | null,
@@ -31,7 +31,7 @@ export function createNewVisualModelAction(
   newVisualModelInitialEdges: string[],
 ): WritableVisualModel {
 
-  const activeVisualModel = graph.aggregatorView.getActiveVisualModel();
+  const activeVisualModel = graph.getActiveVisualModel();
   const model = createWritableVisualModel(activeVisualModel);
 
   if(sourceVisualModel !== null) {
@@ -45,7 +45,7 @@ export function createNewVisualModelAction(
 
   useGraph.addVisualModel(model);
   model.setLabel(newVisualModelName ?? { en: "Visual model" });
-  graph.setAggregatorView(graph.aggregator.getView());
+  graph.reloadView();
 
   return model;
 }
@@ -65,11 +65,11 @@ function addNodesFromSourceModelToTargetModel(
     }
     if(isVisualNode(visualEntity)) {
       const newIdentifier = targetVisualModel.addVisualNode({ ...visualEntity });
-      oldToNewIdMapping[visualEntity.identifier] = newIdentifier;
+      oldToNewIdMapping[visualEntity.id] = newIdentifier;
     }
     else if(isVisualDiagramNode(visualEntity)) {
       const newIdentifier = targetVisualModel.addVisualDiagramNode(visualEntity);
-      oldToNewIdMapping[visualEntity.identifier] = newIdentifier;
+      oldToNewIdMapping[visualEntity.id] = newIdentifier;
     }
   }
 

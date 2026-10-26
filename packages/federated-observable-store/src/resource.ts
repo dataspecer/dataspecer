@@ -1,5 +1,5 @@
 import { Entity } from "@dataspecer/core-v2";
-import {CoreResource} from "@dataspecer/core/core";
+import { CoreResource } from "@dataspecer/core/core";
 
 /**
  * {@link CoreResource} wrapper for easier manipulation with the resource if
@@ -10,10 +10,10 @@ import {CoreResource} from "@dataspecer/core/core";
  * @immutable
  */
 export interface Resource<ResourceType extends CoreResource | Entity = CoreResource | Entity> {
-    /**
-     * The {@link CoreResource} or null, if error or loading for the first time.
-     * If the resource is being reloaded, the old value is still stored here.
-     */
-    resource: ResourceType | null;
-    isLoading: boolean;
+  /**
+   * The {@link CoreResource} or null, if error or loading for the first time.
+   * If the resource is being reloaded, the old value is still stored here.
+   */
+  resource: ResourceType | null;
+  isLoading: boolean;
 }

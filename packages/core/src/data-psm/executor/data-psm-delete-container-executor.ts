@@ -14,6 +14,6 @@ export function executeDataPsmDeleteContainer(
   return removeFromClass(
     reader,
     operation.dataPsmOwner,
-    operation.dataPsmContainer
+    operation.entityId
   );
 }

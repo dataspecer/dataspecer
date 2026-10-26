@@ -34,8 +34,8 @@ export function addVisualRelationshipsWithSpecifiedVisualEnds(
     for (const visualTarget of visualTargets) {
       const alreadyExists = existingVisualRelationships
         .find(visualRelationship =>
-          visualRelationship.visualSource === visualSource.identifier &&
-          visualRelationship.visualTarget === visualTarget.identifier) !== undefined;
+          visualRelationship.visualSource === visualSource.id &&
+          visualRelationship.visualTarget === visualTarget.id) !== undefined;
       if (alreadyExists) {
         continue;
       }
@@ -49,8 +49,8 @@ export function addVisualRelationshipsWithSpecifiedVisualEnds(
         model,
         representedRelationship: represented,
         waypoints,
-        visualSource: visualSource.identifier,
-        visualTarget: visualTarget.identifier,
+        visualSource: visualSource.id,
+        visualTarget: visualTarget.id,
       });
     }
   }

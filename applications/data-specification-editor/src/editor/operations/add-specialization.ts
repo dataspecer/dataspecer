@@ -49,8 +49,8 @@ export class AddSpecialization implements ComplexOperation {
     if (wrapOr === undefined) {
       const wrapWithOrOperation = new DataPsmWrapWithOr();
       wrapWithOrOperation.dataPsmChild = this.forDataPsmClassId;
-      const result = this.store.applyOperation(dataPsmSchema, wrapWithOrOperation);
-      wrapOr = result.created[0];
+      this.store.applyOperation(dataPsmSchema, wrapWithOrOperation);
+      wrapOr = wrapWithOrOperation.dataPsmNewIri as string;
     }
 
     // THIRD: Add PSM class
@@ -58,13 +58,13 @@ export class AddSpecialization implements ComplexOperation {
     const dataPsmCreateClass = new DataPsmCreateClass();
     dataPsmCreateClass.dataPsmInterpretation = targetSemanticClass.id;
     dataPsmCreateClass.dataPsmTechnicalLabel = this.context?.getTechnicalLabelFromPim(targetSemanticClass.name) ?? null;
-    const dataPsmCreateClassResult = this.store.applyOperation(dataPsmSchema, dataPsmCreateClass);
-    const createdPsmClass = dataPsmCreateClassResult.created[0];
+    this.store.applyOperation(dataPsmSchema, dataPsmCreateClass);
+    const createdPsmClass = dataPsmCreateClass.dataPsmNewIri as string;
 
     // FOURTH: Add to OR
 
     const addToOr = new DataPsmSetChoice();
-    addToOr.dataPsmOr = wrapOr;
+    addToOr.entityId = wrapOr;
     addToOr.dataPsmChoice = createdPsmClass;
     this.store.applyOperation(dataPsmSchema, addToOr);
 

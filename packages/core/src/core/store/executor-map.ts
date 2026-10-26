@@ -1,8 +1,8 @@
+import type { Operation } from "../../operation/index.ts";
 import {CoreOperationExecutor} from "../executor/index.ts";
-import {CoreOperation} from "../operation/index.ts";
 import {assert} from "../utilities/assert.ts";
 
-export function createExecutorMap(executors: CoreOperationExecutor<CoreOperation>[]) {
+export function createExecutorMap(executors: CoreOperationExecutor<Operation>[]) {
   const executorForTypes: ExecutorMap = {};
   executors.forEach((executor) => {
     assert(
@@ -14,4 +14,4 @@ export function createExecutorMap(executors: CoreOperationExecutor<CoreOperation
   return executorForTypes;
 }
 
-export type ExecutorMap = { [type: string]: CoreOperationExecutor<CoreOperation> };
+export type ExecutorMap = { [type: string]: CoreOperationExecutor<Operation> };

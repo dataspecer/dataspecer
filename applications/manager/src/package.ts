@@ -1,10 +1,10 @@
+import { LOCAL_SEMANTIC_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { BackendPackageService } from "@dataspecer/core-v2/project";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
 import { createContext, useRef, useState } from "react";
-import { Package } from "../../../packages/core-v2/lib/project/resource/resource";
-import { StructureEditorBackendService } from "@dataspecer/backend-utils/connectors/specification";
-import { LOCAL_SEMANTIC_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { Package } from "@dataspecer/core/project-model/legacy";
 import { createModelInstructions } from "./known-models";
+import { StructureEditorBackendService } from "./structure-editor-backend-service";
 
 const backendUrl = import.meta.env.VITE_BACKEND;
 
@@ -50,7 +50,7 @@ export async function requestLoadPackage(iri: string, forceUpdate = false) {
     resourcesMemory.current = copiedResourcesMemory;
 }
 
-export async function modifyUserMetadata(iri: string, metadata: {label?: LanguageString, description?: LanguageString}) {
+export async function modifyUserMetadata(iri: string, metadata: {label?: LanguageString, description?: LanguageString, tags?: string[]}) {
     const pckg = await packageService.updatePackage(iri, { userMetadata: metadata });
     const copiedResourcesMemory = {...resourcesMemory.current};
     if (copiedResourcesMemory[iri]) {

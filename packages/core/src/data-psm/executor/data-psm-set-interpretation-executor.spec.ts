@@ -9,7 +9,7 @@ import * as PSM from "../data-psm-vocabulary.ts";
 
 test("Update data PSM resource interpretation.", async () => {
   const operation = new DataPsmSetInterpretation();
-  operation.dataPsmResource = "http://class";
+  operation.entityId = "http://class";
   operation.dataPsmInterpretation = "http://interpretation";
 
   const before = {

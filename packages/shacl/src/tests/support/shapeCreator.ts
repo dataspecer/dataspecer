@@ -1,9 +1,9 @@
-import { StructureModel} from "@dataspecer/core/structure-model/model";
+import { StructureModel} from "@dataspecer/generators/structure-model/model";
 import { DataSpecificationArtefact } from "@dataspecer/core/data-specification/model";
 import { ShaclAdapter } from "../../shacl-adapter.ts";
 
 class ShapeCreator{
-    
+
     async createShape(sm : StructureModel) : Promise<String> {
         var artefact = new DataSpecificationArtefact();
         artefact.configuration = {publicBaseUrl: 'https://example.org/'};

@@ -24,4 +24,16 @@ export interface SemanticModelsToShaclConfiguration {
    */
   splitPropertyShapesByConstraints: boolean;
 
+  /**
+   * When true the IRI of a value of a controlled vocabulary has to match
+   * the pattern of the vocabulary (sh:pattern).
+   */
+  controlledVocabularyPattern: boolean;
+
+  /**
+   * When true a value of a SKOS-based controlled vocabulary has to state
+   * the concept scheme of the vocabulary using skos:inScheme.
+   */
+  controlledVocabularyScheme: boolean;
+
 }

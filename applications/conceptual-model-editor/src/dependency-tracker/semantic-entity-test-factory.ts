@@ -22,8 +22,6 @@ export function createSemanticEntityTestFactory(): SemanticEntityTestFactory {
         name: value.name ?? {},
         description: value.description ?? {},
         iri: value.iri ?? "",
-        nameProperty: null,
-        descriptionProperty: null,
         externalDocumentationUrl: null,
       };
     },

@@ -50,8 +50,8 @@ export class ReplaceAlongInheritance implements ComplexOperation {
     const dataPsmCreateClass = new DataPsmCreateClass();
     dataPsmCreateClass.dataPsmInterpretation = newSemanticClass.id;
     dataPsmCreateClass.dataPsmTechnicalLabel = this.context?.getTechnicalLabelFromPim(newSemanticClass.name) ?? null;
-    const dataPsmCreateClassResult = this.store.applyOperation(dataPsmSchemaIri, dataPsmCreateClass);
-    const toPsmClassIri = dataPsmCreateClassResult.created[0];
+    this.store.applyOperation(dataPsmSchemaIri, dataPsmCreateClass);
+    const toPsmClassIri = dataPsmCreateClass.dataPsmNewIri as string;
 
     // Replace data psm classes
 
@@ -63,7 +63,7 @@ export class ReplaceAlongInheritance implements ComplexOperation {
     // Remove the old class
 
     const dataPsmDeleteClass = new DataPsmDeleteClass();
-    dataPsmDeleteClass.dataPsmClass = fromDataPsmClass.iri;
+    dataPsmDeleteClass.entityId = fromDataPsmClass.iri;
     this.store.applyOperation(dataPsmSchemaIri, dataPsmDeleteClass);
   }
 }

@@ -24,7 +24,7 @@ export class DeleteChoice implements ComplexOperation {
     const schema = this.store.getSchemaForResource(this.OrIri) as string;
 
     const dataPsmUnsetChoice = new DataPsmUnsetChoice();
-    dataPsmUnsetChoice.dataPsmOr = this.OrIri;
+    dataPsmUnsetChoice.entityId = this.OrIri;
     dataPsmUnsetChoice.dataPsmChoice = this.choiceIri;
     this.store.applyOperation(schema, dataPsmUnsetChoice);
   }

@@ -74,6 +74,14 @@ const dialogClassProfile = prefix(
   "ok-create": "✅ Create",
 });
 
+const dialogGeneralization = prefix(
+  "dialog.generalization.", {
+  "cancel": "❌ Cancel",
+  // Edit
+  "label-edit": "Edit a generalization",
+  "ok-edit": "✅ Save changes",
+});
+
 const dialogLayoutVisualModel = prefix(
   "dialog.layout-visual-model.", {
   "cancel": "❌ Cancel",
@@ -115,6 +123,12 @@ const dialogVisualNode = prefix(
   "level-mandatory": "mandatory",
   "level-optional": "optional",
   "level-recommended": "recommended",
+});
+
+const dialogVisualColor = prefix(
+  "dialog.visual-color.", {
+  "label": "Color",
+  "reset": "Use model color",
 });
 
 const editSemanticModelDialog = prefix(
@@ -223,11 +237,13 @@ export const english: Record<string, string | Function> = {
   ...dialogAttributeProfile,
   ...dialogClass,
   ...dialogClassProfile,
+  ...dialogGeneralization,
   ...dialogVisualDiagramNode,
   ...dialogVisualModel,
   ...dialogLayoutVisualModel,
   ...dataspecer,
   ...dialogVisualNode,
+  ...dialogVisualColor,
   ...editSemanticModelDialog,
   ...searchExternalSemanticModelDialog,
   ...profileModelDialog,
@@ -386,6 +402,7 @@ export const english: Record<string, string | Function> = {
   //
   "create-class-profile-dialog.label": "Create a profile",
   "modify-class-profile-dialog.profile-of": "Profile of",
+  "modify-class-profile-dialog.controlled-vocabularies": "Controlled vocabularies",
   //
   "undefined": "Undefined",
   "change-in-profile": "Change in profile",

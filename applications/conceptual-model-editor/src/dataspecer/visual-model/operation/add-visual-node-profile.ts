@@ -1,6 +1,6 @@
 import { WritableVisualModel } from "@dataspecer/visual-model";
 import { DataspecerError } from "../../dataspecer-error";
-import { CmeReference } from "@/dataspecer/cme-model/model";
+import { CmeReference } from "../../../dataspecer/cme-model/model";
 
 /**
  * Adds a visual representation for class profile.
@@ -25,8 +25,8 @@ export function addVisualNodeProfile(
       visualModel.addVisualProfileRelationship({
         entity: profile.identifier,
         model: profile.model,
-        visualSource: source.identifier,
-        visualTarget: target.identifier,
+        visualSource: source.id,
+        visualTarget: target.id,
         waypoints: [],
       });
     }

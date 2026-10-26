@@ -9,7 +9,7 @@ import * as PSM from "../data-psm-vocabulary.ts";
 
 test("Update jsonLdDefinedPrefixes in data PSM schema.", async () => {
   const operation = new DataPsmSetJsonLdDefinedPrefixes();
-  operation.dataPsmEntity = "http://schema";
+  operation.entityId = "http://schema";
   operation.jsonLdDefinedPrefixes = { ex: "http://example.com/" };
 
   const before = {

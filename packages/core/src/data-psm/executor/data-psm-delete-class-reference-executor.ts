@@ -22,11 +22,11 @@ export function executeDataPsmDeleteClassReference(
   }
 
   const resourceToDelete = reader.readResource(
-    operation.dataPsmClassReference
+    operation.entityId
   );
   if (!DataPsmClassReference.is(resourceToDelete)) {
     return CoreExecutorResult.createError(
-      `Missing class '${operation.dataPsmClassReference}' to delete.`
+      `Missing class '${operation.entityId}' to delete.`
     );
   }
 
@@ -36,12 +36,12 @@ export function executeDataPsmDeleteClassReference(
       {
         ...schema,
         dataPsmParts: removeValue(
-          operation.dataPsmClassReference,
+          operation.entityId,
           schema.dataPsmParts
         ),
       } as CoreResource,
     ],
-    [operation.dataPsmClassReference]
+    [operation.entityId]
   );
 }
 

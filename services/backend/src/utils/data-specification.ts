@@ -1,39 +1,33 @@
-import { getDataSpecificationWithModels } from "@dataspecer/specification/specification";
-import { resourceModel } from "../main.ts";
-import { BackendModelRepository } from "./model-repository.ts";
-import { SemanticModelClass, SemanticModelGeneralization, SemanticModelRelationship, type SemanticModelRelationshipEnd } from "@dataspecer/core-v2/semantic-model/concepts";
+import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 import type { DataPsmResource } from "@dataspecer/core/data-psm/model/data-psm-resource";
+import { modelRepository } from "../main.ts";
+import { AggregatedSemanticModel, getSpecificationFromModels } from "./aggregated-specification.ts";
+import { getModelsForPackage } from "./backend-model-store.ts";
 
-export interface SemanticModelClassWithConceptIris extends SemanticModelClass {
-  /**
-   * List of IRIs of the original entity that were referenced by the profile.
-   */
-  conceptIris?: string[];
-}
-
-export interface SemanticModelRelationshipWithConceptIris extends SemanticModelRelationship {
-  ends: (SemanticModelRelationshipEnd & {
-    /**
-     * List of IRIs of the original entity that were referenced by the profile.
-     */
-    conceptIris?: string[];
-  })[];
-}
-
-export type AggregatedSemanticModel = (SemanticModelClassWithConceptIris | SemanticModelRelationshipWithConceptIris | SemanticModelGeneralization)[];
+export type {
+  AggregatedSemanticModel,
+  SemanticModelClassWithConceptIris,
+  SemanticModelRelationshipWithConceptIris,
+} from "./aggregated-specification.ts";
 
 /**
  * For a given project id (id/iri of a package) it returns single aggregated
- * semantic model and an array of the structure models.
+ * semantic model, an array of the structure models and the controlled
+ * vocabularies.
  *
- * Both semantic and structure models are array of JSON-serializable entities.
+ * All of them are arrays of JSON-serializable entities.
  *
  * The purpose of this function is to provide a simple API that hides the
  * complexity that may change in the future.
  */
 export async function getSpecification(projectId: string): Promise<{
   /**
-   * List of semantic model entities. Each entity is either a class, relationship or generalization.
+   * List of semantic model entities. Each entity is either a class, relationship,
+   * generalization or a controlled vocabulary assignment.
+   *
+   * Class profiles list in `controlledVocabularies` the identifiers of all
+   * controlled vocabulary assignments that apply to them.
+   * The vocabulary of an assignment is identified by its `vocabulary` and is part of {@link controlledVocabularies}.
    */
   aggregatedSemanticModel: AggregatedSemanticModel;
 
@@ -44,23 +38,13 @@ export async function getSpecification(projectId: string): Promise<{
    * structure model.
    */
   structureModels: DataPsmResource[][];
+
+  /**
+   * Controlled vocabularies of the project, including the ones from the nested packages.
+   * A vocabulary is identified by its `id`.
+   */
+  controlledVocabularies: ControlledVocabulary[];
 }> {
-  const modelRepository = new BackendModelRepository(resourceModel);
-  const specification = await getDataSpecificationWithModels(projectId, "", modelRepository);
-
-  // Aggregated semantic model is a single model containing entities.
-  const aggregatedWrappedEntities = specification.semanticModelAggregator.getAggregatedEntities();
-  const unwrappedEntities = Object.values(aggregatedWrappedEntities).map((entity) => entity.aggregatedEntity);
-  const aggregatedSemanticModel = unwrappedEntities as AggregatedSemanticModel;
-
-  // Now process structure models
-  const structureModels = Object.values(specification.structureModels).map((structureModel) => {
-    const resources = structureModel.listResources();
-    return resources.map((resourceId) => structureModel.readResource(resourceId));
-  }) as DataPsmResource[][];
-
-  return {
-    aggregatedSemanticModel,
-    structureModels,
-  };
+  const allModels = await getModelsForPackage(projectId, modelRepository);
+  return getSpecificationFromModels(projectId, allModels);
 }

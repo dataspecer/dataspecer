@@ -16,10 +16,11 @@
   },
   "dependencies": {
     "@dataspecer/core": "*",
+    "@dataspecer/generators": "^0.0.0",
     "@dataspecer/sparql-query": "*"
   },
   "devDependencies": {
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.7"
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
   }
 }

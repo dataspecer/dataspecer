@@ -1,8 +1,5 @@
+import { EntityIdentifier } from "@dataspecer/core/entity-model";
 import { ColorGenerator, createColorGenerator } from "./color-generator.ts";
-import { ModelIdentifier } from "./entity-model/entity-model.ts";
-import { EntityIdentifier } from "./entity-model/entity.ts";
-import { LanguageString } from "./entity-model/labeled-model.ts";
-import { UnsubscribeCallback } from "./entity-model/observable-entity-model.ts";
 import {
   VisualNode, VisualDiagramNode, VisualRelationship,
   VisualProfileRelationship, VisualGroup, VisualEntity,
@@ -10,6 +7,8 @@ import {
 } from "./concepts/index.ts";
 import { VisualModelDataVersion, VisualModelListener } from "./visual-model.ts";
 import { WritableVisualModel } from "./writable-visual-model.ts";
+import { ModelIdentifier } from "@dataspecer/core/model";
+import { LanguageString } from "@dataspecer/core/core/core-resource";
 
 const colorGenerator: ColorGenerator = createColorGenerator();
 
@@ -21,32 +20,32 @@ class WrappedModel implements WritableVisualModel {
     this.model = model;
   }
 
-  addVisualNode(entity: Omit<VisualNode, "identifier" | "type">): string {
+  addVisualNode(entity: Omit<VisualNode, "id" | "type">): string {
     return this.model.addVisualNode(entity);
   }
 
   addVisualDiagramNode(
-    entity: Omit<VisualDiagramNode, "identifier" | "type">): string {
+    entity: Omit<VisualDiagramNode, "id" | "type">): string {
     return this.model.addVisualDiagramNode(entity);
   }
 
   addVisualRelationship(
-    entity: Omit<VisualRelationship, "identifier" | "type">): string {
+    entity: Omit<VisualRelationship, "id" | "type">): string {
     return this.model.addVisualRelationship(entity);
   }
 
   addVisualProfileRelationship(
-    entity: Omit<VisualProfileRelationship, "identifier" | "type">): string {
+    entity: Omit<VisualProfileRelationship, "id" | "type">): string {
     return this.model.addVisualProfileRelationship(entity);
   }
 
-  addVisualGroup(entity: Omit<VisualGroup, "identifier" | "type">): string {
+  addVisualGroup(entity: Omit<VisualGroup, "id" | "type">): string {
     return this.model.addVisualGroup(entity);
   }
 
   updateVisualEntity<T extends VisualEntity>(
     identifier: EntityIdentifier,
-    entity: Partial<Omit<T, "identifier" | "type">>): void {
+    entity: Partial<Omit<T, "id" | "type">>): void {
     this.model.updateVisualEntity(identifier, entity);
   }
 
@@ -90,7 +89,7 @@ class WrappedModel implements WritableVisualModel {
     return this.model.getVisualEntities();
   }
 
-  subscribeToChanges(listener: VisualModelListener): UnsubscribeCallback {
+  subscribeToChanges(listener: VisualModelListener): () => void {
     return this.model.subscribeToChanges(listener);
   }
 

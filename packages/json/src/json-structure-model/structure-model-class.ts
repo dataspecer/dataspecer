@@ -1,4 +1,4 @@
-import { StructureModelClass } from "@dataspecer/core/structure-model/model";
+import { StructureModelClass } from "@dataspecer/generators/structure-model/model";
 
 export class JsonStructureModelClass extends StructureModelClass {
     /**

@@ -1,6 +1,6 @@
 import { VisualModel } from "@dataspecer/visual-model";
-import { ClassesContextType } from "../../context/classes-context";
-import { ModelGraphContextType } from "../../context/model-context";
+import { ClassesContext } from "../../context/classes-context";
+import { UseModelGraphContextType } from "../../context/model-context";
 import {
   type BaseEntityDialogState,
   createEditBaseEntityDialogState,
@@ -41,8 +41,8 @@ export interface AttributeDialogState extends
   BaseEntityDialogState, BaseRelationshipDialogState<DataTypeRepresentative> { }
 
 export function createNewAttributeDialogState(
-  classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
+  classesContext: ClassesContext,
+  graphContext: UseModelGraphContextType,
   visualModel: VisualModel | null,
   language: string,
   defaultModelIdentifier: string | null,
@@ -50,7 +50,7 @@ export function createNewAttributeDialogState(
 ): AttributeDialogState {
 
   const allModels = semanticModelMapToCmeSemanticModel(
-    graphContext.models, visualModel,
+    classesContext.semanticModels, visualModel,
     configuration().defaultModelColor,
     identifier => t("model-service.model-label-from-id", identifier));
 
@@ -59,7 +59,7 @@ export function createNewAttributeDialogState(
   const rdfsLiteral = representRdfsLiteral();
 
   const allDomains = listRelationshipDomains(
-    classesContext, graphContext, allModels, labelResolver);
+    classesContext, allModels, labelResolver);
   sortRepresentatives(allDomains);
 
   const allRanges = listAttributeRanges();
@@ -88,11 +88,11 @@ export function createNewAttributeDialogState(
 
 function listAttributes(
   labelResolver: LabelResolver,
-  classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
+  classesContext: ClassesContext,
+  graphContext: UseModelGraphContextType,
   vocabularies: CmeSemanticModel[],
 ) {
-  const models = [...graphContext.models.values()];
+  const models = [...classesContext.semanticModels.values()];
 
   const owlThing = representOwlThing();
 
@@ -111,8 +111,8 @@ function listAttributes(
  * @throws InvalidState
  */
 export function createEditAttributeDialogState(
-  classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
+  classesContext: ClassesContext,
+  graphContext: UseModelGraphContextType,
   visualModel: VisualModel | null,
   language: string,
   model: InMemorySemanticModel,
@@ -129,7 +129,7 @@ export function createEditAttributeDialogState(
   //
 
   const allModels = semanticModelMapToCmeSemanticModel(
-    graphContext.models, visualModel,
+    classesContext.semanticModels, visualModel,
     configuration().defaultModelColor,
     identifier => t("model-service.model-label-from-id", identifier));
 
@@ -138,7 +138,7 @@ export function createEditAttributeDialogState(
   const rdfsLiteral = representRdfsLiteral();
 
   const allDomains = listRelationshipDomains(
-    classesContext, graphContext, allModels, labelResolver);
+    classesContext, allModels, labelResolver);
   sortRepresentatives(allDomains);
 
   const allRanges = listAttributeRanges();
@@ -149,7 +149,7 @@ export function createEditAttributeDialogState(
   // EntityState
 
   const entityState = createEditBaseEntityDialogState(
-    language, graphContext.models, allModels,
+    language, classesContext.semanticModels, allModels,
     { identifier: entity.id, model: model.getId() },
     range.iri ?? "", range.name, range.description,
     range.externalDocumentationUrl ?? "",
@@ -178,8 +178,8 @@ export function createEditAttributeDialogState(
  * @throws InvalidState
  */
 export function createAddAttributeDialogState(
-  classesContext: ClassesContextType,
-  graphContext: ModelGraphContextType,
+  classesContext: ClassesContext,
+  graphContext: UseModelGraphContextType,
   visualModel: VisualModel | null,
   language: string,
   entity: SemanticModelClass,
@@ -187,14 +187,14 @@ export function createAddAttributeDialogState(
 ): AttributeDialogState {
 
   const allModels = semanticModelMapToCmeSemanticModel(
-    graphContext.models, visualModel,
+    classesContext.semanticModels, visualModel,
     configuration().defaultModelColor,
     identifier => t("model-service.model-label-from-id", identifier));
 
   const rdfsLiteral = representRdfsLiteral();
 
   const allDomains = listRelationshipDomains(
-    classesContext, graphContext, allModels, labelResolver);
+    classesContext, allModels, labelResolver);
   sortRepresentatives(allDomains);
 
   const allRanges = listAttributeRanges();
@@ -203,7 +203,7 @@ export function createAddAttributeDialogState(
     labelResolver, classesContext, graphContext, allModels);
 
   const defaultModel = selectDefaultModelForAttribute(
-    entity.id, [...graphContext.models.values()], allModels);
+    entity.id, classesContext.semanticModelsList, allModels);
 
   // EntityState
 

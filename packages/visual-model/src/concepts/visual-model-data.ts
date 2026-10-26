@@ -1,4 +1,4 @@
-import { Entity, EntityIdentifier } from "../entity-model/entity.ts";
+import { Entity, EntityIdentifier } from "@dataspecer/core/entity-model";
 import { HexColor } from "./color.ts";
 import { VisualEntity } from "./visual-entity.ts";
 
@@ -25,15 +25,10 @@ export function isModelVisualInformation(
     return what.type.includes(VISUAL_MODEL_DATA_TYPE);
 }
 
-export function createVisualModelData(
-    value: {
-        identifier: EntityIdentifier,
-        representedModel: string;
-        color: HexColor | null;
-    },
-): VisualModelData {
-    return {
-        ...value,
-        type: [VISUAL_MODEL_DATA_TYPE],
-    }
+export function createVisualModelData(value: {
+    id: EntityIdentifier,
+    representedModel: string;
+    color: HexColor | null;
+}): VisualModelData {
+    return { ...value, type: [VISUAL_MODEL_DATA_TYPE] }
 }

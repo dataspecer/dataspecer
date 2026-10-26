@@ -1,15 +1,18 @@
 import { EntityIdentifier } from "../../../entity-model/entity.ts";
-import { Operation } from "../../operations/index.ts";
-import { SemanticModelClassProfile, SemanticModelRelationshipProfile } from "../concepts/index.ts";
+import type { Operation } from "@dataspecer/core/operation";
+import { ControlledVocabularyAssignment, SemanticModelClassProfile, SemanticModelRelationshipEndProfile, SemanticModelRelationshipProfile } from "../concepts/index.ts";
 
 export interface CreateSemanticModelClassProfile extends Operation {
 
   type: typeof CREATE_SEMANTIC_MODEL_CLASS_PROFILE;
 
-  entity: Omit<SemanticModelClassProfile, "id" | "type">;
+  /**
+   * Missing properties are filled with default values during execution.
+   */
+  entity: Partial<Omit<SemanticModelClassProfile, "type">> & Pick<SemanticModelClassProfile, "id">;
 }
 
-export const CREATE_SEMANTIC_MODEL_CLASS_PROFILE = "create-class-profile";
+export const CREATE_SEMANTIC_MODEL_CLASS_PROFILE = "https://schemas.dataspecer.com/semantic-model/operations/create-class-profile";
 
 export function isCreateSemanticModelClassProfile(operation: Operation)
   : operation is CreateSemanticModelClassProfile {
@@ -26,28 +29,45 @@ export interface ModifySemanticModelClassProfile extends Operation {
 
 }
 
-export const MODIFY_SEMANTIC_MODEL_CLASS_PROFILE = "modify-class-profile";
+export const MODIFY_SEMANTIC_MODEL_CLASS_PROFILE = "https://schemas.dataspecer.com/semantic-model/operations/update-class-profile";
 
 export function isModifySemanticModelClassProfile(operation: Operation)
   : operation is ModifySemanticModelClassProfile {
   return operation.type === MODIFY_SEMANTIC_MODEL_CLASS_PROFILE;
 }
 
+/**
+ * Relationship end as accepted by the create operation. Only the concept is
+ * required, all other properties are filled with default values during
+ * execution.
+ */
+export type NewSemanticModelRelationshipEndProfile =
+  Partial<SemanticModelRelationshipEndProfile> & Pick<SemanticModelRelationshipEndProfile, "concept">;
+
 export interface CreateSemanticModelRelationshipProfile extends Operation {
 
   type: typeof CREATE_SEMANTIC_MODEL_RELATIONSHIP_PROFILE;
 
-  entity: Omit<SemanticModelRelationshipProfile, "id" | "type">;
+  /**
+   * Missing properties are filled with default values during execution.
+   */
+  entity: Partial<Omit<SemanticModelRelationshipProfile, "type" | "ends">>
+    & Pick<SemanticModelRelationshipProfile, "id">
+    & { ends?: NewSemanticModelRelationshipEndProfile[] };
 
 }
 
-export const CREATE_SEMANTIC_MODEL_RELATIONSHIP_PROFILE = "create-relation-profile";
+export const CREATE_SEMANTIC_MODEL_RELATIONSHIP_PROFILE = "https://schemas.dataspecer.com/semantic-model/operations/create-relationship-profile";
 
 export function isCreateSemanticModelRelationshipProfile(operation: Operation)
   : operation is CreateSemanticModelRelationshipProfile {
   return operation.type === CREATE_SEMANTIC_MODEL_RELATIONSHIP_PROFILE;
 }
 
+/**
+ * If you modifying individual ends of the relationship profile, use
+ * `ModifySemanticModelRelationshipEndProfile` instead.
+ */
 export interface ModifySemanticModelRelationshipProfile extends Operation {
 
   type: typeof MODIFY_SEMANTIC_MODEL_RELATIONSHIP_PROFILE;
@@ -58,9 +78,69 @@ export interface ModifySemanticModelRelationshipProfile extends Operation {
 
 }
 
-export const MODIFY_SEMANTIC_MODEL_RELATIONSHIP_PROFILE = "modify-relation-profile";
+export const MODIFY_SEMANTIC_MODEL_RELATIONSHIP_PROFILE = "https://schemas.dataspecer.com/semantic-model/operations/update-relationship-profile";
 
 export function isModifySemanticModelRelationshipProfile(operation: Operation)
   : operation is ModifySemanticModelRelationshipProfile {
   return operation.type === MODIFY_SEMANTIC_MODEL_RELATIONSHIP_PROFILE;
+}
+
+export interface ModifySemanticModelRelationshipEndProfile extends Operation {
+
+  type: typeof MODIFY_SEMANTIC_MODEL_RELATIONSHIP_END_PROFILE;
+
+  identifier: EntityIdentifier;
+
+  /**
+   * Zero-based index of the end to modify.
+   */
+  endIndex: number;
+
+  end: Partial<SemanticModelRelationshipEndProfile>;
+
+}
+
+export const MODIFY_SEMANTIC_MODEL_RELATIONSHIP_END_PROFILE = "https://schemas.dataspecer.com/semantic-model/operations/update-relationship-end-profile";
+
+export function isModifySemanticModelRelationshipEndProfile(operation: Operation)
+  : operation is ModifySemanticModelRelationshipEndProfile {
+  return operation.type === MODIFY_SEMANTIC_MODEL_RELATIONSHIP_END_PROFILE;
+}
+
+export interface CreateControlledVocabularyAssignment extends Operation {
+  type: typeof CREATE_CONTROLLED_VOCABULARY_ASSIGNMENT;
+  /**
+   * Missing properties are filled with default values during execution.
+   */
+  entity: Partial<Omit<ControlledVocabularyAssignment, "type">>
+    & Pick<ControlledVocabularyAssignment, "id" | "classProfile" | "vocabulary" | "qualifier">;
+}
+
+export const CREATE_CONTROLLED_VOCABULARY_ASSIGNMENT = "https://schemas.dataspecer.com/semantic-model/operations/create-controlled-vocabulary-assignment";
+
+export function isCreateControlledVocabularyAssignment(op: Operation): op is CreateControlledVocabularyAssignment {
+  return op.type === CREATE_CONTROLLED_VOCABULARY_ASSIGNMENT;
+}
+
+export interface RemoveControlledVocabularyAssignment extends Operation {
+  type: typeof REMOVE_CONTROLLED_VOCABULARY_ASSIGNMENT;
+  identifier: EntityIdentifier;
+}
+
+export const REMOVE_CONTROLLED_VOCABULARY_ASSIGNMENT = "https://schemas.dataspecer.com/semantic-model/operations/delete-controlled-vocabulary-assignment";
+
+export function isRemoveControlledVocabularyAssignment(op: Operation): op is RemoveControlledVocabularyAssignment {
+  return op.type === REMOVE_CONTROLLED_VOCABULARY_ASSIGNMENT;
+}
+
+export interface ModifyControlledVocabularyAssignment extends Operation {
+  type: typeof MODIFY_CONTROLLED_VOCABULARY_ASSIGNMENT;
+  identifier: EntityIdentifier;
+  changes: Partial<Pick<ControlledVocabularyAssignment, "qualifier" | "replaces">>;
+}
+
+export const MODIFY_CONTROLLED_VOCABULARY_ASSIGNMENT = "https://schemas.dataspecer.com/semantic-model/operations/update-controlled-vocabulary-assignment";
+
+export function isModifyControlledVocabularyAssignment(op: Operation): op is ModifyControlledVocabularyAssignment {
+  return op.type === MODIFY_CONTROLLED_VOCABULARY_ASSIGNMENT;
 }

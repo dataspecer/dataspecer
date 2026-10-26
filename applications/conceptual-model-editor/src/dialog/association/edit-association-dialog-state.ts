@@ -22,6 +22,11 @@ import { DialogSemanticTracker } from "../../dialog-v2/dialog-semantic-tracker";
 import { semanticModelTrackerToCmeSemanticModel } from "../../dataspecer/cme-model/adapter";
 import { configuration, createLogger } from "../../application";
 import { LabelResolver } from "../../dependency-tracker";
+import {
+  createNoVisualColorDialogState,
+  createVisualColorDialogState,
+  type VisualColorDialogState,
+} from "../visual-color/visual-color-dialog-state";
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
 import {
   type SemanticModelRelationship,
@@ -33,7 +38,8 @@ const LOG = createLogger(import.meta.url);
 
 export interface AssociationDialogState extends
   BaseEntityDialogState,
-  BaseRelationshipDialogState<EntityRepresentative> { }
+  BaseRelationshipDialogState<EntityRepresentative>,
+  VisualColorDialogState { }
 
 export function createNewAssociationDialogState(
   visualModel: VisualModel | null,
@@ -73,6 +79,7 @@ export function createNewAssociationDialogState(
   return {
     ...entityState,
     ...relationshipState,
+    ...createNoVisualColorDialogState(),
   };
 }
 
@@ -147,5 +154,6 @@ export function createEditAssociationDialogState(
   return {
     ...entityState,
     ...relationshipState,
+    ...createVisualColorDialogState(visualModel, entity.id),
   };
 }

@@ -1,12 +1,13 @@
 import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
+import type { Transaction } from "@dataspecer/core/operation";
 import { EntityModel } from "../../entity-model/index.ts";
-import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL } from "../../model/known-models.ts";
+import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, RDFS_MODEL } from "../../model/known-models.ts";
 import { createRdfsModel, createSgovModel } from "../../semantic-model/simplified/index.ts";
 import { createInMemorySemanticModel } from "../../semantic-model/simplified/in-memory-semantic-model.ts";
 import { createVisualModel } from "../../semantic-model/simplified/visual-model.ts";
 import { PimStoreWrapper } from "../../semantic-model/v1-adapters/index.ts";
 import { VisualModel } from "@dataspecer/visual-model";
-import { BaseResource, Package, ResourceEditable } from "../resource/resource.ts";
+import { BaseResource, Package, ResourceEditable } from "@dataspecer/core/project-model/legacy";
 import { PackageService, SemanticModelPackageService } from "./package-service.ts";
 
 /**
@@ -80,6 +81,19 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
         });
     }
 
+    async applyTransactions(projectId: string, transactions: Transaction[]): Promise<void> {
+        const response = await this.httpFetch(this.getTransactionsUrl(projectId, "/apply"), {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ transactions }),
+        });
+        if (response.status < 200 || response.status >= 300) {
+            throw new Error(`Failed to apply transactions on the backend, status ${response.status}.`);
+        }
+    }
+
     async getResourceJsonData(id: string, blobId?: string): Promise<object | null> {
         const result = await this.httpFetch(this.getBlobUrl(id, blobId));
         return (result.status >= 200 && result.status < 300) ? (await result.json() as object) : null;
@@ -140,10 +154,23 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
             // @ts-ignore
             const modelSerialization = visualModel.serializeModel();
             const iri = visualModel.getId();
-            const name = modelSerialization.modelAlias ?? modelSerialization.alias;
+            const semanticLabel = modelSerialization.type === LOCAL_SEMANTIC_MODEL
+                ? modelSerialization.label as Record<string, string> | undefined
+                : undefined;
+            const name = semanticLabel
+                ? Object.values(semanticLabel)[0]
+                : modelSerialization.modelAlias ?? modelSerialization.alias;
+
+            if (modelSerialization.type === RDFS_MODEL) {
+                modelSerialization.label = {en: name};
+                delete modelSerialization.modelAlias;
+                delete modelSerialization.alias;
+            }
 
             const response = await this.httpFetch(this.getResourceUrl(iri));
-            const userMetadata = name ? { label: { en: name } } : {};
+            const userMetadata = semanticLabel
+                ? { label: semanticLabel }
+                : name ? { label: { en: name } } : {};
             if (response.status !== 200) {
                 const createdResponse = await this.httpFetch(this.getResourceUrl(packageId, true), {
                     method: "POST",
@@ -180,19 +207,27 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
             responseStatuses.add(updatedResponse.status);
         }
 
-        // Remove other models
+        // Remove other models.
+        //
+        // An empty `models`/`visualModels` is never a legitimate "the user
+        // removed every model" - a package always has at least its own
+        // primary semantic model - so it can only mean the caller failed to
+        // load its models before saving. Deleting on that basis would wipe
+        // every model resource in the package, so skip the cleanup instead.
         const modelIds = [...models, ...visualModels].map(model => model.getId());
-        const pckg = await this.getPackage(packageId);
-        for (const model of pckg.subResources!) {
-            if (model.types.some(t => [
-                LOCAL_VISUAL_MODEL,
-                "https://dataspecer.com/core/model-descriptor/sgov",
-                LOCAL_SEMANTIC_MODEL,
-                "https://dataspecer.com/core/model-descriptor/pim-store-wrapper"
-            ].includes(t))) {
-                if (!modelIds.includes(model.iri)) {
-                    // Remove model
-                    await this.deleteResource(model.iri);
+        if (modelIds.length > 0) {
+            const pckg = await this.getPackage(packageId);
+            for (const model of pckg.subResources!) {
+                if (model.types.some(t => [
+                    VISUAL_MODEL,
+                    QUERYABLE_MODEL,
+                    LOCAL_SEMANTIC_MODEL,
+                    RDFS_MODEL
+                ].includes(t))) {
+                    if (!modelIds.includes(model.iri)) {
+                        // Remove model
+                        await this.deleteResource(model.iri);
+                    }
                 }
             }
         }
@@ -243,6 +278,12 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
         return url;
     }
 
+    private getTransactionsUrl(projectIri: string, suffix: string = ""): string {
+        let url = this.backendUrl + "/transactions" + suffix;
+        url += "?" + "projectIri" + "=" + encodeURIComponent(projectIri);
+        return url;
+    }
+
     private async getFullJsonModel(resource: BaseResource): Promise<object> {
         const modelData = (await (await this.httpFetch(this.getBlobUrl(resource.iri).toString())).json()) as any;
         return { resource, ...modelData };
@@ -256,7 +297,7 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
             const name = resource.userMetadata.label?.en ?? resource.userMetadata.label?.cs;
 
             // Visual model
-            if (resource.types.includes(LOCAL_VISUAL_MODEL)) {
+            if (resource.types.includes(VISUAL_MODEL)) {
                 const modelData = (await (
                     await this.httpFetch(this.getBlobUrl(resource.iri).toString())
                 ).json()) as any;
@@ -266,7 +307,7 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
             }
 
             // SGOV model
-            if (resource.types.includes("https://dataspecer.com/core/model-descriptor/sgov")) {
+            if (resource.types.includes(QUERYABLE_MODEL)) {
                 const model = createSgovModel("https://slovník.gov.cz/sparql", this.httpFetch, resource.iri);
                 const modelData = (await (
                     await this.httpFetch(this.getBlobUrl(resource.iri).toString())
@@ -281,13 +322,13 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
                 const modelData = (await (
                     await this.httpFetch(this.getBlobUrl(resource.iri).toString())
                 ).json()) as any;
-                modelData.modelAlias = name;
+                modelData.label ??= resource.userMetadata.label ?? {};
                 const model = createInMemorySemanticModel().deserializeModel(modelData);
                 entityModels.push(model);
             }
 
             // Pim store wrapper
-            if (resource.types.includes("https://dataspecer.com/core/model-descriptor/pim-store-wrapper")) {
+            if (resource.types.includes(RDFS_MODEL)) {
                 const modelData = (await (
                     await this.httpFetch(this.getBlobUrl(resource.iri).toString())
                 ).json()) as any;
@@ -308,7 +349,7 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
         const constructedVisualModels: VisualModel[] = [];
         // todo: use more robust approach
         for (const modelDescriptor of modelDescriptors) {
-            if (modelDescriptor.type === "https://dataspecer.com/core/model-descriptor/sgov") {
+            if (modelDescriptor.type === QUERYABLE_MODEL) {
                 const model = createSgovModel("https://slovník.gov.cz/sparql", this.httpFetch);
                 await model.unserializeModel(modelDescriptor);
                 constructedEntityModels.push(model);
@@ -317,7 +358,7 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
                 constructedEntityModels.push(model);
             } else if (
                 modelDescriptor.type === "https://dataspecer.com/core/model-descriptor/visual-model" ||
-                modelDescriptor.type === LOCAL_VISUAL_MODEL
+                modelDescriptor.type === VISUAL_MODEL
             ) {
                 const model = createVisualModel(modelDescriptor.modelId).deserializeModel(modelDescriptor);
                 constructedVisualModels.push(model);
@@ -327,7 +368,7 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
             ) {
                 const model = createInMemorySemanticModel().deserializeModel(modelDescriptor);
                 constructedEntityModels.push(model);
-            } else if (modelDescriptor.type === "https://dataspecer.com/core/model-descriptor/pim-store-wrapper") {
+            } else if (modelDescriptor.type === RDFS_MODEL) {
                 const model = new PimStoreWrapper(modelDescriptor.pimStore, modelDescriptor.id, modelDescriptor.alias);
                 model.fetchFromPimStore();
                 constructedEntityModels.push(model);

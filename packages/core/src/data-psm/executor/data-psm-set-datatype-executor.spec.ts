@@ -9,7 +9,7 @@ import * as PSM from "../data-psm-vocabulary.ts";
 
 test("Update data PSM attribute datatype.", async () => {
   const operation = new DataPsmSetDatatype();
-  operation.dataPsmAttribute = "http://attribute";
+  operation.entityId = "http://attribute";
   operation.dataPsmDatatype = "http://type";
 
   const before = {

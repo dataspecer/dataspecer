@@ -1,0 +1,146 @@
+import type { LanguageString } from "../core/core-resource.ts";
+import { generateEntityId } from "../entity-model/entity.ts";
+import type { ModelIdentifier } from "../model/model.ts";
+import { Operation, generateOperationId } from "../operation/operation.js";
+
+/**
+ * @see {@link RemoveModelOperation}
+ */
+export const RemoveModelOperationType = "https://schemas.dataspecer.com/project-model/operations/delete-model" as const;
+
+/**
+ * Operation that ensures a model is removed from the project structure.
+ *
+ * If the model does not exist or was already removed, the operation is
+ * ignored. If the removed model is a package, all of its submodels are removed
+ * recursively as well.
+ */
+export interface RemoveModelOperation extends Operation {
+  type: typeof RemoveModelOperationType;
+
+  /**
+   * Model to be removed by its identifier.
+   */
+  modelId: ModelIdentifier;
+}
+
+export function createRemoveModelOperation(modelId: ModelIdentifier): RemoveModelOperation {
+  if (!(typeof modelId === "string" && modelId.length > 0)) {
+    throw new Error("Invalid model identifier.");
+  }
+
+  return {
+    id: generateOperationId(),
+    type: RemoveModelOperationType,
+    modelId,
+  };
+}
+
+export function isRemoveModelOperation(operation: Operation): operation is RemoveModelOperation {
+  return operation.type === RemoveModelOperationType;
+}
+
+/**
+ * @see {@link CreateModelOperation}
+ */
+export const CreateModelOperationType = "https://schemas.dataspecer.com/project-model/operations/create-model" as const;
+
+/**
+ * Operation that ensures a model exists under the given package.
+ *
+ * This operation manipulates only the project structure metadata and does not
+ * deal with model blobs.
+ */
+export interface CreateModelOperation extends Operation {
+  type: typeof CreateModelOperationType;
+
+  /**
+   * Parent package identifier where the model should be created.
+   */
+  parentPackageId: ModelIdentifier;
+
+  /**
+   * Identifier of the model to be created.
+   */
+  modelId: ModelIdentifier;
+
+  /**
+   * Type of the model to create.
+   */
+  modelType: string;
+
+  label?: LanguageString;
+  description?: LanguageString;
+}
+
+/**
+ * Creates a new operation that will create a new model. ID of such model is
+ * pre-generated, but can be overridden by the caller.
+ *
+ * You need to specify model type.
+ *
+ * Usually you do not want to use this operation directly as you also need to
+ * initialize the model with its own operations. Therefore, use functions that
+ * generate both the model and the initial entities in the model at once.
+ */
+export function createCreateModelOperation(parentPackageId: ModelIdentifier, modelType: string, modelId?: ModelIdentifier): CreateModelOperation {
+  return {
+    id: generateOperationId(),
+    type: CreateModelOperationType,
+    parentPackageId,
+    modelId: modelId ?? generateEntityId(),
+    modelType,
+  };
+}
+
+export function isCreateModelOperation(operation: Operation): operation is CreateModelOperation {
+  return operation.type === CreateModelOperationType;
+}
+
+export type ProjectModelStructureOperation = RemoveModelOperation | CreateModelOperation;
+
+/**
+ * @see {@link CreateProjectOperation}
+ */
+export const CreateProjectOperationType = "https://schemas.dataspecer.com/project-model/operations/create-project" as const;
+
+/**
+ * Operation that ensures a project exists.
+ *
+ * A project is the unit operations are recorded in, so this one is dispatched
+ * to the project model of a project that does not exist yet, as the first
+ * operation of its history.
+ *
+ * The location of a project is fixed, hence only its identifier is needed.
+ * Metadata such as the label are set by subsequent operations.
+ *
+ * If the project already exists, the operation is ignored, as required by the
+ * {@link Operation} contract.
+ */
+export interface CreateProjectOperation extends Operation {
+  type: typeof CreateProjectOperationType;
+
+  /**
+   * Identifier of the project to be created.
+   */
+  projectId: ModelIdentifier;
+
+  label?: LanguageString;
+  description?: LanguageString;
+}
+
+export function createCreateProjectOperation(projectId: ModelIdentifier): CreateProjectOperation {
+  if (!(typeof projectId === "string" && projectId.length > 0)) {
+    throw new Error("Invalid project identifier.");
+  }
+
+  return {
+    id: generateOperationId(),
+    type: CreateProjectOperationType,
+    projectId,
+  };
+}
+
+export function isCreateProjectOperation(operation: Operation): operation is CreateProjectOperation {
+  return operation.type === CreateProjectOperationType;
+}

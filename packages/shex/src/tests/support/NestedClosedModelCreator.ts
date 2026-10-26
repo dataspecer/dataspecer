@@ -5,7 +5,7 @@ import {
     StructureModelProperty,
     StructureModelPrimitiveType,
     StructureModelSchemaRoot,
-  } from "@dataspecer/core/structure-model/model";
+  } from "@dataspecer/generators/structure-model/model";
   import ModelCreator from "./ModelCreatorInterface.ts";
 
 class NestedClosedModelCreator implements ModelCreator{
@@ -227,13 +227,13 @@ class NestedClosedModelCreator implements ModelCreator{
       class1.structureSchema = null;
       class1.technicalLabel = "adresa";
       class1.instancesSpecifyTypes = "ALWAYS";
-  
+
       var root1 : StructureModelSchemaRoot;
       root1 = new StructureModelSchemaRoot();
       root1.classes = [class1];
-  
+
       model.roots = [root1];
-  
+
     return model;
   }
 }

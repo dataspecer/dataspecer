@@ -1,61 +1,48 @@
-import { StructureEditorBackendService } from "@dataspecer/backend-utils/connectors/specification";
 import { getDefaultConfiguration, mergeConfigurations } from "@dataspecer/core/configuration/utils";
-import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
 import { createTheme, CssBaseline, ThemeProvider } from "@mui/material";
-import { ThemeProvider as NextThemesProvider, useTheme as useNextTheme } from "next-themes";
 import { SnackbarProvider } from "notistack";
-import React, { createContext, StrictMode, useCallback, useEffect, useMemo, useState } from "react";
+import React, { createContext, StrictMode, useEffect, useMemo, useState } from "react";
 import { BrowserRouter, useRoutes } from "react-router-dom";
+import { AppThemeProvider, useAppTheme } from "./components/theme-context";
 import { getDefaultConfigurators } from "./configurators";
 import EditorPage from "./editor/components/App";
 import ManagerPage from "./manager/app";
 import { Specification } from "./manager/routes/specification/specification";
 
-export const BackendConnectorContext = React.createContext(null as unknown as StructureEditorBackendService);
-
-export const RefreshContext = React.createContext(null as unknown as () => void);
 /**
  * Contains merged default configuration from the source code and the configuration from the backend.
  */
-// @ts-ignore
-export const DefaultConfigurationContext = createContext<object>(null);
+export const DefaultConfigurationContext = createContext<object>(null as unknown as object);
 
-const useDefaultConfiguration = (backendConnector: StructureEditorBackendService) => {
+const useDefaultConfiguration = () => {
   const [context, setContext] = useState<object>(() => getDefaultConfiguration(getDefaultConfigurators()));
   useEffect(() => {
-    backendConnector
-      .readDefaultConfiguration()
+    fetch(import.meta.env.VITE_BACKEND + "/default-configuration")
+      .then((response) => response.json())
       .then((configuration) => setContext(mergeConfigurations(getDefaultConfigurators(), getDefaultConfiguration(getDefaultConfigurators()), configuration)));
-  }, [backendConnector]);
+  }, []);
   return context;
 };
 
 export const PACKAGE_ROOT = "http://dataspecer.com/packages/local-root";
 
 export const Application = () => {
-  const [backendConnector, setBackendConnector] = useState(new StructureEditorBackendService(import.meta.env.VITE_BACKEND, httpFetch, PACKAGE_ROOT));
-  const refresh = useCallback(() => setBackendConnector(new StructureEditorBackendService(import.meta.env.VITE_BACKEND, httpFetch, PACKAGE_ROOT)), []);
-
-  const defaultConfiguration = useDefaultConfiguration(backendConnector);
+  const defaultConfiguration = useDefaultConfiguration();
 
   return (
     <StrictMode>
-      <NextThemesProvider attribute="class" defaultTheme="system" enableSystem>
+      <AppThemeProvider>
         <MuiThemeWrapper>
           <SnackbarProvider maxSnack={3}>
-            <RefreshContext.Provider value={refresh}>
-              <BackendConnectorContext.Provider value={backendConnector}>
-                <DefaultConfigurationContext.Provider value={defaultConfiguration}>
-                  <CssBaseline />
-                  <BrowserRouter basename={(import.meta.env.VITE_BASE_PATH ?? "") + "/"}>
-                    <MainRouter />
-                  </BrowserRouter>
-                </DefaultConfigurationContext.Provider>
-              </BackendConnectorContext.Provider>
-            </RefreshContext.Provider>
+            <DefaultConfigurationContext.Provider value={defaultConfiguration}>
+              <CssBaseline />
+              <BrowserRouter basename={(import.meta.env.VITE_BASE_PATH ?? "") + "/"}>
+                <MainRouter />
+              </BrowserRouter>
+            </DefaultConfigurationContext.Provider>
           </SnackbarProvider>
         </MuiThemeWrapper>
-      </NextThemesProvider>
+      </AppThemeProvider>
     </StrictMode>
   );
 };
@@ -79,10 +66,10 @@ const MainRouter = () => {
 };
 
 /**
- * Wrapper that provides MUI theme based on the next-themes theme mode
+ * Wrapper that provides MUI theme based on the selected color scheme
  */
 const MuiThemeWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { resolvedTheme } = useNextTheme();
+  const { resolvedTheme } = useAppTheme();
   const mode = resolvedTheme === "dark" ? "dark" : "light";
 
   const theme = useMemo(

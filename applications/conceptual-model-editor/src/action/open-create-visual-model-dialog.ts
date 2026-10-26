@@ -1,11 +1,11 @@
-import { WritableVisualModel } from "@dataspecer/visual-model";
-import { ModelGraphContextType, UseModelGraphContextType } from "../context/model-context";
+import { VisualModel } from "@dataspecer/visual-model";
+import { UseModelGraphContextType } from "../context/model-context";
 import { DialogApiContextType } from "../dialog/dialog-service";
 import { Options } from "../application";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { createNewVisualModelAction } from "./create-new-visual-model-from-source-visual-model";
-import { QueryParamsContextType } from "@/context/query-params-context";
-import { createVisualModelDialog } from "@/dialog/visual-model/create-visual-model/edit-visual-model-dialog";
+import { QueryParamsContextType } from "../context/query-params-context";
+import { createVisualModelDialog } from "../dialog/visual-model/create-visual-model/edit-visual-model-dialog";
 import { changeVisualModelAction } from "./change-visual-model";
 import {
   createEditVisualModelDialogState,
@@ -21,10 +21,10 @@ export function openCreateVisualModelDialogAction(
   notifications: UseNotificationServiceWriterType,
   options: Options,
   dialogs: DialogApiContextType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   useGraph: UseModelGraphContextType,
   queryParamsContext: QueryParamsContextType,
-  visualModel: WritableVisualModel,
+  visualModel: VisualModel | null,
   nodes: string[],
   edges: string[],
   shouldSwitchToCreatedModel: boolean,
@@ -50,8 +50,10 @@ export function openCreateVisualModelDialogAction(
       });
     }
   };
-
+  console.log("1");
   const state = createEditVisualModelDialogState(
     options.language, null, options.visualOptions);
+  console.log("2");
   dialogs?.openDialog(createVisualModelDialog(state, onConfirm));
+  console.log("3");
 }

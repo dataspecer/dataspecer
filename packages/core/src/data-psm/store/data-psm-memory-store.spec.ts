@@ -14,15 +14,16 @@ test("Create data PSM schema with class and attribute.", async () => {
   const dataPsmSchema = new Operations.DataPsmCreateSchema();
   dataPsmSchema.dataPsmHumanLabel = { en: "Test schema." };
   const dataPsmSchemaChange = store.applyOperation(dataPsmSchema);
-  expect(dataPsmSchemaChange.operation.iri).toBeDefined();
+  expect(dataPsmSchemaChange.operation.id).toBeDefined();
   expect(dataPsmSchemaChange.created).toEqual(["http://localhost/schema/1"]);
   expect(dataPsmSchemaChange.changed).toEqual([]);
   expect(dataPsmSchemaChange.deleted).toEqual([]);
 
   const dataPsmClass = new Operations.DataPsmCreateClass();
   dataPsmClass.dataPsmInterpretation = "http://localhost/cim/TheClass";
+  dataPsmClass.dataPsmNewIri = "http://localhost/class/3";
   const dataPsmClassChange = store.applyOperation(dataPsmClass);
-  expect(dataPsmClassChange.operation.iri).toBeDefined();
+  expect(dataPsmClassChange.operation.id).toBeDefined();
   expect(dataPsmClassChange.created).toEqual(["http://localhost/class/3"]);
   expect(dataPsmClassChange.changed).toEqual(["http://localhost/schema/1"]);
   expect(dataPsmSchemaChange.deleted).toEqual([]);
@@ -31,8 +32,9 @@ test("Create data PSM schema with class and attribute.", async () => {
   dataPsmAttribute.dataPsmDatatype = "xsd:string";
   dataPsmAttribute.dataPsmInterpretation = "http://localhost/cim/TheProperty";
   dataPsmAttribute.dataPsmOwner = "http://localhost/class/3";
+  dataPsmAttribute.dataPsmNewIri = "http://localhost/attribute/5";
   const dataPsmAttributeChange = store.applyOperation(dataPsmAttribute);
-  expect(dataPsmAttributeChange.operation.iri).toBeDefined();
+  expect(dataPsmAttributeChange.operation.id).toBeDefined();
   expect(dataPsmAttributeChange.created).toEqual([
     "http://localhost/attribute/5",
   ]);
@@ -94,22 +96,23 @@ test("Create and delete data PSM class", async () => {
 
   const pimSchema = new Operations.DataPsmCreateSchema();
   const pimSchemaChange = store.applyOperation(pimSchema);
-  expect(pimSchemaChange.operation.iri).toBeDefined();
+  expect(pimSchemaChange.operation.id).toBeDefined();
   expect(pimSchemaChange.created).toEqual(["http://localhost/schema/1"]);
   expect(pimSchemaChange.changed).toEqual([]);
   expect(pimSchemaChange.deleted).toEqual([]);
 
   const pimCreate = new Operations.DataPsmCreateClass();
+  pimCreate.dataPsmNewIri = "http://localhost/class/3";
   const pimCreateChange = store.applyOperation(pimCreate);
-  expect(pimCreateChange.operation.iri).toBeDefined();
+  expect(pimCreateChange.operation.id).toBeDefined();
   expect(pimCreateChange.created).toEqual(["http://localhost/class/3"]);
   expect(pimCreateChange.changed).toEqual(["http://localhost/schema/1"]);
   expect(pimSchemaChange.deleted).toEqual([]);
 
   const pimDelete = new Operations.DataPsmDeleteClass();
-  pimDelete.dataPsmClass = "http://localhost/class/3";
+  pimDelete.entityId = "http://localhost/class/3";
   const pimDeleteChange = store.applyOperation(pimDelete);
-  expect(pimDeleteChange.operation.iri).toBeDefined();
+  expect(pimDeleteChange.operation.id).toBeDefined();
   expect(pimDeleteChange.changed).toEqual(["http://localhost/schema/1"]);
   expect(pimDeleteChange.deleted).toEqual(["http://localhost/class/3"]);
 

@@ -1,5 +1,5 @@
 import { isVisualProfileRelationship, WritableVisualModel } from "@dataspecer/visual-model";
-import { CmeReference, isCmeReferenceEqual } from "@/dataspecer/cme-model/model";
+import { CmeReference, isCmeReferenceEqual } from "../../../dataspecer/cme-model/model";
 
 /**
  * Propagate changes in the list of profiles to the visual model.
@@ -33,8 +33,8 @@ export function updateVisualNodeProfiles(
         visualModel.addVisualProfileRelationship({
           entity: profile.identifier,
           model: profile.model,
-          visualSource: entityVisual.identifier,
-          visualTarget: visual.identifier,
+          visualSource: entityVisual.id,
+          visualTarget: visual.id,
           waypoints: [],
         });
       }
@@ -51,7 +51,7 @@ export function updateVisualNodeProfiles(
         continue;
       }
       if (removeSet.has(visual.entity)) {
-        visualModel.deleteVisualEntity(visual.identifier);
+        visualModel.deleteVisualEntity(visual.id);
       }
     }
   }

@@ -1,0 +1,38 @@
+{
+  "name": "@dataspecer/model-store",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "prebuild": "node -e \"fs.rmSync('lib', { recursive: true, force: true })\""
+  },
+  "exports": {
+    ".": "./lib/index.js",
+    "./implementation": "./lib/implementation/index.js",
+    "./interfaces": "./lib/interfaces/index.js",
+    "./react": "./lib/react/index.js"
+  },
+  "dependencies": {
+    "@dataspecer/controlled-vocabulary-model": "*",
+    "@dataspecer/core": "*",
+    "@dataspecer/core-v2": "*",
+    "@dataspecer/sgov-adapter": "*",
+    "@dataspecer/utilities": "*",
+    "@dataspecer/visual-model": "*",
+    "uuid": "^14.0.2"
+  },
+  "peerDependencies": {
+    "react": "^19.2.4"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
+  }
+}

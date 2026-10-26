@@ -25,10 +25,10 @@ export function executeDataPsmDeleteExternalRoot(
   }
 
 
-  const classToDelete = reader.readResource(operation.dataPsmExternalRoot);
+  const classToDelete = reader.readResource(operation.entityId);
   if (!DataPsmExternalRoot.is(classToDelete)) {
     return CoreExecutorResult.createError(
-      `Missing class '${operation.dataPsmExternalRoot}' to delete.`
+      `Missing class '${operation.entityId}' to delete.`
     );
   }
 
@@ -37,11 +37,11 @@ export function executeDataPsmDeleteExternalRoot(
     [
       {
         ...schema,
-        dataPsmRoots: removeValue(operation.dataPsmExternalRoot, schema.dataPsmRoots),
-        dataPsmParts: removeValue(operation.dataPsmExternalRoot, schema.dataPsmParts),
+        dataPsmRoots: removeValue(operation.entityId, schema.dataPsmRoots),
+        dataPsmParts: removeValue(operation.entityId, schema.dataPsmParts),
       } as CoreResource,
     ],
-    [operation.dataPsmExternalRoot]
+    [operation.entityId]
   );
 }
 

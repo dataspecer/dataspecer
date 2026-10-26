@@ -7,7 +7,7 @@ import { isVisualNode, isVisualRelationship, VisualNode } from "@dataspecer/visu
 import { isSemanticModelClass, isSemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
 import { addEntityNeighborhoodToVisualModelAction } from "./add-entity-neighborhood-to-visual-model";
 import { ActionsTestSuite, notificationMockup, TestedSemanticConnectionType } from "./test/actions-test-suite";
-import { getDomainAndRangeConcepts } from "@/util/relationship-utils";
+import { getDomainAndRangeConcepts } from "../util/relationship-utils";
 
 test("Test class neighborhood- no relationships", async () => {
   const {
@@ -261,8 +261,8 @@ test("Test relationship neighborhood - add attribute - on fully connected graph 
   expect(domainNode.content.length).toBe(1);
   expect(visualEntities.length).toBe(1);
   // See what happens if the node is visible, but without the attribute
-  visualModel.updateVisualEntity(domainNode.identifier, { content: [] });
-  expect((visualModel.getVisualEntity(domainNode.identifier) as VisualNode).content.length).toBe(0);    // Sanity check
+  visualModel.updateVisualEntity(domainNode.id, { content: [] });
+  expect((visualModel.getVisualEntity(domainNode.id) as VisualNode).content.length).toBe(0);    // Sanity check
   await addEntityNeighborhoodToVisualModelAction(
     notificationMockup, classesContext, graph, diagram, visualModel, createdAttribute.identifier);
   expect([...visualModel.getVisualEntities().entries()].length).toBe(1);

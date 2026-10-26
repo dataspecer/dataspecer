@@ -1,18 +1,29 @@
-import { DataSpecification } from "@dataspecer/backend-utils/connectors/specification";
-import { BaseResource, Package } from "@dataspecer/core-v2/project";
+import type { EntityRecord } from "@dataspecer/core/entity-model";
+import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
+import type { ModelIdentifier } from "@dataspecer/core/model";
+import { createManagerModelStore, type DefaultFrontendModelStore } from "@dataspecer/model-store/implementation";
+import { ModelStoreContext } from "@dataspecer/model-store/react";
+import { type ProjectModelEntity } from "@dataspecer/core/project-model";
+import type { DataSpecification } from "@dataspecer/specification/specification";
 import { getDataSpecification } from "@dataspecer/specification/specification";
-import { createContext, FC, useContext, useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import { BackendConnectorContext } from "../../../application";
-import { modelRepository } from "../../../generators/configuration/provided-configuration";
-import { DocumentationSpecification } from "./documentation-specification";
 import { Box, CircularProgress, Container, Typography } from "@mui/material";
+import { createContext, FC, useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { CachedModelRepository } from "@dataspecer/specification/model-repository";
+import { useSearchParams } from "react-router-dom";
+import { DocumentationSpecification } from "./documentation-specification";
 
-export const SpecificationContext = createContext<[DataSpecification & Package, (update: DataSpecification & Package) => void]>(null);
+export const SpecificationContext = createContext<DataSpecification>(null);
 
-export const AllSpecificationsContext = createContext<Record<string, BaseResource>>(null);
+export const PROJECT_MODEL_ID: ModelIdentifier = "_project_model";
+
+/**
+ * Accesses the manager's model store (provided via {@link ModelStoreContext})
+ * typed for write access (transactions), as opposed to {@link useModelStoreEntity}
+ * which only needs read access.
+ */
+export function useModelStore(): DefaultFrontendModelStore {
+  return useContext(ModelStoreContext) as DefaultFrontendModelStore;
+}
 
 /**
  * There could be more types of specifications. This component decides which one
@@ -23,44 +34,60 @@ export const Specification: FC = () => {
   const [searchParams] = useSearchParams();
   const dataSpecificationIri = searchParams.get("dataSpecificationIri");
 
-  const connector = useContext(BackendConnectorContext);
+  const [specification, updateSpecification] = useState<DataSpecification>(null);
 
-  const contextForSpecificationContext = useState(null);
-  const updateSpecification = contextForSpecificationContext[1];
+  const [modelStore, setModelStore] = useState<DefaultFrontendModelStore>(null);
 
   useEffect(() => {
     (async () => {
-      const cachedModelRepository = new CachedModelRepository(modelRepository);
-      const model = await cachedModelRepository.getModelById(dataSpecificationIri as string);
-      const packageModel = await model?.asPackageModel();
-      const dataSpecification = packageModel ? await getDataSpecification(packageModel) : undefined;
-      updateSpecification(dataSpecification);
+      const modelStore = createManagerModelStore({
+        projectId: dataSpecificationIri,
+        backendUrl: import.meta.env.VITE_BACKEND,
+        httpFetch,
+      });
+
+      await modelStore.initialize();
+      await modelStore.waitForModelsToLoad();
+
+      // Autosave: persist changed models to the backend after every fully
+      // executed operation (commit, undo, redo).
+      modelStore.subscribeToTransactionCommit(() => {
+        modelStore.saveByOverride().catch((error) => console.error("Failed to save models.", error));
+      });
+
+      setModelStore(modelStore);
+
+      const reloadSpecification = () => {
+        const allEntities = modelStore.getAllEntities();
+        const projectModel = allEntities[PROJECT_MODEL_ID] as EntityRecord<ProjectModelEntity>;
+        const rootModel = allEntities[dataSpecificationIri as string] || null;
+
+        const dataSpecification = getDataSpecification(dataSpecificationIri, projectModel, rootModel);
+        updateSpecification(dataSpecification);
+      };
+      reloadSpecification();
+      modelStore.subscribeToEntityChanges(reloadSpecification);
     })();
   }, [dataSpecificationIri, updateSpecification]);
 
-  const [allSpecifications, setAllSpecifications] = useState<Record<string, BaseResource>>(null);
-  useEffect(() => {
-    connector
-      .getPackage("http://dataspecer.com/packages/local-root")
-      .then((result) => setAllSpecifications(Object.fromEntries(result.subResources.map((resource) => [resource.iri, resource]))));
-  }, [connector]);
-
-  if (contextForSpecificationContext[0] && allSpecifications) {
+  if (specification && modelStore) {
     return (
-      <SpecificationContext.Provider value={contextForSpecificationContext}>
-        <AllSpecificationsContext.Provider value={allSpecifications}>
+      <SpecificationContext.Provider value={specification}>
+        <ModelStoreContext.Provider value={modelStore}>
           <DocumentationSpecification />
-        </AllSpecificationsContext.Provider>
+        </ModelStoreContext.Provider>
       </SpecificationContext.Provider>
     );
   } else {
-    return <Container>
-    <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" minHeight="50vh" gap={2}>
-      <CircularProgress />
-      <Typography variant="h6" color="textSecondary">
-        {t("loading specification")}
-      </Typography>
-    </Box>
-  </Container>;
+    return (
+      <Container>
+        <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" minHeight="50vh" gap={2}>
+          <CircularProgress />
+          <Typography variant="h6" color="textSecondary">
+            {t("loading specification")}
+          </Typography>
+        </Box>
+      </Container>
+    );
   }
 };

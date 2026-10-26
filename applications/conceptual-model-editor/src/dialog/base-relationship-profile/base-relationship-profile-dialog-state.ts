@@ -11,7 +11,7 @@ import {
 } from "../utilities/dialog-utilities";
 import { validationNoProblem, validationNotEvaluated, ValidationState } from "../utilities/validation-utilities";
 import { validateBaseRelationshipDialogState } from "../base-relationship/base-relationship-dialog-validation";
-import { CmeRelationshipProfileMandatoryLevel } from "@/dataspecer/cme-model/model";
+import { CmeRelationshipProfileMandatoryLevel } from "../../dataspecer/cme-model/model";
 
 const LOG = createLogger(import.meta.url);
 

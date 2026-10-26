@@ -8,10 +8,13 @@ import { getCMELink } from "@/known-models";
 import { BetterModalProps } from "@/lib/better-modal";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { TagField, parseTags } from "@/components/tag-field";
+import { packageService } from "@/package";
 
-export const Profile = ({ isOpen, resolve, iri }: { iri: string } & BetterModalProps<boolean>) => {
+export const Profile = ({ isOpen, resolve, iri, defaultTag }: { iri: string; defaultTag?: string } & BetterModalProps<boolean>) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
+  const [tags, setTags] = useState(defaultTag ?? "");
 
   const formSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -59,6 +62,10 @@ export const Profile = ({ isOpen, resolve, iri }: { iri: string } & BetterModalP
       }
 
       const result = await response.json();
+      const selectedTags = parseTags(tags);
+      if (selectedTags.length > 0) {
+        await packageService.updatePackage(result.packageIri, { userMetadata: { tags: selectedTags } });
+      }
 
       // Redirect to CME with the created profile
       window.location.href = getCMELink(result.packageIri, result.viewIri);
@@ -111,6 +118,7 @@ export const Profile = ({ isOpen, resolve, iri }: { iri: string } & BetterModalP
               </Label>
               <Input id="base-url" name="base-url" placeholder={t("form.base-iri.instruction")} defaultValue="https://example.com/profile/vocabulary#" />
             </div>
+            <TagField value={tags} onChange={setTags} />
             {/* <div className="grid gap-2">
               <Label htmlFor="documentation-url">{t("form.documentation-base-url.name")}</Label>
               <Input id="documentation-url" name="documentation-url" placeholder={t("form.documentation-base-url.instruction")} defaultValue="https://example.com/profile/" />

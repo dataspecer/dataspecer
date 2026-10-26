@@ -24,6 +24,9 @@ export async function fetchRdfQuads(
     },
   };
   const response = await httpFetch(url, options);
+  if (response.status < 200 || response.status >= 300) {
+    throw new Error(`Failed to fetch "${url}": HTTP ${response.status} ${response.statusText}.`);
+  }
   const contentType = getContentType(response);
 
   let targetMimeType = asMimeType ?? contentType;

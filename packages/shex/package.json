@@ -11,20 +11,19 @@
   "main": "lib/index.js",
   "dependencies": {
     "@dataspecer/core": "*",
-    "@rdfjs/parser-n3": "^2.0.1",
-    "@shexjs/neighborhood-rdfjs": "^1.0.0-alpha.29",
-    "@shexjs/parser": "^1.0.0-alpha.28",
-    "@shexjs/validator": "^1.0.0-alpha.29",
-    "json-schema-faker": "^0.5.3",
-    "jsonld": "^8.3.1",
+    "@dataspecer/generators": "^0.0.0",
+    "@rdfjs/parser-n3": "^2.2.0",
+    "@shexjs/neighborhood-rdfjs": "^1.0.0-alpha.33",
+    "@shexjs/parser": "^1.0.0-alpha.33",
+    "@shexjs/validator": "^1.0.0-alpha.33",
     "md5": "^2.3.0",
-    "n3": "^1.25.1",
-    "rdf-ext": "^2.2.0"
+    "n3": "^2.13.7",
+    "rdf-ext": "^2.6.0"
   },
   "devDependencies": {
-    "@types/n3": "^1.24.2",
-    "@types/rdf-ext": "^2.0.1",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.7"
+    "@types/n3": "^1.26.4",
+    "@types/rdf-ext": "^2.5.2",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
   }
 }

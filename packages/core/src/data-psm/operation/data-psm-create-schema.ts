@@ -1,14 +1,14 @@
-import {
-  CoreOperation,
-  CoreOperationResult,
-  CoreResource,
-  CoreTyped,
-  LanguageString,
-} from "../../core/index.ts";
+import { DataPsmOperationResult } from "./data-psm-operation-result.ts";
+import { generateOperationId, type Operation } from "../../operation/index.ts";
+import { LanguageString } from "../../core/index.ts";
 import * as PSM from "../data-psm-vocabulary.ts";
 
-export class DataPsmCreateSchema extends CoreOperation {
+export class DataPsmCreateSchema implements Operation {
   static readonly TYPE = PSM.CREATE_SCHEMA;
+
+  id: string;
+
+  type: string;
 
   /**
    * IRI of the newly created object.
@@ -20,16 +20,16 @@ export class DataPsmCreateSchema extends CoreOperation {
   dataPsmHumanDescription: LanguageString | null = null;
 
   constructor() {
-    super();
-    this.types.push(DataPsmCreateSchema.TYPE);
+    this.id = generateOperationId();
+    this.type = DataPsmCreateSchema.TYPE;
   }
 
-  static is(resource: CoreResource | null): resource is DataPsmCreateSchema {
-    return resource?.types.includes(DataPsmCreateSchema.TYPE);
+  static is(operation: Operation | null | undefined): operation is DataPsmCreateSchema {
+    return operation?.type === DataPsmCreateSchema.TYPE;
   }
 }
 
-export class DataPsmCreateSchemaResult extends CoreOperationResult {
+export class DataPsmCreateSchemaResult extends DataPsmOperationResult {
   static readonly TYPE = PSM.CREATE_SCHEMA_RESULT;
 
   readonly createdDataPsmSchema: string;
@@ -40,7 +40,7 @@ export class DataPsmCreateSchemaResult extends CoreOperationResult {
     this.createdDataPsmSchema = dataPsmSchema;
   }
 
-  static is(resource: CoreTyped | null): resource is DataPsmCreateSchemaResult {
-    return resource?.types.includes(DataPsmCreateSchemaResult.TYPE);
+  static is(result: DataPsmOperationResult | null | undefined): result is DataPsmCreateSchemaResult {
+    return result?.types.includes(DataPsmCreateSchemaResult.TYPE) ?? false;
   }
 }

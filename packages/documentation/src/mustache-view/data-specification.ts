@@ -1,5 +1,5 @@
-import { ConceptualModelComplexType } from "@dataspecer/core/conceptual-model/model/conceptual-model-type";
-import { filterByStructural } from "@dataspecer/core/conceptual-model/transformation/filter-by-structural";
+import { ConceptualModelComplexType } from "@dataspecer/generators/conceptual-model/model/conceptual-model-type";
+import { filterByStructural } from "@dataspecer/generators/conceptual-model/transformation/filter-by-structural";
 import { assertNot } from "@dataspecer/core/core/utilities/assert";
 import { DataSpecificationSchema } from "@dataspecer/core/data-specification/model";
 import { getArtifactsView } from "./artifacts.ts";

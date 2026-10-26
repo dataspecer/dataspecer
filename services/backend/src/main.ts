@@ -1,18 +1,21 @@
-import { PrismaClient } from "@prisma/client";
+import { createDatabase } from "./database/database.ts";
+import { DatabaseSync } from "node:sqlite";
 import cors from "cors";
 import express from "express";
 import multer from "multer";
 import configuration from "./configuration.ts";
-import { Migrate } from "./migrations/migrate.ts";
+import { migrateDatabase } from "./migration-utils/migrate-database.ts";
+import { InMemoryStoreModel } from "./models/in-memory-store-model.ts";
 import { LocalStoreModel } from "./models/local-store-model.ts";
+import { ModelRepository } from "./models/model-repository.ts";
 import { ResourceModel } from "./models/resource-model.ts";
+import { TransactionModel } from "./models/transaction-model.ts";
 import { getDefaultConfiguration } from "./routes/configuration.ts";
 import { getLightweightOwlFromSimplified } from "./routes/experimental.ts";
 import { getSingleFile, getZip } from "./routes/generate.ts";
 import { exportPackageResource, importPackageResource } from "./routes/export-import-raw.ts";
 import { importResource, reloadResource } from "./routes/import.ts";
 import {
-  copyRecursively,
   createPackageResource,
   createResource,
   deleteBlob,
@@ -27,29 +30,33 @@ import {
 import { getSimplifiedSemanticModel, setSimplifiedSemanticModel } from "./routes/simplified-semantic-model.ts";
 import { getSystemData } from "./routes/system.ts";
 import { useStaticSpaHandler } from "./static.ts";
-import { migratePR419 } from "./tools/migrate-pr419.ts";
 import { newApplicationProfile } from "./routes/new.ts";
+import { applyTransactions, deleteEvolutionBranch, getTransactionsDiff, listBranches } from "./routes/transaction.ts";
 
 // Create application models
 
-export const storeModel = new LocalStoreModel("./database/stores");
-export const prismaClient = new PrismaClient();
-export const resourceModel = new ResourceModel(storeModel, prismaClient);
-const migration = new Migrate(prismaClient);
+const args = process.argv.slice(2);
+const inMemoryDbArg = args.includes("--in-memory-db");
 
-let fullUrl: string;
+const storeModel = inMemoryDbArg ? new InMemoryStoreModel() : new LocalStoreModel("./database/stores");
+const databasePath = inMemoryDbArg
+  ? new DatabaseSync(":memory:", { enableForeignKeyConstraints: true })
+  : new URL("../database/database.db", import.meta.url);
+const database = createDatabase(databasePath);
+const resourceModel = new ResourceModel(storeModel, database);
+export const transactionModel = new TransactionModel(database);
+export const modelRepository = new ModelRepository(resourceModel, transactionModel);
+
 let apiBasename: string;
 let basename: string | null = null;
 if (configuration.baseName) {
   basename = new URL(configuration.baseName).pathname;
-  fullUrl = new URL(configuration.baseName).toString();
   if (basename.endsWith("/")) {
     basename = basename.slice(0, -1);
   }
   apiBasename = basename + "/api";
 } else if (configuration.host) {
   apiBasename = new URL(configuration.host).pathname;
-  fullUrl = new URL(configuration.host).toString() + "data-specification";
   if (apiBasename.endsWith("/")) {
     apiBasename = apiBasename.slice(0, -1);
   }
@@ -94,7 +101,14 @@ application.delete(apiBasename + "/resources/packages", deleteResource); // same
 // Special operation to list all root packages
 application.get(apiBasename + "/resources/root-resources", getRootPackages); // ---
 
-application.post(apiBasename + "/repository/copy-recursively", copyRecursively);
+// disabled for now
+// application.post(apiBasename + "/repository/copy-recursively", copyRecursively);
+
+// Side-channel for storing operations performed on the project, see TransactionModel.
+application.post(apiBasename + "/transactions/apply", applyTransactions);
+application.get(apiBasename + "/transactions/branches", listBranches);
+application.delete(apiBasename + "/transactions/branches/:branchId", deleteEvolutionBranch);
+application.get(apiBasename + "/transactions/log/:range", getTransactionsDiff);
 
 application.post(apiBasename + "/new/application-profile", newApplicationProfile);
 
@@ -126,7 +140,7 @@ application.post(apiBasename + "/experimental/lightweight-owl-from-simplified.tt
 
 application.get(apiBasename + "/generate", getZip);
 application.get(apiBasename + "/experimental/output.zip", getZip);
-application.get(apiBasename + "/preview/*", getSingleFile);
+application.get(apiBasename + "/preview/{*splat}", getSingleFile);
 
 
 // System routes
@@ -142,48 +156,40 @@ if (configuration.staticFilesPath) {
     console.error("Static files path is set, but no base name is set.");
     process.exit(1);
   }
-  application.get(basename + "/conceptual-model-editor", (_, res) => res.status(302).redirect(basename + "/conceptual-model-editor/"));
-  application.get(basename + "/conceptual-model-editor/**", useStaticSpaHandler(configuration.staticFilesPath + "conceptual-model-editor/"));
 
-  application.get(basename + "/data-specification-editor", (_, res) => res.status(302).redirect(basename + "/data-specification-editor/"));
-  application.get(basename + "/data-specification-editor/**", useStaticSpaHandler(configuration.staticFilesPath + "data-specification-editor/"));
+  // List of directories that host its own SPA applications.
+  // todo automate this
+  const registeredSubdirectorySPAs = [
+    "conceptual-model-editor",
+    "controlled-vocabulary-manager",
+    "data-specification-editor",
+  ];
 
-  application.get(basename + "**", useStaticSpaHandler(configuration.staticFilesPath + ""));
+  for (const subdirectoryApp of registeredSubdirectorySPAs) {
+    application.get(basename + `/${subdirectoryApp}`, (req, res, next) => req.path.endsWith("/") ? next() : res.status(302).redirect(basename + `/${subdirectoryApp}/`));
+    application.get([basename + `/${subdirectoryApp}/`, basename + `/${subdirectoryApp}/{*splat}`], useStaticSpaHandler(configuration.staticFilesPath + `${subdirectoryApp}/`));
+  }
+
+  application.get(basename + "/history", (_, res) => res.status(302).redirect(basename + "/history/"));
+  application.get(basename + "/history/{*splat}", useStaticSpaHandler(configuration.staticFilesPath + "history/"));
+
+  application.get(basename + "{/*splat}", useStaticSpaHandler(configuration.staticFilesPath + ""));
 }
 
 (async () => {
   // Run migrations or throw
-  await migration.tryUp();
+  await migrateDatabase(databasePath, storeModel);
 
-  // Command-line arguments
-  if (process.argv.length > 2) {
-    // Some command line arguments are present
-    if (process.argv[2] === "migrate-pr419") {
-      await migratePR419();
-      process.exit(0);
-    } else {
-      console.error("Unknown command line arguments.");
-      process.exit(0);
-    }
-  } else {
-    // Create local root
-    if (!(await resourceModel.getResource(configuration.localRootIri))) {
-      console.log("There is no default root package. Creating one...");
-      await resourceModel.createPackage(null, configuration.localRootIri, configuration.localRootMetadata);
-    }
-    // Create root models for the common use and for the v1 adapter.
-    if (!(await resourceModel.getResource(configuration.v1RootIri))) {
-      console.log("There is no root package for data specifications from v1 dataspecer. Creating one...");
-      await resourceModel.createPackage(null, configuration.v1RootIri, configuration.v1RootMetadata);
-    }
-
-    application.listen(Number(configuration.port), () => {
-      if (configuration.inDocker) {
-        console.log(`Dataspecer is running! Try opening your browser at http://localhost:port/ where port is the port you mapped to the container's port ${configuration.port}.`);
-      } else {
-        console.log(`Server is listening on port ${Number(configuration.port)}.`);
-        console.log(`Try opening ${fullUrl}.`);
-      }
-    });
+  // Create local root
+  if (!(await modelRepository.getResource(configuration.localRootIri))) {
+    await modelRepository.createPackage(null, configuration.localRootIri, configuration.localRootMetadata);
   }
+
+  application.listen(Number(configuration.port), () => {
+    if (configuration.inDocker) {
+      console.log(`Dataspecer is running! Try opening your browser at http://localhost:port/ where port is the port you mapped to the container's port ${configuration.port}.`);
+    } else {
+      console.log(`Server is listening on port ${Number(configuration.port)}.`);
+    }
+  });
 })();

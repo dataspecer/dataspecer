@@ -1,4 +1,4 @@
-import { DialogWrapper } from "@/dialog/dialog-api";
+import { DialogWrapper } from "../../../../dialog/dialog-api";
 import {
   EditVisualDiagramNodeDialogState,
 } from "../edit-visual-diagram-node/edit-visual-diagram-node-dialog-controller";

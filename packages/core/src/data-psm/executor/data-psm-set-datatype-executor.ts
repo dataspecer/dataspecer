@@ -13,7 +13,7 @@ export function executeDataPsmSetDatatype(
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmSetDatatype
 ): CoreExecutorResult {
-  const resource = reader.readResource(operation.dataPsmAttribute);
+  const resource = reader.readResource(operation.entityId);
   if (!DataPsmAttribute.is(resource)) {
     return DataPsmExecutorResultFactory.invalidType(
       resource,

@@ -10,7 +10,7 @@
     "isolatedModules": true,
 
     // todo enable strict mode
-    "strict": false,
+    "strict": true,
     "noUncheckedIndexedAccess": false,
 
     "moduleResolution": "nodenext",

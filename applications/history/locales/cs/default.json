@@ -1,0 +1,268 @@
+{
+  "--lang-name": "Čeština",
+  "app-name": "historie",
+  "breadcrumbs": {
+    "home": "Specifikace",
+    "no-specification": "Není vybrána žádná specifikace"
+  },
+  "nav": {
+    "evolution": "Evoluce",
+    "history": "Historie"
+  },
+  "model-type": {
+    "project": "Projekt",
+    "specification": "Specifikace",
+    "vocabulary": "Slovník",
+    "profile": "Aplikační profil",
+    "visual-model": "Vizuální model",
+    "imported-vocabulary": "Importovaný slovník",
+    "queryable-vocabulary": "Dotazovaný slovník (SGOV)",
+    "api-specification": "Specifikace API",
+    "application-graph": "Aplikační graf",
+    "structure-model": "Strukturální model",
+    "generator-configuration": "Konfigurace generátorů",
+    "model": "Model"
+  },
+  "history": {
+    "title": "Historie",
+    "description": "Úplná historie projektu jako transakce operací, od nejnovějších. Libovolnou transakci lze vrátit zpět nebo označit verzí, podobně jako git tagem - verze rozdělují historii na části publikované ve specifikaci.",
+    "empty": "Projekt zatím nemá žádnou zaznamenanou historii.",
+    "no-project": "Není vybrán žádný projekt. Otevřete tuto stránku s parametrem packageIri.",
+    "project-model": "Struktura projektu",
+    "unnamed": "beze jména",
+    "session-changes_one": "{{count}} změna",
+    "session-changes_few": "{{count}} změny",
+    "session-changes_other": "{{count}} změn",
+    "badge": {
+      "project-structure": "Mění strukturu projektu",
+      "undone": "Vráceno zpět"
+    },
+    "op": {
+      "undo": "Vrátil(a) zpět změny transakce {{transactionId}}",
+      "version": "Označil(a) transakci {{transactionId}} verzí {{version}}",
+      "create-project": "Projekt \"{{name}}\" vytvořen",
+      "create-model": "Přidal(a) do projektu {{type}} \"{{name}}\"",
+      "remove-model": "Odstranil(a) z projektu {{type}} \"{{name}}\"",
+      "create-class": "Vytvořil(a) třídu <name />",
+      "modify-class": "Upravil(a) třídu <name />",
+      "delete-class": "Smazal(a) třídu <name />",
+      "create-relationship": "Vytvořil(a) vztah <name /> (<domain /> → <range />)",
+      "modify-relationship": "Upravil(a) vztah <name />",
+      "delete-relationship": "Smazal(a) vztah <name /> (<domain /> → <range />)",
+      "create-generalization": "<child /> nyní specializuje <parent />",
+      "create-generalization-plain": "Vytvořil(a) generalizaci",
+      "modify-generalization": "Upravil(a) generalizaci",
+      "delete-generalization": "<child /> již nespecializuje <parent />",
+      "delete-entity": "Smazal(a) <name />",
+      "create-class-profile": "Vytvořil(a) profil třídy <name />",
+      "modify-class-profile": "Upravil(a) profil třídy <name />",
+      "delete-class-profile": "Smazal(a) profil třídy <name />",
+      "create-relationship-profile": "Vytvořil(a) profil vztahu <name />",
+      "modify-relationship-profile": "Upravil(a) profil vztahu <name />",
+      "delete-relationship-profile": "Smazal(a) profil vztahu <name />",
+      "assign-controlled-vocabulary": "Přiřadil(a) řízený slovník k <name />",
+      "remove-controlled-vocabulary": "Odebral(a) řízený slovník z <name />",
+      "modify-controlled-vocabulary": "Upravil(a) přiřazení řízeného slovníku u <name />",
+      "add-visual-node": "Přidal(a) <name /> na plátno",
+      "add-visual-diagram-node": "Přidal(a) diagram \"{{name}}\" na plátno",
+      "add-visual-relationship": "Přidal(a) vztah <name /> na plátno",
+      "add-visual-profile-relationship": "Přidal(a) profilovou vazbu na plátno",
+      "add-visual-group": "Seskupil(a) prvky na plátně",
+      "move-node": "Přesunul(a) <name /> z {{from}} na {{to}}",
+      "move-node-to": "Přesunul(a) <name /> na {{to}}",
+      "reroute-edge": "Upravil(a) vedení čáry <name />",
+      "change-node-content": "Změnil(a) zobrazené atributy <name />",
+      "update-visual-entity": "Upravil(a) <name /> na plátně",
+      "remove-visual-node": "Odebral(a) <name /> z plátna",
+      "remove-visual-relationship": "Odebral(a) vztah <name /> z plátna",
+      "remove-visual-entity": "Odebral(a) prvek z plátna",
+      "set-model-color": "Změnil(a) barvu \"{{name}}\"",
+      "remove-model-color": "Odebral(a) barvu \"{{name}}\"",
+      "rename-view": "Přejmenoval(a) pohled na \"{{name}}\"",
+      "set-view": "Změnil(a) výchozí výřez plátna",
+      "reload-model": "Znovu načetl(a) slovník ze zdroje",
+      "set-model-urls": "Změnil(a) zdroj slovníku",
+      "add-query": "Načetl(a) další entity",
+      "remove-query": "Odebral(a) načtené entity",
+      "psm-create-schema": "Vytvořil(a) schéma",
+      "psm-create": "Přidal(a) {{what}} do struktury",
+      "psm-delete": "Odebral(a) {{what}} ze struktury",
+      "psm-move-property": "Přesunul(a) vlastnost ve struktuře",
+      "psm-set-order": "Změnil(a) pořadí vlastností ve struktuře",
+      "psm-set-human-label": "Přejmenoval(a) prvek na \"{{name}}\"",
+      "psm-set-technical-label": "Změnil(a) technický název na \"{{value}}\"",
+      "psm-replace-along-inheritance": "Nahradil(a) třídu podél dědičnosti",
+      "psm-wrap-with-or": "Obalil(a) prvek volbou",
+      "psm-unwrap-or": "Rozbalil(a) volbu",
+      "psm-set": "Změnil(a) {{what}} ve struktuře",
+      "set-entity": "Nahradil(a) <name />",
+      "update-entity": "Upravil(a) <name />",
+      "update-entity-svg": "Aktualizovaný diagram",
+      "remove-entity": "Odebral(a) <name />"
+    },
+    "psm-part": {
+      "class": "třídu",
+      "attribute": "atribut",
+      "association": "asociaci",
+      "choice": "volbu",
+      "container": "kontejner",
+      "include": "vložení",
+      "class-reference": "odkaz na třídu",
+      "external-root": "externí kořen"
+    },
+    "field": {
+      "name": "název",
+      "label": "název",
+      "description": "definice",
+      "iri": "IRI",
+      "ends": "konce",
+      "cardinality": "kardinalita",
+      "usageNote": "poznámka k užití",
+      "externalDocumentationUrl": "URL dokumentace",
+      "profiling": "profilované entity",
+      "position": "pozice",
+      "content": "zobrazené atributy",
+      "waypoints": "vedení čáry",
+      "color": "barva",
+      "subModels": "obsažené modely",
+      "concept": "třída",
+      "dataType": "datový typ",
+      "nameFromProfiled": "zděděný název",
+      "descriptionFromProfiled": "zděděná definice",
+      "usageNoteFromProfiled": "zděděná poznámka k užití",
+      "urls": "zdrojová URL",
+      "visualModels": "přiřazené diagramy"
+    },
+    "action": {
+      "undo": "Vrátit zpět",
+      "undo-description": "Zrušit tuto transakci, jako by její operace nikdy neproběhly. Pozdější změny zůstávají zachovány.",
+      "tag": "Označit verzí",
+      "tag-title": "Označit tuto transakci verzí",
+      "tag-placeholder": "např. 1.1",
+      "tag-confirm": "Označit"
+    }
+  },
+  "mode-toggle": {
+    "title": "Přepnout téma",
+    "light": "Světlé",
+    "dark": "Tmavé",
+    "system": "Systémové"
+  },
+  "evolution": {
+    "title": "Evoluce",
+    "review-title": "Evoluce modelu <name />",
+    "back-to-overview": "Zpět na přehled",
+    "description": "Tato specifikace závisí na nadřazené specifikaci, která byla nedávno upravena. Vyhodnoťte, jak mají na tyto úpravy reagovat závislé modely.",
+    "empty": "Nejsou žádné nevyřízené změny.",
+    "no-project": "Není vybrán žádný projekt. Otevřete tuto stránku s parametrem packageIri.",
+    "error": {
+      "load": "Nepodařilo se načíst čekající evoluci. Zkuste stránku obnovit.",
+      "apply": "Použití změn se nezdařilo. Zkuste to prosím znovu."
+    },
+    "overview": {
+      "description": "Čekající aktualizace slovníků a specifikací, jejichž změny ovlivňují jiné modely. Otevřete konkrétní aktualizaci a projděte si, jak mají závislé modely zareagovat.",
+      "empty": "Žádná evoluce nečeká na vyřízení.",
+      "change": {
+        "created": "Vytvořeno",
+        "modified": "Upraveno",
+        "deleted": "Smazáno"
+      },
+      "kind": {
+        "classes_one": "{{count}} třída",
+        "classes_few": "{{count}} třídy",
+        "classes_other": "{{count}} tříd",
+        "relationships_one": "{{count}} vztah",
+        "relationships_few": "{{count}} vztahy",
+        "relationships_other": "{{count}} vztahů",
+        "generalizations_one": "{{count}} generalizace",
+        "generalizations_few": "{{count}} generalizace",
+        "generalizations_other": "{{count}} generalizací",
+        "other_one": "{{count}} jiná entita",
+        "other_few": "{{count}} jiné entity",
+        "other_other": "{{count}} jiných entit"
+      },
+      "no-net-changes": "Čekající operace se navzájem ruší.",
+      "status": {
+        "not-in-specification": "Změny se zatím nepromítají do specifikace"
+      },
+      "affects": "Ovlivňuje:",
+      "no-targets": "Na tuto změnu nereaguje žádný závislý model — aktualizaci lze rovnou přijmout.",
+      "review": "Zkontrolovat",
+      "action": {
+        "skip": "Přeskočit evoluci",
+        "skip-description": "Přijmout změny nadřazené specifikace tak, jak jsou, bez jakékoliv reakce v závislých modelech.",
+        "cancel": "Zrušit evoluci",
+        "cancel-description": "Zahodit čekající změny a ponechat všechny modely beze změny."
+      },
+      "edge": {
+        "semantic-to-profile": "slovník → profil",
+        "profile-to-profile": "profil → profil"
+      }
+    },
+    "summary": "{{operations}} operací nadřazené specifikace k použití, {{proposed}} navržených operací k rozhodnutí",
+    "all-done": "Vše použito",
+    "back-to-manager": "Zpět do správce",
+    "apply-all": "Přijmout aktualizaci a použít vybrané ({{count}})",
+    "apply-selected": "Použít vybrané ({{count}})",
+    "no-profile-impact": "Změny slovníku neovlivňují aplikační profil. Přijetí aktualizace pouze provede změny slovníku.",
+    "upstream-changes": "Změny nadřazené specifikace",
+    "requires-new-profiles": "Vyžaduje profily tříd navržené výše — jejich odškrtnutí zruší i tuto položku.",
+    "cascade-warning": "Smazání odstraní také {{relationships}} závislé profily vztahů a {{generalizations}} generalizace.",
+    "manual-todo": "Vyřešeno ručně v editoru konceptuálního modelu.",
+    "retyped-upstream": "třída na tomto konci se ve slovníku změnila",
+    "section": {
+      "new-classes": "Nové třídy",
+      "new-relationships": "Nové vztahy",
+      "new-generalizations": "Nové generalizace",
+      "deletions": "Smazání",
+      "modifications": "Úpravy"
+    },
+    "item": {
+      "create-class": "Nová třída <name />",
+      "create-class-hint": "Vytvořit pro ni profil třídy",
+      "create-relationship": "Nový vztah <name />",
+      "create-generalization": "Nová generalizace",
+      "specializes": "<child /> specializuje <parent />",
+      "profile-of": "Profil entity <name />",
+      "deleted-class-profile": "Třída <name /> byla ve slovníku smazána",
+      "deleted-relationship-profile": "Vztah <name /> byl ve slovníku smazán",
+      "deleted-generalization": "Generalizace <name /> byla ve slovníku smazána",
+      "affected-profile": "Dotčený profil: <name />"
+    },
+    "end-role": {
+      "domain": "doména",
+      "range": "obor hodnot"
+    },
+    "field": {
+      "name": "Název",
+      "description": "Definice",
+      "usageNote": "Poznámka k použití",
+      "cardinality": "Kardinalita",
+      "concept": "Třída",
+      "externalDocumentationUrl": "URL dokumentace"
+    },
+    "profile-state": {
+      "inherits": "Profil tuto hodnotu dědí — nová hodnota se propíše automaticky.",
+      "override-matches-new": "Profil hodnotu přepisuje na <value />, což nyní odpovídá nové hodnotě ve slovníku.",
+      "override-differs": "Konflikt: profil hodnotu přepisuje na <value />.",
+      "not-inheritable": "Profil má vlastní hodnotu <value />."
+    },
+    "choice": {
+      "inherit": "Zachovat dědění",
+      "freeze-old": "Ponechat starou hodnotu v profilu",
+      "adopt-new": "Převzít novou hodnotu",
+      "keep-own": "Ponechat změněnou hodnotu",
+      "drop-override": "Zrušit přepis (dědit)",
+      "keep-override": "Ponechat přepis",
+      "delete": "Smazat profil",
+      "detach": "Ponechat profil (odpojit)",
+      "keep": "Ponechat",
+      "retarget": "Přesměrovat na <name />",
+      "manual": "Vyřešit ručně"
+    },
+    "status": {
+      "applied": "Použito",
+      "manual": "Ručně"
+    }
+  }
+}

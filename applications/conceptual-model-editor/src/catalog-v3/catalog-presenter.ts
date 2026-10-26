@@ -163,10 +163,10 @@ export function createCatalogPresenter(
           actions.openCreateProfileDialog(identifier);
           return;
         case Actions.RELATIONSHIP_HIDE:
-          actions.addRelationToVisualModel(model, identifier);
+          actions.removeFromVisualModelByRepresented([identifier]);
           return;
         case Actions.RELATIONSHIP_SHOW:
-          actions.removeFromVisualModelByRepresented([identifier]);
+          actions.addRelationToVisualModel(model, identifier);
           return;
         // RELATIONSHIP PROFILE
         case Actions.RELATIONSHIP_PROFILE_DELETE:
@@ -188,10 +188,10 @@ export function createCatalogPresenter(
           actions.openCreateProfileDialog(identifier);
           return;
         case Actions.RELATIONSHIP_PROFILE_HIDE:
-          actions.addRelationProfileToVisualModel(model, identifier);
+          actions.removeFromVisualModelByRepresented([identifier]);
           return;
         case Actions.RELATIONSHIP_PROFILE_SHOW:
-          actions.removeFromVisualModelByRepresented([identifier]);
+          actions.addRelationProfileToVisualModel(model, identifier);
           return;
         // GENERALIZATION
         case Actions.GENERALIZATION_DELETE:

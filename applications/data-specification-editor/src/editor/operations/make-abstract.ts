@@ -23,7 +23,7 @@ export class MakeAbstract implements ComplexOperation {
     const dataPsmSchema = this.store.getSchemaForResource(this.dataPsmOrIri) as string;
 
     const op = new DataPsmUnsetChoice();
-    op.dataPsmOr = this.dataPsmOrIri;
+    op.entityId = this.dataPsmOrIri;
     op.dataPsmChoice = this.classId;
     this.store.applyOperation(dataPsmSchema, op);
   }

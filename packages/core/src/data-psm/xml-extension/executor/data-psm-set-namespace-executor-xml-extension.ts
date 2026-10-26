@@ -10,7 +10,7 @@ export function executeDataPsmSetNamespaceXmlExtension(
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmSetNamespaceXmlExtension
 ): CoreExecutorResult {
-  const resource = reader.readResource(operation.dataPsmSchema);
+  const resource = reader.readResource(operation.entityId);
   if (resource == null || !DataPsmSchema.is(resource)) {
     return DataPsmExecutorResultFactory.invalidType(
       resource,

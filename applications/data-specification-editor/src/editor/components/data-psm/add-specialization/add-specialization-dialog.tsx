@@ -73,8 +73,8 @@ export const AddSpecializationDialog = dialog<{
       close();
     };
 
-    // @ts-ignore
-    const newStore = useNewFederatedObservableStoreFromSemanticEntities(fullInheritance);
+    const fullInheritanceEntities = React.useMemo(() => fullInheritance?.map(entity => entity.aggregatedEntity as SemanticModelEntity), [fullInheritance]);
+    const newStore = useNewFederatedObservableStoreFromSemanticEntities(fullInheritanceEntities);
 
     return (
       <>

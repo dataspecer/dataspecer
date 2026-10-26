@@ -27,7 +27,7 @@ export class SetDataPsmDatatype implements ComplexOperation {
     }
 
     const dataPsmSetDatatype = new DataPsmSetDatatype();
-    dataPsmSetDatatype.dataPsmAttribute = this.forDataPsmAttributeIri;
+    dataPsmSetDatatype.entityId = this.forDataPsmAttributeIri;
     dataPsmSetDatatype.dataPsmDatatype = datatype;
     this.store.applyOperation(schema, dataPsmSetDatatype);
   }

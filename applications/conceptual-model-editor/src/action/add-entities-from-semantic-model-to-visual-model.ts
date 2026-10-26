@@ -1,12 +1,12 @@
 import { WritableVisualModel } from "@dataspecer/visual-model";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { getSelectionForWholeSemanticModel } from "./extend-selection-action";
 import {
   EntityToAddToVisualModel,
   addSemanticEntitiesToVisualModelAction
 } from "./add-semantic-entities-to-visual-model";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { UseDiagramType } from "../diagram/diagram-hook";
 import { EntityModel } from "@dataspecer/core-v2";
 import {
@@ -31,8 +31,8 @@ import { addSemanticAttributeToVisualModelAction } from "./add-semantic-attribut
  */
 export const addEntitiesFromSemanticModelToVisualModelAction = async (
   notifications: UseNotificationServiceWriterType,
-  classesContext: ClassesContextType,
-  graph: ModelGraphContextType,
+  classesContext: ClassesContext,
+  graph: UseModelGraphContextType,
   diagram: UseDiagramType,
   visualModel: WritableVisualModel,
   semanticModel: EntityModel
@@ -54,7 +54,7 @@ export const addEntitiesFromSemanticModelToVisualModelAction = async (
 
   const classesPresentOnCanvas = entitiesFromSemanticModel.nodeSelection
     .filter(identifier => visualModel.hasVisualEntityForRepresented(identifier))
-    .map(identifier => classesContext.rawEntities.find(entity => entity?.id === identifier))
+    .map(identifier => classesContext.entities.find(entity => entity?.id === identifier))
     .filter(entity => entity !== null && entity !== undefined)
     .filter(entity => isSemanticModelClass(entity) || isSemanticModelClassProfile(entity));
 
@@ -67,7 +67,7 @@ export const addEntitiesFromSemanticModelToVisualModelAction = async (
 
 function addHiddenAttributesForExistingClassesAndClassProfiles(
   notifications: UseNotificationServiceWriterType,
-  classesContext: ClassesContextType,
+  classesContext: ClassesContext,
   visualModel: WritableVisualModel,
   classesPresentOnCanvas: (SemanticModelClass | SemanticModelClassProfile)[]
 ): void {

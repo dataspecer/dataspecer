@@ -1,4 +1,4 @@
-import { DataPsmSetGmlTypeXmlExtension } from "@dataspecer/core/data-psm/xml-extension/operation/index";
+import { DataPsmSetGmlTypeXmlExtension } from "@dataspecer/core/data-psm/xml-extension/operation";
 import { ComplexOperation } from "@dataspecer/federated-observable-store/complex-operation";
 import { FederatedObservableStore } from "@dataspecer/federated-observable-store/federated-observable-store";
 
@@ -20,7 +20,7 @@ export class SetXmlGmlType implements ComplexOperation {
     const schema = this.store.getSchemaForResource(this.forDataPsmResourceIri) as string;
 
     const op = new DataPsmSetGmlTypeXmlExtension();
-    op.dataPsmProperty = this.forDataPsmResourceIri;
+    op.entityId = this.forDataPsmResourceIri;
     op.gmlType = this.gmlType;
     this.store.applyOperation(schema, op);
   }

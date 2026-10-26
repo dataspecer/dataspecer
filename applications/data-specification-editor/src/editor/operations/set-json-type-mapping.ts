@@ -27,7 +27,7 @@ export class SetJsonTypeMapping implements ComplexOperation {
     }
 
     const operation = new DataPsmSetJsonLdDefinedTypeMapping();
-    operation.dataPsmEntity = this.entityId;
+    operation.entityId = this.entityId;
     operation.jsonLdDefinedTypeMapping = this.mapping;
     this.store.applyOperation(schema, operation);
   }

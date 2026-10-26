@@ -22,7 +22,7 @@ export class SetTechnicalLabel implements ComplexOperation {
     const technicalLabel = this.dataPsmTechnicalLabel === "" ? null : this.dataPsmTechnicalLabel;
 
     const dataPsmSetTechnicalLabel = new DataPsmSetTechnicalLabel();
-    dataPsmSetTechnicalLabel.dataPsmResource = this.forDataPsmResourceIri;
+    dataPsmSetTechnicalLabel.entityId = this.forDataPsmResourceIri;
     dataPsmSetTechnicalLabel.dataPsmTechnicalLabel = technicalLabel;
     this.store.applyOperation(schema, dataPsmSetTechnicalLabel);
   }

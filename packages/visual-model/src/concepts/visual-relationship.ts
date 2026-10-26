@@ -1,7 +1,8 @@
-import { ModelIdentifier } from "../entity-model/entity-model.ts";
-import { Entity, EntityIdentifier } from "../entity-model/entity.ts";
+import { ModelIdentifier } from "@dataspecer/core/model";
 import { VisualEntity } from "./visual-entity.ts";
 import { Waypoint } from "./waypoint.ts";
+import { HexColor } from "./color.ts";
+import { Entity, EntityIdentifier } from "@dataspecer/core/entity-model";
 
 /**
  * Represent a binary relationship that should be visible as a connection.
@@ -32,6 +33,12 @@ export interface VisualRelationship extends VisualEntity {
      * Target visual entity.
      */
     visualTarget: EntityIdentifier;
+
+    /**
+     * Custom color, overrides the color of the {@link model}.
+     * When null or missing the model color is used.
+     */
+    color?: HexColor | null;
 
 }
 

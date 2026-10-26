@@ -17,10 +17,10 @@
     "@dataspecer/core": "*",
     "@dataspecer/core-v2": "*",
     "@dataspecer/federated-observable-store": "*",
-    "react": "^19.2.4"
+    "react": "^19.3.0"
   },
   "devDependencies": {
-    "@types/react": "^19.0.7",
-    "typescript": "^6.0.3"
+    "@types/react": "^19.3.0",
+    "typescript": "^7.0.2"
   }
 }

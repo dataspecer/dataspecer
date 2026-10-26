@@ -39,7 +39,6 @@ export class SetCardinality implements ComplexOperation {
       })
     });
 
-    // @ts-ignore
     this.store.applyOperation(schema, operation);
   }
 }

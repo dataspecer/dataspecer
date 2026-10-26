@@ -21,7 +21,7 @@ export class SetInstancesSpecifyTypes implements ComplexOperation {
 
 
     const psmSetInstancesSpecifyTypes = new DataPsmSetInstancesSpecifyTypes();
-    psmSetInstancesSpecifyTypes.dataPsmClass = this.forDataPsmClass;
+    psmSetInstancesSpecifyTypes.entityId = this.forDataPsmClass;
     psmSetInstancesSpecifyTypes.instancesSpecifyTypes = this.instancesSpecifyTypes;
     this.store.applyOperation(schema, psmSetInstancesSpecifyTypes);
   }

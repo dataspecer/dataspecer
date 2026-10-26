@@ -1,4 +1,5 @@
 import {
+  isSemanticModelGeneralization,
   SemanticModelGeneralization,
 } from "@dataspecer/core-v2/semantic-model/concepts";
 import {
@@ -9,12 +10,11 @@ import {
   SemanticModelRelationshipProfile,
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { Entity } from "@dataspecer/entity-model";
-import { isSemanticModelGeneralizationProfile } from "./index.ts";
 import {
   CreatedEntityOperationResult,
-  Operation,
   OperationResult
 } from "@dataspecer/core-v2/semantic-model/operations";
+import type { Operation } from "@dataspecer/core/operation";
 
 export {
   SEMANTIC_MODEL_CLASS_PROFILE,
@@ -34,6 +34,12 @@ export {
   isSemanticModelGeneralization as isSemanticModelGeneralizationProfile,
   type SemanticModelGeneralization as SemanticModelGeneralizationProfile,
 } from "@dataspecer/core-v2/semantic-model/concepts"
+
+export {
+  CONTROLLED_VOCABULARY_ASSIGNMENT,
+  isControlledVocabularyAssignment,
+  type ControlledVocabularyAssignment,
+} from "@dataspecer/core-v2/semantic-model/profile/concepts";
 
 export interface ProfileModel {
 
@@ -64,7 +70,7 @@ export type ProfileRelationshipEnd = SemanticModelRelationshipEndProfile;
 
 export type ProfileGeneralization = SemanticModelGeneralization;
 
-export const isProfileGeneralization = isSemanticModelGeneralizationProfile;
+export const isProfileGeneralization = isSemanticModelGeneralization;
 
 export type ProfileOperation = Operation;
 

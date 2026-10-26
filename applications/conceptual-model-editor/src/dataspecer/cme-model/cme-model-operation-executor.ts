@@ -1,4 +1,9 @@
-import { ModelDsIdentifier } from "../entity-model";
+import { EntityDsIdentifier, ModelDsIdentifier } from "../entity-model";
+import {
+  ControlledVocabularyAssignment,
+  ControlledVocabularyAssignmentReplaces,
+  Qualifier,
+} from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
 import { InvalidState } from "../../application/error";
 import {
@@ -36,6 +41,9 @@ import { updateCmeSpecialization } from "./operation/update-cme-entity-specializ
 import { updateCmeRelationship } from "./operation/update-cme-relationship";
 import { changeCmeClassProfile } from "./operation/change-cme-class-profile";
 import { updateCmeSemanticModel } from "./operation/update-semantic-model";
+import { createCmeControlledVocabularyAssignment } from "./operation/create-cme-controlled-vocabulary-assignment";
+import { deleteCmeControlledVocabularyAssignment } from "./operation/delete-cme-controlled-vocabulary-assignment";
+import { modifyCmeControlledVocabularyAssignment } from "./operation/modify-cme-controlled-vocabulary-assignment";
 
 const LOG = createLogger(import.meta.url);
 
@@ -68,6 +76,37 @@ export interface CmeModelOperationExecutor {
    * @throws {DataspecerError}
    */
   changeClassProfile(value: CmeReference & Partial<CmeClassProfile>): void;
+
+  /**
+   * @returns Reference to the newly created assignment.
+   * @throws {InvalidState}
+   * @throws {DataspecerError}
+   */
+  createControlledVocabularyAssignment(
+    classProfile: CmeReference,
+    assignment: {
+      vocabulary: EntityDsIdentifier;
+      qualifier: Qualifier;
+      replaces: ControlledVocabularyAssignmentReplaces | null;
+    },
+  ): CmeReference;
+
+  /**
+   * @throws {InvalidState}
+   * @throws {DataspecerError}
+   */
+  removeControlledVocabularyAssignment(
+    assignment: CmeReference,
+  ): void;
+
+  /**
+   * @throws {InvalidState}
+   * @throws {DataspecerError}
+   */
+  modifyControlledVocabularyAssignment(
+    assignment: CmeReference,
+    changes: Partial<Pick<ControlledVocabularyAssignment, "qualifier" | "replaces">>,
+  ): void;
 
   // Class
 
@@ -206,6 +245,33 @@ class DefaultCmeModelOperationExecutor implements CmeModelOperationExecutor {
   deleteClassProfile(value: CmeReference): void {
     const model = this.findModel(value.model);
     deleteCmeClassProfile(model, value);
+  }
+
+  createControlledVocabularyAssignment(
+    classProfile: CmeReference,
+    assignment: {
+      vocabulary: EntityDsIdentifier;
+      qualifier: Qualifier;
+      replaces: ControlledVocabularyAssignmentReplaces;
+    },
+  ): CmeReference {
+    const model = this.findModel(classProfile.model);
+    return createCmeControlledVocabularyAssignment(model, classProfile, assignment);
+  }
+
+  removeControlledVocabularyAssignment(
+    assignment: CmeReference,
+  ): void {
+    const model = this.findModel(assignment.model);
+    deleteCmeControlledVocabularyAssignment(model, assignment);
+  }
+
+  modifyControlledVocabularyAssignment(
+    assignment: CmeReference,
+    changes: Partial<Pick<ControlledVocabularyAssignment, "qualifier" | "replaces">>,
+  ): void {
+    const model = this.findModel(assignment.model);
+    modifyCmeControlledVocabularyAssignment(model, assignment, changes);
   }
 
   // Class

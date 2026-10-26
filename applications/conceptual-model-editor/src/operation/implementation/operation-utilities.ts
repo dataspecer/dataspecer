@@ -1,78 +1,70 @@
 import {
-  SemanticModel,
-  SemanticOperation,
-  SemanticOperationResult,
+  SemanticModel, SemanticOperation, SemanticOperationResult,
 } from "@dataspecer/semantic-model";
+import {
+  ProfileModel, ProfileOperation, ProfileOperationResult,
+} from "@dataspecer/profile-model";
+import { WritableVisualModel } from "@dataspecer/visual-model";
+
 import { ModelDsIdentifier } from "../../dataspecer/entity-model";
 import {
-  DataspecerOperationFailed,
-  InvalidModel,
-  MissingModel,
+  CmeExecutionContext, DataspecerOperationFailed, MissingModel,
+  ModelIsNotWritable,
 } from "../operation";
-import { isInMemorySemanticModel } from "../../dataspecer/semantic-model";
-import {
-  ProfileModel,
-  ProfileOperation,
-  ProfileOperationResult,
-} from "@dataspecer/profile-model";
 import { isInMemoryProfileModel } from "../../dataspecer/profile-model";
+import { isInMemorySemanticModel } from "../../dataspecer/semantic-model";
 
 /**
  * @throws MissingModel
- * @throws InvalidModel
  */
 export function findSemanticModel(
-  { semanticModels }: { semanticModels: SemanticModel[] },
-  { semanticModel }: { semanticModel: ModelDsIdentifier },
-) {
-  return findModel(semanticModels, isInMemorySemanticModel, semanticModel)
-}
-
-/**
- * @throws MissingModel
- * @throws InvalidModel
- */
-export function findModel<
-  BaseModelType extends { getId(): string; },
-  ModelType extends BaseModelType,
->(
-  models: BaseModelType[],
-  guard: (what: BaseModelType) => what is ModelType,
-  identifier: ModelDsIdentifier,
-): ModelType {
-  for (const model of models) {
-    if (model.getId() !== identifier) {
-      continue;
-    }
-    if (guard(model)) {
-      return model;
-    }
-    throw new InvalidModel();
+  context: CmeExecutionContext, identifier: ModelDsIdentifier,
+): SemanticModel {
+  const model = context.semanticModels[identifier];
+  if (model === undefined) {
+    throw new MissingModel();
   }
-  throw new MissingModel(models, identifier);
+  return model;
 }
 
 /**
  * @throws MissingModel
- * @throws InvalidModel
  */
 export function findProfileModel(
-  { profileModels }: { profileModels: ProfileModel[] },
-  { profileModel }: { profileModel: ModelDsIdentifier },
-) {
-  return findModel(profileModels, isInMemoryProfileModel, profileModel)
+  context: CmeExecutionContext, identifier: ModelDsIdentifier,
+): ProfileModel {
+  const model = context.profileModels[identifier];
+  if (model === undefined) {
+    throw new MissingModel();
+  }
+  return model;
 }
 
 /**
+ * @throws MissingModel
+ */
+export function findVisualModel(
+  context: CmeExecutionContext, identifier: ModelDsIdentifier,
+): WritableVisualModel {
+  const model = context.visualModels[identifier];
+  if (model === undefined) {
+    throw new MissingModel();
+  }
+  // We know there are no read only visual models.
+  return model as WritableVisualModel;
+}
+
+/**
+ * @throws ModelIsNotWritable
  * @throws DataspecerOperationFailed
  */
 export async function executeCreateSemanticOperation(
-  model: {
-    executeOperation: (operation: SemanticOperation) => SemanticOperationResult,
-  },
-  operation: SemanticOperation,
+  model: SemanticModel, operation: SemanticOperation,
 ): Promise<SemanticOperationResult> {
-  const result = model.executeOperation(operation);
+  if (!isInMemorySemanticModel(model)) {
+    throw new ModelIsNotWritable();
+  }
+  const result = model.executeOperations([operation])[0];
   if (result.success === false) {
     throw new DataspecerOperationFailed();
   }
@@ -80,15 +72,16 @@ export async function executeCreateSemanticOperation(
 }
 
 /**
+ * @throws ModelIsNotWritable
  * @throws DataspecerOperationFailed
  */
 export async function executeCreateProfileOperation(
-  model: {
-    executeOperation: (operation: ProfileOperation) => ProfileOperationResult,
-  },
-  operation: ProfileOperation,
+  model: ProfileModel, operation: ProfileOperation,
 ): Promise<ProfileOperationResult> {
-  const result = model.executeOperation(operation);
+  if (!isInMemoryProfileModel(model)) {
+    throw new ModelIsNotWritable();
+  }
+  const result = model.executeOperations([operation])[0];
   if (result.success === false) {
     throw new DataspecerOperationFailed();
   }

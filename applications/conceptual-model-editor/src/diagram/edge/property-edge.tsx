@@ -12,7 +12,6 @@ import { createLogger } from "../../application/";
 
 import {
   DiagramOptions,
-  EntityColor,
   LabelVisual,
   ProfileOfVisual,
 } from "../model";
@@ -65,8 +64,13 @@ export const PropertyEdge = (props: EdgeProps<Edge<ApiEdge>>) => {
 
   const style = { ...props.style };
   if (data !== undefined) {
-    style.stroke = prepareColor(data);
+    style.stroke = data.color;
   }
+
+  let missingLabel =
+    props.label === null;
+  let missingMandatoryLevel =
+    props.data === undefined || props.data.mandatoryLevelLabel === null;
 
   return (
     <>
@@ -87,7 +91,7 @@ export const PropertyEdge = (props: EdgeProps<Edge<ApiEdge>>) => {
             {props.data.cardinalitySource}
           </div>
         )}
-        {props.selected || props.label === null ? null : (
+        {props.selected || (missingLabel && missingMandatoryLevel) ? null : (
           <div
             style={{
               position: "absolute",
@@ -105,7 +109,14 @@ export const PropertyEdge = (props: EdgeProps<Edge<ApiEdge>>) => {
               opacity: props.style?.opacity,
             }}
           >
-            {label}
+            {missingLabel ? null : (
+              <div>{label}</div>
+            )}
+            {missingMandatoryLevel ? null : (
+              <div style={{color: "#6B7280",}}>
+                {props.data?.mandatoryLevelLabel}
+              </div>
+            )}
           </div>
         )}
         {props.data === undefined || props.data.cardinalityTarget === null ? null : (
@@ -116,17 +127,6 @@ export const PropertyEdge = (props: EdgeProps<Edge<ApiEdge>>) => {
           }}
           >
             {props.data.cardinalityTarget}
-          </div>
-        )}
-        {props.data === undefined || props.data.mandatoryLevelLabel === null ? null : (
-          <div style={{
-            position: "absolute",
-            color: "#6B7280",
-            transform: `${targetShift} translate(${targetWaypoint.x}px,${targetWaypoint.y + 20}px)`,
-            fontSize: "0.85em"
-          }}
-          >
-            {props.data.mandatoryLevelLabel}
           </div>
         )}
       </EdgeLabelRenderer>
@@ -218,19 +218,6 @@ function selectProfileLabel(
     return "";
   }
   return "\n(" + filteredLabels.join(", ") + ")";
-}
-
-function prepareColor(data: ApiEdge) {
-  switch (data.options.entityMainColor) {
-  case EntityColor.Entity:
-    return data.color;
-  case EntityColor.VocabularyOrEntity:
-    if (data.vocabulary.length === 0) {
-      return data.color;
-    }
-    // Just use the first one.
-    return data.vocabulary[0].color;
-  }
 }
 
 /**

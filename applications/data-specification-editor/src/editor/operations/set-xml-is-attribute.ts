@@ -1,4 +1,4 @@
-import { DataPsmSetIsXmlAttribute } from "@dataspecer/core/data-psm/xml-extension/operation/index";
+import { DataPsmSetIsXmlAttribute } from "@dataspecer/core/data-psm/xml-extension/operation";
 import { ComplexOperation } from "@dataspecer/federated-observable-store/complex-operation";
 import { FederatedObservableStore } from "@dataspecer/federated-observable-store/federated-observable-store";
 
@@ -20,7 +20,7 @@ export class SetXmlIsAttribute implements ComplexOperation {
     const schema = this.store.getSchemaForResource(this.forDataPsmResourceIri) as string;
 
     const op = new DataPsmSetIsXmlAttribute();
-    op.dataPsmProperty = this.forDataPsmResourceIri;
+    op.entityId = this.forDataPsmResourceIri;
     op.isAttribute = this.isAttribute;
     this.store.applyOperation(schema, op);
   }

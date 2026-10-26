@@ -5,7 +5,7 @@ import { SelectBuildIn } from "../../components/select-build-in";
 import { DialogDetailRow } from "../../../components/dialog/dialog-detail-row";
 import { EditVisualModelDialogState } from "./edit-visual-model-dialog-state";
 import { useEditVisualModelDialogController } from "./edit-visual-model-dialog-controller";
-import { Checkbox } from "@/dialog/components";
+import { Checkbox } from "../../../dialog/components";
 
 export const CreateVisualModelDialogView = (
   props: DialogProps<EditVisualModelDialogState>,

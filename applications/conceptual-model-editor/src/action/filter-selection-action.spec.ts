@@ -277,14 +277,14 @@ test("Test filter - Class profiles - visual identifiers", () => {
   for(const classProfile of classProfiles.createdIdentifiers) {
     const profiledClassVisual = visualModel.getVisualEntitiesForRepresented(classProfile.profiledClass)[0];
     const id = ActionsTestSuite.createNewVisualNodeOfClassProfileForTesting(
-      visualModel, classProfiles.model.getId(), classProfile.classProfile, profiledClassVisual.identifier);
+      visualModel, classProfiles.model.getId(), classProfile.classProfile, profiledClassVisual.id);
     createdProfileNodes.push(id);
   }
 
   const allEdges = [...visualModel.getVisualEntities().entries()]
     .map(visual => visual[1])
     .filter(visual => isVisualRelationship(visual) || isVisualProfileRelationship(visual))
-    .map(edge => edge.identifier);
+    .map(edge => edge.id);
 
   const inputSelection: SelectionsWithIdInfo = {
     nodeSelection: [...nodes, createdProfileNodes[0]],
@@ -299,7 +299,7 @@ test("Test filter - Class profiles - visual identifiers", () => {
   const expectedEdges = [...visualModel.getVisualEntities().entries()]
     .map(visual => visual[1])
     .filter(visual => isVisualProfileRelationship(visual))
-    .map(edge => edge.identifier)
+    .map(edge => edge.id)
   expect(result.nodeSelection).toEqual([createdProfileNodes[0]]);
   expect(result.edgeSelection.sort()).toEqual(expectedEdges.sort());
 });
@@ -336,7 +336,7 @@ test("Test filter - Class profiles - semantic identifiers", () => {
   for(const classProfile of classProfiles.createdIdentifiers) {
     const profiledClassVisual = visualModel.getVisualEntitiesForRepresented(classProfile.profiledClass)[0];
     const id = ActionsTestSuite.createNewVisualNodeOfClassProfileForTesting(
-      visualModel, classProfiles.model.getId(), classProfile.classProfile, profiledClassVisual.identifier);
+      visualModel, classProfiles.model.getId(), classProfile.classProfile, profiledClassVisual.id);
     createdProfileNodes.push(id);
   }
 

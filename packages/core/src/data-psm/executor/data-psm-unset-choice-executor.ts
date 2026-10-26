@@ -16,7 +16,7 @@ export function executeDataPsmUnsetChoice(
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmUnsetChoice
 ): CoreExecutorResult {
-  const resource = reader.readResource(operation.dataPsmOr);
+  const resource = reader.readResource(operation.entityId);
   if (resource == null || !DataPsmOr.is(resource)) {
     return DataPsmExecutorResultFactory.invalidType(
       resource,

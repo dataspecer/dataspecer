@@ -9,7 +9,7 @@ import * as PSM from "../data-psm-vocabulary.ts";
 
 test("Update data PSM resource profiling.", async () => {
   const operation = new DataPsmSetProfiling();
-  operation.dataPsmResource = "http://class";
+  operation.entityId = "http://class";
   operation.dataPsmProfiling = ["one", "two"];
 
   const before = {

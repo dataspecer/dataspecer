@@ -1,104 +1,208 @@
+import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
+import type { LanguageString } from "@dataspecer/core/core/core-resource";
+import type { Entity } from "@dataspecer/core/entity-model";
+import { createSetEntityOperation, generateOperationId, type OperationInModel, type Transaction } from "@dataspecer/core/operation";
+import {
+  createCreateModelOperation,
+  createCreateProjectOperation,
+  isCreateModelOperation,
+  isCreateProjectOperation,
+  PROJECT_MODEL_MODEL_ENTITY,
+} from "@dataspecer/core/project-model";
 import JSZip from "jszip";
-import { ResourceModel } from "../models/resource-model.ts";
+import { composeModelId, PROJECT_MODEL_ID } from "../models/model-id.ts";
+import { ModelRepository } from "../models/model-repository.ts";
+import { deserializeModelEntities, resolveStoreModelType } from "../models/model-types.ts";
+import { addJsonFileToBackup, createInMemoryBackup, type InMemoryBackupDirectory, type JsonObject } from "./import-backup.ts";
+import { migrateInMemoryBackup } from "./migrations.ts";
 
-const FILE_EXTENSION_REGEX = /^\.([-0-9a-zA-Z]+)\.json$/;
-const RESOURCE_IN_PACKAGE_REGEX = /^([-0-9a-zA-Z]+)\.meta\.json$/;
-const PACKAGES_IN_PACKAGE_REGEX = /^([-0-9a-zA-Z]+\/)\.meta\.json/;
+const RESOURCE_METADATA_REGEX = /^([-0-9a-zA-Z]+)\.meta\.json$/;
 
+/**
+ * Metadata of one exported resource, see PackageExporter.
+ */
+interface ResourceMetadata {
+  iri: string;
+  metadata?: { modificationDate?: string };
+  types?: string[];
+  userMetadata?: Record<string, unknown> & { label?: LanguageString; description?: LanguageString };
+}
+
+const STORE_FILE_REGEX = /^\.([-0-9a-zA-Z]+)\.json$/;
+const RESOURCE_STORE_FILE_REGEX = /^([-0-9a-zA-Z]+)\.([-0-9a-zA-Z]+)\.json$/;
+
+/** Returns the name of an exported store file, if the file is a store. */
+function getStoreName(fileName: string): string | null {
+  const match = STORE_FILE_REGEX.exec(fileName) ?? RESOURCE_STORE_FILE_REGEX.exec(fileName);
+  return match?.[match.length - 1] ?? null;
+}
+
+/** Returns the resource prefix for a store file stored beside its metadata. */
+function getResourcePrefix(fileName: string): string | null {
+  const match = RESOURCE_STORE_FILE_REGEX.exec(fileName);
+  return match?.[1] ?? null;
+}
+
+/**
+ * Creates the projects stored in an exported zip. The export is a snapshot
+ * without any history, so each project is created by a single transaction of
+ * operations that build the project structure and set the entities of the
+ * models as they were exported.
+ */
 export class PackageImporter {
-  private readonly resourceModel: ResourceModel;
-  private zip!: JSZip;
-  private rootToWrite = "http://dataspecer.com/packages/local-root";
+  private readonly modelRepository: ModelRepository;
 
-  constructor(resourceModel: ResourceModel) {
-    this.resourceModel = resourceModel;
+  constructor(modelRepository: ModelRepository) {
+    this.modelRepository = modelRepository;
   }
 
+  /**
+   * Imports the zip and returns the identifiers of the created projects.
+   */
   async doImport(buffer: Buffer): Promise<string[]> {
-    this.zip = new JSZip();
-    await this.zip.loadAsync(buffer);
+    const backup = await this.loadArchive(buffer);
+    migrateInMemoryBackup(backup);
 
-    const files = Object.keys(this.zip.files);
+    // Projects are the directories on the top level of the archive.
+    const rootPackageDirectories = [...backup.directories.values()].filter((directory) => directory.files.has(".meta.json"));
 
-    const rootPackagesMeta = files.filter((file) => file.endsWith("/.meta.json") && file.split("/").length === 2); // It is a directory with one level
-    const rootPackagesIds = rootPackagesMeta.map((file) => file.split("/")[0]);
-
-    const createdPackages = [];
-    for (const rootPackageId of rootPackagesIds) {
-      const iri = await this.importPackage(rootPackageId + "/", this.rootToWrite);
-      createdPackages.push(iri);
-    }
-    return createdPackages;
-  }
-
-  async importPackage(dirPath: string, parentPackageIri: string): Promise<string> {
-    const metaFileName = dirPath + ".meta.json";
-    const metaFile = await this.zip.file(metaFileName)!.async("text");
-    const meta = JSON.parse(metaFile);
-
-    await this.resourceModel.createPackage(parentPackageIri, meta.iri, meta.userMetadata);
-    await this.setBlobsForResource(dirPath, meta.iri);
-    const thisPackageIri = meta.iri;
-
-    for (const file of Object.keys(this.zip.files)) {
-      if (!file.startsWith(dirPath)) {
-        continue;
-      }
-      const restPath = file.substring(dirPath.length);
-
-      const resourceFileName = RESOURCE_IN_PACKAGE_REGEX.exec(restPath)?.[1];
-      if (resourceFileName) {
-        await this.importResource(dirPath + resourceFileName, thisPackageIri);
-      }
-
-      const packageFileName = PACKAGES_IN_PACKAGE_REGEX.exec(restPath)?.[1];
-      if (packageFileName) {
-        await this.importPackage(dirPath + packageFileName, thisPackageIri);
-      }
+    const transactions: Transaction[] = [];
+    for (const directory of rootPackageDirectories) {
+      const metadata = this.readMetadata(directory.files.get(".meta.json"));
+      transactions.push({
+        id: generateOperationId(),
+        time: metadata.metadata?.modificationDate,
+        operations: await this.createDirectoryOperations(directory, null),
+      });
     }
 
-    return thisPackageIri;
+    const operations = transactions.flatMap((transaction) => transaction.operations);
+    const projectIds = operations.flatMap(({ operation }) => (isCreateProjectOperation(operation) ? [operation.projectId] : []));
+    if (projectIds.length === 0) {
+      return [];
+    }
+
+    await this.checkResourcesDoNotExist(operations);
+
+    // Operations belonging to another project are routed to it by the
+    // repository, so the project the transaction is sent to matters only as
+    // the fallback for operations whose project cannot be resolved.
+    await this.modelRepository.applyTransactions(projectIds[0]!, transactions);
+
+    return projectIds;
   }
 
   /**
-   * From file name prefix creates resource (not directory) as a child of parentPackageIri.
+   * Creates operations for a package directory and recursively imports its
+   * direct resources and sub-packages. A null parent means this is a project.
    */
-  async importResource(dirPath: string, parentPackageIri: string) {
-    const metaFileName = dirPath + ".meta.json";
-    const metaFile = await this.zip.file(metaFileName)!.async("text");
-    const meta = JSON.parse(metaFile);
+  private async createDirectoryOperations(directory: InMemoryBackupDirectory, parentPackageId: string | null): Promise<OperationInModel[]> {
+    const metadata = this.readMetadata(directory.files.get(".meta.json"));
+    const stores = [...directory.files.entries()]
+      .filter(([fileName]) => getResourcePrefix(fileName) === null)
+      .flatMap(([fileName, data]) => {
+        const storeName = getStoreName(fileName);
+        return storeName === null || storeName === "meta" ? [] : [{ storeName, data }];
+      });
+    const operations = this.createResourceOperations(metadata, parentPackageId, stores, true);
 
-    await this.resourceModel.createResource(parentPackageIri, meta.iri, meta.types[0], meta.userMetadata);
-    await this.setBlobsForResource(dirPath, meta.iri);
+    for (const [fileName, resourceMetadata] of directory.files) {
+      const prefix = RESOURCE_METADATA_REGEX.exec(fileName)?.[1];
+      if (prefix !== undefined) {
+        const resourceStores = [...directory.files.entries()]
+          .filter(([candidate]) => getResourcePrefix(candidate) === prefix)
+          .flatMap(([candidate, data]) => {
+            const storeName = getStoreName(candidate);
+            return storeName === null || storeName === "meta" ? [] : [{ storeName, data }];
+          });
+        operations.push(...this.createResourceOperations(this.readMetadata(resourceMetadata), metadata.iri, resourceStores, false));
+      }
+    }
+
+    for (const child of directory.directories.values()) {
+      if (child.files.has(".meta.json")) {
+        operations.push(...(await this.createDirectoryOperations(child, metadata.iri)));
+      }
+    }
+
+    return operations;
+  }
+
+  private createResourceOperations(
+    metadata: ResourceMetadata,
+    parentPackageId: string | null,
+    stores: { storeName: string; data: JsonObject }[],
+    isPackageDirectory: boolean,
+  ): OperationInModel[] {
+    const iri = metadata.iri;
+    const modelType = isPackageDirectory ? LOCAL_PACKAGE : (metadata.types?.[0] ?? "");
+    const { label, description, ...otherMetadata } = metadata.userMetadata ?? {};
+
+    const createOperation = parentPackageId === null ? createCreateProjectOperation(iri) : createCreateModelOperation(parentPackageId, modelType, iri);
+    createOperation.label = label;
+    createOperation.description = description;
+
+    const operations: OperationInModel[] = [{ modelId: PROJECT_MODEL_ID, operation: createOperation }];
+
+    // Only the label and description are part of the creation operation, the
+    // rest of the user metadata is set on the resource's project model entity.
+    if (Object.keys(otherMetadata).length > 0) {
+      const entity = { ...otherMetadata, id: iri, type: [PROJECT_MODEL_MODEL_ENTITY] } as Entity;
+      operations.push({ modelId: PROJECT_MODEL_ID, operation: createSetEntityOperation(entity) });
+    }
+
+    for (const { storeName, data } of stores) {
+      const modelId = composeModelId(iri, storeName);
+      const entities = deserializeModelEntities(modelId, resolveStoreModelType(modelType, storeName), data);
+      for (const entity of Object.values(entities)) {
+        operations.push({ modelId, operation: createSetEntityOperation(entity) });
+      }
+    }
+
+    return operations;
+  }
+
+  private readMetadata(data: unknown): ResourceMetadata {
+    if (!data || typeof (data as any).iri !== "string") {
+      throw new Error("Import backup is missing resource metadata.");
+    }
+    return data as unknown as ResourceMetadata;
   }
 
   /**
-   * For given exiting resource by its IRI sets all blobs found in the zip.
-   * For example this would be a typical store: resourcePath + ".model.json"
+   * Loads and parses every archive file into the in-memory backup before
+   * migrations or import operations run.
    */
-  async setBlobsForResource(resourcePath: string, resourceIri: string) {
-    const files = Object.keys(this.zip.files);
+  private async loadArchive(buffer: Buffer): Promise<InMemoryBackupDirectory> {
+    const zip = new JSZip();
+    await zip.loadAsync(buffer);
 
-    for (const file of files) {
-      if (!file.startsWith(resourcePath)) {
-        continue;
-      }
-
-      const restChunk = file.substring(resourcePath.length);
-      const matches = FILE_EXTENSION_REGEX.exec(restChunk);
-      if (matches) {
-        const blobName = matches[1];
-
-        // meta is a special for metadata, it is not a store per se
-        if (blobName === "meta") {
-          continue;
+    const backup = createInMemoryBackup();
+    await Promise.all(
+      Object.entries(zip.files).map(async ([path, source]) => {
+        if (source.dir) {
+          return;
         }
+        const parsed = JSON.parse(await source.async("text")) as unknown;
+        if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+          throw new Error(`Import file "${path}" must contain a JSON object.`);
+        }
+        addJsonFileToBackup(backup, path, parsed as JsonObject);
+      }),
+    );
+    return backup;
+  }
 
-        const blob = await this.zip.file(file)!.async("text");
-        const blobJson = JSON.parse(blob);
-
-        const store = await this.resourceModel.getOrCreateResourceModelStore(resourceIri, blobName);
-        await store.setJson(blobJson);
+  /**
+   * Ensures none of the resources the operations create exists yet. Creation
+   * operations are idempotent and would silently do nothing for an existing
+   * resource, letting the imported content overwrite it.
+   */
+  private async checkResourcesDoNotExist(operations: OperationInModel[]): Promise<void> {
+    for (const { operation } of operations) {
+      const iri = isCreateProjectOperation(operation) ? operation.projectId : isCreateModelOperation(operation) ? operation.modelId : null;
+      if (iri !== null && (await this.modelRepository.getResource(iri)) !== null) {
+        throw new Error(`Cannot import resource "${iri}" because it already exists.`);
       }
     }
   }

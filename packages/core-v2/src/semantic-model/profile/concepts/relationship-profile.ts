@@ -1,4 +1,4 @@
-import { Entity } from "../../../entity-model/index.ts";
+import { Entity } from "@dataspecer/core/entity-model";
 import { NamedThingProfile } from "./named-thing-profile.ts";
 import { Profile } from "./profile.ts";
 import { OrderedThing } from "../../concepts/ordered-thing.ts";
@@ -18,20 +18,14 @@ export interface SemanticModelRelationshipProfile extends Entity {
 
 export const SEMANTIC_MODEL_RELATIONSHIP_PROFILE = "relationship-profile";
 
-export function isSemanticModelRelationshipProfile(entity: Entity | null): entity is SemanticModelRelationshipProfile {
+export function isSemanticModelRelationshipProfile(
+  entity: Entity | null,
+): entity is SemanticModelRelationshipProfile {
   return entity?.type.includes(SEMANTIC_MODEL_RELATIONSHIP_PROFILE) ?? false;
 }
 
-export interface SemanticModelRelationshipEndProfile extends NamedThingProfile, Profile, OrderedThing {
-
-  /**
-   * Public, usually globally-recognized, identifier of the entity.
-   * The value may be null indicating that the entity has no public IRI.
-   * @example http://xmlns.com/foaf/0.1/Person
-   *
-   * IRI may be relative to the base IRI of the model.
-   */
-  iri: string | null;
+export interface SemanticModelRelationshipEndProfile
+  extends Profile, NamedThingProfile, OrderedThing {
 
   /**
    * Must be descendant or self of the corresponding concept of the used entity.

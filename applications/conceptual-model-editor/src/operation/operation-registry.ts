@@ -1,58 +1,49 @@
-import { SemanticModel } from "@dataspecer/semantic-model";
-import { ProfileModel } from "@dataspecer/profile-model";
-import { VisualModel } from "@dataspecer/visual-model";
+import {
+  CmeOperationArguments, CmeOperationExecutor, CmeOperationResultOf,
+} from "./operation";
 
-import { CmeOperationArguments, CmeOperationResult } from "./operation";
+export const cmeOperationExecutorRegistry: CmeOperationExecutorRegistry =
+  (() => {
 
-export interface CmeExecutionContext {
+    const registry: { [type: string]: RegistryEntry } = {};
 
-  semanticModels: SemanticModel[];
+    return {
+      register(type, _factory, executor) {
+        registry[type] = { executor };
+      },
+      get(type) {
+        return registry[type];
+      },
+    }
 
-  profileModels: ProfileModel[];
+  })();
 
-  visualModels: VisualModel[];
+interface CmeOperationExecutorRegistry {
+
+  /**
+   * Register new operation executor for given type.
+   *
+   * The factory is used only to check types, it is not called.
+   * The type must match the type produced by the factory, and the executor
+   * must accept the factory arguments and return the result type
+   * declared by the factory.
+   */
+  register<OperationType extends CmeOperationArguments>(
+    type: OperationType["type"],
+    factory: (...args: any[]) => OperationType,
+    executor: CmeOperationExecutor<
+      OperationType, CmeOperationResultOf<OperationType>>,
+  ): void;
+
+  /**
+   * Returns operation executor for given type.
+   */
+  get(type: string): RegistryEntry | undefined;
 
 }
 
-export type InternalExecutor<
-  ArgumentType extends CmeOperationArguments,
-  ResultType extends CmeOperationResult<ArgumentType>,
-> = (
-  context: CmeExecutionContext,
-  args: ArgumentType,
-) => Promise<ResultType>;
+export interface RegistryEntry {
 
-interface RegistryEntry {
+  executor: CmeOperationExecutor<any, any>;
 
-  executor: InternalExecutor<any, any>;
-
-  label: string;
-
-  description: string;
-
-}
-
-const registry: { [type: string]: RegistryEntry } = {};
-
-/**
- * Register operation executor for operation of the given type.
- */
-export function register<
-  ArgumentType extends CmeOperationArguments,
-  ResultType extends CmeOperationResult<ArgumentType>,
->(
-  type: string,
-  executor: InternalExecutor<ArgumentType, ResultType>,
-  label: string,
-  description: string,
-): void {
-  registry[type] = {
-    executor,
-    label,
-    description,
-  };
-}
-
-export function registeredCmeOperationExecutors() {
-  return Object.freeze(registry);
 }

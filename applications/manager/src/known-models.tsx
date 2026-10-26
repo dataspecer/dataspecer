@@ -1,6 +1,6 @@
-import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, CONTROLLED_VOCABULARY_MODEL, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
-import { AppWindowMac, Code, Cog, Eye, Folder, Globe2, LibraryBig } from "lucide-react";
+import { AppWindowMac, BookOpen, Code, Cog, Eye, Folder, Globe2, LibraryBig } from "lucide-react";
 import { v4 as uuidv4 } from 'uuid';
 import { cn } from "./lib/utils";
 import { packageService, requestLoadPackage } from "./package";
@@ -13,6 +13,14 @@ export function getSchemaLink(packageId: string) {
   return (import.meta.env.VITE_DATA_SPECIFICATION_EDITOR ?? "") + "/specification?dataSpecificationIri=" + encodeURIComponent(packageId);
 }
 
+export function getHistoryLink(packageId: string) {
+  return (import.meta.env.VITE_HISTORY ?? "") + "/evolution?packageIri=" + encodeURIComponent(packageId);
+}
+
+export function getEvolutionReviewLink(packageId: string, branch: number) {
+  return (import.meta.env.VITE_HISTORY ?? "") + "/evolution/review?packageIri=" + encodeURIComponent(packageId) + "&branch=" + encodeURIComponent(branch);
+}
+
 export interface createModelContext {
   iri?: string;
   parentIri: string;
@@ -20,8 +28,6 @@ export interface createModelContext {
   label?: LanguageString;
   description?: LanguageString;
   baseIri?: string;
-  modelAlias?: string;
-  documentBaseUrl?: string;
   caches?: string[];
 }
 
@@ -39,7 +45,6 @@ function getHookForStandardModel(type: string, initialContent: (iri: string, con
         userMetadata: {
           label: context.label,
           description: context.description,
-          documentBaseUrl: context.documentBaseUrl,
         }
       }),
     });
@@ -65,8 +70,6 @@ export const createModelInstructions = {
         userMetadata: {
           label: context.label,
           description: context.description,
-          // @ts-ignore
-          documentBaseUrl: context.documentBaseUrl,
         }
       });
       await fetch(import.meta.env.VITE_BACKEND + "/resources/blob?iri=" + encodeURIComponent(iri), {
@@ -102,15 +105,23 @@ export const createModelInstructions = {
       }}))(context);
     },
   },
-  [LOCAL_VISUAL_MODEL]: {
+  [VISUAL_MODEL]: {
     needsNaming: false,
-    createHook: getHookForStandardModel(LOCAL_VISUAL_MODEL, iri => ({
-      "type": "http://dataspecer.com/resources/local/visual-model",
-      "modelId": iri,
-      "visualEntities": {},
-      "modelColors": {
-        "vhfk9": "#ffd670"
-      }
+    createHook: getHookForStandardModel(VISUAL_MODEL, iri => ({
+      "identifier": iri,
+      "version": 1,
+      "type": VISUAL_MODEL,
+      "entities": [
+        {
+          "identifier": iri,
+          "type": [
+            "entity-model-type"
+          ],
+          "label": {
+            "en": "Main view"
+          }
+        }
+      ]
     })),
   },
   [APPLICATION_GRAPH]: {
@@ -127,9 +138,9 @@ export const createModelInstructions = {
   [LOCAL_SEMANTIC_MODEL]: {
     needsNaming: false,
     createHook: getHookForStandardModel(LOCAL_SEMANTIC_MODEL, (iri, context) => ({
-      "type": "http://dataspecer.com/resources/local/semantic-model",
+      "type": LOCAL_SEMANTIC_MODEL,
       "modelId": iri,
-      "modelAlias": context.modelAlias ?? "",
+      "label": context.label ?? {},
       "baseIri": context.baseIri ?? iri,
       "entities": {}
     })),
@@ -142,14 +153,15 @@ export const createModelInstructions = {
 
 export const modelTypeToName = {
     [LOCAL_PACKAGE]: "Directory",
-    [LOCAL_VISUAL_MODEL]: "Visual model",
+    [VISUAL_MODEL]: "Visual model",
     [LOCAL_SEMANTIC_MODEL]: "Semantic model",
     [V1.PSM]: "PSM",
     [V1.GENERATOR_CONFIGURATION]: "Generator configuration",
-    "https://dataspecer.com/core/model-descriptor/sgov": "SSP",
-    "https://dataspecer.com/core/model-descriptor/pim-store-wrapper": "PIM Wrapper",
+    [QUERYABLE_MODEL]: "SSP",
+    [RDFS_MODEL]: "PIM Wrapper",
     [API_SPECIFICATION_MODEL]: "OpenAPI Specification",
-    [APPLICATION_GRAPH]: "Application graph"
+    [APPLICATION_GRAPH]: "Application graph",
+    [CONTROLLED_VOCABULARY_MODEL]: "Controlled vocabulary",
   };
 
 export const ModelIcon = ({ type, className }: { type: string[], className?: string }) => {
@@ -159,7 +171,7 @@ export const ModelIcon = ({ type, className }: { type: string[], className?: str
   if (type.includes(LOCAL_PACKAGE)) {
     return <Folder className={cn("text-gray-400", className)} />;
   }
-  if (type.includes(LOCAL_VISUAL_MODEL)) {
+  if (type.includes(VISUAL_MODEL)) {
     return <Eye className={cn("text-purple-400", className)} />;
   }
   if (type.includes(LOCAL_SEMANTIC_MODEL)) {
@@ -171,13 +183,16 @@ export const ModelIcon = ({ type, className }: { type: string[], className?: str
   if (type.includes(V1.GENERATOR_CONFIGURATION)) {
     return <Cog className={cn("text-purple-400", className)} />;
   }
-  if (type.includes("https://dataspecer.com/core/model-descriptor/sgov")) {
+  if (type.includes(QUERYABLE_MODEL)) {
     return <Globe2 className={cn("text-green-400", className)} />;
   }
-  if (type.includes("https://dataspecer.com/core/model-descriptor/pim-store-wrapper")) {
+  if (type.includes(RDFS_MODEL)) {
     return <LibraryBig className={cn("text-orange-400", className)} />;
   }
   if (type.includes(API_SPECIFICATION_MODEL)) {
     return <span className={cn("aspect-square w-[24px] leading-[24px] align-middle text-center text-blue-800 font-bold text-xs", className)} >API</span>;
+  }
+  if (type.includes(CONTROLLED_VOCABULARY_MODEL)) {
+    return <BookOpen className={cn("text-teal-400", className)} />;
   }
 };

@@ -385,7 +385,7 @@ export const SPECIFIC_ALGORITHM_CONVERSIONS_MAP: Record<SpecificGraphConversionA
             const edgesInCluster = graphConversionConfiguration.data.clusterifyAction.data.clusters[clusterRoot];
             for(const edgeInCluster of edgesInCluster) {
                 const edgeInCurrentGraph = graph.findEdgeInAllEdges(edgeInCluster.id);
-                const layoutedEdge = visualEdgesWithWaypoints.find(e => e.identifier === edgeInCluster.id);
+                const layoutedEdge = visualEdgesWithWaypoints.find(e => e.id === edgeInCluster.id);
                 if(layoutedEdge === undefined || edgeInCurrentGraph === undefined) {
                     continue;
                 }

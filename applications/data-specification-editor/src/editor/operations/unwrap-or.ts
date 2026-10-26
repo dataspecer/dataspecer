@@ -18,7 +18,7 @@ export class UnwrapOr implements ComplexOperation {
     const schema = this.store.getSchemaForResource(this.or) as string;
 
     const dataPsmUnwrapOr = new DataPsmUnwrapOr();
-    dataPsmUnwrapOr.dataPsmOr = this.or;
+    dataPsmUnwrapOr.entityId = this.or;
     this.store.applyOperation(schema, dataPsmUnwrapOr);
   }
 }

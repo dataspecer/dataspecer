@@ -1,12 +1,8 @@
-import { EntityIdentifier } from "./entity-model/entity.ts";
-import { ModelIdentifier } from "./entity-model/entity-model.ts";
-import { LegacyModel } from "./entity-model/legacy-model.ts";
-import { UnsubscribeCallback } from "./entity-model/observable-entity-model.ts";
-import { TypedObject, isTypedObject } from "./entity-model/typed-object.ts";
+import { ModelIdentifier } from "@dataspecer/core/model";
 import {
     HexColor, VisualModelData, RepresentedEntityIdentifier, VisualEntity,
 } from "./concepts/index.ts";
-import { LabeledModel } from "./entity-model/labeled-model.ts";
+import { EntityIdentifier } from "@dataspecer/core/entity-model";
 
 export enum VisualModelDataVersion {
     VERSION_0,
@@ -24,12 +20,14 @@ export enum VisualModelDataVersion {
  *
  * Since the visual model capture what use see we design it as synchronous interface.
  */
-export interface VisualModel extends TypedObject, LegacyModel, LabeledModel {
+export interface VisualModel {
 
     /**
      * @returns Model identifier.
      */
     getIdentifier(): ModelIdentifier;
+
+    getTypes(): string[];
 
     /**
      * @returns Visual entity with given identifier or null.
@@ -59,7 +57,7 @@ export interface VisualModel extends TypedObject, LegacyModel, LabeledModel {
      * Subscribe to changes.
      * @returns Callback to cancel the subscription.
      */
-    subscribeToChanges(listener: VisualModelListener): UnsubscribeCallback;
+    subscribeToChanges(listener: VisualModelListener): () => void;
 
     /**
      * @returns Color as defined for given model or null.
@@ -78,12 +76,46 @@ export interface VisualModel extends TypedObject, LegacyModel, LabeledModel {
      */
     getInitialModelVersion(): VisualModelDataVersion;
 
+    /**
+     * @deprecated
+     * @returns Model identifier.
+     */
+    getId(): string;
+
+    /**
+     * @deprecated
+     * @returns JSON representation of model content to be send to backend.
+     */
+    serializeModel(): object;
+
+    /**
+     * Replace model content with value loaded from given JSON representation of the model.
+     * @deprecated
+     */
+    deserializeModel(value: object): this;
+
+    /**
+     * @returns Get human readable label.
+     */
+    getLabel(): LanguageString | null;
+
+    /**
+     * @param label Human readable label for the model.
+     */
+    setLabel(label: LanguageString | null): void;
+
 }
 
-export const VISUAL_MODE_TYPE = "visual-model";
+type LanguageString = { [language: string]: string };
+
+export const VISUAL_MODEL_TYPE = "visual-model";
 
 export function isVisualModel(what: unknown): what is VisualModel {
-    return isTypedObject(what) && what.getTypes().includes(VISUAL_MODE_TYPE);
+    return isTypedObject(what) && what.getTypes().includes(VISUAL_MODEL_TYPE);
+}
+
+function isTypedObject(what: unknown): what is { getTypes(): string[]; } {
+    return typeof what === "object" && what !== null && "getTypes" in what;
 }
 
 /**
@@ -109,4 +141,3 @@ export interface VisualModelListener {
     ) => void;
 
 }
-

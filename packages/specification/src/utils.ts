@@ -1,14 +1,19 @@
+import { isModelProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import type { Entity } from "@dataspecer/core-v2";
 import { createDefaultConfigurationModelFromJsonObject } from "@dataspecer/core-v2/configuration-model";
 import { isSemanticModelClass, isSemanticModelRelationship, SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
-import { isSemanticModelClassProfile, isSemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
+import { isSemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
+import { isControlledVocabulary, type ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
+import type { LanguageString } from "@dataspecer/core/core/core-resource";
+import type { EntityRecord } from "@dataspecer/core/entity-model";
+import { createSetEntityOperation, generateOperationId, type Transaction } from "@dataspecer/core/operation";
+import { ldesToRdf, profileTransactionsToLdes, vocabularyTransactionsToLdes } from "@dataspecer/data-specification-vocabulary/ldes";
 import * as DataSpecificationVocabulary from "@dataspecer/data-specification-vocabulary/semantic-model";
 import { getMustacheView } from "@dataspecer/documentation";
 import { createPartialDocumentationConfiguration, DOCUMENTATION_MAIN_TEMPLATE_PARTIAL } from "@dataspecer/documentation/configuration";
 import { generateDocumentation } from "@dataspecer/documentation/documentation-generator";
 import { generateLightweightOwl as generateLightweightOwlInternal } from "@dataspecer/lightweight-owl";
 import { mergeDocumentationConfigurations } from "./documentation/documentation.ts";
-import { BlobModel } from "./model-repository/blob-model.ts";
 import { ModelDescription } from "./model.ts";
 import { GenerateSpecificationContext } from "./specification.ts";
 import { semanticModelsToShacl, shaclToRdf, type SemanticModelsToShaclConfiguration } from "@dataspecer/shacl-v2";
@@ -19,11 +24,13 @@ import { semanticModelsToShacl, shaclToRdf, type SemanticModelsToShaclConfigurat
 export function isModelVocabulary(model: Record<string, SemanticModelEntity>): boolean {
   return Object.values(model).some((entity) => isSemanticModelClass(entity) || isSemanticModelRelationship(entity));
 }
+
 /**
- * Helper function that check whether the model is an application profile. If not, it is probably a vocabulary.
+ * Helper function that checks whether the model is a single controlled
+ * vocabulary model - see fillModels in specification.ts.
  */
-export function isModelProfile(model: Record<string, SemanticModelEntity>): boolean {
-  return Object.values(model).some((entity) => isSemanticModelClassProfile(entity) || isSemanticModelRelationshipProfile(entity));
+export function isModelControlledVocabulary(model: Record<string, SemanticModelEntity>): boolean {
+  return Object.values(model).some((entity) => isControlledVocabulary(entity));
 }
 
 export async function generateLightweightOwl(entities: Record<string, SemanticModelEntity>, baseIri: string, iri: string): Promise<string> {
@@ -33,8 +40,24 @@ export async function generateLightweightOwl(entities: Record<string, SemanticMo
 
 /**
  * Generates Application Profile DSV representation.
+ * @param controlledVocabularyCatalogIris Maps a controlled vocabulary's
+ *  entity id to the IRI of the catalog it is a direct member of - used to
+ *  resolve dsv:controlledVocabulary references. See createContext.
+ * @param controlledVocabulariesToEmbed Vocabularies to embed as a DCAT
+ *  catalog directly in the generated document, alongside the conceptual
+ *  model - only the ones directly owned by this specification's own
+ *  package, not the whole project. See embeddedCatalogIri.
+ * @param embeddedCatalogIri IRI of the catalog controlledVocabulariesToEmbed
+ *  are written as members of.
  */
-export async function generateDsvApplicationProfile(forExportModels: ModelDescription[], forContextModels: ModelDescription[], iri: string) {
+export async function generateDsvApplicationProfile(
+  forExportModels: ModelDescription[],
+  forContextModels: ModelDescription[],
+  iri: string,
+  controlledVocabularyCatalogIris?: Map<string, string>,
+  controlledVocabulariesToEmbed?: ControlledVocabulary[],
+  embeddedCatalogIri?: string,
+) {
   // Step 1: Prepare models in the required format.
 
   const modelMapping = (model: ModelDescription) => ({
@@ -46,6 +69,7 @@ export async function generateDsvApplicationProfile(forExportModels: ModelDescri
 
   const semanticsDependencies = forContextModels.filter((model) => isModelVocabulary(model.entities)).map(modelMapping);
   const profilesDependencies = forContextModels.filter((model) => isModelProfile(model.entities)).map(modelMapping);
+  const controlledVocabularyDependencies = forContextModels.filter((model) => isModelControlledVocabulary(model.entities)).map(modelMapping);
 
   // Step 2: Generate DSV.
 
@@ -53,27 +77,108 @@ export async function generateDsvApplicationProfile(forExportModels: ModelDescri
     {
       semantics: semanticsDependencies,
       profiles: profilesDependencies,
+      controlledVocabularies: controlledVocabularyDependencies,
     },
     profiles,
     {
       iri,
+      controlledVocabularyCatalogIris,
     },
   );
 
   const dsvString = await DataSpecificationVocabulary.conceptualModelToRdf(applicationProfile, {
     prettyPrint: true,
     prefixes: undefined, // todo
+    controlledVocabularies: controlledVocabulariesToEmbed,
+    controlledVocabularyCatalogIri: embeddedCatalogIri,
   });
 
   return dsvString;
 }
 
+/**
+ * Publishes the operations of the model as an LDES stream, see
+ * `@dataspecer/data-specification-vocabulary/ldes`. Members are version
+ * objects of the published representation of the model: DSV term profiles
+ * for an application profile, OWL classes and properties for a vocabulary.
+ *
+ * When no transaction history is available, the current state of the model
+ * is published as a single initial transaction.
+ */
+export async function generateLdesOperationStream(
+  forExportModel: ModelDescription,
+  forContextModels: ModelDescription[],
+  iri: string,
+  streamIri: string,
+  history: { models: Record<string, EntityRecord>; transactions: Transaction[] } | undefined,
+): Promise<string> {
+  const publishedModelId = forExportModel.id ?? "model";
+
+  const baseIris: Record<string, string | null> = {};
+  for (const model of forContextModels) {
+    if (model.id !== null) {
+      baseIris[model.id] = model.baseIri;
+    }
+  }
+  baseIris[publishedModelId] = forExportModel.baseIri;
+
+  let models: Record<string, EntityRecord>;
+  let transactions: Transaction[];
+  if (history) {
+    models = history.models;
+    transactions = history.transactions;
+  } else {
+    models = {};
+    for (const model of forContextModels) {
+      if (model.id !== null) {
+        models[model.id] = model.entities;
+      }
+    }
+    models[publishedModelId] = {};
+    transactions = [{
+      id: generateOperationId(),
+      operations: Object.values(forExportModel.entities)
+        .map((entity) => ({ modelId: publishedModelId, operation: createSetEntityOperation(entity) })),
+    }];
+  }
+
+  const input = {
+    streamIri,
+    publishedModelIri: iri,
+    models,
+    baseIris,
+    publishedModelId,
+    transactions,
+  };
+  const stream = isModelVocabulary(forExportModel.entities)
+    ? vocabularyTransactionsToLdes(input)
+    : profileTransactionsToLdes(input);
+
+  return await ldesToRdf(stream, { prettyPrint: true });
+}
+
 export async function generateShaclApplicationProfile(forExportModel: ModelDescription, forContextModels: ModelDescription[], iri: string, configuration: SemanticModelsToShaclConfiguration) {
-  const mapModel = (model: ModelDescription) => ({
-    getId: () => model.baseIri!,
-    getBaseIri: () => model.baseIri ?? null,
-    getEntities: () => model.entities,
-  });
+  // We want to do memoization here because the called function is depending on the same models
+  const mapModelMemoization = new WeakMap<ModelDescription, ReturnType<typeof mapModel>>();
+  const mapModel = (model: ModelDescription): {
+  getId: () => string;
+  getBaseIri: () => string | null;
+  getEntities: () => Record<string, SemanticModelEntity>;
+  } => {
+    if (mapModelMemoization.has(model)) {
+      return mapModelMemoization.get(model)!;
+    }
+
+    const result = {
+      getId: () => model.baseIri!,
+      getBaseIri: () => model.baseIri ?? null,
+      getEntities: () => model.entities,
+    };
+
+    mapModelMemoization.set(model, result);
+
+    return result;
+  };
 
   /**
    * IRI to key mapping.
@@ -101,6 +206,7 @@ export async function generateShaclApplicationProfile(forExportModel: ModelDescr
     forContextModels.filter((model) => isModelProfile(model.entities)).map(mapModel),
     mapModel(forExportModel),
     configuration, { baseIri: iri, defaultPrefixes: prefixesForIriConstruction },
+    forContextModels.filter((model) => isModelControlledVocabulary(model.entities)).map(mapModel),
   );
 
   const rdf = await shaclToRdf(shacl, {});
@@ -150,7 +256,7 @@ export async function getIdToIriMapping(models: ModelDescription[]): Promise<Rec
  * Returns HTML documentation for the given package.
  */
 export async function generateHtmlDocumentation(
-  thisPackageModel: BlobModel,
+  rootPackage: { data: unknown; label: LanguageString },
   models: ModelDescription[],
   options: {
     externalArtifacts?: Record<
@@ -168,13 +274,12 @@ export async function generateHtmlDocumentation(
 ): Promise<string> {
   const externalArtifacts = options.externalArtifacts ?? {};
 
-  const packageData = await thisPackageModel.getJsonBlob();
-  const configuration = createDefaultConfigurationModelFromJsonObject(packageData as object);
+  const configuration = createDefaultConfigurationModelFromJsonObject(rootPackage.data as object);
   const documentationConfiguration = createPartialDocumentationConfiguration(configuration);
   const fullConfiguration = mergeDocumentationConfigurations([documentationConfiguration]);
 
   const context = {
-    label: thisPackageModel.getUserMetadata().label ?? {},
+    label: rootPackage.label ?? {},
     models,
     externalArtifacts,
     dsv: options.dsv ? JSON.parse(options.dsv) : {},

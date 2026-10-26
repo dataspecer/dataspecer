@@ -1,3 +1,4 @@
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Modal, ModalBody, ModalContent, ModalHeader, ModalTitle } from "@/components/modal";
 import { LoadingButton } from "@/components/ui/button";
 import { CardDescription } from "@/components/ui/card";
@@ -7,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { BetterModalProps } from "@/lib/better-modal";
 import { requestLoadPackage } from "@/package";
+import { AlertCircleIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -19,11 +21,13 @@ export interface AddImportedProps {
 export const AddImported = ({ id, urlOnly, isOpen, resolve }: AddImportedProps & BetterModalProps<boolean>) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const formSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     event.stopPropagation();
     setLoading(true);
+    setError(null);
 
     try {
       const urls = (event.target as any)["url"].value
@@ -51,13 +55,25 @@ export const AddImported = ({ id, urlOnly, isOpen, resolve }: AddImportedProps &
 
       if (importResults.every((r) => r.ok)) {
         toast.success(t("add-imported.success"));
-      } else {
-        toast.error(t("add-imported.error"));
+        resolve(true);
+        return;
       }
 
-      resolve(true);
+      const errors = (
+        await Promise.all(
+          importResults
+            .filter((r) => !r.ok)
+            .map(async (r) => {
+              const data = (await r.json().catch(() => null)) as { error?: string } | null;
+              return data?.error;
+            })
+        )
+      ).filter(Boolean);
+      setError(errors.length > 0 ? errors.join("\n") : t("add-imported.error"));
+      setLoading(false);
     } catch (error) {
       console.error(error);
+      setError(t("add-imported.error"));
       setLoading(false);
     }
   };
@@ -101,6 +117,14 @@ export const AddImported = ({ id, urlOnly, isOpen, resolve }: AddImportedProps &
                 <Textarea id="url" placeholder={t("form.url.instruction")} required />
               </div>
 
+              {error && (
+                <Alert variant="destructive">
+                  <AlertCircleIcon />
+                  <AlertTitle>{t("add-imported.error-title")}</AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
               <LoadingButton type="submit" loading={loading}>
                 {t("add-imported.import")}
               </LoadingButton>
@@ -120,6 +144,14 @@ export const AddImported = ({ id, urlOnly, isOpen, resolve }: AddImportedProps &
                   </Label>
                   <Textarea id="url" placeholder={t("form.url.instruction")} required />
                 </div>
+
+                {error && (
+                  <Alert variant="destructive">
+                    <AlertCircleIcon />
+                    <AlertTitle>{t("add-imported.error-title")}</AlertTitle>
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
 
                 <LoadingButton type="submit" loading={loading}>
                   {t("add-imported.import")}

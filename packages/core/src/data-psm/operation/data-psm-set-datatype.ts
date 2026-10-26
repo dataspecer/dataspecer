@@ -1,19 +1,23 @@
-import { CoreOperation, CoreResource } from "../../core/index.ts";
+import { generateOperationId, type Operation } from "../../operation/index.ts";
 import * as PSM from "../data-psm-vocabulary.ts";
 
-export class DataPsmSetDatatype extends CoreOperation {
+export class DataPsmSetDatatype implements Operation {
   static readonly TYPE = PSM.SET_DATATYPE;
 
-  dataPsmAttribute: string | null = null;
+  id: string;
+
+  type: string;
+
+  entityId: string | null = null;
 
   dataPsmDatatype: string | null = null;
 
   constructor() {
-    super();
-    this.types.push(DataPsmSetDatatype.TYPE);
+    this.id = generateOperationId();
+    this.type = DataPsmSetDatatype.TYPE;
   }
 
-  static is(resource: CoreResource | null): resource is DataPsmSetDatatype {
-    return resource?.types.includes(DataPsmSetDatatype.TYPE);
+  static is(operation: Operation | null | undefined): operation is DataPsmSetDatatype {
+    return operation?.type === DataPsmSetDatatype.TYPE;
   }
 }

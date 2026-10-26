@@ -18,7 +18,7 @@ export class XmlSetSkipRootElement implements ComplexOperation {
 
     execute(): void {
         const operation = new DataPsmSetXmlSkipRootElement();
-        operation.dataPsmSchema = this.forDataPsmSchemaIri;
+        operation.entityId = this.forDataPsmSchemaIri;
         operation.skipRootElement = this.skipRootElement;
         this.store.applyOperation(this.forDataPsmSchemaIri, operation);
     }

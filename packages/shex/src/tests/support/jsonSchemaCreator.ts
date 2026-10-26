@@ -9,7 +9,7 @@ import {
     StructureModelProperty,
     StructureModelPrimitiveType,
     StructureModelSchemaRoot,
-  } from "@dataspecer/core/structure-model/model";
+  } from "@dataspecer/generators/structure-model/model";
   import {
     assert,
     assertFailed,
@@ -29,7 +29,7 @@ import {
   import { ShaclAdapter } from "../../shacl-adapter/index.ts";
   import  ModelCreator  from "./SimpleObjectModelCreator.ts";
   import  ConceptualModelCreator  from "./conceptualModelCreator.ts";
-  import {ArtefactGenerator, ArtefactGeneratorContext, StructureClassLocation} from "@dataspecer/core/generator";
+  import {ArtefactGenerator, ArtefactGeneratorContext, StructureClassLocation} from "@dataspecer/generators/generator";
 import { JsonSchema } from "../../../../json/src/json-schema/json-schema-model.ts";
 import { CoreResourceReader } from "@dataspecer/core/core/core-reader";
 import { JsonLdGenerator } from "../../../../json/src/json-ld/json-ld-generator.ts";
@@ -38,7 +38,7 @@ import {StreamDictionary} from "@dataspecer/core/io/stream/stream-dictionary";
 import {MemoryStreamDictionary} from "@dataspecer/core/io/stream/memory-stream-dictionary";
 import { MemoryOutputStream } from "@dataspecer/core/io/stream/memory-output-stream";
 import { baseDataPsmExecutors } from "@dataspecer/core/data-psm/executor";
-import { ConceptualModelClass } from "@dataspecer/core/conceptual-model";
+import { ConceptualModelClass } from "@dataspecer/generators/conceptual-model";
 import { writeJsonSchema } from "../../../../json/src/json-schema/json-schema-writer.ts";
 import { pimExecutors } from "@dataspecer/core/pim/executor";
 import * as PSM from "@dataspecer/core/data-psm/data-psm-vocabulary";

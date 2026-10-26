@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react'
 import i18nextLoader from 'vite-plugin-i18next-loader'
 
 // https://vite.dev/config/
-export default defineConfig(({ command, mode }) => {
+export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   return {
@@ -28,10 +28,14 @@ export default defineConfig(({ command, mode }) => {
       sourcemap: true,
     },
     resolve: {
-      alias: {
-        "@": path.resolve(__dirname, "./src"),
-        "fs": "path", // Hack to make polyfill to null
-      },
+      alias: [
+        {
+          find: /^@mui\/icons-material\/(.+)$/,
+          replacement: "@mui/icons-material/esm/$1",
+        },
+        { find: "@", replacement: path.resolve(import.meta.dirname, "./src") },
+        { find: "fs", replacement: "path" }, // Hack to make polyfill to null
+      ],
     },
     // https://github.com/mui/material-ui/issues/32727#issuecomment-1697253782
     optimizeDeps: {

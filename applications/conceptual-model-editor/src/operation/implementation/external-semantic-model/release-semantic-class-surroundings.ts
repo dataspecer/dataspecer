@@ -1,25 +1,27 @@
 import {
   EntityDsIdentifier,
   ModelDsIdentifier,
-} from "@/dataspecer/entity-model";
+} from "../../../dataspecer/entity-model";
 
-import { CmeOperationArguments, CmeOperationResult } from "../../operation";
-import { findModel } from "../operation-utilities";
+import { isExternalSemanticModel } from "../../../dataspecer/semantic-model";
+import { cmeOperationExecutorRegistry } from "../../operation-registry";
+import { findSemanticModel } from "../operation-utilities";
 import {
   CmeExecutionContext,
-  register,
-} from "../../operation-registry";
-import { isExternalSemanticModel } from "../../../dataspecer/semantic-model";
+  CmeOperation,
+  CmeOperationArguments,
+  CmeOperationResult,
+  ModelIsNotWritable,
+} from "../../operation";
 
-const ReleaseSemanticClassSurroundingsType =
-  "release-class-surroundings-operation";
-
-register(
-  ReleaseSemanticClassSurroundingsType,
-  releaseClassSurroundingsExecutor,
-  "Release semantic class surrounding",
-  "For given semantic class release its surrounding to its semantic model."
-);
+export function releaseSemanticClassSurroundingsOperation(
+  args: Omit<ReleaseSemanticClassSurroundingsArguments, "type">,
+): CmeOperation<ReleaseSemanticClassSurroundingsArguments, ReleaseClassSurroundingsResult> {
+  return {
+    type: ReleaseSemanticClassSurroundingsType,
+    ...args,
+  };
+}
 
 export interface ReleaseSemanticClassSurroundingsArguments
   extends CmeOperationArguments {
@@ -32,20 +34,26 @@ export interface ReleaseSemanticClassSurroundingsArguments
 
 }
 
+const ReleaseSemanticClassSurroundingsType =
+  "release-class-surroundings-operation";
+
 type ReleaseClassSurroundingsResult =
   CmeOperationResult<ReleaseSemanticClassSurroundingsArguments>;
 
-export type ReleaseSemanticClassSurroundingsOperation = [
-  ReleaseSemanticClassSurroundingsArguments, ReleaseClassSurroundingsResult];
+cmeOperationExecutorRegistry.register(
+  ReleaseSemanticClassSurroundingsType,
+  releaseSemanticClassSurroundingsOperation,
+  { execute: releaseClassSurroundingsExecutor },
+)
 
 export async function releaseClassSurroundingsExecutor(
   context: CmeExecutionContext,
   args: ReleaseSemanticClassSurroundingsArguments,
 ): Promise<ReleaseClassSurroundingsResult> {
-  const model = findModel(
-    context.semanticModels, isExternalSemanticModel, args.semanticModel);
-  //
+  const model = findSemanticModel(context, args.semanticModel);
+  if (!isExternalSemanticModel(model)) {
+    throw new ModelIsNotWritable();
+  }
   await model.releaseClassSurroundings(args.entity);
   return { args };
 }
-

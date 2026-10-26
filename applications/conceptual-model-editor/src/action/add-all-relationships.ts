@@ -5,23 +5,23 @@ import {
   VisualRelationship,
 } from "@dataspecer/visual-model";
 import { getVisualDiagramNodeMappingsByRepresented, isVisualEdgeEnd } from "./utilities";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
-import { ClassesContextType } from "@/context/classes-context";
-import { findSourceModelOfEntity } from "@/service/model-service";
-import { VisualModelDiagramNode } from "@/diagram";
-import { createGetVisualEntitiesForRepresentedGlobalWrapper, VisualsForRepresentedWrapper } from "@/util/utils";
+import { ClassesContext } from "../context/classes-context";
+import { findSourceModelOfEntity } from "../service/model-service";
+import { VisualModelDiagramNode } from "../diagram";
+import { createGetVisualEntitiesForRepresentedGlobalWrapper, VisualsForRepresentedWrapper } from "../util/utils";
 import { SemanticModelGeneralization, SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
 import { SemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { getSemanticConnectionEndConcepts } from "@/util/relationship-utils";
+import { getSemanticConnectionEndConcepts } from "../util/relationship-utils";
 
 /**
  * Adds all relatiions for the given {@link visualDiagramNode} to the given {@link visualModel}.
  */
 export function addAllRelationshipsForVisualDiagramNodeToVisualModelAction(
   notifications: UseNotificationServiceWriterType,
-  classesContext: ClassesContextType,
-  graph: ModelGraphContextType,
+  classesContext: ClassesContext,
+  graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   visualModelDiagramNode: VisualModelDiagramNode,
 ) {
@@ -31,12 +31,11 @@ export function addAllRelationshipsForVisualDiagramNodeToVisualModelAction(
     ...classesContext.relationshipProfiles,
   ];
 
-  const availableVisualModels: VisualModel[] = graph.aggregatorView.getAvailableVisualModels();
+  const availableVisualModels = classesContext.visualModels;
 
-  const visualRelationshipsToAdd: Omit<VisualRelationship, "identifier" | "type">[] = [];
+  const visualRelationshipsToAdd: Omit<VisualRelationship, "id" | "type">[] = [];
 
-  const representedVisualModel = availableVisualModels
-    .find(model => model.getIdentifier() === visualModelDiagramNode.externalIdentifier);
+  const representedVisualModel = availableVisualModels.get(visualModelDiagramNode.externalIdentifier);
   if (representedVisualModel === undefined) {
     notifications.error("Missing referenced visual model");
     return;
@@ -61,12 +60,12 @@ export function addAllRelationshipsForVisualDiagramNodeToVisualModelAction(
       // If domain is in the visual model diagram node
       if (source === cclass) {
         findRelationshipsForEnd(
-          notifications, graph, visualModel, getVisualEntitiesForRepresentedGlobal,
+          notifications, classesContext, visualModel, getVisualEntitiesForRepresentedGlobal,
           relationship, visualModelDiagramNode.identifier, target, false, visualRelationshipsToAdd);
       }
       if (target === cclass) {
         findRelationshipsForEnd(
-          notifications, graph, visualModel, getVisualEntitiesForRepresentedGlobal,
+          notifications, classesContext, visualModel, getVisualEntitiesForRepresentedGlobal,
           relationship, visualModelDiagramNode.identifier, source, true, visualRelationshipsToAdd);
       }
     }
@@ -86,14 +85,14 @@ export function addAllRelationshipsForVisualDiagramNodeToVisualModelAction(
  */
 function findRelationshipsForEnd(
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  classesContext: ClassesContext,
   visualModel: VisualModel,
   getVisualEntitiesForRepresentedGlobal: VisualsForRepresentedWrapper,
   relationship: SemanticModelRelationship | SemanticModelRelationshipProfile | SemanticModelGeneralization,
   otherVisualEnd: string,
   end: string | null,
   isEndSource: boolean,
-  outputArray: Omit<VisualRelationship, "identifier" | "type">[],
+  outputArray: Omit<VisualRelationship, "id" | "type">[],
 ): void {
   const visualEndPropertyString = isEndSource ? "visualSource" : "visualTarget";
   const visualOtherEndPropertyString = isEndSource ? "visualTarget" : "visualSource";
@@ -106,7 +105,7 @@ function findRelationshipsForEnd(
   // which are already covered by the relationship
   const availableVisualEnds = getVisualEntitiesForRepresentedGlobal(end);
   const visualRelationships = visualModel.getVisualEntitiesForRepresented(relationship.id);
-  const model = findSourceModelOfEntity(relationship.id, graph.models);
+  const model = findSourceModelOfEntity(relationship.id, classesContext.semanticModels);
   if (model === null) {
     return;
   }
@@ -120,7 +119,7 @@ function findRelationshipsForEnd(
     }
 
     const index = availableVisualEnds
-      .findIndex(possibleVisualEnd => possibleVisualEnd.identifier === visualRelationship[visualEndPropertyString])
+      .findIndex(possibleVisualEnd => possibleVisualEnd.id === visualRelationship[visualEndPropertyString])
     if(index === -1) {
       continue;
     }
@@ -131,7 +130,7 @@ function findRelationshipsForEnd(
       notifications.error("The edge end is not a supported edge end for unknown reason");
       continue;
     }
-    if (otherVisualEnd === availableVisualEnd.identifier) {
+    if (otherVisualEnd === availableVisualEnd.id) {
       // Just skip it, what this would do is create self-loop which represents relationship
       // which exists inside the diagram node.
       continue;
@@ -140,15 +139,15 @@ function findRelationshipsForEnd(
     let visualSource: string;
     let visualTarget: string;
     if (isEndSource) {
-      visualSource = availableVisualEnd.identifier;
+      visualSource = availableVisualEnd.id;
       visualTarget = otherVisualEnd;
     }
     else {
       visualSource = otherVisualEnd;
-      visualTarget = availableVisualEnd.identifier;
+      visualTarget = availableVisualEnd.id;
     }
 
-    const visualRelationship: Omit<VisualRelationship, "identifier" | "type"> = {
+    const visualRelationship: Omit<VisualRelationship, "id" | "type"> = {
       representedRelationship: relationship.id,
       model: model?.getId(),
       waypoints: [],

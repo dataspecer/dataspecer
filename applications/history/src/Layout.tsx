@@ -1,0 +1,86 @@
+import { Outlet, useLocation } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
+import { Breadcrumbs } from "@/components/breadcrumbs";
+import { SidebarNav } from "@/components/sidebar-nav";
+import { GithubLink } from "@/components/github-link";
+import { LanguageToggle } from "@/components/language-toggle";
+import { ModeToggle } from "@/components/mode-toggle";
+import { ModelStoreProvider, useModelStore } from "@/contexts/model-store-context";
+import { useProjectTitle } from "@/hooks/use-project-title";
+
+const subPageLabelKeys: Record<string, string> = {
+  "/history": "nav.history",
+  "/evolution": "nav.evolution",
+  "/evolution/review": "nav.evolution",
+};
+
+/** The page each pathname's project-title breadcrumb should link back to. */
+const subPageBasePaths: Record<string, string> = {
+  "/history": "/history",
+  "/evolution": "/evolution",
+  "/evolution/review": "/evolution",
+};
+
+export function Layout() {
+  const location = useLocation();
+  const packageIri = (location.search as Record<string, unknown>).packageIri as string | undefined;
+
+  return (
+    <ModelStoreProvider packageIri={packageIri}>
+      <LayoutContent />
+    </ModelStoreProvider>
+  );
+}
+
+function LayoutContent() {
+  const { t } = useTranslation();
+  const location = useLocation();
+  const pathname = location.pathname;
+  const packageIri = (location.search as Record<string, unknown>).packageIri as string | undefined;
+  const baseSearchString = packageIri ? `?packageIri=${encodeURIComponent(packageIri)}` : "";
+  const subPageLabelKey = subPageLabelKeys[pathname];
+  const { isLoading } = useModelStore();
+  const projectTitle = useProjectTitle(packageIri);
+
+  return (
+    <div className="relative flex min-h-screen flex-col bg-background">
+      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-sm supports-backdrop-filter:bg-background/60">
+        <div className="container flex h-14 items-center justify-between gap-2">
+          <a href={import.meta.env.VITE_MANAGER_URL ?? "/"} className="flex min-w-0 items-center gap-2 truncate hover:opacity-80">
+            <strong className="shrink-0">Dataspecer</strong> <span className="truncate">{t("app-name")}</span>
+          </a>
+          <div className="flex shrink-0 gap-2">
+            <GithubLink />
+            <ModeToggle />
+            <LanguageToggle />
+          </div>
+        </div>
+      </header>
+      <div className="container flex flex-col gap-1 pt-4">
+        <Breadcrumbs
+          items={[
+            {
+              label: projectTitle ?? packageIri ?? t("breadcrumbs.no-specification"),
+              href: subPageLabelKey ? subPageBasePaths[pathname] + baseSearchString : undefined,
+            },
+            ...(subPageLabelKey ? [{ label: t(subPageLabelKey) }] : []),
+          ]}
+        />
+      </div>
+      <main className="container flex flex-1 flex-col items-stretch gap-4 py-6 md:flex-row md:items-start md:gap-6">
+        {isLoading ? (
+          <div className="flex flex-1 items-center justify-center py-16">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-foreground" />
+          </div>
+        ) : (
+          <>
+            <SidebarNav />
+            <div className="min-w-0 flex-1">
+              <Outlet />
+            </div>
+          </>
+        )}
+      </main>
+    </div>
+  );
+}

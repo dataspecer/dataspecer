@@ -11,7 +11,7 @@ import {XML_EXTENSION} from "../vocabulary.ts";
 
 test("Update data PSM namespace and namespace prefix.", async () => {
   const operation = new DataPsmSetNamespaceXmlExtension();
-  operation.dataPsmSchema = "http://schema";
+  operation.entityId = "http://schema";
   operation.namespace = "http://namespace";
   operation.namespacePrefix = "nsp";
 

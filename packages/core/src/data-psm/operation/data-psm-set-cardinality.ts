@@ -1,19 +1,23 @@
-import { CoreOperation, CoreResource } from "../../core/index.ts";
+import { generateOperationId, type Operation } from "../../operation/index.ts";
 import * as PSM from "../data-psm-vocabulary.ts";
 
-export class DataPsmSetCardinality extends CoreOperation {
+export class DataPsmSetCardinality implements Operation {
   static readonly TYPE = PSM.SET_CARDINALITY;
+
+  id: string;
+
+  type: string;
 
   entityId: string | null = null;
 
-  dataPsmCardinality: [number, number | null] | null;
+  dataPsmCardinality: [number, number | null] | null = null;
 
   constructor() {
-    super();
-    this.types.push(DataPsmSetCardinality.TYPE);
+    this.id = generateOperationId();
+    this.type = DataPsmSetCardinality.TYPE;
   }
 
-  static is(resource: CoreResource | null): resource is DataPsmSetCardinality {
-    return resource?.types.includes(DataPsmSetCardinality.TYPE);
+  static is(operation: Operation | null | undefined): operation is DataPsmSetCardinality {
+    return operation?.type === DataPsmSetCardinality.TYPE;
   }
 }

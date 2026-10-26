@@ -32,10 +32,10 @@ export function executeDataPsmDeleteClass(
     return DataPsmExecutorResultFactory.missingSchema();
   }
 
-  const classToDelete = loadDataPsmClass(reader, operation.dataPsmClass);
+  const classToDelete = loadDataPsmClass(reader, operation.entityId);
   if (classToDelete === null) {
     return CoreExecutorResult.createError(
-      `Missing class '${operation.dataPsmClass}' to delete.`
+      `Missing class '${operation.entityId}' to delete.`
     );
   }
 
@@ -44,7 +44,7 @@ export function executeDataPsmDeleteClass(
   }
 
   for (const classItem of classes) {
-    if (classItem.dataPsmExtends.includes(operation.dataPsmClass)) {
+    if (classItem.dataPsmExtends.includes(operation.entityId)) {
       return CoreExecutorResult.createError(
         "Class is extended by other class."
       );
@@ -56,11 +56,11 @@ export function executeDataPsmDeleteClass(
     [
       {
         ...schema,
-        dataPsmRoots: removeValue(operation.dataPsmClass, schema.dataPsmRoots),
-        dataPsmParts: removeValue(operation.dataPsmClass, schema.dataPsmParts),
+        dataPsmRoots: removeValue(operation.entityId, schema.dataPsmRoots),
+        dataPsmParts: removeValue(operation.entityId, schema.dataPsmParts),
       } as CoreResource,
     ],
-    [operation.dataPsmClass]
+    [operation.entityId]
   );
 }
 

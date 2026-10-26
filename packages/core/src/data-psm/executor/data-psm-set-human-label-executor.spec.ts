@@ -9,7 +9,7 @@ import * as PSM from "../data-psm-vocabulary.ts";
 
 test("Update data PSM resource human label.", async () => {
   const operation = new DataPsmSetHumanLabel();
-  operation.dataPsmResource = "http://class";
+  operation.entityId = "http://class";
   operation.dataPsmHumanLabel = { en: "label" };
 
   const before = {

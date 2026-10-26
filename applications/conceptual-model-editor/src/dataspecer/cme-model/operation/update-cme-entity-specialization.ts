@@ -5,7 +5,6 @@ import {
   CreatedEntityOperationResult,
   createGeneralization,
   deleteEntity,
-  Operation,
 } from "@dataspecer/core-v2/semantic-model/operations";
 import {
   CmeGeneralization,
@@ -16,6 +15,7 @@ import {
   NewCmeSpecialization,
 } from "../model";
 import { createLogger } from "../../../application";
+import type { Operation } from "@dataspecer/core/operation";
 
 const LOG = createLogger(import.meta.url);
 

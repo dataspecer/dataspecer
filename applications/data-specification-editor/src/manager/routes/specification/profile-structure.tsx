@@ -1,22 +1,28 @@
-import { BackendConnectorContext } from "@/application";
 import { Checkbox } from "@/components/ui/checkbox";
+import type { Configuration } from "@/configuration/configuration";
+import { getConfiguration } from "@/configuration/provided-configuration";
 import { CloseDialogButton } from "@/editor/components/detail/components/close-dialog-button";
 import { dialog } from "@/editor/dialog";
 import { useAsyncMemo } from "@/editor/hooks/use-async-memo";
-import type { Configuration } from "@/generators/configuration/configuration";
-import { getConfiguration } from "@/generators/configuration/provided-configuration";
 import { cn } from "@/lib/utils";
-import type { DataSpecificationStructure, StructureEditorBackendService } from "@dataspecer/backend-utils/connectors/specification";
 import type { ApplicationProfileAggregator } from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
 import { V1 } from "@dataspecer/core-v2/model/known-models";
+import { coreResourceToEntity, type CoreResource } from "@dataspecer/core/core";
 import type { LanguageString } from "@dataspecer/core/core/core-resource";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
+import type { Entity, EntityRecord } from "@dataspecer/core/entity-model";
+import type { ModelIdentifier } from "@dataspecer/core/model";
+import { createSetEntityOperation, type OperationInModel } from "@dataspecer/core/operation";
+import type { TransactionResult } from "@dataspecer/model-store";
+import { useModelStoreEntity } from "@dataspecer/model-store/react";
+import { createCreateModelOperation, type ProjectModelEntity } from "@dataspecer/core/project-model";
+import type { DataSpecificationStructure } from "@dataspecer/specification/specification";
 import { createStructureProfile } from "@dataspecer/structure-model/profile";
 import { Alert, Button, CircularProgress, DialogActions, DialogContent, DialogTitle } from "@mui/material";
 import { ChevronDown, ChevronRight, MinusIcon } from "lucide-react";
-import { useContext, useState } from "react";
+import { FC, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { SpecificationContext } from "./specification";
+import { PROJECT_MODEL_ID, SpecificationContext, useModelStore } from "./specification";
 
 interface ProfileStructureDialogProps {
   dataSpecificationId: string;
@@ -28,21 +34,20 @@ interface ProfileStructureDialogProps {
  */
 export const ProfileStructureDialog = dialog<ProfileStructureDialogProps>({ maxWidth: "md", fullWidth: true }, ({ isOpen, close, dataSpecificationId }) => {
   const { t } = useTranslation("ui");
+  const modelStore = useModelStore();
 
   const [configuration, isLoading] = useAsyncMemo(() => (isOpen ? getConfiguration(dataSpecificationId, "") : null), [dataSpecificationId, isOpen], null);
   const data = configuration ? getStructuresToProfile(configuration) : [];
 
   const [selectedStructures, setSelectedStructures] = useState<Set<string>>(new Set());
 
-  const backendConnector = useContext(BackendConnectorContext);
-  const [specification, updateSpecification] = useContext(SpecificationContext);
+  const specification = useContext(SpecificationContext);
   const dataSpecificationIri = specification.id;
   const profile = async () => {
-    await profileStructures(Array.from(selectedStructures), dataSpecificationIri, configuration!, backendConnector, (newStructures) => {
-      updateSpecification({
-        ...specification,
-        dataStructures: [...specification.dataStructures, ...newStructures],
-      });
+    const semanticModelAggregator = configuration!.semanticModelAggregator as ApplicationProfileAggregator;
+    await profileStructures(Array.from(selectedStructures), dataSpecificationIri, modelStore.getAllEntities(), semanticModelAggregator, (operations) => {
+      console.log(operations);
+      return modelStore.transaction(operations, {});
     });
 
     close();
@@ -86,7 +91,6 @@ export const ProfileStructureDialog = dialog<ProfileStructureDialogProps>({ maxW
 type StructuresToProfileList = {
   iri: string;
   name: LanguageString;
-  description: LanguageString;
 
   structures: {
     iri: string;
@@ -103,8 +107,7 @@ function getStructuresToProfile(configuration: Configuration) {
     if (specification.dataStructures.length > 0) {
       result.push({
         iri: specification.id,
-        name: specification.userMetadata?.label || {},
-        description: specification.userMetadata?.description || {},
+        name: specification.label || {},
 
         structures: specification.dataStructures.map((structure) => ({
           iri: structure.id,
@@ -132,6 +135,18 @@ interface StructuresCheckboxListProps {
 function getLocalizedString(langString: LanguageString, language: string): string {
   return langString[language] || langString["en"] || Object.values(langString)[0] || "";
 }
+
+/**
+ * Reads the specification's description live from the project model.
+ */
+const GroupDescription: FC<{ modelId: string; language: string }> = ({ modelId, language }) => {
+  const entity = useModelStoreEntity<ProjectModelEntity>(PROJECT_MODEL_ID, modelId);
+  const description = entity?.description;
+  if (!description || Object.keys(description).length === 0) {
+    return null;
+  }
+  return <p className="text-sm text-muted-foreground truncate">{getLocalizedString(description, language)}</p>;
+};
 
 export function StructuresCheckboxList({ data, selectedStructures, onSelectionChange, language = "en", className }: StructuresCheckboxListProps) {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => new Set(data.map((group) => group.iri)));
@@ -224,9 +239,7 @@ export function StructuresCheckboxList({ data, selectedStructures, onSelectionCh
                 <label htmlFor={`group-${group.iri}`} className="block cursor-pointer font-medium text-card-foreground">
                   {getLocalizedString(group.name, language)}
                 </label>
-                {group.description && Object.keys(group.description).length > 0 && (
-                  <p className="text-sm text-muted-foreground truncate">{getLocalizedString(group.description, language)}</p>
-                )}
+                <GroupDescription modelId={group.iri} language={language} />
               </div>
 
               <span className="text-sm text-muted-foreground">
@@ -276,33 +289,38 @@ export function StructuresCheckboxList({ data, selectedStructures, onSelectionCh
   );
 }
 
+/**
+ * Builds the operations that bulk-create the given entities in the model
+ * identified by `modelId`.
+ */
+function createEntitySetOperations(modelId: ModelIdentifier, entities: Entity[]): OperationInModel[] {
+  return entities.map((entity) => ({
+    modelId,
+    operation: createSetEntityOperation(entity),
+  }));
+}
+
 async function profileStructures(
   structureIris: string[],
   specificationIri: string,
-  configuration: Configuration,
-
-  backendConnector: StructureEditorBackendService,
-  callbackNewStructures: (newStructures: DataSpecificationStructure[]) => void,
+  entities: Record<ModelIdentifier, EntityRecord>,
+  semanticModelAggregator: ApplicationProfileAggregator,
+  executeOperations: (operations: OperationInModel[]) => TransactionResult,
 ) {
-  const structureModelsToProfile = structureIris.map((iri) => {
-    const structureModel = configuration.structureModels[iri];
-    // @ts-ignore
-    const resources = structureModel.resources;
-    return Object.values(resources);
-  });
+  const structureModelsToProfile = structureIris.map((iri) => Object.values(entities[iri]) as unknown as CoreResource[]);
 
+  const createModelOperations: OperationInModel[] = [];
   const newIriMapping: Record<string, string> = {};
   for (const structureModel of structureModelsToProfile) {
     const schema = structureModel.find(DataPsmSchema.is);
-    const resource = await backendConnector.createResource(specificationIri, { type: V1.PSM });
-    newIriMapping[schema!.iri] = resource.iri!;
+    const op = createCreateModelOperation(specificationIri, V1.PSM);
+    createModelOperations.push({ modelId: PROJECT_MODEL_ID, operation: op });
+    newIriMapping[schema!.iri!] = op.modelId;
   }
 
   const getByProfiling: (externalEntityIri: string) => string | null = (externalEntityIri: string) => {
-    const apAggregator = configuration.semanticModelAggregator as ApplicationProfileAggregator;
-
-    apAggregator.getByProfiling(externalEntityIri);
-    const localEntities = apAggregator.getByProfiling(externalEntityIri);
+    semanticModelAggregator.getByProfiling(externalEntityIri);
+    const localEntities = semanticModelAggregator.getByProfiling(externalEntityIri);
     if (localEntities.length > 0) {
       return localEntities[0]!.id;
     } else {
@@ -313,17 +331,16 @@ async function profileStructures(
   const newStructures = await createStructureProfile(structureModelsToProfile, getByProfiling, { newIriMapping });
 
   const newSpecifications: DataSpecificationStructure[] = [];
+  const setEntityOperations: OperationInModel[] = [];
   for (const newStructure of newStructures) {
     const schema = newStructure.find(DataPsmSchema.is);
-    await backendConnector.setResourceJsonData(schema!.iri!, {
-      operations: [],
-      resources: Object.fromEntries(newStructure.map((r) => [r.iri!, r])),
-    });
+    const modelId = schema!.iri!;
+    setEntityOperations.push(...createEntitySetOperations(modelId, newStructure.map(coreResourceToEntity)));
     newSpecifications.push({
-      id: schema!.iri!,
+      id: modelId,
       label: schema.dataPsmHumanLabel,
     });
   }
 
-  callbackNewStructures(newSpecifications);
+  await executeOperations([...createModelOperations, ...setEntityOperations]).confirmation;
 }

@@ -1,4 +1,4 @@
-import { DialogWrapper } from "@/dialog/dialog-api";
+import { DialogWrapper } from "../../../../dialog/dialog-api";
 import { EditVisualDiagramNodeDialog as EditVisualDiagramNodeDialog } from "./edit-visual-diagram-node-dialog";
 import { EditVisualDiagramNodeDialogState } from "./edit-visual-diagram-node-dialog-controller";
 import { LanguageString } from "@dataspecer/core/core/core-resource";

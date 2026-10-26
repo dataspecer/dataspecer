@@ -1,7 +1,8 @@
-import { Entity, EntityIdentifier } from "../entity-model/entity.ts";
-import { ModelIdentifier } from "../entity-model/entity-model.ts";
 import { VisualEntity } from "./visual-entity.ts";
 import { Position } from "./position.ts";
+import { HexColor } from "./color.ts";
+import { Entity, EntityIdentifier } from "@dataspecer/core/entity-model";
+import { ModelIdentifier } from "@dataspecer/core/model";
 
 /**
  * Represents an entity, i.g. class or a profile.
@@ -35,6 +36,12 @@ export interface VisualNode extends VisualEntity {
      * to this visual entity as representative diagrams.
      */
     visualModels: string[];
+
+    /**
+     * Custom color, overrides the color of the {@link model}.
+     * When null or missing the model color is used.
+     */
+    color?: HexColor | null;
 
 }
 

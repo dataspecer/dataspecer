@@ -6,24 +6,26 @@ import { usePackageService } from "./package-service-context";
 import { getLocalizedStringFromLanguageString } from "../util/language-utils";
 import { type Package } from "@dataspecer/core-v2/project";
 import { useActions } from "../action/actions-react-binding";
-import { packageService } from "@/header/package-service";
+import { packageService } from "../header/package-service";
 import { createDefaultConfigurationModelFromJsonObject } from "@dataspecer/core-v2/configuration-model";
-import { useLayoutConfigurationContext } from "@/context/layout-configuration-context";
+import { useLayoutConfigurationContext } from "../context/layout-configuration-context";
 import { applyLayoutConfiguration } from "@dataspecer/layout";
+import { useClassesContext } from "../context/classes-context";
 
 const MGR_REDIRECT_PATH = import.meta.env.VITE_PUBLIC_MANAGER_PATH;
 
 export interface PackageSectionServiceType {
-    packageHasIdentifier: boolean;
-    packageLabel: string | null;
-    save: () => Promise<void>,
-    saveAndClose: () => Promise<void>,
+  packageHasIdentifier: boolean;
+  packageLabel: string | null;
+  save: () => Promise<void>,
+  saveAndClose: () => Promise<void>,
 }
 
 export const usePackageSectionService = (): PackageSectionServiceType => {
   const actions = useActions();
   const { updateSemanticModelPackageModels } = useBackendConnection();
-  const { models, visualModels, aggregatorView } = useModelGraphContext();
+  const graph = useModelGraphContext();
+  const classesContext = useClassesContext();
   const { layoutConfiguration } = useLayoutConfigurationContext();
 
   const { currentPackage, currentPackageIdentifier } = usePackageService();
@@ -43,9 +45,10 @@ export const usePackageSectionService = (): PackageSectionServiceType => {
       return;
     }
     const result = await updateSemanticModelPackageModels(
-      currentPackageIdentifier, [...models.values()], [...visualModels.values()]);
+      currentPackageIdentifier, classesContext.semanticModelsList,
+      classesContext.visualModelsList);
     const svg = await actions.diagram?.actions().renderToSvgString();
-    const activeVisualModel = aggregatorView.getActiveVisualModel();
+    const activeVisualModel = graph.getActiveVisualModel();
 
     saveLayoutConfiguration(currentPackageIdentifier);
 

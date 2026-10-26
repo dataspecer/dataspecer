@@ -53,24 +53,24 @@ export class CreateRootClass implements ComplexOperation {
       dataPsmCreateClass.dataPsmTechnicalLabel = "root";
     }
 
-    const dataPsmCreateClassResult = this.store.applyOperation(this.dataPsmSchemaIri, dataPsmCreateClass);
+    this.store.applyOperation(this.dataPsmSchemaIri, dataPsmCreateClass);
 
     const dataPsmUpdateSchemaRoots = new DataPsmSetRoots();
-    dataPsmUpdateSchemaRoots.dataPsmRoots = [dataPsmCreateClassResult.created[0]];
+    dataPsmUpdateSchemaRoots.dataPsmRoots = [dataPsmCreateClass.dataPsmNewIri as string];
     this.store.applyOperation(this.dataPsmSchemaIri, dataPsmUpdateSchemaRoots);
 
     // Schema label and description
 
     if (this.schemaHumanLabel) {
       const dataPsmSetHumanLabel = new DataPsmSetHumanLabel();
-      dataPsmSetHumanLabel.dataPsmResource = this.dataPsmSchemaIri;
+      dataPsmSetHumanLabel.entityId = this.dataPsmSchemaIri;
       dataPsmSetHumanLabel.dataPsmHumanLabel = this.schemaHumanLabel;
       this.store.applyOperation(this.dataPsmSchemaIri, dataPsmSetHumanLabel);
     }
 
     if (this.schemaHumanDescription) {
       const dataPsmSetHumanDescription = new DataPsmSetHumanDescription();
-      dataPsmSetHumanDescription.dataPsmResource = this.dataPsmSchemaIri;
+      dataPsmSetHumanDescription.entityId = this.dataPsmSchemaIri;
       dataPsmSetHumanDescription.dataPsmHumanDescription = this.schemaHumanDescription;
       this.store.applyOperation(this.dataPsmSchemaIri, dataPsmSetHumanDescription);
     }

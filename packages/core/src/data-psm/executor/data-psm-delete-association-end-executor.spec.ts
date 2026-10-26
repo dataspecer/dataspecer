@@ -10,7 +10,7 @@ import * as PSM from "../data-psm-vocabulary.ts";
 test("Delete data PSM association-end.", async () => {
   const operation = new DataPsmDeleteAssociationEnd();
   operation.dataPsmOwner = "http://class";
-  operation.dataPsmAssociationEnd = "http://association-end";
+  operation.entityId = "http://association-end";
 
   const before = {
     "http://schema": {

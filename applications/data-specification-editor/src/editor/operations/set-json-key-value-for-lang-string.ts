@@ -1,4 +1,4 @@
-import { DataPsmSetUseKeyValueForLangString } from "@dataspecer/core/data-psm/json-extension/operation/index";
+import { DataPsmSetUseKeyValueForLangString } from "@dataspecer/core/data-psm/json-extension/operation";
 import { ComplexOperation } from "@dataspecer/federated-observable-store/complex-operation";
 import { FederatedObservableStore } from "@dataspecer/federated-observable-store/federated-observable-store";
 
@@ -20,7 +20,7 @@ export class SetJsonKeyValueForLangString implements ComplexOperation {
     const schema = this.store.getSchemaForResource(this.forDataPsmResourceIri) as string;
 
     const op = new DataPsmSetUseKeyValueForLangString();
-    op.dataPsmProperty = this.forDataPsmResourceIri;
+    op.entityId = this.forDataPsmResourceIri;
     op.useKeyValueForLangString = this.useKeyValueForLangString;
     this.store.applyOperation(schema, op);
   }

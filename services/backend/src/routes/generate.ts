@@ -1,21 +1,20 @@
+import { CONTROLLED_VOCABULARY_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { CoreResourceReader } from "@dataspecer/core/core/core-reader";
-import { LanguageString } from "@dataspecer/core/core/index";
+import { LanguageString } from "@dataspecer/core/core";
 import { InputStream } from "@dataspecer/core/io/stream/input-stream";
 import { StreamDictionary } from "@dataspecer/core/io/stream/stream-dictionary";
+import type { ProjectModelEntity } from "@dataspecer/core/project-model";
 import { getDataSpecificationWithModels } from "@dataspecer/specification/specification";
 import { DefaultArtifactBuilder } from "@dataspecer/specification/v1";
 import express from "express";
 import { z } from "zod";
 import configuration from "../configuration.ts";
 import { ZipStreamDictionary } from "../utils/zip-stream-dictionary.ts";
-import { resourceModel } from "../main.ts";
+import { modelRepository, transactionModel } from "../main.ts";
 import { asyncHandler } from "../utils/async-handler.ts";
-import { BackendModelRepository } from "../utils/model-repository.ts";
 import { getContentDispositionAttachmentHeaderValue, safeAsciiFileName, safeUnicodeFileName } from "../utils/safe-file-name.ts";
-
-interface DataSpecifications {
-  [key: string]: any;
-}
+import { getModelsForPackage } from "../utils/backend-model-store.ts";
+import { PROJECT_MODEL_ID } from "../models/model-id.ts";
 
 function getName(name: LanguageString | undefined, defaultName: string) {
   return name?.["cs"] || name?.["en"] || defaultName;
@@ -61,11 +60,46 @@ async function generateArtifacts(
   queryParams: string = "",
   singleFilePath: string | null = null,
 ) {
-  const modelRepository = new BackendModelRepository(resourceModel);
+  const allModels = await getModelsForPackage(packageIri, modelRepository);
 
-  const { store, dataSpecifications } = await getDataSpecificationWithModels(packageIri, "", modelRepository);
-  const generator = new DefaultArtifactBuilder(store as CoreResourceReader, dataSpecifications, configuration.configuration, fetch, modelRepository);
+  // TODO: do we want to include the CVs from nested packages?
+  // Controlled vocabularies are project-wide, not tied to any one
+  // specification - if the requested package is a nested specification (not
+  // the project root), its own subtree does not include sibling CV models.
+  // Fetch the whole project's models too and merge in what the DCAT catalog
+  // generator needs (see specification.ts's writeDcatCatalog).
+  const projectIri = await modelRepository.getProjectIri(packageIri);
+  if (projectIri && projectIri !== packageIri) {
+    const projectModels = await getModelsForPackage(projectIri, modelRepository);
+    const projectModelEntities = (projectModels[PROJECT_MODEL_ID] ?? {}) as Record<string, ProjectModelEntity>;
+    allModels[PROJECT_MODEL_ID] = { ...projectModelEntities, ...allModels[PROJECT_MODEL_ID] };
+    for (const [modelId, entity] of Object.entries(projectModelEntities)) {
+      if (entity.modelType === CONTROLLED_VOCABULARY_MODEL) {
+        allModels[modelId] ??= projectModels[modelId]!;
+      }
+    }
+  }
+
+  const { store, dataSpecifications } = getDataSpecificationWithModels(packageIri, allModels);
+  const generator = new DefaultArtifactBuilder(store as CoreResourceReader, dataSpecifications, configuration.configuration, fetch, allModels);
   generator.singleSpecificationOnly = true; // We want to generate only a single specification without extra directories.
+
+  // The recorded transaction history (with the versions marked in it) is
+  // published as the LDES stream of the specification. The models start empty
+  // and are replayed from the history - faithful for projects whose whole
+  // content is recorded; projects predating the history keep the fallback of
+  // publishing their current state as a single initial transaction.
+  const historyTransactions = await transactionModel.getBranchHistory(packageIri);
+  if (historyTransactions.length > 0) {
+    generator.history = {
+      models: {},
+      transactions: historyTransactions.map((transaction) => ({
+        id: transaction.clientId,
+        time: transaction.createdAt.toISOString(),
+        operations: transaction.operations,
+      })),
+    };
+  }
   await generator.prepare(Object.keys(dataSpecifications), undefined, queryParams);
   await generator.build(streamDictionary, singleFilePath, queryParams, packageIri);
 }
@@ -76,7 +110,7 @@ export const getZip = asyncHandler(async (request: express.Request, response: ex
   });
   const query = querySchema.parse(request.query);
 
-  const resource = await resourceModel.getPackage(query.iri);
+  const resource = await modelRepository.getPackage(query.iri);
 
   if (!resource) {
     response.status(404).send({ error: "Package does not exist." });
@@ -101,7 +135,8 @@ export const getZip = asyncHandler(async (request: express.Request, response: ex
 
 export const getSingleFile = asyncHandler(async (request: express.Request, response: express.Response) => {
   // The path does not start with slash.
-  let path = request.params[0];
+  const splat = request.params.splat;
+  let path = Array.isArray(splat) ? splat.join("/") : "";
   if (path === "") {
     path = "index.html";
   }
@@ -116,7 +151,7 @@ export const getSingleFile = asyncHandler(async (request: express.Request, respo
       .pipe(z.boolean()),
   });
   const query = querySchema.parse(request.query);
-  const resource = await resourceModel.getPackage(query.iri);
+  const resource = await modelRepository.getPackage(query.iri);
   if (!resource) {
     response.status(404).send({ error: "Package does not exist." });
     return;

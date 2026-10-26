@@ -1,4 +1,5 @@
-import { CoreOperation, CoreOperationExecutor } from "../../core/index.ts";
+import { CoreOperationExecutor } from "../../core/index.ts";
+import type { Operation } from "../../operation/index.ts";
 import * as Operations from "../operation/index.ts";
 import { executeDataPsmCreateAssociationEnd } from "./data-psm-create-association-end-executor.ts";
 import { executeDataPsmCreateAttribute } from "./data-psm-create-attribute-executor.ts";
@@ -46,7 +47,7 @@ import { executeDataPsmUnsetChoice } from "./data-psm-unset-choice-executor.ts";
 import { executeDataPsmUnwrapOr } from "./data-psm-unwrap-or-executor.ts";
 import { executeDataPsmWrapWithOr } from "./data-psm-wrap-with-or-executor.ts";
 
-export const baseDataPsmExecutors: CoreOperationExecutor<CoreOperation>[] = [
+export const baseDataPsmExecutors: CoreOperationExecutor<Operation>[] = [
   CoreOperationExecutor.create(
     Operations.DataPsmCreateAssociationEnd.is,
     executeDataPsmCreateAssociationEnd,

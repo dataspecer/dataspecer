@@ -1,10 +1,11 @@
 import { Entity } from "../../../entity-model/index.ts";
-import { SemanticModelEntity } from "../../concepts/index.ts";
+import { EntityIdentifier } from "../../../entity-model/entity.ts";
 import { NamedThingProfile } from "./named-thing-profile.ts";
 import { Profile } from "./profile.ts";
 import { OrderedThing } from "../../concepts/ordered-thing.ts";
 
-export interface SemanticModelClassProfile extends SemanticModelEntity, Profile, NamedThingProfile, OrderedThing {
+export interface SemanticModelClassProfile extends
+  Entity, Profile, NamedThingProfile, OrderedThing {
 
   type: [typeof SEMANTIC_MODEL_CLASS_PROFILE];
 
@@ -13,10 +14,21 @@ export interface SemanticModelClassProfile extends SemanticModelEntity, Profile,
    */
   tags: string[];
 
+  /**
+   * Ids of this class profile's own ControlledVocabularyAssignment
+   * entities. Does not include inherited assignments - see the
+   * aggregator for the resolved, deduped, own-wins-over-inherited view.
+   *
+   * The "undefined" type is workaround for a missing migration.
+   */
+  controlledVocabularies: EntityIdentifier[] | undefined;
+
 }
 
 export const SEMANTIC_MODEL_CLASS_PROFILE = "class-profile";
 
-export function isSemanticModelClassProfile(entity: Entity | null): entity is SemanticModelClassProfile {
+export function isSemanticModelClassProfile(
+  entity: Entity | null,
+): entity is SemanticModelClassProfile {
   return entity?.type.includes(SEMANTIC_MODEL_CLASS_PROFILE) ?? false;
 }

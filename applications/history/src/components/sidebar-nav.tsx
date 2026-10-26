@@ -1,0 +1,36 @@
+import { GitBranch, History } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Link, useLocation } from "@tanstack/react-router";
+import { cn } from "@/lib/utils";
+
+/**
+ * Sub-pages of the history application.
+ */
+const subPages = [
+  { to: "/history", labelKey: "nav.history", icon: History },
+  { to: "/evolution", labelKey: "nav.evolution", icon: GitBranch },
+];
+
+export function SidebarNav() {
+  const { t } = useTranslation();
+  const { pathname } = useLocation();
+
+  return (
+    <nav className="flex gap-1 overflow-x-auto pb-1 md:w-56 md:shrink-0 md:flex-col md:overflow-visible md:pb-0">
+      {subPages.map(({ to, labelKey, icon: Icon }) => (
+        <Link
+          key={to}
+          to={to}
+          search={(prev: Record<string, unknown>) => prev}
+          className={cn(
+            "flex shrink-0 items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
+            pathname === to && "bg-accent text-accent-foreground"
+          )}
+        >
+          <Icon className="h-4 w-4" />
+          {t(labelKey)}
+        </Link>
+      ))}
+    </nav>
+  );
+}

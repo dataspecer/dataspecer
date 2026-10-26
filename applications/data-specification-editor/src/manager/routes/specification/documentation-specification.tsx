@@ -1,19 +1,20 @@
-import { CoreResourceReader } from "@dataspecer/core/core/core-reader";
+import { createStructureModel } from "@dataspecer/core/data-psm";
 import { DataSpecificationConfiguration, DataSpecificationConfigurator } from "@dataspecer/core/data-specification/configuration";
-import { loadDataSpecifications } from "@dataspecer/specification/specification";
+import { type ProjectModelEntity } from "@dataspecer/core/project-model";
+import { useModelStoreEntity } from "@dataspecer/model-store/react";
 import { DefaultArtifactBuilder, GenerateReport } from "@dataspecer/specification/v1";
 import AddIcon from "@mui/icons-material/Add";
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import LoadingButton from "@mui/lab/LoadingButton";
 import { Box, Button, Fab, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from "@mui/material";
 import { saveAs } from "file-saver";
+import { Magnet } from "lucide-react";
 import React, { memo, useCallback, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-import { BackendConnectorContext, DefaultConfigurationContext } from "../../../application";
+import { DefaultConfigurationContext } from "../../../application";
+import { getConfiguration } from "../../../configuration/provided-configuration";
 import { LanguageStringText } from "../../../editor/components/helper/LanguageStringComponents";
 import { useDialog } from "../../../editor/dialog";
-import { getConfiguration, modelRepository } from "../../../generators/configuration/provided-configuration";
 import { ZipStreamDictionary } from "../../../generators/zip-stream-dictionary";
 import { ConfigureArtifacts } from "../../artifacts/configuration/configure-artifacts";
 import { ConfigureButton } from "../../artifacts/configuration/configure-button";
@@ -27,18 +28,22 @@ import { GeneratingDialog } from "./generating-dialog";
 import { ProfileStructureDialog } from "./profile-structure";
 import { RedirectDialog } from "./redirect-dialog";
 import { ReuseDataSpecifications } from "./reuse-data-specifications";
-import { AllSpecificationsContext, SpecificationContext } from "./specification";
-import { Magnet } from "lucide-react";
+import { PROJECT_MODEL_ID, SpecificationContext, useModelStore } from "./specification";
+
+const ImportedSpecificationLabel: React.FC<{ modelId: string; fallback: string }> = ({ modelId, fallback }) => {
+  const entity = useModelStoreEntity<ProjectModelEntity>(PROJECT_MODEL_ID, modelId);
+  return <LanguageStringText from={entity?.label} fallback={fallback} />;
+};
 
 export const DocumentationSpecification = memo(() => {
   const { t } = useTranslation("ui");
 
-  const [specification] = useContext(SpecificationContext);
+  const specification = useContext(SpecificationContext);
   const dataSpecificationIri = specification.id;
 
   const defaultConfiguration = useContext(DefaultConfigurationContext);
 
-  const backendConnector = useContext(BackendConnectorContext);
+  const modelStore = useModelStore();
 
   const navigate = useNavigate();
 
@@ -46,11 +51,15 @@ export const DocumentationSpecification = memo(() => {
   const createDataStructure = useCallback(async () => {
     if (dataSpecificationIri) {
       setRedirecting(true);
-      const { createdPsmSchemaIri } = await backendConnector.createDataStructure(dataSpecificationIri);
-      navigate(getEditorLink(dataSpecificationIri, createdPsmSchemaIri));
+
+      const {operations, modelId} = createStructureModel(dataSpecificationIri);
+      const transaction = modelStore.transaction(operations, {});
+      await transaction.confirmation;
+
+      navigate(getEditorLink(dataSpecificationIri, modelId));
       setRedirecting(false);
     }
-  }, [navigate, backendConnector, dataSpecificationIri]);
+  }, [navigate, modelStore, dataSpecificationIri]);
 
   const profileStructureDialog = useDialog(ProfileStructureDialog, ["dataSpecificationId"]);
 
@@ -62,27 +71,23 @@ export const DocumentationSpecification = memo(() => {
     setGenerateState([]);
     setGenerateDialogOpen(true);
 
-    // Gather all data specifications that are needed for the generation
-    let gatheredDataSpecifications = await loadDataSpecifications(dataSpecificationIri as string, modelRepository); // todo we probably do not need this
+    const { store: federatedStore, dataSpecifications, models } = await getConfiguration(dataSpecificationIri as string, "");
 
     // Override base urls to null
     if (overrideBasePathsToNull) {
-      gatheredDataSpecifications = structuredClone(gatheredDataSpecifications);
-      for (const ds of Object.values(gatheredDataSpecifications)) {
-        // @ts-ignore
+      for (const ds of Object.values(dataSpecifications)) {
+        // @ts-expect-error different type of configuration
         if (ds.artefactConfiguration[DataSpecificationConfigurator.KEY]) {
-          // @ts-ignore
+          // @ts-expect-error different type of configuration
           (ds.artefactConfiguration[DataSpecificationConfigurator.KEY] as DataSpecificationConfiguration).publicBaseUrl = null;
         }
       }
     }
 
-    const { store: federatedStore, dataSpecifications: ds2 } = await getConfiguration(dataSpecificationIri as string, "");
-
     setZipLoading("generating");
 
-    const generator = new DefaultArtifactBuilder(federatedStore as CoreResourceReader, ds2, defaultConfiguration, fetch, modelRepository);
-    await generator.prepare(Object.keys(ds2), setGenerateState);
+    const generator = new DefaultArtifactBuilder(federatedStore, dataSpecifications, defaultConfiguration, fetch, models);
+    await generator.prepare(Object.keys(dataSpecifications), setGenerateState);
     const zip = new ZipStreamDictionary();
     await generator.build(zip);
     const data = await zip.save();
@@ -92,14 +97,12 @@ export const DocumentationSpecification = memo(() => {
 
   const DeleteForm = useDialog(DeleteDataSchemaForm);
 
-  const allSpecifications = useContext(AllSpecificationsContext);
-
   return (
     <>
       <Box height="30px" />
       <Box display="flex" flexDirection="row" justifyContent="space-between">
         <Typography variant="h3" component="div" gutterBottom>
-          <LanguageStringText from={specification.userMetadata.label} fallback={dataSpecificationIri} />
+          <LanguageStringText from={specification.label} fallback={dataSpecificationIri} />
         </Typography>
         <div style={{ display: "flex", gap: "1rem" }}>
           <ConfigureButton />
@@ -156,7 +159,7 @@ export const DocumentationSpecification = memo(() => {
             {specification?.importsDataSpecificationIds.map((importedSpecificationId) => (
               <TableRow key={importedSpecificationId}>
                 <TableCell component="th" scope="row" sx={{ width: "25%", fontWeight: "bold" }}>
-                  <LanguageStringText from={allSpecifications[importedSpecificationId]?.userMetadata.label} fallback={importedSpecificationId} />
+                  <ImportedSpecificationLabel modelId={importedSpecificationId} fallback={importedSpecificationId} />
                 </TableCell>
                 <TableCell align="right">
                   <Box

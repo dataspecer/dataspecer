@@ -10,6 +10,8 @@ import {
   SEMANTIC_MODEL_RELATIONSHIP_PROFILE,
   SEMANTIC_MODEL_GENERALIZATION_PROFILE,
   ProfileEntity,
+  ControlledVocabularyAssignment,
+  CONTROLLED_VOCABULARY_ASSIGNMENT,
 } from "./profile-model.ts";
 import {
   IdentifiableBuilder,
@@ -70,6 +72,7 @@ class DefaultProfileModelBuilder implements ProfileModelBuilder {
       externalDocumentationUrl: null,
       // SemanticModelClassProfile
       tags: [],
+      controlledVocabularies: [],
       ...value,
       // SemanticModelEntity
       iri: this.urlResolver(value?.iri ?? `classProfile#${this.counter}`),
@@ -122,6 +125,26 @@ class DefaultProfileModelBuilder implements ProfileModelBuilder {
     };
     this.entities[identifier] = entity;
     return new DefaultProfileRelationshipBuilder(entity);
+  }
+
+  controlledVocabularyAssignment(
+    value?: Partial<ControlledVocabularyAssignment>,
+  ): IdentifiableBuilder {
+    const identifier = value?.id ?? this.nextIdentifier();
+    const entity: ControlledVocabularyAssignment = {
+      // Entity
+      id: identifier,
+      type: [CONTROLLED_VOCABULARY_ASSIGNMENT],
+      // ControlledVocabularyAssignment
+      classProfile: "",
+      vocabulary: "",
+      qualifier: "must",
+      replaces: null,
+      iri: null,
+      ...value,
+    };
+    this.entities[identifier] = entity;
+    return { identifier };
   }
 
   generalization<Type extends ProfileClassBuilder | ProfileRelationshipBuilder>(

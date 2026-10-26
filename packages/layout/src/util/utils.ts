@@ -96,9 +96,9 @@ export function getGroupMappings(groups: VisualGroup[]) {
   const existingGroups: Record<string, VisualGroup> = {};
   const nodeToGroupMapping: Record<string, string> = {};
   for(const group of groups) {
-    existingGroups[group.identifier] = group;
+    existingGroups[group.id] = group;
     for(const nodeInGroup of group.content) {
-      nodeToGroupMapping[nodeInGroup] = group.identifier;
+      nodeToGroupMapping[nodeInGroup] = group.id;
     }
   }
 

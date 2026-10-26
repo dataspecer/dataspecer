@@ -1,11 +1,13 @@
-import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
-import { SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
-import { createSgovModel } from "@dataspecer/core-v2/semantic-model/simplified";
+import { isModelProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
+import { CONTROLLED_VOCABULARY_MODEL, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, V1, RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
+import { controlledVocabulariesToDcatCatalog, controlledVocabularyCatalogIri, type ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
+import { isMainSemanticModelEntity, isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship, SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
 import { withAbsoluteIri } from "@dataspecer/core-v2/semantic-model/utils";
-import { PimStoreWrapper } from "@dataspecer/core-v2/semantic-model/v1-adapters";
 import { LanguageString, type CoreResource } from "@dataspecer/core/core/core-resource";
 import { DataSpecificationArtefact } from "@dataspecer/core/data-specification/model/data-specification-artefact";
+import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
+import type { Transaction } from "@dataspecer/core/operation";
 import { StreamDictionary } from "@dataspecer/core/io/stream/stream-dictionary";
 import { generatorConfigurationToRdf } from "@dataspecer/data-specification-vocabulary/generator-configuration";
 import {
@@ -20,26 +22,48 @@ import {
   type VocabularySpecificationDocument,
 } from "@dataspecer/data-specification-vocabulary/specification-description";
 import { structureModelToRdf } from "@dataspecer/data-specification-vocabulary/structure-model";
+import type { ProjectModelEntity, PackageEntity } from "@dataspecer/core/project-model";
 import { canonicalizeIds, garbageCollect } from "@dataspecer/structure-model";
-import { ModelRepository } from "./model-repository/index.ts";
 import { ModelDescription, type StructureModelDescription } from "./model.ts";
 import { DefaultShaclConfiguration, DefaultShaclFileKey, ShaclV2Configurator } from "./shacl-v2.ts";
 import {
   generateDsvApplicationProfile,
   generateHtmlDocumentation,
+  generateLdesOperationStream,
   generateLightweightOwl,
   generateShaclApplicationProfile,
   getIdToIriMapping,
-  isModelProfile,
   isModelVocabulary,
 } from "./utils.ts";
 import { artefactToDsv } from "./v1/artefact-to-dsv.ts";
+import { MainEntity as RdfsModelMainEntity } from "@dataspecer/model-store/implementation";
+import { generateApplicationProfileSvg } from "./application-profile-diagram.ts";
 
-const PIM_STORE_WRAPPER = "https://dataspecer.com/core/model-descriptor/pim-store-wrapper";
-const SGOV = "https://dataspecer.com/core/model-descriptor/sgov";
+/**
+ * Id under which the project model (the package hierarchy) is stored in the
+ * models record. @see GenerateSpecificationContext.models
+ */
+const PROJECT_MODEL_ID = "_project_model";
 
-interface StructureModel {
-  resources: { [iri: string]: CoreResource };
+/**
+ * Returns the immediate child model entities of a package, resolved from the
+ * project model.
+ */
+function getSubModelEntities(projectModel: Record<string, ProjectModelEntity>, packageId: string): ProjectModelEntity[] {
+  const packageEntity = projectModel[packageId] as PackageEntity | undefined;
+  const subModelIds = packageEntity?.subModels ?? [];
+  return subModelIds.map((id) => projectModel[id]).filter((entity): entity is ProjectModelEntity => entity !== undefined);
+}
+
+/**
+ * Returns the data of a named storage blob of a model. Defaults to the
+ * "model" blob, which is its own top-level model keyed by the model's own
+ * id. Other blobs (e.g. "svg") are their own top-level model as well, keyed
+ * by `${id}#${blobName}`.
+ */
+function getModelBlobData(models: Record<string, EntityRecord>, id: string, blobName: string = "model"): any {
+  const blobId = blobName === "model" ? id : `${id}#${blobName}`;
+  return models[blobId]?.[blobId];
 }
 
 /**
@@ -48,8 +72,30 @@ interface StructureModel {
  * @todo Consider how this is related to {@link GenerateSpecificationOptions}.
  */
 export interface GenerateSpecificationContext {
-  modelRepository: ModelRepository;
+  /**
+   * All models needed to build the specification, pre-serialized by the
+   * caller. Keyed by model id, with one extra entry for the project model
+   * (see {@link PROJECT_MODEL_ID}) that describes the package hierarchy.
+   *
+   * A model may consist of several storage blobs (e.g. a visual model also
+   * has an "svg" blob). Blobs other than the default ("model") are stored
+   * under their own top-level key `${modelId}#${blobName}`.
+   */
+  models: Record<string, EntityRecord>;
   output: StreamDictionary;
+
+  /**
+   * Transaction history of the project used to publish the operations as an
+   * LDES stream: the state of the models before the first transaction and
+   * all transactions, oldest first.
+   *
+   * @todo The backend does not provide the history yet; when missing, the
+   * current state is published as a single initial transaction.
+   */
+  history?: {
+    models: Record<string, EntityRecord>;
+    transactions: Transaction[];
+  };
 
   fetch: HttpFetch;
 
@@ -83,6 +129,33 @@ export interface GenerateSpecificationOptions {
 }
 
 /**
+ * Writes a DCAT catalog of every controlled vocabulary model found in
+ * `projectModel` to `fileName`. Returns whether anything was written - false
+ * when there are no controlled vocabularies in the project, in which case
+ * the caller should not register the file anywhere.
+ */
+async function writeDcatCatalog(
+  projectModel: Record<string, ProjectModelEntity>,
+  allModels: Record<string, EntityRecord>,
+  writeFile: (path: string, data: string) => Promise<void>,
+  fileName: string,
+  catalogIri: string,
+): Promise<boolean> {
+  const vocabularies = Object.values(projectModel)
+    .filter((entity) => entity.modelType === CONTROLLED_VOCABULARY_MODEL)
+    .map((entity) => allModels[entity.id]?.[entity.id] as ControlledVocabulary | undefined)
+    .filter((vocabulary): vocabulary is ControlledVocabulary => vocabulary !== undefined);
+
+  if (vocabularies.length === 0) {
+    return false;
+  }
+
+  const catalog = await controlledVocabulariesToDcatCatalog(catalogIri, vocabularies);
+  await writeFile(fileName, catalog);
+  return true;
+}
+
+/**
  * Generates the specification with all the artifacts into the output stream.
  *
  * @todo The interface of this function is still not final. We need to properly
@@ -94,7 +167,7 @@ export interface GenerateSpecificationOptions {
  * ! This function is called from backend and DSE
  *
  *  await generateSpecification(packageIri, {
- *    modelRepository: new BackendModelRepository(resourceModel),
+ *    models: await getModelsForPackage(packageIri, resourceModel),
  *    output: streamDictionary,
  *    fetch: httpFetch,
  *  }, {
@@ -105,89 +178,116 @@ export async function generateSpecification(packageId: string, context: Generate
   const subdirectory = options.subdirectory ?? "";
   const queryParams = options.queryParams ?? "";
 
-  const model = (await context.modelRepository.getModelById(packageId))!;
-  const resource = await model.asPackageModel();
-  const subResources = await resource.getSubResources();
+  const allModels = context.models;
+  const projectModel = (allModels[PROJECT_MODEL_ID] ?? {}) as Record<string, ProjectModelEntity>;
+
+  const rootPackageEntity = projectModel[packageId] as PackageEntity | undefined;
+  if (!rootPackageEntity) {
+    throw new Error("Package does not exist.");
+  }
+  const subResources = getSubModelEntities(projectModel, packageId);
 
   let hasVocabulary = false;
   let hasApplicationProfile = false;
 
-  //const pckg = await model.asPackageModel();
-  //const baseUrl = (pckg.getUserMetadata() as any)?.documentBaseUrl ?? "";
-
   const prefixMap = {} as Record<string, string>;
 
   // Find all models recursively and store them with their metadata
-  const models = [] as ModelDescription[];
+  const modelDescriptions = [] as ModelDescription[];
   const primaryStructureModels = [] as StructureModelDescription[];
+  // Maps each controlled vocabulary model to the package that is its direct parent
+  // In case of nested packages we want to serialize the CVs scoped to the directly owning package
+  // Mapping allows matching references to the CVs across borders of nested packages
+  const controlledVocabularyOwningPackage = new Map<string, string>();
+  const visitedPackages = new Set<string>();
   async function fillModels(packageIri: string, isRoot: boolean = false) {
-    const model = (await context.modelRepository.getModelById(packageIri))!;
-    const pckg = await model.asPackageModel();
-    if (!pckg) {
+    if (visitedPackages.has(packageIri)) {
+      return;
+    }
+    visitedPackages.add(packageIri);
+    const pckgEntity = projectModel[packageIri] as PackageEntity | undefined;
+    if (!pckgEntity) {
       throw new Error("Package does not exist.");
     }
-    const subResources = await pckg.getSubResources();
-    const semanticModels = subResources.filter((r) => r.types[0] === LOCAL_SEMANTIC_MODEL);
-    for (const model of semanticModels) {
-      const data = (await (await model.asBlobModel()).getJsonBlob()) as any;
+    const children = getSubModelEntities(projectModel, packageIri);
+    const semanticModels = children.filter((r) => r.modelType === LOCAL_SEMANTIC_MODEL);
+    for (const semanticModel of semanticModels) {
+      const modelEntities = allModels[semanticModel.id] ?? {};
+      const mainEntity = modelEntities[semanticModel.id];
+      const baseIri = mainEntity && isMainSemanticModelEntity(mainEntity) ? mainEntity.baseIri ?? null : null;
+      const entities = Object.fromEntries(Object.entries(modelEntities).filter(([id]) => id !== semanticModel.id));
 
-      const modelName = model.getUserMetadata()?.label?.en ?? model.getUserMetadata()?.label?.cs;
-      if (modelName && modelName.length > 0 && modelName.match(/^[a-z]+$/)) {
-        prefixMap[data.baseIri] = modelName;
+      const modelName = semanticModel.label?.en ?? semanticModel.label?.cs;
+      if (modelName && modelName.length > 0 && modelName.match(/^[a-z]+$/) && baseIri) {
+        prefixMap[baseIri] = modelName;
       }
 
-      models.push({
-        entities: Object.fromEntries(Object.entries(data.entities).map(([id, entity]) => [id, withAbsoluteIri(entity as SemanticModelEntity, data.baseIri)])),
+      modelDescriptions.push({
+        id: semanticModel.id,
+        entities: Object.fromEntries(Object.entries(entities).map(([id, entity]) => [id, withAbsoluteIri(entity as SemanticModelEntity, baseIri ?? undefined)])),
         isPrimary: isRoot,
-        documentationUrl: (pckg.getUserMetadata() as any)?.documentBaseUrl, //data.baseIri + "applicationProfileConceptualModel", //pckg.userMetadata?.documentBaseUrl,// ?? (isRoot ? "." : null),
-        baseIri: data.baseIri,
-        title: model.getUserMetadata()?.label,
+        documentationUrl: (pckgEntity as any).documentBaseUrl ?? null,
+        baseIri,
+        title: semanticModel.label,
       });
     }
-    const sgovModels = subResources.filter((r) => r.types[0] === SGOV);
+    const sgovModels = children.filter((r) => r.modelType === QUERYABLE_MODEL);
     for (const sgovModel of sgovModels) {
-      const model = createSgovModel("https://slovník.gov.cz/sparql", context.fetch, sgovModel.id);
-      const blobModel = await sgovModel.asBlobModel();
-      const data = (await blobModel.getJsonBlob()) as any;
-      await model.unserializeModel(data);
-      models.push({
-        entities: model.getEntities() as Record<string, SemanticModelEntity>,
+      const modelEntities = allModels[sgovModel.id] ?? {};
+      const entities = Object.fromEntries(Object.entries(modelEntities).filter(([_, entity]) =>
+        isSemanticModelClass(entity) ||
+        isSemanticModelRelationship(entity) ||
+        isSemanticModelGeneralization(entity)
+      )) as Record<string, SemanticModelEntity>;
+      modelDescriptions.push({
+        id: sgovModel.id,
+        entities: entities,
         isPrimary: false,
         documentationUrl: null,
         baseIri: null,
         title: null,
       });
     }
-    const pimModels = subResources.filter((r) => r.types[0] === PIM_STORE_WRAPPER);
-    for (const model of pimModels) {
-      const blobModel = await model.asBlobModel();
-      const data = (await blobModel.getJsonBlob()) as any;
-      const constructedModel = new PimStoreWrapper(data.pimStore, data.id, data.alias);
-      constructedModel.fetchFromPimStore();
-      const entities = constructedModel.getEntities() as Record<string, SemanticModelEntity>;
-      models.push({
+    const pimModels = children.filter((r) => r.modelType === RDFS_MODEL);
+    for (const pimModel of pimModels) {
+      const modelEntities = allModels[pimModel.id] ?? {};
+      const entities = Object.fromEntries(Object.entries(modelEntities).filter(([id]) => id !== pimModel.id)) as Record<string, SemanticModelEntity>;
+      modelDescriptions.push({
+        id: pimModel.id,
         entities,
         isPrimary: false,
-        // @ts-ignore
-        documentationUrl: model.userMetadata?.documentBaseUrl ?? null,
+        documentationUrl: null,
         baseIri: null,
         title: null,
       });
     }
+    const controlledVocabularyModels = children.filter((r) => r.modelType === CONTROLLED_VOCABULARY_MODEL);
+    for (const cvModel of controlledVocabularyModels) {
+      // Unlike the model types above, a CV model's own self-entity
+      // (keyed by its own id) is the CV itself, not separate bookkeeping metadata
+      // - it must stay in
+      const modelEntities = (allModels[cvModel.id] ?? {}) as Record<string, SemanticModelEntity>;
+      modelDescriptions.push({
+        id: cvModel.id,
+        entities: modelEntities,
+        isPrimary: false,
+        documentationUrl: null,
+        baseIri: null,
+        title: null,
+      });
+      controlledVocabularyOwningPackage.set(cvModel.id, packageIri);
+    }
     if (isRoot) {
-      const structureModels = subResources.filter((r) => r.types[0] === V1.PSM);
-      for (const model of structureModels) {
-        const blobModel = await model.asBlobModel();
-        const structureModel = (await blobModel.getJsonBlob()) as StructureModel;
-
+      const structureModels = children.filter((r) => r.modelType === V1.PSM);
+      for (const structureModel of structureModels) {
         // We need to process resources to have IDs and IRIs..
         primaryStructureModels.push({
-          id: model.id,
-          entities: structureModel.resources,
+          id: structureModel.id,
+          entities: (allModels[structureModel.id] ?? {}) as unknown as Record<string, CoreResource>,
         });
       }
     }
-    const packages = subResources.filter((r) => r.types[0] === LOCAL_PACKAGE);
+    const packages = children.filter((r) => r.modelType === LOCAL_PACKAGE);
     for (const p of packages) {
       await fillModels(p.id);
     }
@@ -241,10 +341,9 @@ export async function generateSpecification(packageId: string, context: Generate
    */
   let generatorConfiguration: Record<string, any> = {};
 
-  const generatorConfigurationModel = subResources.find((r) => r.types.includes(V1.GENERATOR_CONFIGURATION)) ?? null;
+  const generatorConfigurationModel = subResources.find((r) => r.modelType === V1.GENERATOR_CONFIGURATION) ?? null;
   if (generatorConfigurationModel) {
-    const blobModel = await generatorConfigurationModel.asBlobModel();
-    generatorConfiguration = (await blobModel.getJsonBlob()) as Record<string, unknown>;
+    generatorConfiguration = (getModelBlobData(allModels, generatorConfigurationModel.id) ?? {}) as Record<string, unknown>;
   }
 
   /**
@@ -260,7 +359,7 @@ export async function generateSpecification(packageId: string, context: Generate
     baseUrl += "/";
   }
 
-  const mainModelBaseIri = models.find((m) => m.isPrimary)?.baseIri ?? "";
+  const mainModelBaseIri = modelDescriptions.find((m) => m.isPrimary)?.baseIri ?? "";
   let baseIri = mainModelBaseIri;
   if (baseIri.endsWith("#")) {
     baseIri = baseIri.substring(0, baseIri.length - 1);
@@ -271,6 +370,26 @@ export async function generateSpecification(packageId: string, context: Generate
   if (baseIri.length === 0) {
     baseIri = baseUrl;
   }
+
+  // Each controlled vocabulary is referenced by the IRI of the catalog owned
+  // by its own package - not necessarily this specification's own catalog,
+  // e.g. when this specification profiles a nested one that owns the CV.
+  const controlledVocabularyCatalogIris = new Map<string, string>();
+  for (const [cvModelId, ownerPackageId] of controlledVocabularyOwningPackage) {
+    controlledVocabularyCatalogIris.set(cvModelId, controlledVocabularyCatalogIri(baseIri, ownerPackageId));
+  }
+
+  // The catalog this specification's own dsv.ttl embeds - only the CVs it
+  // directly owns, mirroring how it never duplicates a nested specification's
+  // own class profiles either. Other CVs it references (owned by a nested
+  // specification) are resolved via controlledVocabularyCatalogIris above,
+  // but described in full only in that nested specification's own dsv.ttl -
+  // or, project-wide, in the standalone controlled_vocabulary_catalog.ttl.
+  const ownCatalogIri = controlledVocabularyCatalogIri(baseIri, packageId);
+  const vocabulariesToEmbed = Array.from(controlledVocabularyOwningPackage.entries())
+    .filter(([, ownerPackageId]) => ownerPackageId === packageId)
+    .map(([cvModelId]) => allModels[cvModelId]?.[cvModelId] as ControlledVocabulary | undefined)
+    .filter((vocabulary): vocabulary is ControlledVocabulary => vocabulary !== undefined);
 
   /**
    * Whether we are generating in the "production mode" or in the "preview
@@ -283,34 +402,27 @@ export async function generateSpecification(packageId: string, context: Generate
 
   const usedVocabularies: ExternalSpecification[] = [];
 
-  for (const model of subResources) {
-    if (model.types[0] === PIM_STORE_WRAPPER) {
-      const blobModel = await model.asBlobModel();
-      const data = (await blobModel.getJsonBlob()) as {
-        urls?: string[];
-        alias?: string;
-      };
-
+  for (const entity of subResources) {
+    if (entity.modelType === RDFS_MODEL) {
+      const data = (getModelBlobData(allModels, entity.id) ?? {}) as RdfsModelMainEntity;
       for (const url of data.urls ?? []) {
         usedVocabularies.push({
           url: url,
-          title: data.alias ? { en: data.alias } : (model.getUserMetadata()?.label ?? undefined),
+          title: data.label ?? entity.label ?? undefined,
         } satisfies ExternalSpecification);
       }
     }
-    if (model.types[0] === LOCAL_PACKAGE) {
+    if (entity.modelType === LOCAL_PACKAGE) {
       // We need to obtain IRI of the application profile/vocabulary which is the base IRI of the semantic model.
 
-      const importedPackage = await model.asPackageModel();
-      const models = await importedPackage.getSubResources();
-      const semanticModel = models.find((m) => m.types[0] === LOCAL_SEMANTIC_MODEL);
+      const importedPackageChildren = getSubModelEntities(projectModel, entity.id);
+      const semanticModel = importedPackageChildren.find((m) => m.modelType === LOCAL_SEMANTIC_MODEL);
       if (semanticModel) {
-        const semanticModelBlob = await semanticModel.asBlobModel();
-        const data = (await semanticModelBlob.getJsonBlob()) as any;
-        const baseIri = data.baseIri ?? "";
+        const data = getModelBlobData(allModels, semanticModel.id) as any;
+        const baseIri = data?.baseIri ?? "";
         usedVocabularies.push({
           iri: baseIri,
-          url: (model.getUserMetadata() as any)["importedFromUrl"],
+          url: (entity as any).importedFromUrl,
           title: {},
         });
       }
@@ -319,7 +431,7 @@ export async function generateSpecification(packageId: string, context: Generate
 
   // Primary semantic model
   const semanticModel = {};
-  for (const model of models) {
+  for (const model of modelDescriptions) {
     if (model.isPrimary) {
       Object.assign(semanticModel, model.entities);
     }
@@ -352,15 +464,14 @@ export async function generateSpecification(packageId: string, context: Generate
   let idToIriMapping: Record<string, string> = {};
 
   // For each model we need to decide whether it is a standalone vocabulary of application profile
-  for (const model of models.filter((m) => m.isPrimary)) {
+  for (const model of modelDescriptions.filter((m) => m.isPrimary)) {
     // Resource ID of the Model
     const modelIri = model.baseIri ?? (baseIri + isModelVocabulary(model.entities) ? "vocabulary" : "profile");
     const fileName = isModelVocabulary(model.entities) ? "model.owl.ttl" : "dsv.ttl";
     // This is the physical location of the model
     const modelUrl = baseUrl + fileName + queryParams;
 
-    // @ts-ignore
-    let modelDescription = resource.getUserMetadata().description as LanguageString | undefined;
+    let modelDescription = rootPackageEntity.description as LanguageString | undefined;
     modelDescription = modelDescription ? Object.fromEntries(Object.entries(modelDescription).filter(([_, v]) => v)) : undefined;
     if (modelDescription && Object.keys(modelDescription).length === 0) {
       modelDescription = undefined;
@@ -379,7 +490,7 @@ export async function generateSpecification(packageId: string, context: Generate
 
         iri: modelIri,
 
-        title: resource.getUserMetadata().label ?? model.title ?? {},
+        title: rootPackageEntity.label ?? model.title ?? {},
         description: modelDescription ?? {},
 
         // token: undefined,
@@ -420,7 +531,7 @@ export async function generateSpecification(packageId: string, context: Generate
       const dsvEntry = {
         iri: modelIri,
         types: [DSV_APPLICATION_PROFILE_TYPE],
-        title: resource.getUserMetadata().label ?? model.title ?? {},
+        title: rootPackageEntity.label ?? model.title ?? {},
         description: modelDescription ?? {},
         //token: "xxx",
         isProfileOf: [...usedVocabularies],
@@ -430,7 +541,10 @@ export async function generateSpecification(packageId: string, context: Generate
 
       // Serialize the model in DSV
 
-      const dsv = await generateDsvApplicationProfile([model], models, modelIri);
+      const dsv = await generateDsvApplicationProfile(
+        [model], modelDescriptions, modelIri,
+        controlledVocabularyCatalogIris, vocabulariesToEmbed, ownCatalogIri,
+      );
       idToIriMapping = {
         ...idToIriMapping,
         ...(await getIdToIriMapping([model])),
@@ -463,7 +577,7 @@ export async function generateSpecification(packageId: string, context: Generate
         for (const [fileKey, fileConf] of Object.entries(shaclConfig.files)) {
           const shaclFileName = fileKey === DefaultShaclFileKey ? "shacl.ttl" : `shacl-${fileKey}.ttl`;
           const shaclUrl = baseUrl + shaclFileName + queryParams;
-          const shacl = await generateShaclApplicationProfile(model, models, modelIri, fileConf);
+          const shacl = await generateShaclApplicationProfile(model, modelDescriptions, modelIri, fileConf);
           await writeFile(shaclFileName, shacl);
           shaclProfileExternalArtifacts.push({ type: shaclFileName, URL: shaclUrl });
           const shaclDescriptor = {
@@ -477,6 +591,27 @@ export async function generateSpecification(packageId: string, context: Generate
           hasResource.push(shaclDescriptor);
         }
       }
+    }
+
+    // Publish the operations of the model as an LDES stream. This is a proof
+    // of concept: the descriptor is not registered in the DSV metadata yet as
+    // PROF has no suitable role for a change log.
+    if (isModelVocabulary(model.entities) || isModelProfile(model.entities)) {
+      const ldesFileName = isModelVocabulary(model.entities) ? "model.owl.ldes.ttl" : "dsv.ldes.ttl";
+      const ldesUrl = baseUrl + ldesFileName + queryParams;
+      // We need to use empty IRI because LDES consumers we tested require the IRI to match the URL
+      const ldes = await generateLdesOperationStream(model, modelDescriptions, modelIri, "", context.history);
+      await writeFile(ldesFileName, ldes);
+      externalArtifacts["ldes-operations"] = [{ type: ldesFileName, URL: ldesUrl }];
+      const ldesDescriptor = {
+        iri: null,
+        url: ldesUrl,
+        role: dsvMetadataWellKnown.role.specification,
+        formatMime: dsvMetadataWellKnown.formatMime.turtle,
+        additionalRdfTypes: [],
+        conformsTo: [dsvMetadataWellKnown.conformsTo.ldes],
+      } satisfies ResourceDescriptor;
+      allModelsHasResource.forEach((hasResource) => hasResource.push(ldesDescriptor));
     }
   }
 
@@ -548,14 +683,41 @@ export async function generateSpecification(packageId: string, context: Generate
     ];
   }
 
+  // Write a DCAT catalog of every controlled vocabulary in the project
+  {
+    const fileName = "controlled_vocabulary_catalog.ttl";
+    const url = baseUrl + fileName + queryParams;
+    const wrote = await writeDcatCatalog(projectModel, allModels, writeFile, fileName, ownCatalogIri);
+    if (wrote) {
+      const descriptor = {
+        iri: null,
+        url,
+
+        role: dsvMetadataWellKnown.role.vocabulary,
+        formatMime: dsvMetadataWellKnown.formatMime.turtle,
+        additionalRdfTypes: [],
+
+        conformsTo: [dsvMetadataWellKnown.conformsTo.dcat],
+      } satisfies ResourceDescriptor;
+      APHasResource?.push(descriptor);
+
+      externalArtifacts["catalog"] = [
+        ...(externalArtifacts["catalog"] ?? []),
+        {
+          type: fileName,
+          URL: url,
+        },
+      ];
+    }
+  }
+
   // Process all SVGs. Because we do not know which svg belongs to which model,
   // we assign all of them to all models.
   // Also, currently SVGs are not language dependent, so we generate them to the root of the directory.
-  const visualModels = subResources.filter((r) => r.types[0] === LOCAL_VISUAL_MODEL);
+  const visualModels = subResources.filter((r) => r.modelType === VISUAL_MODEL);
   for (const visualModel of visualModels) {
-    const model = await visualModel.asBlobModel();
-    const svgModel = await model.getJsonBlob("svg");
-    const svg = svgModel ? (svgModel as { svg: string }).svg : null;
+    const svgData = getModelBlobData(allModels, visualModel.id, "svg") as { svg: string } | undefined;
+    const svg = svgData ? svgData.svg : null;
 
     if (svg) {
       const resourceFileName = visualModel.id + ".svg";
@@ -567,7 +729,7 @@ export async function generateSpecification(packageId: string, context: Generate
         {
           type: "svg",
           URL: resourceUrl,
-          label: visualModel.getUserMetadata()?.label,
+          label: visualModel.label,
         },
       ];
 
@@ -575,6 +737,37 @@ export async function generateSpecification(packageId: string, context: Generate
         iri: null,
         url: resourceUrl,
 
+        role: dsvMetadataWellKnown.role.guidance,
+        formatMime: dsvMetadataWellKnown.formatMime.svg,
+        conformsTo: [dsvMetadataWellKnown.conformsTo.svg],
+        additionalRdfTypes: [],
+      } satisfies ResourceDescriptor;
+      allModelsHasResource.forEach((hasResource) => hasResource.push(descriptor));
+    }
+  }
+
+  if (visualModels.length === 0 && hasApplicationProfile) {
+    const applicationProfile = modelDescriptions.find((model) => model.isPrimary && isModelProfile(model.entities));
+    if (applicationProfile?.id) {
+      const svg = await generateApplicationProfileSvg(
+        packageId,
+        applicationProfile.id,
+        applicationProfile.entities,
+        allModels,
+        prefixMap,
+      );
+      const resourceFileName = packageId + ".svg";
+      const resourceUrl = baseUrl + resourceFileName + queryParams;
+
+      await writeFile(resourceFileName, svg);
+      externalArtifacts["svg"] = [
+        ...(externalArtifacts["svg"] ?? []),
+        { type: "svg", URL: resourceUrl, label: rootPackageEntity.label },
+      ];
+
+      const descriptor = {
+        iri: null,
+        url: resourceUrl,
         role: dsvMetadataWellKnown.role.guidance,
         formatMime: dsvMetadataWellKnown.formatMime.svg,
         conformsTo: [dsvMetadataWellKnown.conformsTo.svg],
@@ -657,7 +850,12 @@ export async function generateSpecification(packageId: string, context: Generate
 
     const documentation = context.output.writePath(`${subdirectory}${lang}/index.html`);
     await documentation.write(
-      await generateHtmlDocumentation(resource, models, { externalArtifacts, dsv, language: lang, prefixMap }, context),
+      await generateHtmlDocumentation(
+        { data: getModelBlobData(allModels, packageId), label: rootPackageEntity.label },
+        modelDescriptions,
+        { externalArtifacts, dsv, language: lang, prefixMap },
+        context,
+      ),
     );
     await documentation.close();
   }

@@ -1,4 +1,4 @@
-import { createLogger } from "@/application";
+import { createLogger } from "../../application";
 import { createRdfsModel, createSgovModel, ExternalSemanticModel } from "@dataspecer/core-v2/semantic-model/simplified";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
 import { EntityDsIdentifier } from "../entity-model";

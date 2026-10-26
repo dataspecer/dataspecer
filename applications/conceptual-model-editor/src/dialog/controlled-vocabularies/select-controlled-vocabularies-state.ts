@@ -1,0 +1,102 @@
+import {
+  ControlledVocabulary,
+  ControlledVocabularyOverride,
+  ControlledVocabularyUsage,
+} from "./controlled-vocabulary-model";
+import { AddVocabularyState } from "./add-vocabulary-state";
+import { VocabularyItemState } from "./vocabulary-item-state";
+
+export interface SelectControlledVocabulariesState {
+
+  /**
+   * Selected controlled vocabularies
+   * Both inherited from an ancestor and directly added here
+   */
+  items: VocabularyItemState[];
+
+  /**
+   * All available controlled vocabularies that can be selected
+   */
+  availableVocabularies: ControlledVocabulary[];
+
+  /**
+   * Null when the "Add" button is shown, non-null while the add form is open
+   */
+  addForm: AddVocabularyState | null;
+
+}
+
+export function createSelectControlledVocabulariesState(
+  inherited: ControlledVocabularyUsage[],
+  overrides: ControlledVocabularyOverride[],
+  added: ControlledVocabularyUsage[],
+  availableVocabularies: ControlledVocabulary[],
+): SelectControlledVocabulariesState {
+  const inheritedItems: VocabularyItemState[] = inherited.map(usage => {
+    const override = overrides.find(
+      item => item.targetAssignmentId === usage.assignmentId);
+    return {
+      id: crypto.randomUUID(),
+      entityId: override?.id ?? null,
+      vocabulary: usage.vocabulary,
+      qualifier: override?.qualifier ?? usage.qualifier,
+      inherited: {
+        assignmentId: usage.assignmentId,
+        qualifier: usage.qualifier,
+        overrideEnabled: override !== undefined,
+      },
+    };
+  });
+  const addedItems: VocabularyItemState[] = added.map(usage => ({
+    id: crypto.randomUUID(),
+    entityId: usage.assignmentId,
+    vocabulary: usage.vocabulary,
+    qualifier: usage.qualifier,
+    inherited: null,
+  }));
+  return {
+    items: [...inheritedItems, ...addedItems],
+    availableVocabularies,
+    addForm: null,
+  };
+}
+
+/**
+ * A class profile can only contain one controlled vocabulary assignment when its qualifier is MUST.
+ * Validates it across all vocabulary assignments in the profile.
+ */
+export function hasControlledVocabularyConflict(
+  state: SelectControlledVocabulariesState,
+): boolean {
+  const qualifiers = state.items.map(item => item.qualifier);
+  const mustCount = qualifiers.filter(qualifier => qualifier === "must").length;
+  return mustCount > 0 && qualifiers.length > 1;
+}
+
+/**
+ * Returns the ids (VocabularyItemState.id) of items whose vocabulary is
+ * not unique within the profile - i.e. the same vocabulary is assigned more
+ * than once, regardless of qualifier. Checked across inherited and added
+ * items together: a class profile can only ever have one assignment per
+ * vocabulary.
+ */
+export function findDuplicateVocabularyItemIds(
+  state: SelectControlledVocabulariesState,
+): Set<string> {
+  const groups = new Map<string, VocabularyItemState[]>();
+  for (const item of state.items) {
+    const groupKey = item.vocabulary.id;
+    const group = groups.get(groupKey) ?? [];
+    group.push(item);
+    groups.set(groupKey, group);
+  }
+  const duplicateIds = new Set<string>();
+  for (const group of groups.values()) {
+    if (group.length > 1) {
+      for (const item of group) {
+        duplicateIds.add(item.id);
+      }
+    }
+  }
+  return duplicateIds;
+}

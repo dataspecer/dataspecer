@@ -1,7 +1,7 @@
 import {
     ArtefactGenerator,
     ArtefactGeneratorContext
-} from "@dataspecer/core/generator";
+} from "@dataspecer/generators/generator";
 import {
     DataSpecification,
     DataSpecificationArtefact,
@@ -21,7 +21,7 @@ import {
     assertFailed,
     assertNot
 } from "@dataspecer/core/core";
-import { transformStructureModel } from "@dataspecer/core/structure-model/transformation";
+import { transformStructureModel } from "@dataspecer/generators/structure-model/transformation";
 import {
     CsvConfiguration,
     CsvConfigurator,

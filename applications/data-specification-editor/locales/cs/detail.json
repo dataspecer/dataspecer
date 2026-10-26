@@ -15,9 +15,30 @@
     "title": "Další vlastnosti tříd",
     "yes": "nepovoleno"
   },
-  "codelist": "Číselník",
-  "codelist url": "URL číselníku",
   "confirm": "potvrdit",
+  "controlled vocabularies": {
+    "access url": "URL pro přístup",
+    "assigned from profiled": "přiřazeno z profilovaného",
+    "assignment not found": "Přiřazení řízeného slovníku nenalezeno:",
+    "documentation": "Dokumentace",
+    "download url": "URL ke stažení",
+    "help": "Řízené slovníky přiřazené tomuto profilu třídy, včetně těch přiřazených z profilovaného. Spravují se v konceptuálním editoru.",
+    "iri": "IRI",
+    "no title": "bez názvu",
+    "pattern": "Vzor IRI hodnot",
+    "qualifier": {
+      "at-least-one": "Alespoň jedna hodnota musí pocházet ze slovníku",
+      "may": "Hodnoty mohou pocházet ze slovníku",
+      "must": "Hodnoty musí pocházet ze slovníku",
+      "recommended": "Hodnoty by měly pocházet ze slovníku"
+    },
+    "reference": "Odkaz",
+    "replaces assigned from profiled": "nahrazuje přiřazení z profilovaného",
+    "scheme": "Schéma konceptů",
+    "title": "Řízené slovníky",
+    "usage": "Použití",
+    "vocabulary not found": "Řízený slovník nenalezen:"
+  },
   "dematerialization": {
     "cardinality restriction": "Dematerializovat lze pouze ty asociace, které nemají kardinalitu vyšší než 1.",
     "checkbox": "dematerializovat asociaci",
@@ -51,7 +72,6 @@
   },
   "IRI": "IRI",
   "iri parameters help": "Instance tříd (data) můžou být identifikována svým konkrétním IRI. Například Praha, jako instance města, může mít své IRI http://example.com/Praha. Tato možnost nastavuje, zdali je takový identifikátor v datech vyžadován, což má vliv na validaci dat a jejich reprezetaci například v RDF, kdy se resourcy bez IRI projevují jako blank nodes.",
-  "is codelist": "je číselníkem",
   "json": {
     "use key value for lang string": "Použít formát JSON-LD language map."
   },
@@ -81,7 +101,6 @@
     "gml:EnvelopeType": "má stejný typ jako element <gml:Envelope>",
     "gml:GeometryPropertyType": "musí obsahovat libovolný geometrický element, např. <gml:Point>, <gml:Polygon>, atd."
   },
-  "no codelist url": "Neobsahuje žádná URL číselníku",
   "no description": "bez popisku",
   "no label": "bez názvu",
   "no translations": "žádné překlady nejsou k dispozici",

@@ -3,24 +3,24 @@ import { isSemanticModelClass } from "@dataspecer/core-v2/semantic-model/concept
 
 import { getVisualNodeContentBasedOnExistingEntities, withAggregatedEntity } from "./utilities";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseDiagramType } from "../diagram/diagram-hook";
 import { addRelatedEntitiesAction } from "./add-related-entities-to-visual-model";
 import { findPositionForNewNodeUsingLayouting } from "./layout-visual-model";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { addVisualNode } from "../dataspecer/visual-model/operation/add-visual-node";
 
 export async function addSemanticClassToVisualModelAction(
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
-  classes: ClassesContextType,
+  graph: UseModelGraphContextType,
+  classes: ClassesContext,
   visualModel: WritableVisualModel,
   diagram: UseDiagramType,
   entityIdentifier: string,
   modelIdentifier: string,
   position: { x: number, y: number } | null,
 ) {
-  const entities = graph.aggregatorView.getEntities();
+  const entities = graph.getEntities();
   if (position === null) {
     position = await findPositionForNewNodeUsingLayouting(
       notifications, diagram, graph, visualModel, classes, entityIdentifier);
@@ -36,6 +36,6 @@ export async function addSemanticClassToVisualModelAction(
         entity, modelIdentifier, position, content);
       addRelatedEntitiesAction(
         notifications, graph, classes, visualModel, Object.values(entities),
-        graph.models, entity);
+        classes.semanticModels, entity);
     });
 }

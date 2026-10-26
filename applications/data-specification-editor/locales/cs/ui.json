@@ -2,9 +2,9 @@
   "back to specification manager": "zpět do manažeru specifikací",
   "cancel": "Zrušit",
   "close": "zavřít",
-  "codelist": "číselník",
   "configure": "",
   "configure artifacts": "Konfigurovat artefakty",
+  "controlled vocabulary": "řízený slovník",
   "create data structure": "Vytvořit datovou strukturu",
   "data structure": "datová struktura",
   "data structure edit title": "Editor datové struktury",
@@ -35,6 +35,7 @@
   "no title": "bez názvu",
   "open data structure": "Otevřít",
   "profile": "Profilovat",
+  "redo": "Opakovat",
   "report a bug": "nahlásit chybu",
   "request a feature": "navrhnout úpravu",
   "return back button": "Jít zpět na {{toolName}}",
@@ -53,5 +54,6 @@
     "system": "Systémový"
   },
   "title": "editor schémat",
+  "undo": "Zpět",
   "version": "Verze"
 }

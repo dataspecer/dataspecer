@@ -39,10 +39,10 @@ test("Remove relationship end", () => {
     visualModel, firstModel.getId(), "0", "1");
   expect(visualModel.getVisualEntity(visualRelationship)).not.toBeNull();
   //
-  removeFromVisualModelByVisualAction(notificationMockup, visualModel, [nodeToRemove.identifier]);
+  removeFromVisualModelByVisualAction(notificationMockup, visualModel, [nodeToRemove.id]);
   expect(visualModel.getVisualEntity(visualRelationship)).toBeNull();
   expect(visualModel.getVisualEntitiesForRepresented("0").length).toBe(0);
-  expect(visualModel.getVisualEntity(nodeToRemove.identifier)).toBeNull();
+  expect(visualModel.getVisualEntity(nodeToRemove.id)).toBeNull();
   expect(visualModel.getVisualEntitiesForRepresented("1").length).toBe(1);
   expect(visualModel.getVisualEntitiesForRepresented("2").length).toBe(1);
   expect(visualModel.getVisualEntitiesForRepresented("3").length).toBe(1);
@@ -61,11 +61,11 @@ test("Remove relationship ends at the same time", () => {
   expect(visualModel.getVisualEntity(visualRelationship)).not.toBeNull();
   //
   removeFromVisualModelByVisualAction(
-    notificationMockup, visualModel, [sourceNodeToRemove.identifier, targetNodeToRemove.identifier]);
+    notificationMockup, visualModel, [sourceNodeToRemove.id, targetNodeToRemove.id]);
   expect(visualModel.getVisualEntity(visualRelationship)).toBeNull();
   expect(visualModel.getVisualEntitiesForRepresented("0").length).toBe(0);
-  expect(visualModel.getVisualEntity(sourceNodeToRemove.identifier)).toBeNull();
-  expect(visualModel.getVisualEntity(targetNodeToRemove.identifier)).toBeNull();
+  expect(visualModel.getVisualEntity(sourceNodeToRemove.id)).toBeNull();
+  expect(visualModel.getVisualEntity(targetNodeToRemove.id)).toBeNull();
   expect(visualModel.getVisualEntitiesForRepresented("1").length).toBe(0);
   expect(visualModel.getVisualEntitiesForRepresented("2").length).toBe(1);
   expect(visualModel.getVisualEntitiesForRepresented("3").length).toBe(1);
@@ -87,12 +87,12 @@ test("Remove ends and the relationship", () => {
   //
   removeFromVisualModelByVisualAction(
     notificationMockup, visualModel,
-    [sourceNodeToRemove.identifier, visualRelationship, targetNodeToRemove.identifier]);
+    [sourceNodeToRemove.id, visualRelationship, targetNodeToRemove.id]);
   expect(visualModel.getVisualEntity(visualRelationship)).toBeNull();
   expect(visualModel.getVisualEntitiesForRepresented("relationshipId").length).toBe(0);
   expect(visualModel.getVisualEntitiesForRepresented("0").length).toBe(0);
-  expect(visualModel.getVisualEntity(sourceNodeToRemove.identifier)).toBeNull();
-  expect(visualModel.getVisualEntity(targetNodeToRemove.identifier)).toBeNull();
+  expect(visualModel.getVisualEntity(sourceNodeToRemove.id)).toBeNull();
+  expect(visualModel.getVisualEntity(targetNodeToRemove.id)).toBeNull();
   expect(visualModel.getVisualEntitiesForRepresented("1").length).toBe(0);
   expect(visualModel.getVisualEntitiesForRepresented("2").length).toBe(1);
   expect(visualModel.getVisualEntitiesForRepresented("3").length).toBe(1);
@@ -135,11 +135,11 @@ test("Remove node duplicate", () => {
   ActionsTestSuite.createNewVisualRelationshipsForTestingFromSemanticEnds(
     visualModel, firstModel.getId(), "0", "1", "relationshipId");
   const nodeToDuplicate = visualModel.getVisualEntitiesForRepresented("0")[0];
-  createVisualEdgeEndpointDuplicateAction(notificationMockup, testDiagram, visualModel, nodeToDuplicate.identifier);
+  createVisualEdgeEndpointDuplicateAction(notificationMockup, testDiagram, visualModel, nodeToDuplicate.id);
   expect(visualModel.getVisualEntitiesForRepresented("relationshipId").length).toBe(2);
   expect(visualModel.getVisualEntitiesForRepresented("0").length).toBe(2);
   //
-  removeFromVisualModelByVisualAction(notificationMockup, visualModel, [nodeToDuplicate.identifier]);
+  removeFromVisualModelByVisualAction(notificationMockup, visualModel, [nodeToDuplicate.id]);
   expect(visualModel.getVisualEntitiesForRepresented("relationshipId").length).toBe(1);
   expect(visualModel.getVisualEntitiesForRepresented("0").length).toBe(1);
   expect(visualModel.getVisualEntitiesForRepresented("1").length).toBe(1);

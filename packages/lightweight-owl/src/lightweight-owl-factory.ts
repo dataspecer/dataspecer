@@ -53,7 +53,10 @@ export function semanticModelToLightweightOwl(
   referenceSemanticModels: SemanticModel[],
   semanticModels: SemanticModel[],
   context: Context,
-): OwlOntology {
+): OwlOntology & {
+  classMapId: { [identifier: string]: OwlClass },
+  propertyMapId: { [identifier: string]: OwlProperty },
+} {
   // We start by processing classes as they are referenced from
   // properties and generalizations.
   const { classes, classMapId } = prepareOwlClasses(
@@ -71,6 +74,8 @@ export function semanticModelToLightweightOwl(
   return {
     classes,
     properties,
+    classMapId,
+    propertyMapId,
   };
 }
 

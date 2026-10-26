@@ -5,7 +5,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc -w",
-    "prebuild": "node -e \"fs.rmSync('lib', { recursive: true, force: true })\""
+    "prebuild": "node -e \"fs.rmSync('lib', { recursive: true, force: true })\"",
+    "test": "vitest run --pass-with-no-tests"
   },
   "exports": {
     ".": "./lib/index.js",
@@ -13,12 +14,16 @@
     "./documentation-generator": "./lib/documentation-generator/index.js"
   },
   "dependencies": {
+    "@dataspecer/controlled-vocabulary-model": "*",
     "@dataspecer/core": "*",
     "@dataspecer/core-v2": "*",
-    "@dataspecer/handlebars-adapter": "*"
+    "@dataspecer/handlebars-adapter": "*",
+    "@dataspecer/generators": "^0.0.0"
   },
   "devDependencies": {
-    "@types/node": "^25.5.2",
-    "typescript": "^6.0.3"
+    "@dataspecer/profile-model": "*",
+    "@types/node": "^26.6.4",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
   }
 }

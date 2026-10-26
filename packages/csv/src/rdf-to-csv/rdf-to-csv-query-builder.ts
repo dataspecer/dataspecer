@@ -23,7 +23,7 @@ import { assertFailed } from "@dataspecer/core/core";
 import {
     StructureModel,
     StructureModelClass
-} from "@dataspecer/core/structure-model/model";
+} from "@dataspecer/generators/structure-model/model";
 
 /**
  * This class systematically generates variable names for SPARQL queries.

@@ -24,15 +24,15 @@ export const ResourceDetailClickThrough = (props: {
   withIri?: boolean;
 }) => {
   const { language } = useOptions();
-  const { sourceModelOfEntityMap } = useClassesContext();
-  const { aggregatorView, models } = useModelGraphContext();
+  const classesContext = useClassesContext();
+  const graph= useModelGraphContext();
 
   const { resource, onClick, withCardinality, withIri, detailDialogLanguage } = props;
   const name = useEntityProxy(resource, detailDialogLanguage ?? language).name;
   const modelColor =
-    aggregatorView.getActiveVisualModel()?.getModelColor(sourceModelOfEntityMap.get(resource.id) ?? "")
+    graph.getActiveVisualModel()?.getModelColor(classesContext.sourceModelOfEntityMap.get(resource.id) ?? "")
     ?? DEFAULT_MODEL_COLOR;
-  const iri = withIri ? getIri(resource, getModelIri(sourceModelOfEntity(resource.id, [...models.values()]))) : null;
+  const iri = withIri ? getIri(resource, getModelIri(sourceModelOfEntity(resource.id, classesContext.semanticModelsList))) : null;
 
   return (
     <div className="flex flex-row">

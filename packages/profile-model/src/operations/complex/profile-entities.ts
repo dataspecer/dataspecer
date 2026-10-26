@@ -26,9 +26,9 @@ import {
   type CreatedEntityOperationResult,
   createGeneralization,
   type CreateGeneralizationOperation,
-  type Operation,
   type OperationResult,
 } from "@dataspecer/core-v2/semantic-model/operations";
+import type { Operation } from "@dataspecer/core/operation";
 
 interface OperationContext {
 
@@ -45,7 +45,7 @@ interface OperationContext {
 
 }
 
-type EntityToProfileMapping = Record<EntityIdentifier, EntityIdentifier>;
+export type EntityToProfileMapping = Record<EntityIdentifier, EntityIdentifier>;
 
 type LanguageString = { [language: string]: string };
 
@@ -162,7 +162,7 @@ function splitEntitiesToProfile(entities: Entity[]) {
   }
 }
 
-function prepareProfileSemanticClassOperations(
+export function prepareProfileSemanticClassOperations(
   classes: SemanticClass[],
 ): CreateSemanticModelClassProfile[] {
   return classes.map(item => factory.createClassProfile({
@@ -174,12 +174,13 @@ function prepareProfileSemanticClassOperations(
     descriptionFromProfiled: item.id,
     usageNote: null,
     usageNoteFromProfiled: null,
-    externalDocumentationUrl: item.externalDocumentationUrl ?? null,
+    externalDocumentationUrl: null,
     tags: [],
+    controlledVocabularies: [],
   }))
 }
 
-function prepareProfileSemanticProfileClassOperations(
+export function prepareProfileSemanticProfileClassOperations(
   classes: ProfileClass[],
 ): CreateSemanticModelClassProfile[] {
   return classes.map(item => factory.createClassProfile({
@@ -191,8 +192,14 @@ function prepareProfileSemanticProfileClassOperations(
     descriptionFromProfiled: item.id,
     usageNote: item.usageNote,
     usageNoteFromProfiled: item.id,
-    externalDocumentationUrl: item.externalDocumentationUrl ?? null,
+    externalDocumentationUrl: null,
     tags: item.tags,
+    // controlledVocabularies holds ids of ControlledVocabularyAssignment
+    // entities owned by item, not values - copying them here would point
+    // the new profile at assignment entities it does not own. A new
+    // profile starts with none of its own, same as
+    // prepareProfileSemanticClassOperations above.
+    controlledVocabularies: [],
   }))
 }
 
@@ -204,16 +211,18 @@ async function createSemanticClassProfiles(
   const classProfiles: EntityIdentifier[] = [];
   (await context.targetModel.executeOperations(operations)).map((item, index) => {
     if (item.success) {
-      const source = operations[index].entity.profiling[0];
+      const source = operations[index].entity.profiling?.[0];
       const target = (item as CreatedEntityOperationResult).id;
-      mappings[source] = target;
+      if (source !== undefined) {
+        mappings[source] = target;
+      }
       classProfiles.push(target);
     }
   });
   return classProfiles;
 }
 
-function prepareProfileSemanticRelationshipOperations(
+export function prepareProfileSemanticRelationshipOperations(
   relationships: SemanticRelationship[],
   mappings: EntityToProfileMapping,
   relationshipSources: EntityIdentifier[],
@@ -290,12 +299,12 @@ function rangeEndProfile(
     usageNoteFromProfiled: profiled,
     concept: concept,
     cardinality: range.cardinality ?? null,
-    externalDocumentationUrl: range.externalDocumentationUrl ?? null,
+    externalDocumentationUrl: null,
     tags: [],
   }
 }
 
-function prepareProfileSemanticProfileRelationshipOperations(
+export function prepareProfileSemanticProfileRelationshipOperations(
   relationships: ProfileRelationship[],
   mappings: EntityToProfileMapping,
   relationshipSources: EntityIdentifier[],
@@ -345,7 +354,7 @@ async function createSemanticRelationshipProfiles(
   return relationshipProfiles;
 }
 
-function prepareProfileSemanticGeneralizationOperations(
+export function prepareProfileSemanticGeneralizationOperations(
   generalizations: SemanticGeneralization[],
   mappings: EntityToProfileMapping,
   generalizationSources: EntityIdentifier[],

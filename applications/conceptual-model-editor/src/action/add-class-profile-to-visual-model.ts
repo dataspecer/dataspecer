@@ -1,10 +1,10 @@
 import { WritableVisualModel } from "@dataspecer/visual-model";
 
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseDiagramType } from "../diagram/diagram-hook";
 import { addRelatedEntitiesAction } from "./add-related-entities-to-visual-model";
-import { ClassesContextType } from "../context/classes-context";
+import { ClassesContext } from "../context/classes-context";
 import { findPositionForNewNodesUsingLayouting } from "./layout-visual-model";
 import { findSourceModelOfEntity } from "../service/model-service";
 import { createLogger } from "../application";
@@ -18,8 +18,8 @@ const LOG = createLogger(import.meta.url);
 
 export async function addSemanticClassProfileToVisualModelAction(
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
-  classes: ClassesContextType,
+  graph: UseModelGraphContextType,
+  classes: ClassesContext,
   visualModel: WritableVisualModel,
   diagram: UseDiagramType,
   entityIdentifier: string,
@@ -28,14 +28,14 @@ export async function addSemanticClassProfileToVisualModelAction(
   _modelIdentifier: string,
   position: { x: number, y: number } | null,
 ) {
-  const entities = graph.aggregatorView.getEntities();
+  const entities = graph.getEntities();
   if(position === null) {
     const positions = await findPositionForNewNodesUsingLayouting(
       notifications, diagram, graph, visualModel, classes, [entityIdentifier]);
     position = positions[entityIdentifier];
   }
 
-  const model = findSourceModelOfEntity(entityIdentifier, graph.models);
+  const model = findSourceModelOfEntity(entityIdentifier, classes.semanticModels);
   if (model === null) {
     LOG.error("Operation ignored, we fail to find model for given entity.", { identifier: entityIdentifier });
     notifications.error("Can not find model for given entity");
@@ -55,7 +55,7 @@ export async function addSemanticClassProfileToVisualModelAction(
       position);
     addRelatedEntitiesAction(
       notifications, graph, classes, visualModel, Object.values(entities),
-      graph.models, entity);
+      classes.semanticModels, entity);
   } else {
     LOG.invalidEntity(entityIdentifier, "Entity is not of an expected type.", { entity });
     notifications.error("Invalid entity type!");
@@ -64,7 +64,7 @@ export async function addSemanticClassProfileToVisualModelAction(
 }
 
 function addSemanticClassProfileToVisualModelCommand(
-  classes: ClassesContextType,
+  classes: ClassesContext,
   visualModel: WritableVisualModel,
   entity: SemanticModelClassProfile,
   model: string,

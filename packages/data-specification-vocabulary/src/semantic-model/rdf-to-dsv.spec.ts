@@ -1,8 +1,94 @@
+import { expect, test } from "vitest";
+
 import { rdfToDsv } from "./rdf-to-dsv.ts";
-import { Cardinality, ClassRole, ApplicationProfile, ObjectPropertyProfile, RequirementLevel, ClassProfile } from "./dsv-model.ts";
+import { dsvToRdf } from "./dsv-to-rdf.ts";
+import { Cardinality, ClassRole, ApplicationProfile, RequirementLevel } from "./dsv-model.ts";
+import { createDefaultApplicationProfileBuilder } from "./default-dsv-model-builder.ts";
 import { conceptualModelToEntityListContainer } from "./dsv-to-entity-model.ts";
 import { DataTypeURIs, isPrimitiveType } from "@dataspecer/core-v2/semantic-model/datatypes";
 import { isSemanticModelClass, isSemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
+import type { Qualifier } from "@dataspecer/core-v2/semantic-model/profile/concepts";
+import { DSV_USAGE_EXPECTATION } from "./vocabulary.ts";
+import { parseControlledVocabularyCatalog, type ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
+import * as N3 from "n3";
+
+test("Round-trips every Cardinality, ClassRole, and RequirementLevel value through RDF.", async () => {
+
+  const cardinalities = Object.values(Cardinality);
+  const classRoles = [ClassRole.undefined, ClassRole.main, ClassRole.supportive];
+  const requirementLevels = [
+    RequirementLevel.undefined,
+    RequirementLevel.mandatory,
+    RequirementLevel.optional,
+    RequirementLevel.recommended,
+  ];
+
+  const builder = createDefaultApplicationProfileBuilder({ iri: "http://example.com/model" });
+  const domain = builder.classProfile({
+    iri: "http://example.com/domain",
+    classRole: ClassRole.main,
+  });
+  classRoles.forEach((classRole, index) => {
+    builder.classProfile({ iri: `http://example.com/class-${index}`, classRole });
+  });
+  cardinalities.forEach((cardinality, cardinalityIndex) => {
+    requirementLevels.forEach((requirementLevel, requirementLevelIndex) => {
+      builder.objectProperty({
+        iri: `http://example.com/property-${cardinalityIndex}-${requirementLevelIndex}`,
+        domainIri: domain.identifier,
+        cardinality,
+        requirementLevel,
+        rangeClassIri: [domain.identifier],
+      });
+    });
+  });
+
+  const model = builder.build();
+
+  const rdf = await dsvToRdf(model, {});
+  const parsedModels = await rdfToDsv(rdf);
+  expect(parsedModels).toHaveLength(1);
+  expect(parsedModels[0]).toStrictEqual(model);
+});
+
+test("Embeds a DCAT catalog of controlled vocabularies in the output when given some, and it round-trips.", async () => {
+  const model = createDefaultApplicationProfileBuilder({ iri: "http://example.com/model" }).build();
+  const catalogIri = "http://example.com/model/controlled-vocabulary-catalog";
+  const vocabulary: ControlledVocabulary = {
+    id: "voc-1", type: ["controlled-vocabulary"],
+    title: { en: "Dublin Core" }, pattern: null, references: "http://purl.org/dc/terms/",
+    conformsToSkos: true,
+    documentation: "https://www.dublincore.org/terms/",
+    distribution: { downloadUrl: "https://www.dublincore.org/terms.rdf", accessUrl: "https://www.dublincore.org/terms.rdf" },
+    iri: null,
+  };
+
+  const rdf = await dsvToRdf(model, {
+    controlledVocabularies: [vocabulary],
+    controlledVocabularyCatalogIri: catalogIri,
+  });
+
+  expect(rdf).toContain("dcat:Catalog");
+  expect(rdf).toContain("@prefix dcat:");
+  expect(rdf).toContain("@prefix sh:");
+
+  const quads = new N3.Parser().parse(rdf);
+  const parsedVocabularies = parseControlledVocabularyCatalog(quads);
+  expect(parsedVocabularies).toHaveLength(1);
+  expect(parsedVocabularies[0]!.title).toStrictEqual(vocabulary.title);
+  expect(parsedVocabularies[0]!.references).toBe(vocabulary.references);
+  expect(parsedVocabularies[0]!.conformsToSkos).toBe(true);
+});
+
+test("Writes no catalog and no dcat/sh prefixes when there are no controlled vocabularies to embed.", async () => {
+  const model = createDefaultApplicationProfileBuilder({ iri: "http://example.com/model" }).build();
+
+  const rdf = await dsvToRdf(model, {});
+
+  expect(rdf).not.toContain("dcat:Catalog");
+  expect(rdf).not.toContain("@prefix dcat:");
+  expect(rdf).not.toContain("@prefix sh:");
+});
 
 test("Regression test.", async () => {
 
@@ -94,6 +180,7 @@ test("Regression test.", async () => {
       "externalDocumentationUrl": "http://documentation",
       "classRole": ClassRole.main,
       "specializationOfIri": [],
+      "controlledVocabularyAssignments": [],
     }, {
       "iri": "https://dcat-ap-cz/#Dataset",
       "prefLabel": {},
@@ -106,6 +193,7 @@ test("Regression test.", async () => {
       "specializationOfIri": [],
       "externalDocumentationUrl": null,
       "classRole": ClassRole.main,
+      "controlledVocabularyAssignments": [],
     }, {
       "iri": "http://dcat-ap/ns/dcat#Distribution",
       "prefLabel": {},
@@ -118,6 +206,7 @@ test("Regression test.", async () => {
       "specializationOfIri": [],
       "externalDocumentationUrl": null,
       "classRole": ClassRole.supportive,
+      "controlledVocabularyAssignments": [],
     }],
     "datatypePropertyProfiles": [],
     "objectPropertyProfiles": [{
@@ -401,4 +490,179 @@ _:n3-813 a dsv:PropertyValueReuse;
     }],
   });
 
+});
+
+test("Ignores unresolved dct:isPartOf, unknown role/requirement-level IRIs, and property profiles without a domain.", async () => {
+
+  const inputRdf = `@prefix dct: <http://purl.org/dc/terms/>.
+@prefix dsv: <https://w3id.org/dsv#>.
+@prefix prof: <http://www.w3.org/ns/dx/prof/>.
+
+<http://example.com/model> a prof:Profile, dsv:ApplicationProfile.
+
+<http://example.com/orphanClass> a dsv:TermProfile, dsv:ClassProfile;
+    dsv:classRole <http://example.com/unknown-role>.
+
+<http://example.com/danglingClass> a dsv:TermProfile, dsv:ClassProfile;
+    dct:isPartOf <http://example.com/no-such-model>.
+
+<http://example.com/noDomainObject> a dsv:TermProfile, dsv:ObjectPropertyProfile;
+    dct:isPartOf <http://example.com/model>.
+
+<http://example.com/noDomainDatatype> a dsv:TermProfile, dsv:DatatypePropertyProfile;
+    dct:isPartOf <http://example.com/model>.
+
+<http://example.com/unknownRequirement> a dsv:TermProfile, dsv:ObjectPropertyProfile;
+    dct:isPartOf <http://example.com/model>;
+    dsv:domain <http://example.com/domain>;
+    dsv:requirementLevel <http://example.com/unknown-requirement>.
+`;
+
+  const actualModels = await rdfToDsv(inputRdf);
+  expect(actualModels).toHaveLength(1);
+
+  const model = actualModels[0]!;
+  // Neither the class without dct:isPartOf, nor the one with a dangling
+  // dct:isPartOf, end up attached to the ApplicationProfile.
+  expect(model.classProfiles).toStrictEqual([]);
+  // Property profiles without dsv:domain are skipped entirely.
+  expect(model.datatypePropertyProfiles).toStrictEqual([]);
+  expect(model.objectPropertyProfiles).toHaveLength(1);
+  expect(model.objectPropertyProfiles[0]?.requirementLevel).toBe(RequirementLevel.undefined);
+});
+
+test("Warns and drops a PropertyValueReuse blank node missing reusedProperty or reusedFromResource.", async () => {
+
+  const inputRdf = `@prefix dct: <http://purl.org/dc/terms/>.
+@prefix dsv: <https://w3id.org/dsv#>.
+@prefix prof: <http://www.w3.org/ns/dx/prof/>.
+@prefix skos: <http://www.w3.org/2004/02/skos/core#>.
+
+<http://example.com/model> a prof:Profile, dsv:ApplicationProfile.
+
+<http://example.com/classWithBadReuse> a dsv:TermProfile, dsv:ClassProfile;
+    dct:isPartOf <http://example.com/model>;
+    dsv:reusesPropertyValue [
+      a dsv:PropertyValueReuse;
+      dsv:reusedAsProperty skos:prefLabel;
+      dsv:reusedFromResource <http://example.com/source>
+    ].
+`;
+
+  const actualModels = await rdfToDsv(inputRdf);
+  expect(actualModels[0]?.classProfiles[0]?.reusesPropertyValue).toStrictEqual([]);
+});
+
+test("Migrates a legacy vann:usageNote reusedProperty to skos:scopeNote.", async () => {
+
+  const inputRdf = `@prefix dct: <http://purl.org/dc/terms/>.
+@prefix dsv: <https://w3id.org/dsv#>.
+@prefix prof: <http://www.w3.org/ns/dx/prof/>.
+@prefix skos: <http://www.w3.org/2004/02/skos/core#>.
+@prefix vann: <http://purl.org/vocab/vann/>.
+
+<http://example.com/model> a prof:Profile, dsv:ApplicationProfile.
+
+<http://example.com/classWithLegacyReuse> a dsv:TermProfile, dsv:ClassProfile;
+    dct:isPartOf <http://example.com/model>;
+    dsv:reusesPropertyValue [
+      a dsv:PropertyValueReuse;
+      dsv:reusedProperty vann:usageNote;
+      dsv:reusedAsProperty skos:scopeNote;
+      dsv:reusedFromResource <http://example.com/source>
+    ].
+`;
+
+  const actualModels = await rdfToDsv(inputRdf);
+  expect(actualModels[0]?.classProfiles[0]?.reusesPropertyValue).toStrictEqual([{
+    "reusedPropertyIri": "http://www.w3.org/2004/02/skos/core#scopeNote",
+    "reusedAsPropertyIri": "http://www.w3.org/2004/02/skos/core#scopeNote",
+    "propertyReusedFromResourceIri": "http://example.com/source",
+  }]);
+});
+
+test("Rejects on malformed Turtle input.", async () => {
+  await expect(rdfToDsv("this is not : valid < turtle @ syntax")).rejects.toThrow();
+});
+
+test("Skips writing a null LanguageString value (defensive handling of malformed input).", async () => {
+  const builder = createDefaultApplicationProfileBuilder({ iri: "http://example.com/model" });
+  builder.classProfile({ iri: "http://example.com/class" });
+  const applicationProfile = builder.build();
+  // The builder's typed API can't produce this deliberately-invalid null
+  // (ClassProfile.prefLabel is a LanguageString, never null); set it directly.
+  (applicationProfile.classProfiles[0] as any).prefLabel = null;
+
+  const rdf = await dsvToRdf(applicationProfile, {});
+  expect(rdf).not.toContain("skos:prefLabel");
+});
+
+test("Round-trips every controlled vocabulary assignment usage expectation value through RDF.", async () => {
+  const usageExpectations: Qualifier[] = ["must", "at-least-one", "recommended", "may"];
+  const builder = createDefaultApplicationProfileBuilder({ iri: "http://example.com/model" });
+  builder.classProfile({
+    iri: "http://example.com/class-1",
+    controlledVocabularyAssignments: usageExpectations.map((qualifier, index) => ({
+      iri: `http://example.com/class-1/assignment-${index}`,
+      controlledVocabularyIri: "http://vocab.example.com/scheme",
+      usageExpectationIri: DSV_USAGE_EXPECTATION[qualifier],
+      replacesIri: index === 0 ? null : `http://example.com/class-1/assignment-${index - 1}`,
+    })),
+  });
+
+  const model = builder.build();
+  const rdf = await dsvToRdf(model, {});
+  const parsedModels = await rdfToDsv(rdf);
+  expect(parsedModels).toHaveLength(1);
+  expect(parsedModels[0]).toStrictEqual(model);
+});
+
+test("Reads a controlled vocabulary assignment as its own IRI-identified resource, discovered via the assignment's backward edge to its class profile.", async () => {
+  const inputRdf = `@prefix dct: <http://purl.org/dc/terms/>.
+@prefix dsv: <https://w3id.org/dsv#>.
+@prefix prof: <http://www.w3.org/ns/dx/prof/>.
+
+<http://example.com/model> a prof:Profile, dsv:ApplicationProfile.
+
+<http://example.com/class-1> a dsv:TermProfile, dsv:ClassProfile;
+    dct:isPartOf <http://example.com/model>.
+
+<http://example.com/assignment-1> a dsv:ControlledVocabularyAssignment;
+    dsv:classProfile <http://example.com/class-1>;
+    dsv:controlledVocabulary <http://vocab.example.com/scheme>;
+    dsv:usageExpectation <https://w3id.org/dsv/usage-expectation#must>;
+    dsv:replaces <http://example.com/assignment-0>.
+`;
+
+  const actualModels = await rdfToDsv(inputRdf);
+  const assignments = actualModels[0]!.classProfiles[0]!.controlledVocabularyAssignments;
+  expect(assignments).toStrictEqual([{
+    iri: "http://example.com/assignment-1",
+    controlledVocabularyIri: "http://vocab.example.com/scheme",
+    usageExpectationIri: "https://w3id.org/dsv/usage-expectation#must",
+    replacesIri: "http://example.com/assignment-0",
+  }]);
+});
+
+test("Warns and skips a controlled vocabulary assignment missing controlledVocabulary or usageExpectation.", async () => {
+  const inputRdf = `@prefix dct: <http://purl.org/dc/terms/>.
+@prefix dsv: <https://w3id.org/dsv#>.
+@prefix prof: <http://www.w3.org/ns/dx/prof/>.
+
+<http://example.com/model> a prof:Profile, dsv:ApplicationProfile.
+
+<http://example.com/class-1> a dsv:TermProfile, dsv:ClassProfile;
+    dct:isPartOf <http://example.com/model>.
+
+<http://example.com/missing-vocab> a dsv:ControlledVocabularyAssignment;
+    dsv:classProfile <http://example.com/class-1>;
+    dsv:usageExpectation <https://w3id.org/dsv/usage-expectation#must>.
+
+<http://example.com/missing-expectation> a dsv:ControlledVocabularyAssignment;
+    dsv:classProfile <http://example.com/class-1>;
+    dsv:controlledVocabulary <http://vocab.example.com/scheme>.
+`;
+
+  const actualModels = await rdfToDsv(inputRdf);
+  expect(actualModels[0]!.classProfiles[0]!.controlledVocabularyAssignments).toStrictEqual([]);
 });

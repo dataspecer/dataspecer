@@ -1,17 +1,24 @@
-import {CoreOperation, CoreOperationResult, CoreResource, CoreTyped} from "../../core/index.ts";
+import { DataPsmOperationResult } from "./data-psm-operation-result.ts";
+import { generateOperationId, type Operation } from "../../operation/index.ts";
 import * as PSM from "../data-psm-vocabulary.ts";
+import { generateEntityId } from "../../entity-model/entity.ts";
 
 /**
  * Wraps {@link DataPsmClass}, {@link DataPsmClassReference} or
  * {@link DataPsmOr} into newly created {@link DataPsmOr}
  */
-export class DataPsmWrapWithOr extends CoreOperation {
+export class DataPsmWrapWithOr implements Operation {
   static readonly TYPE = PSM.WRAP_WITH_OR;
 
+  id: string;
+
+  type: string;
+
   /**
-   * IRI of the newly created DataPsmOr
+   * IRI of the newly created DataPsmOr, generated up-front so that callers
+   * can use it without depending on the (deprecated) return value of applyOperation.
    */
-  dataPsmNewIri: string | null = null;
+  dataPsmNewIri: string | null = generateEntityId();
 
   /**
    * The wrapped resource
@@ -19,16 +26,16 @@ export class DataPsmWrapWithOr extends CoreOperation {
   dataPsmChild: string | null = null;
 
   constructor() {
-    super();
-    this.types.push(DataPsmWrapWithOr.TYPE);
+    this.id = generateOperationId();
+    this.type = DataPsmWrapWithOr.TYPE;
   }
 
-  static is(resource: CoreResource | null): resource is DataPsmWrapWithOr {
-    return resource?.types.includes(DataPsmWrapWithOr.TYPE);
+  static is(operation: Operation | null | undefined): operation is DataPsmWrapWithOr {
+    return operation?.type === DataPsmWrapWithOr.TYPE;
   }
 }
 
-export class DataPsmWrapWithOrResult extends CoreOperationResult {
+export class DataPsmWrapWithOrResult extends DataPsmOperationResult {
   static readonly TYPE = PSM.WRAP_WITH_OR_RESULT;
 
   readonly createdDataPsmOr: string;
@@ -39,9 +46,7 @@ export class DataPsmWrapWithOrResult extends CoreOperationResult {
     this.createdDataPsmOr = dataPsmOr;
   }
 
-  static is(
-    resource: CoreTyped | null
-  ): resource is DataPsmWrapWithOrResult {
-    return resource?.types.includes(DataPsmWrapWithOrResult.TYPE);
+  static is(result: DataPsmOperationResult | null | undefined): result is DataPsmWrapWithOrResult {
+    return result?.types.includes(DataPsmWrapWithOrResult.TYPE) ?? false;
   }
 }

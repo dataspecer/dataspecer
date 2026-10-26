@@ -13,7 +13,7 @@ import {
 import { notificationMockup, TestedSemanticConnectionType } from "./test/actions-test-suite";
 import { ActionsTestSuite } from "./test/actions-test-suite";
 import { addAllRelationshipsForVisualDiagramNodeToVisualModelAction } from "./add-all-relationships";
-import { VisualModelDiagramNode } from "@/diagram";
+import { VisualModelDiagramNode } from "../diagram";
 
 test("Try to call the action when all edges are missing, " +
       "then call again, then remove one edge and then call again", () => {
@@ -31,7 +31,7 @@ test("Try to call the action when all edges are missing, " +
   const referencedVisualModel = createDefaultVisualModelFactory().createNewWritableVisualModelSync(null);
   ActionsTestSuite.createNewVisualNodeForTesting(referencedVisualModel, model.getId(), "6");
   ActionsTestSuite.createNewVisualNodeForTesting(referencedVisualModel, model.getId(), "7");
-  graph.aggregator.addModel(referencedVisualModel);
+  graph.addVisualModel(referencedVisualModel);
 
   const diagramNodeIdentifier = ActionsTestSuite.createNewVisualDiagramNodeForTesting(
     visualModel, referencedVisualModel.getIdentifier());
@@ -71,7 +71,7 @@ test("Try to call the action when all edges are missing, " +
   expect([...visualModel.getVisualEntities().keys()].length).toBe(5);
 
   // Remove one of the edges
-  visualModel.deleteVisualEntity(firstEdge[0].identifier);
+  visualModel.deleteVisualEntity(firstEdge[0].id);
   // Sanity check
   expect([...visualModel.getVisualEntities().keys()].length).toBe(4);
   firstEdge = visualModel.getVisualEntitiesForRepresented("5-6") as VisualRelationship[];
@@ -101,11 +101,11 @@ test("Creating edges between two visual diagram nodes", () => {
   const firstReferencedVisualModel = createDefaultVisualModelFactory().createNewWritableVisualModelSync(null);
   ActionsTestSuite.createNewVisualNodeForTesting(firstReferencedVisualModel, model.getId(), "6");
   ActionsTestSuite.createNewVisualNodeForTesting(firstReferencedVisualModel, model.getId(), "7");
-  graph.aggregator.addModel(firstReferencedVisualModel);
+  graph.addVisualModel(firstReferencedVisualModel);
 
   const secondReferencedVisualModel = createDefaultVisualModelFactory().createNewWritableVisualModelSync(null);
   ActionsTestSuite.createNewVisualNodeForTesting(secondReferencedVisualModel, model.getId(), "5");
-  graph.aggregator.addModel(secondReferencedVisualModel);
+  graph.addVisualModel(secondReferencedVisualModel);
 
   const firstDiagramNodeIdentifier = ActionsTestSuite.createNewVisualDiagramNodeForTesting(
     visualModel, firstReferencedVisualModel.getIdentifier());

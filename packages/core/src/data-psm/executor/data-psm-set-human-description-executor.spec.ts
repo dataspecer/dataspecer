@@ -9,7 +9,7 @@ import * as PSM from "../data-psm-vocabulary.ts";
 
 test("Update data PSM resource human description.", async () => {
   const operation = new DataPsmSetHumanDescription();
-  operation.dataPsmResource = "http://class";
+  operation.entityId = "http://class";
   operation.dataPsmHumanDescription = { cs: "popis" };
 
   const before = {

@@ -70,6 +70,40 @@ const FileConfigPanel: FC<{
           />
         </Grid>
       </Grid>
+
+      <Typography variant="subtitle2" component="h4" sx={{ mt: 2 }}>
+        Controlled vocabularies
+      </Typography>
+      <Typography variant="body2" sx={{ mb: 1 }}>
+        Shapes validating values taken from controlled vocabularies. A violation is reported for the <em>must</em> usage expectation, a warning for the others.
+      </Typography>
+      <Grid container rowGap={1}>
+        <Grid item xs={12}>
+          <SwitchWithDefault
+            label="Validate IRI pattern"
+            current={fileConfig ?? {}}
+            itemKey="controlledVocabularyPattern"
+            onChange={handleSwitchChange}
+            default={defaultConfig}
+            undefinedIs={true}
+          />
+          <Typography variant="body2" color="text.secondary">
+            The IRI of the value must match the pattern of the vocabulary (<code>sh:pattern</code>).
+          </Typography>
+        </Grid>
+        <Grid item xs={12}>
+          <SwitchWithDefault
+            label="Validate concept scheme of SKOS vocabularies"
+            current={fileConfig ?? {}}
+            itemKey="controlledVocabularyScheme"
+            onChange={handleSwitchChange}
+            default={defaultConfig}
+          />
+          <Typography variant="body2" color="text.secondary">
+            The value of a SKOS-based vocabulary must state its concept scheme (<code>skos:inScheme</code>).
+          </Typography>
+        </Grid>
+      </Grid>
     </Box>
   );
 };

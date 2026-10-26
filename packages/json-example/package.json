@@ -11,9 +11,10 @@
   "dependencies": {
     "@dataspecer/core": "*",
     "@dataspecer/json": "*",
-    "json-schema-faker": "^0.6.1"
+    "@dataspecer/generators": "^0.0.0",
+    "json-schema-faker": "^0.6.3"
   },
   "devDependencies": {
-    "typescript": "^6.0.3"
+    "typescript": "^7.0.2"
   }
 }

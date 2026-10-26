@@ -19,11 +19,13 @@
   },
   "dependencies": {
     "@dataspecer/core": "*",
-    "@dataspecer/documentation": "*"
+    "@dataspecer/documentation": "*",
+    "@dataspecer/handlebars-adapter": "*",
+    "@dataspecer/generators": "^0.0.0"
   },
   "devDependencies": {
-    "@types/node": "^25.5.2",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.7"
+    "@types/node": "^26.6.4",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
   }
 }

@@ -2,7 +2,7 @@ import { useState } from "react";
 import "./direction-combobox-styling.css";
 import TreeIcon from "./tree-icon";
 import { Direction } from "@dataspecer/layout";
-import { t } from "@/application";
+import { t } from "../../../application";
 
 function capitalizeFirst(direction: Direction): string {
   return direction.charAt(0).toUpperCase() + direction.slice(1).toLowerCase();

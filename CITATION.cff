@@ -80,7 +80,7 @@ preferred-citation:
   conference:
     name: "Lecture Notes in Computer Science"
   collection-title: "The Semantic Web: ESWC 2022 Satellite Events - Hersonissos, Crete, Greece, May 29 - June 2, 2022, Proceedings"
-  url: https://doi.org/10.1007/978-3-031-11609-4_10
+  url: https://doi.org/10.1007/978-3-031-11609-4\_10
   publisher:
     name: Springer
   month: 5

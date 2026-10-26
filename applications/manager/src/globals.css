@@ -108,9 +108,21 @@
     --input: hsl(0 0% 89.8%);
     --ring: hsl(0 0% 3.9%);
     --radius: 0.5rem;
+    --tag-background-saturation: 70%;
+    --tag-background-lightness: 93%;
+    --tag-foreground-saturation: 85%;
+    --tag-foreground-lightness: 30%;
+    --tag-dot-saturation: 85%;
+    --tag-dot-lightness: 48%;
   }
 
   .dark {
+    --tag-background-saturation: 40%;
+    --tag-background-lightness: 18%;
+    --tag-foreground-saturation: 90%;
+    --tag-foreground-lightness: 75%;
+    --tag-dot-saturation: 90%;
+    --tag-dot-lightness: 70%;
     --background: hsl(0 0% 3.9%);
     --foreground: hsl(0 0% 98%);
     --card: hsl(0 0% 3.9%);
@@ -135,7 +147,24 @@
   }
 }
 
+@layer components {
+  .tag-color {
+    --tag-background: hsl(var(--tag-hue) var(--tag-background-saturation) var(--tag-background-lightness));
+    --tag-foreground: hsl(var(--tag-hue) var(--tag-foreground-saturation) var(--tag-foreground-lightness));
+    --tag-dot: hsl(var(--tag-hue) var(--tag-dot-saturation) var(--tag-dot-lightness));
+  }
+}
+
 @layer base {
+  html {
+    overflow-y: scroll;
+  }
+
+  /* Let the scroll lock compensate for the scrollbar it removes. */
+  html:has(body[data-scroll-locked]) {
+    overflow-y: hidden;
+  }
+
   * {
     @apply border-border;
   }

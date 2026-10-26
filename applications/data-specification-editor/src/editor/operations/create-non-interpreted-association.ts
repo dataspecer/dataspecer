@@ -54,14 +54,13 @@ export class CreateNonInterpretedAssociationToClass implements ComplexOperation 
       dataPsmCreateClass.dataPsmTechnicalLabel = "class";
     }
 
-    const dataPsmCreateClassResult = this.store.applyOperation(schema, dataPsmCreateClass);
-    const psmClassIri = dataPsmCreateClassResult.created[0];
+    this.store.applyOperation(schema, dataPsmCreateClass);
 
     const association = new DataPsmCreateAssociationEnd();
     association.dataPsmInterpretation = null;
     association.dataPsmTechnicalLabel = "association";
     association.dataPsmOwner = this.ownerClass;
-    association.dataPsmPart = psmClassIri;
+    association.dataPsmPart = dataPsmCreateClass.dataPsmNewIri;
     this.store.applyOperation(schema, association);
   }
 }

@@ -19,7 +19,7 @@ export default defineConfig({
     },
     rollupOptions: {
       input: {
-        diagram: path.resolve(__dirname, "diagram.html"),
+        diagram: path.resolve(import.meta.dirname, "diagram.html"),
       },
     }
   },
@@ -29,7 +29,7 @@ export default defineConfig({
       // We need this as the "fs", packages/core/lib/io/fetch/fetch-nodejs.js.
       "fs": "path",
       // https://ui.shadcn.com/docs/installation/vite
-      "@": path.resolve(__dirname, "./src"),
+      "@user-interface": path.resolve(import.meta.dirname, "./src/user-interface/"),
     },
   },
 });

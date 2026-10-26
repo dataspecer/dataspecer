@@ -15,7 +15,7 @@
     "@dataspecer/core": "*"
   },
   "devDependencies": {
-    "@types/node": "^25.5.2",
-    "typescript": "^6.0.3"
+    "@types/node": "^26.6.4",
+    "typescript": "^7.0.2"
   }
 }

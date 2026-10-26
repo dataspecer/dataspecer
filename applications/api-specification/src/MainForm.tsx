@@ -157,8 +157,8 @@ export const MainForm = () => {
         }
         catch (error) {
             if (error instanceof z.ZodError) {
-                console.error('Validation of the form failed because: ', error.errors);
-                error.errors.forEach(({ path, message }) => {
+                console.error('Validation of the form failed because: ', error.issues);
+                error.issues.forEach(({ path, message }) => {
                     const field = path[0] as keyof FormValues;
                     formState.errors[field] = { message } as any;
                 });

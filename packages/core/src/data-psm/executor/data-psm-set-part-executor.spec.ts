@@ -10,7 +10,7 @@ import { DataPsmAssociationEnd, DataPsmClassReference } from "../model/index.ts"
 
 test("Update data PSM association end resource part.", async () => {
   const operation = new DataPsmSetPart();
-  operation.dataPsmAssociationEnd = "http://association-end";
+  operation.entityId = "http://association-end";
   operation.dataPsmPart = "http://new-part";
 
   const before = {

@@ -1,21 +1,25 @@
-import { Badge } from "@/components/ui/badge";
-import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, LOCAL_VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { TagBadge, TagName } from "@/components/tag";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
-import { ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, EllipsisVertical, FileText, Folder, FolderDown, Import, NotepadTextDashed, Pencil, Plus, RotateCw, Shapes, Sparkles, Trash2, WandSparkles } from "lucide-react";
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { BookOpen, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, EllipsisVertical, FileText, Folder, FolderDown, History, Import, NotepadTextDashed, Pencil, Plus, RotateCw, Search, Shapes, Sparkles, Tag, Tags, Trash2, WandSparkles } from "lucide-react";
+import { useCallback, useContext, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { getValidTime } from "./components/time";
+import { useTheme } from "next-themes";
+import { useLocalStorage } from "usehooks-ts";
+import { formatRelativeTime, getValidTime } from "./components/time";
 import { Translate } from "./components/translate";
 import { Button } from "./components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./components/ui/dropdown-menu";
 import { Skeleton } from "./components/ui/skeleton";
+import { Input } from "./components/ui/input";
 import { CreateNew } from "./dialog/create-new";
 import { DeleteResource } from "./dialog/delete-resource";
 import { ProjectWizard } from "./dialog/project-wizard/project-wizard";
 import { RenameResourceDialog } from "./dialog/rename-resource";
 import { ResourceDetail } from "./dialog/resource-detail";
 import { useToggle } from "./hooks/use-toggle";
-import { ModelIcon, modelTypeToName } from "./known-models";
+import { getHistoryLink, ModelIcon, modelTypeToName } from "./known-models";
 import { useBetterModal } from "./lib/better-modal";
 import { ResourcesContext, ensurePackageWorksForDSE, modifyUserMetadata, requestLoadPackage } from "./package";
 import { ModifyDocumentationTemplate } from "./dialog/modify-documentation-template";
@@ -24,17 +28,17 @@ import { SortModelsContext } from "./components/sort-models";
 import { ModifyRawDialog } from "./dialog/modify-raw";
 import { Autolayout } from "./dialog/autolayout";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./components/ui/tooltip";
-import { ReloadImported } from "./dialog/reload-imported";
+import { ReloadResource } from "./dialog/reload-resource";
 import { AddImported } from "./dialog/add-imported";
-import { ReloadPimWrapper } from "./dialog/reload-pim-wrapper";
 import { stopPropagation } from "./utils/events";
+import { ModifyTagsDialog } from "./dialog/modify-tags";
 
 export function lng(text: LanguageString | undefined): string | undefined {
   return text?.["cs"] ?? text?.["en"];
 }
 
 const useSortIris = (iris: string[]) => {
-  const {selectedOption} = React.useContext(SortModelsContext);
+  const { selectedOption } = React.useContext(SortModelsContext);
   const resources = useContext(ResourcesContext);
   return useMemo(() => {
     const toSort = iris.map(iri => resources[iri]!);
@@ -60,10 +64,11 @@ const useSortIris = (iris: string[]) => {
   }, [iris, resources, selectedOption]);
 };
 
-const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
+const Row = React.memo(({ iri, parentIri, onTagSelect }: { iri: string, parentIri?: string, onTagSelect: (tag: string) => void }) => {
   const resources = useContext(ResourcesContext);
   const resource = resources[iri]!;
-  const {t, i18n} = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { theme } = useTheme();
 
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
@@ -77,10 +82,13 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
   const openModal = useBetterModal();
 
   const subResources = useSortIris(resource.subResourcesIri ?? []);
+  const creationDate = getValidTime(resource.metadata?.creationDate);
+  const modificationDate = getValidTime(resource.metadata?.modificationDate);
+  const fullDateFormat = new Intl.DateTimeFormat(i18n.language, { dateStyle: "full", timeStyle: "long" });
 
   return <li className="first:border-y last:border-none border-b">
     <div className="flex items-center space-x-4 hover:bg-accent">
-       {resource.types.includes(LOCAL_PACKAGE) ? <div className="flex"><button className="cursor-pointer" onClick={stopPropagation(() => isOpen ? setIsOpen(false) : open())}>
+      {resource.types.includes(LOCAL_PACKAGE) ? <div className="flex"><button className="cursor-pointer" onClick={stopPropagation(() => isOpen ? setIsOpen(false) : open())}>
         {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
       </button><Folder className="text-gray-400 ml-1" /></div> : <div><ModelIcon type={resource.types} /></div>}
 
@@ -91,17 +99,16 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
             match={(t, isMatch, language) => <>
               <span className={isMatch ? "" : "text-muted-foreground"}>{t}</span>
               {!isMatch && <span className="ml-1 ">@{language}</span>}
-              <span className="ml-5 text-gray-500 font-normal">{modelTypeToName[resource.types[0]]}</span>
             </>}
             fallback={modelTypeToName[resource.types[0]]}
           />
         </div>
         <div className="text-sm text-gray-500 flex">
-          <span className="truncate w-[4cm]">
-            {getValidTime(resource.metadata?.creationDate) && t("created", {val: new Date(resource.metadata?.creationDate!)})}
+          <span className="truncate w-[4cm]" title={creationDate ? fullDateFormat.format(creationDate) : undefined}>
+            {creationDate && t("created-relative", {val: formatRelativeTime(creationDate, i18n.language)})}
           </span>
-          <span className="truncate w-[6cm]">
-            {getValidTime(resource.metadata?.modificationDate) && t("changed", {val: new Date(resource.metadata?.modificationDate!)})}
+          <span className="truncate w-[6cm]" title={modificationDate ? fullDateFormat.format(modificationDate) : undefined}>
+            {modificationDate && t("changed-relative", {val: formatRelativeTime(modificationDate, i18n.language)})}
           </span>
           <span className="truncate">
             {resource.iri}
@@ -109,7 +116,7 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
         </div>
       </div>
 
-      {resource.userMetadata?.tags?.map(tag => <Badge variant="secondary" key={tag}>{tag}</Badge>)}
+      {resource.userMetadata?.tags?.toSorted((a, b) => a.localeCompare(b)).map(tag => <TagBadge key={tag} name={tag} onClick={() => onTagSelect(tag)} onRemove={() => modifyUserMetadata(iri, {tags: resource.userMetadata?.tags?.filter(value => value !== tag) ?? []})} />)}
 
       {resource.types.includes(APPLICATION_GRAPH) &&
         <Button asChild variant={"ghost"} onClick={stopPropagation()}>
@@ -125,13 +132,13 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
         await ensurePackageWorksForDSE(parentIri!);
         window.location.href = import.meta.env.VITE_DATA_SPECIFICATION_EDITOR + "/editor?data-specification=" + encodeURIComponent(parentIri ?? "") + "&data-psm-schema=" + encodeURIComponent(iri);
       }}>{t("open")}</Button>}
-      {resource.types.includes(LOCAL_VISUAL_MODEL) && <Button asChild variant={"ghost"} onClick={stopPropagation()}><a href={import.meta.env.VITE_CME + "/diagram?package-id=" + encodeURIComponent(parentIri ?? "") + "&view-id=" + encodeURIComponent(iri) }>{t("open")}</a></Button>}
-      {resource.types.includes(API_SPECIFICATION_MODEL) && <Button asChild variant={"ghost"} onClick={stopPropagation()}><a href={import.meta.env.VITE_API_SPECIFICATION_APPLICATION + "?package-iri=" + encodeURIComponent(parentIri ?? "") + "&model-iri=" + encodeURIComponent(iri) }>{t("open")}</a></Button>}
+      {resource.types.includes(VISUAL_MODEL) && <Button asChild variant={"ghost"} onClick={stopPropagation()}><a href={import.meta.env.VITE_CME + "/diagram?package-id=" + encodeURIComponent(parentIri ?? "") + "&view-id=" + encodeURIComponent(iri)}>{t("open")}</a></Button>}
+      {resource.types.includes(API_SPECIFICATION_MODEL) && <Button asChild variant={"ghost"} onClick={stopPropagation()}><a href={import.meta.env.VITE_API_SPECIFICATION_APPLICATION + "?package-iri=" + encodeURIComponent(parentIri ?? "") + "&model-iri=" + encodeURIComponent(iri)}>{t("open")}</a></Button>}
 
       {resource.types.includes(LOCAL_PACKAGE) && (resource.userMetadata as any)?.importedFromUrl &&
         <Tooltip>
           <TooltipTrigger>
-            <Button asChild variant="ghost" size="icon" className="shrink-0" onClick={stopPropagation(() => openModal(ReloadImported, {id: iri, parentId: parentIri ?? ""}))}>
+            <Button asChild variant="ghost" size="icon" className="shrink-0" onClick={stopPropagation(() => openModal(ReloadResource, { id: iri, parentId: parentIri ?? "" }))}>
               <span>
                 <RotateCw className="h-4 w-4" />
               </span>
@@ -143,10 +150,10 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
         </Tooltip>
       }
 
-      {resource.types.includes("https://dataspecer.com/core/model-descriptor/pim-store-wrapper") &&
+      {resource.types.includes(RDFS_MODEL) &&
         <Tooltip>
           <TooltipTrigger>
-            <Button asChild variant="ghost" size="icon" className="shrink-0" onClick={stopPropagation(() => openModal(ReloadPimWrapper, {id: iri, parentId: parentIri ?? ""}))}>
+            <Button asChild variant="ghost" size="icon" className="shrink-0" onClick={stopPropagation(() => openModal(ReloadResource, { id: iri, parentId: parentIri ?? "" }))}>
               <span>
                 <RotateCw className="h-4 w-4" />
               </span>
@@ -163,7 +170,7 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
           <TooltipTrigger>
             <Button asChild variant="ghost" size="icon" className="shrink-0" onClick={stopPropagation()}>
               <a
-                href={import.meta.env.VITE_DATA_SPECIFICATION_EDITOR + "/specification?dataSpecificationIri=" + encodeURIComponent(iri ?? "") }
+                href={import.meta.env.VITE_DATA_SPECIFICATION_EDITOR + "/specification?dataSpecificationIri=" + encodeURIComponent(iri ?? "")}
                 onClick={async event => {
                   event.preventDefault();
                   event.stopPropagation();
@@ -198,12 +205,30 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
       }
 
       {resource.types.includes(LOCAL_PACKAGE) &&
-        <Button variant="ghost" size="icon" className="shrink-0" onClick={stopPropagation(() => openModal(CreateNew, {iri}))}>
+        <Tooltip>
+          <TooltipTrigger>
+            <Button asChild variant="ghost" size="icon" className="relative shrink-0" onClick={stopPropagation()}>
+              <a href={getHistoryLink(iri ?? "")}>
+                <History className="h-4 w-4" />
+                {resource.hasPendingEvolution &&
+                  <span aria-hidden="true" className="absolute top-1.5 right-1.5 size-2 rounded-full bg-red-500"></span>
+                }
+              </a>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{t(resource.hasPendingEvolution ? "history button pending evolution" : "history button")}</p>
+          </TooltipContent>
+        </Tooltip>
+      }
+
+      {resource.types.includes(LOCAL_PACKAGE) &&
+        <Button variant="ghost" size="icon" className="shrink-0" onClick={stopPropagation(() => openModal(CreateNew, { iri }))}>
           <Plus className="h-4 w-4" />
         </Button>
       }
 
-      <DropdownMenu>
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="shrink-0">
             <EllipsisVertical className="h-4 w-4" />
@@ -213,15 +238,20 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/experimental/output.zip?iri=" + encodeURIComponent(iri)}><FolderDown className="mr-2 h-4 w-4" /> {t("export-zip")}</a></DropdownMenuItem>}
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem asChild><a target="_blank" href={import.meta.env.VITE_BACKEND + `/preview/${i18n.language}/index.html?iri=` + encodeURIComponent(iri)}><FileText className="mr-2 h-4 w-4" /> {t("show-documentation")} ({i18n.language})</a></DropdownMenuItem>}
           {i18n.language !== "en" && resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem asChild><a target="_blank" href={import.meta.env.VITE_BACKEND + `/preview/en/index.html?iri=` + encodeURIComponent(iri)}><FileText className="mr-2 h-4 w-4" /> {t("show-documentation")} (en)</a></DropdownMenuItem>}
-          {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => openModal(ModifyDocumentationTemplate, {iri})}><NotepadTextDashed className="mr-2 h-4 w-4" /> {t("modify-documentation-template")}</DropdownMenuItem>}
-          {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => openModal(AddImported, {id: iri, urlOnly: true})}><Import className="mr-2 h-4 w-4" /> {t("import specification from url")}</DropdownMenuItem>}
+          {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => openModal(ModifyDocumentationTemplate, { iri })}><NotepadTextDashed className="mr-2 h-4 w-4" /> {t("modify-documentation-template")}</DropdownMenuItem>}
+          {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => openModal(AddImported, { id: iri, urlOnly: true })}><Import className="mr-2 h-4 w-4" /> {t("import specification from url")}</DropdownMenuItem>}
+          {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem asChild><a href={import.meta.env.VITE_CONTROLLED_VOCABULARY_MANAGER + "/" + encodeURIComponent(iri) + "?language=" + encodeURIComponent(i18n.language) + "&theme=" + encodeURIComponent(theme ?? "system")}><BookOpen className="mr-2 h-4 w-4" /> {t("controlled-vocabularies")}</a></DropdownMenuItem>}
           <DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/resources/export.zip?iri=" + encodeURIComponent(iri)}><CloudDownload className="mr-2 h-4 w-4" /> {t("export")}</a></DropdownMenuItem>
           <DropdownMenuItem onClick={async () => {
-            const result = await openModal(RenameResourceDialog, {inputLabel: resource.userMetadata?.label, inputDescription: resource.userMetadata?.description});
+            const result = await openModal(RenameResourceDialog, { inputLabel: resource.userMetadata?.label, inputDescription: resource.userMetadata?.description });
             if (result) {
-              await modifyUserMetadata(iri, {label: result.name, description: result.description});
+              await modifyUserMetadata(iri, { label: result.name, description: result.description });
             }
-          }}><Pencil className="mr-2 h-4 w-4" /> Rename</DropdownMenuItem>
+          }}><Pencil className="mr-2 h-4 w-4" /> {t("rename-resource.rename")}</DropdownMenuItem>
+          <DropdownMenuItem onClick={async () => {
+            const result = await openModal(ModifyTagsDialog, {tags: resource.userMetadata?.tags ?? []});
+            if (result) await modifyUserMetadata(iri, {tags: result});
+          }}><Tags className="mr-2 h-4 w-4" /> {t("modify-tags.title")}</DropdownMenuItem>
           {resource.types.includes(LOCAL_SEMANTIC_MODEL) && <DropdownMenuItem onClick={() => openModal(Autolayout, {iri, parentIri: parentIri!})}><Sparkles className="mr-2 h-4 w-4" /> {t("autolayout")}</DropdownMenuItem>}
           <DropdownMenuItem onClick={() => openModal(ModifyRawDialog, {iri})}><CircuitBoard className="mr-2 h-4 w-4" /> {t("modify raw data")}</DropdownMenuItem>
           <DropdownMenuItem className="bg-destructive text-destructive-foreground hover:bg-destructive" onClick={() => openModal(DeleteResource, {iri})}><Trash2 className="mr-2 h-4 w-4" /> {t("remove")}</DropdownMenuItem>
@@ -229,11 +259,11 @@ const Row = ({ iri, parentIri }: { iri: string, parentIri?: string }) => {
       </DropdownMenu>
     </div>
     {subResources.length > 0 && isOpen && <ul className="pl-8">
-      {subResources.map(iri => <Row iri={iri} key={iri} parentIri={resource.iri} />)}
+      {subResources.map(iri => <Row iri={iri} key={iri} parentIri={resource.iri} onTagSelect={onTagSelect} />)}
     </ul>}
     <ResourceDetail isOpen={detailModalToggle.isOpen} close={detailModalToggle.close} iri={iri} />
   </li>
-};
+});
 
 export default function Component() {
   return (
@@ -243,20 +273,58 @@ export default function Component() {
   )
 }
 
-function RootPackage({iri, defaultToggle}: {iri: string, defaultToggle?: boolean}) {
+function RootPackage({iri}: {iri: string}) {
   const openModal = useBetterModal();
   const resources = useContext(ResourcesContext);
   const pckg = resources[iri];
-  const {t} = useTranslation();
+  const { t } = useTranslation();
 
   // Whether the package is open or not
-  const [isOpen, setIsOpen] = useState<boolean>(defaultToggle ?? true);
+  const isOpen = true;
+  const [search, setSearch] = useState("");
+  const [selectedTagRaw, setSelectedTag] = useLocalStorage("filter-by-tag", "");
+  const selectedTag = typeof selectedTagRaw === "string" ? selectedTagRaw : "";
+  const deferredTag = useDeferredValue(selectedTag);
+  const deferredSearch = useDeferredValue(search);
+  const searchPattern = useMemo(() => {
+    try {
+      return new RegExp(deferredSearch, "i");
+    } catch {
+      return null;
+    }
+  }, [deferredSearch]);
 
   useEffect(() => {
     requestLoadPackage(iri);
-  }, []);
+  }, [iri]);
 
   const subResources = useSortIris(pckg?.subResourcesIri ?? []);
+  const searchableResources = useMemo(() => subResources.map(iri => {
+    const resource = resources[iri];
+    return {
+      iri,
+      tags: resource?.userMetadata?.tags ?? [],
+      titles: Object.values(resource?.userMetadata?.label ?? {}).map(title => ({
+        value: title,
+        normalized: title.toLocaleLowerCase(),
+      })),
+    };
+  }), [subResources, resources]);
+  const availableTags = useMemo(() => Array.from(new Set(
+    searchableResources.flatMap(resource => resource.tags).filter(tag => tag !== "")
+  )).sort((a, b) => a.localeCompare(b)), [searchableResources]);
+  const normalizedSearch = deferredSearch.toLocaleLowerCase();
+  const matchingResources = useMemo(() => searchableResources.filter(resource =>
+    (deferredTag === "" || resource.tags.includes(deferredTag)) &&
+    (deferredSearch === "" || resource.titles.some(title => searchPattern
+      ? searchPattern.test(title.value)
+      : title.normalized.includes(normalizedSearch)))
+  ).map(resource => resource.iri), [searchableResources, deferredSearch, deferredTag, searchPattern, normalizedSearch]);
+  const hasFilters = search !== "" || selectedTag !== "";
+  const clearFilters = () => {
+    setSearch("");
+    setSelectedTag("");
+  };
 
   if (pckg === null) {
     return;
@@ -273,29 +341,85 @@ function RootPackage({iri, defaultToggle}: {iri: string, defaultToggle?: boolean
   }
 
   return <div className="mb-12">
-    <div className="flex flex-row">
-      <button onClick={() => setIsOpen(!isOpen)} className="cursor-pointer">
-        {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-      </button>
-      <h2 className="font-heading ml-3 scroll-m-20 pb-2 text-2xl font-semibold tracking-tight first:mt-0 grow">
-        <Translate
-          text={pckg.userMetadata?.label}
-          match={(t, isMatch, language) => <>
-            <span className={isMatch ? "" : "text-muted-foreground"}>{t}</span>
-            {!isMatch && <span className="ml-1 ">@{language}</span>}
-          </>}
-        />
-      </h2>
+    <div className="flex flex-row items-center pb-2">
+      <div className="flex items-baseline grow">
+        <h2 className="font-heading scroll-m-20 text-2xl font-semibold tracking-tight first:mt-0">
+          <Translate
+            text={pckg.userMetadata?.label}
+            match={(t, isMatch, language) => <>
+              <span className={isMatch ? "" : "text-muted-foreground"}>{t}</span>
+              {!isMatch && <span className="ml-1 ">@{language}</span>}
+            </>}
+          />
+        </h2>
+        <div aria-live="polite" aria-atomic="true" className="ml-5 mxtext-sm text-muted-foreground">
+          {hasFilters && t("filter results", {count: matchingResources.length, total: subResources.length})}
+        </div>
+      </div>
+      <div role="search" aria-label={t("search titles")} className="ml-8 flex min-w-0 items-center gap-2">
+        <div className="relative min-w-0 w-64">
+          <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-2 h-4 w-4 text-muted-foreground" />
+          <Input
+            className="h-8 pl-9"
+            type="search"
+            aria-label={t("search titles")}
+            placeholder={t("search titles")}
+            value={search}
+            onChange={event => setSearch(event.target.value)}
+          />
+        </div>
+        <Select
+          value={selectedTag === "" ? "all" : `tag:${selectedTag}`}
+          onValueChange={value => setSelectedTag(value === "all" ? "" : value.slice(4))}
+        >
+          <SelectTrigger aria-label={t("filter by tag")} className="h-8 w-auto min-w-40 shrink-0 gap-2 whitespace-nowrap">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">
+              <span className="inline-flex items-center gap-2">
+                <Tag aria-hidden="true" className="h-4 w-4 text-muted-foreground" />
+                {t("all tags")}
+              </span>
+            </SelectItem>
+            {selectedTag !== "" && !availableTags.includes(selectedTag) &&
+              <SelectItem value={`tag:${selectedTag}`} disabled textValue={selectedTag}>
+                <TagName name={selectedTag} />
+              </SelectItem>
+            }
+            {availableTags.map(tag => <SelectItem key={tag} value={`tag:${tag}`} textValue={tag}>
+              <TagName name={tag} />
+            </SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
       <Button variant="ghost" size="sm" className="shrink-0 ml-4"
-        onClick={() => openModal(AddImported, {id: iri})}>
+        onClick={() => openModal(AddImported, { id: iri })}>
         <Import className="mr-2 h-4 w-4" /> {t("import")}
       </Button>
-      <Button variant="default" size={"sm"} className="shrink-0 ml-4" onClick={() => openModal(ProjectWizard, {iri})}><WandSparkles className="mr-2 h-4 w-4" /> {t("project-wizard")}</Button>
+      <Button variant="default" size={"sm"} className="shrink-0 ml-4" onClick={() => openModal(ProjectWizard, {iri, defaultTag: selectedTag || undefined})}><WandSparkles className="mr-2 h-4 w-4" /> {t("project-wizard")}</Button>
     </div>
-    {isOpen &&
-      <ul>
-        {subResources.map(iri => <Row iri={iri} parentIri={pckg.iri} key={iri} />)}
-      </ul>
-    }
+    {isOpen && <>
+      {matchingResources.length > 0 ? <ul>
+        {matchingResources.map(resourceIri => <Row iri={resourceIri} parentIri={iri} key={resourceIri} onTagSelect={setSelectedTag} />)}
+      </ul> : subResources.length === 0 ? <div className="rounded-lg border border-dashed px-4 py-10 text-center">
+        <FileText aria-hidden="true" className="mx-auto mb-3 h-6 w-6 text-muted-foreground" />
+        <p className="font-medium">{t("no specifications")}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{t("create first specification")}</p>
+        <div className="mt-4 flex flex-wrap justify-center gap-2">
+          <Button variant="outline" onClick={() => openModal(AddImported, {id: iri})}>
+            <Import aria-hidden="true" className="mr-2 h-4 w-4" /> {t("import")}
+          </Button>
+          <Button onClick={() => openModal(ProjectWizard, {iri, defaultTag: selectedTag || undefined})}>
+            <WandSparkles aria-hidden="true" className="mr-2 h-4 w-4" /> {t("project-wizard")}
+          </Button>
+        </div>
+      </div> : hasFilters ? <div className="rounded-lg border border-dashed px-4 py-10 text-center">
+        <Search aria-hidden="true" className="mx-auto mb-3 h-6 w-6 text-muted-foreground" />
+        <p className="font-medium">{t("no search results")}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{t("try other filters")}</p>
+        <Button variant="outline" className="mt-4" onClick={clearFilters}>{t("clear filters")}</Button>
+      </div> : null}
+    </>}
   </div>;
 }

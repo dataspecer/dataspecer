@@ -24,12 +24,11 @@ export class CreateNonInterpretedAttribute implements ComplexOperation {
     operation.dataPsmDatatype = "http://www.w3.org/2001/XMLSchema#string";
     operation.dataPsmOwner = this.ownerClass;
 
-    const result = this.store.applyOperation(schema, operation);
-    const attributeId = result.created[0];
+    this.store.applyOperation(schema, operation);
 
     const cardinality = new DataPsmSetCardinality();
     cardinality.dataPsmCardinality = [1, 1];
-    cardinality.entityId = attributeId;
+    cardinality.entityId = operation.dataPsmNewIri as string;
     this.store.applyOperation(schema, cardinality);
   }
 }

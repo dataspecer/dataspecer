@@ -93,7 +93,7 @@ export async function validateDataAgainstShape( dataFileName : string, shapeFile
 
     const shapes = await this.loadDataset(shapeFileName);
     const data = await this.loadDataset(dataFileName);
-    const validator = new SHACLValidator(shapes, { factory });
+    const validator = new SHACLValidator(shapes);
     const report = await validator.validate(data);
     // Check conformance: `true` or `false`
     //console.log("Validation conforms :" + report.conforms)

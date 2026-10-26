@@ -222,7 +222,7 @@ export class DefaultGraph implements Graph {
     private createNewVisualNodeForGraphBasedOnContainedNodes() {
         const position = getTopLeftPosition(Object.values(this.nodes));
         return {
-            identifier: this.id,
+            id: this.id,
             type: [VISUAL_NODE_TYPE],
             representedEntity: this.id,
             position: {
@@ -533,7 +533,7 @@ export class DefaultGraph implements Graph {
             const alreadyProcessedGroups: Record<string, true> = {};
 
             for(const group of groups) {
-                const topLevelGroup = findTopLevelGroup(group.identifier, existingGroups, nodeToGroupMapping);
+                const topLevelGroup = findTopLevelGroup(group.id, existingGroups, nodeToGroupMapping);
 
                 if(alreadyProcessedGroups[topLevelGroup] === true) {
                     continue;
@@ -921,7 +921,7 @@ export class DefaultMainGraph extends DefaultGraph implements MainGraph {
             placePositionOnGrid(visualEntityForNode.position, 10, 10)
 
             // node.id should be the same as visualEntityForNode.identifier
-            visualEntities[visualEntityForNode.identifier] = {
+            visualEntities[visualEntityForNode.id] = {
                 visualEntity: visualEntityForNode,
                 isOutsider: node.completeVisualNode.isOutsider
             };
@@ -936,20 +936,20 @@ export class DefaultMainGraph extends DefaultGraph implements MainGraph {
             // Just in case look-up if not set, but I think that in current version this never occurs, we always have the visual node to use
             if(visualEntityForEdge.visualSource === "") {
                 const sourceGraphNode = this.findNodeInAllNodes(edge.start.id);
-                visualEntityForEdge.visualSource = sourceGraphNode.completeVisualNode.coreVisualNode.identifier;
+                visualEntityForEdge.visualSource = sourceGraphNode.completeVisualNode.coreVisualNode.id;
             }
             if(visualEntityForEdge.visualTarget === "") {
                 const targetGraphNode = this.findNodeInAllNodes(edge.end.id);
-                visualEntityForEdge.visualTarget = targetGraphNode.completeVisualNode.coreVisualNode.identifier;
+                visualEntityForEdge.visualTarget = targetGraphNode.completeVisualNode.coreVisualNode.id;
             }
 
             if(PhantomElementsFactory.isSplitID(edge.id)) {
                 visualEntityForEdge.waypoints = [];
-                visualEntityForEdge.identifier = PhantomElementsFactory.deconstructSplitID(edge.id);
+                visualEntityForEdge.id = PhantomElementsFactory.deconstructSplitID(edge.id);
             }
 
             // Again edge.id should be the same as visualEntityForEdge.identifier
-            visualEntities[visualEntityForEdge.identifier] = {
+            visualEntities[visualEntityForEdge.id] = {
                 visualEntity: visualEntityForEdge,
                 isOutsider: edge.visualEdge.isOutsider,
             };

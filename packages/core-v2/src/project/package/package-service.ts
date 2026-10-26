@@ -1,31 +1,9 @@
 import { EntityModel } from "../../entity-model/index.ts";
 import { VisualModel } from "@dataspecer/visual-model";
-import { Package, ResourceEditable } from "../resource/resource.ts";
 
-/**
- * Provides basic operations with packages.
- */
-export interface PackageService {
-    /**
-     * Returns package with all sub-packages.
-     */
-    getPackage(packageId: string): Promise<Package>;
+import { PackageService } from "@dataspecer/core/project-model/legacy";
 
-    /**
-     * Create a new empty package that can be used to store other packages or models.
-     */
-    createPackage(parentPackageId: string, data: ResourceEditable): Promise<Package>;
-
-    /**
-     * Updates editable package metadata.
-     */
-    updatePackage(packageId: string, data: Partial<ResourceEditable>): Promise<Package>;
-
-    /**
-     * Removes the package with all models and sub-packages.
-     */
-    deletePackage(packageId: string): Promise<void>;
-}
+export type { ResourceService, PackageService } from "@dataspecer/core/project-model/legacy";
 
 export interface SemanticModelPackageService extends PackageService {
     /**

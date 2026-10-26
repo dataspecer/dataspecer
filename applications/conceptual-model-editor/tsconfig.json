@@ -22,11 +22,11 @@
 
     /* https://ui.shadcn.com/docs/installation/vite */
     "paths": {
-      "@/*": ["./src/*"]
+      "@user-interface/*": ["./src/user-interface/*"],
     },
 
     "types": ["vitest/globals"]
   },
-  "include": ["src"],
+  "include": ["src", "src-v2"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

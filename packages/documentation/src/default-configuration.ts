@@ -129,6 +129,57 @@ export const defaultConfiguration: DocumentationConfiguration = {
 
     {{> used-prefixes}}
 
+    {{#if controlledVocabularies.length}}
+      <section>
+        <h2>{{#iflng "cs"}}Řízené slovníky{{lng}}Controlled vocabularies{{/iflng}}</h2>
+
+        <section>
+          <h3>{{#iflng "cs"}}Seznam řízených slovníků{{lng}}List of controlled vocabularies{{/iflng}}</h3>
+          <p>
+            {{#iflng "cs"}}Seznam obsahuje všechny řízené slovníky, které tato specifikace používá, s odkazy na dokumenaci a ke stažení.{{lng}}The list contains all controlled vocabularies used by this specification, with links to its access URL and documentation.{{/iflng}}
+          </p>
+          {{> controlled-vocabularies-table}}
+        </section>
+
+        {{#if (or controlledVocabularyUsagesByQualifier.must controlledVocabularyUsagesByQualifier.[at-least-one] controlledVocabularyUsagesByQualifier.recommended controlledVocabularyUsagesByQualifier.may)}}
+          <section>
+            <h3>{{#iflng "cs"}}Použití řízených slovníků{{lng}}Controlled vocabularies usage{{/iflng}}</h3>
+            <p>
+              {{#iflng "cs"}}Tabulky níže uvádějí použití řízených slovníků pro vlastnosti, seskupené podle očekávané kvalifikace.{{lng}}The tables below show the usage of the controlled vocabularies with properties grouped by the expected qualification.{{/iflng}}
+            </p>
+
+            {{#if controlledVocabularyUsagesByQualifier.must}}
+              <section>
+                <h4>{{#iflng "cs"}}Vlastnosti s řízenými slovníky, které MUSÍ být použity{{lng}}Properties with controlled vocabularies that MUST be used{{/iflng}}</h4>
+                {{> controlled-vocabulary-usage-table rows=controlledVocabularyUsagesByQualifier.must}}
+              </section>
+            {{/if}}
+
+            {{#if controlledVocabularyUsagesByQualifier.[at-least-one]}}
+              <section>
+                <h4>{{#iflng "cs"}}Vlastnosti s řízenými slovníky, ze kterých MUSÍ být použit alespoň jeden{{lng}}Properties with controlled vocabularies where AT LEAST ONE must be used{{/iflng}}</h4>
+                {{> controlled-vocabulary-usage-table rows=controlledVocabularyUsagesByQualifier.[at-least-one]}}
+              </section>
+            {{/if}}
+
+            {{#if controlledVocabularyUsagesByQualifier.recommended}}
+              <section>
+                <h4>{{#iflng "cs"}}Vlastnosti s DOPORUČENÝMI řízenými slovníky{{lng}}Properties with RECOMMENDED controlled vocabularies{{/iflng}}</h4>
+                {{> controlled-vocabulary-usage-table rows=controlledVocabularyUsagesByQualifier.recommended}}
+              </section>
+            {{/if}}
+
+            {{#if controlledVocabularyUsagesByQualifier.may}}
+              <section>
+                <h4>{{#iflng "cs"}}Vlastnosti s řízenými slovníky, které MOHOU být použity{{lng}}Properties with controlled vocabularies that MAY be used{{/iflng}}</h4>
+                {{> controlled-vocabulary-usage-table rows=controlledVocabularyUsagesByQualifier.may}}
+              </section>
+            {{/if}}
+          </section>
+        {{/if}}
+      </section>
+    {{/if}}
+
     {{> attachments}}
   </body>
 </html>`,
@@ -314,6 +365,16 @@ export const defaultConfiguration: DocumentationConfiguration = {
       <td>{{translation}}{{#if otherLang}} (@{{otherLang}}){{/if}}</td>
     </tr>
     {{/translate}}
+    {{#if resolvedControlledVocabularies}}
+    <tr>
+      <td>{{#iflng "cs"}}Řízené slovníky{{lng}}Controlled vocabularies{{/iflng}}</td>
+      <td>{{> controlled-vocabulary-list vocabularies=resolvedControlledVocabularies showReplaced=true}}</td>
+    </tr>
+    <tr>
+      <td>{{#iflng "cs"}}Použití řízených slovníků{{lng}}Controlled vocabulary usage{{/iflng}}</td>
+      <td>{{> controlled-vocabulary-class-profile-usage vocabularies=resolvedControlledVocabularies}}</td>
+    </tr>
+    {{/if}}
   </table>
 
   {{#if relationships}}
@@ -335,6 +396,139 @@ export const defaultConfiguration: DocumentationConfiguration = {
   {{/each}}
 
 </section>`,
+
+    "controlled-vocabulary-list": `{{#if (equals vocabularies.length 1)}}
+  {{#each vocabularies}}{{> controlled-vocabulary-list-item showReplaced=../showReplaced documentedClassProfile=../id}}{{/each}}
+{{else}}
+  <ul>
+    {{#each vocabularies}}
+      <li>{{> controlled-vocabulary-list-item showReplaced=../showReplaced documentedClassProfile=../id}}</li>
+    {{/each}}
+  </ul>
+{{/if}}`,
+
+    "controlled-vocabulary-list-item": `{{> controlled-vocabulary-link}} ({{qualifierLabel qualifier}}{{#if replaces}}, {{#iflng "cs"}}přepsáno{{lng}}override{{/iflng}}{{/if}})
+{{#if showReplaced}}
+  {{! An assignment of another class profile is inherited from the profiled class profile, which can be in a nested specification. }}
+  {{#unless (equals classProfile documentedClassProfile)}}
+    <br />{{#iflng "cs"}}Převzato z profilovaného profilu třídy{{lng}}Taken from the profiled class profile{{/iflng}}
+    {{#semanticEntity classProfile}}{{class}}{{else}}{{.}}{{/semanticEntity}}
+  {{/unless}}
+  {{> controlled-vocabulary-imported-replaces}}
+  {{! The replaced assignments are a list, shown as a hierarchy: each opens a nested list, all are closed after the last one. }}
+  {{#each (replacedAssignments .)}}
+    <ul style="list-style-type: disclosure-closed;"><li>
+    {{> controlled-vocabulary-replaced-assignment}}
+    {{> controlled-vocabulary-imported-replaces}}
+  {{/each}}
+  {{#each (replacedAssignments .)}}
+    </li></ul>
+  {{/each}}
+{{/if}}`,
+
+    "controlled-vocabulary-link": `{{#semanticEntity vocabulary}}<a href="#{{cvAnchor id}}">{{cvTitle id}}</a>{{else}}{{.}}{{/semanticEntity}}`,
+
+    "controlled-vocabulary-access-link": `<a class="cv-link" href="{{{distribution.accessUrl}}}" title="{{#iflng "cs"}}Přístupová adresa{{lng}}Access URL{{/iflng}}" aria-label="{{#iflng "cs"}}Přístupová adresa{{lng}}Access URL{{/iflng}}"><svg class="cv-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></a>`,
+
+    "controlled-vocabulary-documentation-link": `<a class="cv-link" href="{{{documentation}}}" title="{{#iflng "cs"}}Dokumentace{{lng}}Documentation{{/iflng}}" aria-label="{{#iflng "cs"}}Dokumentace{{lng}}Documentation{{/iflng}}"><svg class="cv-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg></a>`,
+
+    "controlled-vocabularies-table": `<table class="def cv-table cv-list">
+  <thead>
+    <tr>
+      <th>{{#iflng "cs"}}Název{{lng}}Name{{/iflng}}</th>
+      <th class="cv-center">SKOS</th>
+      <th>{{#iflng "cs"}}IRI schématu konceptů{{lng}}Concept Scheme IRI{{/iflng}}</th>
+      <th>{{#iflng "cs"}}Odkazy{{lng}}Links{{/iflng}}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{#each controlledVocabularies}}
+      <tr id="{{cvAnchor id}}">
+        <td>{{cvTitle id}}</td>
+        <td class="cv-center">{{#if conformsToSkos}}{{#iflng "cs"}}ano{{lng}}yes{{/iflng}}{{else}}{{#iflng "cs"}}ne{{lng}}no{{/iflng}}{{/if}}</td>
+        <td class="cv-iri">{{#if conformsToSkos}}{{references}}{{else}}–{{/if}}</td>
+        <td>
+          {{> controlled-vocabulary-access-link}}
+          {{#if documentation}}{{> controlled-vocabulary-documentation-link}}{{/if}}
+        </td>
+      </tr>
+    {{/each}}
+  </tbody>
+</table>`,
+
+    "controlled-vocabulary-replaced-assignment": `{{#iflng "cs"}}nahrazuje přiřazení řízeného slovníku{{lng}}replaces controlled vocabulary assignment{{/iflng}}
+{{> controlled-vocabulary-link}} ({{qualifierLabel qualifier}}) {{#iflng "cs"}}profilu třídy{{lng}}of class profile{{/iflng}}
+{{#semanticEntity classProfile}}{{class}}{{else}}{{.}}{{/semanticEntity}}`,
+
+    "controlled-vocabulary-imported-replaces": `{{#ifEquals replaces.kind "imported"}}
+  <ul style="list-style-type: disclosure-closed;"><li>
+    {{#iflng "cs"}}nahrazuje importované přiřazení{{lng}}replaces imported assignment{{/iflng}}
+    <a href="{{{replaces.iri}}}">{{replaces.iri}}</a>
+  </li></ul>
+{{/ifEquals}}`,
+
+    "controlled-vocabulary-property-usage": `{{#each vocabularies}}
+  <p>
+  {{#ifEquals qualifier "must"}}
+    {{#iflng "cs"}}Vlastnost MUSÍ používat jako obor hodnot položky z {{> controlled-vocabulary-link}}.{{lng}}The property MUST use as range values codes from {{> controlled-vocabulary-link}}.{{/iflng}}<br />
+    {{#iflng "cs"}}Toto očekávání znamená, že prostor hodnot je uzavřen vzhledem k řízenému slovníku. Validační systémy BY MĚLY vytvářet chyby. Všechny profily v ekosystému MUSÍ předcházet konfliktům vytvářením podvlastností.{{lng}}This expectation results in that the value space is closed under the controlled vocabulary. Validation systems SHOULD produce errors. All profiles in the ecosystem MUST avoid conflicts by creating subproperties.{{/iflng}}
+  {{/ifEquals}}
+  {{#ifEquals qualifier "at-least-one"}}
+    {{#iflng "cs"}}Vlastnost MUSÍ mít ALESPOŇ JEDNU hodnotu z {{> controlled-vocabulary-link}}.{{lng}}The property MUST have AT LEAST ONE value from {{> controlled-vocabulary-link}}.{{/iflng}}<br />
+    {{#iflng "cs"}}Toto očekávání jen minimálně omezuje prostor hodnot. Validační systémy BY MĚLY vytvářet varování.{{lng}}This expectation makes the value space minimally constrained. Validation systems SHOULD produce warnings.{{/iflng}}
+  {{/ifEquals}}
+  {{#ifEquals qualifier "recommended"}}
+    {{#iflng "cs"}}Pro vlastnost se DOPORUČUJE používat jako obor hodnot položky z {{> controlled-vocabulary-link}}.{{lng}}The property IS RECOMMENDED to use as range values codes from {{> controlled-vocabulary-link}}.{{/iflng}}<br />
+    {{#iflng "cs"}}Prostor hodnot je uzavřen vzhledem k řízenému slovníku, ale jiné hodnoty jsou tolerovány. Doporučení vyjadřuje silnou preferenci. Aby byl tento silnější směr ke sjednocení hodnot viditelný ve výměnách dat, validační systémy BY MĚLY vytvářet varování.{{lng}}The value space is closed under the controlled vocabulary, but other values are tolerated. Recommending means expressing a strong preference. To make this stronger direction towards harmonisation visible in the data exchanges, validation systems SHOULD produce warnings.{{/iflng}}
+  {{/ifEquals}}
+  {{#ifEquals qualifier "may"}}
+    {{#iflng "cs"}}Vlastnost MŮŽE používat jako obor hodnot položky z {{> controlled-vocabulary-link}}.{{lng}}The property MAY use as range values codes from {{> controlled-vocabulary-link}}.{{/iflng}}<br />
+    {{#iflng "cs"}}Prostor hodnot je uzavřen vzhledem k řízenému slovníku, ale jiné hodnoty jsou přijímány. Toto očekávání je spíše nápověda k použití. Protože zde není vyjádřena ani povinnost, ani silné doporučení, je použití jiných číselníků ve všech případech platné. Validační systémy proto MOHOU vytvářet varování, ale uživatelé je mohou ignorovat. Také žádná validace není v tomto případě přijatelná.{{lng}}The value space is closed under the controlled vocabulary, but other values are accepted. This expectation is more a hint to be used. As there is no obligation nor strong suggestion expressed here, the use of other codelists is valid in all cases. Therefore validation systems MAY produce warnings but users are free to ignore them. No validation in this case is also acceptable.{{/iflng}}
+  {{/ifEquals}}
+  </p>
+{{/each}}`,
+
+    "controlled-vocabulary-class-profile-usage": `{{#each vocabularies}}
+  <p>
+  {{#ifEquals qualifier "must"}}
+    {{#iflng "cs"}}Tento profil třídy MUSÍ být v datech reprezentován položkami řízeného slovníku {{> controlled-vocabulary-link}}.{{lng}}This class profile MUST be represented in data by instances of {{> controlled-vocabulary-link}} controlled vocabulary.{{/iflng}}
+  {{/ifEquals}}
+  {{#ifEquals qualifier "at-least-one"}}
+    {{#iflng "cs"}}Tento profil třídy MUSÍ být v datech reprezentován ALESPOŇ JEDNOU položkou řízeného slovníku {{> controlled-vocabulary-link}}.{{lng}}This class profile MUST be represented in data by AT LEAST ONE instance of {{> controlled-vocabulary-link}} controlled vocabulary.{{/iflng}}
+  {{/ifEquals}}
+  {{#ifEquals qualifier "recommended"}}
+    {{#iflng "cs"}}DOPORUČUJE se, aby byl tento profil třídy v datech reprezentován položkami řízeného slovníku {{> controlled-vocabulary-link}}.{{lng}}It is RECOMMENDED that this class profile is represented in data by instances of {{> controlled-vocabulary-link}} controlled vocabulary.{{/iflng}}
+  {{/ifEquals}}
+  {{#ifEquals qualifier "may"}}
+    {{#iflng "cs"}}Tento profil třídy MŮŽE být v datech reprezentován položkami řízeného slovníku {{> controlled-vocabulary-link}}.{{lng}}This class profile MAY be represented in data by instances of {{> controlled-vocabulary-link}} controlled vocabulary.{{/iflng}}
+  {{/ifEquals}}
+  </p>
+{{/each}}`,
+
+    "controlled-vocabulary-usage-table": `<table class="def cv-table">
+  <thead>
+    <tr>
+      <th>{{#iflng "cs"}}Vlastnost{{lng}}Property{{/iflng}}</th>
+      <th>{{#iflng "cs"}}Definiční obor vlastnosti{{lng}}Property domain{{/iflng}}</th>
+      <th>{{#iflng "cs"}}Použito pro profil třídy{{lng}}Used for class profile{{/iflng}}</th>
+      <th>{{#iflng "cs"}}Řízený slovník{{lng}}Controlled vocabulary{{/iflng}}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{#each rows}}
+      <tr>
+        <td>{{#with property}}{{relation}}{{/with}}</td>
+        <td>{{#each domains}}{{#semanticEntity .}}{{class}}{{else}}{{.}}{{/semanticEntity}}{{#unless @last}}, {{/unless}}{{/each}}</td>
+        <td>{{#semanticEntity range}}{{class}}{{else}}{{.}}{{/semanticEntity}}</td>
+        <td>
+          {{#each vocabularies}}
+            <div>{{> controlled-vocabulary-link}}{{#if replaces}} ({{#iflng "cs"}}přepsáno{{lng}}override{{/iflng}}){{/if}}</div>
+          {{/each}}
+        </td>
+      </tr>
+    {{/each}}
+  </tbody>
+</table>`,
 
     "relationship-profile": `<section id="{{anchor}}">
   <h4>{{#translate aggregation.ends.1.name}}{{translation}}{{#if otherLang}} (@{{otherLang}}){{/if}}{{else}}<i>{{#iflng "cs"}}beze jména{{lng}}without assigned name{{/iflng}}</i>{{/translate}}</h4>
@@ -443,6 +637,16 @@ export const defaultConfiguration: DocumentationConfiguration = {
       <td>{{translation}}{{#if otherLang}} (@{{otherLang}}){{/if}}</td>
     </tr>
     {{/translate}}
+    {{#if derivedControlledVocabularies}}
+    <tr>
+      <td>{{#iflng "cs"}}Řízené slovníky{{lng}}Controlled vocabularies{{/iflng}}</td>
+      <td>{{> controlled-vocabulary-list vocabularies=derivedControlledVocabularies}}</td>
+    </tr>
+    <tr>
+      <td>{{#iflng "cs"}}Použití řízených slovníků{{lng}}Controlled vocabulary usage{{/iflng}}</td>
+      <td>{{> controlled-vocabulary-property-usage vocabularies=derivedControlledVocabularies}}</td>
+    </tr>
+    {{/if}}
   </table>
 </section>`,
 
@@ -487,9 +691,21 @@ export const defaultConfiguration: DocumentationConfiguration = {
           <td><a href="{{{relativePath URL}}}">{{relativePath URL}}</a></td>
         </tr>
       {{/each}}
+      {{#if externalArtifacts.catalog}}
+        <tr>
+          <td>{{#iflng "cs"}}Katalog řízených slovníků{{lng}}Controlled vocabulary catalog{{/iflng}}</td>
+          <td><a href="{{{relativePath externalArtifacts.catalog.[0].URL}}}">{{relativePath externalArtifacts.catalog.[0].URL}}</a></td>
+        </tr>
+      {{/if}}
       {{#each externalArtifacts.structure-model}}
         <tr>
           <td>{{#iflng "cs"}}Popis strukturálního modelu{{lng}}Description of structure model{{/iflng}}</td>
+          <td><a href="{{{relativePath URL}}}">{{relativePath URL}}</a></td>
+        </tr>
+      {{/each}}
+      {{#each externalArtifacts.ldes-operations}}
+        <tr>
+          <td>{{#iflng "cs"}}Serializace změn v LDES formátu{{lng}}List of changes in LDES format{{/iflng}}</td>
           <td><a href="{{{relativePath URL}}}">{{relativePath URL}}</a></td>
         </tr>
       {{/each}}
@@ -570,6 +786,31 @@ var respecConfig = {
   table.simple td {
     border-top: 1px solid #ddd;
     padding: 3px 10px;
+  }
+
+  /* An IRI has no spaces to break at, so it may wrap anywhere instead of widening the table. */
+  table.def.cv-list .cv-iri {
+    overflow-wrap: anywhere;
+  }
+
+  /* ReSpec shows the header row of a definition table as an italic body row, so it is marked out as a header. */
+  table.def.cv-table thead th {
+    font-style: normal;
+    font-weight: bold;
+    background: color-mix(in srgb, currentColor 8%, transparent);
+    border-bottom: 2px solid color-mix(in srgb, currentColor 35%, transparent);
+  }
+
+  table.def.cv-list .cv-center {
+    text-align: center;
+  }
+
+  a.cv-link + a.cv-link {
+    margin-left: 0.5em;
+  }
+
+  .cv-icon {
+    vertical-align: -0.2em;
   }
 </style>`,
   },

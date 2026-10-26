@@ -23,12 +23,12 @@ export class SetDataPsmLabelAndDescription implements ComplexOperation {
     const schema = this.store.getSchemaForResource(this.forDataPsmResourceIri) as string;
 
     const dataPsmSetHumanLabel = new DataPsmSetHumanLabel();
-    dataPsmSetHumanLabel.dataPsmResource = this.forDataPsmResourceIri;
+    dataPsmSetHumanLabel.entityId = this.forDataPsmResourceIri;
     dataPsmSetHumanLabel.dataPsmHumanLabel = this.dataPsmHumanLabel;
     this.store.applyOperation(schema, dataPsmSetHumanLabel);
 
     const dataPsmSetHumanDescription = new DataPsmSetHumanDescription();
-    dataPsmSetHumanDescription.dataPsmResource = this.forDataPsmResourceIri;
+    dataPsmSetHumanDescription.entityId = this.forDataPsmResourceIri;
     dataPsmSetHumanDescription.dataPsmHumanDescription = this.dataPsmHumanDescription;
     this.store.applyOperation(schema, dataPsmSetHumanDescription);
   }

@@ -1,4 +1,4 @@
-import {StructureModel} from "@dataspecer/core/structure-model/model";
+import {StructureModel} from "@dataspecer/generators/structure-model/model";
 
 /**
  * Structure model for XML schemas.

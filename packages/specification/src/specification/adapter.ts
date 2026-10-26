@@ -1,180 +1,347 @@
-import { AggregatorAsEntityModel, SemanticModelAggregator } from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
-import { LOCAL_PACKAGE, V1 } from "@dataspecer/core-v2/model/known-models";
+import { AggregatorAsEntityModel, type ApplicationProfileAggregator, type SemanticModelAggregator } from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
+import { CONTROLLED_VOCABULARY_MODEL, LOCAL_PACKAGE, V1 } from "@dataspecer/core-v2/model/known-models";
 import { BaseResource, Package } from "@dataspecer/core-v2/project";
-import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
-import { CoreResourceReader } from "@dataspecer/core/core/index";
 import { DataSpecification as LegacyDataSpecification } from "@dataspecer/core/data-specification/model";
+import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
+import type { ModelIdentifier } from "@dataspecer/core/model";
 import { FederatedObservableStore } from "@dataspecer/federated-observable-store/federated-observable-store";
-import { MemoryStoreFromBlob } from "../memory-store.ts";
-import { ModelCompositionConfiguration, ModelCompositionConfigurationMerge } from "../model-hierarchy/composition-configuration.ts";
-import { SemanticModelAggregatorBuilder } from "../model-hierarchy/semantic-model-aggregator-builder.ts";
-import { loadAsStructureModel } from "../model-loader.ts";
-import { WritableBlobModel } from "../model-repository/blob-model.ts";
-import { CachedModelRepository } from "../model-repository/cached-model-repository.ts";
-import { ModelRepository } from "../model-repository/model-repository.ts";
-import { PackageModel } from "../model-repository/package-model.ts";
+import { isPackageEntity, type ProjectModelEntity, type PackageEntity } from "@dataspecer/core/project-model";
+import { buildModelHierarchy, isSemanticModelType } from "@dataspecer/model-hierarchy";
+import { build } from "../aggregator-builder/semantic-model-aggregator-builder.ts";
 import { DataSpecification } from "./model.ts";
-import { loadDataSpecifications } from "./utils.ts";
+import { TransactionMetadata } from "@dataspecer/model-store";
+import { OperationInModel } from "@dataspecer/core/operation";
+import type { MemoryStore } from "@dataspecer/core/core";
 
-export async function getDataSpecification(packageAsSpecification: PackageModel): Promise<DataSpecification> {
-  const subResources = await packageAsSpecification.getSubResources();
+const PROJECT_MODEL_ID: ModelIdentifier = "_project_model";
 
-  const dataStructures = subResources
-    .filter((r) => r.types.includes(V1.PSM))
-    .map((ds) => ({
-      id: ds.id,
-      label: ds.getUserMetadata()?.label || {},
-    }));
+/**
+ * For given project ID it returns a connection to the data specification.
+ *
+ * @param projectId The ID of the package that is being worked on
+ * @param models All models needed to build the specification.
+ */
+export function getDataSpecificationWithModels(
+  projectId: ModelIdentifier,
+  models: Record<ModelIdentifier, EntityRecord>,
+  onChange?: (changeListener: (changes: Record<ModelIdentifier, EntityChange[]>) => void) => () => void,
 
-  const artifactConfigurations = subResources
-    .filter((r) => r.types.includes(V1.GENERATOR_CONFIGURATION))
-    .map((ds) => ({
-      id: ds.id,
-      label: ds.getUserMetadata()?.label || {},
-    }));
+  addOperationForTransaction?: (operations: OperationInModel[]) => void,
+  commitTransaction?: (metadata: TransactionMetadata) => void,
+) {
+  if (!addOperationForTransaction || !commitTransaction) {
+    const fallback = () => console.error("Model is in a read only mode, you cannot execute operations on it.");
+    addOperationForTransaction = fallback;
+    commitTransaction = fallback;
+  }
+  const store = new FederatedObservableStore(addOperationForTransaction, commitTransaction);
+  const dataStructureIds: string[] = [];
+  const controlledVocabularyIds: string[] = [];
 
-  const model = ((await packageAsSpecification.getJsonBlob()) as any) ?? {};
+  onChange?.((change) => {
+    for (const [modelId, changesForModel] of Object.entries(change)) {
+      if (dataStructureIds.includes(modelId) || controlledVocabularyIds.includes(modelId)) {
+        store.updateModel(modelId, changesForModel);
+      }
+    }
+  });
 
-  return {
-    ...(await serializePackageModel(packageAsSpecification)),
-    id: packageAsSpecification.id,
-    type: LegacyDataSpecification.TYPE_DOCUMENTATION,
+  const executeOperation = (modelId: ModelIdentifier, operation: any) => addOperationForTransaction([{ modelId, operation }]);
 
-    label: packageAsSpecification.getUserMetadata()?.label || {},
-    tags: [], // todo
+  const projectModel = models[PROJECT_MODEL_ID] as EntityRecord<ProjectModelEntity>;
+  const dataSpecifications = loadDataSpecifications(projectId, projectModel, models);
 
-    sourceSemanticModelIds: model.sourceSemanticModelIds ?? ["https://dataspecer.com/adapters/sgov"], // SGOV is default model if none is selected
-    localSemanticModelIds: model.localSemanticModelIds ?? [],
-    modelCompositionConfiguration: model.modelCompositionConfiguration ?? null,
-    dataStructures,
-    importsDataSpecificationIds: model.dataStructuresImportPackages ?? [],
+  // Register controlled vocabulary models in the store, so that they can be read by their ids (same as model ids).
+  for (const vocabularyId of listControlledVocabularyModels(projectId, projectModel)) {
+    store.addModel(vocabularyId, models[vocabularyId] ?? {});
+    controlledVocabularyIds.push(vocabularyId);
+  }
 
-    artifactConfigurations,
+  for (const specification of Object.values(dataSpecifications)) {
+    for (const structures of specification.dataStructures) {
+      store.addModel(structures.id, models[structures.id] ?? {});
+      dataStructureIds.push(structures.id);
+    }
 
-    userPreferences: model.userPreferences ?? {},
-  };
-}
+    let configuration: any = {};
+    const configurationId = specification.artifactConfigurations[0]?.id;
+    if (configurationId) {
+      configuration = models[configurationId]?.[configurationId] ?? {};
+    }
 
-async function serializePackageModel(packageModel: PackageModel): Promise<Package> {
-  const subResources = [];
-  for (const subResource of await packageModel.getSubResources()) {
-    if (subResource.types.includes(LOCAL_PACKAGE)) {
-      subResources.push(await serializePackageModel(await subResource.asPackageModel()));
-    } else {
-      subResources.push({
-        iri: subResource.id,
-        types: subResource.types,
-        userMetadata: subResource.getUserMetadata() || {},
-        metadata: null as any, // Metadata is not serialized in this context
-      } as BaseResource);
+    // @ts-ignore This inserts the configuration into the specification
+    specification.artefactConfiguration = configuration;
+  }
+
+  // Every package has its own semantic model. All of them are registered so
+  // that entities interpreting structures can be read no matter which package
+  // of the project they come from. Nested packages are registered after the
+  // packages containing them, so that entities are read from the model that is
+  // the closest one to them.
+  const semanticModelAggregator = addSemanticModel(store, projectId, models, onChange, executeOperation);
+  const semanticModels: Record<ModelIdentifier, SemanticModelAggregator> = { [projectId]: semanticModelAggregator };
+
+  for (const packageId of listPackages(projectId, projectModel)) {
+    if (packageId === projectId || !hasSemanticModel(packageId, projectModel)) {
+      continue;
+    }
+    try {
+      semanticModels[packageId] = addSemanticModel(store, packageId, models, onChange, executeOperation);
+    } catch (error) {
+      // A package that cannot be aggregated must not prevent the rest of the
+      // project from being used.
+      console.error(`Semantic model of the package '${packageId}' could not be built.`, error);
     }
   }
 
-  return {
-    iri: packageModel.id,
-    types: packageModel.types,
-    userMetadata: packageModel.getUserMetadata() || {},
-    metadata: null as any,
+  const projectSemanticModels = Object.values(semanticModels);
+  for (const specification of Object.values(dataSpecifications)) {
+    // @ts-ignore This inserts the semantic model of the specification
+    specification.semanticModel = semanticModels[specification.id];
+    // A structure may be interpreted by entities of another package, for
+    // example when it references a structure of another specification.
+    // @ts-ignore This inserts the semantic models of the whole project
+    specification.projectSemanticModels = projectSemanticModels;
+  }
 
-    subResources,
+  return {
+    dataSpecifications,
+    semanticModelAggregator,
+    /**
+     * Aggregators of the specification and of all packages nested in it,
+     * the aggregator of the specification being the first one. The aggregator
+     * of the specification contains the entities of its own profile, while
+     * the entities it takes over from the packages nested in it are provided
+     * only by the aggregators of those packages.
+     */
+    projectSemanticModels,
+    store,
+
+    structureModels: {} as Record<string, MemoryStore>,
   };
 }
 
 /**
- * Returns the full data specification with all dependent specifications and models.
+ * Builds the semantic model of the specification and registers its aggregated
+ * entities in the store, keeping them up to date.
+ *
+ * @returns The aggregator the registered entities come from.
  */
-export async function getDataSpecificationWithModels(dataSpecificationIri: string, dataPsmSchemaIri: string, modelRepository: ModelRepository) {
-  const cachedModelRepository = new CachedModelRepository(modelRepository);
-  const store = new FederatedObservableStore();
+function addSemanticModel(
+  store: FederatedObservableStore,
+  specificationId: ModelIdentifier,
+  models: Record<ModelIdentifier, EntityRecord>,
+  onChange: ((changeListener: (changes: Record<ModelIdentifier, EntityChange[]>) => void) => () => void) | undefined,
+  executeOperation: (modelId: ModelIdentifier, operation: any) => void,
+): SemanticModelAggregator {
+  const hierarchy = buildModelHierarchy(specificationId, models);
+  const aggregator = build(specificationId, hierarchy, models, onChange, executeOperation);
 
-  let specifications: Record<string, DataSpecification>;
-  let semanticModelAggregator!: SemanticModelAggregator;
+  // We need to add the model as the lowest level model because some operations
+  // want to modify the profiled entities directly.
+  const modelId = (aggregator as ApplicationProfileAggregator).profileId ?? specificationId;
 
-  // All structure models are in FederatedObservableStore, but you can also access them directly
-  const structureModels: Record<string, MemoryStoreFromBlob> = {};
+  const asEntityModel = new AggregatorAsEntityModel(aggregator, modelId);
+  const previousModel = { ...asEntityModel.getEntities() };
+  store.addModel(modelId, { ...previousModel });
+  asEntityModel.subscribeToChanges((updated, removed) => {
+    const changes: EntityChange[] = [];
+    for (const [id, entity] of Object.entries(updated)) {
+      changes.push({
+        previous: previousModel[id] ?? null,
+        next: entity as any,
+      });
+      previousModel[id] = entity as any;
+    }
+    for (const id of removed) {
+      changes.push({
+        previous: previousModel[id]!,
+        next: null,
+      });
+      delete previousModel[id];
+    }
 
-  // Loads information about all projects/packages because they can reference each other
-  specifications = await loadDataSpecifications(dataSpecificationIri, cachedModelRepository);
-  await Promise.all(
-    Object.values(specifications).map(async (specification) => {
-      const model = (await cachedModelRepository.getModelById(specification.id))!;
-      const pckg = await model.asPackageModel();
+    store.updateModel(modelId, changes);
+  });
 
-      const psmStores: MemoryStoreFromBlob[] = [];
-      const subResources = await pckg.getSubResources();
+  return aggregator;
+}
 
-      await Promise.all(subResources.map(async subResource => {
-        const model = await loadAsStructureModel(subResource);
-        if (model) {
-          psmStores.push(model);
-          structureModels[subResource.id] = model;
-        }
-      }));
+/**
+ * Identifiers of the package and of all packages nested in it, the package
+ * itself first, followed by the packages it contains. Projects that are reused
+ * are part of the project structure as sub-packages, hence they are listed as
+ * well.
+ */
+function listPackages(rootPackageId: ModelIdentifier, projectModel: EntityRecord<ProjectModelEntity>): ModelIdentifier[] {
+  const packages: ModelIdentifier[] = [];
 
-      // Handle autosave
-      for (const model of psmStores) {
-        await store.addStore(model);
-        store.addEventListener("afterOperationExecuted", () => model.saveIfNewChanges());
+  const visited = new Set<ModelIdentifier>();
+  const toVisit = [rootPackageId];
+
+  for (let i = 0; i < toVisit.length; i++) {
+    const packageId = toVisit[i]!;
+    if (visited.has(packageId)) {
+      continue;
+    }
+    visited.add(packageId);
+
+    const packageEntity = projectModel[packageId] as ProjectModelEntity | undefined;
+    if (packageEntity === undefined || !isPackageEntity(packageEntity)) {
+      // Models other than packages, and packages that are not part of the
+      // project structure (anymore), are skipped.
+      continue;
+    }
+
+    packages.push(packageId);
+    toVisit.push(...packageEntity.subModels);
+  }
+
+  return packages;
+}
+
+/**
+ * Identifiers of the controlled vocabulary models contained in the package and
+ * in all packages nested in it.
+ */
+function listControlledVocabularyModels(rootPackageId: ModelIdentifier, projectModel: EntityRecord<ProjectModelEntity>): ModelIdentifier[] {
+  const vocabularies = new Set<ModelIdentifier>();
+
+  for (const packageId of listPackages(rootPackageId, projectModel)) {
+    for (const subModelId of (projectModel[packageId] as PackageEntity).subModels) {
+      if (projectModel[subModelId]?.modelType === CONTROLLED_VOCABULARY_MODEL) {
+        vocabularies.add(subModelId);
       }
+    }
+  }
 
-      let semanticModel: SemanticModelAggregator;
-      let usedSemanticModels: InMemorySemanticModel[] = [];
-      let compositionConfiguration = specification.modelCompositionConfiguration as ModelCompositionConfiguration | null;
-      const builder = new SemanticModelAggregatorBuilder(pckg, fetch);
-      if (compositionConfiguration) {
-        semanticModel = await builder.build(compositionConfiguration);
-      } else {
-        semanticModel = await builder.build({
-          modelType: "merge",
-          models: null,
-        } as ModelCompositionConfigurationMerge);
-      }
-      usedSemanticModels = builder.getUsedEntityModels();
-      if (specification.id === dataSpecificationIri) {
-        semanticModelAggregator = semanticModel;
-      }
+  return [...vocabularies];
+}
 
-      const storeForFBS = new AggregatorAsEntityModel(semanticModel, specification.id) as unknown as CoreResourceReader;
-      await store.addStore(storeForFBS); // todo typings
-
-      // This loop updates every semantic model
-      // ! semantic model is updated twice!!
-      for (const model of usedSemanticModels) {
-        const id = model.getId();
-        let hasUnsavedChanges = false;
-        model.subscribeToChanges(() => {
-          hasUnsavedChanges = true;
-        });
-        store.addEventListener("afterOperationExecuted", async () => {
-          if (hasUnsavedChanges) {
-            hasUnsavedChanges = false;
-
-            const remoteModel = await cachedModelRepository.getModelById(id);
-            const blobModel = (await remoteModel?.asBlobModel()) as WritableBlobModel | undefined;
-            if (blobModel) {
-              await blobModel.setJsonBlob(model.serializeModel());
-            }
-          }
-        });
-      }
-
-      // @ts-ignore Each specification should have its own semantic model, not merged with other specifications
-      specification.semanticModel = semanticModel;
-
-      // Each specification may have multiple configurations, but in reality we use only the first one.
-      const configurationStore = specification.artifactConfigurations?.[0]?.id ?? null;
-      const configurationModel = configurationStore ? await (await cachedModelRepository.getModelById(configurationStore))?.asBlobModel() : undefined;
-      const configuration = configurationModel ? ((await configurationModel.getJsonBlob()) as Record<string, object>) : {};
-      // @ts-ignore This inserts the configuration into the specification
-      specification.artefactConfiguration = configuration;
+/**
+ * Whether there is anything to aggregate for the package, i.e. whether it or
+ * any package nested in it contains a semantic model.
+ */
+function hasSemanticModel(packageId: ModelIdentifier, projectModel: EntityRecord<ProjectModelEntity>): boolean {
+  return listPackages(packageId, projectModel).some((nestedPackageId) =>
+    (projectModel[nestedPackageId] as PackageEntity).subModels.some((subModelId) => {
+      const subModel = projectModel[subModelId];
+      return subModel !== undefined && isSemanticModelType(subModel.modelType);
     }),
   );
+}
+
+/**
+ * Loads a data specification for structure modeling. This means loading all
+ * semantic models and structure models, including configuration, of the given
+ * package and of all packages nested in it.
+ *
+ * Only packages that contain structures are specifications on their own, the
+ * remaining ones are just a part of the hierarchy.
+ */
+function loadDataSpecifications(
+  rootDataSpecificationId: ModelIdentifier,
+  projectModel: EntityRecord<ProjectModelEntity>,
+  models: Record<ModelIdentifier, EntityRecord>,
+): Record<string, DataSpecification> {
+  const dataSpecifications: { [iri: string]: DataSpecification } = {};
+
+  for (const packageId of listPackages(rootDataSpecificationId, projectModel)) {
+    const specification = getDataSpecification(packageId, projectModel, models[packageId] ?? (null as EntityRecord | null));
+    if (specification.dataStructures.length > 0 || packageId === rootDataSpecificationId) {
+      dataSpecifications[packageId] = specification;
+    }
+  }
+
+  return dataSpecifications;
+}
+
+
+/**
+ * Returns metadata about the data specification.
+ * @param projectId The ID of the data specification (project).
+ * @param projectModel The project model containing the full hierarchy of models inside the project.
+ * @param rootModel The root model may contain configuration for the data specification.
+ */
+export function getDataSpecification(projectId: string, projectModel: EntityRecord<ProjectModelEntity>, rootModel: EntityRecord | null): DataSpecification & Package {
+  const mainPackage = projectModel[projectId] as PackageEntity | undefined;
+  const subResourceIds = mainPackage?.subModels ?? [];
+  if (!rootModel) {
+    console.error(`Package with ID ${projectId} has no root model.`);
+  }
+  const rawModelData: any = rootModel?.[projectId] ?? {};
+
+  // Resolve actual resources from project model
+  const subResources = subResourceIds.map((id) => projectModel[id]).filter((r) => r !== undefined);
+
+  const dataStructures = subResources
+    .filter((r) => r.modelType === V1.PSM)
+    .map((ds) => ({
+      id: ds.id,
+      label: ds.label || {},
+    }));
+
+  const artifactConfigurations = subResources
+    .filter((r) => r.modelType === V1.GENERATOR_CONFIGURATION)
+    .map((ds) => ({
+      id: ds.id,
+      label: ds.label || {},
+    }));
 
   return {
-    dataSpecifications: specifications,
-    semanticModelAggregator,
-    store: store as FederatedObservableStore,
+    ...projectModelToPackage(projectId, projectModel),
 
-    structureModels,
+    id: projectId,
+    type: LegacyDataSpecification.TYPE_DOCUMENTATION,
+
+    label: mainPackage?.label || {},
+    tags: [], // todo
+
+    localSemanticModelIds: rawModelData.localSemanticModelIds ?? [],
+    modelCompositionConfiguration: rawModelData.modelCompositionConfiguration ?? null,
+    dataStructures,
+    importsDataSpecificationIds: rawModelData.dataStructuresImportPackages ?? [],
+
+    artifactConfigurations,
+
+    userPreferences: rawModelData.userPreferences ?? {},
+  };
+}
+
+/**
+ * Obtains data from the project model and returns a legacy data structure about the package.
+ * @todo do we need everything?
+ */
+function projectModelToPackage(packageId: string, projectModel: EntityRecord<ProjectModelEntity>): Package {
+  const packageEntity = projectModel[packageId] as PackageEntity | undefined;
+  const subResourceIds = packageEntity?.subModels ?? [];
+  const subResources: BaseResource[] = [];
+
+  for (const subResourceId of subResourceIds) {
+    const subResource = projectModel[subResourceId];
+    if (subResource) {
+      if (subResource.modelType === LOCAL_PACKAGE) {
+        subResources.push(projectModelToPackage(subResourceId, projectModel));
+      } else {
+        subResources.push({
+          iri: subResource.id,
+          types: [subResource.modelType],
+          userMetadata: {
+            label: subResource.label || {},
+          },
+          metadata: null as any,
+        } as BaseResource);
+      }
+    }
+  }
+
+  return {
+    iri: packageId,
+    types: [packageEntity?.modelType ?? LOCAL_PACKAGE],
+    userMetadata: {
+      label: packageEntity?.label || {},
+    },
+    metadata: null as any,
+    subResources,
   };
 }

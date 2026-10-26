@@ -10,9 +10,10 @@
   "main": "lib/index.js",
   "dependencies": {
     "@dataspecer/core": "*",
+    "@dataspecer/generators": "^0.0.0",
     "@dataspecer/xml": "*"
   },
   "devDependencies": {
-    "typescript": "^6.0.3"
+    "typescript": "^7.0.2"
   }
 }

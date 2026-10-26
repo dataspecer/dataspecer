@@ -7,19 +7,19 @@ import {
 import {
   getViewportCenterForClassPlacement,
 } from "./utilities";
-import { ModelGraphContextType, UseModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { createNewVisualModelAction } from "./create-new-visual-model-from-source-visual-model";
 import { LanguageString } from "@dataspecer/core-v2/semantic-model/concepts";
 import { removeFromVisualModelByVisualAction } from "./remove-from-visual-model-by-visual";
-import { UseDiagramType } from "@/diagram/diagram-hook";
+import { UseDiagramType } from "../diagram/diagram-hook";
 
 /**
  * @returns Identifier of the created visual diagram node
  */
 export function addVisualDiagramNodeForNewModelToVisualModelAction(
   notifications: UseNotificationServiceWriterType,
-  graph: ModelGraphContextType,
+  graph: UseModelGraphContextType,
   useGraph: UseModelGraphContextType,
   diagram: UseDiagramType,
   visualModel: WritableVisualModel,
@@ -38,7 +38,7 @@ export function addVisualDiagramNodeForNewModelToVisualModelAction(
   // Just use the center of screen instead of layouting, User will want to play with it anyways.
   const position = getViewportCenterForClassPlacement(diagram);
 
-  const visualDiagramNode: Omit<VisualDiagramNode, "identifier" | "type"> = {
+  const visualDiagramNode: Omit<VisualDiagramNode, "id" | "type"> = {
     position: {
       ...position,
       anchored: null
@@ -79,20 +79,20 @@ function rerouteAllRelevantEdgesTotheVisualDiagramNode(
       const isTargetInsideVisualDiagramNode = nodesInsideTheVisualDiagramNode.includes(visualEntity.visualTarget);
       if (isSourceInsideVisualDiagramNode && isTargetInsideVisualDiagramNode) {
         // Both ends are inside the newly created visual model representing visual diagram node, so we have to delete it
-        edgesToRemove.push(visualEntity.identifier);
+        edgesToRemove.push(visualEntity.id);
       }
       else if (isSourceInsideVisualDiagramNode && !isTargetInsideVisualDiagramNode) {
         edgesToUpdate.push({
           visualSource: visualDiagramNode,
           visualTarget: visualEntity.visualTarget,
-          edgeIdentifier: visualEntity.identifier
+          edgeIdentifier: visualEntity.id
         });
       }
       else if (!isSourceInsideVisualDiagramNode && isTargetInsideVisualDiagramNode) {
         edgesToUpdate.push({
           visualSource: visualEntity.visualSource,
           visualTarget: visualDiagramNode,
-          edgeIdentifier: visualEntity.identifier
+          edgeIdentifier: visualEntity.id
         });
       }
     }

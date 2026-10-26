@@ -1,24 +1,31 @@
 import {
   EntityDsIdentifier,
   ModelDsIdentifier,
-} from "@/dataspecer/entity-model";
+} from "../../../dataspecer/entity-model";
 import { SemanticProfileModelOperations } from "@dataspecer/profile-model";
+import { Entity } from "@dataspecer/core-v2";
 
-import { CmeOperationArguments, CmeOperationResult } from "../../operation";
-import { CmeExecutionContext, register } from "../../operation-registry";
 import { findProfileModel } from "../operation-utilities";
-import { Entity } from "@dataspecer/entity-model";
+import { cmeOperationExecutorRegistry } from "../../operation-registry";
+import {
+  CmeExecutionContext,
+  CmeOperation,
+  CmeOperationArguments,
+  CmeOperationResult,
+  ModelIsNotWritable,
+} from "../../operation";
+import { isInMemoryProfileModel } from "../../../dataspecer/profile-model";
 
-const ProfileEntitiesType = "profile-entities-operation";
+export function profileEntitiesOperation(
+  args: Omit<ProfileEntitiesArguments, "type">,
+): CmeOperation<ProfileEntitiesArguments, ProfileEntitiesResult> {
+  return {
+    type: ProfileEntitiesType,
+    ...args,
+  };
+}
 
-register(
-  ProfileEntitiesType,
-  createDefaultProfilesExecutor,
-  "Profile entities",
-  "Create profiles for selected entities in the given model."
-);
-
-export interface ProfileEntities extends CmeOperationArguments {
+export interface ProfileEntitiesArguments extends CmeOperationArguments {
 
   type: typeof ProfileEntitiesType;
 
@@ -34,7 +41,10 @@ export interface ProfileEntities extends CmeOperationArguments {
 
 }
 
-type ProfileEntitiesResult = CmeOperationResult<ProfileEntities> & {
+const ProfileEntitiesType = "profile-entities-operation";
+
+interface ProfileEntitiesResult
+  extends CmeOperationResult<ProfileEntitiesArguments> {
 
   classProfiles: EntityDsIdentifier[];
 
@@ -44,33 +54,41 @@ type ProfileEntitiesResult = CmeOperationResult<ProfileEntities> & {
 
 };
 
-export type ProfileEntitiesOperation = [
-  ProfileEntities, ProfileEntitiesResult];
+cmeOperationExecutorRegistry.register(
+  ProfileEntitiesType,
+  profileEntitiesOperation,
+  { execute: createProfilesExecutor },
+)
 
-export async function createDefaultProfilesExecutor(
+export async function createProfilesExecutor(
   context: CmeExecutionContext,
-  args: ProfileEntities,
+  args: ProfileEntitiesArguments,
 ): Promise<ProfileEntitiesResult> {
-  // Collect entities.
-  const entitiesToProfile: Entity[] = [];
-  const models = new Set([
-    ...context.semanticModels,
-    ...context.profileModels,
-  ]);
-  for (const model of models) {
-    const entities = model.getEntities();
+
+  // Collect entities to profile.
+  const entities: Entity[] = [];
+  Object.values(context.semanticModels).forEach(model => {
     args.entities
-      .map(identifier => entities[identifier])
+      .map(item => model.getEntities()[item])
       .filter(item => item !== undefined)
-      .forEach(item => entitiesToProfile.push(item));
+      .forEach(entity => entities.push(entity));
+  });
+  Object.values(context.profileModels).forEach(model => {
+    args.entities
+      .map(item => model.getEntities()[item])
+      .filter(item => item !== undefined)
+      .forEach(entity => entities.push(entity));
+  });
+
+  // Obtain model to save profiles into.
+  const targetModel = findProfileModel(context, args.profileModel);
+  if (!isInMemoryProfileModel(targetModel)) {
+    throw new ModelIsNotWritable();
   }
 
   // Execute operation.
-  const result = await SemanticProfileModelOperations.profileEntities({
-    targetModel: findProfileModel(context, args),
-  }, {
-    entities: entitiesToProfile,
-  });
+  const result = await SemanticProfileModelOperations.profileEntities(
+    { targetModel }, { entities });
 
   // Return result.
   return {

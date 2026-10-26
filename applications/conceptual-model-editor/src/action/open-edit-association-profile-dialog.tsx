@@ -2,7 +2,8 @@ import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-mem
 import { VisualModel } from "@dataspecer/visual-model";
 
 import { DialogApiContextType } from "../dialog/dialog-service";
-import { ModelGraphContextType } from "../context/model-context";
+import { UseModelGraphContextType } from "../context/model-context";
+import { ClassesContext } from "../context/classes-context";
 import { Options } from "../application";
 import {
   isSemanticModelRelationshipProfile,
@@ -21,6 +22,7 @@ import {
 import { createLogger } from "../application";
 import { InvalidState } from "../application/error";
 import { LabelResolver } from "../dependency-tracker";
+import { applyVisualColorFromDialog } from "./utilities/visual-color-utilities";
 
 const LOG = createLogger(import.meta.url);
 
@@ -31,14 +33,15 @@ export function openEditAssociationProfileDialogAction(
   cmeExecutor: CmeModelOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
-  graph: ModelGraphContextType,
+  classes: ClassesContext,
+  graph: UseModelGraphContextType,
   visualModel: VisualModel | null,
   model: InMemorySemanticModel,
   entity: SemanticModelRelationshipProfile,
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
 ) {
-  const aggregate = graph.aggregatorView.getEntities()?.[entity.id];
+  const aggregate = graph.getEntities()?.[entity.id];
   const rawEntity = aggregate?.rawEntity;
   const aggregatedEntity = aggregate?.aggregatedEntity;
   if (!isSemanticModelRelationshipProfile(rawEntity)
@@ -49,7 +52,7 @@ export function openEditAssociationProfileDialogAction(
 
   const initialState = createEditAssociationProfileDialogState(
     visualModel, options.language, model, rawEntity, aggregatedEntity,
-    graph.models, tracker, labelResolver);
+    classes.semanticModels, tracker, labelResolver);
 
   const onConfirm = (state: AssociationProfileDialogState) => {
     cmeExecutor.updateRelationshipProfile({
@@ -60,6 +63,9 @@ export function openEditAssociationProfileDialogAction(
       { identifier: entity.id, model: model.getId() },
       state.model.identifier,
       initialState.specializations, state.specializations);
+
+    applyVisualColorFromDialog(
+      classes, visualModel, entity.id, initialState, state);
   };
 
   dialogs.openDialog(createEditAssociationProfileDialog(initialState, onConfirm));

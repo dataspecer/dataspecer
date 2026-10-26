@@ -1,5 +1,5 @@
 import { LOCAL_SEMANTIC_MODEL } from "@dataspecer/core-v2/model/known-models";
-import { resourceModel } from "../main.ts";
+import { modelRepository } from "../main.ts";
 import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
 import { z } from "zod";
@@ -12,7 +12,7 @@ export const getSimplifiedSemanticModel = asyncHandler(async (request: express.R
     });
     const query = querySchema.parse(request.query);
 
-    const resource = await resourceModel.getResource(query.iri);
+    const resource = await modelRepository.getResource(query.iri);
 
     if (!resource) {
         response.status(404).send({error: "Resource does not exist."});
@@ -24,8 +24,8 @@ export const getSimplifiedSemanticModel = asyncHandler(async (request: express.R
         return;
     }
 
-    const data = await (await resourceModel.getOrCreateResourceModelStore(query.iri)).getJson();
-    const entities = data.entities as Record<string, SemanticModelEntity>;
+    const data = await modelRepository.getResourceStoreJson(query.iri);
+    const entities = (data?.entities ?? {}) as Record<string, SemanticModelEntity>;
 
     const simplifiedModel = semanticModelToSimplifiedSemanticModel(entities, {});
 
@@ -39,7 +39,7 @@ export const setSimplifiedSemanticModel = asyncHandler(async (request: express.R
     });
     const query = querySchema.parse(request.query);
 
-    const resource = await resourceModel.getResource(query.iri);
+    const resource = await modelRepository.getResource(query.iri);
 
     if (!resource) {
         response.status(404).send({error: "Resource does not exist."});
@@ -51,14 +51,12 @@ export const setSimplifiedSemanticModel = asyncHandler(async (request: express.R
         return;
     }
 
-    const modelStore = await resourceModel.getOrCreateResourceModelStore(query.iri);
-
-    const data = await modelStore.getJson();
-    const entities = data.entities as Record<string, SemanticModelEntity>;
+    const data = (await modelRepository.getResourceStoreJson(query.iri)) ?? { modelId: query.iri };
+    const entities = (data.entities ?? {}) as Record<string, SemanticModelEntity>;
 
     const newEntities = simplifiedSemanticModelToSemanticModel(request.body, entities);
 
     data.entities = newEntities;
-    await modelStore.setJson(data);
+    await modelRepository.setModelJson(query.iri, data);
     response.sendStatus(204);
 });

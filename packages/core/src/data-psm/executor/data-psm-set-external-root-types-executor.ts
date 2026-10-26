@@ -7,10 +7,10 @@ export function executeDataPsmSetExternalRootTypes(
   createNewIdentifier: CreateNewIdentifier,
   operation: DataPsmSetExternalRootTypes
 ): CoreExecutorResult {
-  const resource = reader.readResource(operation.dataPsmExternalRoot);
+  const resource = reader.readResource(operation.entityId);
   if (resource == null) {
     return CoreExecutorResult.createError(
-      `Missing data-psm resource '${operation.dataPsmExternalRoot}'.`
+      `Missing data-psm resource '${operation.entityId}'.`
     );
   }
 

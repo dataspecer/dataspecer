@@ -7,5 +7,5 @@ Schema is represented by `DataPsmSchema`, which is a root of the PSM tree. Then,
 This directory is divided into several subdirectories:
 - [adapter](adapter) - contains functionality to recreate or save the model, such as RDF representation
 - [model](model) - classes representing PSM entities - class, attribute, class reference, etc.
-- [operation](operation) - `CoreOperation` to manipulate the model, such as create class, remove the attribute, etc.
+- [operation](operation) - `Operation` to manipulate the model, such as create class, remove the attribute, etc.
 - [executor](executor) - methods that can execute the operations above and modify the model
