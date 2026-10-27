@@ -1,6 +1,6 @@
 import { controlledVocabulariesToDcatCatalog, controlledVocabularyCatalogIri, type ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 import { CONTROLLED_VOCABULARY_MODEL, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL, V1, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
-import { getSemanticModelMainEntity, isMainSemanticModelEntity, isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship, SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
+import { getSemanticModelMainEntity, isMainSemanticModelEntity, isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship, SemanticModelEntity, type MainSemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
 import { isModelProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { withAbsoluteIri } from "@dataspecer/core-v2/semantic-model/utils";
 import { LanguageString, type CoreResource } from "@dataspecer/core/core/core-resource";
@@ -213,7 +213,8 @@ export async function generateSpecification(packageId: string, context: Generate
     const semanticModels = children.filter((r) => r.modelType === LOCAL_SEMANTIC_MODEL);
     for (const semanticModel of semanticModels) {
       const modelEntities = allModels[semanticModel.id] ?? {};
-      const mainEntity = modelEntities[semanticModel.id];
+      const mainEntity = modelEntities[semanticModel.id] as MainSemanticModelEntity | undefined;
+      const isSourced = !!mainEntity?.source;
       const baseIri = mainEntity && isMainSemanticModelEntity(mainEntity) ? mainEntity.baseIri ?? null : null;
       const entities = Object.fromEntries(Object.entries(modelEntities).filter(([id]) => id !== semanticModel.id));
 
@@ -225,8 +226,8 @@ export async function generateSpecification(packageId: string, context: Generate
       modelDescriptions.push({
         id: semanticModel.id,
         entities: Object.fromEntries(Object.entries(entities).map(([id, entity]) => [id, withAbsoluteIri(entity as SemanticModelEntity, baseIri ?? undefined)])),
-        isPrimary: isRoot && !(mainEntity && isMainSemanticModelEntity(mainEntity) && isRdfsSnapshot(mainEntity.source)),
-        documentationUrl: (pckgEntity as any).documentBaseUrl ?? null,
+        isPrimary: isRoot && !isSourced,
+        documentationUrl: isSourced ? null : ((pckgEntity as any).documentBaseUrl ?? null),
         baseIri,
         title: semanticModel.label,
       });
@@ -402,7 +403,7 @@ export async function generateSpecification(packageId: string, context: Generate
       // We need to obtain IRI of the application profile/vocabulary which is the base IRI of the semantic model.
 
       const importedPackageChildren = getSubModelEntities(projectModel, entity.id);
-      const semanticModel = importedPackageChildren.find((m) => m.modelType === LOCAL_SEMANTIC_MODEL);
+      const semanticModel = importedPackageChildren.find((m) => m.modelType === LOCAL_SEMANTIC_MODEL && !getModelBlobData(allModels, m.id)?.source); // We need to find model that is made by the user, not imported.
       if (semanticModel) {
         const data = getModelBlobData(allModels, semanticModel.id) as any;
         const baseIri = data?.baseIri ?? "";
