@@ -16,6 +16,7 @@
     "@dataspecer/documentation": "*",
     "@dataspecer/layout": "*",
     "@dataspecer/ofn-vocabularies": "*",
+    "@dataspecer/rdfs": "*",
     "@dataspecer/specification": "*",
     "@dataspecer/visual-model": "*",
     "@monaco-editor/react": "^4.6.0",

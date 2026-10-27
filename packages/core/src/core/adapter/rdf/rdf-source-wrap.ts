@@ -1,4 +1,5 @@
 import { RdfNode, RdfObject, RdfSource } from "./rdf-api.ts";
+import type { Literal } from "@rdfjs/types";
 import {RdfMemorySource} from "../../../io/rdf/rdf-memory-source.ts";
 
 const TYPE = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type";
@@ -85,7 +86,7 @@ export class RdfSourceWrap {
     }
   }
 
-  async literal(predicate: string): Promise<RdfObject | null> {
+  async literal(predicate: string): Promise<Literal | null> {
     const values = await this.property(predicate);
     if (values.length == 0) {
       return null;
@@ -98,7 +99,7 @@ export class RdfSourceWrap {
     return null;
   }
 
-  async literals(predicate: string): Promise<RdfObject[]> {
+  async literals(predicate: string): Promise<Literal[]> {
     const properties = await this.property(predicate);
     return properties.filter(RdfObject.isLiteral);
   }
@@ -229,7 +230,7 @@ export class RdfMemorySourceWrap {
     }
   }
 
-  literal(predicate: string): RdfObject | null {
+  literal(predicate: string): Literal | null {
     const values = this.property(predicate);
     if (values.length == 0) {
       return null;
@@ -242,7 +243,7 @@ export class RdfMemorySourceWrap {
     return null;
   }
 
-  literals(predicate: string): RdfObject[] {
+  literals(predicate: string): Literal[] {
     const properties = this.property(predicate);
     return properties.filter(RdfObject.isLiteral);
   }

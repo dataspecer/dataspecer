@@ -1,4 +1,4 @@
-import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, CONTROLLED_VOCABULARY_MODEL, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, CONTROLLED_VOCABULARY_MODEL, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
 import { AppWindowMac, BookOpen, Code, Cog, Eye, Folder, Globe2, LibraryBig } from "lucide-react";
 import { v4 as uuidv4 } from 'uuid';
@@ -159,7 +159,6 @@ export const modelTypeToName = {
     [V1.PSM]: "PSM",
     [V1.GENERATOR_CONFIGURATION]: "Generator configuration",
     [QUERYABLE_MODEL]: "SSP",
-    [RDFS_MODEL]: "PIM Wrapper",
     [API_SPECIFICATION_MODEL]: "OpenAPI Specification",
     [APPLICATION_GRAPH]: "Application graph",
     [CONTROLLED_VOCABULARY_MODEL]: "Controlled vocabulary",
@@ -186,9 +185,6 @@ export const ModelIcon = ({ type, className }: { type: string[], className?: str
   }
   if (type.includes(QUERYABLE_MODEL)) {
     return <Globe2 className={cn("text-green-400", className)} />;
-  }
-  if (type.includes(RDFS_MODEL)) {
-    return <LibraryBig className={cn("text-orange-400", className)} />;
   }
   if (type.includes(API_SPECIFICATION_MODEL)) {
     return <span className={cn("aspect-square w-[24px] leading-[24px] align-middle text-center text-blue-800 font-bold text-xs", className)} >API</span>;

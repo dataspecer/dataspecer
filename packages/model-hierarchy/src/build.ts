@@ -1,14 +1,16 @@
+import { getSemanticModelMainEntity, isMainSemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
 import { isModelProfile, isSemanticModelClassProfile, isSemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import { PROJECT_MODEL_ID, isPackageEntity, type ProjectModelEntity, type PackageEntity } from "@dataspecer/core/project-model";
 import { MODEL_HIERARCHY_APPLICATION_PROFILE, MODEL_HIERARCHY_VOCABULARY, MODEL_HIERARCHY_SPECIFICATION, type ModelHierarchyEntity, type SpecificationHierarchyEntity, type VocabularyHierarchyEntity, type ApplicationProfileHierarchyEntity } from "./entities.ts";
+import { isRdfsSnapshot } from "@dataspecer/rdfs/semantic-model";
 
 export { PROJECT_MODEL_ID } from "@dataspecer/core/project-model";
 
 export function isSemanticModelType(modelType: string): boolean {
-  return [LOCAL_SEMANTIC_MODEL, V1.CIM, V1.PIM, QUERYABLE_MODEL, RDFS_MODEL].includes(modelType);
+  return [LOCAL_SEMANTIC_MODEL, V1.CIM, V1.PIM, QUERYABLE_MODEL].includes(modelType);
 }
 
 /**
@@ -39,7 +41,7 @@ export function isModelHierarchyRelevantChange(entityChanges: Record<ModelIdenti
     if (modelId === PROJECT_MODEL_ID) {
       return true;
     }
-    if (changes.some((change) => [change.previous, change.next].some((entity) => entity && (isSemanticModelClassProfile(entity) || isSemanticModelRelationshipProfile(entity))))) {
+    if (changes.some((change) => [change.previous, change.next].some((entity) => entity && (isMainSemanticModelEntity(entity) || isSemanticModelClassProfile(entity) || isSemanticModelRelationshipProfile(entity))))) {
       return true;
     }
   }
@@ -82,7 +84,7 @@ class ModelHierarchyBuilder {
           continue;
         }
         if (dependency.type[0] === MODEL_HIERARCHY_SPECIFICATION ||
-          (dependency.type[0] === MODEL_HIERARCHY_VOCABULARY && dependency.modelType !== LOCAL_SEMANTIC_MODEL)) {
+          (dependency.type[0] === MODEL_HIERARCHY_VOCABULARY && (dependency.modelType !== LOCAL_SEMANTIC_MODEL || isRdfsSnapshot(getSemanticModelMainEntity(this.models[id] ?? {})?.source)))) {
           externalSpecifications.push(id);
         }
       }
@@ -121,7 +123,7 @@ class ModelHierarchyBuilder {
           if (!this.entities[id]) {
             this.buildVocabularyHierarchyEntity(id, packageId);
           }
-          if (model.modelType === LOCAL_SEMANTIC_MODEL && !specification.vocabularies.includes(id)) {
+          if (model.modelType === LOCAL_SEMANTIC_MODEL && !isRdfsSnapshot(getSemanticModelMainEntity(this.models[id] ?? {})?.source) && !specification.vocabularies.includes(id)) {
             specification.vocabularies.push(id);
           }
         }

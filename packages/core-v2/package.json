@@ -41,7 +41,6 @@
   "dependencies": {
     "@dataspecer/controlled-vocabulary-model": "*",
     "@dataspecer/core": "*",
-    "@dataspecer/rdfs-adapter": "*",
     "@dataspecer/sgov-adapter": "*",
     "@dataspecer/utilities": "*",
     "@dataspecer/visual-model": "*",

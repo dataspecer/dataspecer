@@ -1,6 +1,8 @@
-import { CONTROLLED_VOCABULARY_MODEL, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { CONTROLLED_VOCABULARY_MODEL, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import {
   isCachedSubgraph,
+  getSemanticModelMainEntity,
+  isMainSemanticModelEntity,
   isSemanticModelClass,
   isSemanticModelRelationPrimitive,
   isSemanticModelRelationship,
@@ -10,8 +12,8 @@ import {
 import { isControlledVocabularyAssignment } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { DataTypeURIs, isDataType } from "@dataspecer/core-v2/semantic-model/datatypes";
 import { isModelProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { createRdfsModel } from "@dataspecer/core-v2/semantic-model/simplified";
-import { PimStoreWrapper, serializationToPimModelEntities } from "@dataspecer/core-v2/semantic-model/v1-adapters";
+import { createRdfsModel, reloadRdfsModel, isRdfsSnapshot } from "@dataspecer/rdfs/semantic-model";
+import { semanticModelEntitiesToSerialization } from "@dataspecer/core-v2/semantic-model";
 import { parseControlledVocabularyCatalog, type ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 import type { CoreResource } from "@dataspecer/core/core/core-resource";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
@@ -103,6 +105,12 @@ async function getExistingChildrenByUrl(repository: ModelRepositoryType, package
       if (url) {
         map.set(url, child.iri);
       }
+      if (child.types.includes(LOCAL_SEMANTIC_MODEL)) {
+        const main = getSemanticModelMainEntity((await repository.getModelEntities(child.iri)) ?? {});
+        if (isRdfsSnapshot(main?.source)) {
+          for (const sourceUrl of main.source.urls) map.set(sourceUrl, child.iri);
+        }
+      }
       if (child.types.includes(LOCAL_PACKAGE)) {
         const childPackage = await repository.getPackage(child.iri);
         for (const model of childPackage?.subResources ?? []) {
@@ -153,7 +161,7 @@ function getDominantBaseIri(entities: SemanticModelEntity[]): string | null {
 }
 
 /**
- * Finds an existing RDFS_MODEL child of the package whose stored entities
+ * Finds an existing RDFS snapshot child of the package whose stored entities
  * have the given dominant base IRI, ignoring any child whose iri is in
  * excludeIris (already claimed by a URL match or an earlier content match
  * during the same reload). Used to recognize a profiled vocabulary across a
@@ -164,10 +172,14 @@ function getDominantBaseIri(entities: SemanticModelEntity[]): string | null {
 async function findRdfsModelChildByBaseIri(repository: ModelRepositoryType, packageIri: string, baseIri: string, excludeIris: Set<string>): Promise<string | undefined> {
   const pkg = await repository.getPackage(packageIri);
   for (const child of pkg?.subResources ?? []) {
-    if (!child.types.includes(RDFS_MODEL) || excludeIris.has(child.iri)) {
+    if (!child.types.includes(LOCAL_SEMANTIC_MODEL) || excludeIris.has(child.iri)) {
       continue;
     }
-    const entities = Object.values((await repository.getModelEntities(child.iri)) ?? {}) as SemanticModelEntity[];
+    const model = (await repository.getModelEntities(child.iri)) ?? {};
+    if (!isRdfsSnapshot(getSemanticModelMainEntity(model)?.source)) {
+      continue;
+    }
+    const entities = Object.values(model).filter(entity => !isMainSemanticModelEntity(entity)) as SemanticModelEntity[];
     if (getDominantBaseIri(entities) === baseIri) {
       return child.iri;
     }
@@ -197,33 +209,22 @@ function deriveNameFromUrl(url: string): string {
  */
 async function fetchRdfsModel(urls: string[]) {
   const name = deriveNameFromUrl(urls[0]);
-  return await createRdfsModel(urls, httpFetch, { en: name});
+  return await createRdfsModel(uuidv4(), urls, httpFetch, { en: name });
 }
 
-/**
- * Persists an already-fetched RDFS wrapper under the given resource iri,
- * creating the resource if it doesn't exist yet or updating it otherwise.
- */
-async function persistRdfsModel(repository: ModelRepositoryType, parentIri: string, wrapper: Awaited<ReturnType<typeof fetchRdfsModel>>, newIri: string, userMetadata: any): Promise<SemanticModelEntity[]> {
-  const serialization = wrapper.serializeModel();
-  serialization.id = newIri;
-  serialization.label = userMetadata.label;
-  await ensureResource(repository, parentIri, newIri, RDFS_MODEL, userMetadata);
-  await repository.setModelJson(newIri, serialization);
-  return Object.values(wrapper.getEntities()) as SemanticModelEntity[];
+async function persistRdfsModel(repository: ModelRepositoryType, parentIri: string, entities: Awaited<ReturnType<typeof fetchRdfsModel>>, newIri: string, userMetadata: any): Promise<SemanticModelEntity[]> {
+  const main = getSemanticModelMainEntity(entities)!;
+  const vocabulary = { ...entities };
+  delete vocabulary[main.id];
+  const nextEntities = { ...vocabulary, [newIri]: { ...main, id: newIri, label: userMetadata.label ?? main.label } };
+  await ensureResource(repository, parentIri, newIri, LOCAL_SEMANTIC_MODEL, userMetadata);
+  await repository.setModelJson(newIri, semanticModelEntitiesToSerialization(nextEntities));
+  return Object.values(vocabulary) as SemanticModelEntity[];
 }
 
-/**
- * Creates a PIM Wrapper that imports an RDFS model. Model has IRI that needs to
- * be specified, but the IDs inside the model are stable. If the model exists,
- * it is updated.
- *
- * @todo This function should be merged with importRdfsAndDsv and PIM store
- * wrapper should be deprecated.
- */
 async function importRdfsModel(repository: ModelRepositoryType, parentIri: string, url: string, newIri: string, userMetadata: any): Promise<SemanticModelEntity[]> {
-  const wrapper = await fetchRdfsModel([url]);
-  return await persistRdfsModel(repository, parentIri, wrapper, newIri, userMetadata);
+  const entities = await fetchRdfsModel([url]);
+  return await persistRdfsModel(repository, parentIri, entities, newIri, userMetadata);
 }
 
 /**
@@ -384,12 +385,9 @@ async function importRdfsAndDsv(repository: ModelRepositoryType, parentIri: stri
 
   let vocabularyEntities: SemanticModelEntity[] = [];
   if (rdfsUrl) {
-    const wrapper = await createRdfsModel([rdfsUrl], httpFetch);
-    const serialization = wrapper.serializeModel();
-    const model = new PimStoreWrapper(serialization.pimStore, serialization.id, serialization.alias, serialization.urls);
-    model.fetchFromPimStore();
+    const model = await createRdfsModel(uuidv4(), [rdfsUrl], httpFetch);
 
-    for (const entity of Object.values(model.getEntities())) {
+    for (const entity of Object.values(model).filter(entity => !isMainSemanticModelEntity(entity))) {
       if (isSemanticModelClass(entity)) {
         knownMapping[entity.iri!] = entity.id;
       }
@@ -405,7 +403,7 @@ async function importRdfsAndDsv(repository: ModelRepositoryType, parentIri: stri
       }
     }
 
-    vocabularyEntities = Object.values(model.getEntities()) as SemanticModelEntity[];
+    vocabularyEntities = Object.values(model).filter(entity => !isMainSemanticModelEntity(entity)) as SemanticModelEntity[];
   }
   allImportedEntities.push(...vocabularyEntities.map((e) => ({ ...e }))); // We need to clone because the following function modifies iris
   if (vocabularyEntities.length > 0) {
@@ -436,7 +434,7 @@ async function importRdfsAndDsv(repository: ModelRepositoryType, parentIri: stri
     }
 
     // Parse and materialize this document's own embedded controlled
-    // vocabulary catalog before resolving the rest of the DSV below, 
+    // vocabulary catalog before resolving the rest of the DSV below,
     // so ControlledVocabularyAssignment references can already find them.
     const parsedVocabularies = parseControlledVocabularyCatalog(new N3.Parser().parse(data));
     for (const vocabulary of parsedVocabularies) {
@@ -601,8 +599,8 @@ async function dsvImport(repository: ModelRepositoryType, store: N3.Store, url: 
       continue;
     }
 
-    const wrapper = await fetchRdfsModel([profile.url]);
-    const baseIri = getDominantBaseIri(Object.values(wrapper.getEntities()) as SemanticModelEntity[]);
+    const snapshot = await fetchRdfsModel([profile.url]);
+    const baseIri = getDominantBaseIri(Object.values(snapshot).filter(entity => !isMainSemanticModelEntity(entity)) as SemanticModelEntity[]);
     const existingMatchIri = baseIri ? await findRdfsModelChildByBaseIri(repository, rootPackageId, baseIri, claimedExistingIris) : undefined;
     if (existingMatchIri) {
       claimedExistingIris.add(existingMatchIri);
@@ -611,7 +609,7 @@ async function dsvImport(repository: ModelRepositoryType, store: N3.Store, url: 
     const targetIri = existingMatchIri ?? uuidv4();
     touchedModelIds?.add(targetIri);
     const name = deriveNameFromUrl(profile.url);
-    const e = await persistRdfsModel(repository, rootPackageId, wrapper, targetIri, {
+    const e = await persistRdfsModel(repository, rootPackageId, snapshot, targetIri, {
       documentBaseUrl: profile.url,
       ...(name ? { label: { en: name } } : {}),
     });
@@ -764,44 +762,18 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
     return;
   }
 
-  // Check if it is a PIM wrapper and if so, we can reload it directly
-  if (existingResource.types.includes(RDFS_MODEL)) {
-    const previousEntities = (await modelRepository.getModelEntities(existingResource.iri))!;
-
-    const data = await modelRepository.getResourceStoreJson(existingResource.iri) as {urls: string[]};
-    const bodyUrls = (request.body as { urls?: string[] })?.urls;
-    if (bodyUrls) {
-      await modelRepository.setResourceStoreJson(existingResource.iri, { ...data, urls: bodyUrls });
-    }
-    const urls = bodyUrls ?? data.urls;
-    const newModel = await fetchRdfsModel(urls);
-    newModel.id = existingResource.iri;
-    // Intentionally skip store.setJson() — the blob stays unchanged.
-    // The diff is recorded as pending operations on an independent evolution branch.
-    const nextEntities = serializationToPimModelEntities(newModel.serializeModel() as object).entities;
-
-    const previousStates = { [existingResource.iri]: previousEntities };
-    const operations = diffModelEntitiesToOperations(existingResource.iri, RDFS_MODEL, previousEntities, nextEntities);
-
-    const projectIri = (await modelRepository.getProjectIri(existingResource.iri))!;
-    let evolutionBranchId: number | null = null;
-    if (query.apply) {
-      await modelRepository.applyTransactions(projectIri, [{ id: uuidv4(), operations }]);
-    } else {
-      evolutionBranchId = await modelRepository.recordEvolutionTransactions(projectIri, existingResource.iri, [{ id: uuidv4(), operations }], previousStates);
-    }
-
-    response.send({ ...(await modelRepository.getResource(existingResource.iri)), evolutionBranchId });
-    return;
-  }
-
   // Todo better detection of a semantic model and its subtype
   if (existingResource.types.includes(LOCAL_SEMANTIC_MODEL)) {
     const previousEntities = await modelRepository.getModelEntities(existingResource.iri);
     const mainEntity = previousEntities?.[existingResource.iri] as MainSemanticModelEntity | undefined;
     const source = mainEntity?.source;
-    if (isCachedSubgraph(source)) {
-      const nextEntities = await reloadCachedSemanticModel(previousEntities!);
+    if (isCachedSubgraph(source) || isRdfsSnapshot(source)) {
+      const urls = isRdfsSnapshot(source)
+        ? z.object({ urls: z.array(z.string().url()).optional() }).parse(request.body ?? {}).urls
+        : undefined;
+      const nextEntities = isRdfsSnapshot(source)
+        ? await reloadRdfsModel(previousEntities!, httpFetch, urls)
+        : await reloadCachedSemanticModel(previousEntities!);
       const operations = diffModelEntitiesToOperations(
         existingResource.iri,
         LOCAL_SEMANTIC_MODEL,
@@ -836,7 +808,7 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
 
   // Perform reload by re-importing into an in-memory staging overlay: the
   // stored package stays untouched and only the derived operations are
-  // recorded on the evolution branch, same as for the RDFS model above. The
+  // recorded on the evolution branch, same as for the semantic snapshot above. The
   // import reuses existing resource IRIs, so the diff pairs the old and new
   // state of each model.
   const previousModels = await getModelsForPackage(query.iri, modelRepository);

@@ -1,5 +1,5 @@
-import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
-import type { LanguageString } from "@dataspecer/core-v2/semantic-model/concepts";
+import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL } from "@dataspecer/core-v2/model/known-models";
+import type { LanguageString, MainSemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
 import { diffEntities, type Entity, type EntityRecord } from "@dataspecer/core/entity-model";
 import {
   createUpdateEntityOperation,
@@ -12,7 +12,6 @@ import {
   type Transaction,
   type UndoOperation,
 } from "@dataspecer/core/operation";
-import type { MainEntity } from "@dataspecer/model-store/implementation";
 import {
   createCreateModelOperation,
   createCreateProjectOperation,
@@ -981,11 +980,11 @@ export class ModelRepository implements ModelRepositoryType {
 
     if ("label" in toLegacyResourceMetadata && "label" in toUpdateOperation) {
       const currentModel = await this.getModelEntities(resourceId);
-      const labelChanged = !deepEqual((currentModel?.[resourceId] as MainEntity)?.label, toLegacyResourceMetadata.label);
+      const labelChanged = !deepEqual((currentModel?.[resourceId] as MainSemanticModelEntity)?.label, toLegacyResourceMetadata.label);
 
-      if (resource.types[0] === RDFS_MODEL || resource.types[0] === LOCAL_SEMANTIC_MODEL) {
+      if (resource.types[0] === LOCAL_SEMANTIC_MODEL) {
         if (labelChanged) {
-          const update: Partial<Omit<MainEntity, "id" | "type">> = { label: (toLegacyResourceMetadata.label as LanguageString | undefined) ?? {} };
+          const update: Partial<Omit<MainSemanticModelEntity, "id" | "type">> = { label: (toLegacyResourceMetadata.label as LanguageString | undefined) ?? {} };
           operations.push({ modelId: resourceId, operation: createUpdateEntityOperation(resourceId, update) });
         }
         // Label never goes to the resource metadata

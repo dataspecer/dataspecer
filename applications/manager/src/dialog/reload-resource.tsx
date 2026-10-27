@@ -6,12 +6,12 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useAsyncMemo } from "@/hooks/use-async-memo";
+import { useSemanticModelSource } from "@/hooks/use-semantic-model-source";
 import { usePreviousValue } from "@/hooks/use-previous-value";
 import { BetterModalProps } from "@/lib/better-modal";
 import { getEvolutionReviewLink, getHistoryLink } from "@/known-models";
 import { ResourcesContext, requestLoadPackage } from "@/package";
-import { RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
+import { isRdfsSnapshot } from "@dataspecer/rdfs/semantic-model";
 import { AlertCircleIcon, ChevronDown, Loader } from "lucide-react";
 import { useContext, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -27,9 +27,10 @@ export const ReloadResource = ({ id, parentId, isOpen, resolve }: ReloadResource
   const resources = useContext(ResourcesContext);
   const resource = usePreviousValue(resources[id]!);
 
-  // The RDFS wrapper model reloads from a list of URLs (textarea), any other
-  // reloadable resource (an imported specification) reloads from a single URL.
-  const isMultiUrl = resource.types.includes(RDFS_MODEL);
+  const [modelSource, isSourceLoading] = useSemanticModelSource(resource);
+  const source = modelSource?.source;
+  const isMultiUrl = isRdfsSnapshot(source);
+  const currentUrls = isMultiUrl ? source.urls.join("\n") : "";
 
   const urlInputFormId = useId();
   const textareaId = useId();
@@ -38,20 +39,11 @@ export const ReloadResource = ({ id, parentId, isOpen, resolve }: ReloadResource
   // @ts-ignore
   const importedUrl = resource.userMetadata?.importedFromUrl as string | undefined;
 
-  const [currentUrls] = useAsyncMemo(async () => {
-    if (!isMultiUrl) {
-      return "";
-    }
-    const response = await fetch(import.meta.env.VITE_BACKEND + "/resources/blob?iri=" + encodeURIComponent(id));
-    if (!response.ok) return "";
-    const data = (await response.json()) as { urls?: string[] };
-    return (data.urls ?? []).join("\n");
-  }, [id, isMultiUrl]);
-
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const doReload = async (apply: boolean) => {
+    if (isSourceLoading || modelSource?.error) return;
     setIsLoading(true);
     setError(null);
 
@@ -117,23 +109,23 @@ export const ReloadResource = ({ id, parentId, isOpen, resolve }: ReloadResource
                 <Input id={urlInputFormId} defaultValue={importedUrl} />
               </div>
             )}
-            {error && (
+            {(error || modelSource?.error) && (
               <Alert variant="destructive">
                 <AlertCircleIcon />
                 <AlertTitle>{t("reload-resource.error-title")}</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
+                <AlertDescription>{error ?? modelSource?.error}</AlertDescription>
               </Alert>
             )}
           </ModalBody>
           <ModalFooter>
             <div className="flex">
-              <Button type="submit" variant="default" className="rounded-r-none" disabled={isLoading}>
+              <Button type="submit" variant="default" className="rounded-r-none" disabled={isLoading || isSourceLoading || !!modelSource?.error}>
                 {isLoading && <Loader className="mr-2 h-4 w-4 animate-spin" />}
                 {t("reload-resource.reload")}
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button type="button" variant="default" className="rounded-l-none border-l border-l-destructive-foreground/30 px-2" disabled={isLoading}>
+                  <Button type="button" variant="default" className="rounded-l-none border-l border-l-destructive-foreground/30 px-2" disabled={isLoading || isSourceLoading || !!modelSource?.error}>
                     <ChevronDown className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>

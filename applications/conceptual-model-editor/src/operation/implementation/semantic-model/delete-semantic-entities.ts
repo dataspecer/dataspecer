@@ -74,7 +74,7 @@ export async function deleteSemanticEntitiesExecutor(
   const failed: DeleteSemanticEntitiesResult["failed"] = [];
   for (const item of args.entities) {
     const model = models.find(model => model.getId() === item.model);
-    if (model instanceof InMemorySemanticModel) {
+    if (model instanceof InMemorySemanticModel && !model.getMainEntity()?.source) {
       const result = model.executeOperation(deleteEntity(item.identifier));
       if (!result.success) {
         failed.push(item);

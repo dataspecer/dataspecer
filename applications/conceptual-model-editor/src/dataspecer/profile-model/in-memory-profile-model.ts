@@ -10,5 +10,5 @@ export {
 export function isInMemoryProfileModel(
   what: EntityModel,
 ): what is InMemorySemanticModel {
-  return what instanceof InMemorySemanticModel;
+  return what instanceof InMemorySemanticModel && !what.getMainEntity()?.source;
 }

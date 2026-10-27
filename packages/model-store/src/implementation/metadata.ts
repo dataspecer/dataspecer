@@ -1,11 +1,10 @@
-import { CONTROLLED_VOCABULARY_MODEL, LOCAL_SEMANTIC_MODEL, RDFS_MODEL, V1, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
+import { CONTROLLED_VOCABULARY_MODEL, LOCAL_SEMANTIC_MODEL, V1, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { getSemanticModelMetadata } from "@dataspecer/core-v2/semantic-model";
 import { getControlledVocabularyModelMetadata } from "@dataspecer/controlled-vocabulary-model";
 import { getStructureModelMetadata } from "@dataspecer/core/data-psm";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier, ModelMetadata } from "@dataspecer/core/model";
 import { getVisualModelMetadata } from "@dataspecer/visual-model";
-import { getPimModelMetadata } from "./pim-model.ts";
 
 /**
  * Extracts metadata (label, description) from a given model. Metadata is an
@@ -25,8 +24,6 @@ export function getModelMetadata(modelType: string, entities: EntityRecord, mode
       return getVisualModelMetadata(entities, modelId);
     case V1.PSM:
       return getStructureModelMetadata(entities, modelId);
-    case RDFS_MODEL:
-      return getPimModelMetadata(entities, modelId);
     case CONTROLLED_VOCABULARY_MODEL:
       return getControlledVocabularyModelMetadata(entities, modelId);
     default:

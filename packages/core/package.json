@@ -84,6 +84,7 @@
   },
   "dependencies": {
     "@dataspecer/utilities": "*",
+    "@rdfjs/types": "^2.0.1",
     "@types/jsonld": "^1.5.15",
     "@types/n3": "^1.26.4",
     "jsonld": "^9.0.0",

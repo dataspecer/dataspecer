@@ -22,6 +22,7 @@
     "@dataspecer/model-store": "*",
     "@dataspecer/ofn-vocabularies": "*",
     "@dataspecer/profile-model": "*",
+    "@dataspecer/rdfs": "*",
     "@dataspecer/specification": "*",
     "@dataspecer/structure-model": "*",
     "@dataspecer/utilities": "*",

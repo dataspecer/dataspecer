@@ -1,8 +1,10 @@
+import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import type { MainSemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
 import { SEMANTIC_MODEL_CLASS_PROFILE, SEMANTIC_MODEL_RELATIONSHIP_PROFILE } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { describe, expect, it } from "vitest";
-import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { PROJECT_MODEL_ID, PROJECT_MODEL_MODEL_ENTITY, type PackageEntity, type ProjectModelEntity } from "@dataspecer/core/project-model";
+import type { VocabularySourceRdfs } from "@dataspecer/rdfs/semantic-model";
+import { describe, expect, it } from "vitest";
 import { buildModelHierarchy, isModelHierarchyRelevantChange } from "./build.ts";
 
 function vocabulary(id: string, modelType = LOCAL_SEMANTIC_MODEL, projectId = "root"): ProjectModelEntity {
@@ -13,11 +15,16 @@ function packageEntity(id: string, subModels: string[], projectId = "root"): Pac
   return { ...vocabulary(id, LOCAL_PACKAGE, projectId), modelType: LOCAL_PACKAGE, subModels, reusedProjects: [] };
 }
 
-function modelRecords(entities: ProjectModelEntity[], profiles: string[] = []): Record<string, EntityRecord> {
+function modelRecords(entities: ProjectModelEntity[], profiles: string[] = [], snapshots: string[] = []): Record<string, EntityRecord> {
   const models: Record<string, EntityRecord> = Object.fromEntries(entities.map((entity) => [entity.id, {}]));
   models[PROJECT_MODEL_ID] = Object.fromEntries(entities.map((entity) => [entity.id, entity]));
   for (const id of profiles) {
     models[id] = { item: { id: "item", type: [SEMANTIC_MODEL_CLASS_PROFILE] } };
+  }
+  for (const id of snapshots) {
+    const source: VocabularySourceRdfs = { type: "snapshot", provider: "rdfs", urls: [] };
+    const main: MainSemanticModelEntity = { id, type: [LOCAL_SEMANTIC_MODEL], label: {}, source };
+    models[id][id] = main;
   }
   return models;
 }
@@ -26,13 +33,13 @@ describe("buildModelHierarchy", () => {
   it("records local definitions and direct specification dependencies", () => {
     const models = modelRecords([
       packageEntity("root", ["local", "other-local", "profile", "rdfs", "vocabulary-package", "profile-package", "structure"]),
-      vocabulary("local"), vocabulary("other-local"), vocabulary("profile"), vocabulary("rdfs", RDFS_MODEL),
+      vocabulary("local"), vocabulary("other-local"), vocabulary("profile"), vocabulary("rdfs"),
       vocabulary("structure", "structure"),
       packageEntity("vocabulary-package", ["nested-local", "nested-import"]),
       vocabulary("nested-local"), vocabulary("nested-import", QUERYABLE_MODEL),
       packageEntity("profile-package", ["nested-profile", "profile-source"], "reused"),
       vocabulary("nested-profile", LOCAL_SEMANTIC_MODEL, "reused"), vocabulary("profile-source", LOCAL_SEMANTIC_MODEL, "reused"),
-    ], ["profile", "nested-profile"]);
+    ], ["profile", "nested-profile"], ["rdfs"]);
     const before = structuredClone(models);
     const hierarchy = buildModelHierarchy("root", models);
     expect(hierarchy.root).toMatchObject({ type: ["specification"], vocabularies: ["local", "other-local"], applicationProfile: "profile", usedExternalSpecifications: ["rdfs", "vocabulary-package", "profile-package"] });
@@ -50,8 +57,8 @@ describe("buildModelHierarchy", () => {
   it("includes legacy and imported models without exporting them as local definitions", () => {
     const models = modelRecords([
       packageEntity("root", ["local", "cim", "pim", "rdfs", "query"]), vocabulary("local"),
-      vocabulary("cim", V1.CIM), vocabulary("pim", V1.PIM), vocabulary("rdfs", RDFS_MODEL), vocabulary("query", QUERYABLE_MODEL),
-    ]);
+      vocabulary("cim", V1.CIM), vocabulary("pim", V1.PIM), vocabulary("rdfs"), vocabulary("query", QUERYABLE_MODEL),
+    ], [], ["rdfs"]);
     const hierarchy = buildModelHierarchy("root", models);
     expect(Object.keys(hierarchy)).toHaveLength(6);
     expect(hierarchy.root).toMatchObject({ vocabularies: ["local"], applicationProfile: null });

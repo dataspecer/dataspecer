@@ -18,5 +18,5 @@ export async function loadSgovEntityToResource(
 }
 
 function rdfObjectsToLanguageString(objects: RdfObject[]): LanguageString {
-  return Object.fromEntries(objects.map((o) => [o.language, o.value]));
+  return Object.fromEntries(objects.filter(RdfObject.isLiteral).map((o) => [o.language, o.value]));
 }

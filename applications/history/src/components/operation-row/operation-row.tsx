@@ -54,7 +54,7 @@ import {
   type ModifySemanticModelRelationshipProfile,
   type RemoveControlledVocabularyAssignment,
 } from "@dataspecer/core-v2/semantic-model/profile/operations";
-import { AddQueryOperationType, ReloadModelOperationType, RemoveQueryOperationType, SetModelUrlsOperationType } from "@dataspecer/model-store/implementation";
+import { AddQueryOperationType, RemoveQueryOperationType } from "@dataspecer/model-store/implementation";
 import { CreateModelOperationType, CreateProjectOperationType, RemoveModelOperationType, type CreateModelOperation, type CreateProjectOperation, type ProjectModelEntity, type RemoveModelOperation } from "@dataspecer/core/project-model";
 import {
   AddVisualDiagramNodeOperationType,
@@ -732,24 +732,6 @@ function SetViewRow({ operation }: OperationRowProps) {
 
 // #region Async queryable model operations
 
-function ReloadModelRow({ operation }: OperationRowProps) {
-  const { t } = useTranslation();
-  return (
-    <Row icon={Replace} colorClass="text-sky-600 dark:text-sky-400" operation={operation}>
-      <span>{t("history.op.reload-model")}</span>
-    </Row>
-  );
-}
-
-function SetModelUrlsRow({ operation }: OperationRowProps) {
-  const { t } = useTranslation();
-  return (
-    <Row icon={Pencil} colorClass="text-blue-600 dark:text-blue-400" operation={operation}>
-      <span>{t("history.op.set-model-urls")}</span>
-    </Row>
-  );
-}
-
 function AddQueryRow({ operation }: OperationRowProps) {
   const { t } = useTranslation();
   return (
@@ -1068,8 +1050,6 @@ const OPERATION_ROWS: Record<string, ComponentType<OperationRowProps>> = {
   [SetViewOperationType]: SetViewRow,
 
   // Imported vocabulary (RDFS) and queryable (SGOV) models.
-  [ReloadModelOperationType]: ReloadModelRow,
-  [SetModelUrlsOperationType]: SetModelUrlsRow,
   [AddQueryOperationType]: AddQueryRow,
   [RemoveQueryOperationType]: RemoveQueryRow,
 

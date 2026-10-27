@@ -5,7 +5,7 @@ import {
   type EntityModel,
   type SemanticModelAggregator,
 } from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
-import { LOCAL_SEMANTIC_MODEL, RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
+import { LOCAL_SEMANTIC_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship, type LanguageString } from "@dataspecer/core-v2/semantic-model/concepts";
 import { isModelProfile, isSemanticModelClassProfile, isSemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { diffEntities, type Entity, type EntityRecord } from "@dataspecer/core/entity-model";
@@ -132,17 +132,14 @@ export function branchModelLabelChange(modelStore: DefaultFrontendModelStore, br
   const modelType = modelTypesFromProjectModel(modelStore.getAllEntities()[modelStore.projectModelId] ?? {})[modelId];
   if (!modelType) return null;
 
-  if (modelType === RDFS_MODEL) {
+  if (modelType === LOCAL_SEMANTIC_MODEL) {
     const operations = branchOperationsByModel(branch).get(modelId);
     if (!operations || operations.length === 0) return null;
-
     const currentEntities = modelStore.getAllEntities()[modelId] ?? {};
     const current = getModelMetadata(modelType, currentEntities, modelId)?.label ?? {};
-
     const futureEntities = { ...currentEntities };
     applyToModel(futureEntities, operations, false, modelType);
     const future = getModelMetadata(modelType, futureEntities, modelId)?.label ?? {};
-
     return languageStringsEqual(current, future) ? null : { current, future };
   }
 
@@ -237,7 +234,7 @@ export function countBranchPendingChanges(models: Record<string, EntityRecord>, 
 // Models and dependency edges
 // ---------------------------------------------------------------------------
 
-const SEMANTIC_MODEL_TYPES: string[] = [LOCAL_SEMANTIC_MODEL, RDFS_MODEL];
+const SEMANTIC_MODEL_TYPES: string[] = [LOCAL_SEMANTIC_MODEL];
 
 /**
  * Entity records of all semantic models (vocabularies and application

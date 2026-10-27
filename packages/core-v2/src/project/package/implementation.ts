@@ -1,11 +1,12 @@
 import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import type { Transaction } from "@dataspecer/core/operation";
 import { EntityModel } from "../../entity-model/index.ts";
-import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, RDFS_MODEL } from "../../model/known-models.ts";
-import { createRdfsModel, createSgovModel } from "../../semantic-model/simplified/index.ts";
+import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL } from "../../model/known-models.ts";
+import { createSgovModel } from "../../semantic-model/simplified/index.ts";
 import { createInMemorySemanticModel } from "../../semantic-model/simplified/in-memory-semantic-model.ts";
 import { createVisualModel } from "../../semantic-model/simplified/visual-model.ts";
-import { PimStoreWrapper } from "../../semantic-model/v1-adapters/index.ts";
+import { semanticModelEntitiesToSerialization } from "../../semantic-model/writable-semantic-model-adapter.ts";
+import { v4 as uuidv4 } from "uuid";
 import { VisualModel } from "@dataspecer/visual-model";
 import { BaseResource, Package, ResourceEditable } from "@dataspecer/core/project-model/legacy";
 import { PackageService, SemanticModelPackageService } from "./package-service.ts";
@@ -161,12 +162,6 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
                 ? Object.values(semanticLabel)[0]
                 : modelSerialization.modelAlias ?? modelSerialization.alias;
 
-            if (modelSerialization.type === RDFS_MODEL) {
-                modelSerialization.label = {en: name};
-                delete modelSerialization.modelAlias;
-                delete modelSerialization.alias;
-            }
-
             const response = await this.httpFetch(this.getResourceUrl(iri));
             const userMetadata = semanticLabel
                 ? { label: semanticLabel }
@@ -222,7 +217,6 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
                     VISUAL_MODEL,
                     QUERYABLE_MODEL,
                     LOCAL_SEMANTIC_MODEL,
-                    RDFS_MODEL
                 ].includes(t))) {
                     if (!modelIds.includes(model.iri)) {
                         // Remove model
@@ -326,16 +320,6 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
                 const model = createInMemorySemanticModel().deserializeModel(modelData);
                 entityModels.push(model);
             }
-
-            // Pim store wrapper
-            if (resource.types.includes(RDFS_MODEL)) {
-                const modelData = (await (
-                    await this.httpFetch(this.getBlobUrl(resource.iri).toString())
-                ).json()) as any;
-                const model = new PimStoreWrapper(modelData.pimStore, modelData.id, name, modelData.urls);
-                model.fetchFromPimStore();
-                entityModels.push(model);
-            }
         }
 
         return [entityModels, visualModels] as const;
@@ -353,9 +337,6 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
                 const model = createSgovModel("https://slovník.gov.cz/sparql", this.httpFetch);
                 await model.unserializeModel(modelDescriptor);
                 constructedEntityModels.push(model);
-            } else if (modelDescriptor.type === "https://dataspecer.com/core/model-descriptor/rdfs") {
-                const model = await createRdfsModel(modelDescriptor.urls, this.httpFetch);
-                constructedEntityModels.push(model);
             } else if (
                 modelDescriptor.type === "https://dataspecer.com/core/model-descriptor/visual-model" ||
                 modelDescriptor.type === VISUAL_MODEL
@@ -367,10 +348,6 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
                 modelDescriptor.type === LOCAL_SEMANTIC_MODEL
             ) {
                 const model = createInMemorySemanticModel().deserializeModel(modelDescriptor);
-                constructedEntityModels.push(model);
-            } else if (modelDescriptor.type === RDFS_MODEL) {
-                const model = new PimStoreWrapper(modelDescriptor.pimStore, modelDescriptor.id, modelDescriptor.alias);
-                model.fetchFromPimStore();
                 constructedEntityModels.push(model);
             } else {
                 throw new Error(`Unknown model descriptor type: ${modelDescriptor.type}. Can not create such model.`);

@@ -10,7 +10,7 @@ import { ArrowLeft, ArrowRight, CheckCircle2, GitMerge } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { pickLanguageString, resolveModelDisplay } from "@/lib/model-display";
-import { LOCAL_SEMANTIC_MODEL, RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
+import { LOCAL_SEMANTIC_MODEL } from "@dataspecer/core-v2/model/known-models";
 import {
   branchModelLabelChange,
   buildReviewGroups,
@@ -41,7 +41,7 @@ import {
 // ---------------------------------------------------------------------------
 
 /** Upstream changes to models other than these are pushed to the end and grayed out, as they are of little interest here. */
-const IMPORTANT_MODEL_TYPES = [RDFS_MODEL, LOCAL_SEMANTIC_MODEL];
+const IMPORTANT_MODEL_TYPES = [LOCAL_SEMANTIC_MODEL];
 
 const SECTIONS: { id: string; kinds: EvolutionItem["kind"][] }[] = [
   { id: "new-classes", kinds: ["create-class-profile"] },

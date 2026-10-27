@@ -3,7 +3,7 @@ import { applyOperationsToStructureModel } from "@dataspecer/core/data-psm";
 import { applyOperationsToEntityModel, type EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import { isSetEntityOperation, isUpdateEntityOperation, isRemoveEntityOperation, type Operation, type OperationInModel } from "@dataspecer/core/operation";
-import { LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
+import { LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL, V1, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { applyOperationsToSemanticModel } from "@dataspecer/core-v2/semantic-model";
 import { applyOperationsToAsyncQueryableModel } from "@dataspecer/model-store/implementation";
 import { applyOperationsToVirtualProjectModel, isCreateModelOperation, isRemoveModelOperation, type ProjectModelEntity } from "@dataspecer/core/project-model";
@@ -51,7 +51,7 @@ export function applyToModel(entities: EntityRecord, operations: Operation[], is
         applyOperationsToStructureModel(entities as EntityRecord<CoreResourceAndEntity>, [operation]);
       } else if (modelType === QUERYABLE_MODEL) {
         applyOperationsToAsyncQueryableModel(entities, [operation]);
-      } else if (modelType === LOCAL_SEMANTIC_MODEL || modelType === RDFS_MODEL) {
+      } else if (modelType === LOCAL_SEMANTIC_MODEL) {
         applyOperationsToSemanticModel(entities, [operation]);
       }
       // Otherwise (e.g. a blob model), only generic operations are expected;
