@@ -26,6 +26,7 @@ import {
   ShaclNodeShape,
   ShaclPropertyShape,
   ShaclSeverity,
+  ShaclSubClassOf,
 } from "../shacl-model.ts";
 import {
   createSemicShaclStylePolicy,
@@ -107,7 +108,7 @@ export function semanticModelsToShacl(
   const topClassesByIri = topDsv.classProfiles.map(item => item.iri);
 
   // The IRIs of controlled vocabularies may be relative to the base IRI of
-  // the model they come from, so we resolve them here. 
+  // the model they come from, so we resolve them here.
   // Once the entities carry absolute IRIs this can be dropped.
   const resolvedControlledVocabularies: ResolvedControlledVocabulary[] =
     controlledVocabularies.flatMap(model =>
@@ -186,7 +187,53 @@ export function semanticModelsToShacl(
   return transformShaclModel({
     iri: policy.shaclModelIri(),
     members,
+    subClassOf: configuration.profileSpecializationAsSubClassOf === true ?
+      buildSubClassOf([...shapeMap.keys()], classMap, parentMap) : [],
   }, configuration);
+}
+
+/**
+ * Builds direct rdfs:subClassOf statements for profile specializations.
+ * The statements are made for the given classes and for all of their
+ * ancestors, so a chain stays connected. A class is not stated to be
+ * a subclass of itself, which happens when two profiles share a type.
+ * The result is sorted to be deterministic.
+ *
+ * @see https://github.com/dataspecer/dataspecer/issues/1534
+ */
+function buildSubClassOf(
+  classes: StructureClass[],
+  classMap: Record<string, StructureClass>,
+  parentMap: Record<string, string[]>,
+): ShaclSubClassOf[] {
+  const relevant = new Set<StructureClass>(classes);
+  for (const item of classes) {
+    for (const iri of parentMap[item.iri] ?? []) {
+      const parent = classMap[iri];
+      if (parent !== undefined) {
+        relevant.add(parent);
+      }
+    }
+  }
+  const result = new Map<string, ShaclSubClassOf>();
+  for (const item of relevant) {
+    for (const iri of item.specializationOf) {
+      const parent = classMap[iri];
+      if (parent === undefined) {
+        continue;
+      }
+      for (const subClass of item.rdfTypes) {
+        for (const superClass of parent.rdfTypes) {
+          if (subClass !== superClass) {
+            result.set(`${subClass} ${superClass}`, { subClass, superClass });
+          }
+        }
+      }
+    }
+  }
+  return [...result.values()].sort((left, right) =>
+    left.subClass.localeCompare(right.subClass)
+    || left.superClass.localeCompare(right.superClass));
 }
 
 function createPolicy(

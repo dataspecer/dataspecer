@@ -95,6 +95,7 @@ describe("semanticModelsToShacl", () => {
         splitPropertyShapesByConstraints: false,
         controlledVocabularyPattern: true,
         controlledVocabularyScheme: false,
+        profileSpecializationAsSubClassOf: false,
       },
       { baseIri: "http://example/shacl.ttl" });
 
@@ -168,6 +169,7 @@ describe("semanticModelsToShacl", () => {
         splitPropertyShapesByConstraints: false,
         controlledVocabularyPattern: true,
         controlledVocabularyScheme: false,
+        profileSpecializationAsSubClassOf: false,
       },
       { baseIri: "http://example/shacl.ttl" });
 
@@ -237,6 +239,7 @@ describe("semanticModelsToShacl", () => {
         splitPropertyShapesByConstraints: false,
         controlledVocabularyPattern: true,
         controlledVocabularyScheme: false,
+        profileSpecializationAsSubClassOf: false,
       },
       { baseIri: "http://example/shacl.ttl" });
 
@@ -302,6 +305,7 @@ describe("semanticModelsToShacl", () => {
         splitPropertyShapesByConstraints: false,
         controlledVocabularyPattern: true,
         controlledVocabularyScheme: false,
+        profileSpecializationAsSubClassOf: false,
       },
       { baseIri: "http://example/shacl.ttl" });
 
@@ -368,6 +372,7 @@ describe("semanticModelsToShacl", () => {
         splitPropertyShapesByConstraints: false,
         controlledVocabularyPattern: true,
         controlledVocabularyScheme: false,
+        profileSpecializationAsSubClassOf: false,
       },
       { baseIri: "http://example/shacl.ttl" });
 
@@ -417,6 +422,7 @@ describe("semanticModelsToShacl", () => {
         splitPropertyShapesByConstraints: false,
         controlledVocabularyPattern: true,
         controlledVocabularyScheme: false,
+        profileSpecializationAsSubClassOf: false,
       },
       { baseIri: "http://example/shacl.ttl" });
 
@@ -441,6 +447,7 @@ describe("semanticModelsToShacl - controlled vocabularies", () => {
     splitPropertyShapesByConstraints: false,
     controlledVocabularyPattern: true,
     controlledVocabularyScheme: true,
+    profileSpecializationAsSubClassOf: false,
   };
 
   test("must severity, single controlled vocabulary.", async () => {
@@ -798,6 +805,7 @@ describe("semanticModelsToShacl - controlled vocabulary concept schemes", () => 
         splitPropertyShapesByConstraints: false,
         controlledVocabularyPattern: true,
         controlledVocabularyScheme: true,
+        profileSpecializationAsSubClassOf: false,
       },
       { baseIri: "http://example/shacl.ttl" },
       [controlledVocabularies]);
@@ -858,6 +866,7 @@ describe("semanticModelsToShacl - controlled vocabulary concept schemes", () => 
         splitPropertyShapesByConstraints: false,
         controlledVocabularyPattern: true,
         controlledVocabularyScheme: true,
+        profileSpecializationAsSubClassOf: false,
       },
       { baseIri: "http://example/shacl.ttl" },
       [controlledVocabularies]);
@@ -912,6 +921,7 @@ describe("semanticModelsToShacl - controlled vocabulary concept schemes", () => 
         splitPropertyShapesByConstraints: false,
         controlledVocabularyPattern: true,
         controlledVocabularyScheme: true,
+        profileSpecializationAsSubClassOf: false,
       },
       { baseIri: "http://example/shacl.ttl" },
       [controlledVocabularies]);
@@ -960,6 +970,7 @@ describe("semanticModelsToShacl - controlled vocabulary concept schemes", () => 
         splitPropertyShapesByConstraints: false,
         controlledVocabularyPattern: true,
         controlledVocabularyScheme: true,
+        profileSpecializationAsSubClassOf: false,
       },
       { baseIri: "http://example/shacl.ttl" },
       [controlledVocabularies]);
@@ -1001,6 +1012,7 @@ describe("semanticModelsToShacl - controlled vocabulary concept schemes", () => 
         splitPropertyShapesByConstraints: false,
         controlledVocabularyPattern: true,
         controlledVocabularyScheme: true,
+        profileSpecializationAsSubClassOf: false,
       },
       { baseIri: "http://example/shacl.ttl" },
       [controlledVocabularies]);
@@ -1041,6 +1053,7 @@ describe("semanticModelsToShacl - controlled vocabulary concept schemes", () => 
         splitPropertyShapesByConstraints: true,
         controlledVocabularyPattern: true,
         controlledVocabularyScheme: true,
+        profileSpecializationAsSubClassOf: false,
       },
       { baseIri: "http://example/shacl.ttl" },
       [controlledVocabularies]);
@@ -1090,6 +1103,7 @@ describe("semanticModelsToShacl - controlled vocabulary concept schemes", () => 
         splitPropertyShapesByConstraints: false,
         controlledVocabularyPattern: true,
         controlledVocabularyScheme: false,
+        profileSpecializationAsSubClassOf: false,
       },
       { baseIri: "http://example/shacl.ttl" },
       [controlledVocabularies]);
@@ -1136,6 +1150,7 @@ describe("semanticModelsToShacl - controlled vocabulary concept schemes", () => 
         splitPropertyShapesByConstraints: false,
         controlledVocabularyPattern: false,
         controlledVocabularyScheme: true,
+        profileSpecializationAsSubClassOf: false,
       },
       { baseIri: "http://example/shacl.ttl" },
       [controlledVocabularies]);
@@ -1227,6 +1242,7 @@ describe("semanticModelsToShacl - controlled vocabulary concept schemes", () => 
         splitPropertyShapesByConstraints: false,
         controlledVocabularyPattern: false,
         controlledVocabularyScheme: false,
+        profileSpecializationAsSubClassOf: false,
       },
       { baseIri: "http://example/shacl.ttl" },
       [controlledVocabularies]);
@@ -1267,6 +1283,7 @@ describe("semanticModelsToShacl - controlled vocabulary concept schemes", () => 
         splitPropertyShapesByConstraints: false,
         controlledVocabularyPattern: false,
         controlledVocabularyScheme: true,
+        profileSpecializationAsSubClassOf: false,
       },
       { baseIri: "http://example/shacl.ttl" },
       [controlledVocabularies]);
@@ -1281,6 +1298,161 @@ describe("semanticModelsToShacl - controlled vocabulary concept schemes", () => 
   function controlledVocabularyShapes(shacl: ShaclModel) {
     return shacl.members.filter(item => item.iri.includes("/cv-"));
   }
+
+});
+
+/** @see https://github.com/dataspecer/dataspecer/issues/1534 */
+describe("shaclToRdf - profile specializations as rdfs:subClassOf", () => {
+
+  const AGENT = "http://example.com/vocabulary#agent";
+  const PERSON = "http://example.com/vocabulary#person";
+  const EMPLOYEE = "http://example.com/vocabulary#employee";
+
+  /**
+   * Agent <- Person <- Employee, where "<-" is dsv:specializes.
+   * A document has a creator with the range Agent.
+   */
+  function buildProfile() {
+    const vocabulary = createDefaultSemanticModelBuilder({
+      baseIdentifier: "vocab:",
+      baseIri: "http://example.com/vocabulary#",
+    });
+
+    const agent = vocabulary.class({ iri: "agent" });
+    const person = vocabulary.class({ iri: "person" });
+    const employee = vocabulary.class({ iri: "employee" });
+    const document = vocabulary.class({ iri: "document" });
+
+    const creator = vocabulary.property({ iri: "creator" })
+      .domain(document)
+      .range(agent);
+
+    const profile = createDefaultProfileModelBuilder({
+      baseIdentifier: "profile:",
+      baseIri: "http://example.com/profile#",
+    });
+
+    const agentProfile = profile.class({ iri: "agent" }).profile(agent);
+    const personProfile = profile.class({ iri: "person" }).profile(person);
+    const employeeProfile = profile.class({ iri: "employee" })
+      .profile(employee);
+    profile.generalization(agentProfile, personProfile);
+    profile.generalization(personProfile, employeeProfile);
+
+    const documentProfile = profile.class({ iri: "document" })
+      .profile(document);
+    profile.property({ iri: "creator" })
+      .profile(creator)
+      .domain(documentProfile)
+      .range(agentProfile);
+
+    return { vocabulary: vocabulary.build(), profile: profile.build() };
+  }
+
+  function generate(
+    configuration: Partial<SemanticModelsToShaclConfiguration>,
+  ): ShaclModel {
+    const { vocabulary, profile } = buildProfile();
+    return semanticModelsToShacl(
+      [vocabulary],
+      [profile],
+      profile,
+      {
+        policy: "semic-v1",
+        languages: [],
+        noClassConstraints: false,
+        splitPropertyShapesByConstraints: false,
+        controlledVocabularyPattern: true,
+        controlledVocabularyScheme: false,
+        profileSpecializationAsSubClassOf: false,
+        ...configuration,
+      },
+      { baseIri: "http://example/shacl.ttl" });
+  }
+
+  test("Writes direct specializations as rdfs:subClassOf when enabled.", async () => {
+    const shacl = generate({ profileSpecializationAsSubClassOf: true });
+
+    // Only direct edges, sorted, no Employee -> Agent shortcut.
+    expect(shacl.subClassOf).toStrictEqual([
+      { subClass: EMPLOYEE, superClass: PERSON },
+      { subClass: PERSON, superClass: AGENT },
+    ]);
+
+    // The class constraint stays on the parent type.
+    const creatorShape = shacl.members
+      .flatMap(item => item.propertyShapes)
+      .find(item => item.path === "http://example.com/vocabulary#creator");
+    expect(creatorShape!.class).toBe(AGENT);
+
+    // The statements are in the same graph as the shapes.
+    const rdf = await shaclToRdf(shacl, {});
+    expect(rdf).toContain(`<${PERSON}> rdfs:subClassOf <${AGENT}>`);
+    expect(rdf).toContain(`<${EMPLOYEE}> rdfs:subClassOf <${PERSON}>`);
+    expect(rdf).not.toContain(`<${EMPLOYEE}> rdfs:subClassOf <${AGENT}>`);
+  });
+
+  test("Writes nothing when disabled.", async () => {
+    const shacl = generate({ profileSpecializationAsSubClassOf: false });
+
+    expect(shacl.subClassOf).toStrictEqual([]);
+    expect(await shaclToRdf(shacl, {})).not.toContain("subClassOf");
+  });
+
+  test("A configuration without the option behaves as disabled.", () => {
+    // Configuration stored before the option existed.
+    const legacyConfiguration = {
+      policy: "semic-v1",
+      languages: [],
+      noClassConstraints: false,
+      splitPropertyShapesByConstraints: false,
+    } as unknown as SemanticModelsToShaclConfiguration;
+
+    const { vocabulary, profile } = buildProfile();
+    const shacl = semanticModelsToShacl(
+      [vocabulary],
+      [profile],
+      profile,
+      legacyConfiguration,
+      { baseIri: "http://example/shacl.ttl" });
+
+    expect(shacl.subClassOf).toStrictEqual([]);
+  });
+
+  test("Does not write a class as a subclass of itself.", () => {
+    // Both profiles profile the same vocabulary class.
+    const vocabulary = createDefaultSemanticModelBuilder({
+      baseIdentifier: "vocab:",
+      baseIri: "http://example.com/vocabulary#",
+    });
+    const agent = vocabulary.class({ iri: "agent" });
+
+    const profile = createDefaultProfileModelBuilder({
+      baseIdentifier: "profile:",
+      baseIri: "http://example.com/profile#",
+    });
+    const base = profile.class({ iri: "base" }).profile(agent);
+    const derived = profile.class({ iri: "derived" }).profile(agent);
+    profile.generalization(base, derived);
+    const built = profile.build();
+
+    const shacl = semanticModelsToShacl(
+      [vocabulary.build()],
+      [built],
+      built,
+      {
+        policy: "semic-v1",
+        languages: [],
+        noClassConstraints: false,
+        splitPropertyShapesByConstraints: false,
+        controlledVocabularyPattern: true,
+        controlledVocabularyScheme: false,
+        profileSpecializationAsSubClassOf: true,
+      },
+      { baseIri: "http://example/shacl.ttl" });
+
+    expect(shacl.subClassOf).toStrictEqual([]);
+  });
 
 });
 
