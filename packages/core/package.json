@@ -81,7 +81,6 @@
     "jsonld": "^9.0.0",
     "minipass-fetch": "^6.0.0",
     "n3": "^2.13.7",
-    "rdflib": "^2.4.1",
     "rdfxml-streaming-parser": "^3.3.0",
     "uuid": "^14.0.2"
   },

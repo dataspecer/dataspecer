@@ -58,7 +58,7 @@ export async function structureModelToRdf(entities: CoreResource[], configuratio
       if (error) {
         reject(error);
       } else {
-        resolve(result);
+        resolve(result!);
       }
     }),
   );
