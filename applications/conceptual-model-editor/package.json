@@ -67,6 +67,7 @@
     "zustand": "^5.0.14"
   },
   "dependencies": {
-    "@dataspecer/rdfs": "*"
+    "@dataspecer/rdfs": "*",
+    "@dataspecer/sgov-adapter": "*"
   }
 }

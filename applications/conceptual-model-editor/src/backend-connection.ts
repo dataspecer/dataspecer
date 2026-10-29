@@ -1,3 +1,4 @@
+import { createSgovModel } from "@dataspecer/sgov-adapter";
 import { useMemo } from "react";
 
 import { type EntityModel } from "@dataspecer/core-v2/entity-model";
@@ -9,7 +10,7 @@ import { createDefaultConfigurationModelFromJsonObject } from "@dataspecer/core-
 
 export const useBackendConnection = () => {
   // Should fail already when spinning up the next app
-  const service = useMemo(() => new BackendPackageService(import.meta.env.VITE_PUBLIC_APP_BACKEND!, httpFetch), []);
+  const service = useMemo(() => new BackendPackageService(import.meta.env.VITE_PUBLIC_APP_BACKEND!, httpFetch, createSgovModel), []);
 
   const getModelsFromBackend = async (packageId: string) => {
     return service.constructSemanticModelPackageModels(packageId);

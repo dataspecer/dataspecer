@@ -2,7 +2,7 @@ import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import type { Transaction } from "@dataspecer/core/operation";
 import { EntityModel } from "../../entity-model/index.ts";
 import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL } from "../../model/known-models.ts";
-import { createSgovModel } from "../../semantic-model/simplified/index.ts";
+import type { ExternalSemanticModel } from "../../semantic-model/simplified/external-semantic-model.ts";
 import { createInMemorySemanticModel } from "../../semantic-model/simplified/in-memory-semantic-model.ts";
 import { createVisualModel } from "../../semantic-model/simplified/visual-model.ts";
 import { semanticModelEntitiesToSerialization } from "../../semantic-model/writable-semantic-model-adapter.ts";
@@ -18,7 +18,11 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
     protected readonly backendUrl: string;
     protected readonly httpFetch: HttpFetch;
 
-    constructor(backendUrl: string, httpFetch: HttpFetch) {
+    constructor(
+        backendUrl: string,
+        httpFetch: HttpFetch,
+        private readonly createQueryableModel?: (endpoint: string, httpFetch: HttpFetch, id?: string) => ExternalSemanticModel,
+    ) {
         this.backendUrl = backendUrl;
         this.httpFetch = httpFetch;
     }
@@ -302,7 +306,10 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
 
             // SGOV model
             if (resource.types.includes(QUERYABLE_MODEL)) {
-                const model = createSgovModel("https://slovník.gov.cz/sparql", this.httpFetch, resource.iri);
+                if (!this.createQueryableModel) {
+                    throw new Error("A queryable model factory is required to load SGOV models.");
+                }
+                const model = this.createQueryableModel("https://slovník.gov.cz/sparql", this.httpFetch, resource.iri);
                 const modelData = (await (
                     await this.httpFetch(this.getBlobUrl(resource.iri).toString())
                 ).json()) as any;
@@ -334,7 +341,10 @@ export class BackendPackageService implements PackageService, SemanticModelPacka
         // todo: use more robust approach
         for (const modelDescriptor of modelDescriptors) {
             if (modelDescriptor.type === QUERYABLE_MODEL) {
-                const model = createSgovModel("https://slovník.gov.cz/sparql", this.httpFetch);
+                if (!this.createQueryableModel) {
+                    throw new Error("A queryable model factory is required to load SGOV models.");
+                }
+                const model = this.createQueryableModel("https://slovník.gov.cz/sparql", this.httpFetch);
                 await model.unserializeModel(modelDescriptor);
                 constructedEntityModels.push(model);
             } else if (

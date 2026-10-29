@@ -35,10 +35,6 @@ const DefaultOptions: RdfsSemanticModelAdapterOptions = {
  * Adapter that can convert RDFS+OWL to the semantic model representation used
  * in Dataspecer.
  *
- * This implementation should replace both @dataspecer/sgov-adapter and
- * @dataspecer/rdfs-adapter which currently convert data to PIM model and then
- * @dataspecer/core-v2/semantic-model/v1-adapters needs to be used.
- *
  * Before you use this adapter instead of those above, please fix the missing
  * edge cases in its behavior.
  */

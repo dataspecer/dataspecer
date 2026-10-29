@@ -1,6 +1,7 @@
 import { EntityModel } from "@dataspecer/core-v2";
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
-import { createSgovModel, ExternalSemanticModel } from "@dataspecer/core-v2/semantic-model/simplified";
+import { createSgovModel } from "@dataspecer/sgov-adapter";
+import { ExternalSemanticModel } from "@dataspecer/core-v2/semantic-model/simplified";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
 import { createRdfsModel } from "@dataspecer/rdfs/semantic-model";
 import { createLogger } from "../../application";

@@ -12,10 +12,6 @@
   },
   "exports": {
     ".": "./lib/index.js",
-    "./cim/cim-adapter": "./lib/cim/cim-adapter.js",
-    "./cim": "./lib/cim/index.js",
-    "./cim/iri-provider": "./lib/cim/iri-provider.js",
-    "./cim/prefix-iri-provider": "./lib/cim/prefix-iri-provider.js",
     "./configuration/configurator": "./lib/configuration/configurator.js",
     "./configuration/utils": "./lib/configuration/utils.js",
     "./core/adapter/rdf": "./lib/core/adapter/rdf/index.js",
@@ -73,11 +69,6 @@
     "./io/stream/stream-dictionary.js": "./lib/io/stream/stream-dictionary.js",
     "./model": "./lib/model/index.js",
     "./operation": "./lib/operation/index.js",
-    "./pim/model": "./lib/pim/model/index.js",
-    "./pim/model/pim-association": "./lib/pim/model/pim-association.js",
-    "./pim/model/pim-attribute": "./lib/pim/model/pim-attribute.js",
-    "./pim/model/pim-class": "./lib/pim/model/pim-class.js",
-    "./pim/pim-vocabulary": "./lib/pim/pim-vocabulary.js",
     "./project-model": "./lib/project-model/index.js",
     "./project-model/legacy": "./lib/project-model/legacy/index.js",
     "./well-known": "./lib/well-known/index.js"
