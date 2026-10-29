@@ -94,6 +94,9 @@ class ShaclModelWriter {
     for (const member of this.model.members) {
       this.writeNodeShape(member);
     }
+    for (const item of this.model.subClassOf) {
+      this.builder.addIri(item.subClass, RDFS.subClassOf, item.superClass);
+    }
   }
 
   writeNodeShape(shape: ShaclNodeShape): void {

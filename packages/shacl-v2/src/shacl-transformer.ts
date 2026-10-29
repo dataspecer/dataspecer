@@ -13,6 +13,7 @@ import {
 export function applyNoClassConstraint(shacl: ShaclModel): ShaclModel {
   return {
     iri: shacl.iri,
+    subClassOf: shacl.subClassOf,
     members: shacl.members.map(shape => ({
       ...shape,
       propertyShapes: shape.propertyShapes.map(propertyShape => ({
@@ -54,6 +55,7 @@ export function filterLanguageStrings(
 
   return {
     iri: shacl.iri,
+    subClassOf: shacl.subClassOf,
     members: shacl.members.map(shape => ({
       ...shape,
       propertyShapes: shape.propertyShapes.map(propertyShape => ({
@@ -73,6 +75,7 @@ export function filterLanguageStrings(
 export function splitConstraints(shacl: ShaclModel): ShaclModel {
   return {
     iri: shacl.iri,
+    subClassOf: shacl.subClassOf,
     members: shacl.members.map(node => ({
       ...node,
       propertyShapes: node.propertyShapes

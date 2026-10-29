@@ -119,6 +119,7 @@ export const ExportManagement = () => {
         splitPropertyShapesByConstraints: false,
         controlledVocabularyPattern: true,
         controlledVocabularyScheme: false,
+        profileSpecializationAsSubClassOf: false,
       }, { baseIri: iri, defaultPrefixes: {} },);
 
     shaclToRdf(shacl, {
