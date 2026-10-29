@@ -30,9 +30,7 @@ const FileConfigPanel: FC<{
   };
 
   const handleSwitchChange = (updated: Record<string, any>) => {
-    // SwitchWithDefault spreads `current` and sets/deletes one key.
-    // We need to merge that back with the full fileConfig so languages are preserved.
-    onChange({ ...fileConfig, ...updated } as FileConfig);
+    onChange(updated as FileConfig);
   };
 
   return (
@@ -70,6 +68,21 @@ const FileConfigPanel: FC<{
           />
         </Grid>
       </Grid>
+
+      <Typography variant="subtitle2" component="h4" sx={{ mt: 2 }}>
+        Profile specializations
+      </Typography>
+      <SwitchWithDefault
+        label="Export profile specializations as subclass statements"
+        current={fileConfig ?? {}}
+        itemKey="profileSpecializationAsSubClassOf"
+        onChange={handleSwitchChange}
+        default={defaultConfig}
+      />
+      <Typography variant="body2" color="text.secondary">
+        Add <code>rdfs:subClassOf</code> statements between the RDF types of specialized profiles and their parents to the shapes graph.
+        When disabled, these statements are omitted.
+      </Typography>
 
       <Typography variant="subtitle2" component="h4" sx={{ mt: 2 }}>
         Controlled vocabularies
@@ -241,7 +254,7 @@ export const ShaclV2: FC<{
             </Box>
           </AccordionSummary>
           <AccordionDetails>
-            <FileConfigPanel fileConfig={files[key] ?? {}} defaultConfig={defaultObject.files?.[key]} onChange={(updated) => updateFile(key, updated)} />
+            <FileConfigPanel fileConfig={files[key] ?? {}} defaultConfig={defaultObject?.files?.[key]} onChange={(updated) => updateFile(key, updated)} />
           </AccordionDetails>
         </Accordion>
       ))}
