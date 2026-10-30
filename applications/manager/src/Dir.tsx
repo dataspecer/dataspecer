@@ -93,7 +93,7 @@ const Row = React.memo(({ iri, parentIri, onTagSelect }: { iri: string, parentIr
     <div className="flex items-center space-x-4 hover:bg-accent">
       {resource.types.includes(LOCAL_PACKAGE) ? <div className="flex"><button className="cursor-pointer" onClick={stopPropagation(() => isOpen ? setIsOpen(false) : open())}>
         {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-      </button><Folder className="text-gray-400 ml-1" /></div> : <div><ModelIcon type={resource.types} /></div>}
+      </button><Folder className="text-gray-400 ml-1" /></div> : <div><ModelIcon type={resource.types} source={resource.userMetadata?.source} /></div>}
 
       <div className="grow min-w-0">
         <div className="font-medium">

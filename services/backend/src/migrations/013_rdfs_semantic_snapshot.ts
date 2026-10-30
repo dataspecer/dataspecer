@@ -42,7 +42,7 @@ export async function up({ nodeDatabaseSync, storeModel }: MigrationContext): Pr
     const stored = await storeModel.get(storeId);
     const model = migrateRdfsSnapshot(String(resource.iri), stored === null ? null : JSON.parse(stored.toString("utf8")), metadata.label as LanguageString | undefined);
     await storeModel.set(storeId, JSON.stringify(model));
-    update.run(SEMANTIC_MODEL, JSON.stringify({ ...stores, model: storeId }), JSON.stringify({ ...metadata, label: model.label }), resource.id);
+    update.run(SEMANTIC_MODEL, JSON.stringify({ ...stores, model: storeId }), JSON.stringify({ ...metadata, label: model.label, source: model.source }), resource.id);
   }
 }
 
@@ -56,7 +56,7 @@ export function upBackupFile(directory: InMemoryBackupDirectory): void {
     const model = migrateRdfsSnapshot(String(metadata.iri), directory.files.get(modelFile), userMetadata.label as LanguageString | undefined);
     directory.files.set(modelFile, model);
     metadata.types = metadata.types.map(type => type === LEGACY_RDFS_MODEL ? SEMANTIC_MODEL : type);
-    metadata.userMetadata = { ...userMetadata, label: model.label };
+    metadata.userMetadata = { ...userMetadata, label: model.label, source: model.source };
   }
   for (const child of directory.directories.values()) upBackupFile(child);
 }

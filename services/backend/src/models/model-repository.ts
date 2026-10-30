@@ -38,6 +38,7 @@ import type { BaseResource, Package, ResourceModel } from "./resource-model.ts";
 import type { HistoryTransaction, TransactionEvents, TransactionModel, TransactionWithEvents } from "./transaction-model.ts";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import { deepEqual } from "@dataspecer/utilities";
+import { getSemanticModelMetadata } from "@dataspecer/core-v2/semantic-model";
 
 /** Package that all projects are created directly under. */
 const PROJECT_ROOT_IRI = configuration.localRootIri;
@@ -547,7 +548,7 @@ export class ModelRepository implements ModelRepositoryType {
     }
   }
 
-  /** Keeps the resource metadata cache aligned with the semantic model label. */
+  /** Keeps the resource metadata cache aligned with the semantic model label and source. */
   private async synchronizeSemanticModelMetadata(modelId: string, modelType: string, entities: EntityRecord): Promise<void> {
     const { iri, storeName } = splitModelId(modelId);
     if (modelType !== LOCAL_SEMANTIC_MODEL || storeName !== "model") {
@@ -555,14 +556,14 @@ export class ModelRepository implements ModelRepositoryType {
     }
 
     const resource = await this.resourceModel.getResource(iri);
-    const mainEntity = entities[iri] as (Entity & { label?: LanguageString }) | undefined;
-    if (resource === null || mainEntity === undefined) {
+    const metadata = getSemanticModelMetadata(entities, iri);
+    if (resource === null || metadata === null) {
       return;
     }
 
-    const label = mainEntity.label ?? {};
-    if (!deepEqual(resource.userMetadata.label ?? {}, label)) {
-      await this.resourceModel.updateResource(iri, { label });
+    const { label, source } = metadata;
+    if (!deepEqual(resource.userMetadata.label ?? {}, label) || !deepEqual(resource.userMetadata.source, source)) {
+      await this.resourceModel.updateResource(iri, { label, source });
     }
   }
 

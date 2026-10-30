@@ -1,6 +1,7 @@
 import { LOCAL_PACKAGE, V1 } from "@dataspecer/core-v2/model/known-models";
 import { LanguageString } from "@dataspecer/core-v2/semantic-model/concepts";
 import { CoreResource } from "@dataspecer/core/core/core-resource";
+import type { SemanticModelMetadata } from "@dataspecer/core-v2/semantic-model";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
 import { parseDatabaseTimestamp, type Database, type ResourceRow } from "../database/schema.ts";
 import { v4 as uuidv4 } from "uuid";
@@ -28,6 +29,7 @@ export interface BaseResource {
     label?: LanguageString;
     description?: LanguageString;
     tags?: string[];
+    source?: SemanticModelMetadata["source"];
   };
 
   metadata: {
