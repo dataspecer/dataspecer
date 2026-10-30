@@ -6,7 +6,6 @@ import { UseDiagramType } from "../diagram/diagram-hook";
 import { addRelatedEntitiesAction } from "./add-related-entities-to-visual-model";
 import { ClassesContext } from "../context/classes-context";
 import { findPositionForNewNodesUsingLayouting } from "./layout-visual-model";
-import { findSourceModelOfEntity } from "../service/model-service";
 import { createLogger } from "../application";
 import {
   isSemanticModelClassProfile,
@@ -35,8 +34,8 @@ export async function addSemanticClassProfileToVisualModelAction(
     position = positions[entityIdentifier];
   }
 
-  const model = findSourceModelOfEntity(entityIdentifier, classes.semanticModels);
-  if (model === null) {
+  const model = classes.sourceModelOfEntityMap.get(entityIdentifier);
+  if (model === undefined) {
     LOG.error("Operation ignored, we fail to find model for given entity.", { identifier: entityIdentifier });
     notifications.error("Can not find model for given entity");
     return;
@@ -51,7 +50,7 @@ export async function addSemanticClassProfileToVisualModelAction(
 
   if (isSemanticModelClassProfile(entity)) {
     addSemanticClassProfileToVisualModelCommand(
-      classes, visualModel, entity, model.getId(),
+      classes, visualModel, entity, model,
       position);
     addRelatedEntitiesAction(
       notifications, graph, classes, visualModel, Object.values(entities),

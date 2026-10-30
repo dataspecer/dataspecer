@@ -49,7 +49,6 @@ import { t, tData } from "./application/localization";
 import { getDescriptionLanguageString } from "./util/name-utils";
 import { getLocalizedStringFromLanguageString } from "./util/language-utils";
 import { isIriAbsolute } from "./util/iri-utils";
-import { findSourceModelOfEntity } from "./service/model-service";
 import { Entity, type EntityModel } from "@dataspecer/core-v2";
 import { useOptions } from "./configuration/options";
 import { getGroupMappings } from "./action/utilities";
@@ -140,7 +139,7 @@ export const Visualization = () => {
       actions, activeVisualModel, classesContext.visualModels,
       classesContext, classesContext.semanticModels);
     onChangeVisualModel(
-      extendedOptions, activeVisualModel, actions.diagram, classesContext ,graph);
+      extendedOptions, activeVisualModel, actions.diagram, classesContext, graph);
   }, [extendedOptions, activeVisualModel, actions, graph, classesContext]);
 
   return (
@@ -240,13 +239,13 @@ function onChangeVisualModel(
     } else if (isVisualNode(visualEntity)) {
       const entity = entities[visualEntity.representedEntity]?.aggregatedEntity ?? null;
       if (isSemanticModelClass(entity) || isSemanticModelClassProfile(entity)) {
-        const model = findSourceModelOfEntity(entity.id, models);
+        const model = getSemanticModelOwner(classesContext, entity.id);
         if (model === null) {
           console.error("Ignored entity for missing model.", { entity });
           continue;
         }
         const node = createDiagramNode(
-          options, visualModel, models, entities,
+          classesContext, options, visualModel, models, entities,
           visualEntity, entity, model,
           nodeToGroupMapping[visualEntity.id] ?? null);
         nextNodes.push(node);
@@ -258,13 +257,13 @@ function onChangeVisualModel(
         isSemanticModelRelationshipProfile(entity) ||
         isSemanticModelGeneralization(entity);
       if (isRelationship) {
-        const model = findSourceModelOfEntity(entity.id, models);
+        const model = getSemanticModelOwner(classesContext, entity.id);
         if (model === null) {
           console.error("Ignored entity for missing model.", { entity });
           continue;
         }
         const edge = createDiagramEdge(
-          options, visualModel, models, entities,
+          classesContext, options, visualModel, models, entities,
           visualEntity, entity, model);
         if (edge !== null) {
           nextEdges.push(edge);
@@ -276,7 +275,7 @@ function onChangeVisualModel(
         console.error("Ignored entity as aggregate is null.", { visualEntity });
         continue;
       }
-      const model = findSourceModelOfEntity(entity.id, models);
+      const model = getSemanticModelOwner(classesContext, entity.id);
       if (model === null) {
         console.error("Ignored entity for missing model.", { entity });
         continue;
@@ -318,6 +317,17 @@ function onChangeVisualModel(
   void diagram.actions().setContent(nextNodes, nextEdges, groupsToSetContentWith);
 }
 
+function getSemanticModelOwner(
+  classesContext: ClassesContext,
+  entity: EntityDsIdentifier,
+): SemanticModel | null {
+  const id = classesContext.sourceModelOfEntityMap.get(entity);
+  if (id === undefined) {
+    return null;
+  }
+  return classesContext.semanticModels.get(id) ?? null;
+}
+
 function createVisualModelDiagramNode(
   options: ExtendedOptions,
   availableVisualModels: Map<string, VisualModel>,
@@ -349,6 +359,7 @@ function createVisualModelDiagramNode(
 }
 
 function createDiagramNode(
+  classesContext: ClassesContext,
   options: ExtendedOptions,
   visualModel: VisualModel,
   semanticModels: SemanticModelMap,
@@ -361,7 +372,7 @@ function createDiagramNode(
 
   const isProfile = isSemanticModelClassProfile(entity);
   const vocabulary = prepareVocabulary(
-    options, visualModel, semanticModels, entities, entity.id);
+    classesContext, options, visualModel, semanticModels, entities, entity.id);
   const modelColor = visualModel.getModelColor(visualNode.model) ?? DEFAULT_MODEL_COLOR;
 
   return {
@@ -370,7 +381,7 @@ function createDiagramNode(
     identifier: visualNode.id,
     externalIdentifier: entity.id,
     label: getEntityLabelToShowInDiagram(options.language, entity),
-    iri: prepareIri(semanticModels, null, entity),
+    iri: prepareIri(classesContext, null, entity),
     color: selectColor(options, visualNode.color, modelColor, vocabulary),
     description: getEntityDescription(options.language, entity),
     group,
@@ -378,14 +389,16 @@ function createDiagramNode(
       ...visualNode.position
     },
     profileOf: prepareProfileOf(
-      options, semanticModels, entities, entity),
+      classesContext, options, semanticModels, entities, entity),
     items: prepareItems(
-      options, visualModel, semanticModels, entities, visualNode),
+      classesContext, options, visualModel,
+      semanticModels, entities, visualNode),
     vocabulary,
   };
 }
 
 function prepareItems(
+  classesContext: ClassesContext,
   options: ExtendedOptions,
   visualModel: VisualModel,
   semanticModels: SemanticModelMap,
@@ -414,17 +427,19 @@ function prepareItems(
         type: NODE_ITEM_TYPE,
         identifier: entity.id,
         label: getEntityLabelToShowInDiagram(options.language, entity),
-        iri: prepareIri(semanticModels, null, entity),
+        iri: prepareIri(classesContext, null, entity),
         profileOf: [],
         vocabulary: prepareVocabulary(
-          options, visualModel, semanticModels, entities, entity.id),
+          classesContext, options, visualModel,
+          semanticModels, entities, entity.id),
         cardinalitySource: cardinalityToHumanLabel(domain.cardinality),
         cardinalityTarget: cardinalityToHumanLabel(range.cardinality),
         range: {
-          iri: prepareIri(semanticModels, null, rangeEntity),
+          iri: prepareIri(classesContext, null, rangeEntity),
           label: prepareItemRangeEntity(options.language, range, rangeEntity),
           vocabulary: prepareVocabulary(
-            options, visualModel, semanticModels, entities, range.concept)
+            classesContext, options, visualModel,
+            semanticModels, entities, range.concept)
         },
       } as NodeRelationshipItem;
     } if (isSemanticModelRelationshipProfile(entity)) {
@@ -439,18 +454,20 @@ function prepareItems(
         type: NODE_ITEM_TYPE,
         identifier: entity.id,
         label: getEntityLabelToShowInDiagram(options.language, entity),
-        iri: prepareIri(semanticModels, null, entity),
+        iri: prepareIri(classesContext, null, entity),
         profileOf: prepareProfileOf(
-          options, semanticModels, entities, entity),
+          classesContext, options, semanticModels, entities, entity),
         vocabulary: prepareVocabulary(
-          options, visualModel, semanticModels, entities, entity.id),
+          classesContext, options, visualModel,
+          semanticModels, entities, entity.id),
         cardinalitySource: cardinalityToHumanLabel(domain.cardinality),
         cardinalityTarget: cardinalityToHumanLabel(range.cardinality),
         range: {
-          iri: prepareIri(semanticModels, null, rangeEntity),
+          iri: prepareIri(classesContext, null, rangeEntity),
           label: prepareItemRangeEntity(options.language, range, rangeEntity),
           vocabulary: prepareVocabulary(
-            options, visualModel, semanticModels, entities, range.concept)
+            classesContext, options, visualModel,
+            semanticModels, entities, range.concept)
         },
       } as NodeRelationshipItem;
     }
@@ -485,6 +502,7 @@ function prepareItemRangeEntity(
 }
 
 function prepareVocabulary(
+  classesContext: ClassesContext,
   options: ExtendedOptions,
   visualModel: VisualModel,
   semanticModels: SemanticModelMap,
@@ -510,10 +528,10 @@ function prepareVocabulary(
     visited.push(next);
     //
     const entity = entities[next]?.rawEntity;
-    const model = findSourceModelOfEntity(next, semanticModels);
+    const model = getSemanticModelOwner(classesContext, next);
     if (isSemanticModelClass(entity) || isSemanticModelRelationship(entity)) {
       result.push({
-        iri: prepareIri(semanticModels, null, entity),
+        iri: prepareIri(classesContext, null, entity),
         label: getEntityLabelToShowInDiagram(options.language, entity),
         color: visualModel.getModelColor(model?.getId() ?? "") ?? defaultColor,
       });
@@ -531,7 +549,7 @@ function prepareVocabulary(
 }
 
 function prepareIri(
-  semanticModels: SemanticModelMap,
+  classesContext: ClassesContext,
   semanticModel: SemanticModel | null,
   entity: Entity | null,
 ): string | null {
@@ -561,8 +579,7 @@ function prepareIri(
   }
 
   // For a relative IRI use model alias.
-  const model = semanticModel
-    ?? findSourceModelOfEntity(entity.id, semanticModels);
+  const model = semanticModel ?? getSemanticModelOwner(classesContext, entity.id);
   if (model === null || !isInMemorySemanticModel(model)) {
     // We have no additional IRI information.
     return ":" + iri;
@@ -584,6 +601,7 @@ function applyIriPrefix(iri: string): string {
  * Collect and return direct profiles.
  */
 function prepareProfileOf(
+  classesContext: ClassesContext,
   options: ExtendedOptions,
   semanticModels: SemanticModelMap,
   entities: SemanticEntityRecord,
@@ -613,7 +631,7 @@ function prepareProfileOf(
     }
     result.push({
       label: getEntityLabelToShowInDiagram(options.language, entity),
-      iri: prepareIri(semanticModels, null, entity),
+      iri: prepareIri(classesContext, null, entity),
     })
   }
   return result;
@@ -650,6 +668,7 @@ function getEntityDescription(language: string, entity: Entity) {
 }
 
 function createDiagramEdge(
+  classesContext: ClassesContext,
   options: ExtendedOptions,
   visualModel: VisualModel,
   semanticModels: SemanticModelMap,
@@ -661,12 +680,12 @@ function createDiagramEdge(
   const identifier = entity.id;
   if (isSemanticModelRelationship(entity)) {
     return createDiagramEdgeForRelationship(
-      options, visualModel, semanticModels, entities, visualRelationship,
-      entity, semanticModel);
+      classesContext, options, visualModel, semanticModels,
+      entities, visualRelationship, entity, semanticModel);
   } else if (isSemanticModelRelationshipProfile(entity)) {
     return createDiagramEdgeForRelationshipProfile(
-      options, visualModel, semanticModels, entities, visualRelationship,
-      entity, semanticModel);
+      classesContext, options, visualModel, semanticModels,
+      entities, visualRelationship, entity, semanticModel);
   } else if (isSemanticModelGeneralization(entity)) {
     return createDiagramEdgeForGeneralization(
       options, visualModel, visualRelationship, entity);
@@ -675,6 +694,7 @@ function createDiagramEdge(
 }
 
 function createDiagramEdgeForRelationship(
+  classesContext: ClassesContext,
   options: ExtendedOptions,
   visualModel: VisualModel,
   semanticModels: SemanticModelMap,
@@ -686,7 +706,8 @@ function createDiagramEdgeForRelationship(
   const language = options.language;
   const { domain, range } = getDomainAndRange(entity);
   const vocabulary = prepareVocabulary(
-    options, visualModel, semanticModels, entities, entity.id);
+    classesContext, options, visualModel,
+    semanticModels, entities, entity.id);
   const modelColor = visualModel.getModelColor(visualRelationship.model) ?? DEFAULT_MODEL_COLOR;
   return {
     options,
@@ -702,12 +723,13 @@ function createDiagramEdgeForRelationship(
     waypoints: visualRelationship.waypoints,
     profileOf: [],
     vocabulary,
-    iri: prepareIri(semanticModels, semanticModel, entity),
+    iri: prepareIri(classesContext, semanticModel, entity),
     mandatoryLevelLabel: null,
   };
 }
 
 function createDiagramEdgeForRelationshipProfile(
+  classesContext: ClassesContext,
   options: ExtendedOptions,
   visualModel: VisualModel,
   semanticModels: SemanticModelMap,
@@ -718,9 +740,10 @@ function createDiagramEdgeForRelationshipProfile(
 ): Edge {
   const { domain, range } = getDomainAndRange(entity);
   const label = getEntityLabelToShowInDiagram(options.language, entity);
-  const iri = prepareIri(semanticModels, semanticModel, entity);
+  const iri = prepareIri(classesContext, semanticModel, entity);
   const vocabulary = prepareVocabulary(
-    options, visualModel, semanticModels, entities, entity.id);
+    classesContext, options, visualModel,
+    semanticModels, entities, entity.id);
   const modelColor = visualModel.getModelColor(visualRelationship.model) ?? DEFAULT_MODEL_COLOR;
   return {
     options,
@@ -736,7 +759,7 @@ function createDiagramEdgeForRelationshipProfile(
     color: selectColor(options, visualRelationship.color, modelColor, vocabulary),
     waypoints: visualRelationship.waypoints,
     profileOf: prepareProfileOf(
-      options, semanticModels, entities, entity),
+      classesContext, options, semanticModels, entities, entity),
     vocabulary,
     mandatoryLevelLabel: selectMandatoryLevel(asMandatoryLevel(range?.tags ?? []), options.language),
   };
@@ -934,7 +957,7 @@ function onChangeVisualEntities(
           continue;
         }
 
-        const model = findSourceModelOfEntity(entity.id, models);
+        const model = getSemanticModelOwner(classesContext, entity.id);
         if (model === null) {
           LOG.error("Ignored entity for missing model.", { entity });
           continue;
@@ -946,7 +969,8 @@ function onChangeVisualEntities(
         }
 
         const node = createDiagramNode(
-          options, visualModel, models, entities, next, entity, model, group);
+          classesContext, options, visualModel,
+          models, entities, next, entity, model, group);
 
         if (previous === null) {
           // Create new entity.
@@ -969,14 +993,15 @@ function onChangeVisualEntities(
           continue;
         }
 
-        const model = findSourceModelOfEntity(entity.id, models);
+        const model = getSemanticModelOwner(classesContext, entity.id);
         if (model === null) {
           console.error("Ignored entity for missing model.", { entity });
           continue;
         }
 
         const edge = createDiagramEdge(
-          options, visualModel, models, entities, next, entity, model);
+          classesContext, options, visualModel,
+          models, entities, next, entity, model);
 
         if (edge === null) {
           console.error("In visual update created edge is null.", { entity, visual: next });

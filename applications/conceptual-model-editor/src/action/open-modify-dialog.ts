@@ -10,7 +10,6 @@ import { UseNotificationServiceWriterType } from "../notification/notification-s
 import { DialogApiContextType } from "../dialog/dialog-service";
 import { Options } from "../configuration/options";
 import { ClassesContext } from "../context/classes-context";
-import { findSourceModelOfEntity } from "../service/model-service";
 import { VisualModel } from "@dataspecer/visual-model";
 import { isInMemorySemanticModel } from "../dataspecer/semantic-model";
 import { openEditAssociationDialogAction } from "./open-edit-association-dialog";
@@ -54,8 +53,9 @@ export function openModifyDialogAction(
     notifications.error(`Can not find the entity with identifier '${identifier}'.`);
     return;
   }
-  const model = findSourceModelOfEntity(entity.id, classes.semanticModels);
-  if (model === null || !isInMemorySemanticModel(model)) {
+  const modelId = classes.sourceModelOfEntityMap.get(entity.id)
+  const model = modelId === undefined ? undefined : classes.semanticModels.get(modelId);
+  if (model === undefined || !isInMemorySemanticModel(model)) {
     notifications.error("Model is not writable, can not modify entity.");
     return;
   }

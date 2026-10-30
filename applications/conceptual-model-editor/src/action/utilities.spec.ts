@@ -6,8 +6,6 @@ import { expect, test } from "vitest";
 
 import {
   computeRelatedAssociationsBarycenterAction,
-  convertToEntitiesToDeleteType,
-  EntityToDelete,
   findTopLevelGroupInVisualModel,
   getGroupMappings,
   getRemovedAndAdded,
@@ -142,31 +140,6 @@ test("Test computeRelatedAssociationsBarycenterAction with enough neighbors", as
     },
     isInCenterOfViewport: false,
   }
-  expect(result).toEqual(expected);
-});
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-test("Test convertToEntitiesToDeleteType", () => {
-  const { models, firstModel } = ActionsTestSuite.prepareModelsWithSemanticData(
-    0, TestedSemanticConnectionType.Association);
-
-  const modelIdentifier = firstModel.getId();
-  const entityIdentifiers: (string | null)[] = [];
-  entityIdentifiers.push(ActionsTestSuite.createSemanticClassTestVariant(models, "", modelIdentifier, [])!.identifier);
-  entityIdentifiers.push(ActionsTestSuite.createSemanticClassTestVariant(models, "", modelIdentifier, [])!.identifier);
-  entityIdentifiers.push(ActionsTestSuite.createSemanticClassTestVariant(models, "", modelIdentifier, [])!.identifier);
-
-  const result = convertToEntitiesToDeleteType(notificationMockup, models, entityIdentifiers.filter(id => id !== null));
-
-  const expected = entityIdentifiers.map(id => {
-    const expectedEntityToDelete: EntityToDelete = {
-      sourceModel: firstModel.getId(),
-      identifier: id ?? "ERROR Identifier"
-    };
-    return expectedEntityToDelete;
-  });
-
   expect(result).toEqual(expected);
 });
 

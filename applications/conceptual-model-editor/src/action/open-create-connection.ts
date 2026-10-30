@@ -23,7 +23,6 @@ import {
   createVisualModelOperationExecutor,
   VisualModelOperationExecutor,
 } from "../dataspecer/visual-model/visual-model-operation-executor";
-import { findSourceModelOfEntity } from "../service/model-service";
 import { withErrorBoundary } from "./utilities/error-utilities";
 import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
 import { ClassesContext } from "../context/classes-context";
@@ -82,30 +81,30 @@ function openCreateConnectionDialogActionInternal(
   else if (isSemanticModelClassProfile(source)
     && isSemanticModelClass(target)) {
     // Create a profile from class to the profile.
-    createProfile(cmeExecutor, graph, classes, visualExecutor, source, target);
+    createProfile(cmeExecutor, classes, visualExecutor, source, target);
   }
   else if (isSemanticModelClassProfile(source)
     && isSemanticModelClassProfile(target)) {
     // Create a relationship profile or generalization for profiles.
     // We do not support this yet.
 
-    const sourceModel = findSourceModelOfEntity(source.id, classes.semanticModels);
-    const targetModel = findSourceModelOfEntity(target.id, classes.semanticModels);
+    const sourceModel = classes.sourceModelOfEntityMap.get(source.id);
+    const targetModel = classes.sourceModelOfEntityMap.get(target.id);
 
-    if (sourceModel === null || targetModel === null) {
+    if (sourceModel === undefined || targetModel === undefined) {
       LOG.error("Missing model for entity.",
         { source, target, sourceModel, targetModel });
       throw new InvalidState();
     }
 
-    if (sourceModel.getId() !== targetModel.getId()) {
+    if (sourceModel !== targetModel) {
       LOG.error("Ignored operation as there is no single model.",
         { source: sourceModel, target: targetModel });
       return;
     }
 
     const generalization = cmeExecutor.createGeneralization({
-      model: sourceModel.getId(),
+      model: sourceModel,
       // https://github.com/dataspecer/dataspecer/issues/537
       iri: null,
       childIdentifier: source.id,
@@ -211,16 +210,16 @@ function createGeneralization(
 
 function createProfile(
   cmeExecutor: CmeModelOperationExecutor,
-  graph: UseModelGraphContextType,
   classes: ClassesContext,
   visualExecutor: VisualModelOperationExecutor,
   source: SemanticModelClassProfile,
   target: SemanticModelClass,
 ) {
-  const sourceModel = findSourceModelOfEntity(source.id, classes.semanticModels);
-  const targetModel = findSourceModelOfEntity(target.id, classes.semanticModels);
 
-  if (sourceModel === null || targetModel === null) {
+  const sourceModel = classes.sourceModelOfEntityMap.get(source.id);
+  const targetModel = classes.sourceModelOfEntityMap.get(target.id);
+
+  if (sourceModel === undefined || targetModel === undefined) {
     LOG.error("Missing model for entity.",
       { source, target, sourceModel, targetModel });
     throw new InvalidState();
@@ -231,7 +230,7 @@ function createProfile(
     // We update the class profile.
     cmeExecutor.changeClassProfile({
       identifier: source.id,
-      model: sourceModel.getId(),
+      model: sourceModel,
       profileOf: [...prevProfiles, target.id],
     });
   }
@@ -239,10 +238,10 @@ function createProfile(
   // Now we add to the visual.
   visualExecutor.addProfile({
     identifier: source.id,
-    model: sourceModel.getId(),
+    model: sourceModel,
   }, {
     identifier: target.id,
-    model: targetModel.getId()
+    model: targetModel,
   });
 
 }

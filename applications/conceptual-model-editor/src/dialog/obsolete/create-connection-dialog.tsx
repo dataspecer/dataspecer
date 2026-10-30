@@ -21,7 +21,6 @@ import { DialogColoredModelHeaderWithModelSelector } from "../../components/dial
 import { configuration, t } from "../../application";
 import { DialogProps, DialogWrapper } from "../dialog-api";
 import { filterInMemoryModels } from "../../util/model-utils";
-import { findSourceModelOfEntity } from "../../service/model-service";
 import { generateName } from "../../util/name-utils";
 import { getDomainAndRange } from "../../util/relationship-utils";
 import { ClassesContext } from "../../context/classes-context";
@@ -97,7 +96,8 @@ export function createCreateConnectionState(
   language: string,
 ): CreateConnectionState {
   const models = filterInMemoryModels(classesContext.semanticModelsList);
-  const owner = findSourceModelOfEntity(source.id, classesContext.semanticModels);
+  const ownerId = classesContext.sourceModelOfEntityMap.get(source.id);
+  const owner = ownerId === undefined ? null : classesContext.semanticModels.get(ownerId);
   // Check we have an owner as a semantic model we can write to.
   let model;
   if (owner === null || !(owner instanceof InMemorySemanticModel) || !!owner.getMainEntity()?.source) {
