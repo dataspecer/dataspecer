@@ -1,4 +1,5 @@
 import { LOCAL_SEMANTIC_MODEL } from "@dataspecer/core-v2/model/known-models";
+import { changeRdfsSourceUrls, createReloadOperation } from "@dataspecer/core-v2/semantic-model/operations";
 import type { Entity, EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import {
@@ -96,6 +97,26 @@ const setUpProject = [
 ];
 
 describe(applyUndoOperationToModels, () => {
+  test("undo and redo restore an entire RDFS reload without fetching", async () => {
+    const main = entity(MODEL_A, {
+      type: [LOCAL_SEMANTIC_MODEL], label: {}, source: { type: "snapshot", provider: "rdfs", urls: ["https://example.com/old.ttl"] },
+    });
+    const prefix = [
+      ...setUpProject,
+      { clientId: "initial", operations: inA(createSetEntityOperation(main)) },
+      { clientId: "reload", operations: inA(
+        changeRdfsSourceUrls(["https://example.com/new.ttl"]),
+        createReloadOperation(),
+        createSetEntityOperation(entity("downloaded")),
+      ) },
+    ];
+    const { states: reloaded } = await buildHistory(prefix);
+    const { history, states } = await buildHistory([...prefix, { clientId: "undo", operations: inProject(createUndoOperation("reload")) }]);
+    expect(states[MODEL_A]).toEqual({ [MODEL_A]: main });
+    const redone = await applyUndoOperationToModels(createUndoOperation("undo"), history, async (modelId) => states[modelId] ?? {});
+    expect(redone?.[MODEL_A]).toEqual(reloaded[MODEL_A]);
+  });
+
   test("undoes the last transaction", async () => {
     const { history, states } = await buildHistory([
       { clientId: "A", operations: inA(createSetEntityOperation(entity("e1", { value: "a" }))) },

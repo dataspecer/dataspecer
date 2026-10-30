@@ -1,4 +1,3 @@
-import { useSemanticModelSource } from "./hooks/use-semantic-model-source";
 import { isRdfsSnapshot } from "@dataspecer/rdfs/semantic-model";
 import { TagBadge, TagName } from "@/components/tag";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -69,7 +68,6 @@ const useSortIris = (iris: string[]) => {
 const Row = React.memo(({ iri, parentIri, onTagSelect }: { iri: string, parentIri?: string, onTagSelect: (tag: string) => void }) => {
   const resources = useContext(ResourcesContext);
   const resource = resources[iri]!;
-  const [modelSource] = useSemanticModelSource(resource);
   const { t, i18n } = useTranslation();
   const { theme } = useTheme();
 
@@ -153,7 +151,7 @@ const Row = React.memo(({ iri, parentIri, onTagSelect }: { iri: string, parentIr
         </Tooltip>
       }
 
-      {isRdfsSnapshot(modelSource?.source) &&
+      {isRdfsSnapshot(resource.userMetadata?.source) &&
         <Tooltip>
           <TooltipTrigger>
             <Button asChild variant="ghost" size="icon" className="shrink-0" onClick={stopPropagation(() => openModal(ReloadResource, { id: iri, parentId: parentIri ?? "" }))}>

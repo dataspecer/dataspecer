@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createRdfsSemanticModelAdapter } from "../adapter/adapter.ts";
 import { createRdfsModel, reloadRdfsModel } from "./implementation.ts";
 
-vi.mock("../rdfs-adapter.ts", () => ({ createRdfsSemanticModelAdapter: vi.fn() }));
+vi.mock("../adapter/adapter.ts", () => ({ createRdfsSemanticModelAdapter: vi.fn() }));
 
 const vocabulary: EntityRecord<SemanticModelClass> = { item: { id: "item", type: ["class"], iri: "https://example.com/Item", name: {}, description: {} } };
 

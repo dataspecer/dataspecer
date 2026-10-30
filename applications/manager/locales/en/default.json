@@ -117,6 +117,7 @@
     "error-title": "Reload failed",
     "reload": "Reload and view changes",
     "reload-apply": "Reload and apply changes immediately",
+    "no-changes": "The resource was successfully reloaded, however the local version was already up to date. Therefore no changes were made.",
     "success": "Reload was successful.",
     "title": "Reload resource",
     "url": "URL",

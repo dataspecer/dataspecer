@@ -41,10 +41,10 @@ export async function requestLoadPackage(iri: string, forceUpdate = false) {
         pckg.subResourcesIri = pckg.subResources!.map((resource) => resource.iri);
 
         for (const resource of pckg.subResources!) {
-            if (copiedResourcesMemory[resource.iri]) {
-                continue;
-            }
-            copiedResourcesMemory[resource.iri] = resource as ResourceWithIris;
+            copiedResourcesMemory[resource.iri] = {
+                ...copiedResourcesMemory[resource.iri],
+                ...resource,
+            } as ResourceWithIris;
         }
         delete pckg.subResources;
     }

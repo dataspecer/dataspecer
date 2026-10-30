@@ -14,6 +14,8 @@ import { DataTypeURIs, isDataType } from "@dataspecer/core-v2/semantic-model/dat
 import { isModelProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { createRdfsModel, reloadRdfsModel, isRdfsSnapshot } from "@dataspecer/rdfs/semantic-model";
 import { semanticModelEntitiesToSerialization } from "@dataspecer/core-v2/semantic-model";
+import { changeRdfsSourceUrls, createReloadOperation } from "@dataspecer/core-v2/semantic-model/operations";
+import type { OperationInModel } from "@dataspecer/core/operation";
 import { parseControlledVocabularyCatalog, type ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 import type { CoreResource } from "@dataspecer/core/core/core-resource";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
@@ -33,7 +35,7 @@ import { v4 as uuidv4 } from "uuid";
 import z from "zod";
 import { modelRepository } from "../main.ts";
 import { PROJECT_MODEL_ID } from "../models/model-id.ts";
-import { diffModelEntitiesToOperations, diffModelStates } from "../models/model-operations.ts";
+import { applyOperationsToModelEntities, diffModelEntitiesToOperations, diffModelStates } from "../models/model-operations.ts";
 import { type ModelRepositoryType } from "../models/model-repository.ts";
 import { BaseResource } from "../models/resource-model.ts";
 import { StagingModelRepository } from "../models/staging-model-repository.ts";
@@ -771,19 +773,33 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
       const urls = isRdfsSnapshot(source)
         ? z.object({ urls: z.array(z.string().url()).optional() }).parse(request.body ?? {}).urls
         : undefined;
+      const operations: OperationInModel[] = [];
+      if (isRdfsSnapshot(source) && urls !== undefined &&
+        (urls.length !== source.urls.length || urls.some((url, index) => url !== source.urls[index]))) {
+        operations.push({ modelId: existingResource.iri, operation: changeRdfsSourceUrls(urls) });
+      }
+      const reloadBase = applyOperationsToModelEntities(
+        existingResource.iri, LOCAL_SEMANTIC_MODEL, previousEntities!, operations.map(({ operation }) => operation),
+      );
       const nextEntities = isRdfsSnapshot(source)
-        ? await reloadRdfsModel(previousEntities!, httpFetch, urls)
+        ? await reloadRdfsModel(reloadBase, httpFetch)
         : await reloadCachedSemanticModel(previousEntities!);
-      const operations = diffModelEntitiesToOperations(
+      const contentOperations = diffModelEntitiesToOperations(
         existingResource.iri,
         LOCAL_SEMANTIC_MODEL,
-        previousEntities!,
+        reloadBase,
         nextEntities,
       );
+      const hasChanges = operations.length > 0 || contentOperations.length > 0;
+      const unchangedRdfsReload = isRdfsSnapshot(source) && !hasChanges;
+      if (isRdfsSnapshot(source)) {
+        operations.push({ modelId: existingResource.iri, operation: createReloadOperation() });
+      }
+      operations.push(...contentOperations);
 
       const projectIri = (await modelRepository.getProjectIri(existingResource.iri))!;
       let evolutionBranchId: number | null = null;
-      if (query.apply) {
+      if (query.apply || unchangedRdfsReload) {
         await modelRepository.applyTransactions(projectIri, [{ id: uuidv4(), operations }]);
       } else {
         evolutionBranchId = await modelRepository.recordEvolutionTransactions(
@@ -794,7 +810,7 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
         );
       }
 
-      response.send({ ...(await modelRepository.getResource(existingResource.iri)), evolutionBranchId });
+      response.send({ ...(await modelRepository.getResource(existingResource.iri)), evolutionBranchId, hasChanges });
       return;
     }
   }
@@ -860,6 +876,6 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
     evolutionBranchId = await modelRepository.recordEvolutionTransactions(projectIri, query.iri, [{ id: uuidv4(), operations }], previousModels);
   }
 
-  response.send({ ...(await modelRepository.getResource(query.iri)), evolutionBranchId });
+  response.send({ ...(await modelRepository.getResource(query.iri)), evolutionBranchId, hasChanges: operations.length > 0 });
   return;
 });
