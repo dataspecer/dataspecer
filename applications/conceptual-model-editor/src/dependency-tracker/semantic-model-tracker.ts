@@ -3,7 +3,6 @@ import { Entity, ModelIdentifier } from "@dataspecer/entity-model";
 import { Tracker } from "./dependency-tracker";
 import {
   isExternalSemanticModelEntity,
-  isPimStoreModelEntity,
   isSemanticModelEntity,
 } from "./model-observer";
 
@@ -32,7 +31,7 @@ class SemanticModelTracker implements Tracker {
         label: next.label,
         baseIri: next.baseIri,
         isExternal: false,
-        isReadOnly: false,
+        isReadOnly: next.isReadOnly ?? false,
       });
     } else if (isExternalSemanticModelEntity(next)) {
       this.models.set(model, {
@@ -43,28 +42,19 @@ class SemanticModelTracker implements Tracker {
         isExternal: true,
         isReadOnly: true,
       });
-    } else if (isPimStoreModelEntity(next)) {
-      this.models.set(model, {
-        metadataEntity: next.id,
-        model: model,
-        label: next.label,
-        baseIri: next.baseIri,
-        isExternal: false,
-        isReadOnly: true,
-      });
     }
   }
 
   onEntityDidChange(model: ModelIdentifier, _previous: Entity, next: Entity) {
     if (isSemanticModelEntity(next)
-      || isExternalSemanticModelEntity(next)
-      || isPimStoreModelEntity(next)) {
+      || isExternalSemanticModelEntity(next)) {
       const entity = this.models.get(model);
       if (entity === undefined) {
         return;
       }
       entity.label = next.label;
       entity.baseIri = next.baseIri;
+      entity.isReadOnly = (next.isReadOnly ?? false) || isExternalSemanticModelEntity(next);
     }
   }
 
@@ -72,8 +62,6 @@ class SemanticModelTracker implements Tracker {
     if (isSemanticModelEntity(previous)) {
       this.models.delete(model);
     } else if (isExternalSemanticModelEntity(previous)) {
-      this.models.delete(model);
-    } else if (isPimStoreModelEntity(previous)) {
       this.models.delete(model);
     }
   }

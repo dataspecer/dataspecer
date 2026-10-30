@@ -38,6 +38,9 @@
       "undone": "Vráceno zpět"
     },
     "op": {
+      "change-rdfs-source-urls": "Změnil(a) zdrojové URL RDFS",
+      "no-source-urls": "Žádné zdrojové URL",
+      "reload": "Znovu načetl(a) model",
       "undo": "Vrátil(a) zpět změny transakce {{transactionId}}",
       "version": "Označil(a) transakci {{transactionId}} verzí {{version}}",
       "create-project": "Projekt \"{{name}}\" vytvořen",

@@ -233,7 +233,7 @@ export class ProjectModelInModelStore implements ModelInModelStore {
     for (const id in coreState) {
       const entity = coreState[id];
       const metadata = this.metadata[id];
-      outputState[id] = metadata === undefined ? entity : { ...entity, label: metadata.label, description: metadata.description };
+      outputState[id] = metadata === undefined ? entity : { ...entity, ...metadata };
     }
 
     const diff = diffEntities(this.outputState, outputState);

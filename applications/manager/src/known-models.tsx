@@ -1,10 +1,11 @@
-import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, CONTROLLED_VOCABULARY_MODEL, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, CONTROLLED_VOCABULARY_MODEL, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
 import { AppWindowMac, BookOpen, Code, Cog, Eye, Folder, Globe2, LibraryBig } from "lucide-react";
 import { v4 as uuidv4 } from 'uuid';
 import { cn } from "./lib/utils";
 import { packageService, requestLoadPackage } from "./package";
 import type { VocabularySource } from "@dataspecer/core-v2/semantic-model/concepts";
+import type { SemanticModelMetadata } from "@dataspecer/core-v2/semantic-model";
 
 export function getCMELink(packageId: string, viewId: string) {
   return import.meta.env.VITE_CME + "/diagram?package-id=" + encodeURIComponent(packageId) + "&view-id=" + encodeURIComponent(viewId)
@@ -159,13 +160,12 @@ export const modelTypeToName = {
     [V1.PSM]: "PSM",
     [V1.GENERATOR_CONFIGURATION]: "Generator configuration",
     [QUERYABLE_MODEL]: "SSP",
-    [RDFS_MODEL]: "PIM Wrapper",
     [API_SPECIFICATION_MODEL]: "OpenAPI Specification",
     [APPLICATION_GRAPH]: "Application graph",
     [CONTROLLED_VOCABULARY_MODEL]: "Controlled vocabulary",
   };
 
-export const ModelIcon = ({ type, className }: { type: string[], className?: string }) => {
+export const ModelIcon = ({ type, source, className }: { type: string[], source?: SemanticModelMetadata["source"], className?: string }) => {
   if (type.includes(APPLICATION_GRAPH)) {
     return <AppWindowMac className={cn("text-rose-600", className)} />
   }
@@ -176,7 +176,7 @@ export const ModelIcon = ({ type, className }: { type: string[], className?: str
     return <Eye className={cn("text-purple-400", className)} />;
   }
   if (type.includes(LOCAL_SEMANTIC_MODEL)) {
-    return <LibraryBig className={cn("text-yellow-400", className)} />;
+    return <LibraryBig className={cn(source ? "text-orange-400" : "text-yellow-400", className)} />;
   }
   if (type.includes(V1.PSM)) {
     return <Code className={cn("text-red-400", className)} />;
@@ -186,9 +186,6 @@ export const ModelIcon = ({ type, className }: { type: string[], className?: str
   }
   if (type.includes(QUERYABLE_MODEL)) {
     return <Globe2 className={cn("text-green-400", className)} />;
-  }
-  if (type.includes(RDFS_MODEL)) {
-    return <LibraryBig className={cn("text-orange-400", className)} />;
   }
   if (type.includes(API_SPECIFICATION_MODEL)) {
     return <span className={cn("aspect-square w-[24px] leading-[24px] align-middle text-center text-blue-800 font-bold text-xs", className)} >API</span>;

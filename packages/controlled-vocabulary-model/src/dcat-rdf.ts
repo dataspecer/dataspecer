@@ -81,7 +81,7 @@ export function writeControlledVocabularyCatalogQuads(
       }
     }
     if (vocabulary.references) {
-      // Links this metadata record to the vocabulary it describes 
+      // Links this metadata record to the vocabulary it describes
       // - its skos:ConceptScheme when the vocabulary conforms to SKOS,
       // otherwise its main download or documentation URL.
       writer.addQuad(datasetIri, DCT.references, IRI(vocabulary.references));
@@ -134,7 +134,7 @@ export function controlledVocabulariesToDcatCatalog(
       if (error) {
         reject(error);
       } else {
-        resolve(result);
+        resolve(result!);
       }
     });
   });

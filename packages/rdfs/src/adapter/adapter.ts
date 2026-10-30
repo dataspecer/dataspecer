@@ -1,7 +1,7 @@
+import type { LanguageString, NamedThing, SemanticModelClass, SemanticModelGeneralization, SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
+import { SEMANTIC_MODEL_CLASS, SEMANTIC_MODEL_GENERALIZATION, SEMANTIC_MODEL_RELATIONSHIP } from "@dataspecer/core-v2/semantic-model/concepts";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import type { Store } from "n3";
-import { SEMANTIC_MODEL_CLASS, SEMANTIC_MODEL_GENERALIZATION, SEMANTIC_MODEL_RELATIONSHIP } from "./concepts/concepts-utils.ts";
-import type { LanguageString, NamedThing, SemanticModelClass, SemanticModelGeneralization, SemanticModelRelationship } from "./concepts/concepts.ts";
 
 const RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
 const RDFS = "http://www.w3.org/2000/01/rdf-schema#";
@@ -34,10 +34,6 @@ const DefaultOptions: RdfsSemanticModelAdapterOptions = {
 /**
  * Adapter that can convert RDFS+OWL to the semantic model representation used
  * in Dataspecer.
- *
- * This implementation should replace both @dataspecer/sgov-adapter and
- * @dataspecer/rdfs-adapter which currently convert data to PIM model and then
- * @dataspecer/core-v2/semantic-model/v1-adapters needs to be used.
  *
  * Before you use this adapter instead of those above, please fix the missing
  * edge cases in its behavior.

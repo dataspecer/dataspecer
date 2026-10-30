@@ -100,7 +100,7 @@ export function createCreateConnectionState(
   const owner = findSourceModelOfEntity(source.id, classesContext.semanticModels);
   // Check we have an owner as a semantic model we can write to.
   let model;
-  if (owner === null || !(owner instanceof InMemorySemanticModel)) {
+  if (owner === null || !(owner instanceof InMemorySemanticModel) || !!owner.getMainEntity()?.source) {
     model = models[0];
   } else {
     model = owner;

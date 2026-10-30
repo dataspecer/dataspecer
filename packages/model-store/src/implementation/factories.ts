@@ -1,11 +1,10 @@
-import { CONTROLLED_VOCABULARY_MODEL, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { CONTROLLED_VOCABULARY_MODEL, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { BackendPackageService } from "@dataspecer/core-v2/project";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import { createAsyncQueryableModel } from "./async-queryable-model.ts";
 import { createControlledVocabularyModel } from "./controlled-vocabulary-model.ts";
 import { DefaultFrontendModelStore, VISUAL_MODEL_SVG_BLOB_TYPE } from "./implementation.ts";
-import { createPimModel } from "./pim-model.ts";
 import { createProjectModel } from "./project-model.ts";
 import { createSemanticModel } from "./semantic-model.ts";
 import { createVisualModelInModelStore } from "./visual-model.ts";
@@ -29,7 +28,6 @@ export function createCMEModelStore(params: {
       [LOCAL_SEMANTIC_MODEL]: createSemanticModel,
       [VISUAL_MODEL]: createVisualModelInModelStore,
       [QUERYABLE_MODEL]: createAsyncQueryableModel,
-      [RDFS_MODEL]: createPimModel,
     },
     packageService: packageService,
     httpFetch: params.httpFetch,
@@ -101,7 +99,6 @@ export function createDSEModelStore(params: {
       [VISUAL_MODEL_SVG_BLOB_TYPE]: createBlobModel,
       [LOCAL_PACKAGE]: createBlobModel,
       [QUERYABLE_MODEL]: createAsyncQueryableModel,
-      [RDFS_MODEL]: createPimModel,
       [V1.PSM]: createStructureModel,
       [V1.GENERATOR_CONFIGURATION]: createBlobModel,
       [CONTROLLED_VOCABULARY_MODEL]: createControlledVocabularyModel,

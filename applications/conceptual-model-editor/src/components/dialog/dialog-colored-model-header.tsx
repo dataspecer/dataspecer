@@ -85,7 +85,7 @@ export const DialogColoredModelHeaderWithModelSelector = (props: {
   const { activeModel, style } = props;
 
   const availableModels = classesContext.semanticModels.values()
-    .filter(model => model instanceof InMemorySemanticModel)
+    .filter(model => model instanceof InMemorySemanticModel && !model.getMainEntity()?.source)
     .map(model => ({
       id: model.getId(),
       label: getModelLabel(model),

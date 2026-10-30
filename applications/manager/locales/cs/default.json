@@ -117,6 +117,7 @@
     "error-title": "Aktualizace selhala",
     "reload": "Aktualizovat a zobrazit změny",
     "reload-apply": "Aktualizovat a aplikovat změny okamžitě",
+    "no-changes": "Slovník byl úspěšně aktualizován, nicméně lokální verze již byla aktuální. Žádné změny tedy nebyly provedeny.",
     "success": "Aktualizace proběhla úspěšně.",
     "title": "Aktualizovat zdroj",
     "url": "URL",

@@ -4,7 +4,7 @@ import { executeSparqlConstructQuery, type SparqlQueryOptions } from "./sparql.t
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { LOCAL_SEMANTIC_MODEL } from "@dataspecer/core-v2/model/known-models";
 import type { MainSemanticModelEntity, VocabularySourceOFN } from "@dataspecer/core-v2/semantic-model/concepts";
-import { createRdfsSemanticModelAdapter } from "@dataspecer/core-v2/semantic-model/rdfs";
+import { createRdfsSemanticModelAdapter } from "@dataspecer/rdfs/adapter";
 
 export interface LoadOfnVocabularyConceptsOptions extends SparqlQueryOptions {
   vocabularyIri: string;

@@ -1,14 +1,15 @@
-import { isModelProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { CONTROLLED_VOCABULARY_MODEL, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, QUERYABLE_MODEL, V1, RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { controlledVocabulariesToDcatCatalog, controlledVocabularyCatalogIri, type ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
-import { isMainSemanticModelEntity, isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship, SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
+import { CONTROLLED_VOCABULARY_MODEL, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL, V1, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
+import { getSemanticModelMainEntity, isMainSemanticModelEntity, isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship, SemanticModelEntity, type MainSemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
+import { isModelProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { withAbsoluteIri } from "@dataspecer/core-v2/semantic-model/utils";
 import { LanguageString, type CoreResource } from "@dataspecer/core/core/core-resource";
 import { DataSpecificationArtefact } from "@dataspecer/core/data-specification/model/data-specification-artefact";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
-import type { Transaction } from "@dataspecer/core/operation";
 import { StreamDictionary } from "@dataspecer/core/io/stream/stream-dictionary";
+import type { Transaction } from "@dataspecer/core/operation";
+import type { PackageEntity, ProjectModelEntity } from "@dataspecer/core/project-model";
 import { generatorConfigurationToRdf } from "@dataspecer/data-specification-vocabulary/generator-configuration";
 import {
   DSV_APPLICATION_PROFILE_TYPE,
@@ -22,8 +23,9 @@ import {
   type VocabularySpecificationDocument,
 } from "@dataspecer/data-specification-vocabulary/specification-description";
 import { structureModelToRdf } from "@dataspecer/data-specification-vocabulary/structure-model";
-import type { ProjectModelEntity, PackageEntity } from "@dataspecer/core/project-model";
+import { isRdfsSnapshot } from "@dataspecer/rdfs/semantic-model";
 import { canonicalizeIds, garbageCollect } from "@dataspecer/structure-model";
+import { generateApplicationProfileSvg } from "./application-profile-diagram.ts";
 import { ModelDescription, type StructureModelDescription } from "./model.ts";
 import { DefaultShaclConfiguration, DefaultShaclFileKey, ShaclV2Configurator } from "./shacl-v2.ts";
 import {
@@ -36,8 +38,6 @@ import {
   isModelVocabulary,
 } from "./utils.ts";
 import { artefactToDsv } from "./v1/artefact-to-dsv.ts";
-import { MainEntity as RdfsModelMainEntity } from "@dataspecer/model-store/implementation";
-import { generateApplicationProfileSvg } from "./application-profile-diagram.ts";
 
 /**
  * Id under which the project model (the package hierarchy) is stored in the
@@ -213,7 +213,8 @@ export async function generateSpecification(packageId: string, context: Generate
     const semanticModels = children.filter((r) => r.modelType === LOCAL_SEMANTIC_MODEL);
     for (const semanticModel of semanticModels) {
       const modelEntities = allModels[semanticModel.id] ?? {};
-      const mainEntity = modelEntities[semanticModel.id];
+      const mainEntity = modelEntities[semanticModel.id] as MainSemanticModelEntity | undefined;
+      const isSourced = !!mainEntity?.source;
       const baseIri = mainEntity && isMainSemanticModelEntity(mainEntity) ? mainEntity.baseIri ?? null : null;
       const entities = Object.fromEntries(Object.entries(modelEntities).filter(([id]) => id !== semanticModel.id));
 
@@ -225,8 +226,8 @@ export async function generateSpecification(packageId: string, context: Generate
       modelDescriptions.push({
         id: semanticModel.id,
         entities: Object.fromEntries(Object.entries(entities).map(([id, entity]) => [id, withAbsoluteIri(entity as SemanticModelEntity, baseIri ?? undefined)])),
-        isPrimary: isRoot,
-        documentationUrl: (pckgEntity as any).documentBaseUrl ?? null,
+        isPrimary: isRoot && !isSourced,
+        documentationUrl: isSourced ? null : ((pckgEntity as any).documentBaseUrl ?? null),
         baseIri,
         title: semanticModel.label,
       });
@@ -242,19 +243,6 @@ export async function generateSpecification(packageId: string, context: Generate
       modelDescriptions.push({
         id: sgovModel.id,
         entities: entities,
-        isPrimary: false,
-        documentationUrl: null,
-        baseIri: null,
-        title: null,
-      });
-    }
-    const pimModels = children.filter((r) => r.modelType === RDFS_MODEL);
-    for (const pimModel of pimModels) {
-      const modelEntities = allModels[pimModel.id] ?? {};
-      const entities = Object.fromEntries(Object.entries(modelEntities).filter(([id]) => id !== pimModel.id)) as Record<string, SemanticModelEntity>;
-      modelDescriptions.push({
-        id: pimModel.id,
-        entities,
         isPrimary: false,
         documentationUrl: null,
         baseIri: null,
@@ -403,20 +391,19 @@ export async function generateSpecification(packageId: string, context: Generate
   const usedVocabularies: ExternalSpecification[] = [];
 
   for (const entity of subResources) {
-    if (entity.modelType === RDFS_MODEL) {
-      const data = (getModelBlobData(allModels, entity.id) ?? {}) as RdfsModelMainEntity;
-      for (const url of data.urls ?? []) {
-        usedVocabularies.push({
-          url: url,
-          title: data.label ?? entity.label ?? undefined,
-        } satisfies ExternalSpecification);
+    if (entity.modelType === LOCAL_SEMANTIC_MODEL) {
+      const main = getSemanticModelMainEntity(allModels[entity.id] ?? {});
+      if (isRdfsSnapshot(main?.source)) {
+        for (const url of main.source.urls) {
+          usedVocabularies.push({ url, title: main.label ?? entity.label } satisfies ExternalSpecification);
+        }
       }
     }
     if (entity.modelType === LOCAL_PACKAGE) {
       // We need to obtain IRI of the application profile/vocabulary which is the base IRI of the semantic model.
 
       const importedPackageChildren = getSubModelEntities(projectModel, entity.id);
-      const semanticModel = importedPackageChildren.find((m) => m.modelType === LOCAL_SEMANTIC_MODEL);
+      const semanticModel = importedPackageChildren.find((m) => m.modelType === LOCAL_SEMANTIC_MODEL && !getModelBlobData(allModels, m.id)?.source); // We need to find model that is made by the user, not imported.
       if (semanticModel) {
         const data = getModelBlobData(allModels, semanticModel.id) as any;
         const baseIri = data?.baseIri ?? "";

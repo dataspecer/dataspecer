@@ -104,7 +104,7 @@ class Generator {
             writtenProperties.add(property.id);
         }
 
-        return new Promise((resolve, reject) => this.writer.end((error, result) => resolve(result)));
+        return new Promise((resolve, reject) => this.writer.end((error, result) => resolve(result!)));
     }
 
     private writeClass(entity: SemanticModelClass) {

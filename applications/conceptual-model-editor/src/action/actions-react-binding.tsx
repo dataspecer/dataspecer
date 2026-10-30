@@ -754,7 +754,7 @@ function createActionsContext(
   const openCreateClassDialog = (model: string) => {
     const visualModel = useGraph.getActiveVisualModel();
     const modelInstance = classes.semanticModels.get(model);
-    if (modelInstance === null || modelInstance instanceof InMemorySemanticModel) {
+    if (modelInstance === null || (modelInstance !== undefined && isInMemorySemanticModel(modelInstance))) {
       openCreateClassDialogAction(
         cmeExecutor, options, dialogs, classes, useGraph, notifications, visualModel,
         diagram, modelInstance, null, null, dialogTracker, labelResolver);
@@ -766,7 +766,7 @@ function createActionsContext(
   const openCreateAssociationDialog = (model: string) => {
     const visualModel = useGraph.getActiveVisualModel();
     const modelInstance = classes.semanticModels.get(model);
-    if (modelInstance === null || modelInstance instanceof InMemorySemanticModel) {
+    if (modelInstance === null || (modelInstance !== undefined && isInMemorySemanticModel(modelInstance))) {
       openCreateAssociationDialogAction(
         cmeExecutor, options, dialogs, classes, notifications, visualModel,
         modelInstance, dialogTracker, labelResolver);
@@ -778,7 +778,7 @@ function createActionsContext(
   const openCreateAttributeDialogForModel = (model: string) => {
     const visualModel = useGraph.getActiveVisualModel();
     const modelInstance = classes.semanticModels.get(model);
-    if (modelInstance === null || modelInstance instanceof InMemorySemanticModel) {
+    if (modelInstance === null || (modelInstance !== undefined && isInMemorySemanticModel(modelInstance))) {
       openCreateAttributeDialogAction(
         cmeExecutor, options, dialogs, classes, useGraph, notifications,
         visualModel, modelInstance, labelResolver);

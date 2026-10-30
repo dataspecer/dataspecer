@@ -5,6 +5,7 @@ export default defineConfig({
   plugins: [vitestSparqlPlugin()],
   test: {
     include: ["src/**/*.(spec|test).[jt]s"],
+    exclude: ["src/**/*.integration.test.ts"],
     globals: true,
   },
 });

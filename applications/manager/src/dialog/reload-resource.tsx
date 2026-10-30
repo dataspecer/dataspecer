@@ -6,12 +6,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useAsyncMemo } from "@/hooks/use-async-memo";
 import { usePreviousValue } from "@/hooks/use-previous-value";
 import { BetterModalProps } from "@/lib/better-modal";
-import { getEvolutionReviewLink, getHistoryLink } from "@/known-models";
+import { getEvolutionReviewLink } from "@/known-models";
 import { ResourcesContext, requestLoadPackage } from "@/package";
-import { RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
+import { isRdfsSnapshot } from "@dataspecer/rdfs/semantic-model";
 import { AlertCircleIcon, ChevronDown, Loader } from "lucide-react";
 import { useContext, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -27,9 +26,9 @@ export const ReloadResource = ({ id, parentId, isOpen, resolve }: ReloadResource
   const resources = useContext(ResourcesContext);
   const resource = usePreviousValue(resources[id]!);
 
-  // The RDFS wrapper model reloads from a list of URLs (textarea), any other
-  // reloadable resource (an imported specification) reloads from a single URL.
-  const isMultiUrl = resource.types.includes(RDFS_MODEL);
+  const source = resource.userMetadata?.source;
+  const isMultiUrl = isRdfsSnapshot(source);
+  const currentUrls = isMultiUrl ? source.urls.join("\n") : "";
 
   const urlInputFormId = useId();
   const textareaId = useId();
@@ -37,16 +36,6 @@ export const ReloadResource = ({ id, parentId, isOpen, resolve }: ReloadResource
 
   // @ts-ignore
   const importedUrl = resource.userMetadata?.importedFromUrl as string | undefined;
-
-  const [currentUrls] = useAsyncMemo(async () => {
-    if (!isMultiUrl) {
-      return "";
-    }
-    const response = await fetch(import.meta.env.VITE_BACKEND + "/resources/blob?iri=" + encodeURIComponent(id));
-    if (!response.ok) return "";
-    const data = (await response.json()) as { urls?: string[] };
-    return (data.urls ?? []).join("\n");
-  }, [id, isMultiUrl]);
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,15 +66,16 @@ export const ReloadResource = ({ id, parentId, isOpen, resolve }: ReloadResource
     });
 
     if (result.ok) {
+      const data = (await result.json().catch(() => null)) as { evolutionBranchId?: number | null; hasChanges?: boolean } | null;
       await requestLoadPackage(parentId, true);
-      // todo: We need proper functionality to obtain project id, this works only for project package and one level subpackages.
-      const projectId = parentId === "http://dataspecer.com/packages/local-root" ? id : parentId;
-      toast.success(t("reload-resource.success"));
+      toast.success(t(data?.hasChanges === false ? "reload-resource.no-changes" : "reload-resource.success"));
       resolve(true);
       if (!apply) {
-        const data = (await result.json().catch(() => null)) as { evolutionBranchId?: number | null } | null;
-        window.location.href =
-          data?.evolutionBranchId != null ? getEvolutionReviewLink(projectId, data.evolutionBranchId) : getHistoryLink(parentId);
+        if (data?.evolutionBranchId != null) {
+          // todo: We need proper functionality to obtain project id, this works only for project package and one level subpackages.
+          const projectId = parentId === "http://dataspecer.com/packages/local-root" ? id : parentId;
+          window.location.href = getEvolutionReviewLink(projectId, data.evolutionBranchId);
+        }
       }
       return;
     }

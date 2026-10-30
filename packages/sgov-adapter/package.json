@@ -6,12 +6,14 @@
     "build": "tsc",
     "dev": "tsc -w",
     "prebuild": "node ./build/prebuild.mjs",
-    "integration-test": "vitest run --pass-with-no-tests"
+    "integration-test": "vitest run --config vitest.integration.config.js",
+    "test": "vitest run --pass-with-no-tests"
   },
   "main": "lib/index.js",
   "dependencies": {
     "@dataspecer/core": "*",
-    "js-string-escape": "^1.0.1"
+    "js-string-escape": "^1.0.1",
+    "@dataspecer/core-v2": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2",

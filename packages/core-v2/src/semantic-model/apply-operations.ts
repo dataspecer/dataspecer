@@ -10,6 +10,7 @@ import {
 } from "@dataspecer/core/operation";
 import type { Entity } from "../entity-model/entity.ts";
 import type { SemanticModelClass, SemanticModelGeneralization, SemanticModelRelationship } from "./concepts/concepts.ts";
+import { getSemanticModelMainEntity, isRdfsSnapshot } from "./concepts/index.ts";
 import {
   type CreateClassOperation,
   type CreatedEntityOperationResult,
@@ -17,6 +18,8 @@ import {
   type CreateRelationshipOperation,
   type DeleteEntityOperation,
   isCreateClassOperation,
+  isChangeRdfsSourceUrlsOperation,
+  isReloadOperation,
   isCreateGeneralizationOperation,
   isCreateRelationshipOperation,
   isDeleteEntityOperation,
@@ -79,7 +82,18 @@ export function applyOperationsToSemanticModel(
   const result: (OperationResult | CreatedEntityOperationResult)[] = [];
 
   for (const operation of operations) {
-    if (isSetEntityOperation(operation)) {
+    if (isReloadOperation(operation)) {
+      result.push({ success: true });
+    } else if (isChangeRdfsSourceUrlsOperation(operation)) {
+      const entity = getSemanticModelMainEntity(semanticModel);
+      if (entity && isRdfsSnapshot(entity.source)) {
+        const updated = { ...entity, source: { ...entity.source, urls: [...operation.urls] } };
+        change({ [entity.id]: updated }, []);
+        result.push({ success: true });
+      } else {
+        result.push({ success: false });
+      }
+    } else if (isSetEntityOperation(operation)) {
       result.push(handleSetEntityOperation(change, operation));
     } else if (isUpdateEntityOperation(operation)) {
       result.push(handleUpdateEntityOperation(getEntity, change, operation));

@@ -1,22 +1,16 @@
 import { RdfObject, RdfSourceWrap } from "@dataspecer/core/core/adapter/rdf";
-import { PimResource } from "@dataspecer/core/pim/model";
-import { LanguageString } from "@dataspecer/core/core";
+import type { LanguageString, NamedThing } from "@dataspecer/core-v2/semantic-model/concepts";
 import { SKOS } from "../sgov-vocabulary.ts";
-import { IriProvider } from "@dataspecer/core/cim";
 
-export async function loadSgovEntityToResource(
-  entity: RdfSourceWrap,
-  idProvider: IriProvider,
-  resource: PimResource
-): Promise<void> {
-  const prefLabel = await entity.property(SKOS.prefLabel);
-  resource.pimHumanLabel = rdfObjectsToLanguageString(prefLabel);
-  const definition = await entity.property(SKOS.definition);
-  resource.pimHumanDescription = rdfObjectsToLanguageString(definition);
-  resource.pimInterpretation = entity.iri;
-  resource.iri = idProvider.cimToPim(resource.pimInterpretation);
+export async function loadSgovNamedThing(entity: RdfSourceWrap): Promise<NamedThing> {
+  return {
+    name: rdfObjectsToLanguageString(await entity.property(SKOS.prefLabel)),
+    description: rdfObjectsToLanguageString(await entity.property(SKOS.definition)),
+    nameProperty: null,
+    descriptionProperty: null,
+  };
 }
 
 function rdfObjectsToLanguageString(objects: RdfObject[]): LanguageString {
-  return Object.fromEntries(objects.map((o) => [o.language, o.value]));
+  return Object.fromEntries(objects.filter(RdfObject.isLiteral).map((o) => [o.language, o.value]));
 }

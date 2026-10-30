@@ -93,12 +93,7 @@ export async function getModelsForPackage(
         // The metadata stored inside the model take precedence over the
         // resource's user metadata.
         const metadata = getModelMetadata(subModelType, models[subResource.iri] ?? {}, subResource.iri);
-        if (metadata) {
-          projectEntity.label = metadata.label;
-          projectEntity.description = metadata.description;
-        }
-
-        projectModelEntities[projectEntity.id] = projectEntity;
+        projectModelEntities[projectEntity.id] = metadata === null ? projectEntity : { ...projectEntity, ...metadata };
       }
     }
 

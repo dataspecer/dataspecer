@@ -1,5 +1,6 @@
 import { parseRdfQuadsWithN3 } from "./n3-adapter.ts";
-import { RdfNode, RdfObject } from "../rdf-api.ts";
+import { RdfNode } from "../rdf-api.ts";
+import { DataFactory } from "n3";
 
 test("Load sample TRIG.", async () => {
   const input = `
@@ -36,27 +37,18 @@ test("Load sample TRIG.", async () => {
     {
       subject: RdfNode.namedNode("a"),
       predicate: RdfNode.namedNode("b"),
-      object: {
-        language: "en",
-        value: 'Some text "in quotes" and \\ backslash.',
-        termType: "Literal",
-        datatype: RdfNode.namedNode(
-          "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString"
-        ),
-      } as RdfObject,
+      object: DataFactory.literal('Some text "in quotes" and \\ backslash.', "en"),
       graph: RdfNode.defaultGraph(),
     },
     {
       subject: RdfNode.namedNode("c"),
       predicate: RdfNode.namedNode("d"),
-      object: {
-        language: "",
-        value: "42",
-        termType: "Literal",
-        datatype: RdfNode.namedNode("http://www.w3.org/2001/XMLSchema#integer"),
-      } as RdfObject,
+      object: DataFactory.literal("42", RdfNode.namedNode("http://www.w3.org/2001/XMLSchema#integer")),
       graph: RdfNode.defaultGraph(),
     },
   ];
-  expect(actual).toStrictEqual(expected);
+  expect(actual).toHaveLength(expected.length);
+  expected.forEach((quad, index) => {
+    expect(actual[index].equals(DataFactory.quad(quad.subject, quad.predicate, quad.object, quad.graph))).toBe(true);
+  });
 });

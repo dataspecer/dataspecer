@@ -1,18 +1,8 @@
 import { RdfSourceWrap } from "@dataspecer/core/core/adapter/rdf";
-import { PimAssociationEnd, PimAttribute } from "@dataspecer/core/pim/model";
 import { OWL } from "../sgov-vocabulary.ts";
 
-export async function loadSgovCardinalities(
-  rdfEntity: RdfSourceWrap,
-  pimResource: PimAttribute | PimAssociationEnd
-) {
-  const min = await rdfEntity.property(OWL.minQualifiedCardinality);
-  if (min.length > 0) {
-    pimResource.pimCardinalityMin = Number(min[0].value);
-  }
-
-  const max = await rdfEntity.property(OWL.maxQualifiedCardinality);
-  if (max.length > 0) {
-    pimResource.pimCardinalityMax = Number(max[0].value);
-  }
+export async function loadSgovCardinalities(entity: RdfSourceWrap): Promise<[number, number | null]> {
+  const min = await entity.property(OWL.minQualifiedCardinality);
+  const max = await entity.property(OWL.maxQualifiedCardinality);
+  return [min.length > 0 ? Number(min[0].value) : 0, max.length > 0 ? Number(max[0].value) : null];
 }

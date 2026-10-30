@@ -7,7 +7,7 @@ export const sourceModelOfEntity = (entityId: string, models: EntityModel[]) => 
 };
 
 export const filterInMemoryModels = (models: EntityModel[]) => {
-  return models.filter((m): m is InMemorySemanticModel => m instanceof InMemorySemanticModel);
+  return models.filter((m): m is InMemorySemanticModel => m instanceof InMemorySemanticModel && !m.getMainEntity()?.source);
 };
 
 /**
@@ -16,7 +16,7 @@ export const filterInMemoryModels = (models: EntityModel[]) => {
  * @returns
  */
 export const getModelType = (model: EntityModel | undefined | null) => {
-  if (model instanceof InMemorySemanticModel) {
+  if (model instanceof InMemorySemanticModel && !model.getMainEntity()?.source) {
     return "local model";
   } else if (model instanceof ExternalSemanticModel) {
     return "external (sgov)";

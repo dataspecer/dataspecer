@@ -1,30 +1,34 @@
 import { RdfSourceWrap } from "@dataspecer/core/core/adapter/rdf";
-import { PimClass } from "@dataspecer/core/pim/model";
+import type { ExtendedSemanticModelClass, SemanticModelClass, SemanticModelGeneralization } from "@dataspecer/core-v2/semantic-model/concepts";
 import { POJEM, RDFS } from "../sgov-vocabulary.ts";
-import { loadSgovEntityToResource } from "./sgov-entity-adapter.ts";
-import { IriProvider } from "@dataspecer/core/cim";
+import { loadSgovNamedThing } from "./sgov-entity-adapter.ts";
 
 export async function isSgovClass(entity: RdfSourceWrap): Promise<boolean> {
   return (await entity.types()).includes(POJEM.typObjektu);
 }
 
-export async function loadSgovClass(
-  entity: RdfSourceWrap,
-  idProvider: IriProvider
-): Promise<PimClass> {
-  const result = new PimClass();
-  await loadSgovEntityToResource(entity, idProvider, result);
-  result.pimIsCodelist =
-    (await entity.property("__is_ciselnik"))[0]?.value === "1";
-
-  result.pimExtends = unique([
-    ...result.pimExtends,
-    ...(await entity.nodes(RDFS.subClassOf)).map(idProvider.cimToPim),
-  ]);
-
+export async function loadSgovClass(entity: RdfSourceWrap): Promise<SemanticModelClass> {
+  const result: SemanticModelClass & Partial<ExtendedSemanticModelClass> = {
+    id: entity.iri,
+    iri: entity.iri,
+    type: ["class"],
+    ...await loadSgovNamedThing(entity),
+  };
+  if ((await entity.property("__is_ciselnik"))[0]?.value === "1") {
+    result.isCodelist = true;
+    result.codelistUrl = [];
+  }
   return result;
 }
 
-function unique<T>(values: T[]): T[] {
-  return [...new Set(values)];
+export async function loadSgovGeneralizations(entity: RdfSourceWrap): Promise<SemanticModelGeneralization[]> {
+  const parents = new Set(await entity.nodes(RDFS.subClassOf));
+  return [...parents].map(parent => ({
+    // Preserve identifiers used by existing semantic models.
+    id: "https://dataspecer.com/semantic-models/generalization" + new URLSearchParams({ fromIri: entity.iri, toIri: parent }),
+    iri: null,
+    type: ["generalization"],
+    child: entity.iri,
+    parent,
+  }));
 }

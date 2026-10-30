@@ -1,5 +1,6 @@
 import { LOCAL_SEMANTIC_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { BackendPackageService } from "@dataspecer/core-v2/project";
+import type { SemanticModelMetadata } from "@dataspecer/core-v2/semantic-model";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
 import { createContext, useRef, useState } from "react";
 import { Package } from "@dataspecer/core/project-model/legacy";
@@ -8,7 +9,10 @@ import { StructureEditorBackendService } from "./structure-editor-backend-servic
 
 const backendUrl = import.meta.env.VITE_BACKEND;
 
-type ResourceWithIris = Package & { subResourcesIri: string[] };
+type ResourceWithIris = Package & {
+    subResourcesIri: string[];
+    userMetadata: Package["userMetadata"] & Partial<SemanticModelMetadata>;
+};
 
 export const ResourcesContext = createContext<Record<string, ResourceWithIris>>({});
 
@@ -37,10 +41,10 @@ export async function requestLoadPackage(iri: string, forceUpdate = false) {
         pckg.subResourcesIri = pckg.subResources!.map((resource) => resource.iri);
 
         for (const resource of pckg.subResources!) {
-            if (copiedResourcesMemory[resource.iri]) {
-                continue;
-            }
-            copiedResourcesMemory[resource.iri] = resource as ResourceWithIris;
+            copiedResourcesMemory[resource.iri] = {
+                ...copiedResourcesMemory[resource.iri],
+                ...resource,
+            } as ResourceWithIris;
         }
         delete pckg.subResources;
     }

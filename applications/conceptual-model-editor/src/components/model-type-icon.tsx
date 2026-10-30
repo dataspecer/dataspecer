@@ -6,7 +6,9 @@ import { getModelIri } from "../util/iri-utils";
 export const ModelTypeIcon = (props: { model: EntityModel | undefined; onClick: (baseIri: string | null) => void }) => {
   const { model, onClick } = props;
   let modelType: React.JSX.Element;
-  if (model instanceof InMemorySemanticModel) {
+  if (model instanceof InMemorySemanticModel && model.getMainEntity()?.source) {
+    modelType = <span title="imported vocabulary">📁</span>;
+  } else if (model instanceof InMemorySemanticModel) {
     const modelBaseIri = model.getBaseIri();
     const defaultModelIri = modelBaseIri?.length === 0 ? getModelIri(model) : modelBaseIri;
     modelType = (
@@ -20,7 +22,7 @@ export const ModelTypeIcon = (props: { model: EntityModel | undefined; onClick: 
   } else if (model instanceof ExternalSemanticModel) {
     modelType = <span title="slovník.gov.cz">sgov</span>;
   } else {
-    modelType = <span title="pim-store wrapper">📁</span>;
+    modelType = <span title="vocabulary">📁</span>;
   }
 
   return modelType;

@@ -17,6 +17,9 @@ import {
 import { isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship, type SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
 import {
   CREATE_CLASS_OPERATION,
+  CHANGE_RDFS_SOURCE_URLS_OPERATION,
+  RELOAD_OPERATION_TYPE,
+  type ChangeRdfsSourceUrlsOperation,
   CREATE_GENERALIZATION_OPERATION,
   CREATE_RELATIONSHIP_OPERATION,
   DELETE_ENTITY_OPERATION,
@@ -54,7 +57,7 @@ import {
   type ModifySemanticModelRelationshipProfile,
   type RemoveControlledVocabularyAssignment,
 } from "@dataspecer/core-v2/semantic-model/profile/operations";
-import { AddQueryOperationType, ReloadModelOperationType, RemoveQueryOperationType, SetModelUrlsOperationType } from "@dataspecer/model-store/implementation";
+import { AddQueryOperationType, RemoveQueryOperationType } from "@dataspecer/model-store/implementation";
 import { CreateModelOperationType, CreateProjectOperationType, RemoveModelOperationType, type CreateModelOperation, type CreateProjectOperation, type ProjectModelEntity, type RemoveModelOperation } from "@dataspecer/core/project-model";
 import {
   AddVisualDiagramNodeOperationType,
@@ -93,6 +96,7 @@ import {
   Pencil,
   Plus,
   Replace,
+  RotateCw,
   Sparkles,
   Tag,
   Trash2,
@@ -732,24 +736,6 @@ function SetViewRow({ operation }: OperationRowProps) {
 
 // #region Async queryable model operations
 
-function ReloadModelRow({ operation }: OperationRowProps) {
-  const { t } = useTranslation();
-  return (
-    <Row icon={Replace} colorClass="text-sky-600 dark:text-sky-400" operation={operation}>
-      <span>{t("history.op.reload-model")}</span>
-    </Row>
-  );
-}
-
-function SetModelUrlsRow({ operation }: OperationRowProps) {
-  const { t } = useTranslation();
-  return (
-    <Row icon={Pencil} colorClass="text-blue-600 dark:text-blue-400" operation={operation}>
-      <span>{t("history.op.set-model-urls")}</span>
-    </Row>
-  );
-}
-
 function AddQueryRow({ operation }: OperationRowProps) {
   const { t } = useTranslation();
   return (
@@ -1021,6 +1007,26 @@ function UnknownOperationRow({ operation }: OperationRowProps) {
   );
 }
 
+function ChangeRdfsSourceUrlsRow({ operation }: OperationRowProps) {
+  const { t } = useTranslation();
+  const { urls } = operation as ChangeRdfsSourceUrlsOperation;
+  return (
+    <Row icon={Pencil} colorClass="text-blue-600 dark:text-blue-400" operation={operation}>
+      <span>{t("history.op.change-rdfs-source-urls")}</span>
+      <span className="break-all text-xs text-muted-foreground">{urls.length > 0 ? urls.join(", ") : t("history.op.no-source-urls")}</span>
+    </Row>
+  );
+}
+
+function ReloadRow({ operation }: OperationRowProps) {
+  const { t } = useTranslation();
+  return (
+    <Row icon={RotateCw} colorClass="text-blue-600 dark:text-blue-400" operation={operation}>
+      <span>{t("history.op.reload")}</span>
+    </Row>
+  );
+}
+
 /**
  * Operation type to React component that renders the operation.
  */
@@ -1035,6 +1041,8 @@ const OPERATION_ROWS: Record<string, ComponentType<OperationRowProps>> = {
   [RemoveModelOperationType]: RemoveModelRow,
 
   // Semantic model: vocabularies.
+  [RELOAD_OPERATION_TYPE]: ReloadRow,
+  [CHANGE_RDFS_SOURCE_URLS_OPERATION]: ChangeRdfsSourceUrlsRow,
   [CREATE_CLASS_OPERATION]: CreateClassRow,
   [MODIFY_CLASS_OPERATION]: ModifyClassRow,
   [CREATE_RELATIONSHIP_OPERATION]: CreateRelationshipRow,
@@ -1068,8 +1076,6 @@ const OPERATION_ROWS: Record<string, ComponentType<OperationRowProps>> = {
   [SetViewOperationType]: SetViewRow,
 
   // Imported vocabulary (RDFS) and queryable (SGOV) models.
-  [ReloadModelOperationType]: ReloadModelRow,
-  [SetModelUrlsOperationType]: SetModelUrlsRow,
   [AddQueryOperationType]: AddQueryRow,
   [RemoveQueryOperationType]: RemoveQueryRow,
 

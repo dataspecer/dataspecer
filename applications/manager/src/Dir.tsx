@@ -1,6 +1,7 @@
+import { isRdfsSnapshot } from "@dataspecer/rdfs/semantic-model";
 import { TagBadge, TagName } from "@/components/tag";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
 import { BookOpen, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, EllipsisVertical, FileText, Folder, FolderDown, History, Import, NotepadTextDashed, Pencil, Plus, RotateCw, Search, Shapes, Sparkles, Tag, Tags, Trash2, WandSparkles } from "lucide-react";
 import { useCallback, useContext, useDeferredValue, useEffect, useMemo, useState } from "react";
@@ -90,7 +91,7 @@ const Row = React.memo(({ iri, parentIri, onTagSelect }: { iri: string, parentIr
     <div className="flex items-center space-x-4 hover:bg-accent">
       {resource.types.includes(LOCAL_PACKAGE) ? <div className="flex"><button className="cursor-pointer" onClick={stopPropagation(() => isOpen ? setIsOpen(false) : open())}>
         {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-      </button><Folder className="text-gray-400 ml-1" /></div> : <div><ModelIcon type={resource.types} /></div>}
+      </button><Folder className="text-gray-400 ml-1" /></div> : <div><ModelIcon type={resource.types} source={resource.userMetadata?.source} /></div>}
 
       <div className="grow min-w-0">
         <div className="font-medium">
@@ -150,7 +151,7 @@ const Row = React.memo(({ iri, parentIri, onTagSelect }: { iri: string, parentIr
         </Tooltip>
       }
 
-      {resource.types.includes(RDFS_MODEL) &&
+      {isRdfsSnapshot(resource.userMetadata?.source) &&
         <Tooltip>
           <TooltipTrigger>
             <Button asChild variant="ghost" size="icon" className="shrink-0" onClick={stopPropagation(() => openModal(ReloadResource, { id: iri, parentId: parentIri ?? "" }))}>
