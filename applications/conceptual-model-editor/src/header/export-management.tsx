@@ -34,7 +34,7 @@ export const ExportManagement = () => {
   }, [open]);
 
   const handleGenerateLightweightOwl = () => {
-    const entities = Object.values(graph.getEntities())
+    const entities = Object.values(graph.getAggregatedEntities())
       .map((aggregatedEntityWrapper) => aggregatedEntityWrapper.aggregatedEntity)
       .filter((entityOrNull): entityOrNull is SemanticModelEntity => {
         return entityOrNull !== null;

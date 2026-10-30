@@ -43,7 +43,7 @@ export function openEditClassProfileDialogAction(
   labelResolver: LabelResolver,
   availableVocabularies: ControlledVocabulary[],
 ) {
-  const aggregate = graph.getEntities()?.[entity.id];
+  const aggregate = graph.getAggregatedEntities()?.[entity.id];
   const rawEntity = aggregate?.rawEntity;
   if (rawEntity === null || rawEntity === undefined || !isSemanticModelClassProfile(rawEntity)) {
     LOG.error("Missing raw entity for class profile.", { entity });

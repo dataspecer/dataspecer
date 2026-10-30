@@ -249,7 +249,7 @@ function addClassOrClassProfileToVisualModel(
   visualModel: WritableVisualModel,
   visualNode: VisualNode
 ): void {
-  const represented = graph.getEntities()[visualNode.representedEntity]?.rawEntity;
+  const represented = graph.getAggregatedEntities()[visualNode.representedEntity]?.rawEntity;
   if (isSemanticModelClass(represented)) {
     addSemanticClassToVisualModelAction(
       notifications, graph, classes, visualModel, diagram,

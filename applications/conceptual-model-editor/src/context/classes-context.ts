@@ -17,6 +17,7 @@ export const useClassesContext = (): ClassesContext => {
   return useContext(ReactClassesContext);
 };
 
+/** This should be the read state context. */
 export interface ClassesContext {
 
   semanticModels: Map<string, EntityModel>;

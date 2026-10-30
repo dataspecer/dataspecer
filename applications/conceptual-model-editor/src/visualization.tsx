@@ -95,7 +95,7 @@ export const Visualization = () => {
   }), [options.language, options.visualOptions]);
 
   useEffect(() => {
-    const previousEntities = graph.getEntities();
+    const previousEntities = graph.getAggregatedEntities();
     const unsubscribeSemanticAggregatorCallback = graph.subscribeToChanges((updated, removed) => {
       console.log("[VISUALIZATION] SemanticModelAggregatorView.subscribeToChanges", { updated, removed });
       if (isWritableVisualModel(activeVisualModel)) {
@@ -218,7 +218,7 @@ function onChangeVisualModel(
   }
 
   const models = classesContext.semanticModels;
-  const entities = graphContext.getEntities();
+  const entities = graphContext.getAggregatedEntities();
 
   const nextNodes: DiagramNodeTypes[] = [];
   const nextEdges: Edge[] = [];
@@ -895,7 +895,7 @@ function onChangeVisualEntities(
   }
 
   const models = classesContext.semanticModels;
-  const entities = aggregatorView.getEntities();
+  const entities = aggregatorView.getAggregatedEntities();
   const actions = diagram.actions();
 
   const groups = changes.filter(({ previous, next }) =>

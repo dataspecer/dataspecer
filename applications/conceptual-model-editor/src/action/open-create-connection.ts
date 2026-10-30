@@ -128,7 +128,7 @@ function findSourceAndTarget(
   sourceIdentifier: string,
   targetIdentifier: string,
 ) {
-  const entities = graph.getEntities();
+  const entities = graph.getAggregatedEntities();
   const source = entities[sourceIdentifier]?.aggregatedEntity ?? null;
   const target = entities[targetIdentifier]?.aggregatedEntity ?? null;
   if (source === null || target === null) {

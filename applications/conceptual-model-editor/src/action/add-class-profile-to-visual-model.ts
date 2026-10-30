@@ -27,7 +27,7 @@ export async function addSemanticClassProfileToVisualModelAction(
   _modelIdentifier: string,
   position: { x: number, y: number } | null,
 ) {
-  const entities = graph.getEntities();
+  const entities = graph.getAggregatedEntities();
   if(position === null) {
     const positions = await findPositionForNewNodesUsingLayouting(
       notifications, diagram, graph, visualModel, classes, [entityIdentifier]);

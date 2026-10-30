@@ -46,7 +46,7 @@ export function openModifyDialogAction(
   labelResolver: LabelResolver,
   availableVocabularies: ControlledVocabulary[],
 ) {
-  const aggregate = graph.getEntities()?.[identifier];
+  const aggregate = graph.getAggregatedEntities()?.[identifier];
 
   const entity = aggregate.aggregatedEntity;
   if (entity === undefined || entity === null) {
