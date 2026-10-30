@@ -6,10 +6,6 @@ export const sourceModelOfEntity = (entityId: string, models: EntityModel[]) => 
   return models.find((m) => Object.keys(m.getEntities()).find((eId) => eId === entityId));
 };
 
-export const filterInMemoryModels = (models: EntityModel[]) => {
-  return models.filter((m): m is InMemorySemanticModel => m instanceof InMemorySemanticModel && !m.getMainEntity()?.source);
-};
-
 /**
  * Returns model type as a string to be shown in an entity detail for example.
  * @param model

@@ -20,10 +20,10 @@ import { DialogDetailRow } from "../../components/dialog/dialog-detail-row";
 import { DialogColoredModelHeaderWithModelSelector } from "../../components/dialog/dialog-colored-model-header";
 import { configuration, t } from "../../application";
 import { DialogProps, DialogWrapper } from "../dialog-api";
-import { filterInMemoryModels } from "../../util/model-utils";
 import { generateName } from "../../util/name-utils";
 import { getDomainAndRange } from "../../util/relationship-utils";
 import { ClassesContext } from "../../context/classes-context";
+import { EntityModel } from "@dataspecer/core-v2";
 
 
 export enum ConnectionType {
@@ -123,6 +123,11 @@ export function createCreateConnectionState(
     models,
   };
 }
+
+const filterInMemoryModels = (models: EntityModel[]) => {
+  return models.filter((m): m is InMemorySemanticModel => m instanceof InMemorySemanticModel && !m.getMainEntity()?.source);
+};
+
 
 const CreateConnectionDialog = (props: DialogProps<CreateConnectionState>) => {
   const language = props.state.language;

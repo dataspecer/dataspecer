@@ -1,5 +1,3 @@
-import { useContext } from "react";
-
 import {
   type SemanticModelClass,
   type SemanticModelGeneralization,
@@ -24,7 +22,6 @@ import { sourceModelOfEntity } from "./model-utils";
 import { getIri, getModelIri } from "./iri-utils";
 import { useModelGraphContext, UseModelGraphContextType } from "../context/model-context";
 import { ClassesContext, useClassesContext } from "../context/classes-context";
-import { getTheOriginalProfiledEntity } from "./profile-utils";
 import { cardinalityToHumanLabel, getDomainAndRange } from "../util/relationship-utils";
 import {
   isSemanticModelClassProfile,
@@ -355,6 +352,37 @@ export const createEntityProxy = (
     () => isSemanticModelRelationship(viewedEntity) || isSemanticModelRelationshipProfile(viewedEntity);
 
   return proxy;
+};
+
+export const getTheOriginalProfiledEntity = (
+  resource:
+    SemanticModelClassProfile
+    | SemanticModelRelationshipProfile,
+  sources: (
+    | SemanticModelClass
+    | SemanticModelRelationship
+    | SemanticModelClassProfile
+    | SemanticModelRelationshipProfile
+  )[]
+): (SemanticModelClass | SemanticModelRelationship)[] => {
+  let profiling: string[] = [];
+  if (isSemanticModelClassProfile(resource)) {
+    profiling = resource.profiling;
+  } else if (isSemanticModelRelationshipProfile(resource)) {
+    resource.ends.forEach(item => profiling.push(...item.profiling));
+  }
+  const result: (SemanticModelClass | SemanticModelRelationship)[] = [];
+  profiling.map(identifier => sources.find(item => item.id === identifier))
+    .filter(item => item !== undefined)
+    .forEach(item => {
+      if (isSemanticModelClass(item) || isSemanticModelRelationship(item)) {
+        result.push(item);
+      } else {
+        result.push(...getTheOriginalProfiledEntity(item, sources));
+      }
+    });
+  // Make it uniq.
+  return [...new Set(result)];
 };
 
 export const getEntityTypeString = (entity: EntityDetailSupportedType | null) => {

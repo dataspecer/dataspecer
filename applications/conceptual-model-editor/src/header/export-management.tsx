@@ -1,7 +1,7 @@
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { Bug } from "lucide-react";
 import { generateLightweightOwl } from "@dataspecer/lightweight-owl";
-import type { SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
+import { isSemanticModelClass, isSemanticModelRelationship, type SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
 import { type Entities, type Entity, type EntityModel } from "@dataspecer/core-v2/entity-model";
 import * as DataSpecificationVocabulary from "@dataspecer/data-specification-vocabulary/semantic-model";
@@ -9,10 +9,12 @@ import { shaclToRdf, semanticModelsToShacl } from "@dataspecer/shacl-v2";
 
 import { useModelGraphContext } from "../context/model-context";
 import { useClassesContext } from "../context/classes-context";
-import { entityWithOverriddenIri, getIri, getModelIri } from "../util/iri-utils";
+import { getIri, getModelIri } from "../util/iri-utils";
 import { isInMemorySemanticModel } from "../dataspecer/semantic-model";
 
 import { useActions } from "../action/actions-react-binding";
+import { getDomainAndRange } from "../util/relationship-utils";
+import { EntityDetailSupportedType } from "../util/detail-utils";
 
 export const ExportManagement = () => {
   const actions = useActions();
@@ -179,6 +181,31 @@ export const ExportManagement = () => {
       ) : null}
     </div>
   );
+};
+
+/**
+ * Used only for lw-onto exports
+ * @param iri
+ * @param entity
+ * @returns the `entity` with `iri` in absolute form by prepending the model's base iri
+ */
+export const entityWithOverriddenIri = <T extends EntityDetailSupportedType | SemanticModelEntity>(
+  iri: string,
+  entity: T
+): T => {
+  if (isSemanticModelClass(entity)) {
+    return { ...entity, iri: iri };
+  } else if (isSemanticModelRelationship(entity)) {
+    const currentEnds = getDomainAndRange(entity);
+    if (currentEnds.rangeIndex === null || currentEnds.range === null) {
+      return entity;
+    }
+    const newEnds = entity.ends;
+    newEnds[currentEnds.rangeIndex] = { ...currentEnds.range, iri: iri };
+    return { ...entity, ends: newEnds };
+  } else {
+    return { ...entity, iri: iri };
+  }
 };
 
 class SemanticModelWrap implements EntityModel {
