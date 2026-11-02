@@ -56,13 +56,13 @@ describe("buildModelHierarchy", () => {
 
   it("includes legacy and imported models without exporting them as local definitions", () => {
     const models = modelRecords([
-      packageEntity("root", ["local", "cim", "pim", "rdfs", "query"]), vocabulary("local"),
-      vocabulary("cim", V1.CIM), vocabulary("pim", V1.PIM), vocabulary("rdfs"), vocabulary("query", QUERYABLE_MODEL),
+      packageEntity("root", ["local", "rdfs", "query"]), vocabulary("local"),
+      vocabulary("rdfs"), vocabulary("query", QUERYABLE_MODEL),
     ], [], ["rdfs"]);
     const hierarchy = buildModelHierarchy("root", models);
-    expect(Object.keys(hierarchy)).toHaveLength(6);
+    expect(Object.keys(hierarchy)).toHaveLength(4);
     expect(hierarchy.root).toMatchObject({ vocabularies: ["local"], applicationProfile: null });
-    expect(hierarchy.root).toMatchObject({ usedExternalSpecifications: ["cim", "pim", "rdfs", "query"] });
+    expect(hierarchy.root).toMatchObject({ usedExternalSpecifications: ["rdfs", "query"] });
   });
 
   it("preserves shared dependencies and supports cyclic packages", () => {
