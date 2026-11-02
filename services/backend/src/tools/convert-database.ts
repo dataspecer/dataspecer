@@ -4,6 +4,7 @@ import { DatabaseSync } from "node:sqlite";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { DOCUMENTATION_CONFIGURATION_KEY } from "@dataspecer/documentation/configuration";
 import { createTemplateConfigurationConverter } from "./convert-template-configuration.ts";
+import { replaceLegacyDatatypeIris } from "./replace-legacy-datatype-iris.ts";
 import { LOCAL_SEMANTIC_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { applyOperationsToSemanticModel } from "@dataspecer/core-v2/semantic-model";
 import { changesToSemanticModelOperations } from "@dataspecer/core-v2/semantic-model/operations";
@@ -13,7 +14,7 @@ import { DataPsmClassReference, DataPsmSchema } from "@dataspecer/core/data-psm/
 import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { createSetEntityOperation, createUpdateEntityOperation, generateOperationId, type OperationInModel } from "@dataspecer/core/operation";
 import { createCreateModelOperation, createCreateProjectOperation } from "@dataspecer/core/project-model";
-import type { CoreResource } from "@dataspecer/core/core";
+import type { CoreResource, LanguageString } from "@dataspecer/core/core";
 import { PimAssociation, PimAssociationEnd, PimAttribute, PimClass, PimSchema } from "./pim.ts";
 import configuration from "../configuration.ts";
 import { createDatabase } from "../database/database.ts";
@@ -27,6 +28,13 @@ import { deserializeModelEntities } from "../models/model-types.ts";
 import { ResourceModel, type BaseResource } from "../models/resource-model.ts";
 import { TransactionModel } from "../models/transaction-model.ts";
 import type { CachedSubgraph, ExtendedSemanticModelClass, MainSemanticModelEntity, SemanticModelGeneralization, ExtendedSemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
+
+function correctLegacyModelLabelLanguage(label: LanguageString | null | undefined): LanguageString {
+  if (label && Object.keys(label).length === 1 && typeof label.en === "string") {
+    return { cs: label.en };
+  }
+  return label ?? {};
+}
 
 /** Creates a deterministic identifier for an inheritance edge. */
 function getGeneralizationIri(fromIri: string, toIri: string): string {
@@ -154,22 +162,7 @@ function createProfileLookup(resources: Record<string, CoreResource>, profile: E
   };
 }
 
-/** Legacy OFN datatype suffixes and their XML Schema equivalents. */
-const psmDatatypeReplacements = new Map([
-  ["boolean", "boolean"],
-  ["datum", "date"],
-  ["čas", "time"],
-  ["datum-a-čas", "dateTime"],
-  ["celé-číslo", "integer"],
-  ["desetinné-číslo", "decimal"],
-  ["url", "anyURI"],
-  ["řetězec", "string"],
-].map(([ofn, xsd]) => [
-  `https://ofn.gov.cz/zdroj/základní-datové-typy/2020-07-01/${ofn}`,
-  `http://www.w3.org/2001/XMLSchema#${xsd}`,
-]));
-
-/** Rewrites PSM references and legacy datatypes while preserving other serialized properties. */
+/** Rewrites PSM references while preserving other serialized properties. */
 function remapPsm(
   value: unknown,
   ids: Map<string, string>,
@@ -178,7 +171,6 @@ function remapPsm(
   property = "",
 ): unknown {
   if (typeof value === "string") {
-    if (property === "dataPsmDatatype") return psmDatatypeReplacements.get(value) ?? value;
     if (property === "dataPsmInterpretation" || property === "dataPsmTypes") return getProfile(value);
     return ids.get(value) ?? value;
   }
@@ -271,7 +263,8 @@ async function main(): Promise<void> {
 
   const projects: LoadedResource[] = [];
   for (const resource of children.get(1) ?? []) {
-    projects.push(await loadResource(resource, children, path.join(inputPath, "stores")));
+    const project = await loadResource(resource, children, path.join(inputPath, "stores"));
+    projects.push(replaceLegacyDatatypeIris(project) as LoadedResource);
   }
 
   // Import the original defaults from the source checkout without copying them.
@@ -299,7 +292,8 @@ async function main(): Promise<void> {
       const schemas = Object.values(store.resources).filter(DataPsmSchema.is);
       if (schemas.length !== 1) throw new Error(`PSM model "${resource.iri}" must have one schema.`);
       const schema = schemas[0];
-      createModel.label = schema.dataPsmHumanLabel ?? {};
+      schema.dataPsmHumanLabel = correctLegacyModelLabelLanguage(schema.dataPsmHumanLabel);
+      createModel.label = schema.dataPsmHumanLabel;
       createModel.description = schema.dataPsmHumanDescription ?? {};
       const entityIds = new Map<string, string>();
       for (const [key, entity] of Object.entries(store.resources)) {
@@ -377,6 +371,8 @@ async function main(): Promise<void> {
           }
         }
         const createConfiguration = createCreateModelOperation(createProject.projectId, V1.GENERATOR_CONFIGURATION);
+        const configurationMetadata = resource?.userMetadata as BaseResource["userMetadata"] | null | undefined;
+        createConfiguration.label = correctLegacyModelLabelLanguage(configurationMetadata?.label);
         const entities = deserializeModelEntities(createConfiguration.modelId, V1.GENERATOR_CONFIGURATION, configuration);
         operations.push({ modelId: PROJECT_MODEL_ID, operation: createConfiguration });
         operations.push(...diffModelEntitiesToOperations(createConfiguration.modelId, V1.GENERATOR_CONFIGURATION, {}, entities));
@@ -405,9 +401,11 @@ async function main(): Promise<void> {
       const projectLabels = [metadata?.label, schema?.pimHumanLabel].map(label =>
         Object.fromEntries(Object.entries(label ?? {}).filter(([, value]) => value.trim().length > 0)),
       );
-      createProject.label = projectLabels.find(label => Object.keys(label).length > 0) ?? { cs: project.iri };
+      createProject.label = correctLegacyModelLabelLanguage(
+        projectLabels.find(label => Object.keys(label).length > 0) ?? { cs: project.iri },
+      );
       if (schema) {
-        createSemanticModel.label = schema.pimHumanLabel ?? {};
+        createSemanticModel.label = correctLegacyModelLabelLanguage(schema.pimHumanLabel);
         createSemanticModel.description = schema.pimHumanDescription ?? {};
       }
       const mainSemanticEntity = {
