@@ -123,7 +123,9 @@
     "url": "URL",
     "urls": "URLs (one per line)",
     "warning": "You are about to reload {{name}} from the URL(s) below. If the reload is successful, its content will be completely overwritten.",
-    "warning-no-name": "You are about to reload this resource from the URL(s) below. If the reload is successful, its content will be completely overwritten."
+    "warning-no-name": "You are about to reload this resource from the URL(s) below. If the reload is successful, its content will be completely overwritten.",
+    "warning-subgraph": "You are about to reload {{name}} from its original source. You can review the changes before applying them, or apply them immediately.",
+    "warning-subgraph-no-name": "You are about to reload this resource from its original source. You can review the changes before applying them, or apply them immediately."
   },
   "remove": "Remove",
   "modify-tags": {
