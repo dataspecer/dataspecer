@@ -29,6 +29,7 @@
     "@dataspecer/visual-model": "*",
     "@types/n3": "^1.26.4",
     "cors": "^2.8.6",
+    "diff": "^8.0.4",
     "express": "^5.2.1",
     "jsonld": "^9.0.0",
     "jszip": "^3.10.2",
@@ -37,6 +38,7 @@
     "multer": "^2.4.0",
     "n3": "^2.13.7",
     "node-html-parser": "^9.0.4",
+    "openai": "^7.15.0",
     "uuid": "^14.0.2",
     "zod": "^4.6.5"
   },
