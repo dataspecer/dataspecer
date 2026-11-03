@@ -30,6 +30,28 @@ function errorMessage(error: unknown, t: TFunction): string {
 }
 
 /**
+ * Says that something could not be loaded from the source, and why, with a
+ * button to try again.
+ */
+export function LoadErrorAlert({ error, onRetry }: { error: unknown, onRetry: () => void }) {
+  const { t } = useTranslation()
+  return (
+    <Alert variant="destructive">
+      <TriangleAlert className="h-4 w-4" />
+      <AlertTitle>{t("search.error.title")}</AlertTitle>
+      <AlertDescription>
+        {errorMessage(error, t)}
+        <div className="mt-2">
+          <Button variant="outline" size="xsm" onClick={onRetry}>
+            {t("search.error.retry")}
+          </Button>
+        </div>
+      </AlertDescription>
+    </Alert>
+  )
+}
+
+/**
  * Shows a page of a listing, or that it is loading, empty or failed to load.
  */
 export function ListingView<T>({ state, onRetry, getKey, renderItem }: ListingViewProps<T>) {
@@ -44,20 +66,7 @@ export function ListingView<T>({ state, onRetry, getKey, renderItem }: ListingVi
     )
   }
   if (state.status === "error") {
-    return (
-      <Alert variant="destructive">
-        <TriangleAlert className="h-4 w-4" />
-        <AlertTitle>{t("search.error.title")}</AlertTitle>
-        <AlertDescription>
-          {errorMessage(state.error, t)}
-          <div className="mt-2">
-            <Button variant="outline" size="xsm" onClick={onRetry}>
-              {t("search.error.retry")}
-            </Button>
-          </div>
-        </AlertDescription>
-      </Alert>
-    )
+    return <LoadErrorAlert error={state.error} onRetry={onRetry} />
   }
   if (state.items.length === 0) {
     return (

@@ -1,6 +1,7 @@
 import type { LanguageString } from "@dataspecer/core/core/core-resource"
 import type { SparqlRow, SparqlTerm } from "../sparql-client"
 import type { CandidateFilter, SourceCandidate, SourceGroup } from "../types"
+import { toLanguageString } from "./utils"
 
 /**
  * Datasets of NKOD declare the standard they conform to with dct:conformsTo.
@@ -168,13 +169,15 @@ function candidateConditions(filter: CandidateFilter): string {
  *
  * As in {@link publishersQuery}, a subquery cuts the page so that the titles
  * and the publisher names are looked up only for the codelists on it.
+ * The publisher names are asked for with one pattern: three patterns, one per language, make
+ * the endpoint reject the query for a publisher with many codelists as too expensive.
  * The order of the rows of the outer SELECT is not reliable, which {@link mapCandidateRows} takes care of.
  */
 export function candidatesQuery(filter: CandidateFilter, limit: number, offset: number): string {
   assertNonNegativeInteger(limit, "limit")
   assertNonNegativeInteger(offset, "offset")
   return `${PREFIXES}
-SELECT DISTINCT ?dataset ?sort ?titleCs ?titleEn ?titlePlain ?publisher ?pubCs ?pubEn ?pubPlain
+SELECT DISTINCT ?dataset ?sort ?titleCs ?titleEn ?titlePlain ?publisher ?pubName
 WHERE {
   {
     SELECT ?dataset ?publisher
@@ -191,9 +194,7 @@ WHERE {
   OPTIONAL { ?dataset dct:title ?titleCs FILTER(LANG(?titleCs) = "cs") }
   OPTIONAL { ?dataset dct:title ?titleEn FILTER(LANG(?titleEn) = "en") }
   OPTIONAL { ?dataset dct:title ?titlePlain FILTER(LANG(?titlePlain) = "") }
-  OPTIONAL { ?publisher foaf:name ?pubCs FILTER(LANG(?pubCs) = "cs") }
-  OPTIONAL { ?publisher foaf:name ?pubEn FILTER(LANG(?pubEn) = "en") }
-  OPTIONAL { ?publisher foaf:name ?pubPlain FILTER(LANG(?pubPlain) = "") }
+  OPTIONAL { ?publisher foaf:name ?pubName }
 }`
 }
 
@@ -223,7 +224,7 @@ export function mapCandidateRows(rows: SparqlRow[]): SourceCandidate[] {
       continue
     }
     const title = mapNames(row.titleCs, row.titleEn, row.titlePlain)
-    const groupLabel = mapNames(row.pubCs, row.pubEn, row.pubPlain)
+    const groupLabel = toLanguageString(row.pubName ? [row.pubName] : [])
     const entry = entries.get(id)
     if (entry === undefined) {
       entries.set(id, { sort: row.sort?.value ?? "", candidate: { id, title, groupLabel } })

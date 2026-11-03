@@ -13,13 +13,14 @@ interface GroupListProps {
   /** Zero-based number of the shown page. */
   page: number
   onPageChange: (page: number) => void
+  onSelect: (group: SourceGroup) => void
 }
 
 /**
  * The groups of the vocabularies of the source, such as their publishers,
  * with the number of vocabularies in each, paged.
  */
-export function GroupList({ source, page, onPageChange }: GroupListProps) {
+export function GroupList({ source, page, onPageChange, onSelect }: GroupListProps) {
   const { t, i18n } = useTranslation()
   const load = useCallback<PageLoader<SourceGroup>>(
     (request, options) => source.listGroups
@@ -45,10 +46,13 @@ export function GroupList({ source, page, onPageChange }: GroupListProps) {
         onRetry={retry}
         getKey={(group) => group.id}
         renderItem={(group) => (
-          <div className="px-4 py-3 flex items-center justify-between">
-            <div className="font-medium">{selectName(group.label, i18n.language)}</div>
+          <button
+            className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-muted/50"
+            onClick={() => onSelect(group)}
+          >
+            <span className="font-medium">{selectName(group.label, i18n.language)}</span>
             <Badge variant="secondary">{t("search.count", { count: group.count })}</Badge>
-          </div>
+          </button>
         )}
       />
       {total !== null && (

@@ -3,6 +3,7 @@ import { useHashRoute } from './hooks/use-hash-route'
 import { useVocabulariesContext } from './contexts/vocabularies-context'
 import { useVocabularyEditor } from './hooks/use-vocabulary-editor'
 import { useSourceWizard } from './hooks/use-source-wizard'
+import { DistributionPage } from './components/source-wizard/distribution-page'
 import { SearchPage } from './components/source-wizard/search-page'
 import { SourceSelectionPage } from './components/source-wizard/source-selection-page'
 import { VocabularyListPage } from './components/vocabulary-list/vocabulary-list-page'
@@ -123,13 +124,35 @@ function App() {
       ) : screen === "search" && wizard.state.sourceId !== null ? (
         <SearchPage
           sourceId={wizard.state.sourceId}
-          groupsPage={wizard.state.groupsPage}
+          state={wizard.state}
           onGroupsPageChange={wizard.setGroupsPage}
+          onGroupSelect={wizard.selectGroup}
+          onSearch={wizard.search}
+          onCandidatesPageChange={wizard.setCandidatesPage}
+          onCandidateSelect={(candidate) => {
+            wizard.selectCandidate(candidate)
+            navigate("distribution")
+          }}
           onCancel={() => {
             wizard.reset()
             navigate("list")
           }}
           onChangeSource={() => navigate("source-selection")}
+        />
+      ) : screen === "distribution" && wizard.state.sourceId !== null && wizard.state.candidate !== null ? (
+        <DistributionPage
+          sourceId={wizard.state.sourceId}
+          candidate={wizard.state.candidate}
+          onBack={() => navigate("search")}
+          onCancel={() => {
+            wizard.reset()
+            navigate("list")
+          }}
+          onChangeSource={() => navigate("source-selection")}
+          onContinue={(result) => {
+            wizard.setMetadata(result)
+            navigate("form-prefilled")
+          }}
         />
       ) : screen === "form-empty" ? (
         <VocabularyFormPage
@@ -141,6 +164,16 @@ function App() {
         <VocabularyViewPage
           vocabulary={viewingVocabulary}
           onClose={handleCloseView}
+        />
+      ) : screen === "form-prefilled" && wizard.state.metadata !== null ? (
+        <VocabularyFormPage
+          prefilled={wizard.state.metadata}
+          onCancel={handleFormCancel}
+          onConfirm={(vocabulary) => {
+            addVocabulary(vocabulary)
+            wizard.reset()
+            navigate("list")
+          }}
         />
       ) : !wizard.available ? null : (
         <div>Screen: {screen}</div>
