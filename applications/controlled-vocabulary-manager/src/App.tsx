@@ -3,6 +3,7 @@ import { useHashRoute } from './hooks/use-hash-route'
 import { useVocabulariesContext } from './contexts/vocabularies-context'
 import { useVocabularyEditor } from './hooks/use-vocabulary-editor'
 import { useSourceWizard } from './hooks/use-source-wizard'
+import { SearchPage } from './components/source-wizard/search-page'
 import { SourceSelectionPage } from './components/source-wizard/source-selection-page'
 import { VocabularyListPage } from './components/vocabulary-list/vocabulary-list-page'
 import { VocabularyFormPage } from './components/vocabulary-form/vocabulary-form-page'
@@ -118,6 +119,17 @@ function App() {
             wizard.selectSource(sourceId)
             navigate("search")
           }}
+        />
+      ) : screen === "search" && wizard.state.sourceId !== null ? (
+        <SearchPage
+          sourceId={wizard.state.sourceId}
+          groupsPage={wizard.state.groupsPage}
+          onGroupsPageChange={wizard.setGroupsPage}
+          onCancel={() => {
+            wizard.reset()
+            navigate("list")
+          }}
+          onChangeSource={() => navigate("source-selection")}
         />
       ) : screen === "form-empty" ? (
         <VocabularyFormPage

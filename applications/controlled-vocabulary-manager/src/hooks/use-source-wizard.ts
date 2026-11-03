@@ -5,12 +5,14 @@ import type { Navigate } from "./use-hash-route"
 /**
  * What the user has chosen so far in the "Add from source" flow.
  * - sourceId = the source the vocabulary is looked up in, null before it is chosen
+ * - groupsPage = zero-based number of the shown page of the groups of the source
  */
 export interface WizardState {
   sourceId: string | null
+  groupsPage: number
 }
 
-const INITIAL_STATE: WizardState = { sourceId: null }
+const INITIAL_STATE: WizardState = { sourceId: null, groupsPage: 0 }
 
 /**
  * Whether the screen can be shown with the state of the wizard. 
@@ -36,7 +38,11 @@ export function useSourceWizard(screen: Screen, navigate: Navigate) {
   const [state, setState] = useState<WizardState>(INITIAL_STATE)
 
   const selectSource = useCallback((sourceId: string) => {
-    setState((current) => ({ ...current, sourceId }))
+    setState((current) => current.sourceId === sourceId ? current : { ...INITIAL_STATE, sourceId })
+  }, [])
+
+  const setGroupsPage = useCallback((groupsPage: number) => {
+    setState((current) => ({ ...current, groupsPage }))
   }, [])
 
   const reset = useCallback(() => setState(INITIAL_STATE), [])
@@ -48,5 +54,5 @@ export function useSourceWizard(screen: Screen, navigate: Navigate) {
     }
   }, [available, navigate])
 
-  return { state, available, selectSource, reset }
+  return { state, available, selectSource, setGroupsPage, reset }
 }
