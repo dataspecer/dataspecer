@@ -2,6 +2,8 @@ import { PageLayout } from './components/layout/page-layout'
 import { useHashRoute } from './hooks/use-hash-route'
 import { useVocabulariesContext } from './contexts/vocabularies-context'
 import { useVocabularyEditor } from './hooks/use-vocabulary-editor'
+import { useSourceWizard } from './hooks/use-source-wizard'
+import { SourceSelectionPage } from './components/source-wizard/source-selection-page'
 import { VocabularyListPage } from './components/vocabulary-list/vocabulary-list-page'
 import { VocabularyFormPage } from './components/vocabulary-form/vocabulary-form-page'
 import { VocabularyViewPage } from './components/vocabulary-view/vocabulary-view-page'
@@ -13,10 +15,11 @@ import { useEffect, useState } from 'react'
 import { TriangleAlert } from 'lucide-react'
 import { supportedLanguages } from './i18n'
 
-export type Screen = "list" | "source-selection" | "search" | "form-prefilled" | "form-empty" | "view"
+export type Screen = "list" | "source-selection" | "search" | "distribution" | "form-prefilled" | "form-empty" | "view"
 
 function App() {
   const [screen, navigate] = useHashRoute()
+  const wizard = useSourceWizard(screen, navigate)
   const { loading, error, addVocabulary, updateVocabulary, deleteVocabulary } = useVocabulariesContext()
   const { editingVocabulary, startEditing, startCreating, cancelEditing } = useVocabularyEditor()
   const [viewingVocabulary, setViewingVocabulary] = useState<ControlledVocabulary | null>(null)
@@ -98,11 +101,23 @@ function App() {
     <PageLayout>
       {screen === "list" ? (
         <VocabularyListPage
-          onNavigateSourceSelection={() => navigate("form-empty")}
+          onNavigateSourceSelection={() => navigate("source-selection")}
           onNavigateFormEmpty={handleCreate}
           onEdit={handleEdit}
           onDelete={deleteVocabulary}
           onView={handleView}
+        />
+      ) : screen === "source-selection" ? (
+        <SourceSelectionPage
+          initialSourceId={wizard.state.sourceId}
+          onCancel={() => {
+            wizard.reset()
+            navigate("list")
+          }}
+          onContinue={(sourceId) => {
+            wizard.selectSource(sourceId)
+            navigate("search")
+          }}
         />
       ) : screen === "form-empty" ? (
         <VocabularyFormPage
@@ -115,7 +130,7 @@ function App() {
           vocabulary={viewingVocabulary}
           onClose={handleCloseView}
         />
-      ) : (
+      ) : !wizard.available ? null : (
         <div>Screen: {screen}</div>
       )}
     </PageLayout>
