@@ -5,6 +5,7 @@ const HASH_TO_SCREEN: Record<string, Screen> = {
   "#/": "list",
   "#/source-selection": "source-selection",
   "#/search": "search",
+  "#/distribution": "distribution",
   "#/form-prefilled": "form-prefilled",
   "#/form-empty": "form-empty",
   "#/view": "view",
@@ -14,6 +15,7 @@ const SCREEN_TO_HASH: Record<Screen, string> = {
   "list": "#/",
   "source-selection": "#/source-selection",
   "search": "#/search",
+  "distribution": "#/distribution",
   "form-prefilled": "#/form-prefilled",
   "form-empty": "#/form-empty",
   "view": "#/view",
@@ -23,7 +25,13 @@ function hashToScreen(hash: string): Screen {
   return HASH_TO_SCREEN[hash] ?? "list";
 }
 
-export function useHashRoute(): [Screen, (screen: Screen) => void] {
+/**
+ * Moves to a screen. With `replace`, the screen takes the place of the current
+ * one in the browser history, so that Back does not return to it.
+ */
+export type Navigate = (screen: Screen, options?: { replace?: boolean }) => void
+
+export function useHashRoute(): [Screen, Navigate] {
   const [screen, setScreen] = useState<Screen>(() =>
     hashToScreen(window.location.hash || "#/")
   );
@@ -36,8 +44,12 @@ export function useHashRoute(): [Screen, (screen: Screen) => void] {
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
 
-  const navigate = useCallback((target: Screen) => {
-    window.location.hash = SCREEN_TO_HASH[target];
+  const navigate = useCallback<Navigate>((target, options) => {
+    if (options?.replace) {
+      window.location.replace(SCREEN_TO_HASH[target]);
+    } else {
+      window.location.hash = SCREEN_TO_HASH[target];
+    }
   }, []);
 
   return [screen, navigate];
