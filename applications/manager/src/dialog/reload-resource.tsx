@@ -10,6 +10,7 @@ import { usePreviousValue } from "@/hooks/use-previous-value";
 import { BetterModalProps } from "@/lib/better-modal";
 import { getEvolutionReviewLink } from "@/known-models";
 import { ResourcesContext, requestLoadPackage } from "@/package";
+import { isCachedSubgraph } from "@dataspecer/core-v2/semantic-model/concepts";
 import { isRdfsSnapshot } from "@dataspecer/rdfs/semantic-model";
 import { AlertCircleIcon, ChevronDown, Loader } from "lucide-react";
 import { useContext, useId, useRef, useState } from "react";
@@ -27,6 +28,7 @@ export const ReloadResource = ({ id, parentId, isOpen, resolve }: ReloadResource
   const resource = usePreviousValue(resources[id]!);
 
   const source = resource.userMetadata?.source;
+  const isSubgraph = isCachedSubgraph(source);
   const isMultiUrl = isRdfsSnapshot(source);
   const currentUrls = isMultiUrl ? source.urls.join("\n") : "";
 
@@ -55,7 +57,7 @@ export const ReloadResource = ({ id, parentId, isOpen, resolve }: ReloadResource
       const urls = (textareaRef.current?.value ?? "").split("\n").map((u) => u.trim()).filter(Boolean);
       headers["Content-Type"] = "application/json";
       body = JSON.stringify({ urls });
-    } else {
+    } else if (!isSubgraph) {
       params.set("url", (document.getElementById(urlInputFormId)! as HTMLInputElement).value);
     }
 
@@ -89,10 +91,14 @@ export const ReloadResource = ({ id, parentId, isOpen, resolve }: ReloadResource
 
   return (
     <Modal open={isOpen} onClose={() => (isLoading ? null : resolve(false))}>
-      <ModalContent className="max-w-3xl!">
+      <ModalContent className={isMultiUrl ? "max-w-3xl!" : undefined}>
         <ModalHeader>
           <ModalTitle>{t("reload-resource.title")}</ModalTitle>
-          <ModalDescription>{name ? t("reload-resource.warning", { name }) : t("reload-resource.warning-no-name")}</ModalDescription>
+          <ModalDescription>
+            {isSubgraph
+              ? (name ? t("reload-resource.warning-subgraph", { name }) : t("reload-resource.warning-subgraph-no-name"))
+              : (name ? t("reload-resource.warning", { name }) : t("reload-resource.warning-no-name"))}
+          </ModalDescription>
         </ModalHeader>
         <form className="contents" onSubmit={(event) => { event.preventDefault(); void doReload(false); }}>
           <ModalBody className="space-y-4">
@@ -101,7 +107,7 @@ export const ReloadResource = ({ id, parentId, isOpen, resolve }: ReloadResource
                 <Label htmlFor={textareaId}>{t("reload-resource.urls")}</Label>
                 <Textarea id={textareaId} ref={textareaRef} defaultValue={currentUrls} key={currentUrls} rows={5} />
               </div>
-            ) : (
+            ) : !isSubgraph && (
               <div className="grid gap-2">
                 <Label htmlFor={urlInputFormId}>{t("reload-resource.url")}</Label>
                 <Input id={urlInputFormId} defaultValue={importedUrl} />

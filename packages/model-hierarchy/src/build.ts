@@ -1,6 +1,6 @@
 import { getSemanticModelMainEntity, isMainSemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
 import { isModelProfile, isSemanticModelClassProfile, isSemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL } from "@dataspecer/core-v2/model/known-models";
 import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import { PROJECT_MODEL_ID, isPackageEntity, type ProjectModelEntity, type PackageEntity } from "@dataspecer/core/project-model";
@@ -10,7 +10,7 @@ import { isRdfsSnapshot } from "@dataspecer/rdfs/semantic-model";
 export { PROJECT_MODEL_ID } from "@dataspecer/core/project-model";
 
 export function isSemanticModelType(modelType: string): boolean {
-  return [LOCAL_SEMANTIC_MODEL, V1.CIM, V1.PIM, QUERYABLE_MODEL].includes(modelType);
+  return [LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL].includes(modelType);
 }
 
 /**

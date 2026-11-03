@@ -32,11 +32,6 @@ export const CONTROLLED_VOCABULARY_MODEL = "http://dataspecer.com/resources/loca
 
 // Old models from core@v1
 export const V1 = {
-    /** @deprecated */
-    CIM: "http://dataspecer.com/resources/v1/cim",
-    /** @deprecated */
-    PIM: "http://dataspecer.com/resources/v1/pim",
-
     /**
      * Structural model that maps the semantic model to the desired shape.
      */

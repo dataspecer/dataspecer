@@ -1,4 +1,5 @@
 import { isRdfsSnapshot } from "@dataspecer/rdfs/semantic-model";
+import { isCachedSubgraph } from "@dataspecer/core-v2/semantic-model/concepts";
 import { TagBadge, TagName } from "@/components/tag";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
@@ -151,7 +152,7 @@ const Row = React.memo(({ iri, parentIri, onTagSelect }: { iri: string, parentIr
         </Tooltip>
       }
 
-      {isRdfsSnapshot(resource.userMetadata?.source) &&
+      {(isRdfsSnapshot(resource.userMetadata?.source) || isCachedSubgraph(resource.userMetadata?.source)) &&
         <Tooltip>
           <TooltipTrigger>
             <Button asChild variant="ghost" size="icon" className="shrink-0" onClick={stopPropagation(() => openModal(ReloadResource, { id: iri, parentId: parentIri ?? "" }))}>
