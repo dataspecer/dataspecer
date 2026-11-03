@@ -103,7 +103,10 @@ function App() {
     <PageLayout>
       {screen === "list" ? (
         <VocabularyListPage
-          onNavigateSourceSelection={() => navigate("source-selection")}
+          onNavigateSourceSelection={() => {
+            wizard.reset()
+            navigate("source-selection")
+          }}
           onNavigateFormEmpty={handleCreate}
           onEdit={handleEdit}
           onDelete={deleteVocabulary}
@@ -111,7 +114,6 @@ function App() {
         />
       ) : screen === "source-selection" ? (
         <SourceSelectionPage
-          initialSourceId={wizard.state.sourceId}
           onCancel={() => {
             wizard.reset()
             navigate("list")

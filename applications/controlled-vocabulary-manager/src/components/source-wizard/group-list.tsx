@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from "react"
+import { ChevronRight } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { Badge } from "@/components/ui/badge"
 import { usePagedListing, type PageLoader } from "@/hooks/use-paged-listing"
@@ -51,7 +52,10 @@ export function GroupList({ source, page, onPageChange, onSelect }: GroupListPro
             onClick={() => onSelect(group)}
           >
             <span className="font-medium">{selectName(group.label, i18n.language)}</span>
-            <Badge variant="secondary">{t("search.count", { count: group.count })}</Badge>
+            <span className="flex items-center gap-3">
+              <Badge variant="secondary">{t("search.count", { count: group.count })}</Badge>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </span>
           </button>
         )}
       />
