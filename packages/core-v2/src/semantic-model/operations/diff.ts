@@ -19,18 +19,36 @@ export interface SemanticModelOperationsResult {
  *
  * Operations are ordered to avoid acting on non-existing entities: create
  * classes → create relationships/generalizations → modify all → delete
- * relationships/generalizations → delete classes.
+ * relationships/generalizations → delete classes. Class/relationship replacements
+ * delete the old entities before any creations.
  */
 export function changesToSemanticModelOperations(changes: EntityChange[]): SemanticModelOperationsResult {
   const remainingChanges: EntityChange[] = [];
 
+  /* For entities that are being replaced, we need to delete the old entity and create the new one */
+  const deleteReplacedEntityOps: Operation[] = [];
   const createClassOps: Operation[] = [];
   const createRelGenOps: Operation[] = [];
   const modifyOps: Operation[] = [];
   const deleteRelGenOps: Operation[] = [];
   const deleteClassOps: Operation[] = [];
 
-  for (const change of changes) {
+  for (let change of changes) {
+    if (
+      change.previous && change.next &&
+      (
+        (isSemanticModelClass(change.next) && !isSemanticModelClass(change.previous)) ||
+        (isSemanticModelRelationship(change.next) && !isSemanticModelRelationship(change.previous)) ||
+        (isSemanticModelGeneralization(change.next) && !isSemanticModelGeneralization(change.previous))
+      )
+    ) {
+      console.warn(
+        `Semantic entity "${change.previous.id}" changed type from "${change.previous.type}" to "${change.next.type}"; deleting and recreating it.`,
+      );
+      deleteReplacedEntityOps.push(deleteEntity(change.previous.id));
+      change = { previous: null, next: change.next };
+    }
+
     const entity = change.next ?? change.previous;
 
     if (isSemanticModelClass(entity)) {
@@ -105,7 +123,7 @@ export function changesToSemanticModelOperations(changes: EntityChange[]): Seman
   }
 
   return {
-    operations: [...createClassOps, ...createRelGenOps, ...modifyOps, ...deleteRelGenOps, ...deleteClassOps],
+    operations: [...deleteReplacedEntityOps, ...createClassOps, ...createRelGenOps, ...modifyOps, ...deleteRelGenOps, ...deleteClassOps],
     remainingChanges,
   };
 }
