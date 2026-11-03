@@ -101,7 +101,7 @@ describe("mapCandidateRows", () => {
       titleCs: literal("Pohlaví", "cs"),
       titleEn: literal("Sex", "en"),
       publisher: uri(DIA),
-      pubCs: literal("Digitální a informační agentura", "cs"),
+      pubName: literal("Digitální a informační agentura", "cs"),
     }]
     expect(mapCandidateRows(rows)).toEqual([{
       id: DATASET_A,
@@ -123,7 +123,7 @@ describe("mapCandidateRows", () => {
   test("merges the rows of one codelist", () => {
     const rows: SparqlRow[] = [
       { dataset: uri(DATASET_A), sort: literal("a"), titleCs: literal("A", "cs") },
-      { dataset: uri(DATASET_A), sort: literal("a"), titleEn: literal("A in English", "en"), pubCs: literal("DIA", "cs") },
+      { dataset: uri(DATASET_A), sort: literal("a"), titleEn: literal("A in English", "en"), pubName: literal("DIA", "cs") },
     ]
     expect(mapCandidateRows(rows)).toEqual([
       { id: DATASET_A, title: { cs: "A", en: "A in English" }, groupLabel: { cs: "DIA" } },

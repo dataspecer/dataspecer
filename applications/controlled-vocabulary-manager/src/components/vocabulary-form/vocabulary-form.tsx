@@ -1,4 +1,4 @@
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -26,6 +26,8 @@ import {
 } from "@/components/ui/form"
 import { useVocabulariesContext } from "@/contexts/vocabularies-context"
 import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model"
+import type { MetadataWarning, VocabularyMetadata } from "@/sources/types"
+import { MetadataWarnings } from "./metadata-warnings"
 
 /**
  * Which of the vocabulary's URLs is used as its main reference when it is not SKOS-based.
@@ -48,8 +50,15 @@ interface VocabularyFormValues {
   documentation: string
 }
 
+/**
+ * - initialValues = the vocabulary to edit, or metadata read from a source to prefill the form with
+ * - warnings = what could not be read from the source, shown above the form until dismissed
+ * - sampleIris = IRIs of values read from the source, shown under the IRI pattern to check it against
+ */
 interface VocabularyFormProps {
-  initialValues?: ControlledVocabulary
+  initialValues?: VocabularyMetadata
+  warnings?: MetadataWarning[]
+  sampleIris?: string[]
   currentVocabularyId?: string
   onCancel: () => void
   onConfirm: (vocabulary: Omit<ControlledVocabulary, 'id' | 'type'>) => void
@@ -63,7 +72,7 @@ function emptyToNull(value: string): string | null {
   return value === "" ? null : value
 }
 
-function initialReferenceSource(vocabulary?: ControlledVocabulary): ReferenceSource {
+function initialReferenceSource(vocabulary?: VocabularyMetadata): ReferenceSource {
   if (
     vocabulary !== undefined
     && !vocabulary.conformsToSkos
@@ -78,6 +87,8 @@ function initialReferenceSource(vocabulary?: ControlledVocabulary): ReferenceSou
 
 export function VocabularyForm({
   initialValues,
+  warnings = [],
+  sampleIris = [],
   currentVocabularyId,
   onCancel,
   onConfirm,
@@ -85,6 +96,7 @@ export function VocabularyForm({
   const { t, i18n } = useTranslation()
   const defaultLanguage = baseLanguage(i18n.language)
   const { vocabularies } = useVocabulariesContext()
+  const [warningsDismissed, setWarningsDismissed] = useState(false)
 
   const schema = useMemo(() => z.object({
     title: z.array(z.object({ key: z.string(), lang: z.string(), value: z.string() }))
@@ -147,6 +159,7 @@ export function VocabularyForm({
 
   const conformsToSkos = form.watch("conformsToSkos")
   const referenceSource = form.watch("referenceSource")
+  const pattern = form.watch("pattern")
 
   const handleSubmit = (values: VocabularyFormValues) => {
     // SKOS-based vocabularies are referenced by their scheme IRI, others by
@@ -187,6 +200,9 @@ export function VocabularyForm({
   return (
     <form onSubmit={form.handleSubmit(handleSubmit)}>
       <Form {...form}>
+        {warnings.length > 0 && !warningsDismissed && (
+          <MetadataWarnings warnings={warnings} onDismiss={() => setWarningsDismissed(true)} />
+        )}
         <Card>
           <CardContent className="p-5 space-y-4">
             <FormField
@@ -290,6 +306,14 @@ export function VocabularyForm({
                   <FormControl>
                     <Input placeholder={t("form.placeholder.regex")} {...field} />
                   </FormControl>
+                  {pattern !== "" && sampleIris.length > 0 && (
+                    <div className="text-sm text-muted-foreground">
+                      {t("form.regexSamples")}
+                      <ul className="mt-1 list-disc pl-5 break-all">
+                        {sampleIris.map((iri) => <li key={iri}>{iri}</li>)}
+                      </ul>
+                    </div>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
