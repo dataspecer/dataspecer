@@ -1,4 +1,4 @@
-import { mkdir, readFile, realpath } from "node:fs/promises";
+import { mkdir, readFile, realpath, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -281,7 +281,7 @@ async function main(): Promise<void> {
   const packageIds = new Map<string, string>();
   const reuseModels = new Map<string, { modelId: string; ids: Map<string, string> }>();
   const migrationProjects = projects.flatMap(project => {
-    const semanticModel = project.subResources.find(resource => resource.representationType === V1.PIM);
+    const semanticModel = project.subResources.find(resource => resource.representationType === "http://dataspecer.com/resources/v1/pim");
     if (!semanticModel) return [];
     const createProject = createCreateProjectOperation(uuidv4());
     packageIds.set(project.iri, createProject.projectId);
@@ -323,6 +323,7 @@ async function main(): Promise<void> {
   const storeModel = new LocalStoreModel(path.join(outputDirectory, "stores"));
   await migrateDatabase(outputPath, storeModel);
   const outputDatabase = createDatabase(outputPath);
+  const report: [string, string, string, number, number, string][] = [];
   try {
     const storesDirectory = path.join(outputDirectory, "stores");
     await mkdir(storesDirectory, { recursive: true });
@@ -332,6 +333,8 @@ async function main(): Promise<void> {
       await resourceModel.createPackage(null, configuration.localRootIri, configuration.localRootMetadata);
     }
     for (const { project, semanticModel, createProject, structures, psmIds } of migrationProjects) {
+      const problems: string[] = [];
+      let reusedSpecifications = 0;
       const metadata = project.userMetadata as BaseResource["userMetadata"] | null;
       createProject.description = metadata?.description ?? {};
       const operations: OperationInModel[] = [{modelId: PROJECT_MODEL_ID, operation: createProject}];
@@ -341,8 +344,13 @@ async function main(): Promise<void> {
       if (packageData?.dataStructuresImportPackages !== undefined) {
         const imports = packageData.dataStructuresImportPackages.flatMap(id => {
           const mapped = packageIds.get(id);
-          return mapped === undefined ? [] : [mapped];
+          if (mapped === undefined) {
+            problems.push(`Reused specification not migrated: ${id}`);
+            return [];
+          }
+          return [mapped];
         });
+        reusedSpecifications = imports.length;
         operations.push({
           modelId: createProject.projectId,
           operation: createUpdateEntityOperation(createProject.projectId, { dataStructuresImportPackages: imports }),
@@ -470,11 +478,29 @@ async function main(): Promise<void> {
         // Merge tags directly into resource metadata after the project exists.
         await resourceModel.updateResource(createProject.projectId, { tags: metadata.tags });
       }
+      report.push([
+        createProject.label.cs ?? createProject.label.en ?? Object.values(createProject.label)[0] ?? project.iri,
+        `https://xn--slovnk-7va.gov.cz/generujeme/specification?dataSpecificationIri=${encodeURIComponent(project.iri)}`,
+        createProject.projectId,
+        structures.length,
+        reusedSpecifications,
+        problems.join("; "),
+      ]);
       console.log(`Migrated project "${project.iri}" to package "${createProject.projectId}".`);
     }
   } finally {
     await outputDatabase.destroy();
   }
+  report.sort((a, b) => a[0].localeCompare(b[0], "cs"));
+  const rows = [
+    ["Specification name", "Old instance URL", "New project UUID", "Data structures", "Reused data specifications", "Errors"],
+    ...report,
+  ];
+  const reportPath = path.resolve("migration-report.csv");
+  await writeFile(reportPath, rows.map(row =>
+    row.map(value => `"${String(value).replaceAll('"', '""')}"`).join(","),
+  ).join("\r\n") + "\r\n", "utf8");
+  console.log(`Migration report written to "${reportPath}".`);
 }
 
 main().catch(error => {
