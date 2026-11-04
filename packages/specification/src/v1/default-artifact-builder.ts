@@ -11,6 +11,7 @@ import { ArtifactConfigurator } from "./artifact-configurator.ts";
 import { getArtefactGenerators, getDefaultConfigurators } from "./artefact-generators.ts";
 import { generateSpecification, type GenerateSpecificationContext } from "../specification.ts";
 import { DataSpecification } from "../specification/model.ts";
+import { getPartialDocumentationConfiguration } from "@dataspecer/documentation/configuration";
 
 /**
  * Class handling a construction of the zip file. Configuration, helper files, etc.
@@ -155,6 +156,7 @@ export class DefaultArtifactBuilder {
                     models: this.models,
                     output: zip,
                     history: this.history,
+                    defaultDocumentationConfiguration: getPartialDocumentationConfiguration(this.configuration),
 
                     fetch: this.httpFetch,
 

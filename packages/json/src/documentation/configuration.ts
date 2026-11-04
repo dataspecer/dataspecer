@@ -21,6 +21,7 @@ export const defaultJsonPartials: Record<string, string> = {
   {{#if (equals type "ref")}}{{json-tree-ref}}{{/if}}
   {{#if (equals type "numeric")}}{{json-tree-numeric}}{{/if}}
   {{#if (equals type "any")}}{{json-tree-any}}{{/if}}
+  {{#unless (and (equals type "string") pattern)}}{{json-examples}}{{/unless}}
 {{/def}}
 
 {{#def "json-tree-ref"}}
@@ -64,7 +65,7 @@ export const defaultJsonPartials: Record<string, string> = {
 {{#def "json-tree-string"}}
   {{#iflng "cs"}}řetězec{{lng}}string{{/iflng}}
   {{#if format}}({{#iflng "cs"}}formát: <code>{{format}}</code>{{lng}}format: <code>{{format}}</code>{{/iflng}}){{/if}}
-  {{#if pattern}}({{#iflng "cs"}}dle regulárního výrazu{{lng}}by regular expression{{/iflng}}: <code>{{{pattern}}}</code>){{/if}}
+  {{#if pattern}}({{#iflng "cs"}}dle regulárního výrazu{{lng}}by regular expression{{/iflng}}: <code>{{pattern}}</code>{{#if examples}}, {{#iflng "cs"}}například{{lng}}for example{{/iflng}} {{#each examples}}<code>{{this}}</code>{{#unless @last}}, {{/unless}}{{/each}}{{/if}}){{/if}}
 
   {{#with structureEntity}}
     (<a href="{{#with pimClass}}{{href pimIri}}{{/with}}">{{translate ./humanLabel}}</a>)

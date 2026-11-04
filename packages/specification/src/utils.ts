@@ -10,7 +10,7 @@ import { createSetEntityOperation, generateOperationId, type Transaction } from 
 import { ldesToRdf, profileTransactionsToLdes, vocabularyTransactionsToLdes } from "@dataspecer/data-specification-vocabulary/ldes";
 import * as DataSpecificationVocabulary from "@dataspecer/data-specification-vocabulary/semantic-model";
 import { getMustacheView } from "@dataspecer/documentation";
-import { createPartialDocumentationConfiguration, DOCUMENTATION_MAIN_TEMPLATE_PARTIAL } from "@dataspecer/documentation/configuration";
+import { DOCUMENTATION_MAIN_TEMPLATE_PARTIAL, getPartialDocumentationConfiguration } from "@dataspecer/documentation/configuration";
 import { generateDocumentation } from "@dataspecer/documentation/documentation-generator";
 import { generateLightweightOwl as generateLightweightOwlInternal } from "@dataspecer/lightweight-owl";
 import { mergeDocumentationConfigurations } from "./documentation/documentation.ts";
@@ -275,8 +275,11 @@ export async function generateHtmlDocumentation(
   const externalArtifacts = options.externalArtifacts ?? {};
 
   const configuration = createDefaultConfigurationModelFromJsonObject(rootPackage.data as object);
-  const documentationConfiguration = createPartialDocumentationConfiguration(configuration);
-  const fullConfiguration = mergeDocumentationConfigurations([documentationConfiguration]);
+  const documentationConfiguration = getPartialDocumentationConfiguration(configuration.getRawData());
+  const fullConfiguration = mergeDocumentationConfigurations([
+    generatorContext.defaultDocumentationConfiguration ?? {},
+    documentationConfiguration,
+  ]);
 
   const context = {
     label: rootPackage.label ?? {},
