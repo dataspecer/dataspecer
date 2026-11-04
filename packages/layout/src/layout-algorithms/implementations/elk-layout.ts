@@ -142,28 +142,28 @@ export class ElkLayout implements LayoutAlgorithm {
 }
 
 /**
- * At the time of writing this function, Bun does not support the Web Worker
- * API. Furthermore, ELK uses weird hacks to detect if it is running in a Web
- * Worker or not and this collides with Bun's runtime.
+ * ELK treats the presence of `self` without `document` as a Web Worker.
+ * Hide Bun's `self` during initialization so ELK uses its in-process fallback.
  */
 function createElkInstance(): ELKType {
     const ElkConstructor = ELK as unknown as new (options?: ELKConstructorArguments) => ELKType;
     const bunRuntime = globalThis as typeof globalThis & {
         Bun?: unknown;
-        Worker?: new (url: string) => unknown;
+        self?: unknown;
     };
     if (bunRuntime.Bun === undefined) {
         return new ElkConstructor();
     }
 
-    const WorkerConstructor = bunRuntime.Worker;
-    if (WorkerConstructor === undefined) {
-        throw new Error("Bun's Worker API is required to run ELK layouts in Bun.");
+    const selfDescriptor = Object.getOwnPropertyDescriptor(bunRuntime, "self");
+    try {
+        Object.defineProperty(bunRuntime, "self", { configurable: true, value: undefined });
+        return new ElkConstructor();
+    } finally {
+        if (selfDescriptor === undefined) {
+            delete bunRuntime.self;
+        } else {
+            Object.defineProperty(bunRuntime, "self", selfDescriptor);
+        }
     }
-
-    const workerUrl = import.meta.resolve("elkjs/lib/elk-worker.min.js");
-    return new ElkConstructor({
-        workerFactory: () => new WorkerConstructor(workerUrl) as
-            ReturnType<NonNullable<ELKConstructorArguments["workerFactory"]>>,
-    });
 }
