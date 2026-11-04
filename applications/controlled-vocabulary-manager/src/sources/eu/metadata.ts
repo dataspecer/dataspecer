@@ -61,7 +61,7 @@ function isEuDetail(detail: CandidateDetail): detail is EuCandidateDetail {
  * When they are there, the pattern is derived from them. 
  * Otherwise it is the pattern that all the values of a named authority
  * list have by the convention of the Publications Office, and no values are returned to check it against.
- * A failure of the endpoint gives the pattern by the convention and a warning.
+ * A failure of the endpoint gives the pattern by the convention and the warning valuesNotLoaded.
  */
 async function readPattern(
   schemeIri: string,
@@ -77,7 +77,7 @@ async function readPattern(
       throw error
     }
     const detail = error instanceof Error ? error.message : undefined
-    return { pattern: byConvention, sampleIris: [], warnings: [{ code: "fetchFailed", detail }] }
+    return { pattern: byConvention, sampleIris: [], warnings: [{ code: "valuesNotLoaded", detail }] }
   }
   const iris = rows.map((row) => row.value?.value).filter((iri): iri is string => iri !== undefined)
   const derived = buildIriPattern(iris)

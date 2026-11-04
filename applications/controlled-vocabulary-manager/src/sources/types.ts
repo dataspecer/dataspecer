@@ -65,8 +65,8 @@ export interface SourceCandidate {
 /**
  * One way of getting the data of a vocabulary.
  * - format = short name of the data format, for example "JSON-LD"
- * - readable = whether the source can read the vocabulary's scheme IRI and
- *   value IRIs from it
+ * - readable = whether the source can derive the vocabulary's scheme IRI and
+ *   the pattern of its value IRIs when this distribution is chosen
  * - downloadUrl = address of a file, null when the distribution is not a file,
  *   for example a SPARQL endpoint
  */
@@ -95,10 +95,12 @@ export interface CandidateDetail {
  * Why some metadata of a vocabulary could not be read.
  * - fetchFailed = the data file could not be loaded, `detail` says why
  * - notParsed = the data file was loaded but is not a codelist the source understands
- * - noSchemeIri = the data file gives no IRI of the vocabulary
+ * - noSchemeIri = the IRI of the vocabulary could not be determined
  * - unsupportedFormat = the source does not read the chosen distribution
+ * - valuesNotLoaded = the values of the vocabulary could not be loaded to derive the pattern of their IRIs
+ *   from them, `detail` says why, the pattern is a guess
  */
-export type MetadataWarningCode = "fetchFailed" | "notParsed" | "noSchemeIri" | "unsupportedFormat"
+export type MetadataWarningCode = "fetchFailed" | "notParsed" | "noSchemeIri" | "unsupportedFormat" | "valuesNotLoaded"
 
 export interface MetadataWarning {
   code: MetadataWarningCode
@@ -161,10 +163,13 @@ export interface VocabularySource {
 /**
  * How a source is presented in the list of sources.
  * - available = false for a source that is announced but not usable yet
+ * - metadataDerivation = what the source does with the chosen distribution and how it derives the
+ *   metadata of the vocabulary, told to the user before they continue
  */
 export interface SourceDescriptor {
   id: string
   name: LanguageString
   url: string
   available: boolean
+  metadataDerivation: LanguageString
 }

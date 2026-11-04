@@ -80,7 +80,7 @@ describe("readMetadata of a named authority list", () => {
   test("returns the pattern of the convention with a warning when the endpoint fails", async () => {
     const run = vi.fn(async () => { throw new SparqlError("network", "Failed to fetch") })
     const result = await readMetadata(detailOf(), "d1", OPTIONS, { run })
-    expect(result.warnings).toEqual([{ code: "fetchFailed", detail: "Failed to fetch" }])
+    expect(result.warnings).toEqual([{ code: "valuesNotLoaded", detail: "Failed to fetch" }])
     expect(result.metadata.references).toBe(SCHEME)
     expect(result.metadata.pattern).toBe("^http://publications\\.europa\\.eu/resource/authority/country/.*$")
   })

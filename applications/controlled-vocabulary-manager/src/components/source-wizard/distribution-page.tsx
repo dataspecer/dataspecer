@@ -90,7 +90,6 @@ export function DistributionPage({ sourceId, candidate, onBack, onCancel, onChan
     return null
   }
   const title = selectName(candidate.title, i18n.language)
-  const hasUnreadable = state.status === "ready" && state.detail.distributions.some((item) => !item.readable)
 
   return (
     <>
@@ -117,12 +116,10 @@ export function DistributionPage({ sourceId, candidate, onBack, onCancel, onChan
       )}
       {state.status === "ready" && (
         <>
-          {hasUnreadable && (
-            <div className="flex gap-2 rounded-lg border border-border bg-muted/50 px-4 py-3 mb-4 text-sm text-muted-foreground">
-              <Info className="h-4 w-4 mt-0.5 shrink-0" />
-              {t("distribution.unreadableNote")}
-            </div>
-          )}
+          <div className="flex gap-2 rounded-lg border border-border bg-muted/50 px-4 py-3 mb-4 text-sm text-muted-foreground">
+            <Info className="h-4 w-4 mt-0.5 shrink-0" />
+            {selectName(descriptor.metadataDerivation, i18n.language)}
+          </div>
           {state.detail.distributions.length === 0 ? (
             <div className="bg-card border border-border rounded-lg p-6 text-center text-muted-foreground">
               {t("distribution.empty")}
