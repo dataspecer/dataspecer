@@ -219,6 +219,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
 
         {{cardinality ends.1.cardinality}}
       </td>
+      {{regex-and-examples aggregation.ends.[1]}}
       </tr>
       {{#if (parentClasses id)}}
       <tr>
@@ -256,6 +257,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
       <td>{{translation}}{{#if otherLang}} (@{{otherLang}}){{/if}}</td>
     </tr>
     {{/translate}}
+    {{regex-and-examples aggregation}}
     {{#if (parentClasses id)}}
     <tr>
       <td>{{#iflng "cs"}}Rodičovské třídy{{lng}}Subclass of{{/iflng}}</td>
@@ -305,6 +307,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
       <td>{{translation}}{{#if otherLang}} (@{{otherLang}}){{/if}}</td>
     </tr>
     {{/translate}}
+    {{regex-and-examples aggregation}}
     {{#def "profilesClassChain" "isGeneralization"}}
       {{#if isGeneralization}}
         {{#iflng "cs"}}specializuje{{lng}}specializes{{/iflng}}
@@ -575,6 +578,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
         {{cardinality aggregation.ends.1.cardinality}}
     </td>
     </tr>
+    {{regex-and-examples aggregation.ends.[1]}}
 
     {{#def "profilesRelationshipChain" "isGeneralization"}}
       {{#if isGeneralization}}
@@ -655,6 +659,20 @@ export const defaultConfiguration: DocumentationConfiguration = {
 {{#def "cardinality"}}
   {{#if args.[0]}}
     [{{args.[0].[0]}}..{{#if args.[0].[1]}}{{args.[0].[1]}}{{else}}*{{/if}}]
+  {{/if}}
+{{/def}}
+{{#def "regex-and-examples" "entity"}}
+  {{#if entity.regex}}
+    <tr>
+      <td>{{#iflng "cs"}}Regulární výraz{{lng}}Regular expression{{/iflng}}</td>
+      <td><code>{{entity.regex}}</code></td>
+    </tr>
+  {{/if}}
+  {{#if entity.example}}
+    <tr>
+      <td>{{#iflng "cs"}}Příklady{{lng}}Examples{{/iflng}}</td>
+      <td>{{#each entity.example}}<code>{{this}}</code>{{#unless @last}}, {{/unless}}{{/each}}</td>
+    </tr>
   {{/if}}
 {{/def}}`,
 
