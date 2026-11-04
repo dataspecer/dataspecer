@@ -1,4 +1,5 @@
 import { runSparqlSelect, type SparqlRow } from "../sparql-client"
+import { readCount } from "../sparql-utils"
 import type { Page, PageRequest, RequestOptions, VocabularySource } from "../types"
 import { buildDetail, distributionsQuery, recordQuery } from "./detail"
 import {
@@ -8,7 +9,6 @@ import {
   mapPublisherRows,
   publisherCountQuery,
   publishersQuery,
-  readCount,
 } from "./listing"
 import { readMetadata } from "./metadata"
 

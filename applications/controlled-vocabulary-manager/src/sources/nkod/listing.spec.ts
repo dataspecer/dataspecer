@@ -3,7 +3,6 @@ import type { SparqlRow, SparqlTerm } from "../sparql-client"
 import {
   candidateCountQuery,
   candidatesQuery,
-  escapeSparqlString,
   mapCandidateRows,
   mapPublisherRows,
 } from "./listing"
@@ -63,16 +62,6 @@ describe("mapPublisherRows", () => {
 
   test("skips rows without a publisher", () => {
     expect(mapPublisherRows([{ count: integer(3) }])).toEqual([])
-  })
-})
-
-describe("escapeSparqlString", () => {
-  test("escapes quotes, backslashes and line breaks", () => {
-    expect(escapeSparqlString('a"b\\c\nd\re\tf')).toBe('a\\"b\\\\c\\nd\\re\\tf')
-  })
-
-  test("leaves other text, including Czech letters, as it is", () => {
-    expect(escapeSparqlString("Číselník ČSÚ (kód 5103)")).toBe("Číselník ČSÚ (kód 5103)")
   })
 })
 

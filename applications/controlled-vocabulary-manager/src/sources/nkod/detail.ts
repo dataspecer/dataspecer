@@ -1,8 +1,8 @@
 import type { SparqlRow, SparqlTerm } from "../sparql-client"
 import type { CandidateDetail, SourceDistribution } from "../types"
 import { formatName, formatRank, isReadableFormat } from "./distribution"
-import { assertSafeIri, PREFIXES } from "./listing"
-import { toLanguageString } from "./utils"
+import { assertSafeIri, toLanguageString } from "../sparql-utils"
+import { PREFIXES } from "./listing"
 
 /**
  * Reads the titles and the documentation page of a codelist. Each row has either ?title or ?page.

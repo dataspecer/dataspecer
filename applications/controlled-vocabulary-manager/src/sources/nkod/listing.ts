@@ -1,7 +1,14 @@
 import type { LanguageString } from "@dataspecer/core/core/core-resource"
 import type { SparqlRow, SparqlTerm } from "../sparql-client"
+import {
+  assertNonNegativeInteger,
+  assertSafeIri,
+  escapeSparqlString,
+  labelOrIri,
+  readCount,
+  toLanguageString,
+} from "../sparql-utils"
 import type { CandidateFilter, SourceCandidate, SourceGroup } from "../types"
-import { toLanguageString } from "./utils"
 
 /**
  * Datasets of NKOD declare the standard they conform to with dct:conformsTo.
@@ -26,29 +33,6 @@ const CODELIST_DATASETS = `?dataset a dcat:Dataset ;
     FILTER NOT EXISTS { ?dataset a dcat:DatasetSeries }`
 
 
-function assertNonNegativeInteger(value: number, name: string): void {
-  if (!Number.isInteger(value) || value < 0) {
-    throw new Error(`${name} must be a non-negative integer, got ${value}.`)
-  }
-}
-
-/**
- * Makes the text usable inside a double-quoted SPARQL string literal.
- */
-export function escapeSparqlString(text: string): string {
-  const escapes: Record<string, string> = { "\\": "\\\\", '"': '\\"', "\n": "\\n", "\r": "\\r", "\t": "\\t" }
-  return text.replace(/[\\"\n\r\t]/g, (character) => escapes[character])
-}
-
-/**
- * Rejects an IRI that could not be written inside <...> without changing the query.
- */
-export function assertSafeIri(iri: string): void {
-  if (iri === "" || /[\u0000- <>"{}|\\^`]/.test(iri)) {
-    throw new Error(`Not a usable IRI: ${iri}`)
-  }
-}
-
 /**
  * Creates a language string from the Czech, the English and the language-less
  * name of a result row. A name that is missing or empty is left out.
@@ -62,13 +46,6 @@ function mapNames(cs?: SparqlTerm, en?: SparqlTerm, plain?: SparqlTerm): Languag
     }
   }
   return result
-}
-
-/**
- * The label of an entity that has no name is its IRI.
- */
-function labelOrIri(label: LanguageString, iri: string): LanguageString {
-  return Object.keys(label).length > 0 ? label : { "": iri }
 }
 
 /**
@@ -111,14 +88,6 @@ SELECT (COUNT(DISTINCT ?publisher) AS ?total)
 WHERE {
   ${CODELIST_DATASETS}
 }`
-}
-
-/**
- * Reads the single number a count query returns in the given variable.
- */
-export function readCount(rows: SparqlRow[], variable: string): number {
-  const count = Number(rows[0]?.[variable]?.value)
-  return Number.isInteger(count) ? count : 0
 }
 
 /**
