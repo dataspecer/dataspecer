@@ -54,11 +54,13 @@ interface VocabularyFormValues {
  * - initialValues = the vocabulary to edit, or metadata read from a source to prefill the form with
  * - warnings = what could not be read from the source, shown above the form until dismissed
  * - sampleIris = IRIs of values read from the source, shown under the IRI pattern to check it against
+ * - onBack = returns to the choice of the source distribution; the button is shown only when it is given
  */
 interface VocabularyFormProps {
   initialValues?: VocabularyMetadata
   warnings?: MetadataWarning[]
   sampleIris?: string[]
+  onBack?: () => void
   currentVocabularyId?: string
   onCancel: () => void
   onConfirm: (vocabulary: Omit<ControlledVocabulary, 'id' | 'type'>) => void
@@ -89,6 +91,7 @@ export function VocabularyForm({
   initialValues,
   warnings = [],
   sampleIris = [],
+  onBack,
   currentVocabularyId,
   onCancel,
   onConfirm,
@@ -372,6 +375,11 @@ export function VocabularyForm({
           </CardContent>
         </Card>
         <div className="mt-6 flex gap-2">
+          {onBack && (
+            <Button variant="outline" size="sm" type="button" onClick={onBack}>
+              {t("form.back")}
+            </Button>
+          )}
           <Button variant="outline" size="sm" type="button" onClick={onCancel}>
             {t("form.cancel")}
           </Button>
