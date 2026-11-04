@@ -493,7 +493,6 @@ function structureModelPrimitiveToJsonDefinition(
       result = new JsonSchemaString(null);
       result.title = context.stringSelector(OFN_LABELS[OFN.string]);
       result.pattern = primitive.regex;
-      result.examples = primitive.example ?? [];
       break;
     case XSD.decimal:
     case OFN.decimal:
@@ -544,7 +543,6 @@ function structureModelPrimitiveToJsonDefinition(
       result = new JsonSchemaString(JsonSchemaStringFormats.iri);
       result.title = context.stringSelector(OFN_LABELS[OFN.url]);
       result.pattern = primitive.regex;
-      result.examples = primitive.example ?? [];
       break;
     case OFN.text:
       result = languageString(primitive.languageStringRequiredLanguages);
@@ -564,6 +562,7 @@ function structureModelPrimitiveToJsonDefinition(
       result.title = primitive.dataType;
       break;
   }
+  result.examples = primitive.example ?? [];
   return result;
 }
 
