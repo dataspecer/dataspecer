@@ -67,7 +67,7 @@ async function loadCodelist(
 }
 
 /**
- * Reads the metadata of a vocabulary from its NKOD record and from the chosen
+ * Reads the metadata of a vocabulary from its NKD record and from the chosen
  * distribution.
  *
  * Whatever the distribution, the name and the documentation come from the

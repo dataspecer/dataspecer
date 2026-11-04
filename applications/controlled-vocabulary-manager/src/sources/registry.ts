@@ -1,5 +1,5 @@
 import { euSource } from "./eu/eu-source"
-import { nkodSource } from "./nkod/nkod-source"
+import { nkdSource } from "./nkd/nkd-source"
 import type { SourceDescriptor, VocabularySource } from "./types"
 
 /**
@@ -8,10 +8,10 @@ import type { SourceDescriptor, VocabularySource } from "./types"
  */
 export const sourceDescriptors: readonly SourceDescriptor[] = [
   {
-    id: "nkod",
+    id: "nkd",
     name: {
-      en: "Czech National Open Data Catalog (NKOD)",
-      cs: "Národní katalog otevřených dat (NKOD)",
+      en: "Czech National Data Catalog (NKD)",
+      cs: "Národní katalog dat (NKD)",
     },
     url: "https://data.gov.cz/datasets",
     available: true,
@@ -35,7 +35,7 @@ export const sourceDescriptors: readonly SourceDescriptor[] = [
   },
 ]
 
-const sources: readonly VocabularySource[] = [nkodSource, euSource]
+const sources: readonly VocabularySource[] = [nkdSource, euSource]
 
 /**
  * Finds the source with the id, undefined for an unknown source or one that

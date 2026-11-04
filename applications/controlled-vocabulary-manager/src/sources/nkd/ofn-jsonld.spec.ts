@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest"
 import { parseOfnJsonLd } from "./ofn-jsonld"
 
-// The samples are trimmed copies of codelists published in NKOD.
+// The samples are trimmed copies of codelists published in NKD.
 
 describe("parseOfnJsonLd", () => {
   test("reads a codelist in the current OFN form (DIA, sporty)", () => {

@@ -5,25 +5,25 @@ import { buildDetail, distributionsQuery, recordQuery } from "./detail"
 import { catalogueQuery, groupNamesQuery } from "./listing"
 import { readMetadata } from "./metadata"
 
-export const NKOD_SPARQL_ENDPOINT = "https://data.gov.cz/sparql"
+export const NKD_SPARQL_ENDPOINT = "https://data.gov.cz/sparql"
 
-export interface NkodSourceDependencies {
+export interface NkdSourceDependencies {
   /** Replaces the global fetch, for tests. */
   fetch?: typeof fetch
 }
 
 /**
- * The Czech National Open Data Catalog (NKOD) SPARQL endpoint.
+ * The Czech National Data Catalog (NKD) SPARQL endpoint.
  * The vocabularies are the datasets of the catalog that conform to the open formal norm for codelists,
  * browsed by their publishers. There are a few hundred of them, which the listing reads at once
  * (see {@link createCatalogueListing}).
  */
-export function createNkodSource(dependencies: NkodSourceDependencies = {}): VocabularySource {
+export function createNkdSource(dependencies: NkdSourceDependencies = {}): VocabularySource {
   const run = (query: string, options?: RequestOptions) =>
-    runSparqlSelect(NKOD_SPARQL_ENDPOINT, query, { signal: options?.signal, fetch: dependencies.fetch })
+    runSparqlSelect(NKD_SPARQL_ENDPOINT, query, { signal: options?.signal, fetch: dependencies.fetch })
 
   return {
-    id: "nkod",
+    id: "nkd",
     ...createCatalogueListing(
       async () => {
         const [catalogue, groupNames] = await Promise.all([run(catalogueQuery()), run(groupNamesQuery())])
@@ -43,4 +43,4 @@ export function createNkodSource(dependencies: NkodSourceDependencies = {}): Voc
   }
 }
 
-export const nkodSource = createNkodSource()
+export const nkdSource = createNkdSource()

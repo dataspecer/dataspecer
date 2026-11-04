@@ -15,17 +15,17 @@ describe("isWizardScreenAvailable", () => {
 
   test("shows the search only with a source", () => {
     expect(isWizardScreenAvailable("search", empty)).toBe(false)
-    expect(isWizardScreenAvailable("search", { ...empty, sourceId: "nkod" })).toBe(true)
+    expect(isWizardScreenAvailable("search", { ...empty, sourceId: "nkd" })).toBe(true)
   })
 
   test("shows the choice of the distribution only with a chosen vocabulary", () => {
-    expect(isWizardScreenAvailable("distribution", { ...empty, sourceId: "nkod" })).toBe(false)
-    expect(isWizardScreenAvailable("distribution", { ...empty, sourceId: "nkod", candidate })).toBe(true)
+    expect(isWizardScreenAvailable("distribution", { ...empty, sourceId: "nkd" })).toBe(false)
+    expect(isWizardScreenAvailable("distribution", { ...empty, sourceId: "nkd", candidate })).toBe(true)
   })
 
   test("shows the prefilled form only with the metadata read", () => {
-    expect(isWizardScreenAvailable("form-prefilled", { ...empty, sourceId: "nkod", candidate })).toBe(false)
-    expect(isWizardScreenAvailable("form-prefilled", { ...empty, sourceId: "nkod", candidate, metadata })).toBe(true)
+    expect(isWizardScreenAvailable("form-prefilled", { ...empty, sourceId: "nkd", candidate })).toBe(false)
+    expect(isWizardScreenAvailable("form-prefilled", { ...empty, sourceId: "nkd", candidate, metadata })).toBe(true)
   })
 })
 
@@ -33,15 +33,15 @@ describe("searchBackStep", () => {
   const group = { id: "g", label: {}, count: 1 }
 
   test("goes back to the choice of the source from the list of groups", () => {
-    expect(searchBackStep({ ...empty, sourceId: "nkod" })).toBe("source")
+    expect(searchBackStep({ ...empty, sourceId: "nkd" })).toBe("source")
   })
 
   test("goes back to the list of groups from the vocabularies of a group", () => {
-    expect(searchBackStep({ ...empty, sourceId: "nkod", group })).toBe("all-groups")
+    expect(searchBackStep({ ...empty, sourceId: "nkd", group })).toBe("all-groups")
   })
 
   test("clears the search first, whether or not a group is chosen", () => {
-    expect(searchBackStep({ ...empty, sourceId: "nkod", query: "pohl" })).toBe("clear-search")
-    expect(searchBackStep({ ...empty, sourceId: "nkod", group, query: "pohl" })).toBe("clear-search")
+    expect(searchBackStep({ ...empty, sourceId: "nkd", query: "pohl" })).toBe("clear-search")
+    expect(searchBackStep({ ...empty, sourceId: "nkd", group, query: "pohl" })).toBe("clear-search")
   })
 })

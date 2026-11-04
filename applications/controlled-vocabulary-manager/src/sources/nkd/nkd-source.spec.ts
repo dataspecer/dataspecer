@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vitest"
-import { createNkodSource } from "./nkod-source"
+import { createNkdSource } from "./nkd-source"
 
 const PUBLISHER = "https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/17651921"
 const DATASET = "https://data.gov.cz/zdroj/datové-sady/17651921/b4d1"
@@ -15,11 +15,11 @@ const row = {
   name: { type: "literal", value: "Digitální a informační agentura", "xml:lang": "cs" },
 }
 
-describe("createNkodSource", () => {
+describe("createNkdSource", () => {
   test("lists the publishers and the codelists from the two queries that read the catalogue", async () => {
     const fetchMock = vi.fn<typeof fetch>(async () =>
       new Response(JSON.stringify({ results: { bindings: [row] } }), { status: 200 }))
-    const source = createNkodSource({ fetch: fetchMock })
+    const source = createNkdSource({ fetch: fetchMock })
 
     expect(await source.listGroups!({ offset: 0, limit: 20 })).toEqual({
       items: [{ id: PUBLISHER, count: 1, label: { cs: "Digitální a informační agentura" } }],

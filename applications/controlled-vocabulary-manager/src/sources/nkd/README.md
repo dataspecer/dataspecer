@@ -1,6 +1,6 @@
-# NKOD source (Czech National Open Data Catalog)
+# NKD source (Czech National Data Catalog)
 
-Finds codelists in NKOD and prefills the vocabulary form from them. Read this before changing a query or the metadata rules.
+Finds codelists in NKD and prefills the vocabulary form from them. Read this before changing a query or the metadata rules.
 
 ## Endpoint
 - `https://data.gov.cz/sparql`, Virtuoso, queried with GET by `../sparql-client.ts` (30 s timeout, JSON results). It allows browser requests (CORS).
@@ -29,7 +29,7 @@ The record does **not** contain the scheme IRI or the IRIs of the values. They a
 - `distribution.ts` – format names from file-type IRIs (shared `../file-types.ts`), `carriesSkos`, `isReadableFormat`, `formatRank`.
 - `ofn-jsonld.ts` – parser of the OFN JSON-LD codelist file.
 - `metadata.ts` – `readMetadata`: fetches and parses the file, builds the form values and warnings.
-- `nkod-source.ts` – wires it into `VocabularySource` (`NKOD_SPARQL_ENDPOINT`) with `createCatalogueListing`.
+- `nkd-source.ts` – wires it into `VocabularySource` (`NKD_SPARQL_ENDPOINT`) with `createCatalogueListing`.
 
 ## Distributions
 - A distribution with `dcat:accessService` and no `downloadURL` is an endpoint, format `SPARQL`.
