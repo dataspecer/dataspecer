@@ -4,10 +4,7 @@ import path from "node:path";
 import { createTwoFilesPatch } from "diff";
 import OpenAI from "openai";
 import { z } from "zod";
-import {
-  internalDefaultDocumentationConfiguration,
-  type PartialDocumentationConfiguration,
-} from "@dataspecer/documentation/configuration";
+import { defaultDocumentationConfiguration } from "@dataspecer/specification/documentation";
 
 const legacySchema = z.object({
   type: z.string().optional(),
@@ -30,10 +27,10 @@ function canonicalJson(value: unknown): string {
 }
 
 /** Removes deletion markers for partials that are not present in the new defaults. */
-function removeUnsupportedDeletions(configuration: PartialDocumentationConfiguration): PartialDocumentationConfiguration {
+function removeUnsupportedDeletions(configuration: z.infer<typeof resultSchema>): z.infer<typeof resultSchema> {
   return {
     partials: Object.fromEntries(Object.entries(configuration.partials).filter(([name, value]) =>
-      value !== false || Object.hasOwn(internalDefaultDocumentationConfiguration.partials, name),
+      value !== false || Object.hasOwn(defaultDocumentationConfiguration.partials, name),
     )),
   };
 }
@@ -61,7 +58,7 @@ export async function createTemplateConfigurationConverter(options: {
   legacyDefaults: unknown;
   cacheFile: string;
   generate?: (prompt: string) => Promise<unknown>;
-}): Promise<(value: unknown) => Promise<PartialDocumentationConfiguration>> {
+}): Promise<(value: unknown) => Promise<z.infer<typeof resultSchema>>> {
   let cache: z.infer<typeof cacheSchema> = {};
   try {
     cache = cacheSchema.parse(JSON.parse(await readFile(options.cacheFile, "utf8")));
@@ -80,7 +77,7 @@ export async function createTemplateConfigurationConverter(options: {
       return structuredClone(removeUnsupportedDeletions(cached.result));
     }
     const diff = diffTemplateConfiguration(options.legacyDefaults, input);
-    let result: PartialDocumentationConfiguration = { partials: {} };
+    let result: z.infer<typeof resultSchema> = { partials: {} };
     if (diff) {
       const prompt = `Migrate Dataspecer documentation customizations from Mustache to Handlebars.
 Return only a JSON object of the form {"partials":{"name":"complete replacement template"}}.
@@ -104,7 +101,7 @@ Customization diff:
 ${diff}
 
 New documentation defaults:
-${JSON.stringify(internalDefaultDocumentationConfiguration)}`;
+${JSON.stringify(defaultDocumentationConfiguration)}`;
       console.log(`Converting documentation configuration ${key}.`);
       if (options.generate) {
         result = resultSchema.parse(await options.generate(prompt));
