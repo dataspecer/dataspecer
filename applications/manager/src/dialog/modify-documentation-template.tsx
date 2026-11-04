@@ -1,5 +1,5 @@
 import { Modal, ModalBody, ModalContent, ModalHeader, ModalTitle } from "@/components/modal";
-import { MonacoDiffEditor, MonacoEditor } from "@/components/monaco-editor";
+import { MonacoEditorWithDiff } from "@/components/monaco-editor";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,6 @@ import { packageService, requestLoadPackage } from "@/package";
 import { DefaultConfigurationContext } from "@/default-configuration";
 import { preventDefault, stopPropagation } from "@/utils/events";
 import { Trash, Undo2 } from "lucide-react";
-import * as monaco from "monaco-editor";
 import { useContext, useEffect, useRef, useState } from "react";
 import { createDefaultConfigurationModelFromJsonObject } from "@dataspecer/core-v2/configuration-model";
 import { applyPartialDocumentationConfiguration, getPartialDocumentationConfiguration, DOCUMENTATION_MAIN_TEMPLATE_PARTIAL } from "@dataspecer/documentation/configuration";
@@ -125,7 +124,6 @@ function getNewPartialsState(defaultPartials: Record<string, string>, current: R
 export const ModifyDocumentationTemplate = ({ isOpen, resolve, iri }: { iri: string } & BetterModalProps) => {
   const { t } = useTranslation();
   const defaultConfiguration = useContext(DefaultConfigurationContext);
-  const editor = useRef<{ editor: monaco.editor.IStandaloneCodeEditor } | undefined>(undefined);
 
   useOnBeforeUnload(true);
   useOnKeyDown(e => {
@@ -156,6 +154,7 @@ export const ModifyDocumentationTemplate = ({ isOpen, resolve, iri }: { iri: str
   const [editorValue, setEditorValue] = useState("");
   const [showDiff, setShowDiff] = useLocalStorage("documentation-template-show-diff", false);
   const [inlineDiff, setInlineDiff] = useLocalStorage("documentation-template-inline-diff", false);
+
   useEffect(() => {
     if (defaultConfiguration === null) return;
     let active = true;
@@ -319,14 +318,30 @@ export const ModifyDocumentationTemplate = ({ isOpen, resolve, iri }: { iri: str
               <div className="flex items-center justify-end gap-2 px-3 py-2">
                 {showDiff && <>
                   <Label htmlFor="template-inline-diff-switch">{t("modify-documentation-template-dialog.inline-diff")}</Label>
-                  <Switch id="template-inline-diff-switch" checked={inlineDiff} onCheckedChange={setInlineDiff} />
+                  <Switch
+                    id="template-inline-diff-switch"
+                    checked={inlineDiff}
+                    onPointerDown={event => event.preventDefault()}
+                    onCheckedChange={setInlineDiff}
+                  />
                 </>}
                 <Label htmlFor="template-diff-switch">{t("modify-documentation-template-dialog.show-diff")}</Label>
-                <Switch id="template-diff-switch" checked={showDiff} onCheckedChange={setShowDiff} />
+                <Switch
+                  id="template-diff-switch"
+                  checked={showDiff}
+                  onPointerDown={event => event.preventDefault()}
+                  onCheckedChange={setShowDiff}
+                />
               </div>
-              {!isLoading && (showDiff
-                ? <MonacoDiffEditor key={selectedPartial} original={defaultPartials[selectedPartial] ?? ""} modified={editorValue} language="handlebars" onModifiedChange={editorValueUpdated} renderSideBySide={!inlineDiff} />
-                : <MonacoEditor key={selectedPartial} refs={editor} defaultValue={editorValue} language="handlebars" onChange={editorValueUpdated} />)}
+              {!isLoading && <MonacoEditorWithDiff
+                modelId={selectedPartial}
+                original={defaultPartials[selectedPartial] ?? ""}
+                modified={editorValue}
+                language="handlebars"
+                showDiff={showDiff}
+                renderSideBySide={!inlineDiff}
+                onModifiedChange={editorValueUpdated}
+              />}
             </ResizablePanel>
           </ResizablePanelGroup>
         </ModalBody>
