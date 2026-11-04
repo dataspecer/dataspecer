@@ -9,6 +9,8 @@ interface VocabularyFormPageProps {
   vocabulary?: ControlledVocabulary
   /** Metadata read from a source, prefilling the form of a new vocabulary. */
   prefilled?: MetadataResult
+  /** Returns to the choice of the distribution the metadata were read from. */
+  onBack?: () => void
   onCancel: () => void
   onConfirm: (vocabulary: Omit<ControlledVocabulary, 'id' | 'type'>) => void
 }
@@ -16,6 +18,7 @@ interface VocabularyFormPageProps {
 export function VocabularyFormPage({
   vocabulary,
   prefilled,
+  onBack,
   onCancel,
   onConfirm,
 }: VocabularyFormPageProps) {
@@ -49,6 +52,7 @@ export function VocabularyFormPage({
         initialValues={vocabulary ?? prefilled?.metadata}
         warnings={prefilled?.warnings}
         sampleIris={prefilled?.sampleIris}
+        onBack={prefilled ? onBack : undefined}
         currentVocabularyId={vocabulary?.id}
         onCancel={onCancel}
         onConfirm={onConfirm}

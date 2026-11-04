@@ -170,6 +170,7 @@ function App() {
       ) : screen === "form-prefilled" && wizard.state.metadata !== null ? (
         <VocabularyFormPage
           prefilled={wizard.state.metadata}
+          onBack={() => navigate("distribution")}
           onCancel={handleFormCancel}
           onConfirm={(vocabulary) => {
             addVocabulary(vocabulary)

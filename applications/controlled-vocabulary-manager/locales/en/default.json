@@ -55,6 +55,7 @@
   "form.empty.subtitle": "Fill in vocabulary metadata manually. Fields marked with <asterisk>*</asterisk> are required.",
   "form.prefilled.title": "Add Vocabulary from Source",
   "form.prefilled.subtitle": "Check the metadata read from the source and fill in what is missing. Fields marked with <asterisk>*</asterisk> are required.",
+  "form.back": "Back",
   "form.regexSamples": "IRIs of values read from the source, to check the pattern against:",
   "form.warnings.title": "Some metadata could not be read",
   "form.warnings.dismiss": "Dismiss",

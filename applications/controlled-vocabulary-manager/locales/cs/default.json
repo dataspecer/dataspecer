@@ -57,6 +57,7 @@
   "form.empty.subtitle": "Vyplňte metadata slovníku ručně. Pole označená <asterisk>*</asterisk> jsou povinná.",
   "form.prefilled.title": "Přidat slovník ze zdroje",
   "form.prefilled.subtitle": "Zkontrolujte metadata načtená ze zdroje a doplňte, co chybí. Pole označená <asterisk>*</asterisk> jsou povinná.",
+  "form.back": "Zpět",
   "form.regexSamples": "IRI hodnot načtených ze zdroje, proti kterým lze vzor zkontrolovat:",
   "form.warnings.title": "Některá metadata se nepodařilo načíst",
   "form.warnings.dismiss": "Zavřít",
