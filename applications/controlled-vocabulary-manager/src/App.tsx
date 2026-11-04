@@ -171,7 +171,10 @@ function App() {
         <VocabularyFormPage
           prefilled={wizard.state.metadata}
           onBack={() => navigate("distribution")}
-          onCancel={handleFormCancel}
+          onCancel={() => {
+            wizard.reset()
+            handleFormCancel()
+          }}
           onConfirm={(vocabulary) => {
             addVocabulary(vocabulary)
             wizard.reset()

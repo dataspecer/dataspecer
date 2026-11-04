@@ -4,7 +4,7 @@ import { Breadcrumb } from "@/components/layout/breadcrumb"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useConfig } from "@/contexts/config-context"
-import type { WizardState } from "@/hooks/use-source-wizard"
+import { searchBackStep, type WizardState } from "@/hooks/use-source-wizard"
 import { selectName } from "@/lib/language"
 import { getSource, sourceDescriptors } from "@/sources/registry"
 import type { SourceCandidate, SourceGroup } from "@/sources/types"
@@ -69,6 +69,19 @@ export function SearchPage({
   const clear = () => {
     setText("")
     onSearch("")
+  }
+  const back = () => {
+    switch (searchBackStep(state)) {
+      case "clear-search":
+        clear()
+        break
+      case "all-groups":
+        onGroupSelect(null)
+        break
+      case "source":
+        onChangeSource()
+        break
+    }
   }
   const searching = state.query !== ""
   const browsingGroup = !searching && state.group !== null
@@ -140,7 +153,7 @@ export function SearchPage({
         </section>
       ) : null}
       <div className="mt-6">
-        <Button variant="outline" size="sm" onClick={onChangeSource}>
+        <Button variant="outline" size="sm" onClick={back}>
           {t("search.back")}
         </Button>
       </div>

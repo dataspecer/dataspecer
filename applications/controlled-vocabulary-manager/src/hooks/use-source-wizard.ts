@@ -51,6 +51,21 @@ export function isWizardScreenAvailable(screen: Screen, state: WizardState): boo
 }
 
 /**
+ * What the Back button of the search does, one level at a time:
+ * - clear-search = clears the searched text, which shows the vocabularies of the chosen group, or the groups
+ * - all-groups = leaves the chosen group, which shows the groups
+ * - source = returns to the choice of the source
+ */
+export type SearchBackStep = "clear-search" | "all-groups" | "source"
+
+export function searchBackStep(state: WizardState): SearchBackStep {
+  if (state.query !== "") {
+    return "clear-search"
+  }
+  return state.group !== null ? "all-groups" : "source"
+}
+
+/**
  * Holds the state of the "Add from source" flow in memory. A screen of the
  * flow opened without its state, such as after reloading the page, is
  * replaced by the list of vocabularies.
@@ -58,8 +73,9 @@ export function isWizardScreenAvailable(screen: Screen, state: WizardState): boo
 export function useSourceWizard(screen: Screen, navigate: Navigate) {
   const [state, setState] = useState<WizardState>(INITIAL_STATE)
 
+  // Choosing a source starts the flow anew, also when it is the same source as before.
   const selectSource = useCallback((sourceId: string) => {
-    setState((current) => current.sourceId === sourceId ? current : { ...INITIAL_STATE, sourceId })
+    setState({ ...INITIAL_STATE, sourceId })
   }, [])
 
   const setGroupsPage = useCallback((groupsPage: number) => {
