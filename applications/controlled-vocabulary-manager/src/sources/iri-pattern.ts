@@ -21,6 +21,13 @@ function commonPrefix(values: string[]): string {
 }
 
 /**
+ * Builds a regular expression source matching the IRIs that start with the prefix.
+ */
+export function iriPrefixPattern(prefix: string): string {
+  return `^${escapeRegex(prefix)}.*$`
+}
+
+/**
  * Builds a regular expression source matching the IRIs of vocabulary values.
  *
  * The pattern is the longest common prefix of the given IRIs, cut back to its last `/` or `#`
@@ -41,5 +48,5 @@ export function buildIriPattern(iris: string[]): string | null {
   if (!PREFIX_WITH_PATH.test(base)) {
     return null
   }
-  return `^${escapeRegex(base)}.*$`
+  return iriPrefixPattern(base)
 }

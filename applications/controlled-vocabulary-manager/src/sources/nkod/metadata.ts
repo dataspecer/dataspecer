@@ -1,5 +1,5 @@
-import type { LanguageString } from "@dataspecer/core/core/core-resource"
 import { buildIriPattern } from "../iri-pattern"
+import { tagUntagged } from "../sparql-utils"
 import type {
   CandidateDetail,
   MetadataOptions,
@@ -64,15 +64,6 @@ async function loadCodelist(
   }
   const codelist = parseOfnJsonLd(document)
   return codelist === null ? { warning: { code: "notParsed" } } : { codelist }
-}
-
-/**
- * Gives the texts without a language tag, stored under the empty key, the language.
- */
-function tagUntagged(text: LanguageString, language: string): LanguageString {
-  const { "": untagged, ...tagged } = text
-  const tag = language.split("-")[0].toLowerCase()
-  return untagged !== undefined && tagged[tag] === undefined ? { ...tagged, [tag]: untagged } : tagged
 }
 
 /**
