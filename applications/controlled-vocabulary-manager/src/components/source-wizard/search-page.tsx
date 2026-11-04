@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react"
+import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Breadcrumb } from "@/components/layout/breadcrumb"
 import { Button } from "@/components/ui/button"
@@ -10,6 +10,12 @@ import { getSource, sourceDescriptors } from "@/sources/registry"
 import type { SourceCandidate, SourceGroup } from "@/sources/types"
 import { CandidateList } from "./candidate-list"
 import { GroupList } from "./group-list"
+
+/**
+ * How long after the last keystroke the typed text is searched. The vocabularies are searched in the
+ * browser, so this only keeps the list from changing with every letter.
+ */
+const SEARCH_DELAY_MS = 150
 
 interface SearchPageProps {
   sourceId: string
@@ -44,6 +50,15 @@ export function SearchPage({
   const { t, i18n } = useTranslation()
   const { managerUrl } = useConfig()
   const [text, setText] = useState(state.query)
+  // The vocabularies are searched as the user types.
+  useEffect(() => {
+    const query = text.trim()
+    if (query === state.query) {
+      return
+    }
+    const timer = setTimeout(() => onSearch(query), SEARCH_DELAY_MS)
+    return () => clearTimeout(timer)
+  }, [text, state.query, onSearch])
   const source = getSource(sourceId)
   const descriptor = sourceDescriptors.find((candidate) => candidate.id === sourceId)
 
@@ -51,10 +66,6 @@ export function SearchPage({
     return null
   }
 
-  const submit = (event: FormEvent) => {
-    event.preventDefault()
-    onSearch(text.trim())
-  }
   const clear = () => {
     setText("")
     onSearch("")
@@ -73,18 +84,19 @@ export function SearchPage({
         ]}
       />
       <h1 className="text-page-title font-semibold mb-6">{t("search.title")}</h1>
-      <form className="flex gap-2 mb-6" onSubmit={submit}>
+      <div className="flex gap-2 mb-6">
         <Input
+          className="h-12 border-2 border-primary text-lg focus-visible:ring-primary/40"
           value={text}
           onChange={(event) => setText(event.target.value)}
           placeholder={t("search.placeholder")}
           aria-label={t("search.placeholder")}
+          autoFocus
         />
-        <Button type="submit">{t("search.submit")}</Button>
         {(searching || text !== "") && (
-          <Button type="button" variant="outline" onClick={clear}>{t("search.clear")}</Button>
+          <Button type="button" variant="outline" className="h-12" onClick={clear}>{t("search.clear")}</Button>
         )}
-      </form>
+      </div>
       {searching ? (
         <section>
           <h2 className="text-sm font-medium text-muted-foreground mb-2">
