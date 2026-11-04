@@ -1,5 +1,5 @@
 /**
- * Datasets of NKOD declare the standard they conform to with dct:conformsTo.
+ * Datasets of NKD declare the standard they conform to with dct:conformsTo.
  * The codelists are the datasets conforming to the open formal norm (OFN) for codelists,
  * in any of its versions, which all start with this IRI.
  */

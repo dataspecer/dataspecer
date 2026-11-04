@@ -4,7 +4,7 @@ Code behind "Add from source": it finds a vocabulary in a catalog, reads what it
 The UI is in `../components/source-wizard/`, its state in `../hooks/use-source-wizard.ts`. Nothing here depends on React.
 
 **Sources**
-- `nkod/` – Czech National Open Data Catalog. See [nkod/README.md](nkod/README.md).
+- `nkd/` – Czech National Data Catalog. See [nkd/README.md](nkd/README.md).
 - `eu/` – EU Vocabularies Reference Data Catalogue. See [eu/README.md](eu/README.md).
 
 ## Flow

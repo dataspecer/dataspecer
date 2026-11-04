@@ -14,7 +14,7 @@ export interface OfnCodelist {
 
 /*
  * The Czech open formal norm (OFN) for codelists exists in two versions that
- * name the JSON-LD keys differently, and NKOD records declare either of them in `dct:conformsTo`:
+ * name the JSON-LD keys differently, and NKD records declare either of them in `dct:conformsTo`:
  * - the release of 2022-02-08 (`https://ofn.gov.cz/číselníky/2022-02-08/`)
  *   uses `iri` for the IRI of the codelist and of its items and `název` for
  *   the codelist name, for example in the files published by DIA;
