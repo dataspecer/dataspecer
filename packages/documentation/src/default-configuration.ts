@@ -8,14 +8,16 @@ export const defaultConfiguration: DocumentationConfiguration = {
   {{#iflng "cs"}}Tento soubor dokumentuje{{lng}}This file documents{{/iflng}}
   {{#translate label}}<strong>{{translation}}</strong>{{#if otherLang}} (@{{otherLang}}){{/if}}{{else}}<i>{{#iflng "cs"}}beze jména{{lng}}without assigned name{{/iflng}}</i>{{/translate}}.</p>
 </section>`,
-    introduction: `<section>
+    introduction: `{{!--
+<section>
   {{#iflng "cs"}}<h2>Úvod</h2>
   <p>Toto je úvod</p>
   {{lng}}
   <h2>Introduction</h2>
-  <p>This is introduction</p>
+  <p>This is an introduction</p>
   {{/iflng}}
-</section>`,
+</section>
+--}}`,
     localBiblio: `localBiblio: {
       "DCAT-AP": {
           title: "DCAT Application Profile for data portals in Europe",
@@ -49,12 +51,10 @@ export const defaultConfiguration: DocumentationConfiguration = {
       <h2>{{#iflng "cs"}}Přehled{{lng}}Overview{{/iflng}}</h2>
 
       {{#each externalArtifacts.svg}}
-        <a href="{{{relativePath URL}}}">
-          <figure>
-            <img src="{{{relativePath URL}}}" alt="{{translate ./label}}" />
-            <figcaption>{{translate ./label}}</figcaption>
-          </figure>
-        </a>
+        <figure>
+          <img src="{{{relativePath URL}}}" alt="{{translate ./label}}" />
+          <figcaption><a href="{{{relativePath URL}}}">{{translate ./label}}</a></figcaption>
+        </figure>
       {{/each}}
     </section>
 
