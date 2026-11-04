@@ -27,7 +27,7 @@ import { diffModelEntitiesToOperations } from "../models/model-operations.ts";
 import { deserializeModelEntities } from "../models/model-types.ts";
 import { ResourceModel, type BaseResource } from "../models/resource-model.ts";
 import { TransactionModel } from "../models/transaction-model.ts";
-import type { CachedSubgraph, ExtendedSemanticModelClass, MainSemanticModelEntity, SemanticModelGeneralization, ExtendedSemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
+import type { CachedSubgraph, ExtendedSemanticModelClass, ExtendedSemanticModelRelationshipEnd, MainSemanticModelEntity, SemanticModelClass, SemanticModelGeneralization, SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
 
 function correctLegacyModelLabelLanguage(label: LanguageString | null | undefined): LanguageString {
   if (label && Object.keys(label).length === 1 && typeof label.en === "string") {
@@ -60,7 +60,7 @@ function getPimIds(resources: Record<string, CoreResource>): Map<string, string>
 /** Maps legacy PIM resources to semantic entities keyed by interpretation IRI. */
 function convertPim(resources: Record<string, CoreResource>): EntityRecord {
   const ids = getPimIds(resources);
-  const entities: EntityRecord<ExtendedSemanticModelClass | SemanticModelGeneralization | ExtendedSemanticModelRelationship> = Object.create(null);
+  const entities: EntityRecord<SemanticModelClass | SemanticModelGeneralization | SemanticModelRelationship> = Object.create(null);
   for (const [key, resource] of Object.entries(resources)) {
     const id = ids.get(key)!;
     if (PimClass.is(resource)) {
@@ -68,13 +68,7 @@ function convertPim(resources: Record<string, CoreResource>): EntityRecord {
         id, type: ["class"], iri: resource.pimInterpretation ?? null,
         name: resource.pimHumanLabel ?? {},
         description: resource.pimHumanDescription ?? {},
-        technicalLabel: resource.pimTechnicalLabel ?? null,
-        isCodelist: resource.pimIsCodelist ?? false,
-        codelistUrl: resource.pimCodelistUrl ?? [],
-        regex: resource.pimRegex ?? null,
-        example: resource.pimExample ?? null,
-        objectExample: resource.pimObjectExample ?? null,
-      } satisfies ExtendedSemanticModelClass;
+      } satisfies SemanticModelClass;
       for (const parentIri of resource.pimExtends ?? []) {
         const parent = ids.get(parentIri) ?? parentIri;
         const generalizationId = getGeneralizationIri(id, parent);
@@ -85,12 +79,10 @@ function convertPim(resources: Record<string, CoreResource>): EntityRecord {
     } else if (PimAttribute.is(resource)) {
       entities[id] = {
         id, type: ["relationship"], iri: null, name: {}, description: {},
-        technicalLabel: resource.pimTechnicalLabel ?? null,
         ends: [
           {
             iri: null, name: {}, description: {},
             concept: ids.get(resource.pimOwnerClass!) ?? resource.pimOwnerClass, cardinality: [0, null],
-            technicalLabel: null, languageStringRequiredLanguages: [], regex: null, example: null,
           },
           {
             iri: resource.pimInterpretation ?? null,
@@ -98,13 +90,9 @@ function convertPim(resources: Record<string, CoreResource>): EntityRecord {
             description: resource.pimHumanDescription ?? {},
             concept: ids.get(resource.pimDatatype!) ?? resource.pimDatatype ?? "http://www.w3.org/2000/01/rdf-schema#Literal",
             cardinality: [resource.pimCardinalityMin ?? 0, resource.pimCardinalityMax ?? null],
-            technicalLabel: resource.pimTechnicalLabel ?? null,
-            languageStringRequiredLanguages: resource.pimLanguageStringRequiredLanguages ?? [],
-            regex: resource.pimRegex ?? null,
-            example: resource.pimExample ?? null,
           },
         ],
-      } satisfies ExtendedSemanticModelRelationship;
+      } satisfies SemanticModelRelationship;
     } else if (PimAssociation.is(resource)) {
       if (resource.pimEnd.length !== 2) {
         throw new Error(`PIM association "${id}" must have two ends.`);
@@ -113,7 +101,6 @@ function convertPim(resources: Record<string, CoreResource>): EntityRecord {
         id, type: ["relationship"], iri: null,
         name: resource.pimHumanLabel ?? {},
         description: resource.pimHumanDescription ?? {},
-        technicalLabel: resource.pimTechnicalLabel ?? null,
         ends: resource.pimEnd.map((endId, index) => {
           const end = resources[endId];
           if (!end || !PimAssociationEnd.is(end)) {
@@ -125,11 +112,9 @@ function convertPim(resources: Record<string, CoreResource>): EntityRecord {
             description: end.pimHumanDescription ?? (index === 1 ? resource.pimHumanDescription : null) ?? {},
             concept: ids.get(end.pimPart!) ?? end.pimPart,
             cardinality: [end.pimCardinalityMin ?? 0, end.pimCardinalityMax ?? null],
-            technicalLabel: end.pimTechnicalLabel ?? (index === 1 ? resource.pimTechnicalLabel : null) ?? null,
-            languageStringRequiredLanguages: [], regex: null, example: null,
           };
         }),
-      } satisfies ExtendedSemanticModelRelationship;
+      } satisfies SemanticModelRelationship;
     }
   }
   return entities;
@@ -451,6 +436,49 @@ async function main(): Promise<void> {
           },
         },
       }, { entities: Object.values(newResources) });
+      const getProfile = createProfileLookup(pimResources, profileEntities);
+      for (const [key, resource] of Object.entries(pimResources)) {
+        if (!PimClass.is(resource) && !PimAttribute.is(resource) && !PimAssociation.is(resource)) continue;
+        const profile = profileEntities[getProfile(key)];
+        if (PimClass.is(resource)) {
+          if (!isSemanticModelClassProfile(profile)) throw new Error(`Expected a class profile for PIM resource "${key}".`);
+          Object.assign(profile, {
+            technicalLabel: resource.pimTechnicalLabel ?? null,
+            regex: resource.pimRegex ?? null,
+            example: resource.pimExample ?? null,
+            objectExample: resource.pimObjectExample ?? null,
+          } satisfies Pick<ExtendedSemanticModelClass, "technicalLabel" | "regex" | "example" | "objectExample">);
+        } else {
+          if (!isSemanticModelRelationshipProfile(profile)) throw new Error(`Expected a relationship profile for PIM resource "${key}".`);
+          Object.assign(profile, { technicalLabel: resource.pimTechnicalLabel ?? null });
+          for (const end of profile.ends) {
+            Object.assign(end, {
+              technicalLabel: null, languageStringRequiredLanguages: [], regex: null, example: null,
+            } satisfies Pick<ExtendedSemanticModelRelationshipEnd, "technicalLabel" | "languageStringRequiredLanguages" | "regex" | "example">);
+          }
+          if (PimAttribute.is(resource)) {
+            Object.assign(profile.ends[1], {
+              technicalLabel: resource.pimTechnicalLabel ?? null,
+              languageStringRequiredLanguages: resource.pimLanguageStringRequiredLanguages ?? [],
+              regex: resource.pimRegex ?? null,
+              example: resource.pimExample ?? null,
+            } satisfies Pick<ExtendedSemanticModelRelationshipEnd, "technicalLabel" | "languageStringRequiredLanguages" | "regex" | "example">);
+          } else {
+            const ends = resource.pimEnd.map(endId => {
+              const end = pimResources[endId];
+              if (!end || !PimAssociationEnd.is(end)) throw new Error(`PIM association "${key}" has an invalid end "${endId}".`);
+              return end;
+            });
+            ends.forEach((end, index) => {
+              // Profiling swaps the ends when the first vocabulary end has an IRI.
+              const profileIndex = ends[0].pimInterpretation == null ? index : 1 - index;
+              Object.assign(profile.ends[profileIndex], {
+                technicalLabel: end.pimTechnicalLabel ?? (index === 1 ? resource.pimTechnicalLabel : null) ?? null,
+              });
+            });
+          }
+        }
+      }
       operations.push({ modelId: PROJECT_MODEL_ID, operation: createProfile });
       operations.push(...diffModelEntitiesToOperations(createProfile.modelId, LOCAL_SEMANTIC_MODEL, {}, {
         [createProfile.modelId]: {
@@ -460,7 +488,6 @@ async function main(): Promise<void> {
         ...profileEntities,
       } as EntityRecord));
 
-      const getProfile = createProfileLookup(pimResources, profileEntities);
       for (const structure of structures) {
         const resources = Object.fromEntries(Object.entries(structure.resources).map(([key, entity]) => {
           const converted = remapPsm(entity, psmIds, reuseModels, getProfile) as CoreResource;
