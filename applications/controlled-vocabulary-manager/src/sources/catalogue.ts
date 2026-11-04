@@ -4,10 +4,8 @@ import { assertNonNegativeInteger, labelOrIri, toLanguageString } from "./sparql
 import type { CandidateFilter, Page, PageRequest, SourceCandidate, SourceGroup, VocabularySource } from "./types"
 
 /*
- * The listing shared by the sources whose catalogue is small enough to be read at once. The source reads
- * all its vocabularies with their groups and titles, and the groups, pages, searches and counts
- * are made from them in the browser. Doing it by the endpoint took seconds for every page when the endpoint
- * was not warm, and the same for counting.
+ * The listing shared by the sources whose catalogue is small enough to be read at once.
+ * The source reads all its vocabularies with their groups, pages, searches and counts are made in the browser. 
  */
 
 /**
@@ -21,8 +19,7 @@ export interface CatalogueRows {
 }
 
 /**
- * - sortLanguage = the language the vocabularies are sorted by their title in. A vocabulary without a
- *   title in it is sorted after those that have one, by its other title.
+ * - sortLanguage = the language the vocabularies are sorted by their title in.
  */
 export interface CatalogueOptions {
   sortLanguage: string
