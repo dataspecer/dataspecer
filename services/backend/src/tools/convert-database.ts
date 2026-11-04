@@ -323,7 +323,7 @@ async function main(): Promise<void> {
   const storeModel = new LocalStoreModel(path.join(outputDirectory, "stores"));
   await migrateDatabase(outputPath, storeModel);
   const outputDatabase = createDatabase(outputPath);
-  const report: [string, string, string, number, number, string][] = [];
+  const report: [string, string, string, string, number, number, string][] = [];
   try {
     const storesDirectory = path.join(outputDirectory, "stores");
     await mkdir(storesDirectory, { recursive: true });
@@ -480,6 +480,7 @@ async function main(): Promise<void> {
       }
       report.push([
         createProject.label.cs ?? createProject.label.en ?? Object.values(createProject.label)[0] ?? project.iri,
+        (metadata?.tags ?? []).join("; "),
         `https://xn--slovnk-7va.gov.cz/generujeme/specification?dataSpecificationIri=${encodeURIComponent(project.iri)}`,
         createProject.projectId,
         structures.length,
@@ -493,7 +494,7 @@ async function main(): Promise<void> {
   }
   report.sort((a, b) => a[0].localeCompare(b[0], "cs"));
   const rows = [
-    ["Specification name", "Old instance URL", "New project UUID", "Data structures", "Reused data specifications", "Errors"],
+    ["Specification name", "Tags", "Old instance URL", "New project UUID", "Data structures", "Reused data specifications", "Errors"],
     ...report,
   ];
   const reportPath = path.resolve("migration-report.csv");
