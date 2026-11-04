@@ -73,4 +73,4 @@ VOLUME /usr/src/app/database
 EXPOSE 80
 ENV PORT=80
 HEALTHCHECK CMD ./docker-healthcheck.sh
-ENTRYPOINT ["/sbin/tini", "--", "bun", "dist/docker-main.js"]
+ENTRYPOINT ["/sbin/tini", "--", "bun", "--no-install", "dist/docker-main.js"] # No install prevents bun from auto-installing dependencies that were not bundled properly.
