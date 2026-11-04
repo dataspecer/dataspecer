@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest"
-import { buildIriPattern } from "./iri-pattern"
+import { buildIriPattern, iriPrefixPattern } from "./iri-pattern"
 
 describe("buildIriPattern", () => {
   test("uses the common prefix up to the last slash", () => {
@@ -48,5 +48,14 @@ describe("buildIriPattern", () => {
 
   test("returns null when the IRIs share no prefix", () => {
     expect(buildIriPattern(["http://example.org/a/1", "urn:isbn:2"])).toBeNull()
+  })
+})
+
+describe("iriPrefixPattern", () => {
+  test("matches the IRIs with the prefix and escapes the characters special in a regex", () => {
+    const pattern = new RegExp(iriPrefixPattern("http://example.org/a.b/"))
+    expect(pattern.test("http://example.org/a.b/CZE")).toBe(true)
+    expect(pattern.test("http://example.org/aXb/CZE")).toBe(false)
+    expect(pattern.test("http://other.org/a.b/CZE")).toBe(false)
   })
 })

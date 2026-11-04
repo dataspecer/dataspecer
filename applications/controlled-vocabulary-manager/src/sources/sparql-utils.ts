@@ -74,3 +74,12 @@ export function toLanguageString(terms: SparqlTerm[]): LanguageString {
   }
   return result
 }
+
+/**
+ * Gives the texts without a language tag, stored under the empty key, the language.
+ */
+export function tagUntagged(text: LanguageString, language: string): LanguageString {
+  const { "": untagged, ...tagged } = text
+  const tag = language.split("-")[0].toLowerCase()
+  return untagged !== undefined && tagged[tag] === undefined ? { ...tagged, [tag]: untagged } : tagged
+}

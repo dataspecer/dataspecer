@@ -1,22 +1,4 @@
-const FILE_TYPE_IRI = "http://publications.europa.eu/resource/authority/file-type/"
-
-/**
- * Names of the file types of the EU vocabulary used by NKOD for the format of
- * a distribution, by the last part of the IRI of the file type.
- */
-const FORMAT_NAMES: Record<string, string> = {
-  JSON_LD: "JSON-LD",
-  RDF_TURTLE: "Turtle",
-  RDF_XML: "RDF/XML",
-  RDF_TRIG: "TriG",
-  RDF_N_TRIPLES: "N-Triples",
-  RDF_N_QUADS: "N-Quads",
-  RDFA: "RDFa",
-  CSV: "CSV",
-  XML: "XML",
-  JSON: "JSON",
-  XLSX: "XLSX",
-}
+import { fileTypeName, FORMAT_NAMES } from "../file-types"
 
 export const SPARQL_FORMAT = "SPARQL"
 export const UNKNOWN_FORMAT = "Other"
@@ -50,8 +32,7 @@ export function formatName(formatIri: string | undefined, isEndpoint: boolean): 
   if (formatIri === undefined) {
     return isEndpoint ? SPARQL_FORMAT : UNKNOWN_FORMAT
   }
-  const code = formatIri.startsWith(FILE_TYPE_IRI) ? formatIri.slice(FILE_TYPE_IRI.length) : formatIri
-  return FORMAT_NAMES[code] ?? code
+  return fileTypeName(formatIri)
 }
 
 /**

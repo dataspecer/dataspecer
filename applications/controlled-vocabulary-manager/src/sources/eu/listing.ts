@@ -14,7 +14,7 @@ import type { CandidateFilter, SourceCandidate, SourceGroup } from "../types"
  */
 export const EU_CATALOGUE_IRI = "http://data.europa.eu/88u/catalogue/publ"
 
-const DATASET_TYPE_IRI = "http://publications.europa.eu/resource/authority/dataset-type/"
+export const DATASET_TYPE_IRI = "http://publications.europa.eu/resource/authority/dataset-type/"
 
 /**
  * Types of the datasets of the catalogue that are vocabularies with values:
