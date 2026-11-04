@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 import type { SparqlTerm } from "./sparql-client"
-import { escapeSparqlString, toLanguageString } from "./sparql-utils"
+import { toLanguageString } from "./sparql-utils"
 
 function literal(value: string, lang?: string): SparqlTerm {
   return lang === undefined ? { type: "literal", value } : { type: "literal", value, "xml:lang": lang }
@@ -37,15 +37,5 @@ describe("toLanguageString", () => {
 
   test("keeps the first literal of a language", () => {
     expect(toLanguageString([literal("Pohlaví", "cs"), literal("Rod", "cs-CZ")])).toEqual({ cs: "Pohlaví" })
-  })
-})
-
-describe("escapeSparqlString", () => {
-  test("escapes quotes, backslashes and line breaks", () => {
-    expect(escapeSparqlString('a"b\\c\nd\re\tf')).toBe('a\\"b\\\\c\\nd\\re\\tf')
-  })
-
-  test("leaves other text, including Czech letters, as it is", () => {
-    expect(escapeSparqlString("Číselník ČSÚ (kód 5103)")).toBe("Číselník ČSÚ (kód 5103)")
   })
 })

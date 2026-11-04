@@ -10,7 +10,7 @@ export type VocabularyMetadata = Omit<ControlledVocabulary, "id" | "type">
 /**
  * Pagination. The listing is split to pages of `limit` items, starting with the item at position `offset`.
  * `total` is the number of items found by an earlier request for the same listing. 
- * When it is given, the source does not have to count them again.
+ * When it is given, the source does not have to count them again. A source that has the whole listing at hand ignores it.
  */
 export interface PageRequest {
   offset: number

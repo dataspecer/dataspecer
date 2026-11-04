@@ -22,7 +22,6 @@
   "search.title": "Search Vocabulary",
   "search.browseByPublisher": "Browse by publisher",
   "search.placeholder": "Search by name",
-  "search.submit": "Search",
   "search.clear": "Clear",
   "search.resultsFor": "Results for \"{{query}}\"",
   "search.allPublishers": "All publishers",

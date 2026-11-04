@@ -1,25 +1,17 @@
 import type { LanguageString } from "@dataspecer/core/core/core-resource"
-import type { SparqlRow, SparqlTerm } from "./sparql-client"
+import type { SparqlTerm } from "./sparql-client"
 
 /**
  * Helpers shared by the sources that read vocabularies from a SPARQL endpoint.
  */
 
 /**
- * Rejects a number that could not be written into a query as a LIMIT or an OFFSET.
+ * Rejects a number that is not a valid size or position of a page.
  */
 export function assertNonNegativeInteger(value: number, name: string): void {
   if (!Number.isInteger(value) || value < 0) {
     throw new Error(`${name} must be a non-negative integer, got ${value}.`)
   }
-}
-
-/**
- * Makes the text usable inside a double-quoted SPARQL string literal.
- */
-export function escapeSparqlString(text: string): string {
-  const escapes: Record<string, string> = { "\\": "\\\\", '"': '\\"', "\n": "\\n", "\r": "\\r", "\t": "\\t" }
-  return text.replace(/[\\"\n\r\t]/g, (character) => escapes[character])
 }
 
 /**
@@ -36,14 +28,6 @@ export function assertSafeIri(iri: string): void {
  */
 export function labelOrIri(label: LanguageString, iri: string): LanguageString {
   return Object.keys(label).length > 0 ? label : { "": iri }
-}
-
-/**
- * Reads the single number a count query returns in the given variable.
- */
-export function readCount(rows: SparqlRow[], variable: string): number {
-  const count = Number(rows[0]?.[variable]?.value)
-  return Number.isInteger(count) ? count : 0
 }
 
 /**

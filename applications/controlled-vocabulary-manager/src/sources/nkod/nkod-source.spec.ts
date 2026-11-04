@@ -2,52 +2,33 @@ import { describe, expect, test, vi } from "vitest"
 import { createNkodSource } from "./nkod-source"
 
 const PUBLISHER = "https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/17651921"
+const DATASET = "https://data.gov.cz/zdroj/datové-sady/17651921/b4d1"
 
 /**
- * An endpoint that answers every query with one row that serves both as a
- * publisher row and as a count row.
+ * One row that serves as a row of the catalogue (dataset, group, title) and as a row of
+ * the names of the publishers (group, name).
  */
-function endpoint() {
-  const row = {
-    publisher: { type: "uri", value: PUBLISHER },
-    count: { type: "literal", value: "233" },
-    nameCs: { type: "literal", value: "Digitální a informační agentura", "xml:lang": "cs" },
-    total: { type: "literal", value: "7" },
-  }
-  return vi.fn<typeof fetch>(async () => new Response(JSON.stringify({ results: { bindings: [row] } }), { status: 200 }))
+const row = {
+  dataset: { type: "uri", value: DATASET },
+  group: { type: "uri", value: PUBLISHER },
+  title: { type: "literal", value: "Pohlaví", "xml:lang": "cs" },
+  name: { type: "literal", value: "Digitální a informační agentura", "xml:lang": "cs" },
 }
 
 describe("createNkodSource", () => {
-  test("counts the listing when the request does not bring the count", async () => {
-    const fetchMock = endpoint()
-    const page = await createNkodSource({ fetch: fetchMock }).listGroups!({ offset: 0, limit: 20 })
+  test("lists the publishers and the codelists from the two queries that read the catalogue", async () => {
+    const fetchMock = vi.fn<typeof fetch>(async () =>
+      new Response(JSON.stringify({ results: { bindings: [row] } }), { status: 200 }))
+    const source = createNkodSource({ fetch: fetchMock })
+
+    expect(await source.listGroups!({ offset: 0, limit: 20 })).toEqual({
+      items: [{ id: PUBLISHER, count: 1, label: { cs: "Digitální a informační agentura" } }],
+      total: 1,
+    })
+    expect((await source.listCandidates({ query: "neexistuje" }, { offset: 0, limit: 20 })).items).toEqual([])
+    expect((await source.listCandidates({ query: "pohlaví" }, { offset: 0, limit: 20 })).items).toEqual([
+      { id: DATASET, title: { cs: "Pohlaví" }, groupLabel: { cs: "Digitální a informační agentura" } },
+    ])
     expect(fetchMock).toHaveBeenCalledTimes(2)
-    expect(page.total).toBe(7)
-    expect(page.items).toEqual([{ id: PUBLISHER, count: 233, label: { cs: "Digitální a informační agentura" } }])
-  })
-
-  test("does not count the listing again when the request brings the count", async () => {
-    const fetchMock = endpoint()
-    const page = await createNkodSource({ fetch: fetchMock }).listGroups!({ offset: 20, limit: 20, total: 45 })
-    expect(fetchMock).toHaveBeenCalledTimes(1)
-    expect(page.total).toBe(45)
-  })
-
-  test("does the same for the listing of codelists", async () => {
-    const withCount = endpoint()
-    await createNkodSource({ fetch: withCount }).listCandidates({ query: "pohlav" }, { offset: 0, limit: 20 })
-    expect(withCount).toHaveBeenCalledTimes(2)
-
-    const withoutCount = endpoint()
-    await createNkodSource({ fetch: withoutCount }).listCandidates({}, { offset: 20, limit: 20, total: 367 })
-    expect(withoutCount).toHaveBeenCalledTimes(1)
-  })
-
-  test("passes the cancellation to the endpoint", async () => {
-    const controller = new AbortController()
-    controller.abort()
-    const fetchMock = vi.fn<typeof fetch>((_input, init) => Promise.reject(init?.signal?.reason))
-    await expect(createNkodSource({ fetch: fetchMock }).listGroups!({ offset: 0, limit: 20 }, { signal: controller.signal }))
-      .rejects.toMatchObject({ kind: "aborted" })
   })
 })
