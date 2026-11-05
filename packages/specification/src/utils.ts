@@ -9,9 +9,7 @@ import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { createSetEntityOperation, generateOperationId, type Transaction } from "@dataspecer/core/operation";
 import { ldesToRdf, profileTransactionsToLdes, vocabularyTransactionsToLdes } from "@dataspecer/data-specification-vocabulary/ldes";
 import * as DataSpecificationVocabulary from "@dataspecer/data-specification-vocabulary/semantic-model";
-import { getMustacheView } from "@dataspecer/documentation";
-import { DOCUMENTATION_MAIN_TEMPLATE_PARTIAL, getPartialDocumentationConfiguration } from "@dataspecer/documentation/configuration";
-import { generateDocumentation } from "@dataspecer/documentation/documentation-generator";
+import { DOCUMENTATION_MAIN_TEMPLATE_PARTIAL, generateDocumentation, getPartialDocumentationConfiguration } from "@dataspecer/documentation";
 import { generateLightweightOwl as generateLightweightOwlInternal } from "@dataspecer/lightweight-owl";
 import { mergeDocumentationConfigurations } from "./documentation/documentation.ts";
 import { ModelDescription } from "./model.ts";
@@ -287,6 +285,11 @@ export async function generateHtmlDocumentation(
     externalArtifacts,
     dsv: options.dsv ? JSON.parse(options.dsv) : {},
     prefixMap: options.prefixMap ?? {},
+    v1Context: generatorContext.v1Context ? {
+      context: generatorContext.v1Context,
+      specification: generatorContext.v1Specification,
+      artefact: generatorContext.v1Specification.artefacts.find((a: any) => a.generator === "https://schemas.dataspecer.com/generator/template-artifact"),
+    } : undefined,
   };
 
   return await generateDocumentation(
@@ -296,16 +299,5 @@ export async function generateHtmlDocumentation(
       language: options.language ?? "en",
       partials: fullConfiguration.partials,
     },
-    generatorContext.v1Context
-      ? (adapter) =>
-        getMustacheView(
-          {
-            context: generatorContext.v1Context,
-            specification: generatorContext.v1Specification,
-            artefact: generatorContext.v1Specification.artefacts.find((a: any) => a.generator === "https://schemas.dataspecer.com/generator/template-artifact"),
-          },
-          adapter,
-        )
-      : undefined,
   );
 }

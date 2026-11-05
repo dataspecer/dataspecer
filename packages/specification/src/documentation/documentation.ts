@@ -3,7 +3,7 @@ import {
   baseDefaultDocumentationConfiguration,
   internalMergeDocumentationConfigurations,
   PartialDocumentationConfiguration,
-} from "@dataspecer/documentation/configuration";
+} from "@dataspecer/documentation";
 import { defaultJsonPartials } from "@dataspecer/json/documentation";
 import { defaultXmlPartials } from "@dataspecer/xml/documentation";
 

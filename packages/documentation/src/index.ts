@@ -1,5 +1,2 @@
-import { TemplateArtifactGenerator } from "./artefact-generator.ts";
-import { getMustacheView } from "./mustache-view/views.ts";
-
-export { TemplateArtifactGenerator };
-export { getMustacheView };
+export * from "./configuration.ts";
+export * from "./documentation-generator/index.ts";

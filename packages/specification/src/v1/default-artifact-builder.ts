@@ -11,7 +11,7 @@ import { ArtifactConfigurator } from "./artifact-configurator.ts";
 import { getArtefactGenerators, getDefaultConfigurators } from "./artefact-generators.ts";
 import { generateSpecification, type GenerateSpecificationContext } from "../specification.ts";
 import { DataSpecification } from "../specification/model.ts";
-import { getPartialDocumentationConfiguration } from "@dataspecer/documentation/configuration";
+import { getPartialDocumentationConfiguration } from "@dataspecer/documentation";
 
 /**
  * Class handling a construction of the zip file. Configuration, helper files, etc.

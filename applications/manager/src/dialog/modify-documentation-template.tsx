@@ -13,7 +13,7 @@ import { preventDefault, stopPropagation } from "@/utils/events";
 import { Trash, Undo2 } from "lucide-react";
 import { useContext, useEffect, useRef, useState } from "react";
 import { createDefaultConfigurationModelFromJsonObject } from "@dataspecer/core-v2/configuration-model";
-import { applyPartialDocumentationConfiguration, getPartialDocumentationConfiguration, DOCUMENTATION_MAIN_TEMPLATE_PARTIAL } from "@dataspecer/documentation/configuration";
+import { applyPartialDocumentationConfiguration, getPartialDocumentationConfiguration, DOCUMENTATION_MAIN_TEMPLATE_PARTIAL } from "@dataspecer/documentation";
 import { documentationPartialsFromGenerators, mergeDocumentationConfigurations } from "@dataspecer/specification/documentation";
 import { useOnBeforeUnload } from "@/hooks/use-on-before-unload";
 import { useOnKeyDown } from "@/hooks/use-on-key-down";

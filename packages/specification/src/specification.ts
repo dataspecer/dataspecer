@@ -23,7 +23,7 @@ import {
   type VocabularySpecificationDocument,
 } from "@dataspecer/data-specification-vocabulary/specification-description";
 import { structureModelToRdf } from "@dataspecer/data-specification-vocabulary/structure-model";
-import type { PartialDocumentationConfiguration } from "@dataspecer/documentation/configuration";
+import type { PartialDocumentationConfiguration } from "@dataspecer/documentation";
 import { isRdfsSnapshot } from "@dataspecer/rdfs/semantic-model";
 import { canonicalizeIds, garbageCollect } from "@dataspecer/structure-model";
 import { generateApplicationProfileSvg } from "./application-profile-diagram.ts";
