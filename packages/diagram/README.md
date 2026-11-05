@@ -15,6 +15,12 @@ referenced by the visual model and it must also contain a package model.
 
 Third parameter is for customization options.
 
+`measureVisualModelNodes(visualModel, aggregatedModels, options)` returns the
+width and height of each rendered node, keyed by its visual entity ID. Layout
+callers can use these dimensions before assigning positions. Include the final
+attribute content and use the same aggregated models and options for measurement
+and rendering so that labels, profile annotations, and font sizes agree.
+
 ---
 
 The goal of this package is to produce visually identical diagram to the one

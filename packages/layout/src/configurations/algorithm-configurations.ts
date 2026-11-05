@@ -120,6 +120,9 @@ export abstract class StressConfiguration<T extends UserGivenAlgorithmConfigurat
         algorithmPhasesToCall?: AlgorithmPhases
     ) {
         super(userGivenConfiguration, affectedNodes, shouldCreateNewGraph, algorithmPhasesToCall);
+        if (!Number.isFinite(userGivenConfiguration.stress_edge_len) || userGivenConfiguration.stress_edge_len <= 0) {
+            throw new RangeError("stress_edge_len must be a finite number greater than zero.");
+        }
     }
 
 }
