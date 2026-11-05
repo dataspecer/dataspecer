@@ -8,8 +8,8 @@ import {
 import { isDataType } from "@dataspecer/core-v2/semantic-model/datatypes";
 import { isSemanticModelClassProfile, isSemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
-import { generateVisualModelSvg } from "@dataspecer/diagram";
-import { ReactflowDimensionsEstimator, getDefaultUserGivenAlgorithmConfigurationsFull, performLayoutOfSemanticModel } from "@dataspecer/layout";
+import { generateVisualModelSvg, measureVisualModelNodes, type SvgRenderOptions } from "@dataspecer/diagram";
+import { Direction, getDefaultUserGivenAlgorithmConfigurationsFull, performLayoutOfSemanticModel } from "@dataspecer/layout";
 import { buildModelHierarchy } from "@dataspecer/model-hierarchy";
 import { isVisualNode, isVisualRelationship, type VisualEntity, type VisualNode, type VisualRelationship } from "@dataspecer/visual-model";
 import { build as buildSemanticModelAggregator } from "./aggregator-builder/semantic-model-aggregator-builder.ts";
@@ -24,24 +24,35 @@ export async function generateApplicationProfileSvg(
   models: Record<string, EntityRecord>,
   prefixes: Record<string, string>,
 ): Promise<string> {
+  const layoutConfiguration = getDefaultUserGivenAlgorithmConfigurationsFull();
+  layoutConfiguration.chosenMainAlgorithm = "elk_stress"; // Use "elk_layered" for compact, wrapped layout.
+  const minimumNodeGap = 80;
+  // Each node position is rounded to a 10-unit grid after layout.
+  const spacing = minimumNodeGap + 10;
+
+  layoutConfiguration.main.elk_stress.run_node_overlap_removal_after = true;
+  layoutConfiguration.main.elk_stress.node_overlap_removal_min_distance = spacing;
+  // New diagrams have no positions worth preserving.
+  layoutConfiguration.main.elk_stress.interactive = false;
+  layoutConfiguration.main.elk_stress.number_of_new_algorithm_runs = 1;
+  // Stress targets center-to-center distances; overlap removal preserves the class gap.
+  layoutConfiguration.main.elk_stress.stress_edge_len = 100;
+
+  layoutConfiguration.main.elk_layered.alg_direction = Direction.Right;
+  layoutConfiguration.main.elk_layered.layer_gap = spacing;
+  layoutConfiguration.main.elk_layered.in_layer_gap = spacing;
+  layoutConfiguration.main.elk_layered.edge_routing = "ORTHOGONAL";
+  layoutConfiguration.main.elk_layered.advanced_settings = {
+    "org.eclipse.elk.layered.wrapping.strategy": "MULTI_EDGE",
+    "org.eclipse.elk.aspectRatio": "1.4",
+    "org.eclipse.elk.spacing.componentComponent": String(spacing),
+  };
+
   const hierarchy = buildModelHierarchy(packageId, models);
   const aggregatedEntities = buildSemanticModelAggregator(packageId, hierarchy, models, undefined, undefined, { forcePassThrough: true }).getAggregatedEntities();
   const layoutModel = addReferencedClasses(semanticModel, models);
   const { attributesByClass, profileAttributeIds } = collectProfileAttributes(semanticModel);
   for (const id of profileAttributeIds) delete layoutModel[id];
-  const layoutConfiguration = getDefaultUserGivenAlgorithmConfigurationsFull();
-  layoutConfiguration.chosenMainAlgorithm = "elk_stress";
-  layoutConfiguration.main.elk_stress.run_node_overlap_removal_after = true;
-  layoutConfiguration.main.elk_stress.interactive = true;
-  layoutConfiguration.main.elk_stress.number_of_new_algorithm_runs = 1;
-  layoutConfiguration.main.elk_stress.stress_edge_len = 400;
-  const result = await performLayoutOfSemanticModel(layoutModel, modelId, layoutConfiguration, new ReactflowDimensionsEstimator());
-  const visualModel = createApplicationProfileVisualModel(
-    Object.values(result).map(({ visualEntity }) => visualEntity),
-    semanticModel,
-    attributesByClass,
-  );
-
   const diagramModels: Record<string, EntityRecord> = Object.fromEntries(
     Object.entries(models).map(([id, entities]) => [
       id,
@@ -52,12 +63,32 @@ export async function generateApplicationProfileSvg(
     ...diagramModels[modelId],
     ...Object.fromEntries(Object.entries(layoutModel).map(([id, entity]) => [id, aggregatedEntities[id]?.aggregatedEntity ?? entity])),
   };
-  return generateVisualModelSvg(visualModel, diagramModels, {
+  const renderOptions: SvgRenderOptions = {
     prefixes,
     profileOfMode: "hidden",
     language: "cs",
     showIris: false,
+  };
+  const nodes: EntityRecord<VisualNode> = {};
+  for (const entity of Object.values(layoutModel)) {
+    if (!isSemanticModelClass(entity) && !isSemanticModelClassProfile(entity)) continue;
+    nodes[entity.id] = {
+      id: entity.id, type: ["visual-node"], representedEntity: entity.id, model: modelId,
+      position: { x: 0, y: 0, anchored: null }, visualModels: [],
+      content: attributesByClass.get(entity.id) ?? [],
+    };
+  }
+  const dimensions = measureVisualModelNodes(nodes, diagramModels, renderOptions);
+  const result = await performLayoutOfSemanticModel(layoutModel, modelId, layoutConfiguration, {
+    getWidth: (node) => dimensions[node.semanticEntityRepresentingNode!.id]!.width,
+    getHeight: (node) => dimensions[node.semanticEntityRepresentingNode!.id]!.height,
   });
+  const visualModel = createApplicationProfileVisualModel(
+    Object.values(result).map(({ visualEntity }) => visualEntity),
+    semanticModel,
+    attributesByClass,
+  );
+  return generateVisualModelSvg(visualModel, diagramModels, renderOptions);
 }
 
 /** Keeps profile entities and reconnects their relationships to profile nodes. */

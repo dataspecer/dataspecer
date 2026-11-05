@@ -141,11 +141,11 @@ class AlgorithmConfigurationFactory {
         }
 
         if(userGivenAlgorithmConfiguration.run_node_overlap_removal_after) {
-            // Just use the deafult small value, I think that it behaves better.
-            // Even though the results are "nicer" if we set it the edge length of the physical based algorithm (stress)
-            // The nodes are too far from each other, so we lose the compactness and there is no way for us to get it,
-            // if we use the length instead of some small default value.
-            layoutActionsToSet.push(getOverlapConfigurationToRunAfterMainAlgorithm(affectedNodes, null));
+            const spacing = userGivenAlgorithmConfiguration.node_overlap_removal_min_distance ?? 50;
+            if (!Number.isFinite(spacing) || spacing < 0) {
+                throw new RangeError("node_overlap_removal_min_distance must be a finite non-negative number.");
+            }
+            layoutActionsToSet.push(getOverlapConfigurationToRunAfterMainAlgorithm(affectedNodes, spacing));
         }
 
         if(userGivenAlgorithmConfiguration.run_layered_after) {

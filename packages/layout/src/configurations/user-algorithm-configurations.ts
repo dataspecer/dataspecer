@@ -66,6 +66,7 @@ export function isUserGivenAlgorithmConfigurationLayered(
 }
 
 export interface UserGivenAlgorithmConfigurationStressBase extends UserGivenAlgorithmConfigurationBase {
+    /** Positive center-to-center target distance. Node sizes and overlap removal can increase the final distance. */
     "stress_edge_len": number,
     "number_of_new_algorithm_runs": number,
 }
@@ -186,6 +187,8 @@ export interface UserGivenAlgorithmConfigurationBase {
     "run_layered_after": boolean,
     "run_node_overlap_removal_after": boolean,
     "interactive": boolean,
+    /** Minimum node spacing in the optional overlap-removal pass. Defaults to 50. */
+    node_overlap_removal_min_distance?: number,
 }
 
 
