@@ -74,18 +74,6 @@ export class StructureEditorBackendService extends BackendPackageService {
           type: [],
         }),
       },
-      {
-        modelId: projectId,
-        operation: createSetEntityOperation({
-          id: projectId,
-          type: [],
-          modelCompositionConfiguration: {
-            modelType: "application-profile",
-            model: createPim.modelId,
-            profiles: { modelType: "merge" },
-          },
-        } as Entity),
-      },
     ];
 
     if (set.includeSgov !== false) {

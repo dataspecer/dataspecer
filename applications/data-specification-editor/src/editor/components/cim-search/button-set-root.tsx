@@ -83,10 +83,10 @@ const ButtonSetRoot: React.FC = () => {
 
   const setRootOr = useCallback(() => {
     if (dataSpecificationIri && dataPsmSchemaIri) {
-      store.executeComplexOperation(new CreateRootOr(dataSpecifications[dataSpecificationIri].localSemanticModelIds[0] as string, dataPsmSchemaIri));
+      store.executeComplexOperation(new CreateRootOr(dataPsmSchemaIri));
       menuOpen.close();
     }
-  }, [dataSpecificationIri, dataPsmSchemaIri, store, dataSpecifications, menuOpen]);
+  }, [dataSpecificationIri, dataPsmSchemaIri, store, menuOpen]);
 
   return <>
     <ButtonGroup variant="contained" ref={buttonRef}>

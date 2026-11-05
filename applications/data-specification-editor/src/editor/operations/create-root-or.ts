@@ -11,12 +11,10 @@ import {FederatedObservableStore} from "@dataspecer/federated-observable-store/f
  * schema.
  */
 export class CreateRootOr implements ComplexOperation {
-    private readonly pimSchemaIri: string;
     private readonly dataPsmSchemaIri: string;
     private store!: FederatedObservableStore;
 
-    constructor(pimSchemaIri: string, dataPsmSchemaIri: string) {
-        this.pimSchemaIri = pimSchemaIri;
+    constructor(dataPsmSchemaIri: string) {
         this.dataPsmSchemaIri = dataPsmSchemaIri;
     }
 

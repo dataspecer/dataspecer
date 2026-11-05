@@ -25,8 +25,7 @@ import { ProfileInformation } from "../profiling/profile-information";
 export const RegularOr: React.FC<{ iri: string } & ObjectContext & RowSlots> = memo((props) => {
   const { t } = useTranslation("psm");
   const store = useFederatedObservableStore();
-  const { dataSpecifications, dataSpecificationIri, semanticModelAggregator } = useContext(ConfigurationContext);
-  const dataSpecification = dataSpecifications[dataSpecificationIri as string];
+  const { semanticModelAggregator } = useContext(ConfigurationContext);
   const { operationContext } = useContext(ConfigurationContext);
 
   const { resource } = useResource<DataPsmOr>(props.iri);
@@ -47,20 +46,20 @@ export const RegularOr: React.FC<{ iri: string } & ObjectContext & RowSlots> = m
       const op = new CreateNewClassInOr(props.iri, semanticClassId);
       op.setContext(operationContext);
       op.setSemanticStore(semanticModelAggregator);
-      await store.executeComplexOperation(op);
+      store.executeComplexOperation(op);
       AddToOr.close();
     }
   }, [AddToOr, props.iri, store, operationContext]);
 
-  const onSearchClass = useCallback(async (semanticClassId: string) => {
+  const onSearchClass = useCallback((semanticClassId: string) => {
     if (semanticClassId) {
       const op = new CreateNewClassInOr(props.iri, semanticClassId);
       op.setContext(operationContext);
       op.setSemanticStore(semanticModelAggregator);
-      await store.executeComplexOperation(op);
+      store.executeComplexOperation(op);
       SearchToOr.close();
     }
-  }, [SearchToOr, props.iri, store, dataSpecification.localSemanticModelIds, operationContext, semanticModelAggregator]);
+  }, [SearchToOr, props.iri, store, operationContext, semanticModelAggregator]);
 
   const thisStartRow = <>
     <Span sx={sxStyles.or}>{t("OR")}</Span>
