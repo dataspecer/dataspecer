@@ -1,9 +1,11 @@
-import { createLogger } from "../../application";
-import { createRdfsModel, createSgovModel, ExternalSemanticModel } from "@dataspecer/core-v2/semantic-model/simplified";
-import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
-import { EntityDsIdentifier } from "../entity-model";
-import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
 import { EntityModel } from "@dataspecer/core-v2";
+import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
+import { createSgovModel } from "@dataspecer/sgov-adapter";
+import { ExternalSemanticModel } from "@dataspecer/core-v2/semantic-model/simplified";
+import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
+import { createRdfsModel } from "@dataspecer/rdfs/semantic-model";
+import { createLogger } from "../../application";
+import { EntityDsIdentifier } from "../entity-model";
 
 const LOG = createLogger(import.meta.url);
 
@@ -21,10 +23,9 @@ export async function createInMemorySemanticModel(
 export async function createRdfsSemanticModel(
   url: string, alias: string,
 ): Promise<EntityModel> {
-  const model = await createRdfsModel([url], httpFetch);
-  model.alias = alias;
-  model.fetchFromPimStore();
-  return model;
+  const model = new InMemorySemanticModel();
+  const entities = await createRdfsModel(model.getId(), [url], httpFetch, { en: alias });
+  return model.fromEntities(entities);
 }
 
 export async function createCzechSemanticVocabulary(): Promise<EntityModel> {

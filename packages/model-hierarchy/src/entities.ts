@@ -18,8 +18,8 @@ interface BaseModelHierarchyEntity extends Entity {
   id: ModelIdentifier;
 
   /**
-   * Type of the model from the project model. You can use this to determine if
-   * this is RDFS model, SGOV model, or regular semantic model.
+   * Type of the model from the project model. Imported semantic vocabularies
+   * are distinguished by the source on their main entity.
    */
   modelType: string;
 

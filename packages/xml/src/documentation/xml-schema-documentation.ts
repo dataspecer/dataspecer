@@ -1,6 +1,5 @@
 import { ConceptualModel } from "@dataspecer/generators/conceptual-model";
 import {
-  DataSpecification,
   DataSpecificationArtefact,
 } from "@dataspecer/core/data-specification/model";
 import {
@@ -17,8 +16,7 @@ import {
 import { ArtefactGeneratorContext } from "@dataspecer/generators/generator/artefact-generator-context";
 import { pathRelative } from "@dataspecer/core/core/utilities/path-relative";
 import { NEW_DOC_GENERATOR } from "../xml-schema/xml-schema-generator.ts";
-import { getMustacheView } from "@dataspecer/documentation";
-import { HandlebarsAdapter } from "@dataspecer/handlebars-adapter";
+import type { StructureModel } from "@dataspecer/generators/structure-model/model/structure-model";
 import { MAIN_XML_PARTIAL } from "./index.ts";
 import { StructureModelClass } from "@dataspecer/generators/structure-model/model/structure-model-class";
 
@@ -118,26 +116,23 @@ export class XmlSchemaDocumentationGenerator {
   private conceptualModel: ConceptualModel;
   private context: ArtefactGeneratorContext;
   private artefact: DataSpecificationArtefact;
-  private specification: DataSpecification;
   private partial: (template: string) => string;
-  private adapter: HandlebarsAdapter;
+  private documentationView: { structureModels: StructureModel[] };
 
   constructor(
     documentationArtifact: DataSpecificationArtefact,
     conceptualModel: ConceptualModel,
     context: ArtefactGeneratorContext,
     artefact: DataSpecificationArtefact,
-    specification: DataSpecification,
     partial: (template: string) => string,
-    adapter: HandlebarsAdapter,
+    documentationView: { structureModels: StructureModel[] },
   ) {
     this.documentationArtifact = documentationArtifact;
     this.conceptualModel = conceptualModel;
     this.context = context;
     this.artefact = artefact;
-    this.specification = specification;
     this.partial = partial;
-    this.adapter = adapter;
+    this.documentationView = documentationView;
   }
 
   /**
@@ -324,19 +319,12 @@ export class XmlSchemaDocumentationGenerator {
       });
     }
 
-    // todo: It uses data from the template-artifact package
-    const data = getMustacheView({
-      context: this.context,
-      artefact: this.documentationArtifact,
-      specification: this.specification,
-    }, this.adapter);
-
     return {
       xmlSchema: this.xmlSchema,
-      ...data,
+      ...this.documentationView,
       imports,
       // @ts-ignore
-      structureModel: data.structureModels.find(m => m.psmIri === this.artefact.psm),
+      structureModel: this.documentationView.structureModels.find(m => m.psmIri === this.artefact.psm),
 
       rootElements,
       rootTypes,

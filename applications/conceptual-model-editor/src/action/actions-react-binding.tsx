@@ -47,7 +47,6 @@ import { addSemanticRelationshipProfileToVisualModelAction } from "./add-relatio
 import {
   EntityToDelete,
   isAttributeOrAttributeProfile,
-  convertToEntitiesToDeleteType,
   findTopLevelGroupInVisualModel,
   getSelections,
   getViewportCenterForClassPlacement,
@@ -91,7 +90,6 @@ import { ShiftAttributeDirection, shiftAttributePositionAction } from "./shift-a
 import { openEditNodeAttributesDialogAction } from "./open-edit-node-attributes-dialog";
 import { openEditAttributeDialogAction } from "./open-edit-attribute-dialog";
 import { openEditAttributeProfileDialogAction } from "./open-edit-attribute-profile-dialog";
-import { findSourceModelOfEntity } from "../service/model-service";
 import { isInMemorySemanticModel } from "../dataspecer/semantic-model";
 import { isSemanticModelAttribute, isSemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
 import { isSemanticModelAttributeProfile } from "../dataspecer/semantic-model";
@@ -557,17 +555,6 @@ export const ActionsContextProvider = (props: {
   );
 };
 
-let prevOptions: Options | null = null;
-let prevDialogs: DialogApiContextType | null = null;
-let prevClasses: ClassesContext | null = null;
-let prevUseClasses: ClassesContext | null = null;
-let prevNotifications: UseNotificationServiceWriterType | null = null;
-let prevUseGraph: UseModelGraphContextType | null = null;
-let prevDiagram: UseDiagramType | null = null;
-let prevLayoutConfiguration: LayoutConfigurationContextType | null = null;
-let prevQueryParamsContext: QueryParamsContextType | null = null;
-let prevDialogTracker: DialogSemanticTracker | null = null;
-
 function createActionsContext(
   options: Options | null,
   dialogs: DialogApiContextType | null,
@@ -632,7 +619,20 @@ function createActionsContext(
   };
 
   const deleteVisualElements = (identifiers: string[]) => {
-    const entitiesToDelete = convertToEntitiesToDeleteType(notifications, classes.semanticModels, identifiers);
+    const entitiesToDelete: EntityToDelete[] = [];
+    for (const identifier of identifiers) {
+      const sourceModel = classes.sourceModelOfEntityMap.get(identifier);
+      if (sourceModel === undefined) {
+        if (notifications !== null) {
+          notifications.error("Entity doesn't have source semantic model.");
+        }
+        continue;
+      }
+      entitiesToDelete.push({
+        identifier: identifier,
+        sourceModel: sourceModel
+      });
+    }
     deleteFromSemanticModels(entitiesToDelete);
   };
 
@@ -754,7 +754,7 @@ function createActionsContext(
   const openCreateClassDialog = (model: string) => {
     const visualModel = useGraph.getActiveVisualModel();
     const modelInstance = classes.semanticModels.get(model);
-    if (modelInstance === null || modelInstance instanceof InMemorySemanticModel) {
+    if (modelInstance === null || (modelInstance !== undefined && isInMemorySemanticModel(modelInstance))) {
       openCreateClassDialogAction(
         cmeExecutor, options, dialogs, classes, useGraph, notifications, visualModel,
         diagram, modelInstance, null, null, dialogTracker, labelResolver);
@@ -766,7 +766,7 @@ function createActionsContext(
   const openCreateAssociationDialog = (model: string) => {
     const visualModel = useGraph.getActiveVisualModel();
     const modelInstance = classes.semanticModels.get(model);
-    if (modelInstance === null || modelInstance instanceof InMemorySemanticModel) {
+    if (modelInstance === null || (modelInstance !== undefined && isInMemorySemanticModel(modelInstance))) {
       openCreateAssociationDialogAction(
         cmeExecutor, options, dialogs, classes, notifications, visualModel,
         modelInstance, dialogTracker, labelResolver);
@@ -778,7 +778,7 @@ function createActionsContext(
   const openCreateAttributeDialogForModel = (model: string) => {
     const visualModel = useGraph.getActiveVisualModel();
     const modelInstance = classes.semanticModels.get(model);
-    if (modelInstance === null || modelInstance instanceof InMemorySemanticModel) {
+    if (modelInstance === null || (modelInstance !== undefined && isInMemorySemanticModel(modelInstance))) {
       openCreateAttributeDialogAction(
         cmeExecutor, options, dialogs, classes, useGraph, notifications,
         visualModel, modelInstance, labelResolver);
@@ -1385,8 +1385,9 @@ function createActionsContext(
 
     onEditEntityItem: (identifier: string) => {
       withVisualModel(notifications, useGraph, (visualModel) => {
-        const model = findSourceModelOfEntity(identifier, classes.semanticModels);
-        if (model === null) {
+        const modelId = classes.sourceModelOfEntityMap.get(identifier);
+        const model = modelId === undefined ? undefined : classes.semanticModels.get(modelId);
+        if (model === undefined) {
           notifications.error("Given attribute does not have source model.");
           return;
         }

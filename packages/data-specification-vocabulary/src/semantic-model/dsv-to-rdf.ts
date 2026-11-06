@@ -88,9 +88,9 @@ export async function dsvToRdf(
       reject(error);
     } else {
       if (effectiveConfiguration.prettyPrint) {
-        resolve(prettyPrintTurtle(result));
+        resolve(prettyPrintTurtle(result!));
       } else {
-        resolve(result);
+        resolve(result!);
       }
     }
   }));

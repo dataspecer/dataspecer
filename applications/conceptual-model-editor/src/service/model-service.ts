@@ -1,4 +1,4 @@
-import { type Entities, type EntityModel } from "@dataspecer/core-v2/entity-model";
+import { type EntityModel } from "@dataspecer/core-v2/entity-model";
 
 import { t } from "../application/";
 
@@ -16,21 +16,3 @@ export function getModelLabel(model: EntityModel | undefined | null): string {
   }
   return t("model-service.model-label-from-id", model.getId());
 }
-
-/**
- * @deprecated This is very slow and should not be used!
- */
-export const findSourceModelOfEntity = (
-  entityIdentifier: string,
-  models: Map<string, EntityModel> | EntityModel[],
-): EntityModel | null => {
-  const iterable = models instanceof Map ? models.values() : models;
-  for (const model of iterable) {
-    const entities: Entities = model.getEntities();
-    if (entities[entityIdentifier] === undefined) {
-      continue;
-    }
-    return model;
-  }
-  return null;
-};

@@ -19,7 +19,6 @@ import {
   VisualEntity,
 } from "@dataspecer/visual-model";
 import { DiagramNodeTypes, Edge, EdgeType } from "../diagram";
-import { findSourceModelOfEntity } from "../service/model-service";
 import { UseModelGraphContextType } from "../context/model-context";
 import { ClassesContext } from "../context/classes-context";
 import { ExtensionType, VisibilityFilter, extendSelectionAction } from "./extend-selection-action";
@@ -36,28 +35,6 @@ export type EntityToDelete = {
   sourceModel: string,
   identifier: string,
 };
-
-export function convertToEntitiesToDeleteType(
-  notifications: UseNotificationServiceWriterType | null,
-  allModels: Map<string, EntityModel>,
-  entityIdentifiers: string[],
-): EntityToDelete[] {
-  const entitiesToDelete: EntityToDelete[] = [];
-  for (const entityIdentifier of entityIdentifiers) {
-    const sourceModel = findSourceModelOfEntity(entityIdentifier, allModels);
-    if (sourceModel === null) {
-      if (notifications !== null) {
-        notifications.error("Entity doesn't have source semantic model.");
-      }
-      continue;
-    }
-    entitiesToDelete.push({
-      identifier: entityIdentifier,
-      sourceModel: sourceModel.getId()
-    });
-  }
-  return entitiesToDelete;
-}
 
 export function isAttributeOrAttributeProfile(
   entityIdentifier: string,

@@ -2,6 +2,39 @@ import { generateEntityId, type EntityIdentifier } from "@dataspecer/core/entity
 import {SemanticModelClass, SemanticModelGeneralization, SemanticModelRelationship, SemanticModelRelationshipEnd} from "../concepts/index.ts";
 import { generateOperationId, type Operation } from "@dataspecer/core/operation";
 
+export const RELOAD_OPERATION_TYPE = "https://schemas.dataspecer.com/semantic-model/operations/reload";
+
+/**
+ * Records a successful semantic model reload. Fetching and the resulting entity
+ * changes are handled separately; executing this marker never changes state.
+ */
+export interface ReloadOperation extends Operation {
+    type: typeof RELOAD_OPERATION_TYPE;
+}
+
+export function createReloadOperation(): ReloadOperation {
+    return { id: generateOperationId(), type: RELOAD_OPERATION_TYPE };
+}
+
+export function isReloadOperation(operation: Operation): operation is ReloadOperation {
+    return operation.type === RELOAD_OPERATION_TYPE;
+}
+
+export const CHANGE_RDFS_SOURCE_URLS_OPERATION = "https://schemas.dataspecer.com/semantic-model/operations/change-rdfs-source-urls";
+
+export interface ChangeRdfsSourceUrlsOperation extends Operation {
+    type: typeof CHANGE_RDFS_SOURCE_URLS_OPERATION;
+    urls: string[];
+}
+
+export function changeRdfsSourceUrls(urls: string[]): ChangeRdfsSourceUrlsOperation {
+    return { id: generateOperationId(), type: CHANGE_RDFS_SOURCE_URLS_OPERATION, urls: [...urls] };
+}
+
+export function isChangeRdfsSourceUrlsOperation(operation: Operation): operation is ChangeRdfsSourceUrlsOperation {
+    return operation.type === CHANGE_RDFS_SOURCE_URLS_OPERATION;
+}
+
 export interface OperationResult {
     success: boolean;
     // todo add more details

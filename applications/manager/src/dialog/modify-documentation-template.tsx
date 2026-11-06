@@ -1,5 +1,5 @@
 import { Modal, ModalBody, ModalContent, ModalHeader, ModalTitle } from "@/components/modal";
-import { MonacoDiffEditor, MonacoEditor } from "@/components/monaco-editor";
+import { MonacoEditorWithDiff } from "@/components/monaco-editor";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,13 +8,13 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/componen
 import { Switch } from "@/components/ui/switch";
 import { BetterModalProps } from "@/lib/better-modal";
 import { packageService, requestLoadPackage } from "@/package";
+import { DefaultConfigurationContext } from "@/default-configuration";
 import { preventDefault, stopPropagation } from "@/utils/events";
 import { Trash, Undo2 } from "lucide-react";
-import * as monaco from "monaco-editor";
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { createDefaultConfigurationModelFromJsonObject } from "@dataspecer/core-v2/configuration-model";
-import { applyPartialDocumentationConfiguration, createPartialDocumentationConfiguration, DOCUMENTATION_MAIN_TEMPLATE_PARTIAL } from "@dataspecer/documentation/configuration";
-import { defaultDocumentationConfiguration, documentationPartialsFromGenerators } from "@dataspecer/specification/documentation";
+import { applyPartialDocumentationConfiguration, getPartialDocumentationConfiguration, DOCUMENTATION_MAIN_TEMPLATE_PARTIAL } from "@dataspecer/documentation";
+import { documentationPartialsFromGenerators, mergeDocumentationConfigurations } from "@dataspecer/specification/documentation";
 import { useOnBeforeUnload } from "@/hooks/use-on-before-unload";
 import { useOnKeyDown } from "@/hooks/use-on-key-down";
 import { toast } from "sonner";
@@ -102,7 +102,7 @@ function PartialButton(props: {
 function getNewPartialsState(defaultPartials: Record<string, string>, current: Record<string, string | false>): Record<string, PartialState> {
   const newPartialsState: Record<string, PartialState> = {};
   for (const [name, value] of Object.entries(current)) {
-    if (defaultPartials[name]) {
+    if (Object.hasOwn(defaultPartials, name)) {
       if (value === defaultPartials[name]) {
         newPartialsState[name] = "UNCHANGED";
         delete current[name];
@@ -123,7 +123,7 @@ function getNewPartialsState(defaultPartials: Record<string, string>, current: R
 
 export const ModifyDocumentationTemplate = ({ isOpen, resolve, iri }: { iri: string } & BetterModalProps) => {
   const { t } = useTranslation();
-  const editor = useRef<{ editor: monaco.editor.IStandaloneCodeEditor } | undefined>(undefined);
+  const defaultConfiguration = useContext(DefaultConfigurationContext);
 
   useOnBeforeUnload(true);
   useOnKeyDown(e => {
@@ -135,9 +135,10 @@ export const ModifyDocumentationTemplate = ({ isOpen, resolve, iri }: { iri: str
   });
 
   const save = async () => {
+    if (isLoading) return;
     const data = (await packageService.getResourceJsonData(iri)) ?? {};
     const configuration = createDefaultConfigurationModelFromJsonObject(data);
-    const documentationConfiguration = createPartialDocumentationConfiguration(configuration);
+    const documentationConfiguration = getPartialDocumentationConfiguration(configuration.getRawData());
     documentationConfiguration.partials = currentPartials.current;
     applyPartialDocumentationConfiguration(configuration, documentationConfiguration);
     const result = configuration.serializeModelToApiJsonObject(data);
@@ -145,7 +146,7 @@ export const ModifyDocumentationTemplate = ({ isOpen, resolve, iri }: { iri: str
     await requestLoadPackage(iri, true);
   };
 
-  const defaultPartials = defaultDocumentationConfiguration.partials;
+  const [defaultPartials, setDefaultPartials] = useState(() => mergeDocumentationConfigurations([]).partials);
 
   const [isLoading, setIsLoading] = useState(true);
   const currentPartials = useRef<Record<string, string | false>>({});
@@ -153,17 +154,30 @@ export const ModifyDocumentationTemplate = ({ isOpen, resolve, iri }: { iri: str
   const [editorValue, setEditorValue] = useState("");
   const [showDiff, setShowDiff] = useLocalStorage("documentation-template-show-diff", false);
   const [inlineDiff, setInlineDiff] = useLocalStorage("documentation-template-inline-diff", false);
+
   useEffect(() => {
+    if (defaultConfiguration === null) return;
+    let active = true;
+    setIsLoading(true);
     (async () => {
-      const data = (await packageService.getResourceJsonData(iri)) ?? {};
-      const configuration = createDefaultConfigurationModelFromJsonObject(data);
-      const documentationConfiguration = structuredClone(createPartialDocumentationConfiguration(configuration));
-      currentPartials.current = documentationConfiguration.partials;
+      const data = await packageService.getResourceJsonData(iri);
+      if (!active) return;
+      const instanceDefaults = getPartialDocumentationConfiguration(defaultConfiguration);
+      const defaultPartials = mergeDocumentationConfigurations([instanceDefaults]).partials;
+      setDefaultPartials(defaultPartials);
+      const configuration = createDefaultConfigurationModelFromJsonObject(data ?? {});
+      const documentationConfiguration = getPartialDocumentationConfiguration(configuration.getRawData());
+      currentPartials.current = structuredClone(documentationConfiguration.partials ?? {});
       setPartialsState(getNewPartialsState(defaultPartials, currentPartials.current));
-      selectNewPartial(MAIN_TEMPLATE);
+      const mainTemplate = currentPartials.current[MAIN_TEMPLATE];
+      setSelectedPartial(MAIN_TEMPLATE);
+      setEditorValue(mainTemplate === false ? "" : mainTemplate ?? defaultPartials[MAIN_TEMPLATE] ?? "");
       setIsLoading(false);
-    })();
-  }, []);
+    })().catch(error => {
+      if (active) toast.error(String(error));
+    });
+    return () => { active = false; };
+  }, [defaultConfiguration, iri]);
 
 
   const [partialsState, setPartialsState] = useState<Record<string, PartialState>>(() => getNewPartialsState(defaultPartials, currentPartials.current));
@@ -185,7 +199,7 @@ export const ModifyDocumentationTemplate = ({ isOpen, resolve, iri }: { iri: str
   };
 
   const remove = (name: string) => {
-    if (defaultPartials[name]) {
+    if (Object.hasOwn(defaultPartials, name)) {
       currentPartials.current[name] = false;
     } else {
       delete currentPartials.current[name];
@@ -304,14 +318,30 @@ export const ModifyDocumentationTemplate = ({ isOpen, resolve, iri }: { iri: str
               <div className="flex items-center justify-end gap-2 px-3 py-2">
                 {showDiff && <>
                   <Label htmlFor="template-inline-diff-switch">{t("modify-documentation-template-dialog.inline-diff")}</Label>
-                  <Switch id="template-inline-diff-switch" checked={inlineDiff} onCheckedChange={setInlineDiff} />
+                  <Switch
+                    id="template-inline-diff-switch"
+                    checked={inlineDiff}
+                    onPointerDown={event => event.preventDefault()}
+                    onCheckedChange={setInlineDiff}
+                  />
                 </>}
                 <Label htmlFor="template-diff-switch">{t("modify-documentation-template-dialog.show-diff")}</Label>
-                <Switch id="template-diff-switch" checked={showDiff} onCheckedChange={setShowDiff} />
+                <Switch
+                  id="template-diff-switch"
+                  checked={showDiff}
+                  onPointerDown={event => event.preventDefault()}
+                  onCheckedChange={setShowDiff}
+                />
               </div>
-              {!isLoading && (showDiff
-                ? <MonacoDiffEditor key={selectedPartial} original={defaultPartials[selectedPartial] ?? ""} modified={editorValue} language="handlebars" onModifiedChange={editorValueUpdated} renderSideBySide={!inlineDiff} />
-                : <MonacoEditor key={selectedPartial} refs={editor} defaultValue={editorValue} language="handlebars" onChange={editorValueUpdated} />)}
+              {!isLoading && <MonacoEditorWithDiff
+                modelId={selectedPartial}
+                original={defaultPartials[selectedPartial] ?? ""}
+                modified={editorValue}
+                language="handlebars"
+                showDiff={showDiff}
+                renderSideBySide={!inlineDiff}
+                onModifiedChange={editorValueUpdated}
+              />}
             </ResizablePanel>
           </ResizablePanelGroup>
         </ModalBody>

@@ -71,7 +71,7 @@ function createClassProfileControlledVocabulariesState(
   ownAssignmentIds: EntityDsIdentifier[] | undefined,
   availableVocabularies: ControlledVocabulary[],
 ): SelectControlledVocabulariesState {
-  const entities = graph.getEntities();
+  const entities = graph.getAggregatedEntities();
 
   const resolveAssignment = (
     identifier: EntityDsIdentifier,

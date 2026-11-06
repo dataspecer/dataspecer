@@ -41,7 +41,7 @@ export function openEditAssociationProfileDialogAction(
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
 ) {
-  const aggregate = graph.getEntities()?.[entity.id];
+  const aggregate = graph.getAggregatedEntities()?.[entity.id];
   const rawEntity = aggregate?.rawEntity;
   const aggregatedEntity = aggregate?.aggregatedEntity;
   if (!isSemanticModelRelationshipProfile(rawEntity)

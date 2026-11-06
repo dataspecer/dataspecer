@@ -1,11 +1,12 @@
 import { InMemoryEntityModel } from "../../entity-model/in-memory-entity-model.ts";
-import type { Entity } from "../../entity-model/entity.ts";
+import type { Entities, Entity } from "../../entity-model/entity.ts";
 import { LOCAL_SEMANTIC_MODEL } from "../../model/known-models.ts";
 import {
     semanticModelEntitiesToSerialization,
     serializationToSemanticModelEntities,
     WritableSemanticModelAdapter,
 } from "../writable-semantic-model-adapter.ts";
+import { getSemanticModelMainEntity } from "../concepts/concepts-utils.ts";
 
 /**
  * @deprecated Use model store instead to manage the model state.
@@ -37,6 +38,18 @@ export class InMemorySemanticModel extends WritableSemanticModelAdapter {
             type: LOCAL_SEMANTIC_MODEL,
             baseIri: this.baseIri ?? "",
         };
+    }
+
+    fromEntities(entities: Entities) {
+        const mainEntity = getSemanticModelMainEntity(entities);
+        if (!mainEntity) {
+            throw new Error("Expected a semantic model main entity.");
+        }
+        this.baseIri = mainEntity.baseIri ?? "";
+        this.entityModel.id = mainEntity.id;
+        this.entityModel.entities = entities;
+        this.modelMetadata = {};
+        return this;
     }
 
     deserializeModel(data: object) {

@@ -1,6 +1,8 @@
+import { isRdfsSnapshot } from "@dataspecer/rdfs/semantic-model";
+import { isCachedSubgraph } from "@dataspecer/core-v2/semantic-model/concepts";
 import { TagBadge, TagName } from "@/components/tag";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, CONTROLLED_VOCABULARY_MODEL, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, CONTROLLED_VOCABULARY_MODEL, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
 import { BookOpen, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, EllipsisVertical, FileText, Folder, FolderDown, History, Import, NotepadTextDashed, Pencil, Plus, RotateCw, Search, Shapes, Sparkles, Tag, Tags, Trash2, WandSparkles } from "lucide-react";
 import { useCallback, useContext, useDeferredValue, useEffect, useMemo, useState } from "react";
@@ -90,7 +92,7 @@ const Row = React.memo(({ iri, parentIri, onTagSelect }: { iri: string, parentIr
     <div className="flex items-center space-x-4 hover:bg-accent">
       {resource.types.includes(LOCAL_PACKAGE) ? <div className="flex"><button className="cursor-pointer" onClick={stopPropagation(() => isOpen ? setIsOpen(false) : open())}>
         {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-      </button><Folder className="text-gray-400 ml-1" /></div> : <div><ModelIcon type={resource.types} /></div>}
+      </button><Folder className="text-gray-400 ml-1" /></div> : <div><ModelIcon type={resource.types} source={resource.userMetadata?.source} /></div>}
 
       <div className="grow min-w-0">
         <div className="font-medium">
@@ -105,10 +107,10 @@ const Row = React.memo(({ iri, parentIri, onTagSelect }: { iri: string, parentIr
         </div>
         <div className="text-sm text-gray-500 flex">
           <span className="truncate w-[4cm]" title={creationDate ? fullDateFormat.format(creationDate) : undefined}>
-            {creationDate && t("created-relative", {val: formatRelativeTime(creationDate, i18n.language)})}
+            {creationDate && t("created-relative", { val: formatRelativeTime(creationDate, i18n.language) })}
           </span>
           <span className="truncate w-[6cm]" title={modificationDate ? fullDateFormat.format(modificationDate) : undefined}>
-            {modificationDate && t("changed-relative", {val: formatRelativeTime(modificationDate, i18n.language)})}
+            {modificationDate && t("changed-relative", { val: formatRelativeTime(modificationDate, i18n.language) })}
           </span>
           <span className="truncate">
             {resource.iri}
@@ -116,7 +118,7 @@ const Row = React.memo(({ iri, parentIri, onTagSelect }: { iri: string, parentIr
         </div>
       </div>
 
-      {resource.userMetadata?.tags?.toSorted((a, b) => a.localeCompare(b)).map(tag => <TagBadge key={tag} name={tag} onClick={() => onTagSelect(tag)} onRemove={() => modifyUserMetadata(iri, {tags: resource.userMetadata?.tags?.filter(value => value !== tag) ?? []})} />)}
+      {resource.userMetadata?.tags?.toSorted((a, b) => a.localeCompare(b)).map(tag => <TagBadge key={tag} name={tag} onClick={() => onTagSelect(tag)} onRemove={() => modifyUserMetadata(iri, { tags: resource.userMetadata?.tags?.filter(value => value !== tag) ?? [] })} />)}
 
       {resource.types.includes(APPLICATION_GRAPH) &&
         <Button asChild variant={"ghost"} onClick={stopPropagation()}>
@@ -151,7 +153,7 @@ const Row = React.memo(({ iri, parentIri, onTagSelect }: { iri: string, parentIr
         </Tooltip>
       }
 
-      {resource.types.includes(RDFS_MODEL) &&
+      {(isRdfsSnapshot(resource.userMetadata?.source) || isCachedSubgraph(resource.userMetadata?.source)) &&
         <Tooltip>
           <TooltipTrigger>
             <Button asChild variant="ghost" size="icon" className="shrink-0" onClick={stopPropagation(() => openModal(ReloadResource, { id: iri, parentId: parentIri ?? "" }))}>
@@ -250,12 +252,12 @@ const Row = React.memo(({ iri, parentIri, onTagSelect }: { iri: string, parentIr
             }
           }}><Pencil className="mr-2 h-4 w-4" /> {t("rename-resource.rename")}</DropdownMenuItem>
           <DropdownMenuItem onClick={async () => {
-            const result = await openModal(ModifyTagsDialog, {tags: resource.userMetadata?.tags ?? []});
-            if (result) await modifyUserMetadata(iri, {tags: result});
+            const result = await openModal(ModifyTagsDialog, { tags: resource.userMetadata?.tags ?? [] });
+            if (result) await modifyUserMetadata(iri, { tags: result });
           }}><Tags className="mr-2 h-4 w-4" /> {t("modify-tags.title")}</DropdownMenuItem>
-          {resource.types.includes(LOCAL_SEMANTIC_MODEL) && <DropdownMenuItem onClick={() => openModal(Autolayout, {iri, parentIri: parentIri!})}><Sparkles className="mr-2 h-4 w-4" /> {t("autolayout")}</DropdownMenuItem>}
-          <DropdownMenuItem onClick={() => openModal(ModifyRawDialog, {iri})}><CircuitBoard className="mr-2 h-4 w-4" /> {t("modify raw data")}</DropdownMenuItem>
-          <DropdownMenuItem className="bg-destructive text-destructive-foreground hover:bg-destructive" onClick={() => openModal(DeleteResource, {iri})}><Trash2 className="mr-2 h-4 w-4" /> {t("remove")}</DropdownMenuItem>
+          {resource.types.includes(LOCAL_SEMANTIC_MODEL) && <DropdownMenuItem onClick={() => openModal(Autolayout, { iri, parentIri: parentIri! })}><Sparkles className="mr-2 h-4 w-4" /> {t("autolayout")}</DropdownMenuItem>}
+          <DropdownMenuItem onClick={() => openModal(ModifyRawDialog, { iri })}><CircuitBoard className="mr-2 h-4 w-4" /> {t("modify raw data")}</DropdownMenuItem>
+          <DropdownMenuItem className="bg-destructive text-destructive-foreground hover:bg-destructive" onClick={() => openModal(DeleteResource, { iri })}><Trash2 className="mr-2 h-4 w-4" /> {t("remove")}</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
@@ -274,7 +276,7 @@ export default function Component() {
   )
 }
 
-function RootPackage({iri}: {iri: string}) {
+function RootPackage({ iri }: { iri: string }) {
   const openModal = useBetterModal();
   const resources = useContext(ResourcesContext);
   const pckg = resources[iri];
@@ -354,7 +356,7 @@ function RootPackage({iri}: {iri: string}) {
           />
         </h2>
         <div aria-live="polite" aria-atomic="true" className="ml-5 mxtext-sm text-muted-foreground">
-          {hasFilters && t("filter results", {count: matchingResources.length, total: subResources.length})}
+          {hasFilters && t("filter results", { count: matchingResources.length, total: subResources.length })}
         </div>
       </div>
       <div role="search" aria-label={t("search titles")} className="ml-8 flex min-w-0 items-center gap-2">
@@ -398,7 +400,7 @@ function RootPackage({iri}: {iri: string}) {
         onClick={() => openModal(AddImported, { id: iri })}>
         <Import className="mr-2 h-4 w-4" /> {t("import")}
       </Button>
-      <Button variant="default" size={"sm"} className="shrink-0 ml-4" onClick={() => openModal(ProjectWizard, {iri, defaultTag: selectedTag || undefined})}><WandSparkles className="mr-2 h-4 w-4" /> {t("project-wizard")}</Button>
+      <Button variant="default" size={"sm"} className="shrink-0 ml-4" onClick={() => openModal(ProjectWizard, { iri, defaultTag: selectedTag || undefined })}><WandSparkles className="mr-2 h-4 w-4" /> {t("project-wizard")}</Button>
     </div>
     {isOpen && <>
       {matchingResources.length > 0 ? <ul>
@@ -408,10 +410,10 @@ function RootPackage({iri}: {iri: string}) {
         <p className="font-medium">{t("no specifications")}</p>
         <p className="mt-1 text-sm text-muted-foreground">{t("create first specification")}</p>
         <div className="mt-4 flex flex-wrap justify-center gap-2">
-          <Button variant="outline" onClick={() => openModal(AddImported, {id: iri})}>
+          <Button variant="outline" onClick={() => openModal(AddImported, { id: iri })}>
             <Import aria-hidden="true" className="mr-2 h-4 w-4" /> {t("import")}
           </Button>
-          <Button onClick={() => openModal(ProjectWizard, {iri, defaultTag: selectedTag || undefined})}>
+          <Button onClick={() => openModal(ProjectWizard, { iri, defaultTag: selectedTag || undefined })}>
             <WandSparkles aria-hidden="true" className="mr-2 h-4 w-4" /> {t("project-wizard")}
           </Button>
         </div>

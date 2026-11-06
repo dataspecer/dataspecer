@@ -8,7 +8,6 @@ import { getVisualDiagramNodeMappingsByRepresented, isVisualEdgeEnd } from "./ut
 import { UseModelGraphContextType } from "../context/model-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { ClassesContext } from "../context/classes-context";
-import { findSourceModelOfEntity } from "../service/model-service";
 import { VisualModelDiagramNode } from "../diagram";
 import { createGetVisualEntitiesForRepresentedGlobalWrapper, VisualsForRepresentedWrapper } from "../util/utils";
 import { SemanticModelGeneralization, SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
@@ -105,8 +104,8 @@ function findRelationshipsForEnd(
   // which are already covered by the relationship
   const availableVisualEnds = getVisualEntitiesForRepresentedGlobal(end);
   const visualRelationships = visualModel.getVisualEntitiesForRepresented(relationship.id);
-  const model = findSourceModelOfEntity(relationship.id, classesContext.semanticModels);
-  if (model === null) {
+  const model = classesContext.sourceModelOfEntityMap.get(relationship.id);
+  if (model === undefined) {
     return;
   }
 
@@ -149,7 +148,7 @@ function findRelationshipsForEnd(
 
     const visualRelationship: Omit<VisualRelationship, "id" | "type"> = {
       representedRelationship: relationship.id,
-      model: model?.getId(),
+      model: model,
       waypoints: [],
       visualSource,
       visualTarget,

@@ -8,6 +8,19 @@ export default {
 
     // Generator configuraion
     configuration: {
+        // Instance defaults for documentation. Unspecified partials keep their
+        // built-in values; project overrides take precedence. Restart the backend
+        // after changing this configuration.
+        documentation: {
+            partials: {
+                // Replaces the whole html-head partial. Copy its built-in value
+                // from packages/documentation/src/default-configuration.ts to
+                // preserve the standard scripts and styles when customizing it.
+                // "html-head": `<meta charset="utf-8" /><title>My documentation</title>`,
+                // Use false to remove a partial, or an empty string to render nothing.
+            },
+        },
+
         json: {
             /**
              * Key of property representing ID of the entity.

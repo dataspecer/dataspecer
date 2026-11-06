@@ -41,22 +41,7 @@ export function generateVisualModelSvg(
   const resolved = resolveOptions(options);
   const model = new DiagramModel(models, visualModel, resolved);
   const drawing = new SvgDrawing(resolved);
-  const nodes = new Map<string, NodeLayout>();
-  const anchored = anchoredMembers(visualModel, resolved.onWarning);
-  for (const visual of Object.values(visualModel)) {
-    if (isVisualNode(visual) || isVisualDiagramNode(visual)) {
-      if (!finitePoint(visual.position)) {
-        resolved.onWarning(`Skipped visual node ${JSON.stringify(visual.id)} with invalid coordinates.`);
-        continue;
-      }
-      const node = layoutNode(visual, model, drawing, anchored.has(visual.id));
-      if (node) nodes.set(visual.id, node);
-    } else if (!isVisualRelationship(visual) && !isVisualProfileRelationship(visual)
-      && !isVisualGroup(visual) && !isModelVisualInformation(visual) && !isVisualView(visual)
-      && !visual.type.includes(VISUAL_MODEL_ENTITY_TYPE)) {
-      resolved.onWarning(`Skipped unsupported visual entity ${JSON.stringify(visual.id)}.`);
-    }
-  }
+  const nodes = layoutNodes(visualModel, model, drawing);
 
   const edges: string[] = [];
   const labels: string[] = [];
@@ -74,6 +59,44 @@ export function generateVisualModelSvg(
     `<!-- Classes and diagrams -->\n${bodies.join("\n\n")}`,
     `<!-- Arrow labels -->\n${labels.filter(Boolean).join("\n\n")}`,
   ].join("\n\n"));
+}
+
+/**
+ * Measures node boxes using the same content and presentation rules as SVG rendering.
+ * Returns dimensions keyed by visual entity ID, excluding skipped or unresolved nodes.
+ * Supply aggregated models and the same options to measurement and rendering. Inputs are not modified.
+ */
+export function measureVisualModelNodes(
+  visualModel: EntityRecord<VisualEntity>,
+  models: Record<ModelIdentifier, EntityRecord>,
+  options: SvgRenderOptions = {},
+): Record<string, { width: number; height: number }> {
+  const resolved = resolveOptions(options);
+  const model = new DiagramModel(models, visualModel, resolved);
+  const nodes = layoutNodes(visualModel, model, new SvgDrawing(resolved));
+  return Object.fromEntries([...nodes].map(([id, node]) => [id, { width: node.rect.width, height: node.rect.height }]));
+}
+
+function layoutNodes(visualModel: EntityRecord<VisualEntity>, model: DiagramModel, drawing: SvgDrawing): Map<string, NodeLayout> {
+  const resolved = model.options;
+  const nodes = new Map<string, NodeLayout>();
+  const anchored = anchoredMembers(visualModel, resolved.onWarning);
+  for (const visual of Object.values(visualModel)) {
+    if (isVisualNode(visual) || isVisualDiagramNode(visual)) {
+      if (!finitePoint(visual.position)) {
+        resolved.onWarning(`Skipped visual node ${JSON.stringify(visual.id)} with invalid coordinates.`);
+        continue;
+      }
+      const node = layoutNode(visual, model, drawing, anchored.has(visual.id));
+      if (node) nodes.set(visual.id, node);
+    } else if (!isVisualRelationship(visual) && !isVisualProfileRelationship(visual)
+      && !isVisualGroup(visual) && !isModelVisualInformation(visual) && !isVisualView(visual)
+      && !visual.type.includes(VISUAL_MODEL_ENTITY_TYPE)) {
+      resolved.onWarning(`Skipped unsupported visual entity ${JSON.stringify(visual.id)}.`);
+    }
+  }
+
+  return nodes;
 }
 
 /** Expands anchored groups without exposing their temporary editor highlights. */

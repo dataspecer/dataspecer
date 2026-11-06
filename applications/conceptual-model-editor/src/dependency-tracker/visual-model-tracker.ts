@@ -10,7 +10,6 @@ import {
 import { Tracker } from "./dependency-tracker";
 import {
   isExternalSemanticModelEntity,
-  isPimStoreModelEntity,
   isSemanticModelEntity,
   isVisualModelEntity,
 } from "./model-observer";
@@ -87,8 +86,7 @@ class VisualModelTracker implements Tracker {
 
   onEntityDidRemove(model: ModelIdentifier, previous: Entity): void {
     if (isSemanticModelEntity(previous)
-      || isExternalSemanticModelEntity(previous)
-      || isPimStoreModelEntity(previous)) {
+      || isExternalSemanticModelEntity(previous)) {
       // Remove visual information about the model.
       // TODO Remove this once we properly delete all model entities.
       this.models.values().forEach(visualModel => {

@@ -297,8 +297,6 @@ export function getDataSpecification(projectId: string, projectModel: EntityReco
     label: mainPackage?.label || {},
     tags: [], // todo
 
-    localSemanticModelIds: rawModelData.localSemanticModelIds ?? [],
-    modelCompositionConfiguration: rawModelData.modelCompositionConfiguration ?? null,
     dataStructures,
     importsDataSpecificationIds: rawModelData.dataStructuresImportPackages ?? [],
 

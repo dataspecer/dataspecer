@@ -27,7 +27,7 @@ class DefaultN3Writer {
       if (error) {
         reject(error);
       } else {
-        resolve(result);
+        resolve(result!);
       }
     }));
   }

@@ -64,7 +64,7 @@ function normalizeAssignments(entities: EntityRecord | undefined): EntityRecord 
  * Returns entities that represent the semantic model based on the provided serialization.
  */
 export function serializationToSemanticModelEntities(serialization: unknown): EntityRecord {
-  const modelDescriptor = { ...(serialization as any) };
+  const { modelId, ...modelDescriptor } = serialization as any;
 
   const modelAlias = modelDescriptor.modelAlias;
   delete modelDescriptor.modelAlias;
@@ -91,7 +91,7 @@ export function serializationToSemanticModelEntities(serialization: unknown): En
 
   const mainEntity = {
     ...modelDescriptor,
-    id: modelDescriptor.modelId,
+    id: modelId,
     type: [LOCAL_SEMANTIC_MODEL],
   } as MainSemanticModelEntity;
 

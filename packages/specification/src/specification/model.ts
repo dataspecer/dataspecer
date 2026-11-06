@@ -12,18 +12,6 @@ export type DataSpecification = Package & {
   label: LanguageString;
   tags: string[];
 
-  /**
-   * List of IDs of models that are being interpreted as PIMs.
-   * @deprecated Use {@link modelCompositionConfiguration} instead.
-   */
-  localSemanticModelIds: string[];
-
-  /**
-   * Information about models and how they are composed.
-   * Overrides {@link sourceSemanticModelIds} and {@link localSemanticModelIds}.
-   */
-  modelCompositionConfiguration: object | null;
-
   dataStructures: DataSpecificationStructure[];
 
   /**

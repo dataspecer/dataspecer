@@ -1,11 +1,10 @@
-import { CONTROLLED_VOCABULARY_MODEL, LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL, RDFS_MODEL, V1, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
+import { CONTROLLED_VOCABULARY_MODEL, LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL, V1, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { applyOperationsToSemanticModel, semanticModelEntitiesToSerialization, serializationToSemanticModelEntities } from "@dataspecer/core-v2/semantic-model";
 import {
   controlledVocabularyModelEntitiesToSerialization,
   serializationToControlledVocabularyModelEntities,
 } from "@dataspecer/controlled-vocabulary-model";
 import { changesToSemanticModelOperations } from "@dataspecer/core-v2/semantic-model/operations";
-import { rdfsModelToSerialization, serializationToPimModelEntities } from "@dataspecer/core-v2/semantic-model/v1-adapters";
 import type { CoreResourceAndEntity } from "@dataspecer/core/core";
 import { applyOperationsToStructureModel, serializationToStructureModelEntities, structureModelEntitiesToSerialization } from "@dataspecer/core/data-psm";
 import type { EntityChange, EntityRecord } from "@dataspecer/core/entity-model";
@@ -14,10 +13,7 @@ import type { Operation } from "@dataspecer/core/operation";
 import {
   applyOperationsToAsyncQueryableModel,
   asyncQueryableModelEntitiesToSerialization,
-  ReloadModelOperationType,
   serializationToAsyncQueryableModelEntities,
-  SetModelUrlsOperationType,
-  type SetModelUrl,
 } from "@dataspecer/model-store/implementation";
 import { SemanticProfileModelOperations } from "@dataspecer/profile-model";
 import { changesToVisualModelOperations, serializationToVisualModelEntities, visualModelEntitiesToSerialization } from "@dataspecer/visual-model";
@@ -75,7 +71,7 @@ interface ModelTypeSupport {
   changesToOperations?(changes: EntityChange[]): { operations: Operation[]; remainingChanges: EntityChange[] };
 }
 
-/** Semantic and RDFS models share the semantic and profile operations. */
+/** Semantic models support both vocabulary and profile operations. */
 function changesToSemanticAndProfileOperations(changes: EntityChange[]): { operations: Operation[]; remainingChanges: EntityChange[] } {
   const semantic = changesToSemanticModelOperations(changes);
   const profile = SemanticProfileModelOperations.changesToProfileModelOperations(semantic.remainingChanges);
@@ -112,23 +108,6 @@ const MODEL_TYPES: Record<string, ModelTypeSupport> = {
     deserialize: (_modelId, data) => (data ? serializationToAsyncQueryableModelEntities(data) : {}),
     serialize: (modelId, entities) => asyncQueryableModelEntitiesToSerialization(modelId, entities),
     applyOperation: (_modelId, working, operation) => applyOperationsToAsyncQueryableModel(working, [operation]),
-  },
-  [RDFS_MODEL]: {
-    deserialize: (modelId, data) => serializationToPimModelEntities((data as object) ?? { id: modelId, pimStore: { resources: {} } }).entities,
-    serialize: (modelId, entities) => rdfsModelToSerialization(modelId, entities),
-    applyOperation: (modelId, working, operation) => {
-      if (operation.type === SetModelUrlsOperationType) {
-        // Only the urls are updated; the cached vocabulary entities are
-        // refetched by the reload endpoint, not by applying operations.
-        working[modelId] = { ...working[modelId], urls: (operation as SetModelUrl).urls } as EntityRecord[string];
-        return;
-      }
-      if (operation.type === ReloadModelOperationType) {
-        return;
-      }
-      applyOperationsToSemanticModel(working, [operation]);
-    },
-    changesToOperations: changesToSemanticAndProfileOperations,
   },
   [CONTROLLED_VOCABULARY_MODEL]: {
     deserialize: serializationToControlledVocabularyModelEntities,

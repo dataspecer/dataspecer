@@ -116,7 +116,7 @@ export function createEditAttributeProfileDialogState(
   entityIdentifier: string,
   labelResolver: LabelResolver,
 ): AttributeProfileDialogState {
-  const entities = graphContext.getEntities();
+  const entities = graphContext.getAggregatedEntities();
 
   const { rawEntity: entity, aggregatedEntity: aggregate } =
     entities[entityIdentifier];
@@ -198,7 +198,7 @@ function listAttributesToProfile(
   graphContext: UseModelGraphContextType,
   vocabularies: CmeSemanticModel[],
 ) {
-  const entities = graphContext.getEntities();
+  const entities = graphContext.getAggregatedEntities();
   const models = classesContext.semanticModelsList;
 
   const owlThing = representOwlThing();
@@ -220,7 +220,7 @@ function listAttributesToSpecialize(
   graphContext: UseModelGraphContextType,
   vocabularies: CmeSemanticModel[],
 ) {
-  const entities = graphContext.getEntities();
+  const entities = graphContext.getAggregatedEntities();
   const models = [...classesContext.semanticModels.values()];
   return [
     ...representRelationshipProfile(entities, models, vocabularies,

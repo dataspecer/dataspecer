@@ -36,4 +36,16 @@ export interface SemanticModelsToShaclConfiguration {
    */
   controlledVocabularyScheme: boolean;
 
+  /**
+   * When true, every profile specialization (C dsv:specializes P) is
+   * written to the shapes graph as rdfs:subClassOf between the RDF types
+   * of C and P. The statements are background knowledge for validators,
+   * so that sh:class P accepts instances of C.
+   *
+   * Defaults to false when missing for backward compatibility.
+   *
+   * @see https://github.com/dataspecer/dataspecer/issues/1534
+   */
+  profileSpecializationAsSubClassOf: boolean;
+
 }

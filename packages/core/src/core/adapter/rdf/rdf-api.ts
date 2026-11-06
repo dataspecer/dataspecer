@@ -1,62 +1,42 @@
+import type { BlankNode, Literal, NamedNode, Quad, Term } from "@rdfjs/types";
+import { DataFactory } from "n3";
+
 export enum RdfTermType {
   BlankNode = "BlankNode",
   NamedNode = "NamedNode",
   Literal = "Literal",
   DefaultGraph = "DefaultGraph",
+  Variable = "Variable",
+  Quad = "Quad",
 }
 
-export interface RdfQuad {
-  subject: RdfNode;
+export type RdfQuad = Quad;
+export type RdfNode = Quad["subject"] | Quad["graph"];
+export type RdfObject = Quad["object"];
+export type RdfLiteral = Literal;
 
-  predicate: RdfNode;
+export const RdfNode = {
+  DEFAULT_GRAPH: "",
+  namedNode: DataFactory.namedNode,
+  defaultGraph: DataFactory.defaultGraph,
+} as const;
 
-  object: RdfObject;
+export const RdfObject = {
+  isNotNode(object: Term): boolean {
+    return !RdfObject.isNode(object);
+  },
 
-  graph: RdfNode;
-}
-
-export class RdfNode {
-  static readonly DEFAULT_GRAPH = "";
-
-  termType: string;
-
-  value: string;
-
-  static namedNode(iri: string): RdfNode {
-    return {
-      termType: RdfTermType.NamedNode,
-      value: iri,
-    };
-  }
-
-  static defaultGraph(): RdfNode {
-    return {
-      termType: RdfTermType.DefaultGraph,
-      value: RdfNode.DEFAULT_GRAPH,
-    };
-  }
-}
-
-export class RdfObject extends RdfNode {
-  datatype: RdfNode | null;
-
-  language: string | null;
-
-  static isNotNode(object: RdfObject): boolean {
-    return !this.isNode(object);
-  }
-
-  static isNode(object: RdfObject): object is RdfObject {
+  isNode(object: Term): object is NamedNode | BlankNode {
     return (
       object.termType === RdfTermType.NamedNode ||
       object.termType === RdfTermType.BlankNode
     );
-  }
+  },
 
-  static isLiteral(object: RdfObject): boolean {
+  isLiteral(object: Term): object is Literal {
     return object.termType === RdfTermType.Literal;
-  }
-}
+  },
+};
 
 /**
  * This interface should be implemented by sources of RDF data.

@@ -20,6 +20,28 @@ export interface ShaclModel {
    */
   members: ShaclNodeShape[];
 
+  /**
+   * Class hierarchy statements, background knowledge for validators.
+   * Empty when there is nothing to state.
+   *
+   * @see https://github.com/dataspecer/dataspecer/issues/1534
+   */
+  subClassOf: ShaclSubClassOf[];
+
+}
+
+/**
+ * States that every instance of {@link subClass} is an instance
+ * of {@link superClass}.
+ *
+ * @lc-identifier rdfs:subClassOf
+ */
+export interface ShaclSubClassOf {
+
+  subClass: Node;
+
+  superClass: Node;
+
 }
 
 /**

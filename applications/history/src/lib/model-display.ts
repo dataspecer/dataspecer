@@ -4,11 +4,10 @@ import {
   LOCAL_PACKAGE,
   LOCAL_SEMANTIC_MODEL,
   QUERYABLE_MODEL,
-  RDFS_MODEL,
   V1,
   VISUAL_MODEL,
 } from "@dataspecer/core-v2/model/known-models";
-import { isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
+import { getSemanticModelMainEntity, isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
 import { isModelProfile, isSemanticModelClassProfile, isSemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import type { Entity, EntityRecord } from "@dataspecer/core/entity-model";
 import type { DefaultFrontendModelStore } from "@dataspecer/model-store/implementation";
@@ -117,7 +116,6 @@ const MODEL_TYPE_DISPLAY: Record<string, ModelTypeDisplay> = {
   [LOCAL_PACKAGE]: { typeKey: "specification", icon: Package },
   [LOCAL_SEMANTIC_MODEL]: { typeKey: "vocabulary", icon: BookOpen },
   [VISUAL_MODEL]: { typeKey: "visual-model", icon: Workflow },
-  [RDFS_MODEL]: { typeKey: "imported-vocabulary", icon: CloudDownload },
   [QUERYABLE_MODEL]: { typeKey: "queryable-vocabulary", icon: Globe },
   [API_SPECIFICATION_MODEL]: { typeKey: "api-specification", icon: Braces },
   [APPLICATION_GRAPH]: { typeKey: "application-graph", icon: Network },
@@ -157,7 +155,9 @@ export function resolveModelDisplay(modelStore: DefaultFrontendModelStore, model
 
   let display = modelTypeDisplay(entity?.modelType);
   if (entity?.modelType === LOCAL_SEMANTIC_MODEL) {
-    if (isModelProfile(allEntities[baseId] ?? {})) {
+    if (getSemanticModelMainEntity(allEntities[baseId] ?? {})?.source) {
+      display = { typeKey: "imported-vocabulary", icon: CloudDownload };
+    } else if (isModelProfile(allEntities[baseId] ?? {})) {
       display = PROFILE_DISPLAY;
     }
   }

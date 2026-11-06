@@ -65,7 +65,7 @@ export function openCreateProfileDialogAction(
   labelResolver: LabelResolver,
   availableVocabularies: ControlledVocabulary[],
 ) {
-  const entity = graph.getEntities()?.[identifier].aggregatedEntity;
+  const entity = graph.getAggregatedEntities()?.[identifier].aggregatedEntity;
   if (entity === undefined) {
     notifications.error(`Can not find the entity with identifier '${identifier}'.`);
     return;

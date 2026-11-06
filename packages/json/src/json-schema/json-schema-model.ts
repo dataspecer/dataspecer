@@ -15,6 +15,8 @@ export class JsonSchemaDefinition {
 
   description: string | null = null;
 
+  examples: string[] = [];
+
   anyOf: JsonSchemaDefinition[] = [];
   oneOf: JsonSchemaDefinition[] = [];
   allOf: JsonSchemaDefinition[] = [];
@@ -46,8 +48,6 @@ export class JsonSchemaObject extends JsonSchemaDefinition {
   properties: { [name: string]: JsonSchemaDefinition } = {};
 
   required: string[] = [];
-
-  examples: string[] = [];
 
   objectExamples: object[] = [];
 
@@ -140,8 +140,6 @@ export class JsonSchemaString extends JsonSchemaDefinition {
   format: string | null = null;
 
   pattern: string | null = null;
-
-  examples: string[] = [];
 
   constructor(format: string | null) {
     super(JsonSchemaString.TYPE);

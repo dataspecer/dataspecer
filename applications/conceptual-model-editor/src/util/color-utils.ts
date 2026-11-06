@@ -241,7 +241,7 @@ export const randomColorFromPalette = (colorPalette: ColorPaletteType = ColorPal
   return tailwindColorToHex(key, colorPalette);
 };
 
-export const tailwindColorToHex = (color: string, colorPalette: ColorPaletteType = ColorPalette) => {
+const tailwindColorToHex = (color: string, colorPalette: ColorPaletteType = ColorPalette) => {
   if (color.startsWith("#")) {
     return color;
   }

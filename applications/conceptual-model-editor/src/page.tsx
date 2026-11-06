@@ -249,7 +249,7 @@ function initializeWithPackage(
       visualModels.push(visualModel);
     }
 
-    if (!entityModels.find((model) => model instanceof InMemorySemanticModel)) {
+    if (!entityModels.find((model) => model instanceof InMemorySemanticModel && !model.getMainEntity()?.source)) {
       console.info("No semantic model found in the package, creating a default semantic model.");
       const model = new InMemorySemanticModel();
       model.setAlias("Default local model");

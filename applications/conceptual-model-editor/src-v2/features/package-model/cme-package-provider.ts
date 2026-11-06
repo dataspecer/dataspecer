@@ -1,7 +1,8 @@
+import { isMainSemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
 import { ModelIdentifier } from "@dataspecer/core/model";
 import { Entity } from "@dataspecer/core/entity-model";
 import {
-  LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL, RDFS_MODEL, VISUAL_MODEL,
+  LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL, VISUAL_MODEL,
 } from "@dataspecer/core-v2/model/known-models";
 
 import { Logger } from "../../infrastructure/logger";
@@ -59,7 +60,7 @@ export interface CmeModelMetadata {
 
   /**
    * True when entities of this model can not be modified by the user.
-   * External models and PIM-store-backed models are read-only.
+   * External models and semantic models with a source are read-only.
    */
   isReadOnly: boolean;
 
@@ -98,6 +99,8 @@ class DefaultCmePackageProvider implements CmePackageProvider {
 
   private readonly logger: Logger;
 
+  private readonly sourceReadOnly = new Map<ModelIdentifier, boolean>();
+
   private readonly subscribers = new SubscriptionManager<CmePackageStateEvent>();
 
   constructor(logger: Logger) {
@@ -113,6 +116,22 @@ class DefaultCmePackageProvider implements CmePackageProvider {
       { entityChanges: { [model]: changes } });
     // Notify listeners about a new state.
     this.state = update.state();
+    for (const [modelId, entityChanges] of Object.entries(event.entityChanges)) {
+      for (const { previous, next } of Object.values(entityChanges)) {
+        if (next && isMainSemanticModelEntity(next)) {
+          this.sourceReadOnly.set(modelId, !!next.source);
+        } else if (previous && isMainSemanticModelEntity(previous)) {
+          this.sourceReadOnly.delete(modelId);
+        }
+      }
+    }
+    const semanticModels = this.state.semanticModels.map(model => {
+      const isReadOnly = model.isExternal || (this.sourceReadOnly.get(model.id) ?? true);
+      return model.isReadOnly === isReadOnly ? model : { ...model, isReadOnly };
+    });
+    if (semanticModels.some((model, index) => model !== this.state.semanticModels[index])) {
+      this.state = { ...this.state, semanticModels };
+    }
     this.state = this.updateLabelsFromVisualModel_WORKAROUND_(event);
     this.subscribers.notifyAll(this.state);
   }
@@ -194,9 +213,7 @@ class CmePackageUpdate implements StateUpdate<CmePackageStateEvent> {
    * or another package/model-descriptor entity.
    */
   private isSemanticModelType(modelType: string): boolean {
-    return modelType === LOCAL_SEMANTIC_MODEL
-      || modelType === QUERYABLE_MODEL
-      || modelType === RDFS_MODEL;
+    return modelType === LOCAL_SEMANTIC_MODEL || modelType === QUERYABLE_MODEL;
   }
 
   onCreateEntity(_: ModelIdentifier, next: Entity): void {

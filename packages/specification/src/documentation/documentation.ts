@@ -1,9 +1,9 @@
 import {
   DocumentationConfiguration,
-  internalDefaultDocumentationConfiguration,
+  baseDefaultDocumentationConfiguration,
   internalMergeDocumentationConfigurations,
   PartialDocumentationConfiguration,
-} from "@dataspecer/documentation/configuration";
+} from "@dataspecer/documentation";
 import { defaultJsonPartials } from "@dataspecer/json/documentation";
 import { defaultXmlPartials } from "@dataspecer/xml/documentation";
 
@@ -11,10 +11,10 @@ import { defaultXmlPartials } from "@dataspecer/xml/documentation";
  * Default, complete configuration for the documentation generator.
  */
 export const defaultDocumentationConfiguration: DocumentationConfiguration = {
-  ...internalDefaultDocumentationConfiguration,
+  ...baseDefaultDocumentationConfiguration,
 
   partials: {
-    ...internalDefaultDocumentationConfiguration.partials,
+    ...baseDefaultDocumentationConfiguration.partials,
     ...defaultJsonPartials,
     ...defaultXmlPartials,
   },

@@ -24,7 +24,6 @@ import { ActionsContextType } from "./action/actions-react-binding";
 import { ClassesContext } from "./context/classes-context";
 import { createLogger } from "./application";
 import { addToRecordArray } from "./utilities/functional";
-import { findSourceModelOfEntity } from "./service/model-service";
 import {
   createGetVisualEntitiesForRepresentedGlobalWrapper,
   VisualsForRepresentedWrapper,
@@ -144,14 +143,14 @@ function validateClassProfilesInsideVisualModel(
         const isVisualProfileRelationshipInModel = validVisualProfileRelationships[profileOfVisual.id]
           ?.find(profileRelationship => profileRelationship.visualSource === visualEntity.id) !== undefined;
         if (!isVisualProfileRelationshipInModel) {
-          const model = findSourceModelOfEntity(classProfile.id, models);
-          if (model === null) {
+          const model = classesContext.sourceModelOfEntityMap.get(classProfile.id);
+          if (model === undefined) {
             LOG.error("Missing the source model when creating missing profile relationship on validation");
             continue;
           }
           const profileRelationshipToAdd: Omit<VisualProfileRelationship, "id" | "type"> = {
             entity: classProfile.id,
-            model: model.getId(),
+            model: model,
             waypoints: [],
             visualSource: visualEntity.id,
             visualTarget: profileOfVisual.id

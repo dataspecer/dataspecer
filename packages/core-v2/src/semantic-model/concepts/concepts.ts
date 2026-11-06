@@ -66,6 +66,21 @@ export interface VocabularySource {
 }
 
 /**
+ * Describes a semantic model that is a federation of urls that contain web
+ * vocabularies. Such model should contain all semantic entities that are
+ * obtained from the urls combined.
+ */
+export interface VocabularySourceRdfs extends VocabularySource {
+  type: "snapshot";
+  provider: "rdfs";
+  urls: string[];
+}
+
+export function isRdfsSnapshot(source: VocabularySource | null | undefined): source is VocabularySourceRdfs {
+  return source?.type === "snapshot" && "provider" in source && source.provider === "rdfs";
+}
+
+/**
  * For vocabularies that function as a cache but only for a used subgraph of the
  * vocabulary. The only current provider is SGOV, which is a huge vocabulary
  * (behind a SPARQL endpoint) and we only want to cache the part of it that is

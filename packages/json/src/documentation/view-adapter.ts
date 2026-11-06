@@ -164,9 +164,10 @@ class ViewAdapter {
     throw new Error(`Unsupported JSON Schema definition type (${definition.type}) when creating documentation.`);
   }
 
-  private processCommonProperties(definition: JsonSchemaDefinition): Omit<JsonSchemaDefinitionViewModel, "examples" | "isMain" | "type" | "anchor"> {
+  private processCommonProperties(definition: JsonSchemaDefinition): Omit<JsonSchemaDefinitionViewModel, "isMain" | "type" | "anchor"> {
     return {
       jsonSchemaDefinition: definition,
+      examples: definition.examples.length > 0 ? definition.examples : null,
 
       anyOf: definition.anyOf.length > 0 ? definition.anyOf.map((d) => this.jsonSchemaDefinitionToViewModel(d)) : null,
       oneOf: definition.oneOf.length > 0 ? definition.oneOf.map((d) => this.jsonSchemaDefinitionToViewModel(d)) : null,
@@ -181,8 +182,6 @@ class ViewAdapter {
       anchor: null,
 
       isMain: false,
-
-      examples: null,
     };
   }
 
@@ -199,8 +198,6 @@ class ViewAdapter {
 
       const: strValue,
       multiline: strValue.includes("\n"),
-
-      examples: [],
     } as JsonSchemaConstViewModel;
   }
 
@@ -211,8 +208,6 @@ class ViewAdapter {
       anchor: null,
 
       isMain: false,
-
-      examples: null,
     };
   }
 
@@ -223,7 +218,6 @@ class ViewAdapter {
       anchor: null,
 
       isMain: false,
-      examples: null,
       values: definition.values,
     } as JsonSchemaEnumViewModel;
   }
@@ -236,8 +230,6 @@ class ViewAdapter {
 
       isMain: false,
       integerOnly: definition.isInteger,
-
-      examples: null,
     };
   }
 
@@ -250,8 +242,6 @@ class ViewAdapter {
       isMain: false,
       format: definition.format,
       pattern: definition.pattern,
-
-      examples: definition.examples.length > 0 ? definition.examples : null,
     };
   }
 
@@ -280,8 +270,6 @@ class ViewAdapter {
 
       isMain: false,
       ref: null as any,
-
-      examples: null,
     };
   }
 
@@ -348,8 +336,6 @@ class ViewAdapter {
       cardinalityText: `{${minItems}..${maxItems === null ? "*" : maxItems}}`,
 
       requiresStringConstantsOnly: null,
-
-      examples: null,
     };
 
     return this.arrayViewModelTryMatchOnlyStrings(result);

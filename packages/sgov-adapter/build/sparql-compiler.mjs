@@ -1,4 +1,4 @@
-import { join, dirname } from 'path';
+import { join, dirname, resolve } from 'path';
 import { existsSync, readdirSync, lstatSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 
 function fromDir(startPath, filter, found) {
@@ -47,6 +47,11 @@ function processSparql(input) {
 export function vitestSparqlPlugin() {
   return {
     name: "vitest-sparql-plugin",
+    resolveId(source, importer) {
+      if (importer && source.endsWith(".sparql.ts")) {
+        return resolve(dirname(importer), source.slice(0, -3));
+      }
+    },
     transform(src, id) {
       if (id.endsWith(".sparql")) {
         return processSparqlFile(src);

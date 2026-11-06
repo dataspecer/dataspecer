@@ -1,5 +1,6 @@
-import { LOCAL_SEMANTIC_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { V1 } from "@dataspecer/core-v2/model/known-models";
 import { BackendPackageService } from "@dataspecer/core-v2/project";
+import type { SemanticModelMetadata } from "@dataspecer/core-v2/semantic-model";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
 import { createContext, useRef, useState } from "react";
 import { Package } from "@dataspecer/core/project-model/legacy";
@@ -8,7 +9,10 @@ import { StructureEditorBackendService } from "./structure-editor-backend-servic
 
 const backendUrl = import.meta.env.VITE_BACKEND;
 
-type ResourceWithIris = Package & { subResourcesIri: string[] };
+type ResourceWithIris = Package & {
+    subResourcesIri: string[];
+    userMetadata: Package["userMetadata"] & Partial<SemanticModelMetadata>;
+};
 
 export const ResourcesContext = createContext<Record<string, ResourceWithIris>>({});
 
@@ -37,10 +41,10 @@ export async function requestLoadPackage(iri: string, forceUpdate = false) {
         pckg.subResourcesIri = pckg.subResources!.map((resource) => resource.iri);
 
         for (const resource of pckg.subResources!) {
-            if (copiedResourcesMemory[resource.iri]) {
-                continue;
-            }
-            copiedResourcesMemory[resource.iri] = resource as ResourceWithIris;
+            copiedResourcesMemory[resource.iri] = {
+                ...copiedResourcesMemory[resource.iri],
+                ...resource,
+            } as ResourceWithIris;
         }
         delete pckg.subResources;
     }
@@ -100,28 +104,5 @@ export async function ensurePackageWorksForDSE(packageIri: string) {
     // Configuration
     if (!pckg.subResources!.find(resource => resource.types.includes(V1.GENERATOR_CONFIGURATION))) {
         await createModelInstructions[V1.GENERATOR_CONFIGURATION].createHook({ parentIri: packageIri });
-    }
-
-    const semanticModels = pckg.subResources!.filter(resource => resource.types.includes(LOCAL_SEMANTIC_MODEL));
-    if (semanticModels.length === 1) {
-        // Exactly one semantic model to choose from
-
-        // Profile config
-        const data: any = await packageService.getResourceJsonData(packageIri) ?? {};
-
-        if (!data["modelCompositionConfiguration"]) {
-            // We need to create new one
-            data["modelCompositionConfiguration"] = {
-                "modelType": "application-profile",
-                "model": semanticModels[0].iri,
-                "canAddEntities": false,
-                "canModify": true,
-                "profiles": {
-                    "modelType": "merge",
-                    "models": null
-                }
-            };
-            await packageService.setResourceJsonData(packageIri, data);
-        }
     }
 }

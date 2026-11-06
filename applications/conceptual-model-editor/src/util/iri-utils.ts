@@ -1,11 +1,8 @@
 import {
-  type SemanticModelClass,
-  type SemanticModelEntity,
   isSemanticModelClass,
   isSemanticModelGeneralization,
   isSemanticModelRelationship,
 } from "@dataspecer/core-v2/semantic-model/concepts";
-import type { EntityDetailSupportedType } from "./detail-utils";
 import type { Entity, EntityModel } from "@dataspecer/core-v2";
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
 import {
@@ -79,27 +76,3 @@ export const getModelIri = (model: EntityModel | undefined | null) => {
   return "";
 };
 
-/**
- * Used only for lw-onto exports
- * @param iri
- * @param entity
- * @returns the `entity` with `iri` in absolute form by prepending the model's base iri
- */
-export const entityWithOverriddenIri = <T extends EntityDetailSupportedType | SemanticModelEntity>(
-  iri: string,
-  entity: T
-): T => {
-  if (isSemanticModelClass(entity)) {
-    return { ...entity, iri: iri };
-  } else if (isSemanticModelRelationship(entity)) {
-    const currentEnds = getDomainAndRange(entity);
-    if (currentEnds.rangeIndex === null || currentEnds.range === null) {
-      return entity;
-    }
-    const newEnds = entity.ends;
-    newEnds[currentEnds.rangeIndex] = { ...currentEnds.range, iri: iri };
-    return { ...entity, ends: newEnds };
-  } else {
-    return { ...entity, iri: iri };
-  }
-};

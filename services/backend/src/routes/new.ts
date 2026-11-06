@@ -1,5 +1,6 @@
+import { isRdfsSnapshot } from "@dataspecer/rdfs/semantic-model";
 import type { Entity } from "@dataspecer/core/entity-model";
-import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, RDFS_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import type { CoreResource } from "@dataspecer/core/core/core-resource";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
@@ -18,7 +19,6 @@ import { diffModelEntitiesToOperations } from "../models/model-operations.ts";
 import { deserializeModelEntities } from "../models/model-types.ts";
 import { asyncHandler } from "../utils/async-handler.ts";
 import { importFromUrl } from "./import.ts";
-import { PimStoreWrapper } from "@dataspecer/core-v2/semantic-model/v1-adapters";
 import { getSemanticModelMainEntity, isMainSemanticModelEntity, isSemanticModelClass, isSemanticModelRelationship, type SemanticModelClass } from "@dataspecer/core-v2/semantic-model/concepts";
 import { SEMANTIC_MODEL_APPLICATION_PROFILE_SUBTYPE } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { createOfnVocabularyModelOperations, loadOfnVocabularyModels } from "../utils/ofn-vocabularies.ts";
@@ -137,13 +137,12 @@ export const newApplicationProfile = asyncHandler(async (request: Request, respo
             if (subResource.types.includes(LOCAL_SEMANTIC_MODEL)) {
               const subModelJson = await modelRepository.getResourceStoreJson(subResource.iri);
               if (subModelJson.entities) {
-                thisSpecificationEntities.push(...Object.values(subModelJson.entities as Record<string, Entity>));
+                // Here we need to decide whether the model is something that
+                // user created or it is something imported. For now, we check
+                // whether the model has any source.
+                const target = subModelJson.source ? otherEntities : thisSpecificationEntities;
+                target.push(...Object.values(subModelJson.entities as Record<string, Entity>));
               }
-            } else if (subResource.types.includes(RDFS_MODEL)) {
-              const subModelJson = await modelRepository.getResourceStoreJson(subResource.iri);
-              const model = new PimStoreWrapper(subModelJson.pimStore, subModelJson.id, "", subModelJson.urls);
-              model.fetchFromPimStore();
-              otherEntities.push(...Object.values(model.getEntities()));
             }
           }
         } else {

@@ -1,5 +1,5 @@
-import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, RDFS_MODEL } from "@dataspecer/core-v2/model/known-models";
-import type { LanguageString } from "@dataspecer/core-v2/semantic-model/concepts";
+import { LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL } from "@dataspecer/core-v2/model/known-models";
+import type { LanguageString, MainSemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
 import { diffEntities, type Entity, type EntityRecord } from "@dataspecer/core/entity-model";
 import {
   createUpdateEntityOperation,
@@ -12,7 +12,6 @@ import {
   type Transaction,
   type UndoOperation,
 } from "@dataspecer/core/operation";
-import type { MainEntity } from "@dataspecer/model-store/implementation";
 import {
   createCreateModelOperation,
   createCreateProjectOperation,
@@ -39,6 +38,7 @@ import type { BaseResource, Package, ResourceModel } from "./resource-model.ts";
 import type { HistoryTransaction, TransactionEvents, TransactionModel, TransactionWithEvents } from "./transaction-model.ts";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import { deepEqual } from "@dataspecer/utilities";
+import { getSemanticModelMetadata } from "@dataspecer/core-v2/semantic-model";
 
 /** Package that all projects are created directly under. */
 const PROJECT_ROOT_IRI = configuration.localRootIri;
@@ -548,7 +548,7 @@ export class ModelRepository implements ModelRepositoryType {
     }
   }
 
-  /** Keeps the resource metadata cache aligned with the semantic model label. */
+  /** Keeps the resource metadata cache aligned with the semantic model label and source. */
   private async synchronizeSemanticModelMetadata(modelId: string, modelType: string, entities: EntityRecord): Promise<void> {
     const { iri, storeName } = splitModelId(modelId);
     if (modelType !== LOCAL_SEMANTIC_MODEL || storeName !== "model") {
@@ -556,14 +556,14 @@ export class ModelRepository implements ModelRepositoryType {
     }
 
     const resource = await this.resourceModel.getResource(iri);
-    const mainEntity = entities[iri] as (Entity & { label?: LanguageString }) | undefined;
-    if (resource === null || mainEntity === undefined) {
+    const metadata = getSemanticModelMetadata(entities, iri);
+    if (resource === null || metadata === null) {
       return;
     }
 
-    const label = mainEntity.label ?? {};
-    if (!deepEqual(resource.userMetadata.label ?? {}, label)) {
-      await this.resourceModel.updateResource(iri, { label });
+    const { label, source } = metadata;
+    if (!deepEqual(resource.userMetadata.label ?? {}, label) || !deepEqual(resource.userMetadata.source, source)) {
+      await this.resourceModel.updateResource(iri, { label, source });
     }
   }
 
@@ -981,11 +981,11 @@ export class ModelRepository implements ModelRepositoryType {
 
     if ("label" in toLegacyResourceMetadata && "label" in toUpdateOperation) {
       const currentModel = await this.getModelEntities(resourceId);
-      const labelChanged = !deepEqual((currentModel?.[resourceId] as MainEntity)?.label, toLegacyResourceMetadata.label);
+      const labelChanged = !deepEqual((currentModel?.[resourceId] as MainSemanticModelEntity)?.label, toLegacyResourceMetadata.label);
 
-      if (resource.types[0] === RDFS_MODEL || resource.types[0] === LOCAL_SEMANTIC_MODEL) {
+      if (resource.types[0] === LOCAL_SEMANTIC_MODEL) {
         if (labelChanged) {
-          const update: Partial<Omit<MainEntity, "id" | "type">> = { label: (toLegacyResourceMetadata.label as LanguageString | undefined) ?? {} };
+          const update: Partial<Omit<MainSemanticModelEntity, "id" | "type">> = { label: (toLegacyResourceMetadata.label as LanguageString | undefined) ?? {} };
           operations.push({ modelId: resourceId, operation: createUpdateEntityOperation(resourceId, update) });
         }
         // Label never goes to the resource metadata

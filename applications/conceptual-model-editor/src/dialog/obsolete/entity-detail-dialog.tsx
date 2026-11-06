@@ -49,7 +49,7 @@ export const createEntityDetailDialog = (
   entity: SupportedTypes,
   language: string,
 ): DialogWrapper<EntityDetailState> => {
-  const aggregatedEntity = graph.getEntities()[entity.id];
+  const aggregatedEntity = graph.getAggregatedEntities()[entity.id];
 
   return {
     label: selectLabel(aggregatedEntity),

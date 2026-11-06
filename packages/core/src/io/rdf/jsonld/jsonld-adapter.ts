@@ -1,11 +1,13 @@
 import * as jsonld from "jsonld";
 import { RdfQuad } from "../../../core/adapter/rdf/index.ts";
+import { parseRdfQuadsWithN3 } from "../n3/n3-adapter.ts";
 
 export async function parseRdfQuadsWithJsonLd(
   content: string
 ): Promise<RdfQuad[]> {
   const contentAsJson = JSON.parse(content) as jsonld.JsonLdDocument;
-  const options = {
+  const options: jsonld.Options.ToRdf = {
+    format: "application/n-quads",
     documentLoader: async (url) => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
@@ -14,6 +16,9 @@ export async function parseRdfQuadsWithJsonLd(
       return await loader(encodeURI(url));
     },
   };
-  // The dataset model match with the RdfQuad array.
-  return (await jsonld.toRDF(contentAsJson, options)) as RdfQuad[];
+  const nquads = await jsonld.toRDF(contentAsJson, options);
+  if (typeof nquads !== "string") {
+    throw new Error("Expected JSON-LD conversion to produce N-Quads.");
+  }
+  return parseRdfQuadsWithN3(nquads);
 }

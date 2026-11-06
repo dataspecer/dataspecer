@@ -1,4 +1,6 @@
 import { RdfSource, RdfQuad, RdfObject, RdfTermType, RdfNode } from "./rdf-api.ts";
+import { DataFactory } from "n3";
+import type { BlankNode } from "@rdfjs/types";
 
 /**
  * Can be used as a base class for sources that load chunk of data
@@ -13,12 +15,16 @@ export class RdfMemorySource implements RdfSource {
       .map((quad) => quad.object);
   }
 
-  reverseProperty(predicate: string, iri: string): RdfObject[] {
+  reverseProperty(predicate: string, iri: string): RdfNode[] {
     return this.quads
       .filter((quad) => quad.object.value === iri)
       .filter((quad) => RdfObject.isNode(quad.object))
       .filter((quad) => quad.predicate.value === predicate)
-      .map((quad) => quad.subject as RdfObject);
+      .map((quad) => quad.subject);
+  }
+
+  getQuads(): RdfQuad[] {
+    return this.quads;
   }
 
   /**
@@ -30,24 +36,22 @@ export class RdfMemorySource implements RdfSource {
     quads: RdfQuad[],
     prefix: string
   ): RdfQuad[] {
-    // Insert URL into the blank node name.
-    const sanitizeUrl = (url: string) =>
-      url.startsWith("_:") ? url + ":" + prefix : url;
+    const sanitizeTerm = <T extends RdfNode | RdfObject>(term: T): T | BlankNode =>
+      term.termType === RdfTermType.BlankNode
+        ? DataFactory.blankNode(`${term.value}:${prefix}`)
+        : term;
 
-    // If value is blank node sanitize the value, else return the value.
-    const sanitizeObject = <T extends RdfNode>(value: T) =>
-      value.termType === RdfTermType.BlankNode
-        ? {
-            ...value,
-            value: sanitizeUrl(value.value),
-          }
-        : value;
+    const sanitizeQuad = (quad: RdfQuad): RdfQuad => DataFactory.quad(
+      quad.subject.termType === RdfTermType.Quad
+        ? sanitizeQuad(quad.subject)
+        : sanitizeTerm(quad.subject),
+      quad.predicate,
+      quad.object.termType === RdfTermType.Quad
+        ? sanitizeQuad(quad.object)
+        : sanitizeTerm(quad.object),
+      sanitizeTerm(quad.graph),
+    );
 
-    return quads.map((quad) => ({
-      subject: sanitizeObject(quad.subject),
-      object: sanitizeObject(quad.object),
-      predicate: quad.predicate,
-      graph: sanitizeObject(quad.graph),
-    }));
+    return quads.map(sanitizeQuad);
   }
 }

@@ -36,20 +36,16 @@
     "./semantic-model/utils": "./lib/semantic-model/utils/index.js",
     "./simplified-semantic-model": "./lib/simplified-semantic-model/index.js",
     "./utils/language": "./lib/utils/language.js",
-    "./semantic-model/v1-adapters": "./lib/semantic-model/v1-adapters/index.js"
+    "./semantic-model/cim-adapter": "./lib/semantic-model/cim-adapter/index.js"
   },
   "dependencies": {
     "@dataspecer/controlled-vocabulary-model": "*",
     "@dataspecer/core": "*",
-    "@dataspecer/rdfs-adapter": "*",
-    "@dataspecer/sgov-adapter": "*",
     "@dataspecer/utilities": "*",
     "@dataspecer/visual-model": "*",
-    "n3": "^2.13.12",
     "uuid": "^14.0.2"
   },
   "devDependencies": {
-    "@types/n3": "~1.26.4",
     "@types/node": "^26.6.4",
     "typescript": "^7.0.2",
     "vitest": "^5.0.3"

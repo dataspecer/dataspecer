@@ -22,7 +22,7 @@ export function openDetailDialogAction(
   graph: UseModelGraphContextType,
   identifier: string,
 ) {
-  const entity = graph.getEntities()?.[identifier].rawEntity;
+  const entity = graph.getAggregatedEntities()?.[identifier].rawEntity;
   if (entity === undefined) {
     notifications.error(`Can not find the entity with identifier '${identifier}'.`);
     return;

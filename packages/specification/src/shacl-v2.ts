@@ -30,6 +30,7 @@ export const DefaultShaclConfiguration: ShaclConfiguration = {
       splitPropertyShapesByConstraints: false,
       controlledVocabularyPattern: true,
       controlledVocabularyScheme: false,
+      profileSpecializationAsSubClassOf: false,
     },
   },
 };
