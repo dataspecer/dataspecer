@@ -9,6 +9,7 @@ import { ResourcesContext, useResourcesContext } from './package';
 import { useTranslation } from "react-i18next";
 import { Toaster } from "@/components/ui/sonner"
 import { VersionInformation } from './components/version-information';
+import { DefaultConfigurationProvider } from './default-configuration';
 
 const version = import.meta.env.VITE_VERSION || null;
 
@@ -17,39 +18,41 @@ function App() {
   const {t} = useTranslation();
 
   return (
-    <ResourcesContext.Provider value={resources}>
-      <BetterModalProvider>
-        <div className='relative flex min-h-screen flex-col bg-background'>
-          <header className='sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-sm supports-backdrop-filter:bg-background/60'>
-            <div className='container flex h-14 items-center justify-between'>
-              <div className='flex gap-2'>
-                <div className='flex items-center gap-2'>
-                  <span>
-                    <strong>Dataspecer</strong> {t('dataspecer-packages')}
-                  </span>
-                  <VersionInformation />
-                </div>
-                {version &&
-                  <div className='inline-flex items-center rounded-full px-2.5 py-1 text-sm bg-purple-500/10 text-purple-800 dark:text-purple-400'>
-                    {version}
+    <DefaultConfigurationProvider>
+      <ResourcesContext.Provider value={resources}>
+        <BetterModalProvider>
+          <div className='relative flex min-h-screen flex-col bg-background'>
+            <header className='sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-sm supports-backdrop-filter:bg-background/60'>
+              <div className='container flex h-14 items-center justify-between'>
+                <div className='flex gap-2'>
+                  <div className='flex items-center gap-2'>
+                    <span>
+                      <strong>Dataspecer</strong> {t('dataspecer-packages')}
+                    </span>
+                    <VersionInformation />
                   </div>
-                }
+                  {version &&
+                    <div className='inline-flex items-center rounded-full px-2.5 py-1 text-sm bg-purple-500/10 text-purple-800 dark:text-purple-400'>
+                      {version}
+                    </div>
+                  }
+                </div>
+                <div className='flex gap-2'>
+                  <SortModels />
+                  <GithubLink />
+                  <ModeToggle />
+                  <LanguageToggle />
+                </div>
               </div>
-              <div className='flex gap-2'>
-                <SortModels />
-                <GithubLink />
-                <ModeToggle />
-                <LanguageToggle />
-              </div>
-            </div>
-          </header>
-          <main className='flex-1 container items-start pt-5'>
-            <Dir />
-          </main>
-        </div>
-      </BetterModalProvider>
-      <Toaster />
-    </ResourcesContext.Provider>
+            </header>
+            <main className='flex-1 container items-start pt-5'>
+              <Dir />
+            </main>
+          </div>
+        </BetterModalProvider>
+        <Toaster />
+      </ResourcesContext.Provider>
+    </DefaultConfigurationProvider>
   )
 }
 

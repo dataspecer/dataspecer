@@ -37,6 +37,9 @@
       "undone": "Undone"
     },
     "op": {
+      "change-rdfs-source-urls": "Changed RDFS source URLs",
+      "no-source-urls": "No source URLs",
+      "reload": "Reloaded model",
       "undo": "Reverted the changes of transaction {{transactionId}}",
       "version": "Marked transaction {{transactionId}} as version {{version}}",
       "create-project": "Project \"{{name}}\" created",

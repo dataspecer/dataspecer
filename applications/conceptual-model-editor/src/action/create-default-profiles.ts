@@ -134,7 +134,7 @@ async function createDefaultClassProfile(
   labelResolver: LabelResolver,
   availableVocabularies: ControlledVocabulary[],
 ): Promise<string | null> {
-  const classOrClassProfileToBeProfiled = graph.getEntities()?.[entityToProfile]?.aggregatedEntity;
+  const classOrClassProfileToBeProfiled = graph.getAggregatedEntities()?.[entityToProfile]?.aggregatedEntity;
   if (classOrClassProfileToBeProfiled === undefined || classOrClassProfileToBeProfiled === null) {
     notifications.error("The entity (node) to be profiled from selection is not present in aggregatorView");
     return null;
@@ -301,7 +301,7 @@ function getAndValidateRelationshipToBeProfiled(
   graph: UseModelGraphContextType,
   entityToProfile: string
 ): SemanticModelRelationship | SemanticModelRelationshipProfile | null {
-  const relationshipToProfile = graph.getEntities()?.[entityToProfile]?.aggregatedEntity;
+  const relationshipToProfile = graph.getAggregatedEntities()?.[entityToProfile]?.aggregatedEntity;
   if (relationshipToProfile === undefined || relationshipToProfile === null) {
     notifications.error("The entity (edge) to be profiled from selection is not present in aggregatorView");
     return null;

@@ -24,6 +24,7 @@ export const RDFS = {
   "range": IRI(RDFS_PREFIX + "range"),
   "member": IRI(RDFS_PREFIX + "member"),
   "seeAlso": IRI(RDFS_PREFIX + "seeAlso"),
+  "subClassOf": IRI(RDFS_PREFIX + "subClassOf"),
 };
 
 const SHACL_PREFIX = "http://www.w3.org/ns/shacl#";

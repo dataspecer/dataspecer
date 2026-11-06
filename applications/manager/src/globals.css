@@ -155,6 +155,11 @@
   }
 }
 
+/* Keep fixed toasts aligned while the dialog scroll lock hides the scrollbar. */
+[data-sonner-toaster][data-x-position="right"] {
+  margin-right: var(--removed-body-scroll-bar-size, 0px);
+}
+
 @layer base {
   html {
     overflow-y: scroll;

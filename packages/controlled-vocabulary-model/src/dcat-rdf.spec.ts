@@ -160,7 +160,7 @@ test("writeControlledVocabularyCatalogQuads merges into an existing writer witho
     writeControlledVocabularyCatalogQuads(writer, CATALOG_IRI, [
       vocabulary({ id: "voc-1", title: { en: "Dublin Core" }, references: "http://purl.org/dc/terms/" }),
     ]);
-    writer.end((error, result) => (error ? reject(error) : resolve(result)));
+    writer.end((error, result) => (error ? reject(error) : resolve(result!)));
   });
 
   const quads = turtleToQuads(turtle);

@@ -40,7 +40,6 @@ import { MemoryOutputStream } from "@dataspecer/core/io/stream/memory-output-str
 import { baseDataPsmExecutors } from "@dataspecer/core/data-psm/executor";
 import { ConceptualModelClass } from "@dataspecer/generators/conceptual-model";
 import { writeJsonSchema } from "../../../../json/src/json-schema/json-schema-writer.ts";
-import { pimExecutors } from "@dataspecer/core/pim/executor";
 import * as PSM from "@dataspecer/core/data-psm/data-psm-vocabulary";
 
 import * as path from 'path';

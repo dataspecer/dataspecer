@@ -8,14 +8,16 @@ export const defaultConfiguration: DocumentationConfiguration = {
   {{#iflng "cs"}}Tento soubor dokumentuje{{lng}}This file documents{{/iflng}}
   {{#translate label}}<strong>{{translation}}</strong>{{#if otherLang}} (@{{otherLang}}){{/if}}{{else}}<i>{{#iflng "cs"}}beze jména{{lng}}without assigned name{{/iflng}}</i>{{/translate}}.</p>
 </section>`,
-    introduction: `<section>
+    introduction: `{{!--
+<section>
   {{#iflng "cs"}}<h2>Úvod</h2>
   <p>Toto je úvod</p>
   {{lng}}
   <h2>Introduction</h2>
-  <p>This is introduction</p>
+  <p>This is an introduction</p>
   {{/iflng}}
-</section>`,
+</section>
+--}}`,
     localBiblio: `localBiblio: {
       "DCAT-AP": {
           title: "DCAT Application Profile for data portals in Europe",
@@ -49,12 +51,10 @@ export const defaultConfiguration: DocumentationConfiguration = {
       <h2>{{#iflng "cs"}}Přehled{{lng}}Overview{{/iflng}}</h2>
 
       {{#each externalArtifacts.svg}}
-        <a href="{{{relativePath URL}}}">
-          <figure>
-            <img src="{{{relativePath URL}}}" alt="{{translate ./label}}" />
-            <figcaption>{{translate ./label}}</figcaption>
-          </figure>
-        </a>
+        <figure>
+          <img src="{{{relativePath URL}}}" alt="{{translate ./label}}" />
+          <figcaption><a href="{{{relativePath URL}}}">{{translate ./label}}</a></figcaption>
+        </figure>
       {{/each}}
     </section>
 
@@ -219,6 +219,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
 
         {{cardinality ends.1.cardinality}}
       </td>
+      {{regex-and-examples aggregation.ends.[1]}}
       </tr>
       {{#if (parentClasses id)}}
       <tr>
@@ -256,6 +257,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
       <td>{{translation}}{{#if otherLang}} (@{{otherLang}}){{/if}}</td>
     </tr>
     {{/translate}}
+    {{regex-and-examples aggregation}}
     {{#if (parentClasses id)}}
     <tr>
       <td>{{#iflng "cs"}}Rodičovské třídy{{lng}}Subclass of{{/iflng}}</td>
@@ -305,6 +307,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
       <td>{{translation}}{{#if otherLang}} (@{{otherLang}}){{/if}}</td>
     </tr>
     {{/translate}}
+    {{regex-and-examples aggregation}}
     {{#def "profilesClassChain" "isGeneralization"}}
       {{#if isGeneralization}}
         {{#iflng "cs"}}specializuje{{lng}}specializes{{/iflng}}
@@ -575,6 +578,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
         {{cardinality aggregation.ends.1.cardinality}}
     </td>
     </tr>
+    {{regex-and-examples aggregation.ends.[1]}}
 
     {{#def "profilesRelationshipChain" "isGeneralization"}}
       {{#if isGeneralization}}
@@ -656,6 +660,20 @@ export const defaultConfiguration: DocumentationConfiguration = {
   {{#if args.[0]}}
     [{{args.[0].[0]}}..{{#if args.[0].[1]}}{{args.[0].[1]}}{{else}}*{{/if}}]
   {{/if}}
+{{/def}}
+{{#def "regex-and-examples" "entity"}}
+  {{#if entity.regex}}
+    <tr>
+      <td>{{#iflng "cs"}}Regulární výraz{{lng}}Regular expression{{/iflng}}</td>
+      <td><code>{{entity.regex}}</code></td>
+    </tr>
+  {{/if}}
+  {{#if entity.example}}
+    <tr>
+      <td>{{#iflng "cs"}}Příklady{{lng}}Examples{{/iflng}}</td>
+      <td>{{#each entity.example}}<code>{{this}}</code>{{#unless @last}}, {{/unless}}{{/each}}</td>
+    </tr>
+  {{/if}}
 {{/def}}`,
 
     attachments: `<section id="{{#iflng "cs"}}přílohy{{lng}}attachments{{/iflng}}">
@@ -734,8 +752,8 @@ var respecConfig = {
   //github: "some-org/mySpec",
   shortName: "todo",
   historyURI: null,
-  //thisVersion: "https://xx.github.io/yy/",
-  //latestVersion: "https://xx.github.io/yy/",
+  thisVersion: "{{{artifact.template-artifact.publicUrl}}}",
+  latestVersion: "{{{artifact.template-artifact.publicUrl}}}",
   //publishDate: "2025-09-29",
   //github: "https://github.com/org/repo",
   //xref: "web-platform",

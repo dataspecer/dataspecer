@@ -2,7 +2,6 @@ import {
   ExternalSemanticModel,
   InMemorySemanticModel,
 } from "../dataspecer/semantic-model";
-import { InMemoryEntityModel } from "@dataspecer/core-v2";
 import {
   Entity,
   EntityIdentifier,
@@ -254,12 +253,8 @@ function createModelMetadataEntity(
   if (model instanceof InMemorySemanticModel) {
     result.type.push(SEMANTIC_MODEL);
     result.label = { "": model.getAlias() ?? "" };
-    (result as any).baseIri = model.getBaseIri();
-  }
-  if (model instanceof InMemoryEntityModel) { // PimStoreWrapper
-    result.type.push(PIM_STORE_MODEL);
-    result.label = { "": model.getAlias() ?? "" };
-    (result as any).baseIri = "";
+    (result as SemanticModelMetadataEntity).baseIri = model.getBaseIri();
+    (result as SemanticModelMetadataEntity).isReadOnly = !!model.getMainEntity()?.source;
   }
   if (model instanceof ExternalSemanticModel) {
     result.type.push(EXTERNAL_SEMANTIC_MODEL);
@@ -278,8 +273,6 @@ const MAIN_ENTITY_TYPE = "main-entity";
 const SEMANTIC_MODEL = "semantic-model";
 
 const EXTERNAL_SEMANTIC_MODEL = "external-semantic-model";
-
-const PIM_STORE_MODEL = "pim-store-model";
 
 const VISUAL_MODEL = "visual-model";
 
@@ -302,6 +295,8 @@ export function isModelMetadataEntity(
 
 export interface SemanticModelMetadataEntity extends ModelMetadataEntity {
 
+  isReadOnly?: boolean;
+
   baseIri: string;
 
 }
@@ -316,12 +311,6 @@ export function isExternalSemanticModelEntity(
   what: Entity,
 ): what is SemanticModelMetadataEntity {
   return what.type.includes(EXTERNAL_SEMANTIC_MODEL);
-}
-
-export function isPimStoreModelEntity(
-  what: Entity,
-): what is SemanticModelMetadataEntity {
-  return what.type.includes(PIM_STORE_MODEL);
 }
 
 export function isVisualModelEntity(

@@ -265,7 +265,7 @@ export function listRelationshipProfileDomains(
   vocabularies: CmeSemanticModel[],
   labelResolver: LabelResolver,
 ): EntityRepresentative[] {
-  const entities = graphContext.getEntities();
+  const entities = graphContext.getAggregatedEntities();
   const models = classesContext.semanticModelsList;
 
   return [

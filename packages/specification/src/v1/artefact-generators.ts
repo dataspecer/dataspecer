@@ -10,12 +10,12 @@ import {ShaclGenerator} from "@dataspecer/shacl";
 import {ShexGenerator, ShexMapGenerator} from "@dataspecer/shex"
 import {JsonExampleGenerator} from "@dataspecer/json-example";
 import {OpenapiGenerator} from "@dataspecer/openapi";
-import {TemplateArtifactGenerator} from "@dataspecer/documentation";
 import { Configurator } from "@dataspecer/core/configuration/configurator";
 import { DataSpecificationConfigurator } from "@dataspecer/core/data-specification/configuration";
 import { CsvConfigurator } from "@dataspecer/csv/configuration";
 import { JsonConfigurator } from "@dataspecer/json/configuration";
 import { XmlConfigurator } from "@dataspecer/xml/configuration";
+import type { ArtefactGenerator } from "@dataspecer/generators/generator";
 
 /**
  * Returns all artefact generators that will be used in the application.
@@ -56,4 +56,31 @@ export function getDefaultConfigurators(): Configurator[] {
         XmlConfigurator,
         DataSpecificationConfigurator,
     ]
+}
+
+/**
+ * Legacy interface generator serving as a placeholder for the documentation
+ * generator. The real documentation generator is executed outside of the legacy
+ * generator framework.
+ */
+export class TemplateArtifactGenerator implements ArtefactGenerator {
+  static readonly IDENTIFIER = "https://schemas.dataspecer.com/generator/template-artifact";
+  identifier(): string {
+    return TemplateArtifactGenerator.IDENTIFIER;
+  }
+
+  async generateToStream(): Promise<void> {
+    // This is a dummy generator for other legacy generators to properly link to HTML documentation.
+    return;
+  }
+
+  generateToObject(): Promise<never> {
+    // Not applicable for this generator - can not even be called
+    throw new Error("Method not implemented.");
+  }
+
+  async generateForDocumentation(): Promise<null> {
+    // Not applicable for this generator => return null
+    return null;
+  }
 }

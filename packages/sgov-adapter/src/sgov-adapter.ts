@@ -8,15 +8,17 @@ import getSurroundingsParent from "./queries/get-surroundings-parent.sparql.ts";
 import getSurroundingsComplexAttributes from "./queries/get-surroundings-complex-attributes.sparql.ts";
 import getHierarchy from "./queries/get-hierarchy.sparql.ts";
 import getGroup from "./queries/get-group.sparql.ts";
-import { CimAdapter, IriProvider } from "@dataspecer/core/cim";
+import type { CimAdapter } from "@dataspecer/core-v2/semantic-model/cim-adapter";
+import { isSemanticModelClass, type SemanticModelClass, type SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
+import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { SparqlQueryRdfSource } from "@dataspecer/core/io/rdf/sparql/sparql-query-rdf-source";
 import { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import { RdfSource, RdfSourceWrap } from "@dataspecer/core/core/adapter/rdf";
 import {
   isSgovClass,
   loadSgovClass,
+  loadSgovGeneralizations,
 } from "./entity-adapters/sgov-class-adapter.ts";
-import { CoreResource, ReadOnlyMemoryStore } from "@dataspecer/core/core";
 import { FederatedSource } from "@dataspecer/core/io/rdf/federated/federated-rdf-source";
 import { RDFS, SKOS } from "./sgov-vocabulary.ts";
 import {
@@ -27,7 +29,6 @@ import {
   isSgovAttribute,
   loadSgovAttribute,
 } from "./entity-adapters/sgov-attribute-adapter.ts";
-import { PimClass } from "@dataspecer/core/pim/model";
 
 const getSurroundings = [
   getSurroundingsAttributes,
@@ -56,24 +57,15 @@ const IRI_REGEXP = new RegExp("^https?://");
 export class SgovAdapter implements CimAdapter {
   protected readonly endpoint: string;
   protected readonly httpFetch: HttpFetch;
-  protected iriProvider: IriProvider;
 
-  protected resourceGroupCache = new Map<string, string[] | undefined>();
+  protected resourceGroupCache = new Map<string, string[]>();
 
   constructor(endpoint: string, httpFetch: HttpFetch) {
     this.endpoint = endpoint;
     this.httpFetch = httpFetch;
   }
 
-  setIriProvider(iriProvider: IriProvider): void {
-    this.iriProvider = iriProvider;
-  }
-
-  async search(searchString: string): Promise<PimClass[]> {
-    if (!this.iriProvider) {
-      throw new Error("Missing IRI provider.");
-    }
-
+  async search(searchString: string): Promise<SemanticModelClass[]> {
     const source = new SparqlQueryRdfSource(
       this.httpFetch,
       this.endpoint,
@@ -86,32 +78,26 @@ export class SgovAdapter implements CimAdapter {
       "__has_search_result"
     );
 
-    let sorted = [];
+    const resultsWithOrder: { sort: number; cls: SemanticModelClass }[] = [];
     for (const result of results) {
       const resultWrap = RdfSourceWrap.forIri(result.value, source);
       await this.cacheResourceGroup(resultWrap);
-      sorted.push({
+      resultsWithOrder.push({
         sort: Number((await resultWrap.property("__order"))[0].value),
-        cls: await loadSgovClass(resultWrap, this.iriProvider),
+        cls: await loadSgovClass(resultWrap),
       });
     }
-    sorted = sorted.sort((a, b) => a.sort - b.sort).map((p) => p.cls);
+    let sorted = resultsWithOrder.sort((a, b) => a.sort - b.sort).map((p) => p.cls);
 
     if (IRI_REGEXP.test(searchString)) {
-      const classByIri = await this.getClass(searchString);
-      if (classByIri) {
-        sorted = [classByIri, ...sorted];
-      }
+      const classByIri = (await this.getClass(searchString)).filter(isSemanticModelClass);
+      sorted = [...classByIri, ...sorted];
     }
 
     return sorted;
   }
 
-  async getClass(cimIri: string): Promise<PimClass | null> {
-    if (!this.iriProvider) {
-      throw new Error("Missing IRI provider.");
-    }
-
+  async getClass(cimIri: string): Promise<SemanticModelEntity[]> {
     const source = new SparqlQueryRdfSource(
       this.httpFetch,
       this.endpoint,
@@ -121,25 +107,24 @@ export class SgovAdapter implements CimAdapter {
     const entity = RdfSourceWrap.forIri(cimIri, source);
 
     if (!(await isSgovClass(entity))) {
-      return null;
+      return [];
     }
     await this.cacheResourceGroup(RdfSourceWrap.forIri(cimIri, source));
-    return await loadSgovClass(entity, this.iriProvider);
+    return [await loadSgovClass(entity), ...await loadSgovGeneralizations(entity)];
   }
 
-  async getSurroundings(cimIri: string): Promise<ReadOnlyMemoryStore> {
-    if (!this.iriProvider) {
-      throw new Error("Missing IRI provider.");
-    }
-
+  async getSurroundings(cimIri: string): Promise<SemanticModelEntity[]> {
     const sources = getSurroundingsQueries(cimIri).map(
       (query) => new SparqlQueryRdfSource(this.httpFetch, this.endpoint, query)
     );
 
     await Promise.all(sources.map((q) => q.query()));
     const source = FederatedSource.createExhaustive(sources);
-    const resources = await this.loadPimEntitiesGraphFromEntity(cimIri, source);
-    return ReadOnlyMemoryStore.create(resources);
+    const entities = await this.loadSemanticEntitiesGraphFromEntity(cimIri, source);
+    for (const entity of await this.getClass(cimIri)) {
+      entities[entity.id] = entity;
+    }
+    return Object.values(entities);
   }
 
   /**
@@ -147,19 +132,14 @@ export class SgovAdapter implements CimAdapter {
    * descendants of the given class.
    * @param cimIri class CIM IRI
    */
-  public async getFullHierarchy(cimIri: string): Promise<ReadOnlyMemoryStore> {
-    if (!this.iriProvider) {
-      throw new Error("Missing IRI provider.");
-    }
-
+  public async getFullHierarchy(cimIri: string): Promise<SemanticModelEntity[]> {
     const source = new SparqlQueryRdfSource(
       this.httpFetch,
       this.endpoint,
       getHierarchyQuery(cimIri)
     );
     await source.query();
-    const resources = await this.loadPimEntitiesGraphFromEntity(cimIri, source);
-    return ReadOnlyMemoryStore.create(resources);
+    return Object.values(await this.loadSemanticEntitiesGraphFromEntity(cimIri, source));
   }
 
   /**
@@ -167,10 +147,6 @@ export class SgovAdapter implements CimAdapter {
    * @param cimIri
    */
   public async getResourceGroup(cimIri: string): Promise<string[]> {
-    if (!this.iriProvider) {
-      throw new Error("Missing IRI provider.");
-    }
-
     if (this.resourceGroupCache.has(cimIri)) {
       return this.resourceGroupCache.get(cimIri);
     } else {
@@ -191,11 +167,11 @@ export class SgovAdapter implements CimAdapter {
    * everything accessible (associations, attributes and parents) and
    * returns all the entities.
    */
-  protected async loadPimEntitiesGraphFromEntity(
+  protected async loadSemanticEntitiesGraphFromEntity(
     rootClassCimIri: string,
     source: RdfSource
-  ): Promise<{ [iri: string]: CoreResource }> {
-    const resources: { [iri: string]: CoreResource } = {};
+  ): Promise<EntityRecord<SemanticModelEntity>> {
+    const entities: EntityRecord<SemanticModelEntity> = {};
 
     const classesProcessed = new Set<string>();
     const associationsProcessed = new Set<string>();
@@ -218,7 +194,7 @@ export class SgovAdapter implements CimAdapter {
     let processQueue: string[] = [rootClassCimIri, ...descendants];
     while (processQueue.length) {
       const processedCimIri = processQueue.pop();
-      if (classesProcessed.has(processedCimIri)) {
+      if (!processedCimIri || classesProcessed.has(processedCimIri)) {
         continue;
       }
       classesProcessed.add(processedCimIri);
@@ -226,8 +202,14 @@ export class SgovAdapter implements CimAdapter {
       // Class itself
 
       const rdfClassWrap = RdfSourceWrap.forIri(processedCimIri, source);
-      const pimClass = await loadSgovClass(rdfClassWrap, this.iriProvider);
-      resources[pimClass.iri] = pimClass;
+      const generalizations = await loadSgovGeneralizations(rdfClassWrap);
+      if (processedCimIri !== "http://www.w3.org/2002/07/owl#Thing") {
+        const cls = await loadSgovClass(rdfClassWrap);
+        entities[cls.id] = cls;
+        for (const generalization of generalizations) {
+          entities[generalization.id] = generalization;
+        }
+      }
 
       // Some classes may be empty because of simplification of SPARQL queries.
       // Therefore, we need to check, if it is actually a class and containing
@@ -253,17 +235,16 @@ export class SgovAdapter implements CimAdapter {
         }
         associationsProcessed.add(cimAssociationIri);
 
-        const associationResources = await loadSgovAssociation(
-          entity,
-          source,
-          this.iriProvider
-        );
-        associationResources.forEach((r) => (resources[r.iri] = r));
+        const association = await loadSgovAssociation(entity, source);
+        entities[association.id] = association;
 
         // Add linked classes to the processQueue
 
-        processQueue.push(await entity.node(RDFS.domain));
-        processQueue.push(await entity.node(RDFS.range));
+        for (const end of association.ends) {
+          if (end.concept !== null) {
+            processQueue.push(end.concept);
+          }
+        }
       }
 
       // Process attributes for the current class
@@ -274,19 +255,19 @@ export class SgovAdapter implements CimAdapter {
         if (!(await isSgovAttribute(entity))) {
           continue;
         }
-        const pimAttribute = await loadSgovAttribute(entity, this.iriProvider);
-        resources[pimAttribute.iri] = pimAttribute;
+        const attribute = await loadSgovAttribute(entity);
+        entities[attribute.id] = attribute;
       }
 
       // Process class hierarchy
 
       processQueue = [
         ...processQueue,
-        ...pimClass.pimExtends.map(this.iriProvider.pimToCim),
+        ...generalizations.map(generalization => generalization.parent),
       ];
     }
 
-    return resources;
+    return entities;
   }
 
   protected async cacheResourceGroup(entity: RdfSourceWrap): Promise<string[]> {

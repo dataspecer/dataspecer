@@ -20,7 +20,7 @@ export async function removeFromSemanticModelsAction(
       continue;
     }
     //
-    if (model instanceof InMemorySemanticModel) {
+    if (model instanceof InMemorySemanticModel && !model.getMainEntity()?.source) {
       const result = model.executeOperation(deleteEntity(identifier));
       if (!result.success) {
         notifications.error("Can not delete entity from in memory semantic model.");

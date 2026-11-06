@@ -9,9 +9,7 @@
     "test": "vitest run --pass-with-no-tests"
   },
   "exports": {
-    ".": "./lib/index.js",
-    "./configuration": "./lib/configuration.js",
-    "./documentation-generator": "./lib/documentation-generator/index.js"
+    ".": "./lib/index.js"
   },
   "dependencies": {
     "@dataspecer/controlled-vocabulary-model": "*",

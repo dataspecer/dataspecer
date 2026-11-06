@@ -15,6 +15,138 @@ import { createDefaultWritableVisualModel } from "../dataspecer/visual-model/vis
 import { ModelDsIdentifier } from "../dataspecer/entity-model";
 import { QueryParamsContextType } from "./query-params-context";
 
+/**
+ * Provides all models and visual models we work with
+ * also provides model manipulating functions (eg add, remove, set alias, ..)
+ */
+export const useModelGraphContext = (): UseModelGraphContextType => {
+  const context = useContext(ModelGraphContext);
+  return useMemo(() => modelGraphContextToUse(context), [context]);
+};
+
+/** This function is exported to be used in tests. */
+export function modelGraphContextToUse(context: ModelGraphContext): UseModelGraphContextType {
+  const { aggregatorView, models, visualModels } = context;
+
+  const addModel = (...models: EntityModel[]) => {
+    // Make sure there is a view model.
+    if (aggregatorView.getActiveVisualModel() === null) {
+      console.warn("Creating default visual model.")
+      const visualModel = createDefaultWritableVisualModel(models);
+      addVisualModel(visualModel);
+      aggregatorView.changeActiveVisualModel(visualModel.getId());
+    }
+
+    // Add models.
+    for (const model of models) {
+      context.addSemanticModel(model);
+      // Set color for all visual models.
+      for (const [_, visualModel] of visualModels) {
+        visualModel.setModelColor(model.getId(), randomColorFromPalette());
+      }
+    }
+  };
+
+  const addVisualModel = (...models: WritableVisualModel[]) => {
+    for (const model of models) {
+      context.addVisualModel(model);
+    }
+  };
+
+  const setModelAlias = (alias: string | null, model: EntityModel) => {
+    // TODO We need propagate change in models.
+    model.setAlias(alias);
+  };
+
+  const setModelIri = (iri: string, model: InMemorySemanticModel) => {
+    // TODO We need propagate change in models.
+    model.setBaseIri(iri);
+  };
+
+  const replaceModels = (nextModels: EntityModel[], nextVisualModels: WritableVisualModel[]) => {
+    // Remove old models.
+    models.keys().forEach(item => context.deleteModel(item));
+    visualModels.keys().forEach(item => context.deleteVisualModel(item));
+    // Set new models.
+    nextModels.forEach(item => context.addSemanticModel(item));
+    nextVisualModels.forEach(item => context.addVisualModel(item));
+  };
+
+  const deleteModel = (modelId: string) => {
+    // We need to remove all records about this model.
+    visualModels.forEach(visualModel => deleteEntityModel(visualModel, modelId));
+    // Now we can remove this from the package.
+    context.deleteModel(modelId);
+  };
+
+  const deleteVisualModel = (modelId: string) => {
+    context.deleteVisualModel(modelId);
+    context.reloadView();
+  };
+
+  return {
+    getActiveViewId() {
+      return aggregatorView.getActiveViewId();
+    },
+    getActiveVisualModel() {
+      return aggregatorView.getActiveVisualModel();
+    },
+    getAggregatedEntities() {
+      return aggregatorView.getEntities();
+    },
+    reloadView: () => context.reloadView(),
+    selectActiveVisualModel: (model) => context.selectActiveVisualModel(model),
+    addSemanticModel: addModel,
+    addVisualModel,
+    setModelAlias,
+    setModelIri,
+    replaceModels,
+    deleteModel,
+    deleteVisualModel,
+    onVisualModelDidChange: () => {
+      const activeViewId = aggregatorView.getActiveViewId();
+      aggregatorView.changeActiveVisualModel(activeViewId ?? null);
+      context.reloadView();
+    },
+    subscribeToChanges(callback) {
+      return aggregatorView.subscribeToChanges(callback);
+    },
+  };
+}
+
+/** This should be write and execute operation context. */
+export interface UseModelGraphContextType {
+
+  getActiveViewId(): string | undefined;
+
+  getAggregatedEntities(): Record<string, AggregatedEntityWrapper>;
+
+  reloadView: () => void;
+
+  getActiveVisualModel(): VisualModel | null;
+
+  selectActiveVisualModel(identifier: ModelDsIdentifier | null): void;
+
+  addSemanticModel: (...models: EntityModel[]) => void;
+
+  addVisualModel: (...models: WritableVisualModel[]) => void;
+
+  setModelAlias: (alias: string | null, model: EntityModel) => void;
+
+  setModelIri: (iri: string, model: InMemorySemanticModel) => void;
+
+  replaceModels: (semanticModels: EntityModel[], visualModels: WritableVisualModel[]) => void;
+
+  deleteModel: (modelId: string) => void;
+
+  deleteVisualModel: (modelId: string) => void;
+
+  subscribeToChanges(callback: (updated: AggregatedEntityWrapper[], removed: string[]) => void): () => void;
+
+  onVisualModelDidChange: () => void;
+
+}
+
 const _semanticModelAggregator = new SemanticModelAggregator();
 
 type SemanticModelAggregatorType = typeof _semanticModelAggregator;
@@ -117,134 +249,4 @@ export function ModelContextProvider(props: {
 
   return React.createElement(
     ModelGraphContext.Provider, { value: context }, props.children)
-}
-
-/**
- * Provides all models and visual models we work with
- * also provides model manipulating functions (eg add, remove, set alias, ..)
- */
-export const useModelGraphContext = (): UseModelGraphContextType => {
-  const context = useContext(ModelGraphContext);
-  return useMemo(() => modelGraphContextToUse(context), [context]);
-};
-
-export function modelGraphContextToUse(context: ModelGraphContext): UseModelGraphContextType {
-  const { aggregatorView, models, visualModels } = context;
-
-  const addModel = (...models: EntityModel[]) => {
-    // Make sure there is a view model.
-    if (aggregatorView.getActiveVisualModel() === null) {
-      console.warn("Creating default visual model.")
-      const visualModel = createDefaultWritableVisualModel(models);
-      addVisualModel(visualModel);
-      aggregatorView.changeActiveVisualModel(visualModel.getId());
-    }
-
-    // Add models.
-    for (const model of models) {
-      context.addSemanticModel(model);
-      // Set color for all visual models.
-      for (const [_, visualModel] of visualModels) {
-        visualModel.setModelColor(model.getId(), randomColorFromPalette());
-      }
-    }
-  };
-
-  const addVisualModel = (...models: WritableVisualModel[]) => {
-    for (const model of models) {
-      context.addVisualModel(model);
-    }
-  };
-
-  const setModelAlias = (alias: string | null, model: EntityModel) => {
-    // TODO We need propagate change in models.
-    model.setAlias(alias);
-  };
-
-  const setModelIri = (iri: string, model: InMemorySemanticModel) => {
-    // TODO We need propagate change in models.
-    model.setBaseIri(iri);
-  };
-
-  const replaceModels = (nextModels: EntityModel[], nextVisualModels: WritableVisualModel[]) => {
-    // Remove old models.
-    models.keys().forEach(item => context.deleteModel(item));
-    visualModels.keys().forEach(item => context.deleteVisualModel(item));
-    // Set new models.
-    nextModels.forEach(item => context.addSemanticModel(item));
-    nextVisualModels.forEach(item => context.addVisualModel(item));
-  };
-
-  const deleteModel = (modelId: string) => {
-    // We need to remove all records about this model.
-    visualModels.forEach(visualModel => deleteEntityModel(visualModel, modelId));
-    // Now we can remove this from the package.
-    context.deleteModel(modelId);
-  };
-
-  const deleteVisualModel = (modelId: string) => {
-    context.deleteVisualModel(modelId);
-    context.reloadView();
-  };
-
-  return {
-    getActiveViewId() {
-      return aggregatorView.getActiveViewId();
-    },
-    getActiveVisualModel() {
-      return aggregatorView.getActiveVisualModel();
-    },
-    getEntities() {
-      return aggregatorView.getEntities();
-    },
-    reloadView: () => context.reloadView(),
-    selectActiveVisualModel: (model) => context.selectActiveVisualModel(model),
-    addSemanticModel: addModel,
-    addVisualModel,
-    setModelAlias,
-    setModelIri,
-    replaceModels,
-    deleteModel,
-    deleteVisualModel,
-    onVisualModelDidChange: () => {
-      const activeViewId = aggregatorView.getActiveViewId();
-      aggregatorView.changeActiveVisualModel(activeViewId ?? null);
-      context.reloadView();
-    },
-    subscribeToChanges(callback) {
-      return aggregatorView.subscribeToChanges(callback);
-    },
-  };
-}
-
-export interface UseModelGraphContextType {
-
-  getActiveViewId(): string | undefined;
-
-  getEntities(): Record<string, AggregatedEntityWrapper>;
-
-  reloadView: () => void;
-
-  getActiveVisualModel(): VisualModel | null;
-
-  selectActiveVisualModel(identifier: ModelDsIdentifier | null): void;
-
-  addSemanticModel: (...models: EntityModel[]) => void;
-
-  addVisualModel: (...models: WritableVisualModel[]) => void;
-
-  setModelAlias: (alias: string | null, model: EntityModel) => void;
-
-  setModelIri: (iri: string, model: InMemorySemanticModel) => void;
-
-  replaceModels: (semanticModels: EntityModel[], visualModels: WritableVisualModel[]) => void;
-
-  deleteModel: (modelId: string) => void;
-
-  deleteVisualModel: (modelId: string) => void;
-
-  subscribeToChanges(callback: (updated: AggregatedEntityWrapper[], removed: string[]) => void): () => void;
-
-  onVisualModelDidChange: () => void;
-
 }

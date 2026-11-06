@@ -10,9 +10,11 @@ function createModel(
   pattern: string | null,
   severity: ShaclSeverity | null,
   propertyShapes: ShaclModel["members"][number]["propertyShapes"],
+  subClassOf: ShaclModel["subClassOf"] = [],
 ): ShaclModel {
   return {
     iri: "http://example.com/model",
+    subClassOf,
     members: [{
       iri: "http://example.com/shape",
       seeAlso: "http://example.com/profile",
@@ -60,6 +62,23 @@ describe("shaclToRdf", () => {
     expect(rdf).not.toContain("sh:hasValue");
     expect(rdf).not.toContain("sh:severity");
     expect(rdf).not.toContain("sh:pattern");
+  });
+
+  /** @see https://github.com/dataspecer/dataspecer/issues/1534 */
+  test("Writes rdfs:subClassOf statements.", async () => {
+    const rdf = await shaclToRdf(createModel(null, null, [], [{
+      subClass: "http://example.com/vocabulary#person",
+      superClass: "http://example.com/vocabulary#agent",
+    }]), {});
+    expect(rdf).toContain(
+      "<http://example.com/vocabulary#person> rdfs:subClassOf "
+      + "<http://example.com/vocabulary#agent>");
+  });
+
+  /** @see https://github.com/dataspecer/dataspecer/issues/1534 */
+  test("Does not write rdfs:subClassOf when there are no statements.", async () => {
+    const rdf = await shaclToRdf(createModel(null, null, []), {});
+    expect(rdf).not.toContain("subClassOf");
   });
 
 });

@@ -54,7 +54,7 @@ function getModelLabel(
 }
 
 function getModelType(model: SemanticModel): CmeSemanticModelType {
-  if (model instanceof InMemorySemanticModel) {
+  if (model instanceof InMemorySemanticModel && !model.getMainEntity()?.source) {
     return CmeSemanticModelType.InMemorySemanticModel;
   } else if (model instanceof ExternalSemanticModel) {
     return CmeSemanticModelType.ExternalSemanticModel;

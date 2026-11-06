@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { DOMParser } from "@xmldom/xmldom";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
-import { createColorGenerator, type VisualNode, type VisualRelationship, type VisualModelData } from "@dataspecer/visual-model";
-import { generateVisualModelSvg, type SvgLinkContext, type SvgRenderOptions } from "./index.ts";
+import { createColorGenerator, isVisualNode, isVisualDiagramNode, type VisualNode, type VisualRelationship, type VisualModelData } from "@dataspecer/visual-model";
+import { generateVisualModelSvg, measureVisualModelNodes, type SvgLinkContext, type SvgRenderOptions } from "./index.ts";
 import { escapeXml } from "./svg.ts";
 import { diagramFixture, classEntity, edge, node, relationship } from "./tests/diagram.ts";
 import { mkdir, writeFile } from "node:fs/promises";
@@ -31,6 +31,42 @@ function elements(svg: string, name: string) {
 }
 
 describe("visual-model SVG", () => {
+  it.each<SvgRenderOptions>([
+    {},
+    { profileOfMode: "hidden", showIris: false, language: "cs", fontSize: 20 },
+    { labelMode: "iri", showRangeDetails: false, fontSize: 12 },
+  ])("measures the same node boxes as rendering with options %j", (options) => {
+    const data = diagramFixture();
+    data.models.profile.Employee = { ...data.models.profile.Employee, name: { en: "Employee\nWith a multiline title" } } as EntityRecord[string];
+    data.models.vocabulary.name = relationship("name", "An attribute with a long label\nand another line", "Person", "http://www.w3.org/2001/XMLSchema#string");
+    const original = structuredClone(data);
+    const getLink = vi.fn(() => null);
+    const dimensions = measureVisualModelNodes(data.visual, data.models, { ...options, getLink });
+    expect(getLink).not.toHaveBeenCalled();
+    const boxes = elements(generateVisualModelSvg(data.visual, data.models, options), "rect");
+    for (const visual of Object.values(data.visual)) {
+      if (!isVisualNode(visual) && !isVisualDiagramNode(visual)) continue;
+      const box = boxes.find(rect => Number(rect.getAttribute("x")) === visual.position.x
+        && Number(rect.getAttribute("y")) === visual.position.y && rect.getAttribute("stroke") !== null)!;
+      expect(box).toBeDefined();
+      expect(dimensions[visual.id].width).toBeCloseTo(Number(box.getAttribute("width")), 3);
+      expect(dimensions[visual.id].height).toBeCloseTo(Number(box.getAttribute("height")), 3);
+    }
+    expect(Object.keys(dimensions)).toHaveLength(4);
+    expect(data).toEqual(original);
+  });
+
+  it("omits unrenderable nodes from measurement", () => {
+    const data = diagramFixture();
+    data.visual.missing = node("missing", "missing", "vocabulary", 0, 0);
+    data.visual.invalid = node("invalid", "Person", "vocabulary", NaN, 0);
+    const onWarning = vi.fn();
+    const dimensions = measureVisualModelNodes(data.visual, data.models, { onWarning });
+    expect(dimensions.missing).toBeUndefined();
+    expect(dimensions.invalid).toBeUndefined();
+    expect(onWarning).toHaveBeenCalledTimes(2);
+  });
+
   it.each([false, true])("uses generated model colors when saved colors are absent or null: %s", (nullColor) => {
     const data = diagramFixture();
     if (nullColor) {

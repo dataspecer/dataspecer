@@ -1,4 +1,4 @@
-import type { Transaction } from "@dataspecer/core/operation";
+import type { Transaction } from "../../operation/operation.ts";
 import { Package, ResourceEditable, type BaseResource } from "./resource.ts";
 
 /**

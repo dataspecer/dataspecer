@@ -21,7 +21,7 @@ export function addSemanticRelationshipToVisualModelAction(
   entityIdentifier: string,
   modelIdentifier: string,
 ) {
-  const entities = graph.getEntities();
+  const entities = graph.getAggregatedEntities();
   withAggregatedEntity(notifications, entities,
     entityIdentifier, modelIdentifier,
     isSemanticModelRelationship, (entity) => {

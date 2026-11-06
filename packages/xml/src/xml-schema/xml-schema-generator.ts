@@ -11,7 +11,7 @@ import { structureModelAddXmlProperties } from "../xml-structure-model/add-xml-p
 import { structureModelToXmlSchema } from "./xml-schema-model-adapter.ts";
 import { XML_SCHEMA } from "./xml-schema-vocabulary.ts";
 import { writeXmlSchema } from "./xml-schema-writer.ts";
-import { HandlebarsAdapter } from "@dataspecer/handlebars-adapter";
+import type { StructureModel } from "@dataspecer/generators/structure-model/model/structure-model";
 import { XmlSchemaDocumentationGenerator } from "../documentation/xml-schema-documentation.ts";
 import { structureModelMarkGmlLiteralAsReferencing, structureModelPopulateSfGeometry } from "./gml-support.ts";
 
@@ -116,16 +116,16 @@ export class XmlSchemaGenerator implements ArtefactGenerator {
     callerContext: unknown
   ): Promise<unknown | null> {
     if (documentationIdentifier === NEW_DOC_GENERATOR) {
-      const {artifact: documentationArtefact, partial, adapter} = callerContext as {
+      const {artifact: documentationArtefact, partial, documentationView} = callerContext as {
         artifact: DataSpecificationArtefact,
         partial: (template: string) => string,
-        adapter: HandlebarsAdapter,
+        documentationView: { structureModels: StructureModel[] },
       };
       const {xmlSchemas, conceptualModel} = await this.generateToObject(context, artefact, specification, true);
       const documentationSchemaView = xmlSchemas[0]; // We squash them into one
 
       const generator = new XmlSchemaDocumentationGenerator(
-        documentationArtefact, conceptualModel, context, artefact, specification, partial, adapter
+        documentationArtefact, conceptualModel, context, artefact, partial, documentationView
       );
 
       return generator.generateToObject(documentationSchemaView);

@@ -1,13 +1,13 @@
 import { isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship } from '@dataspecer/core-v2/semantic-model/concepts';
-// @ts-ignore
 import { Entity, InMemoryEntityModel } from "@dataspecer/core-v2/entity-model";
 import { SemanticModelAggregator } from "@dataspecer/core-v2/semantic-model/aggregator";
 import { LanguageString, SemanticModelClass, SemanticModelEntity, SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
 import { ControlledVocabularyAssignment, Qualifier, isControlledVocabularyAssignment, isSemanticModelClassProfile, isSemanticModelRelationshipProfile, SemanticModelClassProfile, SemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { ControlledVocabulary, isControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 import { getTranslation } from "@dataspecer/core-v2/utils/language";
-import { createHandlebarsAdapter, HandlebarsAdapter } from "@dataspecer/handlebars-adapter";
+import { createHandlebarsAdapter } from "@dataspecer/handlebars-adapter";
 import { StructureModel } from '@dataspecer/generators/structure-model/model/structure-model';
+import { getView, type PackageContext } from "../views/views.ts";
 
 export interface DocumentationGeneratorConfiguration {
   template: string;
@@ -106,12 +106,12 @@ export type DocumentationGeneratorInputModel = {
   // Data specification vocabulary in JSON with JSON-LD context
   dsv: object,
   prefixMap: Record<string, string>,
+  v1Context?: PackageContext,
 };
 
 export async function generateDocumentation(
   inputModel: DocumentationGeneratorInputModel,
   configuration: DocumentationGeneratorConfiguration,
-  addData?: (adapter: HandlebarsAdapter) => object,
 ): Promise<string> {
   const localPrefixMap = {...PREFIX_MAP, ...inputModel.prefixMap};
 
@@ -248,7 +248,7 @@ export async function generateDocumentation(
 
   const locallyDefinedSemanticEntityByTags = Object.groupBy(sortedSemanticModel, entity => (entity as SemanticModelClassProfile)?.tags?.[0] || "default");
 
-  // Reversed view of derived controlled vocabulary usages 
+  // Reversed view of derived controlled vocabulary usages
   // For each qualifier, one entry per property listing all controlled vocabularies connected to this property
   // The property domains and controlled vocabularies are grouped by the property
   type ControlledVocabularyUsage = {
@@ -338,7 +338,7 @@ export async function generateDocumentation(
   const handlebarsAdapter = createHandlebarsAdapter();
 
   const data = {
-    ...(addData?.(handlebarsAdapter)),
+    ...(inputModel.v1Context ? getView(inputModel.v1Context, handlebarsAdapter) : {}),
     label: inputModel.label,
     locallyDefinedSemanticEntity: sortedSemanticModel,
     locallyDefinedSemanticEntityByTags,

@@ -10,7 +10,6 @@ import {
   ShaclNodeKind,
   ShaclSeverity,
 } from "./shacl-model.ts";
-import { shaclToRdf } from "./shacl-to-rdf.ts";
 
 describe("applyNoClassConstraint", () => {
 
@@ -18,6 +17,7 @@ describe("applyNoClassConstraint", () => {
 
     const input: ShaclModel = {
       iri: "http://localhost/does-not-matter",
+      subClassOf: [],
       members: [{
         iri: "http://localhost/does-not-matter",
         closed: false,
@@ -58,6 +58,7 @@ describe("filterLanguageStrings", () => {
 
     const input: ShaclModel = {
       iri: "http://localhost/does-not-matter",
+      subClassOf: [],
       members: [{
         iri: "http://localhost/does-not-matter",
         closed: false,
@@ -91,6 +92,7 @@ describe("splitConstraints", () => {
 
     const input: ShaclModel = {
       iri: "http://localhost/does-not-matter",
+      subClassOf: [],
       members: [{
         iri: "http://localhost/does-not-matter",
         closed: false,
@@ -123,6 +125,7 @@ describe("splitConstraints", () => {
 
     const expected: ShaclModel = {
       iri: "http://localhost/does-not-matter",
+      subClassOf: [],
       members: [{
         iri: "http://localhost/does-not-matter",
         closed: false,
@@ -180,6 +183,7 @@ describe("splitConstraints", () => {
 
     const input: ShaclModel = {
       iri: "http://localhost/does-not-matter",
+      subClassOf: [],
       members: [{
         iri: "http://localhost/does-not-matter",
         closed: false,
@@ -212,6 +216,7 @@ describe("splitConstraints", () => {
 
     const expected: ShaclModel = {
       iri: "http://localhost/does-not-matter",
+      subClassOf: [],
       members: [{
         iri: "http://localhost/does-not-matter",
         closed: false,
@@ -234,6 +239,7 @@ describe("splitConstraints", () => {
 
     const input: ShaclModel = {
       iri: "http://localhost/does-not-matter",
+      subClassOf: [],
       members: [{
         iri: "http://localhost/does-not-matter",
         closed: false,

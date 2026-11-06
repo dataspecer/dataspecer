@@ -1,18 +1,12 @@
 import { QUERYABLE_MODEL } from "@dataspecer/core-v2/model/known-models";
 import type { PackageService } from "@dataspecer/core-v2/project";
-import { CimAdapterWrapper } from "@dataspecer/core-v2/semantic-model/v1-adapters";
-import type { IriProvider } from "@dataspecer/core/cim";
+import { CimAdapterWrapper } from "@dataspecer/core-v2/semantic-model/cim-adapter";
 import { diffEntities, type Entity, type EntityChange, type EntityIdentifier, type EntityRecord } from "@dataspecer/core/entity-model";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import type { Operation } from "@dataspecer/core/operation";
 import { SgovAdapter } from "@dataspecer/sgov-adapter";
 import type { ModelInModelStore, StateResult } from "./interface.ts";
-
-class IdentityIriProvider implements IriProvider {
-  cimToPim = (cimIri: string) => cimIri;
-  pimToCim = (pimIri: string) => pimIri;
-}
 
 interface QueryEntity extends Entity {
   type: ["query"];
@@ -35,7 +29,6 @@ function queryEntityToQueryString(entity: QueryEntity): string {
 
 function createQueryAdapter(httpFetch: HttpFetch): CimAdapterWrapper {
   const adapter = new SgovAdapter("https://slovník.gov.cz/sparql", httpFetch);
-  adapter.setIriProvider(new IdentityIriProvider());
   return new CimAdapterWrapper(adapter);
 }
 

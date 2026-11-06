@@ -117,12 +117,15 @@
     "error-title": "Aktualizace selhala",
     "reload": "Aktualizovat a zobrazit změny",
     "reload-apply": "Aktualizovat a aplikovat změny okamžitě",
+    "no-changes": "Slovník byl úspěšně aktualizován, nicméně lokální verze již byla aktuální. Žádné změny tedy nebyly provedeny.",
     "success": "Aktualizace proběhla úspěšně.",
     "title": "Aktualizovat zdroj",
     "url": "URL",
     "urls": "URL adresy (jedna na řádek)",
     "warning": "Chystáte se aktualizovat {{name}} z níže uvedené URL adresy (adres). Pokud aktualizace proběhne úspěšně, obsah bude kompletně přepsán.",
-    "warning-no-name": "Chystáte se aktualizovat tento zdroj z níže uvedené URL adresy (adres). Pokud aktualizace proběhne úspěšně, obsah bude kompletně přepsán."
+    "warning-no-name": "Chystáte se aktualizovat tento zdroj z níže uvedené URL adresy (adres). Pokud aktualizace proběhne úspěšně, obsah bude kompletně přepsán.",
+    "warning-subgraph": "Chystáte se aktualizovat {{name}} z původního zdroje. Změny si můžete před aplikováním prohlédnout, nebo je aplikovat okamžitě.",
+    "warning-subgraph-no-name": "Chystáte se aktualizovat tento zdroj z původního zdroje. Změny si můžete před aplikováním prohlédnout, nebo je aplikovat okamžitě."
   },
   "remove": "Odstranit",
   "modify-tags": {

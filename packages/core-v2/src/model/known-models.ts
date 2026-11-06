@@ -25,11 +25,6 @@ export const APPLICATION_GRAPH = "http://dataspecer.com/resources/local/applicat
 export const QUERYABLE_MODEL = "https://dataspecer.com/core/model-descriptor/sgov";
 
 /**
- * Model that has a list of URLs that can be fetched as vocabulary.
- */
-export const RDFS_MODEL = "https://dataspecer.com/core/model-descriptor/pim-store-wrapper";
-
-/**
  * Model representing a single controlled vocabulary metadata entry.
  * TODO: do we need to publish this URL? - issue#1559 https://github.com/dataspecer/dataspecer/issues/1559
  */
@@ -37,11 +32,6 @@ export const CONTROLLED_VOCABULARY_MODEL = "http://dataspecer.com/resources/loca
 
 // Old models from core@v1
 export const V1 = {
-    /** @deprecated */
-    CIM: "http://dataspecer.com/resources/v1/cim",
-    /** @deprecated */
-    PIM: "http://dataspecer.com/resources/v1/pim",
-
     /**
      * Structural model that maps the semantic model to the desired shape.
      */
