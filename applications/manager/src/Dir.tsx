@@ -134,6 +134,7 @@ const Row = React.memo(({ iri, parentIri, onTagSelect }: { iri: string, parentIr
       }}>{t("open")}</Button>}
       {resource.types.includes(VISUAL_MODEL) && <Button asChild variant={"ghost"} onClick={stopPropagation()}><a href={import.meta.env.VITE_CME + "/diagram?package-id=" + encodeURIComponent(parentIri ?? "") + "&view-id=" + encodeURIComponent(iri)}>{t("open")}</a></Button>}
       {resource.types.includes(API_SPECIFICATION_MODEL) && <Button asChild variant={"ghost"} onClick={stopPropagation()}><a href={import.meta.env.VITE_API_SPECIFICATION_APPLICATION + "?package-iri=" + encodeURIComponent(parentIri ?? "") + "&model-iri=" + encodeURIComponent(iri)}>{t("open")}</a></Button>}
+      {resource.types.includes(CONTROLLED_VOCABULARY_MODEL) && parentIri && <Button asChild variant={"ghost"} onClick={stopPropagation()}><a href={getControlledVocabularyManagerLink(parentIri, "edit/" + encodeURIComponent(iri), i18n.language, theme ?? "system")}>{t("edit-controlled-vocabulary")}</a></Button>}
 
       {resource.types.includes(LOCAL_PACKAGE) && (resource.userMetadata as any)?.importedFromUrl &&
         <Tooltip>
@@ -241,7 +242,6 @@ const Row = React.memo(({ iri, parentIri, onTagSelect }: { iri: string, parentIr
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => openModal(ModifyDocumentationTemplate, { iri })}><NotepadTextDashed className="mr-2 h-4 w-4" /> {t("modify-documentation-template")}</DropdownMenuItem>}
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => openModal(AddImported, { id: iri, urlOnly: true })}><Import className="mr-2 h-4 w-4" /> {t("import specification from url")}</DropdownMenuItem>}
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem asChild><a href={import.meta.env.VITE_CONTROLLED_VOCABULARY_MANAGER + "/" + encodeURIComponent(iri) + "?language=" + encodeURIComponent(i18n.language) + "&theme=" + encodeURIComponent(theme ?? "system")}><BookOpen className="mr-2 h-4 w-4" /> {t("controlled-vocabularies")}</a></DropdownMenuItem>}
-          {resource.types.includes(CONTROLLED_VOCABULARY_MODEL) && parentIri && <DropdownMenuItem asChild><a href={getControlledVocabularyManagerLink(parentIri, "edit/" + encodeURIComponent(iri), i18n.language, theme ?? "system")}><Pencil className="mr-2 h-4 w-4" /> {t("edit-controlled-vocabulary")}</a></DropdownMenuItem>}
           <DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/resources/export.zip?iri=" + encodeURIComponent(iri)}><CloudDownload className="mr-2 h-4 w-4" /> {t("export")}</a></DropdownMenuItem>
           <DropdownMenuItem onClick={async () => {
             const result = await openModal(RenameResourceDialog, { inputLabel: resource.userMetadata?.label, inputDescription: resource.userMetadata?.description });
