@@ -2,7 +2,7 @@ import { isRdfsSnapshot } from "@dataspecer/rdfs/semantic-model";
 import { isCachedSubgraph } from "@dataspecer/core-v2/semantic-model/concepts";
 import { TagBadge, TagName } from "@/components/tag";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, CONTROLLED_VOCABULARY_MODEL, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
 import { BookOpen, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, EllipsisVertical, FileText, Folder, FolderDown, History, Import, NotepadTextDashed, Pencil, Plus, RotateCw, Search, Shapes, Sparkles, Tag, Tags, Trash2, WandSparkles } from "lucide-react";
 import { useCallback, useContext, useDeferredValue, useEffect, useMemo, useState } from "react";
@@ -21,7 +21,7 @@ import { ProjectWizard } from "./dialog/project-wizard/project-wizard";
 import { RenameResourceDialog } from "./dialog/rename-resource";
 import { ResourceDetail } from "./dialog/resource-detail";
 import { useToggle } from "./hooks/use-toggle";
-import { getHistoryLink, ModelIcon, modelTypeToName } from "./known-models";
+import { getControlledVocabularyManagerLink, getHistoryLink, ModelIcon, modelTypeToName } from "./known-models";
 import { useBetterModal } from "./lib/better-modal";
 import { ResourcesContext, ensurePackageWorksForDSE, modifyUserMetadata, requestLoadPackage } from "./package";
 import { ModifyDocumentationTemplate } from "./dialog/modify-documentation-template";
@@ -243,6 +243,7 @@ const Row = React.memo(({ iri, parentIri, onTagSelect }: { iri: string, parentIr
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => openModal(ModifyDocumentationTemplate, { iri })}><NotepadTextDashed className="mr-2 h-4 w-4" /> {t("modify-documentation-template")}</DropdownMenuItem>}
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem onClick={() => openModal(AddImported, { id: iri, urlOnly: true })}><Import className="mr-2 h-4 w-4" /> {t("import specification from url")}</DropdownMenuItem>}
           {resource.types.includes(LOCAL_PACKAGE) && <DropdownMenuItem asChild><a href={import.meta.env.VITE_CONTROLLED_VOCABULARY_MANAGER + "/" + encodeURIComponent(iri) + "?language=" + encodeURIComponent(i18n.language) + "&theme=" + encodeURIComponent(theme ?? "system")}><BookOpen className="mr-2 h-4 w-4" /> {t("controlled-vocabularies")}</a></DropdownMenuItem>}
+          {resource.types.includes(CONTROLLED_VOCABULARY_MODEL) && parentIri && <DropdownMenuItem asChild><a href={getControlledVocabularyManagerLink(parentIri, "edit/" + encodeURIComponent(iri), i18n.language, theme ?? "system")}><Pencil className="mr-2 h-4 w-4" /> {t("edit-controlled-vocabulary")}</a></DropdownMenuItem>}
           <DropdownMenuItem asChild><a href={import.meta.env.VITE_BACKEND + "/resources/export.zip?iri=" + encodeURIComponent(iri)}><CloudDownload className="mr-2 h-4 w-4" /> {t("export")}</a></DropdownMenuItem>
           <DropdownMenuItem onClick={async () => {
             const result = await openModal(RenameResourceDialog, { inputLabel: resource.userMetadata?.label, inputDescription: resource.userMetadata?.description });
