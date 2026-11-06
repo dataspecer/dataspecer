@@ -163,7 +163,7 @@ export function useVocabularies() {
     }
   }, [backendUrl])
 
-  const addVocabulary = useEventCallback((vocabulary: Omit<ControlledVocabulary, 'id' | 'type'>) => {
+  const addVocabulary = useEventCallback(async (vocabulary: Omit<ControlledVocabulary, 'id' | 'type'>) => {
     if (!modelStore || !packageIri) return
     const id = generateEntityId()
     const entity: ControlledVocabulary = { ...vocabulary, id, type: [CONTROLLED_VOCABULARY_TYPE] }
@@ -177,9 +177,10 @@ export function useVocabularies() {
       ],
       {},
     )
+    await modelStore.saveByOverride()
   })
 
-  const updateVocabulary = useEventCallback((id: string, vocabulary: Omit<ControlledVocabulary, 'id' | 'type'>) => {
+  const updateVocabulary = useEventCallback(async (id: string, vocabulary: Omit<ControlledVocabulary, 'id' | 'type'>) => {
     if (!modelStore) return
     const entity: ControlledVocabulary = { ...vocabulary, id, type: [CONTROLLED_VOCABULARY_TYPE] }
     modelStore.transaction(
@@ -192,11 +193,13 @@ export function useVocabularies() {
       ],
       {},
     )
+    await modelStore.saveByOverride()
   })
 
-  const deleteVocabulary = useEventCallback((id: string) => {
+  const deleteVocabulary = useEventCallback(async (id: string) => {
     if (!modelStore) return
     modelStore.transaction([{ modelId: PROJECT_MODEL_ID, operation: createRemoveModelOperation(id) }], {})
+    await modelStore.saveByOverride()
   })
 
   return {

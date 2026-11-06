@@ -1,16 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import type { Screen } from "../App";
 
-const HASH_TO_SCREEN: Record<string, Screen> = {
-  "#/": "list",
-  "#/source-selection": "source-selection",
-  "#/search": "search",
-  "#/distribution": "distribution",
-  "#/form-prefilled": "form-prefilled",
-  "#/form-empty": "form-empty",
-  "#/view": "view",
-};
-
+/** Hash of every screen. A `:name` segment is a parameter of the route. */
 const SCREEN_TO_HASH: Record<Screen, string> = {
   "list": "#/",
   "source-selection": "#/source-selection",
@@ -19,38 +10,82 @@ const SCREEN_TO_HASH: Record<Screen, string> = {
   "form-prefilled": "#/form-prefilled",
   "form-empty": "#/form-empty",
   "view": "#/view",
+  "edit": "#/edit/:id",
 };
 
-function hashToScreen(hash: string): Screen {
-  return HASH_TO_SCREEN[hash] ?? "list";
+/** Parameters of the screens that have any. */
+interface ScreenParams {
+  edit: { id: string };
+}
+
+type RouteParams = Record<string, string>;
+
+interface ParsedRoute {
+  screen: Screen;
+  params: RouteParams;
+}
+
+const PARAMETER = /:(\w+)/g;
+
+const ROUTE_MATCHERS = (Object.entries(SCREEN_TO_HASH) as [Screen, string][]).map(([screen, template]) => ({
+  screen,
+  names: [...template.matchAll(PARAMETER)].map((match) => match[1]),
+  pattern: new RegExp("^" + template.replace(PARAMETER, "([^/]+)") + "$"),
+}));
+
+function parseHash(hash: string): ParsedRoute {
+  for (const { screen, names, pattern } of ROUTE_MATCHERS) {
+    const match = pattern.exec(hash);
+    if (match) {
+      const params = Object.fromEntries(names.map((name, i) => [name, decodeURIComponent(match[i + 1])]));
+      return { screen, params };
+    }
+  }
+  return { screen: "list", params: {} };
+}
+
+function buildHash(screen: Screen, params: RouteParams): string {
+  return SCREEN_TO_HASH[screen].replace(PARAMETER, (_, name) => encodeURIComponent(params[name]));
+}
+
+interface NavigateOptions {
+  replace?: boolean;
 }
 
 /**
- * Moves to a screen. With `replace`, the screen takes the place of the current
- * one in the browser history, so that Back does not return to it.
+ * Moves to a screen, passing the parameters the screen requires, if any. With
+ * `replace`, the screen takes the place of the current one in the browser
+ * history, so that Back does not return to it.
  */
-export type Navigate = (screen: Screen, options?: { replace?: boolean }) => void
+export type Navigate = <S extends Screen>(
+  screen: S,
+  ...args: S extends keyof ScreenParams
+    ? [params: ScreenParams[S], options?: NavigateOptions]
+    : [options?: NavigateOptions]
+) => void
 
-export function useHashRoute(): [Screen, Navigate] {
-  const [screen, setScreen] = useState<Screen>(() =>
-    hashToScreen(window.location.hash || "#/")
-  );
+export function useHashRoute(): [Screen, Navigate, RouteParams] {
+  const [hash, setHash] = useState(() => window.location.hash || "#/");
+  const { screen, params } = useMemo(() => parseHash(hash), [hash]);
 
   useEffect(() => {
     function onHashChange() {
-      setScreen(hashToScreen(window.location.hash));
+      setHash(window.location.hash);
     }
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
 
-  const navigate = useCallback<Navigate>((target, options) => {
+  const navigate: Navigate = useCallback((target, ...args) => {
+    const hasParams = SCREEN_TO_HASH[target].includes(":");
+    const [params, options] = (hasParams ? args : [{}, args[0]]) as [RouteParams, NavigateOptions | undefined];
+    const targetHash = buildHash(target, params);
     if (options?.replace) {
-      window.location.replace(SCREEN_TO_HASH[target]);
+      window.location.replace(targetHash);
     } else {
-      window.location.hash = SCREEN_TO_HASH[target];
+      window.location.hash = targetHash;
     }
   }, []);
 
-  return [screen, navigate];
+  return [screen, navigate, params];
 }

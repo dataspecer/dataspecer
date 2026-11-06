@@ -44,6 +44,8 @@
   "paginator.page": "Strana {{page}} / {{pages}}",
   "error.missing-package.title": "Není propojeno k projektu",
   "error.missing-package.description": "Tato stránka byla otevřena bez projektu ke správě. Otevřete Řízené slovníky z projektu ve Správci balíčků.",
+  "error.vocabulary-not-found.title": "Slovník nenalezen",
+  "error.vocabulary-not-found.description": "Tento projekt neobsahuje řízený slovník s požadovaným identifikátorem.",
   "error.load-failed.title": "Načtení selhalo",
   "error.load-failed.description": "Při načítání řízených slovníků tohoto projektu se něco pokazilo. Zkuste stránku znovu načíst.",
   "actions.view": "Zobrazit podrobnosti",
