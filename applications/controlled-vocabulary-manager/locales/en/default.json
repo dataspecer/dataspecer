@@ -42,6 +42,8 @@
   "paginator.page": "Page {{page}} / {{pages}}",
   "error.missing-package.title": "No project linked",
   "error.missing-package.description": "This page was opened without a project to manage. Open Controlled Vocabularies from a project in the Package Manager instead.",
+  "error.vocabulary-not-found.title": "Vocabulary not found",
+  "error.vocabulary-not-found.description": "This project has no controlled vocabulary with the requested identifier.",
   "error.load-failed.title": "Failed to load",
   "error.load-failed.description": "Something went wrong while loading this project's controlled vocabularies. Try reloading the page.",
   "actions.view": "View details",

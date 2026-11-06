@@ -16,13 +16,15 @@ import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
 import { TriangleAlert } from 'lucide-react'
 import { supportedLanguages } from './i18n'
+import { useConfig } from './contexts/config-context'
 
-export type Screen = "list" | "source-selection" | "search" | "distribution" | "form-prefilled" | "form-empty" | "view"
+export type Screen = "list" | "source-selection" | "search" | "distribution" | "form-prefilled" | "form-empty" | "view" | "edit"
 
 function App() {
-  const [screen, navigate] = useHashRoute()
+  const [screen, navigate, routeParams] = useHashRoute()
+  const { returnTo } = useConfig()
   const wizard = useSourceWizard(screen, navigate)
-  const { loading, error, addVocabulary, updateVocabulary, deleteVocabulary } = useVocabulariesContext()
+  const { loading, error, vocabularies, addVocabulary, updateVocabulary, deleteVocabulary } = useVocabulariesContext()
   const { editingVocabulary, startEditing, startCreating, cancelEditing } = useVocabularyEditor()
   const [viewingVocabulary, setViewingVocabulary] = useState<ControlledVocabulary | null>(null)
   const { t, i18n } = useTranslation()
@@ -42,20 +44,38 @@ function App() {
     }
   }, [i18n, setTheme])
 
-  const handleFormConfirm = (vocabulary: Omit<ControlledVocabulary, 'id' | 'type'>) => {
-    if (editingVocabulary) {
-      updateVocabulary(editingVocabulary.id, vocabulary)
-    } else {
-      addVocabulary(vocabulary)
+  // The vocabulary opened by an `#/edit/<id>` link, or the one chosen in the list.
+  const vocabularyToEdit = screen === "edit"
+    ? vocabularies.find((vocabulary) => vocabulary.id === routeParams.id)
+    : editingVocabulary
+
+  /** Leaves the form: back to the page we were opened from, otherwise to the list. */
+  const leaveForm = () => {
+    if (returnTo) {
+      window.location.href = returnTo
+      return
     }
     cancelEditing()
     navigate("list")
   }
 
-  const handleFormCancel = () => {
-    cancelEditing()
-    navigate("list")
+  const handleFormConfirm = async (vocabulary: Omit<ControlledVocabulary, 'id' | 'type'>) => {
+    const saved = vocabularyToEdit
+      ? updateVocabulary(vocabularyToEdit.id, vocabulary)
+      : addVocabulary(vocabulary)
+    if (returnTo) {
+      // The page we return to shows the saved data, so wait for the save.
+      try {
+        await saved
+      } catch (err) {
+        console.error('Failed to save the controlled vocabulary', err)
+        return
+      }
+    }
+    leaveForm()
   }
+
+  const handleFormCancel = leaveForm
 
   const handleEdit = (vocab: ControlledVocabulary) => {
     startEditing(vocab)
@@ -156,9 +176,15 @@ function App() {
             navigate("form-prefilled")
           }}
         />
-      ) : screen === "form-empty" ? (
+      ) : screen === "edit" && !vocabularyToEdit ? (
+        <Alert variant="destructive">
+          <TriangleAlert className="h-4 w-4" />
+          <AlertTitle>{t("error.vocabulary-not-found.title")}</AlertTitle>
+          <AlertDescription>{t("error.vocabulary-not-found.description")}</AlertDescription>
+        </Alert>
+      ) : screen === "form-empty" || screen === "edit" ? (
         <VocabularyFormPage
-          vocabulary={editingVocabulary}
+          vocabulary={vocabularyToEdit}
           onCancel={handleFormCancel}
           onConfirm={handleFormConfirm}
         />
