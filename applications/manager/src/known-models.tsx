@@ -3,11 +3,24 @@ import { LanguageString } from "@dataspecer/core/core/core-resource";
 import { AppWindowMac, BookOpen, Code, Cog, Eye, Folder, Globe2, LibraryBig } from "lucide-react";
 import { v4 as uuidv4 } from 'uuid';
 import { cn } from "./lib/utils";
+import { i18nConfig } from "./i18n";
 import { packageService, requestLoadPackage } from "./package";
 import type { VocabularySource } from "@dataspecer/core-v2/semantic-model/concepts";
 
 export function getCMELink(packageId: string, viewId: string) {
   return import.meta.env.VITE_CME + "/diagram?package-id=" + encodeURIComponent(packageId) + "&view-id=" + encodeURIComponent(viewId)
+}
+
+/**
+ * Link into the controlled vocabulary manager for the given package.
+ * The manager returns to the current page on save or cancel.
+ */
+export function getControlledVocabularyManagerLink(packageIri: string, route: string, language: string, theme: string) {
+  return import.meta.env.VITE_CONTROLLED_VOCABULARY_MANAGER + "/" + encodeURIComponent(packageIri)
+    + "?language=" + encodeURIComponent(language)
+    + "&theme=" + encodeURIComponent(theme)
+    + "&returnTo=" + encodeURIComponent(window.location.href)
+    + "#/" + route;
 }
 
 export function getSchemaLink(packageId: string) {
@@ -150,6 +163,15 @@ export const createModelInstructions = {
       needsNaming: false,
       createHook: getHookForStandardModel(V1.GENERATOR_CONFIGURATION, () => ({})),
     },
+  [CONTROLLED_VOCABULARY_MODEL]: {
+    needsNaming: false,
+    // The controlled vocabulary manager owns creation; leave this page for its form.
+    createHook: async (context: createModelContext) => {
+      // next-themes persists the user's choice under the "theme" key.
+      const theme = localStorage.getItem("theme") ?? "system";
+      window.location.href = getControlledVocabularyManagerLink(context.parentIri, "form-empty", i18nConfig.language, theme);
+    },
+  },
   }
 
 export const modelTypeToName = {

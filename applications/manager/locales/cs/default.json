@@ -38,6 +38,7 @@
   },
   "conceptual editor button": "Upravovat slovníky a aplikační profily",
   "controlled-vocabularies": "Řízené slovníky",
+  "edit-controlled-vocabulary": "Upravit",
   "created": "Vytvořeno {{val, datetime(dateStyle: short)}}",
   "data specification button": "Upravovat datové struktury",
   "data specification reload": "Znovu načíst datovou specifikaci",
