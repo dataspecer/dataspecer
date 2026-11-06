@@ -202,7 +202,7 @@ export class XmlSchemaDocumentationGenerator {
           return ""; // todo
         }
         const artefact = specification.artefacts.find(artefact => artefact.generator === NEW_DOC_GENERATOR);
-        const path = pathRelative(this.documentationArtifact.publicUrl, artefact.publicUrl, artefact !== this.documentationArtifact);
+        const path = pathRelative(this.documentationArtifact.publicUrl, artefact.publicUrl);
         return path + "#" + this.getElementUniqueId(element);
       }
 

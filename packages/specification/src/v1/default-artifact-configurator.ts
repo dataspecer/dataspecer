@@ -8,6 +8,7 @@ import { FederatedObservableStore } from "@dataspecer/federated-observable-store
 import { getSchemaArtifacts } from "./schema-artifacts.ts";
 import { DataSpecification } from "../specification/model.ts";
 import { getDefaultConfigurators } from "./artefact-generators.ts";
+import { resolveSpecificationUrls, type SpecificationUrls } from "../specification-urls.ts";
 
 /**
  * This class is responsible for setting the artifacts definitions in
@@ -31,6 +32,10 @@ export class DefaultArtifactConfigurator {
   baseURL = "/";
 
   queryParams: string = "";
+  previewBaseUrl = "/";
+
+  documentationUrls: Record<string, string> = {};
+  readonly specificationUrls: Record<string, SpecificationUrls> = {};
 
   constructor(
     dataSpecifications: DataSpecification[],
@@ -47,7 +52,7 @@ export class DefaultArtifactConfigurator {
   /**
    * Sets {@link DataSpecification.artefacts} field for the given specification.
    * @param dataSpecificationIri Iri of the specification to set the artifacts for.
-   * @param singleSpecificationOnly This affects only the technical paths of the artifacts, not their public URLs.
+   * @param singleSpecificationOnly Generate a release at its public URL; otherwise link within the archive directories.
    */
   public async generateFor(
     dataSpecificationIri: string,
@@ -68,10 +73,16 @@ export class DefaultArtifactConfigurator {
     const dataSpecificationName = await this.getSpecificationDirectoryName(dataSpecificationIri);
 
     const dataSpecificationConfiguration = DataSpecificationConfigurator.getFromObject(configuration);
-    let baseFromConfig = dataSpecificationConfiguration.publicBaseUrl ? dataSpecificationConfiguration.publicBaseUrl : null;
-
-    // Base URL must end without slash
-    this.baseURL = baseFromConfig ?? `/${singleSpecificationOnly ? "" : dataSpecificationName}`; // This is only the fallback for base URLs in ZIP without real URLs
+    const urls = resolveSpecificationUrls(dataSpecificationIri, {
+      mode: this.queryParams ? "preview" : singleSpecificationOnly ? "release" : "archive",
+      publicBaseUrl: dataSpecificationConfiguration.publicBaseUrl,
+      documentationUrl: this.documentationUrls[dataSpecificationIri],
+      previewBaseUrl: this.previewBaseUrl,
+      outputDirectory: dataSpecificationName,
+      queryParams: this.queryParams,
+    });
+    this.specificationUrls[dataSpecificationIri] = urls;
+    this.baseURL = urls.baseUrl;
 
     // Generate schemas
 
@@ -96,7 +107,7 @@ export class DefaultArtifactConfigurator {
           mergePaths(this.baseURL, subdirectory, "/"),
           ensureNonLeadingSlash(mergePaths(basePath, "/")),
           configuration,
-          this.queryParams,
+          urls.queryParams,
       ));
     }
 

@@ -39,6 +39,8 @@ import {
   isModelVocabulary,
 } from "./utils.ts";
 import { artefactToDsv } from "./v1/artefact-to-dsv.ts";
+import { pathRelative } from "@dataspecer/core/core/utilities/path-relative";
+import { resolveSpecificationUrls, type SpecificationUrls } from "./specification-urls.ts";
 
 /**
  * Id under which the project model (the package hierarchy) is stored in the
@@ -102,6 +104,8 @@ export interface GenerateSpecificationContext {
 
   /** Instance defaults, overridden by the package's documentation configuration. */
   defaultDocumentationConfiguration?: PartialDocumentationConfiguration;
+
+  specificationUrls?: Record<string, SpecificationUrls>;
 
   // todo Following properties are temporary to support the old API.
 
@@ -180,7 +184,6 @@ async function writeDcatCatalog(
  */
 export async function generateSpecification(packageId: string, context: GenerateSpecificationContext, options: GenerateSpecificationOptions = {}): Promise<void> {
   const subdirectory = options.subdirectory ?? "";
-  const queryParams = options.queryParams ?? "";
 
   const allModels = context.models;
   const projectModel = (allModels[PROJECT_MODEL_ID] ?? {}) as Record<string, ProjectModelEntity>;
@@ -199,6 +202,8 @@ export async function generateSpecification(packageId: string, context: Generate
   // Find all models recursively and store them with their metadata
   const modelDescriptions = [] as ModelDescription[];
   const primaryStructureModels = [] as StructureModelDescription[];
+  const specificationUrls = { ...context.specificationUrls };
+  const semanticModelOwningPackage = new Map<string, string>();
   // Maps each controlled vocabulary model to the package that is its direct parent
   // In case of nested packages we want to serialize the CVs scoped to the directly owning package
   // Mapping allows matching references to the CVs across borders of nested packages
@@ -214,11 +219,24 @@ export async function generateSpecification(packageId: string, context: Generate
       throw new Error("Package does not exist.");
     }
     const children = getSubModelEntities(projectModel, packageIri);
+    const configurationId = children.find((child) => child.modelType === V1.GENERATOR_CONFIGURATION)?.id;
+    const configuration = configurationId ? getModelBlobData(allModels, configurationId) : {};
+    specificationUrls[packageIri] ??= resolveSpecificationUrls(packageIri, {
+      mode: options.queryParams ? "preview" : isRoot && subdirectory ? "archive" : "release",
+      publicBaseUrl: configuration?.["data-specification"]?.publicBaseUrl,
+      documentationUrl: (pckgEntity as any).documentBaseUrl,
+      previewBaseUrl: context.specificationUrls?.[packageId]?.baseUrl,
+      outputDirectory: subdirectory,
+      queryParams: options.queryParams,
+    });
     const semanticModels = children.filter((r) => r.modelType === LOCAL_SEMANTIC_MODEL);
     for (const semanticModel of semanticModels) {
       const modelEntities = allModels[semanticModel.id] ?? {};
       const mainEntity = modelEntities[semanticModel.id] as MainSemanticModelEntity | undefined;
       const isSourced = !!mainEntity?.source;
+      if (!isSourced) {
+        semanticModelOwningPackage.set(semanticModel.id, packageIri);
+      }
       const baseIri = mainEntity && isMainSemanticModelEntity(mainEntity) ? mainEntity.baseIri ?? null : null;
       const entities = Object.fromEntries(Object.entries(modelEntities).filter(([id]) => id !== semanticModel.id));
 
@@ -231,7 +249,7 @@ export async function generateSpecification(packageId: string, context: Generate
         id: semanticModel.id,
         entities: Object.fromEntries(Object.entries(entities).map(([id, entity]) => [id, withAbsoluteIri(entity as SemanticModelEntity, baseIri ?? undefined)])),
         isPrimary: isRoot && !isSourced,
-        documentationUrl: isSourced ? null : ((pckgEntity as any).documentBaseUrl ?? null),
+        documentationUrl: null,
         baseIri,
         title: semanticModel.label,
       });
@@ -338,18 +356,8 @@ export async function generateSpecification(packageId: string, context: Generate
     generatorConfiguration = (getModelBlobData(allModels, generatorConfigurationModel.id) ?? {}) as Record<string, unknown>;
   }
 
-  /**
-   * Base URL for all generated files for this specification. This is the root.
-   *
-   * Ends with a slash.
-   *
-   * @todo Since vocabularies and APs did not need this at all, we used "/".
-   * @todo We need to normalize the path so that domains only do not end with slash.
-   */
-  let baseUrl = generatorConfiguration["data-specification"]?.["publicBaseUrl"] ?? "/";
-  if (!baseUrl.endsWith("/")) {
-    baseUrl += "/";
-  }
+  const urls = specificationUrls[packageId]!;
+  const { baseUrl, queryParams } = urls;
 
   const mainModelBaseIri = modelDescriptions.find((m) => m.isPrimary)?.baseIri ?? "";
   let baseIri = mainModelBaseIri;
@@ -382,13 +390,6 @@ export async function generateSpecification(packageId: string, context: Generate
     .filter(([, ownerPackageId]) => ownerPackageId === packageId)
     .map(([cvModelId]) => allModels[cvModelId]?.[cvModelId] as ControlledVocabulary | undefined)
     .filter((vocabulary): vocabulary is ControlledVocabulary => vocabulary !== undefined);
-
-  /**
-   * Whether we are generating in the "production mode" or in the "preview
-   * mode". In the production mode, we want to use relative IRIs in order to
-   * make images and other resources work.
-   */
-  const isPreviewMode = queryParams && queryParams.length > 0;
 
   // Get used vocabularies
 
@@ -802,48 +803,44 @@ export async function generateSpecification(packageId: string, context: Generate
     }
   }
 
-  /**
-   * Because we generate documentation in multiple languages, we replace public
-   * URLs with the current language in order to have correct links.
-   */
-  function createLangReplacer(artefacts: DataSpecificationArtefact[]) {
-    const replacers: ((lang: string) => void)[] = [];
-
-    for (const artefact of artefacts) {
-      if (artefact.generator === "https://schemas.dataspecer.com/generator/template-artifact") {
-        const originalUrl = artefact.publicUrl!;
-        replacers.push((lang: string) => {
-          artefact.publicUrl = originalUrl.replace("/en/", "/" + lang + "/");
-        });
-      }
-    }
-
-    return (lang: string) => {
-      for (const replacer of replacers) {
-        replacer(lang);
-      }
-    }
-  }
-
-  const langReplacer = createLangReplacer(context.v1Specification.artefacts);
-
   for (const lang of ["cs", "en"]) {
     // Generate the DSV Metadata serialization in JSON-LD string
     // Set correct URL for the documentation
-    htmlDescriptor.url = baseUrl + lang + "/" + queryParams;
+    const documentationUrl = urls.documentationUrl(`${lang}/index.html`);
+    htmlDescriptor.url = documentationUrl;
     const dsv = await DSVMetadataToJsonLdString(specifications, {
       rootHtmlDocumentIri: htmlDescriptor.iri,
       space: 2,
-      useAbsoluteUrls: false, // !isPreviewMode,
+      useAbsoluteUrls: false,
     });
 
-    langReplacer(lang);
+    for (const [id, specification] of Object.entries(context.v1Context?.specifications ?? {})) {
+      const targetUrls = specificationUrls[id];
+      if (!targetUrls) {
+        continue;
+      }
+      for (const artifact of (specification as { artefacts: DataSpecificationArtefact[] }).artefacts) {
+        if (artifact.generator === "https://schemas.dataspecer.com/generator/template-artifact") {
+          artifact.publicUrl = targetUrls.documentationUrl(`${lang}/index.html`);
+        }
+      }
+    }
+
+    const localizedModels = modelDescriptions.map((model) => {
+      const owner = model.id ? semanticModelOwningPackage.get(model.id) : undefined;
+      const targetUrls = owner ? specificationUrls[owner] : undefined;
+      return targetUrls ? {
+        ...model,
+        documentationUrl: pathRelative(documentationUrl, targetUrls.documentationUrl(`${lang}/index.html`)),
+        preferDocumentationUrl: targetUrls.isGeneratedDocumentation,
+      } : model;
+    });
 
     const documentation = context.output.writePath(`${subdirectory}${lang}/index.html`);
     await documentation.write(
       await generateHtmlDocumentation(
         { data: getModelBlobData(allModels, packageId), label: rootPackageEntity.label },
-        modelDescriptions,
+        localizedModels,
         { externalArtifacts, dsv, language: lang, prefixMap },
         context,
       ),

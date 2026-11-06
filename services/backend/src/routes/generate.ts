@@ -59,6 +59,7 @@ async function generateArtifacts(
   streamDictionary: StreamDictionary,
   queryParams: string = "",
   singleFilePath: string | null = null,
+  previewBaseUrl: string = "/",
 ) {
   const allModels = await getModelsForPackage(packageIri, modelRepository);
 
@@ -83,6 +84,7 @@ async function generateArtifacts(
   const { store, dataSpecifications } = getDataSpecificationWithModels(packageIri, allModels);
   const generator = new DefaultArtifactBuilder(store as CoreResourceReader, dataSpecifications, configuration.configuration, fetch, allModels);
   generator.singleSpecificationOnly = true; // We want to generate only a single specification without extra directories.
+  generator.previewBaseUrl = previewBaseUrl;
 
   // The recorded transaction history (with the versions marked in it) is
   // published as the LDES stream of the specification. The models start empty
@@ -163,6 +165,7 @@ export const getSingleFile = asyncHandler(async (request: express.Request, respo
     streamDictionary,
     query.raw ? "" : "?iri=" + encodeURIComponent(query.iri),
     path,
+    request.baseUrl + request.route.path.replace("{*splat}", ""),
   );
 
   if (streamDictionary.requestedFileContents === null) {

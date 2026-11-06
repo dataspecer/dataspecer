@@ -43,7 +43,7 @@ interface ViewAdapterParams {
   jsonSchema: JsonSchema;
   configuration: JsonConfiguration;
   context: ArtefactGeneratorContext;
-  artefact: DataSpecificationArtefact;
+  documentationArtifact: DataSpecificationArtefact;
 
   // Preferred languages for labels and descriptions
   languages: string[];
@@ -67,14 +67,14 @@ class ViewAdapter {
   private conceptualModel: ConceptualModel | null = null;
   private conceptualModelProperties: Record<string, ConceptualModelProperty> = {};
   private context: ArtefactGeneratorContext;
-  private artefact: DataSpecificationArtefact;
+  private documentationArtifact: DataSpecificationArtefact;
   private languages: string[] = [];
 
   public process(params: ViewAdapterParams): JsonSchemaViewModel {
     this.structureModel = params.structureModel;
     this.conceptualModel = params.conceptualModel;
     this.context = params.context;
-    this.artefact = params.artefact;
+    this.documentationArtifact = params.documentationArtifact;
     this.languages = params.languages;
     this.preprocess();
 
@@ -252,7 +252,7 @@ class ViewAdapter {
     const isExternal = this.structureModel.specification !== cls.specification;
 
     const artefact = specification.artefacts.find((a) => a.generator === "https://schemas.dataspecer.com/generator/template-artifact");
-    const path = pathRelative(this.artefact.publicUrl, artefact.publicUrl);
+    const path = pathRelative(this.documentationArtifact.publicUrl, artefact.publicUrl);
     const anchor = this.getAnchorForStructure(this.context.structureModels[cls.structureSchema]);
     const link = `${isExternal ? path : ""}#${anchor}`;
     const semanticModel = this.context.conceptualModels[this.context.specifications[cls.specification].pim];

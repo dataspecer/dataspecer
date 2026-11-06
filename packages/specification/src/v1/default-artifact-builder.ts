@@ -12,6 +12,7 @@ import { getArtefactGenerators, getDefaultConfigurators } from "./artefact-gener
 import { generateSpecification, type GenerateSpecificationContext } from "../specification.ts";
 import { DataSpecification } from "../specification/model.ts";
 import { getPartialDocumentationConfiguration } from "@dataspecer/documentation";
+import type { SpecificationUrls } from "../specification-urls.ts";
 
 /**
  * Class handling a construction of the zip file. Configuration, helper files, etc.
@@ -26,11 +27,15 @@ export class DefaultArtifactBuilder {
     private readonly httpFetch: HttpFetch;
     private readonly configurator: Configurator[];
     private readonly models: Record<string, EntityRecord>;
+    private specificationUrls: Record<string, SpecificationUrls> = {};
 
     /**
      * Whether to generate a single specification only. This will affect the file structure.
      */
     singleSpecificationOnly = false;
+
+    /** Backend route serving generated files, including any API prefix. */
+    previewBaseUrl = "/";
 
     /**
      * Transaction history of the project, used to publish the operations
@@ -73,11 +78,18 @@ export class DefaultArtifactBuilder {
         );
 
         artifactConfigurator.queryParams = queryParams;
+        artifactConfigurator.previewBaseUrl = this.previewBaseUrl;
+        for (const [id, entity] of Object.entries(this.models._project_model ?? {})) {
+            if ("documentBaseUrl" in entity && typeof entity.documentBaseUrl === "string") {
+                artifactConfigurator.documentationUrls[id] = entity.documentBaseUrl;
+            }
+        }
 
         for (const dataSpecificationIri of dataSpecificationIris) {
             this.dataSpecifications[dataSpecificationIri]!.artefacts =
               await artifactConfigurator.generateFor(dataSpecificationIri, this.singleSpecificationOnly);
         }
+        this.specificationUrls = artifactConfigurator.specificationUrls;
 
         this.artifactReport = dataSpecificationIris
           .flatMap(dataSpecificationIri => this.dataSpecifications[dataSpecificationIri]!.artefacts.filter((a: any) => a.outputPath).map((artifact: any) => ({
@@ -157,6 +169,7 @@ export class DefaultArtifactBuilder {
                     output: zip,
                     history: this.history,
                     defaultDocumentationConfiguration: getPartialDocumentationConfiguration(this.configuration),
+                    specificationUrls: this.specificationUrls,
 
                     fetch: this.httpFetch,
 
