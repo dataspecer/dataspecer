@@ -202,7 +202,8 @@ export class XmlSchemaDocumentationGenerator {
           return ""; // todo
         }
         const artefact = specification.artefacts.find(artefact => artefact.generator === NEW_DOC_GENERATOR);
-        const path = pathRelative(this.documentationArtifact.publicUrl, artefact.publicUrl, artefact !== this.documentationArtifact);
+        const path = pathRelative(this.documentationArtifact.publicUrl, artefact.publicUrl,
+          artefact !== this.documentationArtifact && !specification.preferRelativeLinking);
         return path + "#" + this.getElementUniqueId(element);
       }
 
@@ -300,7 +301,8 @@ export class XmlSchemaDocumentationGenerator {
       return {
         link: pathRelative(
           this.documentationArtifact.publicUrl,
-          artefact.publicUrl
+          artefact.publicUrl,
+          artefact !== this.documentationArtifact && !this.context.specifications[specification].preferRelativeLinking
         ),
         specificationName: this.context.conceptualModels[
           this.context.specifications[specification].pim

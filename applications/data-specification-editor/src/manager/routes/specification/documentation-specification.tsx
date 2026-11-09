@@ -1,8 +1,8 @@
 import { createStructureModel } from "@dataspecer/core/data-psm";
-import { DataSpecificationConfiguration, DataSpecificationConfigurator } from "@dataspecer/core/data-specification/configuration";
+import { DataSpecificationConfigurator } from "@dataspecer/core/data-specification/configuration";
 import { type ProjectModelEntity } from "@dataspecer/core/project-model";
 import { useModelStoreEntity } from "@dataspecer/model-store/react";
-import { DefaultArtifactBuilder, GenerateReport } from "@dataspecer/specification/v1";
+import { ArtifactConfigurator, DefaultArtifactBuilder, GenerateReport, type SpecificationUrlOverride } from "@dataspecer/specification/v1";
 import AddIcon from "@mui/icons-material/Add";
 import LoadingButton from "@mui/lab/LoadingButton";
 import { Box, Button, Fab, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from "@mui/material";
@@ -73,21 +73,27 @@ export const DocumentationSpecification = memo(() => {
 
     const { store: federatedStore, dataSpecifications, models } = await getConfiguration(dataSpecificationIri as string, "");
 
-    // Override base urls to null
-    if (overrideBasePathsToNull) {
-      for (const ds of Object.values(dataSpecifications)) {
-        // @ts-expect-error different type of configuration
-        if (ds.artefactConfiguration[DataSpecificationConfigurator.KEY]) {
-          // @ts-expect-error different type of configuration
-          (ds.artefactConfiguration[DataSpecificationConfigurator.KEY] as DataSpecificationConfiguration).publicBaseUrl = null;
-        }
+    const artifactConfigurator = new ArtifactConfigurator(Object.values(dataSpecifications), federatedStore, defaultConfiguration);
+    const specificationOverrides: Record<string, SpecificationUrlOverride> = {};
+    for (const ds of Object.values(dataSpecifications)) {
+      // @ts-expect-error The adapter attaches the generator configuration to the specification.
+      const publicBaseUrl = DataSpecificationConfigurator.getFromObject(ds.artefactConfiguration).publicBaseUrl;
+      if (overrideBasePathsToNull || !publicBaseUrl) {
+        specificationOverrides[ds.id] = {
+          baseUrl: "/" + await artifactConfigurator.getSpecificationDirectoryName(ds.id) + "/",
+          preferRelativeLinking: true,
+        };
       }
     }
 
     setZipLoading("generating");
 
     const generator = new DefaultArtifactBuilder(federatedStore, dataSpecifications, defaultConfiguration, fetch, models);
-    await generator.prepare(Object.keys(dataSpecifications), setGenerateState);
+    await generator.prepare(Object.keys(dataSpecifications), setGenerateState, {
+      specificationId: dataSpecificationIri as string,
+      baseUrl: specificationOverrides[dataSpecificationIri as string]?.baseUrl ?? null,
+      specificationOverrides,
+    });
     const zip = new ZipStreamDictionary();
     await generator.build(zip);
     const data = await zip.save();

@@ -231,6 +231,7 @@ export async function structureModelToXmlSchema(
           namespace: xmlStructureModel.namespace,
           namespacePrefix: xmlStructureModel.namespacePrefix,
           publicUrl: candidateSchema.publicUrl,
+          preferRelativeLinking: specification.preferRelativeLinking,
         };
       }
       throw new Error(`No artifact found matching structure ${structureId}.`);
@@ -340,6 +341,7 @@ export type GetReferencedSchema = (structureId: string, specificationId: string)
   namespace: string | null;
   namespacePrefix: string | null;
   publicUrl: string | null;
+  preferRelativeLinking?: boolean;
 } | null;
 
 /**
@@ -908,7 +910,8 @@ class XmlSchemaAdapter {
     if (imported) {
       const prefix = imported.namespacePrefix ?? null;
       const namespace = imported.namespace ?? null;
-      const location = pathRelative(this.currentPath(), imported.publicUrl, specification !== this.model.specification);
+      const location = pathRelative(this.currentPath(), imported.publicUrl,
+        specification !== this.model.specification && !imported.preferRelativeLinking);
       if (this.imports[location]) {
         this.imports[location].schemaIds.push(structureSchema);
       } else {

@@ -13,6 +13,7 @@ export interface ModelDescription {
   id: string | null;
   isPrimary: boolean;
   documentationUrl: string | null;
+  preferDocumentationUrl?: boolean;
   entities: Record<string, SemanticModelEntity>;
   baseIri: string | null;
   title: LanguageString | null;
