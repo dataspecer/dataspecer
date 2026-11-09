@@ -33,7 +33,7 @@ export class ArtifactConfigurator extends DefaultArtifactConfigurator {
     htmlDoc.generator = "https://schemas.dataspecer.com/generator/template-artifact";
     const respecFileName = dataSpecificationConfiguration.renameArtifacts?.[htmlDoc.generator] ?? "en/index.html";
     htmlDoc.outputPath = `${baseOutputPath}${respecFileName}`;
-    htmlDoc.publicUrl = `${this.baseURL}${respecFileName}${this.queryParams}`;
+    htmlDoc.publicUrl = this.specificationUrls[dataSpecificationIri]!.documentationUrl(respecFileName);
     htmlDoc.artefacts = artifacts.map(a => a.iri!);
     htmlDoc.configuration = configuration;
     artifacts.push(htmlDoc);

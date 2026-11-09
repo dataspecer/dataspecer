@@ -258,7 +258,9 @@ function structureModelClassToJsonSchemaDefinition(
   if ((context.model.psmIri !== modelClass.structureSchema || modelClass.isReferenced) && !context.configuration.dereferenceSchema) {
     const artefact = findArtefactForImport(context, modelClass);
     if (artefact !== null) {
-      const url = pathRelative(context.artefact.publicUrl, artefact.publicUrl);
+      const targetSpecification = context.specifications[modelClass.specification];
+      const url = pathRelative(context.artefact.publicUrl, artefact.publicUrl,
+        modelClass.specification !== context.specification.iri && !targetSpecification.preferRelativeLinking);
       const reference = new JsonSchemaRef();
       reference.url = url;
       reference.absoluteUrl = artefact.publicUrl;

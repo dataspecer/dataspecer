@@ -28,7 +28,7 @@ async function render(
   vocabularies: ControlledVocabulary[],
   template: string,
   language: string = "en",
-  nestedSpecifications: { builder: ProfileModelBuilder, documentationUrl: string }[] = [],
+  nestedSpecifications: { builder: ProfileModelBuilder, documentationUrl: string, preferDocumentationUrl?: boolean }[] = [],
 ): Promise<string> {
   return await generateDocumentation(
     {
@@ -36,7 +36,7 @@ async function render(
       models: [
         { id: "primary", isPrimary: true, entities: builder.build().getEntities() as never, baseIri: "", documentationUrl: null, title: null },
         // Nested specifications have their own documentation.
-        ...nestedSpecifications.map((item, index) => ({ id: `nested-${index}`, isPrimary: false, entities: item.builder.build().getEntities() as never, baseIri: "", documentationUrl: item.documentationUrl, title: null })),
+        ...nestedSpecifications.map((item, index) => ({ id: `nested-${index}`, isPrimary: false, entities: item.builder.build().getEntities() as never, baseIri: "", documentationUrl: item.documentationUrl, preferDocumentationUrl: item.preferDocumentationUrl, title: null })),
         // Every controlled vocabulary is a model of its own.
         ...vocabularies.map(item => ({ id: item.id, isPrimary: false, entities: { [item.id]: item } as never, baseIri: null, documentationUrl: null, title: null })),
       ],
@@ -55,6 +55,23 @@ const CLASS_PROFILE_TEMPLATE = `
  * Lists the assignments of each class profile as `[profile: id=qualifier+replaces ...]`.
  */
 const ASSIGNMENT_LIST_TEMPLATE = `{{#each semanticEntitiesByType.classProfiles}}[{{id}}:{{#each resolvedControlledVocabularies}} {{id}}={{qualifier}}{{#if replaces}}+replaces{{/if}}{{/each}}]{{/each}}`;
+
+describe("semantic documentation links", () => {
+  it.each([
+    [true, "?iri=target#Owner"],
+    [false, "https://published.test/entity.html#original"],
+  ])("prefers generated documentation only when requested (%s)", async (preferDocumentationUrl, expected) => {
+    const nested = createBuilder();
+    nested.class({
+      id: "owner", iri: "https://example.test/model#Owner", name: { en: "Owner" },
+      externalDocumentationUrl: "https://published.test/entity.html#original",
+    });
+    const html = await render(createBuilder(), [], '{{{href "owner"}}}', "en", [
+      { builder: nested, documentationUrl: "?iri=target", preferDocumentationUrl },
+    ]);
+    expect(html).toBe(expected);
+  });
+});
 
 describe("generateDocumentation controlled vocabularies", () => {
 

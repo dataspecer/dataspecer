@@ -143,7 +143,8 @@ export class JsonLdAdapter {
             contextData["@container"] = "@set";
           }
           const artefact = findArtefactForImport(this.context, firstDataType.dataType);
-          contextData["@context"] = pathRelative(this.artefact.publicUrl, artefact.publicUrl);
+          contextData["@context"] = pathRelative(this.artefact.publicUrl, artefact.publicUrl,
+            firstDataType.dataType.specification !== this.model.specification && !this.context.specifications[firstDataType.dataType.specification].preferRelativeLinking);
         } else {
           if (property.cardinalityMax !== 1) {
             contextData["@container"] = "@set";
@@ -204,7 +205,8 @@ export class JsonLdAdapter {
     for (const cls of classes) {
       if (cls.isReferenced && !this.configuration.dereferenceContext && this.model.psmIri !== cls.structureSchema) {
         const artefact = findArtefactForImport(this.context, cls);
-        const referencedContext = pathRelative(this.artefact.publicUrl, artefact.publicUrl);
+        const referencedContext = pathRelative(this.artefact.publicUrl, artefact.publicUrl,
+          cls.specification !== this.model.specification && !this.context.specifications[cls.specification].preferRelativeLinking);
         referencedContexts.push(referencedContext);
         // This class is referenced so we skip everything here
         continue;
