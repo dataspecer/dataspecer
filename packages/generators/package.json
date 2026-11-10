@@ -20,6 +20,7 @@
     "./conceptual-model/transformation/filter-by-structural": "./lib/conceptual-model/transformation/filter-by-structural.js",
     "./generator/artefact-generator-context": "./lib/generator/artefact-generator-context.js",
     "./generator": "./lib/generator/index.js",
+    "./structure-model/helper/controlled-vocabulary-rules": "./lib/structure-model/helper/controlled-vocabulary-rules.js",
     "./structure-model/helper/is-recursive": "./lib/structure-model/helper/is-recursive.js",
     "./structure-model": "./lib/structure-model/index.js",
     "./structure-model/model": "./lib/structure-model/model/index.js",
