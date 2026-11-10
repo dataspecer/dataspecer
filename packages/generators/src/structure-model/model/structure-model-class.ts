@@ -95,6 +95,18 @@ export class StructureModelClass {
    */
   controlledVocabularies: ConceptualModelControlledVocabularyAssignment[] = [];
 
+  /**
+   * Whether data must contain a value from the controlled vocabulary assigned with the usage "recommended".
+   * Null until the default of the data specification is applied.
+   */
+  requireRecommendedControlledVocabularyValue: boolean | null = null;
+
+  /**
+   * Whether data must not contain values from outside of the controlled vocabulary assigned with the usage "recommended".
+   * Null until the default of the data specification is applied.
+   */
+  restrictToRecommendedControlledVocabulary: boolean | null = null;
+
   example: unknown[] | null = null;
 
   objectExample: unknown[] | null = null;

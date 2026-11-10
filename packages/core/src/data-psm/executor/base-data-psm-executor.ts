@@ -31,6 +31,7 @@ import { executeDataPsmSetHumanLabel } from "./data-psm-set-human-label-executor
 import { executeDataPsmSetProfiling } from "./data-psm-set-profiling-executor.ts";
 import { executeDataPsmSetIdType } from "./data-psm-set-idtype-executor.ts";
 import { executeDataPsmSetInstancesHaveIdentity } from "./data-psm-set-instances-have-identity.ts";
+import { executeDataPsmSetRecommendedControlledVocabularyUsage } from "./data-psm-set-recommended-controlled-vocabulary-usage-executor.ts";
 import { executeDataPsmSetInstancesSpecifyTypes } from "./data-psm-set-instances-specify-type.ts";
 import { executeDataPsmSetInterpretation } from "./data-psm-set-interpretation-executor.ts";
 import { executeDataPsmSetIsClosed } from "./data-psm-set-is-closed-executor.ts";
@@ -172,6 +173,11 @@ export const baseDataPsmExecutors: CoreOperationExecutor<Operation>[] = [
     Operations.DataPsmSetInstancesHaveIdentity.is,
     executeDataPsmSetInstancesHaveIdentity,
     Operations.DataPsmSetInstancesHaveIdentity.TYPE
+  ),
+  CoreOperationExecutor.create(
+    Operations.DataPsmSetRecommendedControlledVocabularyUsage.is,
+    executeDataPsmSetRecommendedControlledVocabularyUsage,
+    Operations.DataPsmSetRecommendedControlledVocabularyUsage.TYPE
   ),
   CoreOperationExecutor.create(
     Operations.DataPsmSetInstancesSpecifyTypes.is,
