@@ -23,6 +23,20 @@ export const DefaultDataSpecificationConfiguration =  {
      */
     instancesSpecifyTypes: "ALWAYS" as "ALWAYS" | "NEVER" | "OPTIONAL",
 
+    /**
+     * Whether data must contain a value from the controlled vocabulary that is
+     * assigned to a class with the usage "recommended".
+     * Classes can override it.
+     */
+    requireRecommendedControlledVocabularyValue: false,
+
+    /**
+     * Whether data must not contain values from outside of the controlled
+     * vocabulary that is assigned to a class with the usage "recommended".
+     * Classes can override it.
+     */
+    restrictToRecommendedControlledVocabulary: false,
+
     dataPsmIsClosed: "OPEN" as "OPEN" | "CLOSED",
 
     /**

@@ -96,6 +96,32 @@ export const DataSpecification: FC<{
     </Grid>
 
 
+    <Typography variant="h6" sx={{ mt: 6 }}>Controlled vocabularies</Typography>
+    <Grid container rowGap={1}>
+      <Grid item xs={12} sx={{display: "flex", alignItems: "center"}}>
+        <SwitchWithDefault
+          label="Require a value from the vocabulary with the usage recommended"
+          current={input ?? {}}
+          itemKey="requireRecommendedControlledVocabularyValue"
+          onChange={onChange}
+          default={defaultObject}
+          undefinedIs={false}
+        />
+        <div><InfoHelp text={t('controlled vocabularies.recommended usage.require value.help')} /></div>
+      </Grid>
+      <Grid item xs={12} sx={{display: "flex", alignItems: "center"}}>
+        <SwitchWithDefault
+          label="Allow only values from the vocabulary with the usage recommended"
+          current={input ?? {}}
+          itemKey="restrictToRecommendedControlledVocabulary"
+          onChange={onChange}
+          default={defaultObject}
+          undefinedIs={false}
+        />
+        <div><InfoHelp text={t('controlled vocabularies.recommended usage.restrict values.help')} /></div>
+      </Grid>
+    </Grid>
+
     <Typography variant="h6" sx={{ mt: 6 }}>Generated artifacts</Typography>
     <Grid container rowGap={1}>
       <Grid item xs={12}>

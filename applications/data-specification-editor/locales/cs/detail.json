@@ -32,6 +32,19 @@
       "must": "Hodnoty musí pocházet ze slovníku",
       "recommended": "Hodnoty by měly pocházet ze slovníku"
     },
+    "recommended usage": {
+      "default": "výchozí hodnota",
+      "no": "ne",
+      "require value": {
+        "help": "Platí pro řízený slovník přiřazený s použitím „recommended“. Pokud je zapnuto, data musí obsahovat hodnotu ze slovníku. Výchozí hodnota se nastavuje v konfiguraci specifikace.",
+        "title": "Vyžadovat hodnotu z doporučeného slovníku"
+      },
+      "restrict values": {
+        "help": "Platí pro řízený slovník přiřazený s použitím „recommended“. Pokud je zapnuto, data nesmí obsahovat hodnoty mimo slovník. Výchozí hodnota se nastavuje v konfiguraci specifikace.",
+        "title": "Povolit pouze hodnoty z doporučeného slovníku"
+      },
+      "yes": "ano"
+    },
     "reference": "Odkaz",
     "replaces assigned from profiled": "nahrazuje přiřazení z profilovaného",
     "scheme": "Schéma konceptů",

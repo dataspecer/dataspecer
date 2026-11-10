@@ -59,6 +59,20 @@ export class DataPsmClass extends DataPsmResource {
   instancesHaveIdentity: "ALWAYS" | "NEVER" | "OPTIONAL" | undefined = undefined;
 
   /**
+   * Whether data must contain a value from the controlled vocabulary 
+   * that is assigned to the class with the usage "recommended".
+   * If not set, the default value of the data specification is used.
+   */
+  requireRecommendedControlledVocabularyValue?: boolean | null;
+
+  /**
+   * Whether data must not contain values from outside of the controlled vocabulary 
+   * that is assigned to the class with the usage "recommended".
+   * If not set, the default value of the data specification is used.
+   */
+  restrictToRecommendedControlledVocabulary?: boolean | null;
+
+  /**
    * Require explicit instance typing. For example as @type property in JSON-LD.
    * If set to undefined, the default value will be used which is "ALWAYS" currently.
    */
