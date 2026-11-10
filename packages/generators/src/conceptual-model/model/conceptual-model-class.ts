@@ -1,3 +1,4 @@
+import { ConceptualModelControlledVocabularyAssignment } from "./conceptual-model-controlled-vocabulary.ts";
 import { ConceptualModelProperty } from "./conceptual-model-property.ts";
 import { LanguageString } from "@dataspecer/core/core";
 
@@ -26,6 +27,12 @@ export class ConceptualModelClass {
    * @deprecated Not populated. Controlled vocabularies are assigned to class profiles using controlled vocabulary assignments.
    */
   codelistUrl: string[] = [];
+
+  /**
+   * Controlled vocabularies assigned to the class profile, both its own and
+   * the ones assigned from the profiled entities.
+   */
+  controlledVocabularies: ConceptualModelControlledVocabularyAssignment[] = [];
 
   extends: ConceptualModelClass[] = [];
 

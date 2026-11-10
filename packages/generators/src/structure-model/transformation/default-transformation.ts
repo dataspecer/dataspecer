@@ -9,6 +9,7 @@ import { propagateCimIri } from "./propagate-cim-iri.ts";
 import { StructureModel } from "../model/index.ts";
 import { propagateReverse } from "./propagate-reverse.ts";
 import { propagateRegex } from "./propagate-regex.ts";
+import { propagateControlledVocabularies } from "./propagate-controlled-vocabularies.ts";
 import { propagateExample } from "./propagate-example.ts";
 import { propagateLanguageStringRequiredLanguages } from "./propagate-language-string-required-languages.ts";
 import { addSemanticPaths } from "./add-semantic-paths.ts";
@@ -31,6 +32,7 @@ export const defaultConceptualTransformations: ConceptualTransformation[] = [
   propagateCimIri,
   propagateReverse,
   propagateRegex,
+  propagateControlledVocabularies,
   propagateExample,
   propagateLanguageStringRequiredLanguages,
   addSemanticPaths,
