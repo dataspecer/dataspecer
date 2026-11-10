@@ -133,8 +133,12 @@ async function writeJsonSchemaArray(writer: JsonObjectWriter, schema: JsonSchema
     await writeJsonDefinition(containsWriter, schema.contains);
     await containsWriter.closeObject();
   }
+  if (schema.items === null) {
+    // An array that only constrains the items it contains does not specify the other items.
+    assertNot(!schema.contains, "Missing items specification.");
+    return;
+  }
   const items = writer.object("items");
-  assertNot(schema.items === null, "Missing items specification.");
   await writeJsonDefinition(items, schema.items);
   await items.closeObject();
 }

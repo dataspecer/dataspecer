@@ -4,6 +4,7 @@ import { SemanticModelClassProfile } from "@dataspecer/core-v2/semantic-model/pr
 import { clone } from "@dataspecer/core/core";
 import { StructureModel, StructureModelClass, StructureModelComplexType, StructureModelProperty } from "@dataspecer/generators/structure-model/model";
 import { JsonConfiguration } from "../configuration.ts";
+import type { JsonStructureModelClass } from "../json-structure-model/structure-model-class.ts";
 import { getClassTypeKey } from "../json-ld/json-ld-adapter.ts";
 import type { JsonTypeStructureModelProperty } from "./json-schema-model-adapter.ts";
 
@@ -60,6 +61,11 @@ export function structureModelAddIdAndTypeProperties(
         if (structureClass.example && structureClass.example.length > 0) {
           idDatatype.dataType.example = structureClass.example as string[];
         }
+        // The id of every instance must satisfy the rules for every value. The rules
+        // for at least one value belong to the property that refers to the class.
+        idDatatype.dataType.controlledVocabularies = structureClass.controlledVocabularies.filter(assignment => assignment.qualifier !== "at-least-one");
+        idDatatype.dataType.requireRecommendedControlledVocabularyValue = false;
+        idDatatype.dataType.restrictToRecommendedControlledVocabulary = structureClass.restrictToRecommendedControlledVocabulary;
 
         const id = new StructureModelProperty();
         id.technicalLabel = localClassConfiguration.jsonIdKeyAlias;
@@ -69,6 +75,7 @@ export function structureModelAddIdAndTypeProperties(
         }
         id.dataTypes = [idDatatype];
         structureClass.properties.unshift(id);
+        (structureClass as JsonStructureModelClass).idPropertyName = localClassConfiguration.jsonIdKeyAlias;
       }
     }
   }

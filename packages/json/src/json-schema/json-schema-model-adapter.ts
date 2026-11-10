@@ -26,6 +26,7 @@ import {
   StructureModelProperty,
   type StructureModelComplexType,
 } from "@dataspecer/generators/structure-model/model";
+import { getControlledVocabularyRules } from "@dataspecer/generators/structure-model/helper/controlled-vocabulary-rules";
 import { XSD, OFN, OFN_LABELS } from "@dataspecer/core/well-known";
 import {
   DataSpecification,
@@ -398,13 +399,76 @@ function findArtefactForImport(
 function structureModelClassPrimitive(modelClass: StructureModelClass): JsonSchemaDefinition {
   const useStringInsteadOfIri = !!(modelClass as JsonStructureModelClass).iriUsesPrefixes
   const str = new JsonSchemaString(useStringInsteadOfIri ? null : JsonSchemaStringFormats.iri);
-  if (modelClass.regex) {
-    str.pattern = modelClass.regex;
+  // Every pattern is a rule of its own, a value must match all of them.
+  const patterns = [
+    ...(modelClass.regex ? [modelClass.regex] : []),
+    ...getControlledVocabularyRules(modelClass).everyValue,
+  ];
+  if (patterns.length === 1) {
+    str.pattern = patterns[0];
+  } else {
+    str.allOf = patterns.map(stringWithPattern);
   }
   if (modelClass.example && modelClass.example.length > 0) {
     str.examples = modelClass.example as string[];
   }
   return str;
+}
+
+function stringWithPattern(pattern: string): JsonSchemaString {
+  const result = new JsonSchemaString(null);
+  result.pattern = pattern;
+  return result;
+}
+
+/**
+ * Describes a value of the class whose IRI matches the pattern.
+ * The value is either the IRI itself, or an object that holds it in its id property.
+ *
+ * @returns Null if the values of the class do not have an IRI in the schema.
+ */
+function valueWithIriMatching(modelClass: StructureModelClass, pattern: string): JsonSchemaDefinition | null {
+  if (modelClass.properties.length === 0 && !modelClass.emptyAsComplex) {
+    return stringWithPattern(pattern);
+  }
+  const idPropertyName = (modelClass as JsonStructureModelClass).idPropertyName;
+  if (idPropertyName === null || idPropertyName === undefined) {
+    return null;
+  }
+  const result = new JsonSchemaObject();
+  result.properties[idPropertyName] = stringWithPattern(pattern);
+  result.required.push(idPropertyName);
+  return result;
+}
+
+/**
+ * Rules that the values of the property must satisfy as a whole,
+ * not each of them, because of the controlled vocabularies of the class the property refers to.
+ * A property with several types has none, as the class of the values is not known.
+ */
+function getValuesRulesOfControlledVocabularies(property: StructureModelProperty): JsonSchemaDefinition[] {
+  const [dataType] = property.dataTypes;
+  if (property.dataTypes.length !== 1 || !dataType.isAssociation()) {
+    return [];
+  }
+  return getControlledVocabularyRules(dataType.dataType).atLeastOne
+    .map(pattern => valueWithIriMatching(dataType.dataType, pattern))
+    .filter((rule): rule is JsonSchemaDefinition => rule !== null);
+}
+
+/**
+ * Requires the array to contain a value that satisfies each of the rules.
+ */
+function addContainsRules(array: JsonSchemaArray, rules: JsonSchemaDefinition[]) {
+  if (rules.length === 1) {
+    array.contains = rules[0];
+    return;
+  }
+  array.allOf = rules.map(rule => {
+    const containing = new JsonSchemaArray();
+    containing.contains = rule;
+    return containing;
+  });
 }
 
 function structureModelPropertyToJsonDefinition(
@@ -442,7 +506,23 @@ function structureModelPropertyToJsonDefinition(
     result.anyOf = dataTypes;
   }
   //
-  const wrapped = wrapWithCardinality(property, result);
+  const valuesRules = getValuesRulesOfControlledVocabularies(property);
+  let wrapped: JsonSchemaDefinition;
+  if (valuesRules.length === 0) {
+    wrapped = wrapWithCardinality(property, result);
+  } else if (property.cardinalityMax == 1) {
+    // There is only one value, so it must satisfy the rules.
+    const value = new JsonSchemaAny();
+    value.allOf = [result, ...valuesRules];
+    wrapped = value;
+  } else {
+    wrapped = wrapWithCardinality(property, result);
+    if (JsonSchemaArray.is(wrapped)) {
+      addContainsRules(wrapped, valuesRules);
+    } else {
+      assertFailed("Property with multiple values must be an array.");
+    }
+  }
 
   const title = context.stringSelector(property.humanLabel);
   if (title && title.length > 0) {
