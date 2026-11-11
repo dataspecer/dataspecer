@@ -53,19 +53,7 @@ export function entityChangesToEvents(changes: EntityChange[]): { up: Record<str
 export function diffModelEntitiesToOperations(modelId: string, modelType: string, previous: EntityRecord, next: EntityRecord): OperationInModel[] {
   const changes = diffEntities(previous, next);
   const { operations, remainingChanges } = modelTypeChangesToOperations(modelType, changes);
-  // Operations are stored as JSON. In particular, undefined cannot carry a
-  // property removal through history; richer operations can also leave fields
-  // unchanged or generate different identifiers. Use exact entity replacements
-  // if the persisted operations would not reproduce the requested state.
-  const result = JSON.parse(JSON.stringify([...operations, ...changesToEntityOperations(remainingChanges)])) as Operation[];
-  const applied = applyOperationsToModelEntities(modelId, modelType, previous, result);
-  if (diffEntities(applied, next).length > 0) {
-    return changes.map((change) => ({
-      modelId,
-      operation: change.next === null ? createRemoveEntityOperation(change.previous.id) : createSetEntityOperation(change.next),
-    }));
-  }
-  return result.map((operation) => ({ modelId, operation }));
+  return [...operations, ...changesToEntityOperations(remainingChanges)].map((operation) => ({ modelId, operation }));
 }
 
 /**
