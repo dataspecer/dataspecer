@@ -591,8 +591,7 @@ async function dsvImport(repository: ModelRepositoryType, store: N3.Store, url: 
     // reliable way to recognize this for full HTML specifications profiled
     // via isProfileOf before fully importing them, so those are just
     // imported as new, same as before.
-    const probeUrl = profile.url.replace(/#.*$/, "");
-    const probeResponse = await fetchOrThrow(probeUrl);
+    const probeResponse = await fetchOrThrow(profile.url);
     const isHtml = probeResponse.headers.get("content-type")?.includes("text/html") ?? false;
 
     if (isHtml) {
@@ -656,14 +655,11 @@ export async function importFromUrl(
   touchedModelIds?: Set<string>,
   repository: ModelRepositoryType = modelRepository,
 ): Promise<[BaseResource | null, SemanticModelEntity[]]> {
-  url = url.replace(/#.*$/, "");
-
-  // const baseIri = url;
-  const baseIri = url;
-
   // Load the URL
   const queryResponse = await fetchOrThrow(url);
   if (queryResponse.headers.get("content-type")?.includes("text/html")) {
+    const baseIri = url.replace(/#.*$/, "");
+
     const queryText = await queryResponse.text();
     const html = parse(queryText);
     const jsonLdText = html.querySelector('script[type="application/ld+json"]')?.innerHTML ?? "{}";
@@ -673,7 +669,7 @@ export async function importFromUrl(
     const quads = (await jsonld.toRDF(jsonLd)) as N3.Quad[];
     const store = new N3.Store(quads);
 
-    return dsvImport(repository, store, url, baseIri, parentIri, existingIri, touchedModelIds);
+    return dsvImport(repository, store, baseIri, baseIri, parentIri, existingIri, touchedModelIds);
   } else {
     const name = deriveNameFromUrl(url);
 
