@@ -9,7 +9,20 @@ import {
   SemanticModelRelationship,
 } from "@dataspecer/core-v2/semantic-model/concepts";
 import { OFN } from "@dataspecer/core/well-known";
-import { ConceptualModel, ConceptualModelClass, ConceptualModelComplexType, ConceptualModelPrimitiveType, ConceptualModelProperty } from "../model/index.ts";
+import {
+  isControlledVocabularyAssignment,
+  normalizeQualifier,
+  Qualifier,
+} from "@dataspecer/core-v2/semantic-model/profile/concepts";
+import { isControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
+import {
+  ConceptualModel,
+  ConceptualModelClass,
+  ConceptualModelComplexType,
+  ConceptualModelControlledVocabularyAssignment,
+  ConceptualModelPrimitiveType,
+  ConceptualModelProperty,
+} from "../model/index.ts";
 import { Entity, EntityArray } from "@dataspecer/core/entity-model";
 import { ModelIdentifier } from "@dataspecer/core/model";
 
@@ -20,8 +33,19 @@ interface WithConceptIris {
   conceptIris?: string[];
 }
 
+interface WithControlledVocabularies {
+  /**
+   * Identifiers of the controlled vocabulary assignments of a class profile,
+   * both its own and the ones assigned from the profiled entities.
+   */
+  controlledVocabularies?: string[];
+}
+
+const QUALIFIERS: readonly string[] = ["must", "at-least-one", "recommended", "may"] satisfies Qualifier[];
+
 class ConceptualModelAdapter {
   private model: EntityArray | null = null;
+  private entitiesById: Map<string, Entity> = new Map();
   private modelId: ModelIdentifier | null = null;
 
   private readonly classes: { [iri: string]: ConceptualModelClass } = {};
@@ -29,6 +53,7 @@ class ConceptualModelAdapter {
   load(model: EntityArray, modelId: ModelIdentifier): ConceptualModel | null {
     this.model = model;
     this.modelId = modelId;
+    this.entitiesById = new Map(model.map(entity => [entity.id, entity]));
 
     const result = new ConceptualModel();
     result.pimIri = this.modelId;
@@ -118,6 +143,38 @@ class ConceptualModelAdapter {
     return (entity as WithConceptIris).conceptIris.filter((iri) => iri !== null && iri !== "");
   }
 
+  /**
+   * Resolves the controlled vocabulary assignments of the class profile to plain data.
+   * An assignment is skipped when it or its vocabulary is not in the model, or when its qualifier is not known.
+   */
+  private getControlledVocabularyAssignments(classData: ExtendedSemanticModelClass): ConceptualModelControlledVocabularyAssignment[] {
+    const result: ConceptualModelControlledVocabularyAssignment[] = [];
+    for (const assignmentId of (classData as WithControlledVocabularies).controlledVocabularies ?? []) {
+      const assignment = this.entitiesById.get(assignmentId) ?? null;
+      if (!isControlledVocabularyAssignment(assignment)) {
+        continue;
+      }
+      const qualifier = normalizeQualifier(assignment.qualifier);
+      const vocabulary = this.entitiesById.get(assignment.vocabulary);
+      if (!QUALIFIERS.includes(qualifier) || vocabulary === undefined || !isControlledVocabulary(vocabulary)) {
+        continue;
+      }
+      result.push({
+        id: assignment.id,
+        qualifier: qualifier as Qualifier,
+        vocabulary: {
+          id: vocabulary.id,
+          iri: vocabulary.iri ?? null,
+          title: vocabulary.title,
+          pattern: vocabulary.pattern ?? null,
+          references: vocabulary.references,
+          conformsToSkos: vocabulary.conformsToSkos,
+        },
+      });
+    }
+    return result;
+  }
+
   private loadAttribute(attributeData: ExtendedSemanticModelRelationship) {
     const end = attributeData.ends[1];
 
@@ -154,6 +211,7 @@ class ConceptualModelAdapter {
     model.usageNote = (classData as any).usageNote ?? null;
     // model.extends = classData.pimExtends.map((iri) => this.getClass(iri));
     model.regex = classData.regex ?? null;
+    model.controlledVocabularies = this.getControlledVocabularyAssignments(classData);
     model.example = classData.example ?? null;
     model.objectExample = classData.objectExample ?? null;
   }

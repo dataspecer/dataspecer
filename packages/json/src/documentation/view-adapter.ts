@@ -242,6 +242,7 @@ class ViewAdapter {
       isMain: false,
       format: definition.format,
       pattern: definition.pattern,
+      controlledVocabularyId: definition.controlledVocabularyId,
     };
   }
 
@@ -320,8 +321,15 @@ class ViewAdapter {
   private jsonSchemaArrayToViewModel(definition: JsonSchemaArray): JsonSchemaArrayViewModel {
     const minItems = definition.minItems ?? 0;
     const maxItems = definition.maxItems ?? null;
+
+    // Rules that only require an item in the array are described by `containsAll`, the other rules stay in `allOf`.
+    const containsRules = definition.allOf.filter(isContainsOnlyArray);
+    const otherRules = definition.allOf.filter((rule) => !isContainsOnlyArray(rule));
+    const common = this.processCommonProperties(definition);
+
     const result: JsonSchemaArrayViewModel = {
-      ...this.processCommonProperties(definition),
+      ...common,
+      allOf: otherRules.length > 0 ? otherRules.map((d) => this.jsonSchemaDefinitionToViewModel(d)) : null,
       jsonSchemaDefinition: definition,
       type: "array",
       isMain: false,
@@ -329,6 +337,7 @@ class ViewAdapter {
 
       items: this.jsonSchemaDefinitionToViewModel(definition.items!),
       contains: definition.contains ? this.jsonSchemaDefinitionToViewModel(definition.contains) : null,
+      containsAll: containsRules.length > 0 ? containsRules.map((d) => this.jsonSchemaDefinitionToViewModel(d.contains!)) : null,
 
       minItems,
       maxItems,
@@ -346,43 +355,35 @@ class ViewAdapter {
    * If matched, the view model is updated to include the list of required string constants.
    */
   private arrayViewModelTryMatchOnlyStrings(definition: JsonSchemaArrayViewModel): JsonSchemaArrayViewModel {
-    if (definition.anyOf || definition.oneOf || definition.items.type !== "string") {
+    if (definition.anyOf || definition.oneOf || definition.allOf || definition.items.type !== "string") {
       return definition;
     }
 
-    const collectedStringConstants: string[] = [];
-
-    if (definition.contains) {
-      if (definition.contains.type === "const") {
-        collectedStringConstants.push((definition.contains as JsonSchemaConstViewModel).const);
-      } else {
-        return definition;
-      }
+    const requiredItems = [...(definition.contains ? [definition.contains] : []), ...(definition.containsAll ?? [])];
+    if (requiredItems.length === 0 || requiredItems.some((item) => item.type !== "const")) {
+      return definition;
     }
 
-    if (definition.allOf) {
-      for (const subDef of definition.allOf) {
-        // todo some more checks
-
-        if (subDef.type === "array") {
-          const subArrayDef = subDef as JsonSchemaArrayViewModel;
-          if (subArrayDef.contains) {
-            if (subArrayDef.contains.type === "const") {
-              collectedStringConstants.push((subArrayDef.contains as JsonSchemaConstViewModel).const);
-            } else {
-              return definition;
-            }
-          }
-        }
-      }
-    }
-
-    if (collectedStringConstants.length > 0) {
-      definition.requiresStringConstantsOnly = collectedStringConstants;
-    }
-
+    definition.requiresStringConstantsOnly = requiredItems.map((item) => (item as JsonSchemaConstViewModel).const);
     return definition;
   }
+}
+
+/**
+ * Array schema that only requires the array to contain an item, for example
+ * <code>{type: array, items: {}, contains: ...}</code>, and does not restrict anything else.
+ */
+function isContainsOnlyArray(definition: JsonSchemaDefinition): definition is JsonSchemaArray & { contains: JsonSchemaDefinition } {
+  return (
+    JsonSchemaArray.is(definition) &&
+    definition.contains !== null &&
+    (definition.items === null || JsonSchemaAny.is(definition.items)) &&
+    definition.minItems === null &&
+    definition.maxItems === null &&
+    definition.anyOf.length === 0 &&
+    definition.oneOf.length === 0 &&
+    definition.allOf.length === 0
+  );
 }
 
 function metaschemaToDialect(metaschemaIri: string) {
