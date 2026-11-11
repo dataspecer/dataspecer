@@ -1,6 +1,8 @@
 import { changesToEntityOperations, diffEntities, type Entity, type EntityChange, type EntityRecord } from "@dataspecer/core/entity-model";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import {
+  createRemoveEntityOperation,
+  createSetEntityOperation,
   isRemoveEntityOperation,
   isSetEntityOperation,
   isUndoOperation,
@@ -13,8 +15,12 @@ import {
 } from "@dataspecer/core/operation";
 import {
   applyOperationsToVirtualProjectModel,
+  createCreateModelOperation,
+  createCreateProjectOperation,
+  createRemoveModelOperation,
   isCreateModelOperation,
   isCreateProjectOperation,
+  isPackageEntity,
   isRemoveModelOperation,
   type ProjectModelEntity,
 } from "@dataspecer/core/project-model";
@@ -47,7 +53,19 @@ export function entityChangesToEvents(changes: EntityChange[]): { up: Record<str
 export function diffModelEntitiesToOperations(modelId: string, modelType: string, previous: EntityRecord, next: EntityRecord): OperationInModel[] {
   const changes = diffEntities(previous, next);
   const { operations, remainingChanges } = modelTypeChangesToOperations(modelType, changes);
-  return [...operations, ...changesToEntityOperations(remainingChanges)].map((operation) => ({ modelId, operation }));
+  // Operations are stored as JSON. In particular, undefined cannot carry a
+  // property removal through history; richer operations can also leave fields
+  // unchanged or generate different identifiers. Use exact entity replacements
+  // if the persisted operations would not reproduce the requested state.
+  const result = JSON.parse(JSON.stringify([...operations, ...changesToEntityOperations(remainingChanges)])) as Operation[];
+  const applied = applyOperationsToModelEntities(modelId, modelType, previous, result);
+  if (diffEntities(applied, next).length > 0) {
+    return changes.map((change) => ({
+      modelId,
+      operation: change.next === null ? createRemoveEntityOperation(change.previous.id) : createSetEntityOperation(change.next),
+    }));
+  }
+  return result.map((operation) => ({ modelId, operation }));
 }
 
 /**
@@ -56,24 +74,88 @@ export function diffModelEntitiesToOperations(modelId: string, modelType: string
  * The type of each model is resolved from its project model entity so that the
  * diff can generate model type specific operations; models without one (the
  * virtual project model itself, named blob stores) fall back to the generic
- * entity operations.
+ * entity operations. New resources are created before their content is
+ * populated, with parent packages preceding their children. Removed resources
+ * are deleted after the surviving models have been updated.
  */
 export function diffModelStates(previous: Record<string, EntityRecord>, next: Record<string, EntityRecord>): OperationInModel[] {
   const modelIds = new Set([...Object.keys(previous), ...Object.keys(next)]);
   const operations: OperationInModel[] = [];
-
-  for (const modelId of modelIds) {
-    // The virtual project model itself (modelId === PROJECT_MODEL_ID) is
-    // diffed too, so changes to a resource's label/description (e.g. a
-    // package renamed on reload) are captured as generic update-entity
-    // operations - it has no richer model-type-specific operations, so it
-    // always falls back to NAMED_BLOB_STORE_TYPE below.
-    const projectEntity = (next[PROJECT_MODEL_ID]?.[modelId] ?? previous[PROJECT_MODEL_ID]?.[modelId]) as ProjectModelEntity | undefined;
-    const modelType = projectEntity?.modelType ?? NAMED_BLOB_STORE_TYPE;
-    operations.push(...diffModelEntitiesToOperations(modelId, modelType, previous[modelId] ?? {}, next[modelId] ?? {}));
+  let projectEntities = previous[PROJECT_MODEL_ID] ?? {};
+  const nextProjectEntities = next[PROJECT_MODEL_ID] ?? {};
+  const parentIds = new Map<string, string>();
+  for (const entity of Object.values(nextProjectEntities)) {
+    if (isPackageEntity(entity)) {
+      for (const childId of entity.subModels) {
+        if (!entity.reusedProjects.includes(childId)) {
+          parentIds.set(childId, entity.id);
+        }
+      }
+    }
   }
 
-  return operations;
+  const pending = new Set(Object.keys(nextProjectEntities).filter((id) => !projectEntities[id]));
+  while (pending.size > 0) {
+    const pendingCount = pending.size;
+    for (const modelId of pending) {
+      const entity = nextProjectEntities[modelId] as ProjectModelEntity;
+      const parentId = parentIds.get(modelId);
+      if (parentId !== undefined && !projectEntities[parentId]) {
+        continue;
+      }
+      if (parentId === undefined && !(isPackageEntity(entity) && entity.projectId === modelId)) {
+        throw new Error(`Cannot create model "${modelId}" without its parent package.`);
+      }
+      const operation = parentId === undefined
+        ? createCreateProjectOperation(modelId)
+        : createCreateModelOperation(parentId, entity.modelType, modelId);
+      operation.label = entity.label;
+      operation.description = entity.description;
+      operations.push({ modelId: PROJECT_MODEL_ID, operation });
+      projectEntities = applyOperationsToModelEntities(PROJECT_MODEL_ID, "", projectEntities, [operation]);
+      pending.delete(modelId);
+    }
+    if (pending.size === pendingCount) {
+      throw new Error("Cannot create models with missing or cyclic parent packages.");
+    }
+  }
+
+  const removedModelIds = new Set(Object.keys(previous[PROJECT_MODEL_ID] ?? {}).filter((id) => !nextProjectEntities[id]));
+  const removedChildren = new Set<string>();
+  for (const modelId of removedModelIds) {
+    const entity = projectEntities[modelId];
+    if (isPackageEntity(entity)) {
+      for (const childId of entity.subModels) {
+        if (!entity.reusedProjects.includes(childId)) {
+          removedChildren.add(childId);
+        }
+      }
+    }
+  }
+  const removals: OperationInModel[] = [];
+  for (const modelId of removedModelIds) {
+    // Removing a package already removes all of its owned descendants.
+    if (removedChildren.has(modelId)) {
+      continue;
+    }
+    const operation = createRemoveModelOperation(modelId);
+    removals.push({ modelId: PROJECT_MODEL_ID, operation });
+    projectEntities = applyOperationsToModelEntities(PROJECT_MODEL_ID, "", projectEntities, [operation]);
+  }
+
+  for (const modelId of modelIds) {
+    if (removedModelIds.has(splitModelId(modelId).iri)) {
+      continue;
+    }
+    // Structural operations account for model creation/removal and parent
+    // links. Only the remaining project metadata needs entity operations.
+    const projectEntity = (next[PROJECT_MODEL_ID]?.[modelId] ?? previous[PROJECT_MODEL_ID]?.[modelId]) as ProjectModelEntity | undefined;
+    const modelType = projectEntity?.modelType ?? NAMED_BLOB_STORE_TYPE;
+    const previousEntities = modelId === PROJECT_MODEL_ID ? projectEntities : previous[modelId] ?? {};
+    operations.push(...diffModelEntitiesToOperations(modelId, modelType, previousEntities, next[modelId] ?? {}));
+  }
+
+  return [...operations, ...removals];
 }
 
 /**

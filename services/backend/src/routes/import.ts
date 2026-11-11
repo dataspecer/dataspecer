@@ -58,26 +58,15 @@ async function fetchOrThrow(url: string): Promise<Response> {
 }
 
 /**
- * Creates a resource if it doesn't exist, or updates its metadata if it already exists.
+ * Creates an imported resource or replaces its metadata with the source metadata.
  */
 async function ensureResource(repository: ModelRepositoryType, parentIri: string, iri: string, type: string, userMetadata: any): Promise<void> {
   const existing = await repository.getResource(iri);
   if (existing) {
-    await repository.updateResource(iri, userMetadata);
+    const clearedMetadata = Object.fromEntries(Object.keys(existing.userMetadata).map((key) => [key, undefined]));
+    await repository.updateResource(iri, { ...clearedMetadata, ...userMetadata });
   } else {
     await repository.createResource(parentIri, iri, type, userMetadata);
-  }
-}
-
-/**
- * Creates a package if it doesn't exist, or updates its metadata if it already exists.
- */
-async function ensurePackage(repository: ModelRepositoryType, parentIri: string, iri: string, userMetadata: any): Promise<void> {
-  const existing = await repository.getResource(iri);
-  if (existing) {
-    await repository.updateResource(iri, userMetadata);
-  } else {
-    await repository.createPackage(parentIri, iri, userMetadata);
   }
 }
 
@@ -310,10 +299,14 @@ async function importRdfsAndDsv(repository: ModelRepositoryType, parentIri: stri
   let vocabularyModelId: string | undefined;
   let profileModelId: string | undefined;
   for (const model of existingPackage?.subResources ?? []) {
-    if (!model.types.includes(LOCAL_SEMANTIC_MODEL)) {
+    if (!model.types.includes(LOCAL_SEMANTIC_MODEL) || touchedModelIds?.has(model.iri)) {
       continue;
     }
     const entities = await repository.getModelEntities(model.iri);
+    const source = getSemanticModelMainEntity(entities ?? {})?.source;
+    if (isRdfsSnapshot(source) || isCachedSubgraph(source)) {
+      continue;
+    }
     if (isModelProfile(entities ?? {})) {
       profileModelId ??= model.iri;
     } else {
@@ -423,9 +416,12 @@ async function importRdfsAndDsv(repository: ModelRepositoryType, parentIri: stri
     // import (a nested specification's own catalog) are already persisted
     // to this same repository - resolve references into them too.
     const resolvedVocabularyModelIds = new Set<string>();
-    const existingModels = await getModelsForPackage(parentIri, repository);
+    const existingModels = await getModelsForPackage(parentIri, repository, { includeReusedProjects: false });
     const existingProjectModel = existingModels[PROJECT_MODEL_ID] ?? {};
     for (const [modelId, entity] of Object.entries(existingProjectModel)) {
+      if (touchedModelIds && !touchedModelIds.has(modelId)) {
+        continue;
+      }
       if ((entity as { modelType?: string }).modelType === CONTROLLED_VOCABULARY_MODEL) {
         const cvIri = (existingModels[modelId]?.[modelId] as ControlledVocabulary | undefined)?.iri;
         if (cvIri) {
@@ -440,7 +436,12 @@ async function importRdfsAndDsv(repository: ModelRepositoryType, parentIri: stri
     // so ControlledVocabularyAssignment references can already find them.
     const parsedVocabularies = parseControlledVocabularyCatalog(new N3.Parser().parse(data));
     for (const vocabulary of parsedVocabularies) {
-      const cvModelId = parentIri + "/controlled-vocabulary/" + uuidv4();
+      const existingVocabulary = vocabulary.iri ? existingPackage?.subResources?.find((model) =>
+        model.types.includes(CONTROLLED_VOCABULARY_MODEL)
+        && !touchedModelIds?.has(model.iri)
+        && (existingModels[model.iri]?.[model.iri] as ControlledVocabulary | undefined)?.iri === vocabulary.iri,
+      ) : undefined;
+      const cvModelId = existingVocabulary?.iri ?? parentIri + "/controlled-vocabulary/" + uuidv4();
       await ensureResource(repository, parentIri, cvModelId, CONTROLLED_VOCABULARY_MODEL, { label: vocabulary.title });
       touchedModelIds?.add(cvModelId);
       // Mirrors controlledVocabularyModelEntitiesToSerialization's own
@@ -483,7 +484,7 @@ async function importRdfsAndDsv(repository: ModelRepositoryType, parentIri: stri
 /**
  * Performs import from DSV metadata document.
  */
-async function dsvImport(repository: ModelRepositoryType, store: N3.Store, url: string, baseIri: string, parentIri: string, existingPackageIri?: string, touchedModelIds?: Set<string>): Promise<[BaseResource | null, SemanticModelEntity[]]> {
+async function dsvImport(repository: ModelRepositoryType, store: N3.Store, url: string, baseIri: string, parentIri: string, existingPackageIri?: string, touchedModelIds: Set<string> = new Set()): Promise<[BaseResource | null, SemanticModelEntity[]]> {
   const dsv = rdfToDSVMetadata(store.getQuads(null, null, null, null), { baseIri });
 
   // todo: what to do when there are multiple specifications that this document describes?
@@ -492,14 +493,15 @@ async function dsvImport(repository: ModelRepositoryType, store: N3.Store, url: 
   // Create or reuse package
 
   const rootPackageId = existingPackageIri ?? uuidv4();
-  touchedModelIds?.add(rootPackageId);
+  touchedModelIds.add(rootPackageId);
 
-  await ensurePackage(repository, parentIri, rootPackageId, {
+  await ensureResource(repository, parentIri, rootPackageId, LOCAL_PACKAGE, {
     label: mainSpecification.title,
     description: mainSpecification.description,
     importedFromUrl: url,
     documentBaseUrl: url,
   });
+  await repository.setModelJson(rootPackageId, {});
 
   // We create a generator configuration so that re-generation works correctly
   {
@@ -585,9 +587,7 @@ async function dsvImport(repository: ModelRepositoryType, store: N3.Store, url: 
     // and matching its dominant IRI prefix against an existing child before
     // deciding whether to store it as a new model or update the matched one -
     // without this, the old and new state would be treated as unrelated
-    // models and the reload would be unable to derive a diff for it (see
-    // below in reloadResource, where previous/next models without a
-    // counterpart on the other side are dropped from the diff). There is no
+    // models and the reload would replace the vocabulary's identifier. There is no
     // reliable way to recognize this for full HTML specifications profiled
     // via isProfileOf before fully importing them, so those are just
     // imported as new, same as before.
@@ -636,9 +636,7 @@ async function dsvImport(repository: ModelRepositoryType, store: N3.Store, url: 
   await importAllStructureModels(repository, structureModelResources, rootPackageId + "/", rootPackageId, touchedModelIds);
 
   // Delete children that were not touched during reload
-  if (touchedModelIds) {
-    await deleteUntouchedChildren(repository, rootPackageId, touchedModelIds);
-  }
+  await deleteUntouchedChildren(repository, rootPackageId, touchedModelIds);
 
   return [(await repository.getResource(rootPackageId))!, allEntitiesFromProfiled];
 }
@@ -827,48 +825,17 @@ export const reloadResource = asyncHandler(async (request: express.Request, resp
   // recorded on the evolution branch, same as for the semantic snapshot above. The
   // import reuses existing resource IRIs, so the diff pairs the old and new
   // state of each model.
-  const previousModels = await getModelsForPackage(query.iri, modelRepository);
+  const projectIri = (await modelRepository.getProjectIri(query.iri))!;
+  const snapshotOptions = { includeReusedProjects: false, projectId: projectIri };
+  const previousModels = await getModelsForPackage(query.iri, modelRepository, snapshotOptions);
 
   const staging = new StagingModelRepository(modelRepository);
   await importFromUrl("", url, query.iri, undefined, staging);
 
-  const nextModels = await getModelsForPackage(query.iri, staging);
-
-  // TODO: Creation and deletion of models is not supported in branches yet.
-  // Models existing on only one side of the reload are skipped here, and no
-  // touched-model tracking is passed to the import above, so vanished models
-  // are not deleted either. Only reloads of stable specifications (keeping
-  // the same set of models) are therefore fully recorded.
-  for (const modelId of Object.keys(previousModels)) {
-    if (modelId !== PROJECT_MODEL_ID && !(modelId in nextModels)) {
-      delete previousModels[modelId];
-    }
-  }
-  for (const modelId of Object.keys(nextModels)) {
-    if (modelId !== PROJECT_MODEL_ID && !(modelId in previousModels)) {
-      delete nextModels[modelId];
-    }
-  }
-
-  // The project model's own entities (one per surviving model above, keyed
-  // by the same resource iris) are trimmed the same way, so its diff below
-  // only reports metadata changes (e.g. a package renamed on reload) for
-  // models that exist on both sides, not model creation/removal.
-  const survivingModelIds = new Set(Object.keys(nextModels).filter((modelId) => modelId !== PROJECT_MODEL_ID));
-  for (const entityId of Object.keys(previousModels[PROJECT_MODEL_ID] ?? {})) {
-    if (!survivingModelIds.has(entityId)) {
-      delete previousModels[PROJECT_MODEL_ID]![entityId];
-    }
-  }
-  for (const entityId of Object.keys(nextModels[PROJECT_MODEL_ID] ?? {})) {
-    if (!survivingModelIds.has(entityId)) {
-      delete nextModels[PROJECT_MODEL_ID]![entityId];
-    }
-  }
+  const nextModels = await getModelsForPackage(query.iri, staging, snapshotOptions);
 
   const operations = diffModelStates(previousModels, nextModels);
 
-  const projectIri = (await modelRepository.getProjectIri(query.iri))!;
   let evolutionBranchId: number | null = null;
   if (query.apply) {
     await modelRepository.applyTransactions(projectIri, [{ id: uuidv4(), operations }]);
