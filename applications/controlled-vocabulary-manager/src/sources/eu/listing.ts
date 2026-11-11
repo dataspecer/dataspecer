@@ -45,7 +45,7 @@ const VOCABULARY_DATASETS = `<${EU_CATALOGUE_IRI}> dcat:dataset ?dataset .
 /**
  * Reads all the vocabularies of the catalogue, with their group and titles: a row for each title.
  *
- * The rows are in the form {@link createCatalogueListing} takes.
+ * The rows are in the form {@link createCatalogueLoader} takes.
  */
 export function catalogueQuery(): string {
   return `${PREFIXES}

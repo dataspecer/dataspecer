@@ -1,4 +1,5 @@
 import { fileTypeName, FORMAT_NAMES } from "../file-types"
+import { rankIn } from "../sparql-utils"
 
 export const SPARQL_FORMAT = "SPARQL"
 export const UNKNOWN_FORMAT = "Other"
@@ -58,6 +59,5 @@ export function formatRank(format: string): number {
   if (format === SPARQL_FORMAT) {
     return FORMAT_ORDER.length + 1
   }
-  const index = FORMAT_ORDER.indexOf(format)
-  return index === -1 ? FORMAT_ORDER.length : index
+  return rankIn(FORMAT_ORDER, format)
 }

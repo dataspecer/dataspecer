@@ -1,5 +1,6 @@
 import type { LanguageString } from "@dataspecer/core/core/core-resource"
 import { fileTypeName, FORMAT_NAMES } from "../file-types"
+import { rankIn } from "../sparql-utils"
 
 export const UNKNOWN_FORMAT = "Other"
 
@@ -44,8 +45,7 @@ export function carriesSkos(format: string): boolean {
  * Position of the format in the order of suitability, smaller is better.
  */
 export function formatRank(format: string): number {
-  const index = FORMAT_ORDER.indexOf(format)
-  return index === -1 ? FORMAT_ORDER.length : index
+  return rankIn(FORMAT_ORDER, format)
 }
 
 /**

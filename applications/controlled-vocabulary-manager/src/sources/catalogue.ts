@@ -1,11 +1,11 @@
 import type { LanguageString } from "@dataspecer/core/core/core-resource"
 import type { SparqlRow, SparqlTerm } from "./sparql-client"
-import { assertNonNegativeInteger, labelOrIri, toLanguageString } from "./sparql-utils"
-import type { CandidateFilter, Page, PageRequest, SourceCandidate, SourceGroup, VocabularySource } from "./types"
+import { compareText, labelOrIri, toLanguageString } from "./sparql-utils"
+import type { CandidateFilter, SourceCandidate, SourceGroup } from "./types"
 
 /*
  * The listing shared by the sources whose catalogue is small enough to be read at once.
- * The source reads all its vocabularies with their groups, pages, searches and counts are made in the browser. 
+ * The source reads all its vocabularies with their groups, and the search and the counts are made in the browser.
  */
 
 /**
@@ -27,6 +27,7 @@ export interface CatalogueOptions {
 
 /**
  * A vocabulary of the catalogue.
+ * - groupLabel = the name of the group of the vocabulary
  * - sortKey = the title in the sort language in lower case, or another title after a "~" when there is none
  * - searchText = the titles in lower case, one per line
  */
@@ -34,6 +35,7 @@ interface CatalogueEntry {
   id: string
   title: LanguageString
   groupId: string
+  groupLabel: LanguageString
   sortKey: string
   searchText: string
 }
@@ -46,10 +48,6 @@ export interface Catalogue {
   entries: CatalogueEntry[]
   /** The biggest first. */
   groups: SourceGroup[]
-}
-
-function compare(a: string, b: string): number {
-  return a < b ? -1 : a > b ? 1 : 0
 }
 
 /**
@@ -84,21 +82,6 @@ export function buildCatalogue({ catalogue, groupNames }: CatalogueRows, { sortL
     }
   }
 
-  const entries = [...datasets].map(([id, { groupId, titles }]): CatalogueEntry => {
-    const title = labelOrIri(toLanguageString(titles), id)
-    return {
-      id,
-      title,
-      groupId,
-      sortKey: sortKeyOf(titles, sortLanguage),
-      searchText: Object.values(title).join("\n").toLowerCase(),
-    }
-  }).sort((a, b) => compare(a.sortKey, b.sortKey) || compare(a.id, b.id))
-
-  const counts = new Map<string, number>()
-  for (const entry of entries) {
-    counts.set(entry.groupId, (counts.get(entry.groupId) ?? 0) + 1)
-  }
   const names = new Map<string, SparqlTerm[]>()
   for (const row of groupNames) {
     const id = row.group?.value
@@ -106,58 +89,55 @@ export function buildCatalogue({ catalogue, groupNames }: CatalogueRows, { sortL
       names.set(id, [...(names.get(id) ?? []), ...(row.name === undefined ? [] : [row.name])])
     }
   }
+  const labelOf = (groupId: string) => labelOrIri(toLanguageString(names.get(groupId) ?? []), groupId)
+
+  const entries = [...datasets].map(([id, { groupId, titles }]): CatalogueEntry => {
+    const title = labelOrIri(toLanguageString(titles), id)
+    return {
+      id,
+      title,
+      groupId,
+      groupLabel: labelOf(groupId),
+      sortKey: sortKeyOf(titles, sortLanguage),
+      searchText: Object.values(title).join("\n").toLowerCase(),
+    }
+  }).sort((a, b) => compareText(a.sortKey, b.sortKey) || compareText(a.id, b.id))
+
+  const counts = new Map<string, number>()
+  for (const entry of entries) {
+    counts.set(entry.groupId, (counts.get(entry.groupId) ?? 0) + 1)
+  }
   const groups = [...counts]
-    .map(([id, count]): SourceGroup => ({ id, count, label: labelOrIri(toLanguageString(names.get(id) ?? []), id) }))
-    .sort((a, b) => b.count - a.count || compare(a.id, b.id))
+    .map(([id, count]): SourceGroup => ({ id, count, label: labelOf(id) }))
+    .sort((a, b) => b.count - a.count || compareText(a.id, b.id))
   return { entries, groups }
 }
 
 /**
- * Cuts the page out of the list.
- */
-function pageOf<T>(items: T[], request: PageRequest): Page<T> {
-  assertNonNegativeInteger(request.limit, "limit")
-  assertNonNegativeInteger(request.offset, "offset")
-  return { items: items.slice(request.offset, request.offset + request.limit), total: items.length }
-}
-
-/**
- * A page of the groups, the biggest first.
- */
-export function listGroups(catalogue: Catalogue, request: PageRequest): Page<SourceGroup> {
-  return pageOf(catalogue.groups, request)
-}
-
-/**
- * A page of the vocabularies that satisfy the filter, in the order of the catalogue. The text is searched in the
+ * The vocabularies that satisfy the filter, in the order of the catalogue. The text is searched in the
  * titles in all the languages the catalogue has, ignoring case. Each vocabulary is labeled with the name of its group.
  */
-export function listCandidates(catalogue: Catalogue, filter: CandidateFilter, request: PageRequest): Page<SourceCandidate> {
+export function filterCandidates(catalogue: Catalogue, filter: CandidateFilter): SourceCandidate[] {
   const text = filter.query?.trim().toLowerCase()
-  const found = catalogue.entries.filter((entry) =>
-    (filter.groupId === undefined || entry.groupId === filter.groupId)
-    && (!text || entry.searchText.includes(text)))
-  const page = pageOf(found, request)
-  const labels = new Map(catalogue.groups.map((group) => [group.id, group.label]))
-  return {
-    total: page.total,
-    items: page.items.map((entry) => ({ id: entry.id, title: entry.title, groupLabel: labels.get(entry.groupId) ?? {} })),
-  }
+  return catalogue.entries
+    .filter((entry) =>
+      (filter.groupId === undefined || entry.groupId === filter.groupId)
+      && (!text || entry.searchText.includes(text)))
+    .map((entry) => ({ id: entry.id, title: entry.title, groupLabel: entry.groupLabel }))
 }
 
 /**
- * Creates the listing of a source from the function that reads its catalogue.
- *
- * The catalogue is read with the first listing and kept for all the following ones, including those that
- * start while it is still being read. It is shared, so reading it is not cancelled together with the listing
- * that started it. A failed reading is forgotten, so that the next listing tries again.
- */
-export function createCatalogueListing(
+ * Creates a catalogue loader. 
+ * Receives a read function that handles the access to the catalog service and fetches data.
+ * Returns a loader that uses the read function to builds a browsable catalog from the received data.
+ * The catalog is read once an memoized.
+*/
+export function createCatalogueLoader(
   read: () => Promise<CatalogueRows>,
   options: CatalogueOptions,
-): Required<Pick<VocabularySource, "listGroups" | "listCandidates">> {
+): () => Promise<Catalogue> {
   let catalogue: Promise<Catalogue> | null = null
-  const load = (): Promise<Catalogue> => {
+  return () => {
     const loading = catalogue ?? read().then((rows) => buildCatalogue(rows, options))
     catalogue = loading
     loading.catch(() => {
@@ -166,9 +146,5 @@ export function createCatalogueListing(
       }
     })
     return loading
-  }
-  return {
-    listGroups: async (request) => listGroups(await load(), request),
-    listCandidates: async (filter, request) => listCandidates(await load(), filter, request),
   }
 }

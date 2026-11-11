@@ -22,7 +22,7 @@ const CODELIST_DATASETS = `?dataset a dcat:Dataset ;
 
 /**
  * Reads all the codelists with their publisher and titles: a row for each title.
- * The rows are in the form {@link createCatalogueListing} takes.
+ * The rows are in the form {@link createCatalogueLoader} takes.
  */
 export function catalogueQuery(): string {
   return `${PREFIXES}

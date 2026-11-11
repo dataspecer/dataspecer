@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react"
 import type { Screen } from "../App"
-import type { MetadataResult, SourceCandidate, SourceGroup } from "@/sources/types"
+import type { MetadataResult, SourceGroup } from "@/sources/types"
 import type { Navigate } from "./use-hash-route"
 
 /**
@@ -10,8 +10,7 @@ import type { Navigate } from "./use-hash-route"
  * - group = the group whose vocabularies are listed
  * - query = the text the vocabularies are searched by, empty when not searching
  * - candidatesPage = zero-based number of the shown page of the vocabularies
- * - candidate = the vocabulary the user has chosen
- * - metadata = what was read about the chosen vocabulary from its chosen distribution
+ * - metadata = what was read about the vocabulary the user has chosen
  */
 export interface WizardState {
   sourceId: string | null
@@ -19,7 +18,6 @@ export interface WizardState {
   group: SourceGroup | null
   query: string
   candidatesPage: number
-  candidate: SourceCandidate | null
   metadata: MetadataResult | null
 }
 
@@ -29,7 +27,6 @@ const INITIAL_STATE: WizardState = {
   group: null,
   query: "",
   candidatesPage: 0,
-  candidate: null,
   metadata: null,
 }
 
@@ -41,8 +38,6 @@ export function isWizardScreenAvailable(screen: Screen, state: WizardState): boo
   switch (screen) {
     case "search":
       return state.sourceId !== null
-    case "distribution":
-      return state.candidate !== null
     case "form-prefilled":
       return state.metadata !== null
     default:
@@ -94,10 +89,6 @@ export function useSourceWizard(screen: Screen, navigate: Navigate) {
     setState((current) => ({ ...current, candidatesPage }))
   }, [])
 
-  const selectCandidate = useCallback((candidate: SourceCandidate) => {
-    setState((current) => ({ ...current, candidate, metadata: null }))
-  }, [])
-
   const setMetadata = useCallback((metadata: MetadataResult) => {
     setState((current) => ({ ...current, metadata }))
   }, [])
@@ -111,5 +102,5 @@ export function useSourceWizard(screen: Screen, navigate: Navigate) {
     }
   }, [available, navigate])
 
-  return { state, available, selectSource, setGroupsPage, selectGroup, search, setCandidatesPage, selectCandidate, setMetadata, reset }
+  return { state, available, selectSource, setGroupsPage, selectGroup, search, setCandidatesPage, setMetadata, reset }
 }

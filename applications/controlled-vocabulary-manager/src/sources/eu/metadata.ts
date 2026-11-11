@@ -2,14 +2,13 @@ import { buildIriPattern, iriPrefixPattern } from "../iri-pattern"
 import { SparqlError, type SparqlRow } from "../sparql-client"
 import { tagUntagged } from "../sparql-utils"
 import type {
-  CandidateDetail,
   MetadataOptions,
   MetadataResult,
   MetadataWarning,
   RequestOptions,
   VocabularyMetadata,
 } from "../types"
-import type { EuCandidateDetail } from "./detail"
+import type { EuRecord } from "./detail"
 import { carriesSkos } from "./distribution"
 import { PREFIXES } from "./listing"
 
@@ -24,6 +23,12 @@ export const AUTHORITY_LIST_IRI = "http://publications.europa.eu/resource/author
  */
 const SAMPLED_VALUES = 200
 const SAMPLE_IRI_COUNT = 5
+
+/**
+ * The code of the value "Provisional data" that many lists have next to their real values. It is not a value
+ * to show as an example, and it does not take part in deriving the pattern of the IRIs.
+ */
+const PROVISIONAL_DATA_CODE = "OP_DATPRO"
 
 export interface MetadataDependencies {
   /** Runs a SELECT query against the endpoint of the catalog. */
@@ -50,17 +55,14 @@ export function authorityListIri(identifier: string): string | null {
   return /^[A-Za-z0-9._-]+$/.test(identifier) ? `${AUTHORITY_LIST_IRI}${identifier}` : null
 }
 
-function isEuDetail(detail: CandidateDetail): detail is EuCandidateDetail {
-  return "isNamedAuthorityList" in detail
-}
-
 /**
  * Reads the pattern of the IRIs of the values of the list.
  *
  * The catalog on data.europa.eu has the values of only some of the lists. 
  * When they are there, the pattern is derived from them. 
  * Otherwise it is the pattern that all the values of a named authority
- * list have by the convention of the Publications Office, and no values are returned to check it against.
+ * list have by the convention of the Publications Office, and no values are returned to check it against,
+ * which the warning patternByConvention says.
  * A failure of the endpoint gives the pattern by the convention and the warning valuesNotLoaded.
  */
 async function readPattern(
@@ -79,10 +81,12 @@ async function readPattern(
     const detail = error instanceof Error ? error.message : undefined
     return { pattern: byConvention, sampleIris: [], warnings: [{ code: "valuesNotLoaded", detail }] }
   }
-  const iris = rows.map((row) => row.value?.value).filter((iri): iri is string => iri !== undefined)
+  const iris = rows
+    .map((row) => row.value?.value)
+    .filter((iri): iri is string => iri !== undefined && !iri.endsWith(`/${PROVISIONAL_DATA_CODE}`))
   const derived = buildIriPattern(iris)
   if (derived === null) {
-    return { pattern: byConvention, sampleIris: [], warnings: [] }
+    return { pattern: byConvention, sampleIris: [], warnings: [{ code: "patternByConvention" }] }
   }
   return { pattern: derived, sampleIris: [...new Set(iris)].slice(0, SAMPLE_IRI_COUNT), warnings: [] }
 }
@@ -96,28 +100,24 @@ async function readPattern(
  *   its values in the catalog, or by the convention when it has none there
  * - the IRI of any other vocabulary cannot be derived, so it and the pattern are left empty with a warning
  * - a distribution that is not SKOS has no scheme, the vocabulary is referenced by the address of the distribution
+ * - a record without a distribution has no addresses, which the warning noDistribution says
  */
-export async function readMetadata(
-  detail: CandidateDetail,
-  distributionId: string,
+export async function deriveMetadata(
+  record: EuRecord,
   options: MetadataOptions,
   dependencies: MetadataDependencies,
 ): Promise<MetadataResult> {
-  const distribution = detail.distributions.find((candidate) => candidate.id === distributionId)
-  if (distribution === undefined) {
-    throw new Error(`The record has no distribution ${distributionId}.`)
-  }
-
-  const conformsToSkos = carriesSkos(distribution.format)
-  const accessUrl = distribution.downloadUrl ?? distribution.accessUrl
-  const warnings: MetadataWarning[] = []
+  const { distribution } = record
+  const conformsToSkos = distribution === null || carriesSkos(distribution.format)
+  const accessUrl = distribution === null ? "" : distribution.downloadUrl ?? distribution.accessUrl
+  const warnings: MetadataWarning[] = distribution === null ? [{ code: "noDistribution" }] : []
   let references = conformsToSkos ? "" : accessUrl
   let pattern: string | null = null
   let sampleIris: string[] = []
 
   if (conformsToSkos) {
-    const schemeIri = isEuDetail(detail) && detail.isNamedAuthorityList && detail.identifier !== null
-      ? authorityListIri(detail.identifier)
+    const schemeIri = record.isNamedAuthorityList && record.identifier !== null
+      ? authorityListIri(record.identifier)
       : null
     if (schemeIri === null) {
       warnings.push({ code: "noSchemeIri" })
@@ -131,13 +131,13 @@ export async function readMetadata(
   }
 
   const metadata: VocabularyMetadata = {
-    title: tagUntagged(detail.title, options.language),
+    title: tagUntagged(record.title, options.language),
     pattern,
     references,
     conformsToSkos,
-    documentation: detail.documentationUrl,
+    documentation: record.documentationUrl,
     distribution: {
-      downloadUrl: distribution.downloadUrl === null ? null : accessUrl,
+      downloadUrl: distribution === null || distribution.downloadUrl === null ? null : accessUrl,
       accessUrl,
     },
     iri: null,

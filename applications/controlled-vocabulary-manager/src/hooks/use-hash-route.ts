@@ -6,7 +6,6 @@ const SCREEN_TO_HASH: Record<Screen, string> = {
   "list": "#/",
   "source-selection": "#/source-selection",
   "search": "#/search",
-  "distribution": "#/distribution",
   "form-prefilled": "#/form-prefilled",
   "form-empty": "#/form-empty",
   "view": "#/view",

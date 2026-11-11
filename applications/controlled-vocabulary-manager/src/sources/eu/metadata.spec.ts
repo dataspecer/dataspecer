@@ -1,32 +1,26 @@
 import { describe, expect, test, vi } from "vitest"
 import { SparqlError, type SparqlRow } from "../sparql-client"
-import type { SourceDistribution } from "../types"
-import type { EuCandidateDetail } from "./detail"
-import { authorityListIri, readMetadata } from "./metadata"
+import type { ChosenDistribution } from "../sparql-source"
+import type { EuRecord } from "./detail"
+import { authorityListIri, deriveMetadata } from "./metadata"
 
 const SCHEME = "http://publications.europa.eu/resource/authority/country"
 const OPTIONS = { language: "cs" }
 
-function distribution(overrides: Partial<SourceDistribution> = {}): SourceDistribution {
+function distribution(overrides: Partial<ChosenDistribution> = {}): ChosenDistribution {
   return {
-    id: "d1",
-    title: { en: "Countries SKOS_CORE distribution" },
     format: "RDF/XML",
-    readable: true,
     accessUrl: "https://op.example/download?file=countries-skos.rdf",
     downloadUrl: "https://op.example/download?file=countries-skos.rdf",
     ...overrides,
   }
 }
 
-function detailOf(overrides: Partial<EuCandidateDetail> = {}, ...distributions: SourceDistribution[]): EuCandidateDetail {
-  const list = distributions.length > 0 ? distributions : [distribution()]
+function recordOf(overrides: Partial<EuRecord> = {}, chosen: ChosenDistribution | null = distribution()): EuRecord {
   return {
-    id: "http://data.europa.eu/88u/dataset/country",
     title: { en: "Countries and territories", "": "Země" },
     documentationUrl: "https://op.example/country",
-    distributions: list,
-    defaultDistributionId: list[0].id,
+    distribution: chosen,
     identifier: "country",
     isNamedAuthorityList: true,
     ...overrides,
@@ -41,10 +35,10 @@ function runReturning(rows: SparqlRow[]) {
   return vi.fn(async () => rows)
 }
 
-describe("readMetadata of a named authority list", () => {
+describe("deriveMetadata of a named authority list", () => {
   test("derives the scheme IRI from the identifier and the pattern from the values in the catalog", async () => {
     const run = runReturning(values("CZE", "DEU", "FRA", "ITA", "ESP", "POL", "AUT"))
-    const result = await readMetadata(detailOf(), "d1", OPTIONS, { run })
+    const result = await deriveMetadata(recordOf(), OPTIONS, { run })
 
     expect(result.warnings).toEqual([])
     expect(result.metadata).toEqual({
@@ -63,23 +57,38 @@ describe("readMetadata of a named authority list", () => {
     expect(run).toHaveBeenCalledTimes(1)
   })
 
-  test("uses the pattern of the convention, without samples, when the catalog has no values of the list", async () => {
-    const result = await readMetadata(detailOf(), "d1", OPTIONS, { run: runReturning([]) })
+  test("leaves the provisional data value out of the example IRIs", async () => {
+    const run = runReturning(values("OP_DATPRO", "CZE", "DEU", "FRA"))
+    const result = await deriveMetadata(recordOf(), OPTIONS, { run })
+    expect(result.sampleIris).toEqual([`${SCHEME}/CZE`, `${SCHEME}/DEU`, `${SCHEME}/FRA`])
+    expect(result.metadata.pattern).toBe("^http://publications\\.europa\\.eu/resource/authority/country/.*$")
     expect(result.warnings).toEqual([])
+  })
+
+  test("uses the pattern of the convention when the provisional data value is all but one of the values", async () => {
+    const result = await deriveMetadata(recordOf(), OPTIONS, { run: runReturning(values("OP_DATPRO", "CZE")) })
+    expect(result.sampleIris).toEqual([])
+    expect(result.warnings).toEqual([{ code: "patternByConvention" }])
+  })
+
+  test("uses the pattern of the convention, without samples, when the catalog has no values of the list", async () => {
+    const result = await deriveMetadata(recordOf(), OPTIONS, { run: runReturning([]) })
+    expect(result.warnings).toEqual([{ code: "patternByConvention" }])
     expect(result.metadata.references).toBe(SCHEME)
     expect(result.metadata.pattern).toBe("^http://publications\\.europa\\.eu/resource/authority/country/.*$")
     expect(result.sampleIris).toEqual([])
   })
 
   test("uses the pattern of the convention when there is a single value, from which no pattern is derived", async () => {
-    const result = await readMetadata(detailOf(), "d1", OPTIONS, { run: runReturning(values("CZE")) })
+    const result = await deriveMetadata(recordOf(), OPTIONS, { run: runReturning(values("CZE")) })
+    expect(result.warnings).toEqual([{ code: "patternByConvention" }])
     expect(result.metadata.pattern).toBe("^http://publications\\.europa\\.eu/resource/authority/country/.*$")
     expect(result.sampleIris).toEqual([])
   })
 
   test("returns the pattern of the convention with a warning when the endpoint fails", async () => {
     const run = vi.fn(async () => { throw new SparqlError("network", "Failed to fetch") })
-    const result = await readMetadata(detailOf(), "d1", OPTIONS, { run })
+    const result = await deriveMetadata(recordOf(), OPTIONS, { run })
     expect(result.warnings).toEqual([{ code: "valuesNotLoaded", detail: "Failed to fetch" }])
     expect(result.metadata.references).toBe(SCHEME)
     expect(result.metadata.pattern).toBe("^http://publications\\.europa\\.eu/resource/authority/country/.*$")
@@ -89,22 +98,22 @@ describe("readMetadata of a named authority list", () => {
     const controller = new AbortController()
     controller.abort()
     const run = vi.fn(async () => { throw new SparqlError("aborted", "aborted") })
-    await expect(readMetadata(detailOf(), "d1", { ...OPTIONS, signal: controller.signal }, { run })).rejects.toThrow("aborted")
-    await expect(readMetadata(detailOf(), "d1", OPTIONS, { run })).rejects.toThrow("aborted")
+    await expect(deriveMetadata(recordOf(), { ...OPTIONS, signal: controller.signal }, { run })).rejects.toThrow("aborted")
+    await expect(deriveMetadata(recordOf(), OPTIONS, { run })).rejects.toThrow("aborted")
   })
 
   test("passes the signal on to the query", async () => {
     const controller = new AbortController()
     const run = runReturning([])
-    await readMetadata(detailOf(), "d1", { ...OPTIONS, signal: controller.signal }, { run })
+    await deriveMetadata(recordOf(), { ...OPTIONS, signal: controller.signal }, { run })
     expect(run).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ signal: controller.signal }))
   })
 })
 
-describe("readMetadata of the other vocabularies", () => {
+describe("deriveMetadata of the other vocabularies", () => {
   test("leaves the scheme IRI and the pattern empty with a warning for another type", async () => {
     const run = runReturning([])
-    const result = await readMetadata(detailOf({ identifier: "agriprod", isNamedAuthorityList: false }), "d1", OPTIONS, { run })
+    const result = await deriveMetadata(recordOf({ identifier: "agriprod", isNamedAuthorityList: false }), OPTIONS, { run })
     expect(result.warnings).toEqual([{ code: "noSchemeIri" }])
     expect(result.metadata).toMatchObject({ references: "", pattern: null, conformsToSkos: true })
     expect(run).not.toHaveBeenCalled()
@@ -112,15 +121,15 @@ describe("readMetadata of the other vocabularies", () => {
 
   test("leaves them empty when the list has no usable identifier", async () => {
     for (const identifier of [null, "a b", "x/../y", ""]) {
-      const result = await readMetadata(detailOf({ identifier }), "d1", OPTIONS, { run: runReturning([]) })
+      const result = await deriveMetadata(recordOf({ identifier }), OPTIONS, { run: runReturning([]) })
       expect(result.warnings).toEqual([{ code: "noSchemeIri" }])
     }
   })
 
   test("references a vocabulary in a format that is not SKOS by the address of the distribution", async () => {
-    const xml = distribution({ id: "x", format: "XML", accessUrl: "https://op.example/c.xml", downloadUrl: "https://op.example/c.xml" })
+    const xml = distribution({ format: "XML", accessUrl: "https://op.example/c.xml", downloadUrl: "https://op.example/c.xml" })
     const run = runReturning([])
-    const result = await readMetadata(detailOf({}, xml), "x", OPTIONS, { run })
+    const result = await deriveMetadata(recordOf({}, xml), OPTIONS, { run })
     expect(result.warnings).toEqual([])
     expect(result.metadata).toMatchObject({
       references: "https://op.example/c.xml",
@@ -129,10 +138,6 @@ describe("readMetadata of the other vocabularies", () => {
       distribution: { downloadUrl: "https://op.example/c.xml", accessUrl: "https://op.example/c.xml" },
     })
     expect(run).not.toHaveBeenCalled()
-  })
-
-  test("fails for a distribution the record does not have", async () => {
-    await expect(readMetadata(detailOf(), "missing", OPTIONS, { run: runReturning([]) })).rejects.toThrow()
   })
 })
 
@@ -146,5 +151,34 @@ describe("authorityListIri", () => {
     expect(authorityListIri("a b")).toBeNull()
     expect(authorityListIri("a/b")).toBeNull()
     expect(authorityListIri("")).toBeNull()
+  })
+})
+
+describe("deriveMetadata of a record without a distribution", () => {
+  const record = {
+    title: { en: "Countries and territories" },
+    documentationUrl: "https://op.example/country",
+    distribution: null,
+    identifier: "country",
+    isNamedAuthorityList: true,
+  }
+
+  test("has no addresses and says so, but still derives the scheme IRI and the pattern of a named authority list", async () => {
+    const result = await deriveMetadata(record, OPTIONS, { run: runReturning(values("CZE", "DEU", "FRA")) })
+    expect(result.warnings).toEqual([{ code: "noDistribution" }])
+    expect(result.metadata).toMatchObject({
+      references: SCHEME,
+      pattern: "^http://publications\\.europa\\.eu/resource/authority/country/.*$",
+      conformsToSkos: true,
+      documentation: "https://op.example/country",
+      distribution: { downloadUrl: null, accessUrl: "" },
+    })
+  })
+
+  test("also warns that the IRI of another type of vocabulary is not known", async () => {
+    const run = runReturning([])
+    const result = await deriveMetadata({ ...record, isNamedAuthorityList: false }, OPTIONS, { run })
+    expect(result.warnings).toEqual([{ code: "noDistribution" }, { code: "noSchemeIri" }])
+    expect(run).not.toHaveBeenCalled()
   })
 })

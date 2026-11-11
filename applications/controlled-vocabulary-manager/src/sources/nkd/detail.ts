@@ -1,7 +1,7 @@
-import type { SparqlRow, SparqlTerm } from "../sparql-client"
-import type { CandidateDetail, SourceDistribution } from "../types"
-import { formatName, formatRank, isReadableFormat } from "./distribution"
-import { assertSafeIri, toLanguageString } from "../sparql-utils"
+import type { SparqlRow } from "../sparql-client"
+import { formatName, formatRank } from "./distribution"
+import { assertSafeIri, compareText, firstValue, groupRows, termsOf, toLanguageString } from "../sparql-utils"
+import type { ChosenDistribution, SourceRecord } from "../sparql-source"
 import { PREFIXES } from "./listing"
 
 /**
@@ -37,74 +37,34 @@ WHERE {
 }
 
 /**
- * Orders the distributions from the most suitable format to the least
- * suitable one, and those of the same format by IRI.
- */
-function compareDistributions(a: SourceDistribution, b: SourceDistribution): number {
-  const byFormat = formatRank(a.format) - formatRank(b.format)
-  if (byFormat !== 0) {
-    return byFormat
-  }
-  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0
-}
-
-/**
- * The first non-empty value of the variable in the rows, undefined if there is none.
- */
-function firstValue(rows: SparqlRow[], variable: string): string | undefined {
-  return rows.map((row) => row[variable]?.value).find((value) => value !== undefined && value !== "")
-}
-
-/**
- * Maps query results, selects the most suitable distribution first. 
- * The rows of one distribution are merged. A distribution without any address is left out.
+ * Chooses the distribution to read the metadata from among the rows of {@link distributionsQuery}: the one
+ * in the most suitable format, the OFN JSON-LD file first, and among those of one format the first by IRI.
+ * A distribution without any address is not chosen. Null when there is no distribution.
  *
- * A distribution that has a service and no file to download is an endpoint,
- * such as a SPARQL endpoint.
+ * A distribution that has a service and no file to download is an endpoint, such as a SPARQL endpoint.
  */
-export function mapDistributionRows(rows: SparqlRow[]): SourceDistribution[] {
-  const rowsByDistribution = new Map<string, SparqlRow[]>()
-  for (const row of rows) {
-    const id = row.distribution?.value
-    if (id !== undefined) {
-      rowsByDistribution.set(id, [...(rowsByDistribution.get(id) ?? []), row])
-    }
-  }
-
-  const distributions: SourceDistribution[] = []
-  for (const [id, group] of rowsByDistribution) {
+export function chooseDistribution(rows: SparqlRow[]): ChosenDistribution | null {
+  const distributions = [...groupRows(rows, "distribution")].flatMap(([id, group]) => {
     const downloadUrl = firstValue(group, "downloadUrl") ?? null
     const accessUrl = firstValue(group, "accessUrl") ?? downloadUrl
     if (accessUrl === null) {
-      continue
+      return []
     }
     const isEndpoint = downloadUrl === null && group.some((row) => row.service !== undefined)
-    const format = formatName(firstValue(group, "format"), isEndpoint)
-    const titles = group.map((row) => row.title).filter((title): title is SparqlTerm => title !== undefined)
-    distributions.push({
-      id,
-      title: toLanguageString(titles),
-      format,
-      readable: isReadableFormat(format),
-      accessUrl,
-      downloadUrl,
-    })
-  }
-  return distributions.sort(compareDistributions)
+    return [{ id, format: formatName(firstValue(group, "format"), isEndpoint), accessUrl, downloadUrl }]
+  })
+  distributions.sort((a, b) => formatRank(a.format) - formatRank(b.format) || compareText(a.id, b.id))
+  const best = distributions[0]
+  return best === undefined ? null : { format: best.format, accessUrl: best.accessUrl, downloadUrl: best.downloadUrl }
 }
 
 /**
- * Builds what the source knows about a codelist from the rows of
- * {@link recordQuery} and {@link distributionsQuery}. The distribution to preselect is the most suitable one.
+ * Builds what the source knows about a record from the rows of {@link recordQuery} and {@link distributionsQuery}.
  */
-export function buildDetail(datasetIri: string, recordRows: SparqlRow[], distributionRows: SparqlRow[]): CandidateDetail {
-  const titles = recordRows.map((row) => row.title).filter((title): title is SparqlTerm => title !== undefined)
-  const distributions = mapDistributionRows(distributionRows)
+export function buildRecord(recordRows: SparqlRow[], distributionRows: SparqlRow[]): SourceRecord {
   return {
-    id: datasetIri,
-    title: toLanguageString(titles),
+    title: toLanguageString(termsOf(recordRows, "title")),
     documentationUrl: firstValue(recordRows, "page") ?? null,
-    distributions,
-    defaultDistributionId: distributions[0]?.id ?? null,
+    distribution: chooseDistribution(distributionRows),
   }
 }

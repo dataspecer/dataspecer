@@ -1,18 +1,8 @@
-import type { SparqlRow, SparqlTerm } from "../sparql-client"
-import { assertSafeIri, toLanguageString } from "../sparql-utils"
-import type { CandidateDetail, SourceDistribution } from "../types"
+import type { SparqlRow } from "../sparql-client"
+import { assertSafeIri, compareText, firstValue, groupRows, termsOf, toLanguageString } from "../sparql-utils"
+import type { ChosenDistribution, SourceRecord } from "../sparql-source"
 import { formatName, formatRank, variantRank } from "./distribution"
 import { DATASET_TYPE_IRI, NAMED_AUTHORITY_LIST, PREFIXES } from "./listing"
-
-/**
- * What the source knows about a vocabulary besides {@link CandidateDetail}.
- * - identifier = identifier of the vocabulary in the catalog, such as "country"
- * - isNamedAuthorityList = whether it is a named authority list, whose IRI is derived from the identifier
- */
-export interface EuCandidateDetail extends CandidateDetail {
-  identifier: string | null
-  isNamedAuthorityList: boolean
-}
 
 /**
  * Reads the titles, the identifier, the type and the documentation page of a vocabulary.
@@ -56,69 +46,50 @@ WHERE {
 }
 
 /**
- * The first non-empty value of the variable in the rows, undefined if there is none.
+ * What the source knows about a record of the catalog.
+ * - identifier = identifier of the vocabulary in the catalog, such as "country"
+ * - isNamedAuthorityList = whether it is a named authority list, whose IRI is derived from the identifier
  */
-function firstValue(rows: SparqlRow[], variable: string): string | undefined {
-  return rows.map((row) => row[variable]?.value).find((value) => value !== undefined && value !== "")
-}
-
-function termsOf(rows: SparqlRow[], variable: string): SparqlTerm[] {
-  return rows.map((row) => row[variable]).filter((term): term is SparqlTerm => term !== undefined)
+export interface EuRecord extends SourceRecord {
+  identifier: string | null
+  isNamedAuthorityList: boolean
 }
 
 /**
- * Maps the rows of {@link distributionsQuery}, the most suitable distribution first. The rows of one
- * distribution are merged. A distribution without any address is left out.
- *
- * RDF files come first; among files of one format the SKOS variant named in the title decides.
- * - readable = whether the metadata of the vocabulary can be derived, whatever the distribution
+ * Chooses the distribution to read the metadata from among the rows of {@link distributionsQuery}: the RDF/XML one,
+ * and among those the one with the SKOS variant that is the most suitable by its title. When there is no RDF/XML
+ * distribution, it is the next of the formats by their order. A distribution without any address is not chosen.
+ * Null when there is no distribution.
  */
-export function mapDistributionRows(rows: SparqlRow[], readable: boolean): SourceDistribution[] {
-  const rowsByDistribution = new Map<string, SparqlRow[]>()
-  for (const row of rows) {
-    const id = row.distribution?.value
-    if (id !== undefined) {
-      rowsByDistribution.set(id, [...(rowsByDistribution.get(id) ?? []), row])
-    }
-  }
-
-  const distributions: SourceDistribution[] = []
-  for (const [id, group] of rowsByDistribution) {
+export function chooseDistribution(rows: SparqlRow[]): ChosenDistribution | null {
+  const distributions = [...groupRows(rows, "distribution")].flatMap(([id, group]) => {
     const downloadUrl = firstValue(group, "downloadUrl") ?? null
     const accessUrl = firstValue(group, "accessUrl") ?? downloadUrl
-    if (accessUrl === null) {
-      continue
-    }
-    distributions.push({
+    return accessUrl === null ? [] : [{
       id,
       title: toLanguageString(termsOf(group, "title")),
       format: formatName(firstValue(group, "format")),
-      readable,
       accessUrl,
       downloadUrl,
-    })
-  }
-  const compare = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0)
-  return distributions.sort((a, b) =>
+    }]
+  })
+  distributions.sort((a, b) =>
     formatRank(a.format) - formatRank(b.format)
     || variantRank(a.title) - variantRank(b.title)
-    || compare(a.id, b.id))
+    || compareText(a.id, b.id))
+  const best = distributions[0]
+  return best === undefined ? null : { format: best.format, accessUrl: best.accessUrl, downloadUrl: best.downloadUrl }
 }
 
 /**
- * Builds what the source knows about a vocabulary from the rows of {@link recordQuery} and
- * {@link distributionsQuery}. The distribution to preselect is the most suitable one.
+ * Builds what the source knows about a record from the rows of {@link recordQuery} and {@link distributionsQuery}.
  */
-export function buildDetail(datasetIri: string, recordRows: SparqlRow[], distributionRows: SparqlRow[]): EuCandidateDetail {
-  const isNamedAuthorityList = firstValue(recordRows, "type") === `${DATASET_TYPE_IRI}${NAMED_AUTHORITY_LIST}`
-  const distributions = mapDistributionRows(distributionRows, isNamedAuthorityList)
+export function buildRecord(recordRows: SparqlRow[], distributionRows: SparqlRow[]): EuRecord {
   return {
-    id: datasetIri,
     title: toLanguageString(termsOf(recordRows, "title")),
     documentationUrl: firstValue(recordRows, "page") ?? firstValue(recordRows, "landingPage") ?? null,
-    distributions,
-    defaultDistributionId: distributions[0]?.id ?? null,
+    distribution: chooseDistribution(distributionRows),
     identifier: firstValue(recordRows, "identifier") ?? null,
-    isNamedAuthorityList,
+    isNamedAuthorityList: firstValue(recordRows, "type") === `${DATASET_TYPE_IRI}${NAMED_AUTHORITY_LIST}`,
   }
 }
