@@ -6,15 +6,6 @@ import type { SparqlTerm } from "./sparql-client"
  */
 
 /**
- * Rejects a number that is not a valid size or position of a page.
- */
-export function assertNonNegativeInteger(value: number, name: string): void {
-  if (!Number.isInteger(value) || value < 0) {
-    throw new Error(`${name} must be a non-negative integer, got ${value}.`)
-  }
-}
-
-/**
  * Rejects an IRI that could not be written inside <...> without changing the query.
  */
 export function assertSafeIri(iri: string): void {

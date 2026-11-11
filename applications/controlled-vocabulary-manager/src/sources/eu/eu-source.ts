@@ -1,4 +1,4 @@
-import { createCatalogueListing } from "../catalogue"
+import { createCatalogueLoader } from "../catalogue"
 import { runSparqlSelect } from "../sparql-client"
 import type { RequestOptions, VocabularySource } from "../types"
 import { buildDetail, distributionsQuery, recordQuery } from "./detail"
@@ -21,7 +21,7 @@ export interface EuSourceDependencies {
  * The vocabularies are the named authority lists, code lists, taxonomies and thesauri of the catalogue,
  * browsed by the bodies that created them.
  *
- * The catalogue has a few hundred vocabularies, which the listing reads at once (see {@link createCatalogueListing}).
+ * The catalogue has a few hundred vocabularies, which the listing reads at once (see {@link createCatalogueLoader}).
  */
 export function createEuSource(dependencies: EuSourceDependencies = {}): VocabularySource {
   const run = (query: string, options?: RequestOptions) =>
@@ -29,7 +29,7 @@ export function createEuSource(dependencies: EuSourceDependencies = {}): Vocabul
 
   return {
     id: "eu-vocabularies",
-    ...createCatalogueListing(
+    loadCatalogue: createCatalogueLoader(
       async () => {
         const [catalogue, groupNames] = await Promise.all([run(catalogueQuery()), run(groupNamesQuery())])
         return { catalogue, groupNames }

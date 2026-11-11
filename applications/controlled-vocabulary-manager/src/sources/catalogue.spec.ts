@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vitest"
-import { buildCatalogue, createCatalogueListing, listCandidates, listGroups, type CatalogueRows } from "./catalogue"
+import { buildCatalogue, createCatalogueLoader, filterCandidates, type CatalogueRows } from "./catalogue"
 import { SparqlError, type SparqlRow, type SparqlTerm } from "./sparql-client"
 
 const ESTAT = "http://example.org/body/ESTAT"
@@ -109,100 +109,57 @@ describe("buildCatalogue", () => {
   })
 })
 
-describe("listGroups", () => {
+describe("filterCandidates", () => {
   const catalogue = catalogueOf(rows)
+  const ids = (filter: Parameters<typeof filterCandidates>[1]) => filterCandidates(catalogue, filter).map((candidate) => candidate.id)
 
-  test("cuts a page and tells the number of all the groups", () => {
-    expect(listGroups(catalogue, { offset: 0, limit: 1 })).toEqual({ items: [catalogue.groups[0]], total: 2 })
-    expect(listGroups(catalogue, { offset: 1, limit: 1 })).toEqual({ items: [catalogue.groups[1]], total: 2 })
-  })
-
-  test("gives no items past the end", () => {
-    expect(listGroups(catalogue, { offset: 20, limit: 20 })).toEqual({ items: [], total: 2 })
-  })
-
-  test("rejects a page that is not a non-negative integer", () => {
-    expect(() => listGroups(catalogue, { offset: 0, limit: 1.5 })).toThrow()
-    expect(() => listGroups(catalogue, { offset: -1, limit: 20 })).toThrow()
-  })
-})
-
-describe("listCandidates", () => {
-  const catalogue = catalogueOf(rows)
-
-  test("lists the vocabularies in order, labeled with their groups", () => {
-    const page = listCandidates(catalogue, {}, { offset: 0, limit: 20 })
-    expect(page.total).toBe(3)
-    expect(page.items.map((candidate) => candidate.id)).toEqual([CBF, COUNTRY, CURRENCY])
-    expect(page.items[0]).toEqual({ id: CBF, title: { en: "Classification of Business Functions" }, groupLabel: { en: "Eurostat" } })
-    expect(page.items[1].groupLabel).toEqual({ en: "Publications Office", cs: "Úřad pro publikace" })
-  })
-
-  test("cuts pages and counts the whole listing", () => {
-    expect(listCandidates(catalogue, {}, { offset: 1, limit: 1 })).toMatchObject({ total: 3, items: [{ id: COUNTRY }] })
-    expect(listCandidates(catalogue, {}, { offset: 2, limit: 5 }).items.map((candidate) => candidate.id)).toEqual([CURRENCY])
+  test("lists all the vocabularies in order, labeled with their groups", () => {
+    expect(ids({})).toEqual([CBF, COUNTRY, CURRENCY])
+    expect(filterCandidates(catalogue, {})[1]).toEqual({
+      id: COUNTRY,
+      title: { en: "Countries and territories", cs: "Země a území" },
+      groupLabel: { en: "Publications Office", cs: "Úřad pro publikace" },
+    })
   })
 
   test("keeps only the vocabularies of the group", () => {
-    const page = listCandidates(catalogue, { groupId: PUBL }, { offset: 0, limit: 20 })
-    expect(page.total).toBe(2)
-    expect(page.items.map((candidate) => candidate.id)).toEqual([COUNTRY, CURRENCY])
+    expect(ids({ groupId: PUBL })).toEqual([COUNTRY, CURRENCY])
   })
 
   test("searches the titles in any language ignoring case", () => {
-    expect(listCandidates(catalogue, { query: "COUNTR" }, { offset: 0, limit: 20 }).items.map((candidate) => candidate.id)).toEqual([COUNTRY])
-    expect(listCandidates(catalogue, { query: "země" }, { offset: 0, limit: 20 }).items.map((candidate) => candidate.id)).toEqual([COUNTRY])
+    expect(ids({ query: "COUNTR" })).toEqual([COUNTRY])
+    expect(ids({ query: "země" })).toEqual([COUNTRY])
   })
 
   test("trims the search text and treats a blank one as no search", () => {
-    expect(listCandidates(catalogue, { query: "  currency " }, { offset: 0, limit: 20 }).total).toBe(1)
-    expect(listCandidates(catalogue, { query: "   " }, { offset: 0, limit: 20 }).total).toBe(3)
+    expect(ids({ query: "  currency " })).toEqual([CURRENCY])
+    expect(ids({ query: "   " })).toHaveLength(3)
   })
 
   test("combines the group and the search", () => {
-    expect(listCandidates(catalogue, { groupId: ESTAT, query: "countr" }, { offset: 0, limit: 20 }).total).toBe(0)
-    expect(listCandidates(catalogue, { groupId: PUBL, query: "countr" }, { offset: 0, limit: 20 }).total).toBe(1)
+    expect(ids({ groupId: ESTAT, query: "countr" })).toEqual([])
+    expect(ids({ groupId: PUBL, query: "countr" })).toEqual([COUNTRY])
   })
 
   test("takes the search text literally", () => {
-    expect(listCandidates(catalogue, { query: '.*"\\' }, { offset: 0, limit: 20 }).total).toBe(0)
-  })
-
-  test("rejects a page that is not a non-negative integer", () => {
-    expect(() => listCandidates(catalogue, {}, { offset: -1, limit: 20 })).toThrow()
+    expect(ids({ query: '.*"\\' })).toEqual([])
   })
 })
 
-describe("createCatalogueListing", () => {
+describe("createCatalogueLoader", () => {
   const data: CatalogueRows = { catalogue: rows, groupNames }
 
-  test("reads the catalogue once for all the listings, also those that start at the same time", async () => {
+  test("reads the catalogue once for all the calls, also those that start at the same time", async () => {
     const read = vi.fn(async () => data)
-    const listing = createCatalogueListing(read, EN)
-    await Promise.all([listing.listGroups({ offset: 0, limit: 20 }), listing.listCandidates({}, { offset: 0, limit: 20 })])
-    await listing.listCandidates({ query: "country" }, { offset: 0, limit: 20 })
-    await listing.listGroups({ offset: 0, limit: 20 })
+    const load = createCatalogueLoader(read, EN)
+    const [first, second] = await Promise.all([load(), load()])
+    expect(await load()).toBe(first)
+    expect(second).toBe(first)
+    expect(first.entries.map((entry) => entry.id)).toEqual([CBF, COUNTRY, CURRENCY])
     expect(read).toHaveBeenCalledTimes(1)
   })
 
-  test("lists what was read, in the order of the sort language", async () => {
-    const listing = createCatalogueListing(async () => data, EN)
-    expect((await listing.listGroups({ offset: 0, limit: 20 })).total).toBe(2)
-    expect((await listing.listCandidates({}, { offset: 0, limit: 20 })).items[0].id).toBe(CBF)
-  })
-
-  test("keeps the catalogue when the listing that started reading it is cancelled", async () => {
-    const read = vi.fn(async () => data)
-    const listing = createCatalogueListing(read, EN)
-    const cancelled = new AbortController()
-    const first = listing.listCandidates({}, { offset: 0, limit: 20 }, { signal: cancelled.signal })
-    cancelled.abort()
-    await first
-    expect((await listing.listCandidates({}, { offset: 0, limit: 20 })).items).toHaveLength(3)
-    expect(read).toHaveBeenCalledTimes(1)
-  })
-
-  test("fails the listing when the catalogue cannot be read and reads it again next time", async () => {
+  test("fails when the catalogue cannot be read and reads it again next time", async () => {
     let failing = true
     const read = vi.fn(async () => {
       if (failing) {
@@ -210,10 +167,10 @@ describe("createCatalogueListing", () => {
       }
       return data
     })
-    const listing = createCatalogueListing(read, EN)
-    await expect(listing.listCandidates({}, { offset: 0, limit: 20 })).rejects.toThrow("Failed to fetch")
+    const load = createCatalogueLoader(read, EN)
+    await expect(load()).rejects.toThrow("Failed to fetch")
     failing = false
-    expect((await listing.listCandidates({}, { offset: 0, limit: 20 })).items).toHaveLength(3)
+    expect((await load()).entries).toHaveLength(3)
     expect(read).toHaveBeenCalledTimes(2)
   })
 })
