@@ -242,6 +242,7 @@ class ViewAdapter {
       isMain: false,
       format: definition.format,
       pattern: definition.pattern,
+      controlledVocabularyId: definition.controlledVocabularyId,
     };
   }
 

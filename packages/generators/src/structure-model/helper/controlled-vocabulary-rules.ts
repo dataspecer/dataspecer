@@ -1,21 +1,21 @@
-import { getControlledVocabularyPatterns } from "../../conceptual-model/model/conceptual-model-controlled-vocabulary.ts";
+import { getControlledVocabularyPatterns, type ControlledVocabularyPattern } from "../../conceptual-model/model/conceptual-model-controlled-vocabulary.ts";
 import type { StructureModelClass } from "../model/structure-model-class.ts";
 
 /**
- * Patterns of the IRIs of values of a class that its controlled vocabulary
- * assignments and the options for the usage "recommended" make mandatory.
+ * For controlled vocabulary assignments with usage qualifier "recommended"
+ * the user can select the strictness of the validation - is CV use mandatory and are other values allowed
  * Each pattern is a rule of its own, a generator decides how the rules combine.
  */
 export interface ControlledVocabularyRules {
   /**
    * Every value must match the pattern.
    */
-  everyValue: string[];
+  everyValue: ControlledVocabularyPattern[];
 
   /**
    * At least one value must match the pattern.
    */
-  atLeastOne: string[];
+  atLeastOne: ControlledVocabularyPattern[];
 }
 
 /**
