@@ -20,7 +20,11 @@ describe("getControlledVocabularyPatterns", () => {
       assignment("a", "must", "^a$"),
       assignment("b", "at-least-one", "^b$"),
       assignment("c", "recommended", "^c$"),
-    ])).toStrictEqual({ must: ["^a$"], atLeastOne: ["^b$"], recommended: ["^c$"] });
+    ])).toStrictEqual({
+      must: [{ pattern: "^a$", vocabularyId: "a-vocabulary" }],
+      atLeastOne: [{ pattern: "^b$", vocabularyId: "b-vocabulary" }],
+      recommended: [{ pattern: "^c$", vocabularyId: "c-vocabulary" }],
+    });
   });
 
   it("Ignores the qualifier that expects nothing.", () => {
@@ -41,15 +45,26 @@ describe("getControlledVocabularyPatterns", () => {
       assignment("a", "must", "^a$"),
       assignment("b", "recommended", "^a$"),
       assignment("c", "recommended", "^a$"),
-    ])).toStrictEqual({ must: ["^a$"], atLeastOne: [], recommended: ["^a$"] });
+    ])).toStrictEqual({
+      must: [{ pattern: "^a$", vocabularyId: "a-vocabulary" }],
+      atLeastOne: [],
+      recommended: [{ pattern: "^a$", vocabularyId: "b-vocabulary" }],
+    });
   });
 
-  it("Lists a pattern once.", () => {
+  it("Names the first vocabulary when several have the same pattern.", () => {
     expect(getControlledVocabularyPatterns([
       assignment("a", "must", "^a$"),
       assignment("b", "must", "^a$"),
       assignment("c", "must", "^c$"),
-    ])).toStrictEqual({ must: ["^a$", "^c$"], atLeastOne: [], recommended: [] });
+    ])).toStrictEqual({
+      must: [
+        { pattern: "^a$", vocabularyId: "a-vocabulary" },
+        { pattern: "^c$", vocabularyId: "c-vocabulary" },
+      ],
+      atLeastOne: [],
+      recommended: [],
+    });
   });
 
 });

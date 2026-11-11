@@ -39,6 +39,19 @@ export interface ConceptualModelControlledVocabularyAssignment {
 }
 
 /**
+ * Metadata relevant for controlled vocabulary pattern validation
+ */
+export interface ControlledVocabularyPattern {
+  pattern: string;
+
+  /**
+   * Id of the controlled vocabulary that defines the pattern.
+   * When several vocabularies have the same pattern, it is the first of the (unlikelly in practice)
+   */
+  vocabularyId: string;
+}
+
+/**
  * Patterns of the IRIs of values that a class profile with the given
  * controlled vocabulary assignments expects, sorted by the qualifier of the
  * assignment. Each pattern is a rule of its own, a generator decides how the
@@ -48,25 +61,25 @@ export interface ControlledVocabularyPatterns {
   /**
    * Every value must match the pattern.
    */
-  must: string[];
+  must: ControlledVocabularyPattern[];
 
   /**
    * At least one value must match the pattern.
    */
-  atLeastOne: string[];
+  atLeastOne: ControlledVocabularyPattern[];
 
   /**
    * Values should match the pattern. Whether a generator enforces it is up to
    * its configuration.
    */
-  recommended: string[];
+  recommended: ControlledVocabularyPattern[];
 }
 
 /**
- * Collects the patterns of the assignments by their qualifiers. Qualifier
- * "may" does not expect anything, so it is not included. Vocabularies without
- * a pattern do not constrain anything either. Each pattern is listed once per
- * qualifier.
+ * Collects the patterns of the assignments by their qualifiers.
+ * Qualifier "may" does not validate anything, so it is not included.
+ * Vocabularies without a pattern do not constrain anything either.
+ * Each pattern is listed once per qualifier to avoid duplicate regexes in docs.
  */
 export function getControlledVocabularyPatterns(
   assignments: readonly ConceptualModelControlledVocabularyAssignment[],
@@ -81,8 +94,8 @@ export function getControlledVocabularyPatterns(
       : qualifier === "at-least-one" ? result.atLeastOne
         : qualifier === "recommended" ? result.recommended
           : null;
-    if (target !== null && !target.includes(pattern)) {
-      target.push(pattern);
+    if (target !== null && !target.some((existing) => existing.pattern === pattern)) {
+      target.push({ pattern, vocabularyId: vocabulary.id });
     }
   }
   return result;

@@ -7,8 +7,12 @@ function assignment(qualifier: Qualifier, pattern: string | null): ConceptualMod
   return {
     id: `${qualifier}-${pattern}`,
     qualifier,
-    vocabulary: { id: "vocabulary", iri: null, title: {}, pattern, references: "", conformsToSkos: true },
+    vocabulary: { id: `vocabulary-${pattern}`, iri: null, title: {}, pattern, references: "", conformsToSkos: true },
   };
+}
+
+function rule(pattern: string) {
+  return { pattern, vocabularyId: `vocabulary-${pattern}` };
 }
 
 function rulesOf(
@@ -27,7 +31,7 @@ describe("getControlledVocabularyRules", () => {
 
   it("Makes 'must' a rule for every value and 'at-least-one' a rule for at least one value.", () => {
     expect(rulesOf([assignment("must", "^a$"), assignment("at-least-one", "^b$")]))
-      .toStrictEqual({ everyValue: ["^a$"], atLeastOne: ["^b$"] });
+      .toStrictEqual({ everyValue: [rule("^a$")], atLeastOne: [rule("^b$")] });
   });
 
   it("Gives nothing for 'may'.", () => {
@@ -44,22 +48,22 @@ describe("getControlledVocabularyRules", () => {
 
   it("Makes 'recommended' a rule for at least one value when a value is required.", () => {
     expect(rulesOf([assignment("recommended", "^a$")], true, false))
-      .toStrictEqual({ everyValue: [], atLeastOne: ["^a$"] });
+      .toStrictEqual({ everyValue: [], atLeastOne: [rule("^a$")] });
   });
 
   it("Makes 'recommended' a rule for every value when values are restricted.", () => {
     expect(rulesOf([assignment("recommended", "^a$")], false, true))
-      .toStrictEqual({ everyValue: ["^a$"], atLeastOne: [] });
+      .toStrictEqual({ everyValue: [rule("^a$")], atLeastOne: [] });
   });
 
   it("Applies both options of 'recommended' together.", () => {
     expect(rulesOf([assignment("recommended", "^a$")], true, true))
-      .toStrictEqual({ everyValue: ["^a$"], atLeastOne: ["^a$"] });
+      .toStrictEqual({ everyValue: [rule("^a$")], atLeastOne: [rule("^a$")] });
   });
 
   it("Keeps a rule for each assignment.", () => {
     expect(rulesOf([assignment("must", "^a$"), assignment("must", "^b$")]))
-      .toStrictEqual({ everyValue: ["^a$", "^b$"], atLeastOne: [] });
+      .toStrictEqual({ everyValue: [rule("^a$"), rule("^b$")], atLeastOne: [] });
   });
 
   it("Ignores vocabularies without a pattern.", () => {

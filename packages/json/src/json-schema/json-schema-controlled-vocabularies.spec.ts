@@ -14,15 +14,16 @@ import {
 import { DefaultJsonConfiguration } from "../configuration.ts";
 import { structureModelAddIdAndTypeProperties } from "./json-id-transformations.ts";
 import { structureModelToJsonSchema } from "./json-schema-model-adapter.ts";
+import { JsonSchema, JsonSchemaArray, JsonSchemaObject, JsonSchemaString } from "./json-schema-model.ts";
 import { writeJsonSchema } from "./json-schema-writer.ts";
 
 type Json = any;
 
-function assignment(qualifier: Qualifier, pattern: string | null): ConceptualModelControlledVocabularyAssignment {
+function assignment(qualifier: Qualifier, pattern: string | null, vocabularyId = "vocabulary"): ConceptualModelControlledVocabularyAssignment {
   return {
     id: `${qualifier}-${pattern}`,
     qualifier,
-    vocabulary: { id: "vocabulary", iri: null, title: {}, pattern, references: "", conformsToSkos: true },
+    vocabulary: { id: vocabularyId, iri: null, title: {}, pattern, references: "", conformsToSkos: true },
   };
 }
 
@@ -65,7 +66,7 @@ function valueClassOf(options: Options): StructureModelClass {
  * that refers to a class with the given options.
  * The identity properties are added the same way as the generator adds them.
  */
-async function generate(options: Options): Promise<Json> {
+function generateSchema(options: Options): JsonSchema {
   const type = new StructureModelComplexType();
   type.dataType = valueClassOf(options);
   const property = new StructureModelProperty();
@@ -89,16 +90,26 @@ async function generate(options: Options): Promise<Json> {
 
   const specification = new DataSpecification();
   const withIdentity = structureModelAddIdAndTypeProperties(structure, DefaultJsonConfiguration, {});
-  const schema = structureModelToJsonSchema(
+  return structureModelToJsonSchema(
     { specification },
     specification,
     withIdentity,
     DefaultJsonConfiguration,
     {} as DataSpecificationArtefact,
   );
+}
+
+async function generate(options: Options): Promise<Json> {
   const stream = new MemoryOutputStream();
-  await writeJsonSchema(schema, stream);
+  await writeJsonSchema(generateSchema(options), stream);
   return JSON.parse(stream.getContent()).properties.values;
+}
+
+/**
+ * The schema of the property "values" as the model that documentation is created from.
+ */
+function generateValuesModel(options: Options): JsonSchemaArray {
+  return (generateSchema(options).root as JsonSchemaObject).properties.values as JsonSchemaArray;
 }
 
 const A = "^http://example\\.com/a/[a-z]+$";
@@ -254,6 +265,52 @@ describe("JSON schema of values with controlled vocabularies", () => {
       expect(values.items.properties.id).toBeUndefined();
     });
 
+  });
+
+});
+
+describe("Source of the patterns in the schema model", () => {
+
+  it("Names the vocabulary of a pattern that every value must match.", () => {
+    const items = generateValuesModel({ assignments: [assignment("must", A, "vocabulary-a")] }).items as JsonSchemaString;
+    expect(items.pattern).toBe(A);
+    expect(items.controlledVocabularyId).toBe("vocabulary-a");
+  });
+
+  it("Names the vocabulary of each of several patterns and none for the regex of the class.", () => {
+    const items = generateValuesModel({
+      regex: "^http://example\\.com/",
+      assignments: [assignment("must", A, "vocabulary-a"), assignment("must", B, "vocabulary-b")],
+    }).items as JsonSchemaString;
+    expect((items.allOf as JsonSchemaString[]).map(rule => rule.controlledVocabularyId)).toStrictEqual([null, "vocabulary-a", "vocabulary-b"]);
+  });
+
+  it("Names no vocabulary for the regex of the class alone.", () => {
+    const items = generateValuesModel({ regex: "^x$" }).items as JsonSchemaString;
+    expect(items.pattern).toBe("^x$");
+    expect(items.controlledVocabularyId).toBeNull();
+  });
+
+  it("Names the vocabulary of a pattern that one value must match.", () => {
+    const contains = generateValuesModel({ assignments: [assignment("at-least-one", A, "vocabulary-a")] }).contains as JsonSchemaString;
+    expect(contains.controlledVocabularyId).toBe("vocabulary-a");
+  });
+
+  it("Names the vocabulary of the pattern of the id of a contained object.", () => {
+    const contains = generateValuesModel({ asObject: true, assignments: [assignment("at-least-one", A, "vocabulary-a")] }).contains as JsonSchemaObject;
+    expect((contains.properties.id as JsonSchemaString).controlledVocabularyId).toBe("vocabulary-a");
+  });
+
+  it("Names the vocabulary in each rule of an array that must contain several values.", () => {
+    const rules = generateValuesModel({
+      assignments: [assignment("at-least-one", A, "vocabulary-a"), assignment("at-least-one", B, "vocabulary-b")],
+    }).allOf as JsonSchemaArray[];
+    expect(rules.map(rule => (rule.contains as JsonSchemaString).controlledVocabularyId)).toStrictEqual(["vocabulary-a", "vocabulary-b"]);
+  });
+
+  it("Does not write the vocabulary to the schema.", async () => {
+    const values = await generate({ assignments: [assignment("must", A, "vocabulary-a")] });
+    expect(JSON.stringify(values)).not.toContain("vocabulary-a");
   });
 
 });

@@ -96,6 +96,11 @@ export interface JsonSchemaStringViewModel extends JsonSchemaDefinitionViewModel
 
   format: string | null;
   pattern: string | null;
+
+  /**
+   * Id of the controlled vocabulary the pattern comes from, null if it does not come from one.
+   */
+  controlledVocabularyId: string | null;
 }
 
 export interface JsonSchemaBooleanViewModel extends JsonSchemaDefinitionViewModel {

@@ -26,6 +26,7 @@ import {
   StructureModelProperty,
   type StructureModelComplexType,
 } from "@dataspecer/generators/structure-model/model";
+import type { ControlledVocabularyPattern } from "@dataspecer/generators/conceptual-model/model";
 import { getControlledVocabularyRules } from "@dataspecer/generators/structure-model/helper/controlled-vocabulary-rules";
 import { XSD, OFN, OFN_LABELS } from "@dataspecer/core/well-known";
 import {
@@ -400,14 +401,15 @@ function structureModelClassPrimitive(modelClass: StructureModelClass): JsonSche
   const useStringInsteadOfIri = !!(modelClass as JsonStructureModelClass).iriUsesPrefixes
   const str = new JsonSchemaString(useStringInsteadOfIri ? null : JsonSchemaStringFormats.iri);
   // Every pattern is a rule of its own, a value must match all of them.
-  const patterns = [
-    ...(modelClass.regex ? [modelClass.regex] : []),
+  const rules: { pattern: string; vocabularyId: string | null }[] = [
+    ...(modelClass.regex ? [{ pattern: modelClass.regex, vocabularyId: null }] : []),
     ...getControlledVocabularyRules(modelClass).everyValue,
   ];
-  if (patterns.length === 1) {
-    str.pattern = patterns[0];
+  if (rules.length === 1) {
+    str.pattern = rules[0].pattern;
+    str.controlledVocabularyId = rules[0].vocabularyId;
   } else {
-    str.allOf = patterns.map(stringWithPattern);
+    str.allOf = rules.map(rule => stringWithPattern(rule.pattern, rule.vocabularyId));
   }
   if (modelClass.example && modelClass.example.length > 0) {
     str.examples = modelClass.example as string[];
@@ -415,9 +417,10 @@ function structureModelClassPrimitive(modelClass: StructureModelClass): JsonSche
   return str;
 }
 
-function stringWithPattern(pattern: string): JsonSchemaString {
+function stringWithPattern(pattern: string, vocabularyId: string | null): JsonSchemaString {
   const result = new JsonSchemaString(null);
   result.pattern = pattern;
+  result.controlledVocabularyId = vocabularyId;
   return result;
 }
 
@@ -427,16 +430,16 @@ function stringWithPattern(pattern: string): JsonSchemaString {
  *
  * @returns Null if the values of the class do not have an IRI in the schema.
  */
-function valueWithIriMatching(modelClass: StructureModelClass, pattern: string): JsonSchemaDefinition | null {
+function valueWithIriMatching(modelClass: StructureModelClass, rule: ControlledVocabularyPattern): JsonSchemaDefinition | null {
   if (modelClass.properties.length === 0 && !modelClass.emptyAsComplex) {
-    return stringWithPattern(pattern);
+    return stringWithPattern(rule.pattern, rule.vocabularyId);
   }
   const idPropertyName = (modelClass as JsonStructureModelClass).idPropertyName;
   if (idPropertyName === null || idPropertyName === undefined) {
     return null;
   }
   const result = new JsonSchemaObject();
-  result.properties[idPropertyName] = stringWithPattern(pattern);
+  result.properties[idPropertyName] = stringWithPattern(rule.pattern, rule.vocabularyId);
   result.required.push(idPropertyName);
   return result;
 }
@@ -452,7 +455,7 @@ function getValuesRulesOfControlledVocabularies(property: StructureModelProperty
     return [];
   }
   return getControlledVocabularyRules(dataType.dataType).atLeastOne
-    .map(pattern => valueWithIriMatching(dataType.dataType, pattern))
+    .map(rule => valueWithIriMatching(dataType.dataType, rule))
     .filter((rule): rule is JsonSchemaDefinition => rule !== null);
 }
 
