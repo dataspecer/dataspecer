@@ -1,15 +1,18 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Breadcrumb } from "@/components/layout/breadcrumb"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useConfig } from "@/contexts/config-context"
+import { useCatalogue } from "@/hooks/use-catalogue"
 import { searchBackStep, type WizardState } from "@/hooks/use-source-wizard"
 import { selectName } from "@/lib/language"
+import { filterCandidates } from "@/sources/catalogue"
 import { getSource, sourceDescriptors } from "@/sources/registry"
 import type { SourceCandidate, SourceGroup } from "@/sources/types"
 import { CandidateList } from "./candidate-list"
 import { GroupList } from "./group-list"
+import { LoadErrorAlert, LoadingIndicator } from "./load-status"
 
 /**
  * How long after the last keystroke the typed text is searched. The vocabularies are searched in the
@@ -61,6 +64,15 @@ export function SearchPage({
   }, [text, state.query, onSearch])
   const source = getSource(sourceId)
   const descriptor = sourceDescriptors.find((candidate) => candidate.id === sourceId)
+  const { state: catalogueState, retry } = useCatalogue(source)
+  const searching = state.query !== ""
+  const browsingGroup = !searching && state.group !== null
+  const catalogue = catalogueState.status === "ready" ? catalogueState.catalogue : null
+  // A search looks in all the vocabularies of the source, not only in those of the chosen group.
+  const candidates = useMemo(
+    () => catalogue === null ? [] : filterCandidates(catalogue, searching ? { query: state.query } : { groupId: state.group?.id }),
+    [catalogue, searching, state.query, state.group],
+  )
 
   if (source === undefined || descriptor === undefined) {
     return null
@@ -83,8 +95,6 @@ export function SearchPage({
         break
     }
   }
-  const searching = state.query !== ""
-  const browsingGroup = !searching && state.group !== null
 
   return (
     <>
@@ -110,14 +120,16 @@ export function SearchPage({
           <Button type="button" variant="outline" className="h-12" onClick={clear}>{t("search.clear")}</Button>
         )}
       </div>
-      {searching ? (
+      {catalogueState.status === "loading" && <LoadingIndicator />}
+      {catalogueState.status === "error" && <LoadErrorAlert error={catalogueState.error} onRetry={retry} />}
+      {catalogue !== null && (searching ? (
         <section>
           <h2 className="text-sm font-medium text-muted-foreground mb-2">
             {t("search.resultsFor", { query: state.query })}
           </h2>
           <CandidateList
-            source={source}
-            filter={{ query: state.query }}
+            candidates={candidates}
+            showGroup
             page={state.candidatesPage}
             onPageChange={onCandidatesPageChange}
             onSelect={onCandidateSelect}
@@ -134,24 +146,24 @@ export function SearchPage({
             </h2>
           </div>
           <CandidateList
-            source={source}
-            filter={{ groupId: state.group.id }}
+            candidates={candidates}
+            showGroup={false}
             page={state.candidatesPage}
             onPageChange={onCandidatesPageChange}
             onSelect={onCandidateSelect}
           />
         </section>
-      ) : source.listGroups ? (
+      ) : catalogue.groups.length > 0 ? (
         <section>
           <h2 className="text-sm font-medium text-muted-foreground mb-2">{t("search.browseByPublisher")}</h2>
           <GroupList
-            source={source}
+            groups={catalogue.groups}
             page={state.groupsPage}
             onPageChange={onGroupsPageChange}
             onSelect={onGroupSelect}
           />
         </section>
-      ) : null}
+      ) : null)}
       <div className="mt-6">
         <Button variant="outline" size="sm" onClick={back}>
           {t("search.back")}

@@ -1,4 +1,5 @@
 import { describe, expect, test, vi } from "vitest"
+import { filterCandidates } from "../catalogue"
 import { createNkdSource } from "./nkd-source"
 
 const PUBLISHER = "https://rpp-opendata.egon.gov.cz/odrpp/zdroj/orgán-veřejné-moci/17651921"
@@ -16,19 +17,18 @@ const row = {
 }
 
 describe("createNkdSource", () => {
-  test("lists the publishers and the codelists from the two queries that read the catalogue", async () => {
+  test("builds the catalogue from the two queries that read it, and reads it once", async () => {
     const fetchMock = vi.fn<typeof fetch>(async () =>
       new Response(JSON.stringify({ results: { bindings: [row] } }), { status: 200 }))
     const source = createNkdSource({ fetch: fetchMock })
 
-    expect(await source.listGroups!({ offset: 0, limit: 20 })).toEqual({
-      items: [{ id: PUBLISHER, count: 1, label: { cs: "Digitální a informační agentura" } }],
-      total: 1,
-    })
-    expect((await source.listCandidates({ query: "neexistuje" }, { offset: 0, limit: 20 })).items).toEqual([])
-    expect((await source.listCandidates({ query: "pohlaví" }, { offset: 0, limit: 20 })).items).toEqual([
+    const catalogue = await source.loadCatalogue()
+    expect(catalogue.groups).toEqual([{ id: PUBLISHER, count: 1, label: { cs: "Digitální a informační agentura" } }])
+    expect(filterCandidates(catalogue, { query: "neexistuje" })).toEqual([])
+    expect(filterCandidates(catalogue, { query: "pohlaví" })).toEqual([
       { id: DATASET, title: { cs: "Pohlaví" }, groupLabel: { cs: "Digitální a informační agentura" } },
     ])
+    await source.loadCatalogue()
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 })

@@ -1,28 +1,12 @@
 import type { LanguageString } from "@dataspecer/core/core/core-resource"
 import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model"
+import type { Catalogue } from "./catalogue"
 
 /**
  * Metadata of a controlled vocabulary as the form takes it, without the
  * identity the vocabulary gets when it is stored.
  */
 export type VocabularyMetadata = Omit<ControlledVocabulary, "id" | "type">
-
-/**
- * Pagination. The listing is split to pages of `limit` items, starting with the item at position `offset`.
- * `total` is the number of items found by an earlier request for the same listing. 
- * When it is given, the source does not have to count them again. A source that has the whole listing at hand ignores it.
- */
-export interface PageRequest {
-  offset: number
-  limit: number
-  total?: number
-}
-
-export interface Page<T> {
-  items: T[]
-  /** Number of items in the whole listing, not only on this page. */
-  total: number
-}
 
 /**
  * Optional settings of every request to a source.
@@ -137,15 +121,10 @@ export interface MetadataOptions extends RequestOptions {
 export interface VocabularySource {
   id: string
   /**
-   * Lists the groups vocabularies can be browsed by. A source without groups
-   * does not have it and is only searched.
+   * Gives all the vocabularies of the source with their groups. The catalogue is read once and kept,
+   * and a failed reading is tried again by the next call.
    */
-  listGroups?(request: PageRequest, options?: RequestOptions): Promise<Page<SourceGroup>>
-  listCandidates(
-    filter: CandidateFilter,
-    request: PageRequest,
-    options?: RequestOptions,
-  ): Promise<Page<SourceCandidate>>
+  loadCatalogue(): Promise<Catalogue>
   getDetail(candidateId: string, options?: RequestOptions): Promise<CandidateDetail>
   /**
    * Reads the metadata of the vocabulary from its record and from the chosen

@@ -9,7 +9,7 @@ import { selectName } from "@/lib/language"
 import { cn } from "@/lib/utils"
 import { getSource, sourceDescriptors } from "@/sources/registry"
 import type { CandidateDetail, MetadataResult, SourceCandidate } from "@/sources/types"
-import { LoadErrorAlert } from "./listing-view"
+import { LoadErrorAlert } from "./load-status"
 
 interface DistributionPageProps {
   sourceId: string

@@ -12,20 +12,18 @@ source selection -> search or browse by group -> choose a distribution -> prefil
 
 ## The contract (`types.ts`)
 A source implements `VocabularySource`:
-- `listGroups?(page)` – groups to browse by (publishers, creators). Optional.
-- `listCandidates(filter, page)` – vocabularies, filtered by group and/or name text. Paged (`PageRequest`, `PAGE_SIZE` = 20); the total is the size of the whole listing.
+- `loadCatalogue()` – all the vocabularies of the source with their groups (publishers, creators), as a `Catalogue`. Read once and kept, so calling it again is instant; a failed reading is retried by the next call. It takes no `AbortSignal`, since the reading is shared.
 - `getDetail(candidateId)` – titles, documentation URL and distributions, with the one to preselect.
 - `getMetadata(detail, distributionId, options)` – the metadata for the form, plus warnings and sample IRIs. It must not fail for data it cannot read (it returns what is known with a warning); it fails only when cancelled.
 
-Every request takes an `AbortSignal`; stale answers are dropped by the caller.
-
+`getDetail` and `getMetadata` take an `AbortSignal`; stale answers are dropped by the caller.
 
 ## Listing (`catalogue.ts`)
-The catalogs are small (a few hundred vocabularies), so a source does not page, count or search on the endpoint. `createCatalogueListing(read, { sortLanguage })` builds `listGroups` and `listCandidates` from two queries the source supplies, read once and kept for the session (also when listings start at once or the first one is cancelled; a failed reading is retried by the next listing):
+The catalogs are small (a few hundred vocabularies), so a source does not page, count or search on the endpoint. `createCatalogueLoader(read, { sortLanguage })` gives the source its `loadCatalogue` from two queries the source supplies:
 - catalogue rows: `?dataset ?group ?title`, a row per title (`?title` missing for a vocabulary without one);
 - group name rows: `?group ?name`, a row per name.
 
-It merges them, sorts the vocabularies by their title in `sortLanguage` (others after, then by IRI), counts and names the groups, filters by group and by a case-insensitive substring of any loaded title, and cuts the page. A source that has a catalog too big for this would need its own paged listing (the contract allows it).
+It merges them (`buildCatalogue`), sorts the vocabularies by their title in `sortLanguage` (others after, then by IRI), and counts and names the groups. The wizard loads the catalogue once (`useCatalogue`), filters it by group and by a case-insensitive substring of any loaded title (`filterCandidates`), and cuts the pages (`pageItems`, `PAGE_SIZE` in `../lib/paging.ts`). A source that has a catalog too big for this would need a paged listing in the contract.
 
 ## Rules the sources follow
 - The queries run in the browser against public endpoints, so the endpoint must allow CORS. Virtuoso rejects queries it thinks are too expensive, and a cold endpoint takes seconds for even a simple query.

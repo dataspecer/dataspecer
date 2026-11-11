@@ -1,4 +1,5 @@
 import { describe, expect, test, vi } from "vitest"
+import { filterCandidates } from "../catalogue"
 import { createEuSource } from "./eu-source"
 
 const GROUP = "http://publications.europa.eu/resource/authority/corporate-body/ESTAT"
@@ -16,18 +17,18 @@ const row = {
 }
 
 describe("createEuSource", () => {
-  test("lists the groups and the vocabularies from the two queries that read the catalogue", async () => {
+  test("builds the catalogue from the two queries that read it, and reads it once", async () => {
     const fetchMock = vi.fn<typeof fetch>(async () =>
       new Response(JSON.stringify({ results: { bindings: [row] } }), { status: 200 }))
     const source = createEuSource({ fetch: fetchMock })
 
-    expect(await source.listGroups!({ offset: 0, limit: 20 })).toEqual({
-      items: [{ id: GROUP, count: 1, label: { en: "Eurostat" } }],
-      total: 1,
-    })
-    expect((await source.listCandidates({ groupId: GROUP }, { offset: 0, limit: 20 })).items).toEqual([
+    const catalogue = await source.loadCatalogue()
+    expect(catalogue.groups).toEqual([{ id: GROUP, count: 1, label: { en: "Eurostat" } }])
+    expect(filterCandidates(catalogue, { query: "neexistuje" })).toEqual([])
+    expect(filterCandidates(catalogue, { query: "Classification" })).toEqual([
       { id: DATASET, title: { en: "Classification of Business Functions" }, groupLabel: { en: "Eurostat" } },
     ])
+    await source.loadCatalogue()
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 })

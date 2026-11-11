@@ -7,14 +7,13 @@ interface PaginatorProps {
   page: number
   pageCount: number
   onPageChange: (page: number) => void
-  disabled?: boolean
 }
 
 /**
  * Buttons for moving between the pages of a listing. It is hidden when the
  * listing has a single page.
  */
-export function Paginator({ page, pageCount, onPageChange, disabled = false }: PaginatorProps) {
+export function Paginator({ page, pageCount, onPageChange }: PaginatorProps) {
   const { t } = useTranslation()
 
   if (pageCount <= 1) {
@@ -28,7 +27,7 @@ export function Paginator({ page, pageCount, onPageChange, disabled = false }: P
       <Button
         variant="outline"
         size="xsm"
-        disabled={disabled || page === 0}
+        disabled={page === 0}
         onClick={() => onPageChange(page - 1)}
       >
         <ChevronLeft className="mr-1 h-3.5 w-3.5" />
@@ -37,7 +36,7 @@ export function Paginator({ page, pageCount, onPageChange, disabled = false }: P
       <Button
         variant="outline"
         size="xsm"
-        disabled={disabled || page >= pageCount - 1}
+        disabled={page >= pageCount - 1}
         onClick={() => onPageChange(page + 1)}
       >
         {t("paginator.next")}

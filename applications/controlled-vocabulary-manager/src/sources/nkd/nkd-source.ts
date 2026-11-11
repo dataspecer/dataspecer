@@ -1,4 +1,4 @@
-import { createCatalogueListing } from "../catalogue"
+import { createCatalogueLoader } from "../catalogue"
 import { runSparqlSelect } from "../sparql-client"
 import type { RequestOptions, VocabularySource } from "../types"
 import { buildDetail, distributionsQuery, recordQuery } from "./detail"
@@ -16,7 +16,7 @@ export interface NkdSourceDependencies {
  * The Czech National Data Catalog (NKD) SPARQL endpoint.
  * The vocabularies are the datasets of the catalog that conform to the open formal norm for codelists,
  * browsed by their publishers. There are a few hundred of them, which the listing reads at once
- * (see {@link createCatalogueListing}).
+ * (see {@link createCatalogueLoader}).
  */
 export function createNkdSource(dependencies: NkdSourceDependencies = {}): VocabularySource {
   const run = (query: string, options?: RequestOptions) =>
@@ -24,7 +24,7 @@ export function createNkdSource(dependencies: NkdSourceDependencies = {}): Vocab
 
   return {
     id: "nkd",
-    ...createCatalogueListing(
+    loadCatalogue: createCatalogueLoader(
       async () => {
         const [catalogue, groupNames] = await Promise.all([run(catalogueQuery()), run(groupNamesQuery())])
         return { catalogue, groupNames }
