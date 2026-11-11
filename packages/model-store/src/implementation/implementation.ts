@@ -1,9 +1,9 @@
 import { VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { type PackageService } from "@dataspecer/core-v2/project";
-import { type Entity, type EntityChange, type EntityIdentifier, type EntityRecord } from "@dataspecer/core/entity-model";
+import { applyOperationsToEntityModel, diffEntities, type Entity, type EntityChange, type EntityIdentifier, type EntityRecord } from "@dataspecer/core/entity-model";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import type { ModelIdentifier, ModelMetadata } from "@dataspecer/core/model";
-import { createUndoOperation, type Transaction as CoreTransaction, type Operation, type OperationInModel } from "@dataspecer/core/operation";
+import { createUndoOperation, isRemoveEntityOperation, isSetEntityOperation, isUpdateEntityOperation, type Transaction as CoreTransaction, type Operation, type OperationInModel } from "@dataspecer/core/operation";
 import { getReusedProjectIds, isCreateModelOperation, isPackageEntity, type CreateModelOperation, type ProjectModelEntity } from "@dataspecer/core/project-model";
 import { v4 as uuidv4 } from "uuid";
 import type { ObservableEntityModelStoreChangeEvent } from "../interfaces/observable.ts";
@@ -498,7 +498,34 @@ export class DefaultFrontendModelStore implements RemoteModelStore {
 
     this.currentTransactionStates[modelId] ??= tracked.coreState;
 
-    const stateResult = tracked.model.applyOperationAndSetState(operations);
+    const batches: { generic: boolean; operations: Operation[] }[] = [];
+    for (const operation of operations) {
+      const generic = isSetEntityOperation(operation) || isUpdateEntityOperation(operation) || isRemoveEntityOperation(operation);
+      const lastBatch = batches.at(-1);
+      if (lastBatch?.generic === generic) {
+        lastBatch.operations.push(operation);
+      } else {
+        batches.push({ generic, operations: [operation] });
+      }
+    }
+
+    let stateResult: StateResult = { coreState: tracked.coreState, outputState: tracked.outputState, diff: [] };
+    try {
+      for (const batch of batches) {
+        if (batch.generic) {
+          const coreState = { ...stateResult.coreState };
+          applyOperationsToEntityModel(coreState, batch.operations);
+          // Recompute derived state without storing it in the core entities.
+          stateResult = tracked.model.setState(coreState);
+        } else {
+          stateResult = tracked.model.applyOperationAndSetState(batch.operations);
+        }
+      }
+    } catch (error) {
+      tracked.model.setState(tracked.coreState);
+      throw error;
+    }
+    stateResult = { ...stateResult, diff: diffEntities(tracked.outputState, stateResult.outputState) };
     this.setModelState(modelId, stateResult, entityChanges);
     return stateResult;
   }
