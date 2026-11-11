@@ -28,6 +28,7 @@ export * from "./data-psm-set-human-label.ts";
 export * from "./data-psm-set-profiling.ts";
 export * from "./data-psm-set-idtype.ts";
 export * from "./data-psm-set-instances-have-identity.ts";
+export * from "./data-psm-set-recommended-controlled-vocabulary-usage.ts";
 export * from "./data-psm-set-instances-specify-types.ts";
 export * from "./data-psm-set-interpretation.ts";
 export * from "./data-psm-set-is-closed.ts";

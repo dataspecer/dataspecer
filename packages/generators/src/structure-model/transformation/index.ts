@@ -4,6 +4,7 @@ export * from "./default-transformation.ts";
 export * from "./dematerialize.ts";
 export * from "./instantiate-properties.ts";
 export * from "./propagate-cardinality.ts";
+export * from "./propagate-controlled-vocabularies.ts";
 export * from "./propagate-example.ts";
 export * from "./propagate-label.ts";
 export * from "./propagate-regex.ts";

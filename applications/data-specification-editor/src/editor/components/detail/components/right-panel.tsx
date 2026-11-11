@@ -25,12 +25,14 @@ import { SetDematerialize } from "../../../operations/set-dematerialize";
 import { SetExample } from "../../../operations/set-example";
 import { SetInstancesHaveIdentity } from "../../../operations/set-inastances-have-identity";
 import { SetIsClosed } from "../../../operations/set-is-closed";
+import { SetRecommendedControlledVocabularyUsage } from "../../../operations/set-recommended-controlled-vocabulary-usage";
 import { SetPimDatatype } from "../../../operations/set-pim-datatype";
 import { SetRegex } from "../../../operations/set-regex";
 import { SetTechnicalLabel } from "../../../operations/set-technical-label";
 import { getControlledVocabularyAssignmentIds } from "../../../utils/controlled-vocabularies";
 import { knownDatatypes } from "../../../utils/known-datatypes";
 import { ControlledVocabularies } from "./controlled-vocabularies";
+import { RecommendedControlledVocabularyUsage } from "./recommended-controlled-vocabulary-usage";
 import { Cardinality, CardinalitySelector, cardinalityFromPim, cardinalityFromPsm, defaultCardinality } from "../../helper/cardinality-selector";
 import { DatatypeSelector, DatatypeSelectorValueType, getIriFromDatatypeSelectorValue } from "../../helper/datatype-selector";
 import { RegexField } from "../../helper/regex-field";
@@ -319,6 +321,33 @@ export const RightPanel: React.FC<{ iri: string, close: () => void }> = memo(({i
 
     // endregion instances have identity
 
+    // region recommended controlled vocabulary usage
+
+    const sourceRecommendedUsage = {
+        requireValue: (resource as DataPsmClass).requireRecommendedControlledVocabularyValue ?? null,
+        restrictValues: (resource as DataPsmClass).restrictToRecommendedControlledVocabulary ?? null,
+    };
+    const [recommendedUsage, setRecommendedUsage] = useState(sourceRecommendedUsage);
+    useEffect(() => {
+        if (isClass) {
+            setRecommendedUsage({
+                requireValue: sourceRecommendedUsage.requireValue,
+                restrictValues: sourceRecommendedUsage.restrictValues,
+            });
+        }
+    }, [isClass, resource, sourceRecommendedUsage.requireValue, sourceRecommendedUsage.restrictValues]);
+
+    useSaveHandler(
+        isClass && !isEqual(sourceRecommendedUsage, recommendedUsage),
+        useCallback(
+            async () => resource && await store.executeComplexOperation(new SetRecommendedControlledVocabularyUsage(
+                resource.iri as string, recommendedUsage.requireValue, recommendedUsage.restrictValues)),
+            [resource, store, recommendedUsage]
+        )
+    );
+
+    // endregion recommended controlled vocabulary usage
+
     // region empty as complex
     const [emptyAsComplex, setEmptyAsComplex] = useState<boolean>(false);
     const currentEmptyAsComplex = isClass && resource.dataPsmEmptyAsComplex === true;
@@ -375,6 +404,8 @@ export const RightPanel: React.FC<{ iri: string, close: () => void }> = memo(({i
                 </Typography>
 
                 <ControlledVocabularies classProfileId={pimResource!.id} assignmentIds={controlledVocabularyAssignmentIds} />
+
+                <RecommendedControlledVocabularyUsage value={recommendedUsage} onChange={setRecommendedUsage} />
             </Box>
         }
 

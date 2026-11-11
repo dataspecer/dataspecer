@@ -28,6 +28,12 @@ export class JsonStructureModelClass extends StructureModelClass {
     jsonTypeRequired: boolean | undefined = undefined;
 
     /**
+     * Name of the property that holds the identity of the instances in the generated schema.
+     * It is set only when the schema has such a property.
+     */
+    idPropertyName: string | null | undefined = undefined;
+
+    /**
      * Whether you are allowed to use prefixes in the IRI and therefore it needs
      * to fallback to string instead of iri.
      */

@@ -141,6 +141,13 @@ export class JsonSchemaString extends JsonSchemaDefinition {
 
   pattern: string | null = null;
 
+  /**
+   * Id of the controlled vocabulary whose pattern the string is matched against.
+   * Null when the pattern does not come from a controlled vocabulary.
+   * It is not a part of the written schema, documentation uses it.
+   */
+  controlledVocabularyId: string | null = null;
+
   constructor(format: string | null) {
     super(JsonSchemaString.TYPE);
     this.format = format;
