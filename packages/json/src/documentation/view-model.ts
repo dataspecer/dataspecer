@@ -154,6 +154,13 @@ export interface JsonSchemaArrayViewModel extends JsonSchemaDefinitionViewModel 
   contains: JsonSchemaDefinitionViewModel | null;
 
   /**
+   * Items the array must contain, each required by a separate rule in
+   * allOf of the form "array containing at least one item of the given type".
+   * Such rules are listed here instead of in {@link allOf}. Null if there are none.
+   */
+  containsAll: JsonSchemaDefinitionViewModel[] | null;
+
+  /**
    * @default 0
    */
   minItems: number;
