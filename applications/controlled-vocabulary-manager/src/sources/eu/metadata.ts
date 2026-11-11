@@ -25,6 +25,12 @@ export const AUTHORITY_LIST_IRI = "http://publications.europa.eu/resource/author
 const SAMPLED_VALUES = 200
 const SAMPLE_IRI_COUNT = 5
 
+/**
+ * The code of the value "Provisional data" that many lists have next to their real values. It is not a value
+ * to show as an example, and it does not take part in deriving the pattern of the IRIs.
+ */
+const PROVISIONAL_DATA_CODE = "OP_DATPRO"
+
 export interface MetadataDependencies {
   /** Runs a SELECT query against the endpoint of the catalog. */
   run: (query: string, options?: RequestOptions) => Promise<SparqlRow[]>
@@ -80,7 +86,9 @@ async function readPattern(
     const detail = error instanceof Error ? error.message : undefined
     return { pattern: byConvention, sampleIris: [], warnings: [{ code: "valuesNotLoaded", detail }] }
   }
-  const iris = rows.map((row) => row.value?.value).filter((iri): iri is string => iri !== undefined)
+  const iris = rows
+    .map((row) => row.value?.value)
+    .filter((iri): iri is string => iri !== undefined && !iri.endsWith(`/${PROVISIONAL_DATA_CODE}`))
   const derived = buildIriPattern(iris)
   if (derived === null) {
     return { pattern: byConvention, sampleIris: [], warnings: [{ code: "patternByConvention" }] }

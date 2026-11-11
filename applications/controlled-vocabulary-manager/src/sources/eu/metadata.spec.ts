@@ -63,6 +63,20 @@ describe("readMetadata of a named authority list", () => {
     expect(run).toHaveBeenCalledTimes(1)
   })
 
+  test("leaves the provisional data value out of the example IRIs", async () => {
+    const run = runReturning(values("OP_DATPRO", "CZE", "DEU", "FRA"))
+    const result = await readMetadata(detailOf(), "d1", OPTIONS, { run })
+    expect(result.sampleIris).toEqual([`${SCHEME}/CZE`, `${SCHEME}/DEU`, `${SCHEME}/FRA`])
+    expect(result.metadata.pattern).toBe("^http://publications\\.europa\\.eu/resource/authority/country/.*$")
+    expect(result.warnings).toEqual([])
+  })
+
+  test("uses the pattern of the convention when the provisional data value is all but one of the values", async () => {
+    const result = await readMetadata(detailOf(), "d1", OPTIONS, { run: runReturning(values("OP_DATPRO", "CZE")) })
+    expect(result.sampleIris).toEqual([])
+    expect(result.warnings).toEqual([{ code: "patternByConvention" }])
+  })
+
   test("uses the pattern of the convention, without samples, when the catalog has no values of the list", async () => {
     const result = await readMetadata(detailOf(), "d1", OPTIONS, { run: runReturning([]) })
     expect(result.warnings).toEqual([{ code: "patternByConvention" }])
