@@ -1,6 +1,6 @@
 import type { LanguageString } from "@dataspecer/core/core/core-resource"
 import type { SparqlRow, SparqlTerm } from "./sparql-client"
-import { labelOrIri, toLanguageString } from "./sparql-utils"
+import { compareText, labelOrIri, toLanguageString } from "./sparql-utils"
 import type { CandidateFilter, SourceCandidate, SourceGroup } from "./types"
 
 /*
@@ -48,10 +48,6 @@ export interface Catalogue {
   entries: CatalogueEntry[]
   /** The biggest first. */
   groups: SourceGroup[]
-}
-
-function compare(a: string, b: string): number {
-  return a < b ? -1 : a > b ? 1 : 0
 }
 
 /**
@@ -105,7 +101,7 @@ export function buildCatalogue({ catalogue, groupNames }: CatalogueRows, { sortL
       sortKey: sortKeyOf(titles, sortLanguage),
       searchText: Object.values(title).join("\n").toLowerCase(),
     }
-  }).sort((a, b) => compare(a.sortKey, b.sortKey) || compare(a.id, b.id))
+  }).sort((a, b) => compareText(a.sortKey, b.sortKey) || compareText(a.id, b.id))
 
   const counts = new Map<string, number>()
   for (const entry of entries) {
@@ -113,7 +109,7 @@ export function buildCatalogue({ catalogue, groupNames }: CatalogueRows, { sortL
   }
   const groups = [...counts]
     .map(([id, count]): SourceGroup => ({ id, count, label: labelOf(id) }))
-    .sort((a, b) => b.count - a.count || compare(a.id, b.id))
+    .sort((a, b) => b.count - a.count || compareText(a.id, b.id))
   return { entries, groups }
 }
 

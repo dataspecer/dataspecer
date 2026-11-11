@@ -1,6 +1,5 @@
-import { createCatalogueLoader } from "../catalogue"
-import { runSparqlSelect } from "../sparql-client"
-import type { RequestOptions, VocabularySource } from "../types"
+import { createSparqlSource } from "../sparql-source"
+import type { VocabularySource } from "../types"
 import { buildDetail, distributionsQuery, recordQuery } from "./detail"
 import { catalogueQuery, groupNamesQuery } from "./listing"
 import { readMetadata } from "./metadata"
@@ -21,30 +20,17 @@ export interface EuSourceDependencies {
  * The vocabularies are the named authority lists, code lists, taxonomies and thesauri of the catalogue,
  * browsed by the bodies that created them.
  *
- * The catalogue has a few hundred vocabularies, which the listing reads at once (see {@link createCatalogueLoader}).
+ * The catalogue has a few hundred vocabularies, which the listing reads at once (see {@link createSparqlSource}).
  */
 export function createEuSource(dependencies: EuSourceDependencies = {}): VocabularySource {
-  const run = (query: string, options?: RequestOptions) =>
-    runSparqlSelect(EU_SPARQL_ENDPOINT, query, { signal: options?.signal, fetch: dependencies.fetch })
-
-  return {
+  return createSparqlSource({
     id: "eu-vocabularies",
-    loadCatalogue: createCatalogueLoader(
-      async () => {
-        const [catalogue, groupNames] = await Promise.all([run(catalogueQuery()), run(groupNamesQuery())])
-        return { catalogue, groupNames }
-      },
-      { sortLanguage: "en" },
-    ),
-    getDetail: async (candidateId, options) => {
-      const [recordRows, distributionRows] = await Promise.all([
-        run(recordQuery(candidateId), options),
-        run(distributionsQuery(candidateId), options),
-      ])
-      return buildDetail(candidateId, recordRows, distributionRows)
-    },
-    getMetadata: (detail, distributionId, options) => readMetadata(detail, distributionId, options, { run }),
-  }
+    endpoint: EU_SPARQL_ENDPOINT,
+    sortLanguage: "en",
+    queries: { catalogue: catalogueQuery, groupNames: groupNamesQuery, record: recordQuery, distributions: distributionsQuery },
+    buildDetail,
+    readMetadata: (detail, distributionId, options, { run }) => readMetadata(detail, distributionId, options, { run }),
+  }, dependencies)
 }
 
 export const euSource = createEuSource()
