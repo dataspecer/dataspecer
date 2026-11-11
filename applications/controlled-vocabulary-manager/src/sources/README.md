@@ -30,6 +30,8 @@ It merges them (`buildCatalogue`), sorts the vocabularies by their title in `sor
 - The metadata never block the form: a source that cannot read something warns (`MetadataWarning`) and leaves the field to the user.
 
 ## Adding a source
-1. Create `<name>/` with the listing, detail and metadata code, a `create<Name>Source()` factory and a `README.md`.
-2. Add its descriptor (with `metadataDerivation` in English and Czech) and the source to `registry.ts`.
-3. Test the mapping, validation and metadata with mocked `fetch`/`run` (`*.spec.ts`). Check each query live against the endpoint.
+1. Create `<name>/` with the four queries (catalogue rows, group names, record, distributions), `buildDetail`, `readMetadata` and a `README.md`.
+2. Make the source with `createSparqlSource({ id, endpoint, sortLanguage, queries, buildDetail, readMetadata })` (`sparql-source.ts`), in a `create<Name>Source()` factory that takes `{ fetch }` for tests. It runs the queries, reads the catalogue once and calls `readMetadata` with `{ run, fetch }`, so a source uses whichever it needs (query the endpoint, load a file).
+3. Map the rows of the distributions with `mapDistributions(rows, kindOf)` (`distributions.ts`): it merges the rows and works out the addresses, the source tells the format and whether the metadata can be read from it, and sorts the result. Other helpers for rows are in `sparql-utils.ts` (`firstValue`, `termsOf`, `toLanguageString`, `rankIn`), for file types in `file-types.ts`, for IRI patterns in `iri-pattern.ts`.
+4. Add its descriptor (with `metadataDerivation` in English and Czech) and the source to `registry.ts`.
+5. Test the mapping, validation and metadata with mocked `fetch`/`run` (`*.spec.ts`). Check each query live against the endpoint.

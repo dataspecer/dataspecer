@@ -1,6 +1,7 @@
-import type { SparqlRow, SparqlTerm } from "../sparql-client"
-import { assertSafeIri, toLanguageString } from "../sparql-utils"
+import type { SparqlRow } from "../sparql-client"
+import { assertSafeIri, compareText, firstValue, termsOf, toLanguageString } from "../sparql-utils"
 import type { CandidateDetail, SourceDistribution } from "../types"
+import { mapDistributions } from "../distributions"
 import { formatName, formatRank, variantRank } from "./distribution"
 import { DATASET_TYPE_IRI, NAMED_AUTHORITY_LIST, PREFIXES } from "./listing"
 
@@ -56,17 +57,6 @@ WHERE {
 }
 
 /**
- * The first non-empty value of the variable in the rows, undefined if there is none.
- */
-function firstValue(rows: SparqlRow[], variable: string): string | undefined {
-  return rows.map((row) => row[variable]?.value).find((value) => value !== undefined && value !== "")
-}
-
-function termsOf(rows: SparqlRow[], variable: string): SparqlTerm[] {
-  return rows.map((row) => row[variable]).filter((term): term is SparqlTerm => term !== undefined)
-}
-
-/**
  * Maps the rows of {@link distributionsQuery}, the most suitable distribution first. The rows of one
  * distribution are merged. A distribution without any address is left out.
  *
@@ -74,35 +64,11 @@ function termsOf(rows: SparqlRow[], variable: string): SparqlTerm[] {
  * - readable = whether the metadata of the vocabulary can be derived, whatever the distribution
  */
 export function mapDistributionRows(rows: SparqlRow[], readable: boolean): SourceDistribution[] {
-  const rowsByDistribution = new Map<string, SparqlRow[]>()
-  for (const row of rows) {
-    const id = row.distribution?.value
-    if (id !== undefined) {
-      rowsByDistribution.set(id, [...(rowsByDistribution.get(id) ?? []), row])
-    }
-  }
-
-  const distributions: SourceDistribution[] = []
-  for (const [id, group] of rowsByDistribution) {
-    const downloadUrl = firstValue(group, "downloadUrl") ?? null
-    const accessUrl = firstValue(group, "accessUrl") ?? downloadUrl
-    if (accessUrl === null) {
-      continue
-    }
-    distributions.push({
-      id,
-      title: toLanguageString(termsOf(group, "title")),
-      format: formatName(firstValue(group, "format")),
-      readable,
-      accessUrl,
-      downloadUrl,
-    })
-  }
-  const compare = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0)
-  return distributions.sort((a, b) =>
-    formatRank(a.format) - formatRank(b.format)
-    || variantRank(a.title) - variantRank(b.title)
-    || compare(a.id, b.id))
+  return mapDistributions(rows, (group) => ({ format: formatName(firstValue(group, "format")), readable }))
+    .sort((a, b) =>
+      formatRank(a.format) - formatRank(b.format)
+      || variantRank(a.title) - variantRank(b.title)
+      || compareText(a.id, b.id))
 }
 
 /**

@@ -1,5 +1,5 @@
 import type { LanguageString } from "@dataspecer/core/core/core-resource"
-import type { SparqlTerm } from "./sparql-client"
+import type { SparqlRow, SparqlTerm } from "./sparql-client"
 
 /**
  * Helpers shared by the sources that read vocabularies from a SPARQL endpoint.
@@ -57,4 +57,34 @@ export function tagUntagged(text: LanguageString, language: string): LanguageStr
   const { "": untagged, ...tagged } = text
   const tag = language.split("-")[0].toLowerCase()
   return untagged !== undefined && tagged[tag] === undefined ? { ...tagged, [tag]: untagged } : tagged
+}
+
+/**
+ * The first non-empty value of the variable in the rows, undefined if there is none.
+ */
+export function firstValue(rows: SparqlRow[], variable: string): string | undefined {
+  return rows.map((row) => row[variable]?.value).find((value) => value !== undefined && value !== "")
+}
+
+/**
+ * The terms the variable is bound to in the rows, the rows where it is not bound are skipped.
+ */
+export function termsOf(rows: SparqlRow[], variable: string): SparqlTerm[] {
+  return rows.map((row) => row[variable]).filter((term): term is SparqlTerm => term !== undefined)
+}
+
+/**
+ * Compares two texts by their code units, the way a sort key is compared.
+ */
+export function compareText(a: string, b: string): number {
+  return a < b ? -1 : a > b ? 1 : 0
+}
+
+/**
+ * Position of the value in the list, which is in the order from the best to the worst.
+ * A value that is not in the list is the last.
+ */
+export function rankIn(order: readonly string[], value: string): number {
+  const index = order.indexOf(value)
+  return index === -1 ? order.length : index
 }

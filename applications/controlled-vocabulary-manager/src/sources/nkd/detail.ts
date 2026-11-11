@@ -1,7 +1,8 @@
-import type { SparqlRow, SparqlTerm } from "../sparql-client"
+import type { SparqlRow } from "../sparql-client"
 import type { CandidateDetail, SourceDistribution } from "../types"
+import { mapDistributions } from "../distributions"
 import { formatName, formatRank, isReadableFormat } from "./distribution"
-import { assertSafeIri, toLanguageString } from "../sparql-utils"
+import { assertSafeIri, compareText, firstValue, termsOf, toLanguageString } from "../sparql-utils"
 import { PREFIXES } from "./listing"
 
 /**
@@ -45,14 +46,7 @@ function compareDistributions(a: SourceDistribution, b: SourceDistribution): num
   if (byFormat !== 0) {
     return byFormat
   }
-  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0
-}
-
-/**
- * The first non-empty value of the variable in the rows, undefined if there is none.
- */
-function firstValue(rows: SparqlRow[], variable: string): string | undefined {
-  return rows.map((row) => row[variable]?.value).find((value) => value !== undefined && value !== "")
+  return compareText(a.id, b.id)
 }
 
 /**
@@ -63,34 +57,11 @@ function firstValue(rows: SparqlRow[], variable: string): string | undefined {
  * such as a SPARQL endpoint.
  */
 export function mapDistributionRows(rows: SparqlRow[]): SourceDistribution[] {
-  const rowsByDistribution = new Map<string, SparqlRow[]>()
-  for (const row of rows) {
-    const id = row.distribution?.value
-    if (id !== undefined) {
-      rowsByDistribution.set(id, [...(rowsByDistribution.get(id) ?? []), row])
-    }
-  }
-
-  const distributions: SourceDistribution[] = []
-  for (const [id, group] of rowsByDistribution) {
-    const downloadUrl = firstValue(group, "downloadUrl") ?? null
-    const accessUrl = firstValue(group, "accessUrl") ?? downloadUrl
-    if (accessUrl === null) {
-      continue
-    }
+  return mapDistributions(rows, (group, downloadUrl) => {
     const isEndpoint = downloadUrl === null && group.some((row) => row.service !== undefined)
     const format = formatName(firstValue(group, "format"), isEndpoint)
-    const titles = group.map((row) => row.title).filter((title): title is SparqlTerm => title !== undefined)
-    distributions.push({
-      id,
-      title: toLanguageString(titles),
-      format,
-      readable: isReadableFormat(format),
-      accessUrl,
-      downloadUrl,
-    })
-  }
-  return distributions.sort(compareDistributions)
+    return { format, readable: isReadableFormat(format) }
+  }).sort(compareDistributions)
 }
 
 /**
@@ -98,11 +69,10 @@ export function mapDistributionRows(rows: SparqlRow[]): SourceDistribution[] {
  * {@link recordQuery} and {@link distributionsQuery}. The distribution to preselect is the most suitable one.
  */
 export function buildDetail(datasetIri: string, recordRows: SparqlRow[], distributionRows: SparqlRow[]): CandidateDetail {
-  const titles = recordRows.map((row) => row.title).filter((title): title is SparqlTerm => title !== undefined)
   const distributions = mapDistributionRows(distributionRows)
   return {
     id: datasetIri,
-    title: toLanguageString(titles),
+    title: toLanguageString(termsOf(recordRows, "title")),
     documentationUrl: firstValue(recordRows, "page") ?? null,
     distributions,
     defaultDistributionId: distributions[0]?.id ?? null,
