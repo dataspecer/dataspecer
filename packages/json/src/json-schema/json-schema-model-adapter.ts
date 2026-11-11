@@ -467,6 +467,7 @@ function addContainsRules(array: JsonSchemaArray, rules: JsonSchemaDefinition[])
   array.allOf = rules.map(rule => {
     const containing = new JsonSchemaArray();
     containing.contains = rule;
+    containing.items = new JsonSchemaAny(); // The other items are not constrained.
     return containing;
   });
 }

@@ -163,8 +163,8 @@ describe("JSON schema of values with controlled vocabularies", () => {
       const values = await generate({ assignments: [assignment("at-least-one", A), assignment("at-least-one", B)] });
       expect(values.contains).toBeUndefined();
       expect(values.allOf).toStrictEqual([
-        { type: "array", contains: { type: "string", pattern: A } },
-        { type: "array", contains: { type: "string", pattern: B } },
+        { type: "array", contains: { type: "string", pattern: A }, items: {} },
+        { type: "array", contains: { type: "string", pattern: B }, items: {} },
       ]);
     });
 
