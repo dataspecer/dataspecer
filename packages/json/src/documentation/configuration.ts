@@ -128,13 +128,31 @@ export const defaultJsonPartials: Record<string, string> = {
     {{#if requiresStringConstantsOnly}} a musí obsahovat: {{#each requiresStringConstantsOnly}}<code>{{this}}</code>{{#unless @last}}, {{/unless}}{{/each}}
     {{else}}
       {{#if contains}} a musí obsahovat alespoň jednu položku typu {{#with contains}}{{json-tree-or-link}}{{/with}}{{/if}}
+      {{#if containsAll}}
+        a musí obsahovat:
+        <ul>
+          {{#each containsAll}}
+            <li>alespoň jednu položku typu {{json-tree-or-link}}</li>
+          {{/each}}
+        </ul>
+      {{/if}}
     {{/if}}
+    {{xof}}
   {{lng}}
     array of values <code>{{cardinalityText}}</code> of type {{#with items}}{{json-tree-or-link}}{{/with}}
     {{#if requiresStringConstantsOnly}} and must contain: {{#each requiresStringConstantsOnly}}<code>{{this}}</code>{{#unless @last}}, {{/unless}}{{/each}}
     {{else}}
       {{#if contains}} and must contain at least one item of type {{#with contains}}{{json-tree-or-link}}{{/with}}{{/if}}
+      {{#if containsAll}}
+        and must contain:
+        <ul>
+          {{#each containsAll}}
+            <li>at least one item of type {{json-tree-or-link}}</li>
+          {{/each}}
+        </ul>
+      {{/if}}
     {{/if}}
+    {{xof}}
   {{/iflng}}
 {{/def}}
 
