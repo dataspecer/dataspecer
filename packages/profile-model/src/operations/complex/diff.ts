@@ -40,9 +40,11 @@ export function changesToProfileModelOperations(changes: EntityChange[]): Profil
       } else if (change.next === null) {
         deleteClassOps.push(deleteEntity(change.previous.id));
       } else {
-        const patch = createPatch(change.previous as ProfileClass, change.next as ProfileClass);
+        const patch = createPatch(change.previous as ProfileClass, change.next as ProfileClass, true);
         const { type: _, id: __, ...rest } = patch as Partial<ProfileClass>;
-        modifyOps.push(factory.modifyClassProfile(change.next.id, rest));
+        if (Object.keys(rest).length > 0) {
+          modifyOps.push(factory.modifyClassProfile(change.next.id, rest));
+        }
       }
     } else if (isProfileRelationship(entity)) {
       if (change.previous === null) {
@@ -51,9 +53,23 @@ export function changesToProfileModelOperations(changes: EntityChange[]): Profil
       } else if (change.next === null) {
         deleteRelGenOps.push(deleteEntity(change.previous.id));
       } else {
-        const patch = createPatch(change.previous as ProfileRelationship, change.next as ProfileRelationship);
-        const { type: _, id: __, ...rest } = patch as Partial<ProfileRelationship>;
-        modifyOps.push(factory.modifyRelationshipProfile(change.next.id, rest));
+        const previous = change.previous as ProfileRelationship;
+        const next = change.next as ProfileRelationship;
+
+        const patch = createPatch(previous, next, true);
+        const { type: _, id: __, ends: ___, ...rest } = patch as Partial<ProfileRelationship>;
+        if (Object.keys(rest).length > 0) {
+          modifyOps.push(factory.modifyRelationshipProfile(change.next.id, rest));
+        }
+        // We suppose that each relationship has two ends
+        for (const index of [0, 1]) {
+          const nextEnd = next.ends[index];
+          const prevEnd = previous.ends[index];
+          const patch = createPatch(prevEnd, nextEnd, true);
+          if (Object.keys(patch).length > 0) {
+            modifyOps.push(factory.modifyRelationshipEndProfile(change.next.id, index, patch));
+          }
+        }
       }
     } else if (isProfileGeneralization(entity)) {
       if (change.previous === null) {
@@ -64,9 +80,11 @@ export function changesToProfileModelOperations(changes: EntityChange[]): Profil
       } else if (change.next === null) {
         deleteRelGenOps.push(deleteEntity(change.previous.id));
       } else {
-        const patch = createPatch(change.previous as ProfileGeneralization, change.next as ProfileGeneralization);
+        const patch = createPatch(change.previous as ProfileGeneralization, change.next as ProfileGeneralization, true);
         const { type: _, id: __, ...rest } = patch as Partial<ProfileGeneralization>;
-        modifyOps.push(modifyGeneralization(change.next.id, rest));
+        if (Object.keys(rest).length > 0) {
+          modifyOps.push(modifyGeneralization(change.next.id, rest));
+        }
       }
     } else {
       remainingChanges.push(change);
