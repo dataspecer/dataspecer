@@ -60,7 +60,8 @@ function isEuDetail(detail: CandidateDetail): detail is EuCandidateDetail {
  * The catalog on data.europa.eu has the values of only some of the lists. 
  * When they are there, the pattern is derived from them. 
  * Otherwise it is the pattern that all the values of a named authority
- * list have by the convention of the Publications Office, and no values are returned to check it against.
+ * list have by the convention of the Publications Office, and no values are returned to check it against,
+ * which the warning patternByConvention says.
  * A failure of the endpoint gives the pattern by the convention and the warning valuesNotLoaded.
  */
 async function readPattern(
@@ -82,7 +83,7 @@ async function readPattern(
   const iris = rows.map((row) => row.value?.value).filter((iri): iri is string => iri !== undefined)
   const derived = buildIriPattern(iris)
   if (derived === null) {
-    return { pattern: byConvention, sampleIris: [], warnings: [] }
+    return { pattern: byConvention, sampleIris: [], warnings: [{ code: "patternByConvention" }] }
   }
   return { pattern: derived, sampleIris: [...new Set(iris)].slice(0, SAMPLE_IRI_COUNT), warnings: [] }
 }

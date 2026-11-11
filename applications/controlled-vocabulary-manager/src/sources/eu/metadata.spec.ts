@@ -65,7 +65,7 @@ describe("readMetadata of a named authority list", () => {
 
   test("uses the pattern of the convention, without samples, when the catalog has no values of the list", async () => {
     const result = await readMetadata(detailOf(), "d1", OPTIONS, { run: runReturning([]) })
-    expect(result.warnings).toEqual([])
+    expect(result.warnings).toEqual([{ code: "patternByConvention" }])
     expect(result.metadata.references).toBe(SCHEME)
     expect(result.metadata.pattern).toBe("^http://publications\\.europa\\.eu/resource/authority/country/.*$")
     expect(result.sampleIris).toEqual([])
@@ -73,6 +73,7 @@ describe("readMetadata of a named authority list", () => {
 
   test("uses the pattern of the convention when there is a single value, from which no pattern is derived", async () => {
     const result = await readMetadata(detailOf(), "d1", OPTIONS, { run: runReturning(values("CZE")) })
+    expect(result.warnings).toEqual([{ code: "patternByConvention" }])
     expect(result.metadata.pattern).toBe("^http://publications\\.europa\\.eu/resource/authority/country/.*$")
     expect(result.sampleIris).toEqual([])
   })

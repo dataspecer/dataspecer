@@ -83,8 +83,11 @@ export interface CandidateDetail {
  * - unsupportedFormat = the source does not read the chosen distribution
  * - valuesNotLoaded = the values of the vocabulary could not be loaded to derive the pattern of their IRIs
  *   from them, `detail` says why, the pattern is a guess
+ * - patternByConvention = the source has no values of the vocabulary to derive the pattern of their IRIs from, so the pattern
+ *   follows the convention of the IRIs of this kind of vocabulary and no example IRIs are given
  */
-export type MetadataWarningCode = "fetchFailed" | "notParsed" | "noSchemeIri" | "unsupportedFormat" | "valuesNotLoaded"
+export type MetadataWarningCode =
+  | "fetchFailed" | "notParsed" | "noSchemeIri" | "unsupportedFormat" | "valuesNotLoaded" | "patternByConvention"
 
 export interface MetadataWarning {
   code: MetadataWarningCode
