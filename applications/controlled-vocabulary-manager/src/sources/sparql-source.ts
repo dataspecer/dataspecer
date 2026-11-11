@@ -1,6 +1,14 @@
+import type { LanguageString } from "@dataspecer/core/core/core-resource"
 import { createCatalogueLoader } from "./catalogue"
-import { runSparqlSelect, type SparqlRow } from "./sparql-client"
-import type { CandidateDetail, MetadataOptions, MetadataResult, RequestOptions, VocabularySource } from "./types"
+import { runSparqlSelect, SparqlError, type SparqlRow } from "./sparql-client"
+import { tagUntagged } from "./sparql-utils"
+import type {
+  MetadataOptions,
+  MetadataResult,
+  RequestOptions,
+  SourceCandidate,
+  VocabularySource,
+} from "./types"
 
 /**
  * Runs a SELECT query against the endpoint of the source.
@@ -8,11 +16,30 @@ import type { CandidateDetail, MetadataOptions, MetadataResult, RequestOptions, 
 export type SparqlRunner = (query: string, options?: RequestOptions) => Promise<SparqlRow[]>
 
 /**
+ * The distribution the metadata of a vocabulary are read from: the best one the record has.
+ */
+export interface ChosenDistribution {
+  format: string
+  accessUrl: string
+  downloadUrl: string | null
+}
+
+/**
+ * What the record of a vocabulary says, with the distribution chosen to read the metadata from.
+ * - distribution = null when the record has no distribution
+ */
+export interface SourceRecord {
+  title: LanguageString
+  documentationUrl: string | null
+  distribution: ChosenDistribution | null
+}
+
+/**
  * How a source that reads its vocabularies from a SPARQL endpoint differs from the others.
  * - sortLanguage = the language the vocabularies are sorted by their title in
  * - queries = the queries that read the catalogue (see {@link createCatalogueLoader}) and one vocabulary
- * - buildDetail = builds what the source knows about a vocabulary from the rows of its record and of its distributions
- * - readMetadata = reads the metadata of a vocabulary, with the means to query the endpoint or to load a file
+ * - deriveMetadata = reads the metadata of a vocabulary from the rows of its record and of its distributions,
+ *   choosing the distribution to read them from, with the means to query the endpoint or to load a file
  */
 export interface SparqlSourceConfig {
   id: string
@@ -24,13 +51,31 @@ export interface SparqlSourceConfig {
     record(datasetIri: string): string
     distributions(datasetIri: string): string
   }
-  buildDetail(datasetIri: string, recordRows: SparqlRow[], distributionRows: SparqlRow[]): CandidateDetail
-  readMetadata(
-    detail: CandidateDetail,
-    distributionId: string,
+  deriveMetadata(
+    recordRows: SparqlRow[],
+    distributionRows: SparqlRow[],
     options: MetadataOptions,
     tools: { run: SparqlRunner, fetch?: typeof fetch },
   ): Promise<MetadataResult>
+}
+
+/**
+ * The metadata of a vocabulary whose record could not be loaded: its name from the listing, the rest is left to the user.
+ */
+function recordNotLoaded(candidate: SourceCandidate, options: MetadataOptions, error: unknown): MetadataResult {
+  return {
+    metadata: {
+      title: tagUntagged(candidate.title, options.language),
+      pattern: null,
+      references: "",
+      conformsToSkos: true,
+      documentation: null,
+      distribution: { downloadUrl: null, accessUrl: "" },
+      iri: null,
+    },
+    warnings: [{ code: "recordNotLoaded", detail: error instanceof Error ? error.message : undefined }],
+    sampleIris: [],
+  }
 }
 
 /**
@@ -52,14 +97,17 @@ export function createSparqlSource(config: SparqlSourceConfig, dependencies: { f
       },
       { sortLanguage: config.sortLanguage },
     ),
-    getDetail: async (candidateId, options) => {
-      const [recordRows, distributionRows] = await Promise.all([
-        run(queries.record(candidateId), options),
-        run(queries.distributions(candidateId), options),
-      ])
-      return config.buildDetail(candidateId, recordRows, distributionRows)
+    readMetadata: async (candidate, options) => {
+      let rows: [SparqlRow[], SparqlRow[]]
+      try {
+        rows = await Promise.all([run(queries.record(candidate.id), options), run(queries.distributions(candidate.id), options)])
+      } catch (error) {
+        if (options.signal?.aborted || (error instanceof SparqlError && error.kind === "aborted")) {
+          throw error
+        }
+        return recordNotLoaded(candidate, options, error)
+      }
+      return config.deriveMetadata(rows[0], rows[1], options, { run, fetch: dependencies.fetch })
     },
-    getMetadata: (detail, distributionId, options) =>
-      config.readMetadata(detail, distributionId, options, { run, fetch: dependencies.fetch }),
   }
 }

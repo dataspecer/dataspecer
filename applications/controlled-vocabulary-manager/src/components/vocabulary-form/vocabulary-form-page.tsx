@@ -3,13 +3,16 @@ import { Breadcrumb } from "@/components/layout/breadcrumb"
 import { VocabularyForm } from "./vocabulary-form"
 import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model"
 import { useConfig } from "@/contexts/config-context"
+import type { LanguageString } from "@dataspecer/core/core/core-resource"
 import type { MetadataResult } from "@/sources/types"
 
 interface VocabularyFormPageProps {
   vocabulary?: ControlledVocabulary
   /** Metadata read from a source, prefilling the form of a new vocabulary. */
   prefilled?: MetadataResult
-  /** Returns to the choice of the distribution the metadata were read from. */
+  /** How the source derived the metadata of a prefilled form. */
+  derivation?: LanguageString
+  /** Returns to the search the vocabulary was chosen in. */
   onBack?: () => void
   onCancel: () => void
   onConfirm: (vocabulary: Omit<ControlledVocabulary, 'id' | 'type'>) => void
@@ -18,6 +21,7 @@ interface VocabularyFormPageProps {
 export function VocabularyFormPage({
   vocabulary,
   prefilled,
+  derivation,
   onBack,
   onCancel,
   onConfirm,
@@ -50,6 +54,7 @@ export function VocabularyFormPage({
       </p>
       <VocabularyForm
         initialValues={vocabulary ?? prefilled?.metadata}
+        derivation={prefilled ? derivation : undefined}
         warnings={prefilled?.warnings}
         sampleIris={prefilled?.sampleIris}
         onBack={prefilled ? onBack : undefined}

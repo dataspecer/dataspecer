@@ -1,8 +1,8 @@
 import { createSparqlSource } from "../sparql-source"
 import type { VocabularySource } from "../types"
-import { buildDetail, distributionsQuery, recordQuery } from "./detail"
+import { buildRecord, distributionsQuery, recordQuery } from "./detail"
 import { catalogueQuery, groupNamesQuery } from "./listing"
-import { readMetadata } from "./metadata"
+import { deriveMetadata } from "./metadata"
 
 /**
  * The endpoint of the European Data Portal, which has the Reference Data Catalogue of EU Vocabularies.
@@ -28,8 +28,8 @@ export function createEuSource(dependencies: EuSourceDependencies = {}): Vocabul
     endpoint: EU_SPARQL_ENDPOINT,
     sortLanguage: "en",
     queries: { catalogue: catalogueQuery, groupNames: groupNamesQuery, record: recordQuery, distributions: distributionsQuery },
-    buildDetail,
-    readMetadata: (detail, distributionId, options, { run }) => readMetadata(detail, distributionId, options, { run }),
+    deriveMetadata: (recordRows, distributionRows, options, { run }) =>
+      deriveMetadata(buildRecord(recordRows, distributionRows), options, { run }),
   }, dependencies)
 }
 

@@ -88,3 +88,17 @@ export function rankIn(order: readonly string[], value: string): number {
   const index = order.indexOf(value)
   return index === -1 ? order.length : index
 }
+
+/**
+ * Groups the rows by the value of the variable, in the order the values first appear. The rows without it are skipped.
+ */
+export function groupRows(rows: SparqlRow[], variable: string): Map<string, SparqlRow[]> {
+  const groups = new Map<string, SparqlRow[]>()
+  for (const row of rows) {
+    const key = row[variable]?.value
+    if (key !== undefined) {
+      groups.set(key, [...(groups.get(key) ?? []), row])
+    }
+  }
+  return groups
+}

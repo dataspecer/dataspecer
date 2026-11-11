@@ -2,8 +2,7 @@ import { describe, expect, test } from "vitest"
 import type { VocabularyMetadata } from "@/sources/types"
 import { isWizardScreenAvailable, searchBackStep, type WizardState } from "./use-source-wizard"
 
-const empty: WizardState = { sourceId: null, groupsPage: 0, group: null, query: "", candidatesPage: 0, candidate: null, metadata: null }
-const candidate = { id: "c", title: {}, groupLabel: {} }
+const empty: WizardState = { sourceId: null, groupsPage: 0, group: null, query: "", candidatesPage: 0, metadata: null }
 const metadata = { metadata: {} as VocabularyMetadata, warnings: [], sampleIris: [] }
 
 describe("isWizardScreenAvailable", () => {
@@ -18,14 +17,9 @@ describe("isWizardScreenAvailable", () => {
     expect(isWizardScreenAvailable("search", { ...empty, sourceId: "nkd" })).toBe(true)
   })
 
-  test("shows the choice of the distribution only with a chosen vocabulary", () => {
-    expect(isWizardScreenAvailable("distribution", { ...empty, sourceId: "nkd" })).toBe(false)
-    expect(isWizardScreenAvailable("distribution", { ...empty, sourceId: "nkd", candidate })).toBe(true)
-  })
-
   test("shows the prefilled form only with the metadata read", () => {
-    expect(isWizardScreenAvailable("form-prefilled", { ...empty, sourceId: "nkd", candidate })).toBe(false)
-    expect(isWizardScreenAvailable("form-prefilled", { ...empty, sourceId: "nkd", candidate, metadata })).toBe(true)
+    expect(isWizardScreenAvailable("form-prefilled", { ...empty, sourceId: "nkd" })).toBe(false)
+    expect(isWizardScreenAvailable("form-prefilled", { ...empty, sourceId: "nkd", metadata })).toBe(true)
   })
 })
 

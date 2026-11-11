@@ -1,10 +1,9 @@
 import { describe, expect, test } from "vitest"
 import type { SparqlRow, SparqlTerm } from "../sparql-client"
-import { buildDetail, distributionsQuery, mapDistributionRows, recordQuery } from "./detail"
+import { buildRecord, chooseDistribution, distributionsQuery, recordQuery } from "./detail"
 
 const FILE_TYPE = "http://publications.europa.eu/resource/authority/file-type/"
 const DATASET_TYPE = "http://publications.europa.eu/resource/authority/dataset-type/"
-const RECORD = "http://data.europa.eu/88u/dataset/country"
 const DISTRIBUTION = "http://data.europa.eu/88u/distribution/"
 
 function uri(value: string): SparqlTerm {
@@ -25,22 +24,35 @@ function distributionRows(id: string, title: string, fileType: string, url = `ht
   }]
 }
 
-describe("mapDistributionRows", () => {
-  test("merges the rows of a distribution, which come one per title", () => {
-    const rows: SparqlRow[] = [
-      { ...distributionRows("a", "Countries SKOS_CORE distribution", "RDF_XML")[0] },
-      { ...distributionRows("a", "Země SKOS_CORE distribuce", "RDF_XML")[0], title: literal("Země SKOS_CORE distribuce", "cs-t-en-t0-mtec") },
-    ]
-    const [distribution] = mapDistributionRows(rows, true)
-    expect(mapDistributionRows(rows, true)).toHaveLength(1)
-    expect(distribution).toMatchObject({
-      id: `${DISTRIBUTION}a`,
-      title: { en: "Countries SKOS_CORE distribution", cs: "Země SKOS_CORE distribuce" },
+describe("query builders", () => {
+  test("reject a record that is not usable as an IRI", () => {
+    expect(() => recordQuery("http://x> } DROP")).toThrow()
+    expect(() => distributionsQuery("")).toThrow()
+  })
+})
+
+describe("chooseDistribution", () => {
+  const skosCore = distributionRows("core", "Countries SKOS_CORE distribution", "RDF_XML", "https://example.org/core.rdf")
+  const skosAp = distributionRows("ap", "Countries SKOS_AP_EU distribution", "RDF_XML", "https://example.org/ap.rdf")
+  const csv = distributionRows("csv", "Countries CSV distribution", "CSV", "https://example.org/countries.csv")
+  const turtle = distributionRows("ttl", "Countries Turtle distribution", "RDF_TURTLE", "https://example.org/countries.ttl")
+
+  test("chooses the RDF/XML distribution with the most suitable SKOS variant", () => {
+    expect(chooseDistribution([...csv, ...skosAp, ...turtle, ...skosCore])).toEqual({
       format: "RDF/XML",
-      readable: true,
-      accessUrl: "https://example.org/a",
-      downloadUrl: "https://example.org/a",
+      accessUrl: "https://example.org/core.rdf",
+      downloadUrl: "https://example.org/core.rdf",
     })
+  })
+
+  test("chooses the next format when there is no RDF/XML distribution", () => {
+    expect(chooseDistribution([...csv, ...turtle])?.format).toBe("Turtle")
+    expect(chooseDistribution(csv)?.format).toBe("CSV")
+  })
+
+  test("accesses a distribution without an access URL at its download URL", () => {
+    const rows: SparqlRow[] = [{ distribution: uri(`${DISTRIBUTION}x`), downloadUrl: uri("https://example.org/x.rdf") }]
+    expect(chooseDistribution(rows)).toEqual({ format: "Other", accessUrl: "https://example.org/x.rdf", downloadUrl: "https://example.org/x.rdf" })
   })
 
   test("puts RDF before other formats and plain SKOS before the profiles, then orders by IRI", () => {
@@ -51,70 +63,52 @@ describe("mapDistributionRows", () => {
       ...distributionRows("c", "X SKOS_CORE distribution", "RDF_XML"),
       ...distributionRows("e", "X distribution", "ZIP"),
     ]
-    expect(mapDistributionRows(rows, true).map((distribution) => distribution.id.replace(DISTRIBUTION, "")))
-      .toEqual(["c", "d", "b", "a", "e"])
+    expect(chooseDistribution(rows)?.accessUrl).toBe("https://example.org/c")
+    expect(chooseDistribution([...rows].reverse())).toEqual(chooseDistribution(rows))
   })
 
-  test("uses the download address when there is no access address", () => {
-    const rows: SparqlRow[] = [{ distribution: uri(`${DISTRIBUTION}a`), format: uri(`${FILE_TYPE}CSV`), downloadUrl: uri("https://example.org/a.csv") }]
-    expect(mapDistributionRows(rows, false)[0]).toMatchObject({ accessUrl: "https://example.org/a.csv", downloadUrl: "https://example.org/a.csv", format: "CSV", readable: false })
+  test("merges the rows of a distribution, which come one per title", () => {
+    const rows: SparqlRow[] = [
+      distributionRows("a", "Countries SKOS_CORE distribution", "RDF_XML")[0],
+      { ...distributionRows("a", "Země SKOS_CORE distribuce", "RDF_XML")[0], title: literal("Země SKOS_CORE distribuce", "cs-t-en-t0-mtec") },
+      ...distributionRows("b", "Countries SKOS_AP_EU distribution", "RDF_XML"),
+    ]
+    expect(chooseDistribution(rows)?.accessUrl).toBe("https://example.org/a")
   })
 
-  test("leaves out a distribution without any address", () => {
-    expect(mapDistributionRows([{ distribution: uri(`${DISTRIBUTION}a`) }], true)).toEqual([])
-  })
-
-  test("calls a distribution without a file type Other", () => {
-    const rows: SparqlRow[] = [{ distribution: uri(`${DISTRIBUTION}a`), accessUrl: uri("https://example.org/a") }]
-    expect(mapDistributionRows(rows, true)[0].format).toBe("Other")
+  test("gives null when there is no distribution with an address", () => {
+    expect(chooseDistribution([])).toBeNull()
+    expect(chooseDistribution([{ distribution: uri(`${DISTRIBUTION}x`), title: literal("No address", "en") }])).toBeNull()
   })
 })
 
-describe("buildDetail", () => {
-  const recordRows: SparqlRow[] = [
-    { title: literal("Countries and territories Named Authority List", "en") },
-    { title: literal("Země a území", "cs-t-en-t0-mtec") },
-    { identifier: literal("country") },
-    { type: uri(`${DATASET_TYPE}NAL`) },
-    { page: uri("https://op.example/page") },
-    { landingPage: uri("https://op.example/landing") },
-  ]
-
-  test("reads all titles, the identifier and prefers the page to the landing page", () => {
-    const detail = buildDetail(RECORD, recordRows, distributionRows("a", "X SKOS_CORE distribution", "RDF_XML"))
-    expect(detail).toMatchObject({
-      id: RECORD,
-      title: { en: "Countries and territories Named Authority List", cs: "Země a území" },
+describe("buildRecord", () => {
+  test("reads the title, the page, the identifier and the type of the record and chooses the distribution", () => {
+    const record = buildRecord(
+      [
+        { title: literal("Countries", "en") },
+        { identifier: literal("country") },
+        { type: uri(`${DATASET_TYPE}NAL`) },
+        { landingPage: uri("https://example.org/country") },
+      ],
+      distributionRows("core", "Countries SKOS_CORE distribution", "RDF_XML"),
+    )
+    expect(record).toEqual({
+      title: { en: "Countries" },
+      documentationUrl: "https://example.org/country",
+      distribution: { format: "RDF/XML", accessUrl: "https://example.org/core", downloadUrl: "https://example.org/core" },
       identifier: "country",
       isNamedAuthorityList: true,
-      documentationUrl: "https://op.example/page",
-      defaultDistributionId: `${DISTRIBUTION}a`,
     })
   })
 
-  test("falls back to the landing page for the documentation", () => {
-    const rows = recordRows.filter((row) => row.page === undefined)
-    expect(buildDetail(RECORD, rows, []).documentationUrl).toBe("https://op.example/landing")
+  test("prefers the page to the landing page for the documentation", () => {
+    const record = buildRecord([{ landingPage: uri("https://example.org/landing") }, { page: uri("https://example.org/page") }], [])
+    expect(record.documentationUrl).toBe("https://example.org/page")
   })
 
-  test("marks the distributions of a named authority list as readable and those of other types as not", () => {
-    const distributions = distributionRows("a", "X distribution", "RDF_XML")
-    expect(buildDetail(RECORD, recordRows, distributions).distributions[0].readable).toBe(true)
-    const taxonomy = recordRows.map((row) => row.type ? { type: uri(`${DATASET_TYPE}TAXONOMY`) } : row)
-    const detail = buildDetail(RECORD, taxonomy, distributions)
-    expect(detail.isNamedAuthorityList).toBe(false)
-    expect(detail.distributions[0].readable).toBe(false)
-  })
-
-  test("has no preselected distribution and no documentation for a record without them", () => {
-    const detail = buildDetail(RECORD, [], [])
-    expect(detail).toMatchObject({ title: {}, identifier: null, documentationUrl: null, distributions: [], defaultDistributionId: null })
-  })
-})
-
-describe("query builders", () => {
-  test("reject a record that is not usable as an IRI", () => {
-    expect(() => recordQuery("http://x> } DROP")).toThrow()
-    expect(() => distributionsQuery("")).toThrow()
+  test("is not a named authority list of another type, and has no distribution without rows", () => {
+    const record = buildRecord([{ type: uri(`${DATASET_TYPE}TAXONOMY`) }], [])
+    expect(record).toMatchObject({ isNamedAuthorityList: false, distribution: null, identifier: null, documentationUrl: null })
   })
 })

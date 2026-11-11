@@ -1,19 +1,8 @@
 import type { SparqlRow } from "../sparql-client"
-import { assertSafeIri, compareText, firstValue, termsOf, toLanguageString } from "../sparql-utils"
-import type { CandidateDetail, SourceDistribution } from "../types"
-import { mapDistributions } from "../distributions"
+import { assertSafeIri, compareText, firstValue, groupRows, termsOf, toLanguageString } from "../sparql-utils"
+import type { ChosenDistribution, SourceRecord } from "../sparql-source"
 import { formatName, formatRank, variantRank } from "./distribution"
 import { DATASET_TYPE_IRI, NAMED_AUTHORITY_LIST, PREFIXES } from "./listing"
-
-/**
- * What the source knows about a vocabulary besides {@link CandidateDetail}.
- * - identifier = identifier of the vocabulary in the catalog, such as "country"
- * - isNamedAuthorityList = whether it is a named authority list, whose IRI is derived from the identifier
- */
-export interface EuCandidateDetail extends CandidateDetail {
-  identifier: string | null
-  isNamedAuthorityList: boolean
-}
 
 /**
  * Reads the titles, the identifier, the type and the documentation page of a vocabulary.
@@ -57,34 +46,50 @@ WHERE {
 }
 
 /**
- * Maps the rows of {@link distributionsQuery}, the most suitable distribution first. The rows of one
- * distribution are merged. A distribution without any address is left out.
- *
- * RDF files come first; among files of one format the SKOS variant named in the title decides.
- * - readable = whether the metadata of the vocabulary can be derived, whatever the distribution
+ * What the source knows about a record of the catalog.
+ * - identifier = identifier of the vocabulary in the catalog, such as "country"
+ * - isNamedAuthorityList = whether it is a named authority list, whose IRI is derived from the identifier
  */
-export function mapDistributionRows(rows: SparqlRow[], readable: boolean): SourceDistribution[] {
-  return mapDistributions(rows, (group) => ({ format: formatName(firstValue(group, "format")), readable }))
-    .sort((a, b) =>
-      formatRank(a.format) - formatRank(b.format)
-      || variantRank(a.title) - variantRank(b.title)
-      || compareText(a.id, b.id))
+export interface EuRecord extends SourceRecord {
+  identifier: string | null
+  isNamedAuthorityList: boolean
 }
 
 /**
- * Builds what the source knows about a vocabulary from the rows of {@link recordQuery} and
- * {@link distributionsQuery}. The distribution to preselect is the most suitable one.
+ * Chooses the distribution to read the metadata from among the rows of {@link distributionsQuery}: the RDF/XML one,
+ * and among those the one with the SKOS variant that is the most suitable by its title. When there is no RDF/XML
+ * distribution, it is the next of the formats by their order. A distribution without any address is not chosen.
+ * Null when there is no distribution.
  */
-export function buildDetail(datasetIri: string, recordRows: SparqlRow[], distributionRows: SparqlRow[]): EuCandidateDetail {
-  const isNamedAuthorityList = firstValue(recordRows, "type") === `${DATASET_TYPE_IRI}${NAMED_AUTHORITY_LIST}`
-  const distributions = mapDistributionRows(distributionRows, isNamedAuthorityList)
+export function chooseDistribution(rows: SparqlRow[]): ChosenDistribution | null {
+  const distributions = [...groupRows(rows, "distribution")].flatMap(([id, group]) => {
+    const downloadUrl = firstValue(group, "downloadUrl") ?? null
+    const accessUrl = firstValue(group, "accessUrl") ?? downloadUrl
+    return accessUrl === null ? [] : [{
+      id,
+      title: toLanguageString(termsOf(group, "title")),
+      format: formatName(firstValue(group, "format")),
+      accessUrl,
+      downloadUrl,
+    }]
+  })
+  distributions.sort((a, b) =>
+    formatRank(a.format) - formatRank(b.format)
+    || variantRank(a.title) - variantRank(b.title)
+    || compareText(a.id, b.id))
+  const best = distributions[0]
+  return best === undefined ? null : { format: best.format, accessUrl: best.accessUrl, downloadUrl: best.downloadUrl }
+}
+
+/**
+ * Builds what the source knows about a record from the rows of {@link recordQuery} and {@link distributionsQuery}.
+ */
+export function buildRecord(recordRows: SparqlRow[], distributionRows: SparqlRow[]): EuRecord {
   return {
-    id: datasetIri,
     title: toLanguageString(termsOf(recordRows, "title")),
     documentationUrl: firstValue(recordRows, "page") ?? firstValue(recordRows, "landingPage") ?? null,
-    distributions,
-    defaultDistributionId: distributions[0]?.id ?? null,
+    distribution: chooseDistribution(distributionRows),
     identifier: firstValue(recordRows, "identifier") ?? null,
-    isNamedAuthorityList,
+    isNamedAuthorityList: firstValue(recordRows, "type") === `${DATASET_TYPE_IRI}${NAMED_AUTHORITY_LIST}`,
   }
 }
