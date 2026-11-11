@@ -1,8 +1,8 @@
 import { createSparqlSource } from "../sparql-source"
 import type { VocabularySource } from "../types"
-import { buildDetail, distributionsQuery, recordQuery } from "./detail"
+import { buildRecord, distributionsQuery, recordQuery } from "./detail"
 import { catalogueQuery, groupNamesQuery } from "./listing"
-import { readMetadata } from "./metadata"
+import { deriveMetadata } from "./metadata"
 
 export const NKD_SPARQL_ENDPOINT = "https://data.gov.cz/sparql"
 
@@ -23,8 +23,8 @@ export function createNkdSource(dependencies: NkdSourceDependencies = {}): Vocab
     endpoint: NKD_SPARQL_ENDPOINT,
     sortLanguage: "cs",
     queries: { catalogue: catalogueQuery, groupNames: groupNamesQuery, record: recordQuery, distributions: distributionsQuery },
-    buildDetail,
-    readMetadata: (detail, distributionId, options, { fetch }) => readMetadata(detail, distributionId, options, { fetch }),
+    deriveMetadata: (recordRows, distributionRows, options, { fetch }) =>
+      deriveMetadata(buildRecord(recordRows, distributionRows), options, { fetch }),
   }, dependencies)
 }
 

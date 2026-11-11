@@ -26,7 +26,9 @@ import {
 } from "@/components/ui/form"
 import { useVocabulariesContext } from "@/contexts/vocabularies-context"
 import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model"
+import type { LanguageString } from "@dataspecer/core/core/core-resource"
 import type { MetadataWarning, VocabularyMetadata } from "@/sources/types"
+import { MetadataDerivation } from "./metadata-derivation"
 import { MetadataWarnings } from "./metadata-warnings"
 
 /**
@@ -52,12 +54,14 @@ interface VocabularyFormValues {
 
 /**
  * - initialValues = the vocabulary to edit, or metadata read from a source to prefill the form with
- * - warnings = what could not be read from the source, shown above the form until dismissed
+ * - derivation = how the source derives the metadata, shown above the form
+ * - warnings = what could not be read from the source or is only a guess, shown above the form until dismissed
  * - sampleIris = IRIs of values read from the source, shown under the IRI pattern to check it against
- * - onBack = returns to the choice of the source distribution; the button is shown only when it is given
+ * - onBack = returns to the search of the source; the button is shown only when it is given
  */
 interface VocabularyFormProps {
   initialValues?: VocabularyMetadata
+  derivation?: LanguageString
   warnings?: MetadataWarning[]
   sampleIris?: string[]
   onBack?: () => void
@@ -89,6 +93,7 @@ function initialReferenceSource(vocabulary?: VocabularyMetadata): ReferenceSourc
 
 export function VocabularyForm({
   initialValues,
+  derivation,
   warnings = [],
   sampleIris = [],
   onBack,
@@ -203,6 +208,7 @@ export function VocabularyForm({
   return (
     <form onSubmit={form.handleSubmit(handleSubmit)}>
       <Form {...form}>
+        {derivation && <MetadataDerivation text={derivation} />}
         {warnings.length > 0 && !warningsDismissed && (
           <MetadataWarnings warnings={warnings} onDismiss={() => setWarningsDismissed(true)} />
         )}

@@ -2,14 +2,13 @@ import { buildIriPattern, iriPrefixPattern } from "../iri-pattern"
 import { SparqlError, type SparqlRow } from "../sparql-client"
 import { tagUntagged } from "../sparql-utils"
 import type {
-  CandidateDetail,
   MetadataOptions,
   MetadataResult,
   MetadataWarning,
   RequestOptions,
   VocabularyMetadata,
 } from "../types"
-import type { EuCandidateDetail } from "./detail"
+import type { EuRecord } from "./detail"
 import { carriesSkos } from "./distribution"
 import { PREFIXES } from "./listing"
 
@@ -54,10 +53,6 @@ LIMIT ${SAMPLED_VALUES}`
  */
 export function authorityListIri(identifier: string): string | null {
   return /^[A-Za-z0-9._-]+$/.test(identifier) ? `${AUTHORITY_LIST_IRI}${identifier}` : null
-}
-
-function isEuDetail(detail: CandidateDetail): detail is EuCandidateDetail {
-  return "isNamedAuthorityList" in detail
 }
 
 /**
@@ -105,28 +100,24 @@ async function readPattern(
  *   its values in the catalog, or by the convention when it has none there
  * - the IRI of any other vocabulary cannot be derived, so it and the pattern are left empty with a warning
  * - a distribution that is not SKOS has no scheme, the vocabulary is referenced by the address of the distribution
+ * - a record without a distribution has no addresses, which the warning noDistribution says
  */
-export async function readMetadata(
-  detail: CandidateDetail,
-  distributionId: string,
+export async function deriveMetadata(
+  record: EuRecord,
   options: MetadataOptions,
   dependencies: MetadataDependencies,
 ): Promise<MetadataResult> {
-  const distribution = detail.distributions.find((candidate) => candidate.id === distributionId)
-  if (distribution === undefined) {
-    throw new Error(`The record has no distribution ${distributionId}.`)
-  }
-
-  const conformsToSkos = carriesSkos(distribution.format)
-  const accessUrl = distribution.downloadUrl ?? distribution.accessUrl
-  const warnings: MetadataWarning[] = []
+  const { distribution } = record
+  const conformsToSkos = distribution === null || carriesSkos(distribution.format)
+  const accessUrl = distribution === null ? "" : distribution.downloadUrl ?? distribution.accessUrl
+  const warnings: MetadataWarning[] = distribution === null ? [{ code: "noDistribution" }] : []
   let references = conformsToSkos ? "" : accessUrl
   let pattern: string | null = null
   let sampleIris: string[] = []
 
   if (conformsToSkos) {
-    const schemeIri = isEuDetail(detail) && detail.isNamedAuthorityList && detail.identifier !== null
-      ? authorityListIri(detail.identifier)
+    const schemeIri = record.isNamedAuthorityList && record.identifier !== null
+      ? authorityListIri(record.identifier)
       : null
     if (schemeIri === null) {
       warnings.push({ code: "noSchemeIri" })
@@ -140,13 +131,13 @@ export async function readMetadata(
   }
 
   const metadata: VocabularyMetadata = {
-    title: tagUntagged(detail.title, options.language),
+    title: tagUntagged(record.title, options.language),
     pattern,
     references,
     conformsToSkos,
-    documentation: detail.documentationUrl,
+    documentation: record.documentationUrl,
     distribution: {
-      downloadUrl: distribution.downloadUrl === null ? null : accessUrl,
+      downloadUrl: distribution === null || distribution.downloadUrl === null ? null : accessUrl,
       accessUrl,
     },
     iri: null,

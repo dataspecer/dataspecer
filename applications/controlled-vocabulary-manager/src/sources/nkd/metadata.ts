@@ -1,13 +1,13 @@
 import { buildIriPattern } from "../iri-pattern"
 import { tagUntagged } from "../sparql-utils"
 import type {
-  CandidateDetail,
   MetadataOptions,
   MetadataResult,
   MetadataWarning,
   VocabularyMetadata,
 } from "../types"
-import { carriesSkos } from "./distribution"
+import type { SourceRecord } from "../sparql-source"
+import { carriesSkos, isReadableFormat } from "./distribution"
 import { parseOfnJsonLd, type OfnCodelist } from "./ofn-jsonld"
 
 const FETCH_TIMEOUT_MS = 10_000
@@ -74,28 +74,24 @@ async function loadCodelist(
  * record and the addresses from the distribution. When it is an OFN JSON-LD
  * file, the file is loaded to read the IRI of the vocabulary and to derive the
  * pattern of the IRIs of its values. A problem with loading or reading the
- * file is returned as a warning together with what is known.
+ * file is returned as a warning together with what is known. A record without a
+ * distribution has no addresses, which the warning noDistribution says.
  */
-export async function readMetadata(
-  detail: CandidateDetail,
-  distributionId: string,
+export async function deriveMetadata(
+  record: SourceRecord,
   options: MetadataOptions,
   dependencies: MetadataDependencies = {},
 ): Promise<MetadataResult> {
-  const distribution = detail.distributions.find((candidate) => candidate.id === distributionId)
-  if (distribution === undefined) {
-    throw new Error(`The record has no distribution ${distributionId}.`)
-  }
-
-  const conformsToSkos = carriesSkos(distribution.format)
-  const accessUrl = distribution.downloadUrl ?? distribution.accessUrl
-  const warnings: MetadataWarning[] = []
+  const { distribution } = record
+  const conformsToSkos = distribution === null || carriesSkos(distribution.format)
+  const accessUrl = distribution === null ? "" : distribution.downloadUrl ?? distribution.accessUrl
+  const warnings: MetadataWarning[] = distribution === null ? [{ code: "noDistribution" }] : []
   // A vocabulary that is not SKOS has no scheme, it is referenced by its address.
   let references = conformsToSkos ? "" : accessUrl
   let pattern: string | null = null
   let sampleIris: string[] = []
 
-  if (distribution.readable) {
+  if (distribution !== null && isReadableFormat(distribution.format)) {
     const loaded = await loadCodelist(accessUrl, options, dependencies)
     if ("warning" in loaded) {
       warnings.push(loaded.warning)
@@ -111,18 +107,18 @@ export async function readMetadata(
         sampleIris = [...new Set(itemIris)].slice(0, SAMPLE_IRI_COUNT)
       }
     }
-  } else if (conformsToSkos) {
+  } else if (distribution !== null && conformsToSkos) {
     warnings.push({ code: "unsupportedFormat" })
   }
 
   const metadata: VocabularyMetadata = {
-    title: tagUntagged(detail.title, options.language),
+    title: tagUntagged(record.title, options.language),
     pattern,
     references,
     conformsToSkos,
-    documentation: detail.documentationUrl,
+    documentation: record.documentationUrl,
     distribution: {
-      downloadUrl: distribution.downloadUrl === null ? null : accessUrl,
+      downloadUrl: distribution === null || distribution.downloadUrl === null ? null : accessUrl,
       accessUrl,
     },
     iri: null,

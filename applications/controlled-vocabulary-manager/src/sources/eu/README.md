@@ -23,20 +23,21 @@ The group of a vocabulary is its `dct:creator` if that is an IRI (named by its `
 Search covers the English and Czech titles only, since only those are loaded for the listing.
 
 ## Distributions
-- Rank: RDF/XML, Turtle, generic `RDF`, CSV, XML, JSON, then others (ZIP, XLS, …). Among files of one format the title decides: `SKOS_CORE`, `SKOS_AP_EU`, `SKOS_AP_ACT`, then others, then by IRI. So the default is usually the `SKOS_CORE` RDF/XML file.
+The user does not choose a distribution: `chooseDistribution` (`detail.ts`) picks the best one.
+- Rank: RDF/XML, Turtle, generic `RDF`, CSV, XML, JSON, then others (ZIP, XLS, …). Among files of one format the title decides: `SKOS_CORE`, `SKOS_AP_EU`, `SKOS_AP_ACT`, then others, then by IRI. So the chosen one is usually the `SKOS_CORE` RDF/XML file. A distribution without any address is not chosen; a record with none gets the `noDistribution` warning (a named authority list still gets its scheme IRI and pattern).
 - Only RDF/XML, Turtle and RDF carry SKOS (`conformsToSkos` true). Any other format gives false and the vocabulary is referenced by the file address.
-- `readable` is true for every distribution of a NAL record and false for the other types. It only decides what the user is told; nothing is read from the file.
+- Nothing is read from the file; only its addresses are taken.
 
-## How metadata are derived (`metadata.ts`)
+## How metadata are derived (`metadata.ts`, `deriveMetadata`)
 | Form field | From |
 |---|---|
 | Name | all record `dct:title` (about 24 languages; untagged ones go under the UI language). The listing reads English and Czech only; the record read for the form has all of them. Only English and a few Czech ones are real, most others are machine translations tagged like `cs-t-en-t0-mtec`; `toLanguageString` (`../sparql-utils.ts`) cuts the tag to its primary subtag, and a bare tag (`cs`) wins over a derived one. |
 | Documentation | `foaf:page`, else `dcat:landingPage` (both point to the vocabulary page on op.europa.eu) |
-| Distributions | `dcat:distribution` -> `dct:title`, `dct:format` (EU file-type IRI, always present), `dcat:accessURL`, `dcat:downloadURL` (always present). A record has 1 to 29, many are XML schema files, not vocabularies. |
+| Distribution | the best of `dcat:distribution` -> `dct:title`, `dct:format` (EU file-type IRI, always present), `dcat:accessURL`, `dcat:downloadURL` (always present). A record has 1 to 29, many are XML schema files, not vocabularies. |
 | Access / download URL | distribution `accessURL` / `downloadURL` (download checkbox on) |
 | `conformsToSkos` | by format, see above |
 | Scheme IRI | not in the record. **NAL only:** `http://publications.europa.eu/resource/authority/<dct:identifier>`, e.g. `country` (must match `[A-Za-z0-9._-]+`). Other types: empty + `noSchemeIri` warning. Non-SKOS distribution: the file address. |
-| Regex | **NAL only:** from up to 200 values found with `?v skos:inScheme <scheme>` on data.europa.eu (`buildIriPattern`), plus 5 sample IRIs. If the catalogue has no values: the convention `^<scheme IRI>/.*$`, no samples, and the `patternByConvention` note (the form says no values were found). If the endpoint fails: the convention regex + `valuesNotLoaded` warning. |
+| Regex | **NAL only:** from up to 200 values found with `?v skos:inScheme <scheme>` on data.europa.eu (`buildIriPattern`), plus 5 sample IRIs; the value `OP_DATPRO` ("Provisional data", present in about 30 lists) is left out of the pattern and the samples. If the catalogue has no values: the convention `^<scheme IRI>/.*$`, no samples, and the `patternByConvention` note (the form says no values were found). If the endpoint fails: the convention regex + `valuesNotLoaded` warning. |
 
 ### Why only NALs
 - **NAL (176):** the scheme exists for 172 of 176. The IRIs of the values are always `<scheme IRI>/<code>`. But data.europa.eu holds the **values of only 22 of the 176** (the DCAT-AP-related ones, e.g. country, language, file-type, data-theme); for the other 154 the regex comes from the convention.

@@ -22,12 +22,13 @@ The group of a vocabulary is its `dct:publisher`, named by `foaf:name`.
 Measured: **367 records, 7 publishers**, 149 records have `foaf:page`. Records per publisher: DIA 233, MŠMT 71, MPSV 44, Univerzita Karlova 12, TAČR 3, ČOI 3, ÚOHS 1.
 
 ## Distributions
+The user does not choose a distribution: `chooseDistribution` (`detail.ts`) picks the best one.
 - A distribution with `dcat:accessService` and no `downloadURL` is an endpoint, format `SPARQL`.
-- Default preselection (rank): JSON-LD, Turtle, RDF/XML, TriG, N-Triples, N-Quads, RDFa, CSV, XML, JSON, then others, SPARQL last. Ties by IRI.
+- Rank, best first: JSON-LD, Turtle, RDF/XML, TriG, N-Triples, N-Quads, RDFa, CSV, XML, JSON, then others, SPARQL last. Ties by IRI. So the OFN JSON-LD file is used when there is one, otherwise the best of the others. A distribution without any address is not chosen; a record with none gets the `noDistribution` warning.
 - RDF formats and SPARQL carry SKOS (`conformsToSkos` true); CSV, XML, JSON, XLSX and others do not (false, and the vocabulary is then referenced by the file address).
-- **Only JSON-LD is read** (`readable`). Other formats only give the addresses.
+- **Only JSON-LD is read** (`isReadableFormat`). Other formats only give the addresses.
 
-## How metadata are derived (`metadata.ts`)
+## How metadata are derived (`metadata.ts`, `deriveMetadata`)
 | Form field | From |
 |---|---|
 | Name | record `dct:title` in cs / en; untagged titles go under the UI language |
@@ -40,7 +41,7 @@ Measured: **367 records, 7 publishers**, 149 records have `foaf:page`. Records p
 | Regex | not in the record either: longest common prefix of the item IRIs (`../iri-pattern.ts`), cut at the last `/` or `#`, escaped, `^….*$`; none for fewer than 2 items or a prefix that is only a host |
 | Sample IRIs | first 5 distinct item IRIs, shown under the regex field |
 
-The file is fetched from the browser **with no custom headers** (10 s timeout) because publishers allow cross-origin simple requests at best, and some (for example isvavai.cz) not at all. Any failure never blocks the form; it adds a warning: `fetchFailed` (network, CORS, HTTP status, timeout; `detail` has the reason), `notParsed`, `noSchemeIri`, `unsupportedFormat` (non-JSON-LD distribution chosen).
+The file is fetched from the browser **with no custom headers** (10 s timeout) because publishers allow cross-origin simple requests at best, and some (for example isvavai.cz) not at all. Any failure never blocks the form; it adds a warning: `fetchFailed` (network, CORS, HTTP status, timeout; `detail` has the reason), `notParsed`, `noSchemeIri`, `unsupportedFormat` (the best distribution is not JSON-LD but carries SKOS), `noDistribution` (the record has none). When the record itself cannot be loaded, the form gets only the name from the list and `recordNotLoaded` (`../sparql-source.ts`).
 
 ## JSON-LD variants (`ofn-jsonld.ts`)
 - OFN release 2022-02-08 (DIA, MŠMT): `iri`, `název`, `položky[].iri`.

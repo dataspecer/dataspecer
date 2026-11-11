@@ -1,8 +1,7 @@
 import type { SparqlRow } from "../sparql-client"
-import type { CandidateDetail, SourceDistribution } from "../types"
-import { mapDistributions } from "../distributions"
-import { formatName, formatRank, isReadableFormat } from "./distribution"
-import { assertSafeIri, compareText, firstValue, termsOf, toLanguageString } from "../sparql-utils"
+import { formatName, formatRank } from "./distribution"
+import { assertSafeIri, compareText, firstValue, groupRows, termsOf, toLanguageString } from "../sparql-utils"
+import type { ChosenDistribution, SourceRecord } from "../sparql-source"
 import { PREFIXES } from "./listing"
 
 /**
@@ -38,43 +37,34 @@ WHERE {
 }
 
 /**
- * Orders the distributions from the most suitable format to the least
- * suitable one, and those of the same format by IRI.
- */
-function compareDistributions(a: SourceDistribution, b: SourceDistribution): number {
-  const byFormat = formatRank(a.format) - formatRank(b.format)
-  if (byFormat !== 0) {
-    return byFormat
-  }
-  return compareText(a.id, b.id)
-}
-
-/**
- * Maps query results, selects the most suitable distribution first. 
- * The rows of one distribution are merged. A distribution without any address is left out.
+ * Chooses the distribution to read the metadata from among the rows of {@link distributionsQuery}: the one
+ * in the most suitable format, the OFN JSON-LD file first, and among those of one format the first by IRI.
+ * A distribution without any address is not chosen. Null when there is no distribution.
  *
- * A distribution that has a service and no file to download is an endpoint,
- * such as a SPARQL endpoint.
+ * A distribution that has a service and no file to download is an endpoint, such as a SPARQL endpoint.
  */
-export function mapDistributionRows(rows: SparqlRow[]): SourceDistribution[] {
-  return mapDistributions(rows, (group, downloadUrl) => {
+export function chooseDistribution(rows: SparqlRow[]): ChosenDistribution | null {
+  const distributions = [...groupRows(rows, "distribution")].flatMap(([id, group]) => {
+    const downloadUrl = firstValue(group, "downloadUrl") ?? null
+    const accessUrl = firstValue(group, "accessUrl") ?? downloadUrl
+    if (accessUrl === null) {
+      return []
+    }
     const isEndpoint = downloadUrl === null && group.some((row) => row.service !== undefined)
-    const format = formatName(firstValue(group, "format"), isEndpoint)
-    return { format, readable: isReadableFormat(format) }
-  }).sort(compareDistributions)
+    return [{ id, format: formatName(firstValue(group, "format"), isEndpoint), accessUrl, downloadUrl }]
+  })
+  distributions.sort((a, b) => formatRank(a.format) - formatRank(b.format) || compareText(a.id, b.id))
+  const best = distributions[0]
+  return best === undefined ? null : { format: best.format, accessUrl: best.accessUrl, downloadUrl: best.downloadUrl }
 }
 
 /**
- * Builds what the source knows about a codelist from the rows of
- * {@link recordQuery} and {@link distributionsQuery}. The distribution to preselect is the most suitable one.
+ * Builds what the source knows about a record from the rows of {@link recordQuery} and {@link distributionsQuery}.
  */
-export function buildDetail(datasetIri: string, recordRows: SparqlRow[], distributionRows: SparqlRow[]): CandidateDetail {
-  const distributions = mapDistributionRows(distributionRows)
+export function buildRecord(recordRows: SparqlRow[], distributionRows: SparqlRow[]): SourceRecord {
   return {
-    id: datasetIri,
     title: toLanguageString(termsOf(recordRows, "title")),
     documentationUrl: firstValue(recordRows, "page") ?? null,
-    distributions,
-    defaultDistributionId: distributions[0]?.id ?? null,
+    distribution: chooseDistribution(distributionRows),
   }
 }

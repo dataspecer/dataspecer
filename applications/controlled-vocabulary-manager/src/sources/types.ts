@@ -47,35 +47,6 @@ export interface SourceCandidate {
 }
 
 /**
- * One way of getting the data of a vocabulary.
- * - format = short name of the data format, for example "JSON-LD"
- * - readable = whether the source can derive the vocabulary's scheme IRI and
- *   the pattern of its value IRIs when this distribution is chosen
- * - downloadUrl = address of a file, null when the distribution is not a file,
- *   for example a SPARQL endpoint
- */
-export interface SourceDistribution {
-  id: string
-  title: LanguageString
-  format: string
-  readable: boolean
-  accessUrl: string
-  downloadUrl: string | null
-}
-
-/**
- * What a source knows about a vocabulary chosen from its listing.
- * - defaultDistributionId = the distribution to preselect, null if there is none
- */
-export interface CandidateDetail {
-  id: string
-  title: LanguageString
-  documentationUrl: string | null
-  distributions: SourceDistribution[]
-  defaultDistributionId: string | null
-}
-
-/**
  * Why some metadata of a vocabulary could not be read.
  * - fetchFailed = the data file could not be loaded, `detail` says why
  * - notParsed = the data file was loaded but is not a codelist the source understands
@@ -83,11 +54,14 @@ export interface CandidateDetail {
  * - unsupportedFormat = the source does not read the chosen distribution
  * - valuesNotLoaded = the values of the vocabulary could not be loaded to derive the pattern of their IRIs
  *   from them, `detail` says why, the pattern is a guess
+ * - recordNotLoaded = the record of the vocabulary could not be loaded, `detail` says why, only its name is known
+ * - noDistribution = the record has no distribution, so it has no addresses
  * - patternByConvention = the source has no values of the vocabulary to derive the pattern of their IRIs from, so the pattern
  *   follows the convention of the IRIs of this kind of vocabulary and no example IRIs are given
  */
 export type MetadataWarningCode =
   | "fetchFailed" | "notParsed" | "noSchemeIri" | "unsupportedFormat" | "valuesNotLoaded" | "patternByConvention"
+  | "recordNotLoaded" | "noDistribution"
 
 export interface MetadataWarning {
   code: MetadataWarningCode
@@ -107,7 +81,7 @@ export interface MetadataResult {
 }
 
 /**
- * Settings of {@link VocabularySource.getMetadata}.
+ * Settings of {@link VocabularySource.readMetadata}.
  * - language = language tag given to texts that have none, such as the name of
  *   the vocabulary
  */
@@ -118,8 +92,8 @@ export interface MetadataOptions extends RequestOptions {
 /**
  * A place the user can look up controlled vocabularies in.
  * The user searches the vocabularies by name or browses them by group,
- * chooses one and one of its distributions, and the source reads the
- * metadata of the vocabulary from it.
+ * chooses one, and the source reads the metadata of the vocabulary from
+ * its record and its best distribution.
  */
 export interface VocabularySource {
   id: string
@@ -128,25 +102,18 @@ export interface VocabularySource {
    * and a failed reading is tried again by the next call.
    */
   loadCatalogue(): Promise<Catalogue>
-  getDetail(candidateId: string, options?: RequestOptions): Promise<CandidateDetail>
   /**
-   * Reads the metadata of the vocabulary from its record and from the chosen
-   * distribution. It does not fail when the data cannot be loaded or read; it
-   * returns what is known with a warning instead. It fails only when the
-   * request is cancelled.
+   * Reads the metadata of the vocabulary from its record and from the best of its distributions. It does not
+   * fail when the data cannot be loaded or read; it returns what is known with a warning instead, at least the name
+   * of the vocabulary from the listing. It fails only when the request is cancelled.
    */
-  getMetadata(
-    detail: CandidateDetail,
-    distributionId: string,
-    options: MetadataOptions,
-  ): Promise<MetadataResult>
+  readMetadata(candidate: SourceCandidate, options: MetadataOptions): Promise<MetadataResult>
 }
 
 /**
  * How a source is presented in the list of sources.
  * - available = false for a source that is announced but not usable yet
- * - metadataDerivation = what the source does with the chosen distribution and how it derives the
- *   metadata of the vocabulary, told to the user before they continue
+ * - metadataDerivation = how the source derives the metadata of a vocabulary, told to the user in the form
  */
 export interface SourceDescriptor {
   id: string
