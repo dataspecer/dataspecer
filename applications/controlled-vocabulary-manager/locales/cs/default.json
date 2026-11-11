@@ -64,6 +64,7 @@
   "form.warnings.noSchemeIri": "IRI slovníku se nepodařilo určit, proto je třeba ho vyplnit ručně.",
   "form.warnings.unsupportedFormat": "Vybraná distribuce se automaticky nečte, proto je třeba IRI slovníku a vzor IRI vyplnit ručně.",
   "form.warnings.valuesNotLoaded": "Hodnoty slovníku se nepodařilo načíst, aby se ověřil vzor IRI. Vychází z obvyklého tvaru IRI tohoto druhu slovníků, zkontrolujte ho prosím.",
+  "form.warnings.patternByConvention": "V katalogu nebyly nalezeny žádné hodnoty slovníku, proto se nezobrazují příklady IRI a vzor IRI vychází z obvyklého tvaru IRI tohoto druhu slovníků. Zkontrolujte ho prosím.",
   "form.field.name": "Název slovníku",
   "form.field.addName": "Přidat název",
   "form.field.removeName": "Odebrat název",

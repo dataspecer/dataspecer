@@ -62,6 +62,7 @@
   "form.warnings.noSchemeIri": "The IRI of the vocabulary could not be determined, so it must be filled in by hand.",
   "form.warnings.unsupportedFormat": "The chosen distribution is not read automatically, so the vocabulary IRI and the IRI pattern must be filled in by hand.",
   "form.warnings.valuesNotLoaded": "The values of the vocabulary could not be loaded to check the IRI pattern. It follows the usual form of the IRIs of this kind of vocabulary, please check it.",
+  "form.warnings.patternByConvention": "No values of the vocabulary were found in the catalogue, so no example IRIs are shown and the IRI pattern follows the usual form of the IRIs of this kind of vocabulary. Please check it.",
   "form.field.name": "Vocabulary name",
   "form.field.addName": "Add name",
   "form.field.removeName": "Remove name",

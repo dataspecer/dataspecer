@@ -36,7 +36,7 @@ Search covers the English and Czech titles only, since only those are loaded for
 | Access / download URL | distribution `accessURL` / `downloadURL` (download checkbox on) |
 | `conformsToSkos` | by format, see above |
 | Scheme IRI | not in the record. **NAL only:** `http://publications.europa.eu/resource/authority/<dct:identifier>`, e.g. `country` (must match `[A-Za-z0-9._-]+`). Other types: empty + `noSchemeIri` warning. Non-SKOS distribution: the file address. |
-| Regex | **NAL only:** from up to 200 values found with `?v skos:inScheme <scheme>` on data.europa.eu (`buildIriPattern`), plus 5 sample IRIs. If the catalogue has no values: the convention `^<scheme IRI>/.*$`, no samples, no warning. If the endpoint fails: the convention regex + `valuesNotLoaded` warning. |
+| Regex | **NAL only:** from up to 200 values found with `?v skos:inScheme <scheme>` on data.europa.eu (`buildIriPattern`), plus 5 sample IRIs. If the catalogue has no values: the convention `^<scheme IRI>/.*$`, no samples, and the `patternByConvention` note (the form says no values were found). If the endpoint fails: the convention regex + `valuesNotLoaded` warning. |
 
 ### Why only NALs
 - **NAL (176):** the scheme exists for 172 of 176. The IRIs of the values are always `<scheme IRI>/<code>`. But data.europa.eu holds the **values of only 22 of the 176** (the DCAT-AP-related ones, e.g. country, language, file-type, data-theme); for the other 154 the regex comes from the convention.
