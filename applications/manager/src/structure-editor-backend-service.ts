@@ -4,7 +4,7 @@ import { BackendPackageService } from "@dataspecer/core-v2/project";
 import type { LanguageString } from "@dataspecer/core/core/core-resource";
 import type { HttpFetch } from "@dataspecer/core/io/fetch/fetch-api";
 import { generateEntityId, type Entity } from "@dataspecer/core/entity-model";
-import { createSetEntityOperation, generateOperationId, type OperationInModel } from "@dataspecer/core/operation";
+import { createSetEntityOperation, createUpdateEntityOperation, generateOperationId, type OperationInModel } from "@dataspecer/core/operation";
 import { createCreateModelOperation, createCreateProjectOperation } from "@dataspecer/core/project-model";
 import type { CachedSubgraph } from "@dataspecer/core-v2/semantic-model/concepts";
 
@@ -100,7 +100,7 @@ export class StructureEditorBackendService extends BackendPackageService {
       // the project in the project model.
       operations.push({
         modelId: PROJECT_MODEL_ID,
-        operation: createSetEntityOperation({ id: projectId, type: [], tags: set.tags } as Entity),
+        operation: createUpdateEntityOperation(projectId, { tags: set.tags }),
       });
     }
 
