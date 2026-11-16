@@ -1,6 +1,8 @@
 interface BreadcrumbItem {
   label: string
   href?: string
+  /** Called when the item without an href is clicked, instead of `onItemClick`. */
+  onClick?: () => void
 }
 
 export function Breadcrumb({
@@ -29,7 +31,7 @@ export function Breadcrumb({
             ) : (
               <button
                 className="text-caption text-muted-foreground hover:underline"
-                onClick={() => onItemClick?.(item)}
+                onClick={() => (item.onClick ? item.onClick() : onItemClick?.(item))}
               >
                 {item.label}
               </button>

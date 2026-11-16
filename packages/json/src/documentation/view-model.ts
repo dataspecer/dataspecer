@@ -96,6 +96,11 @@ export interface JsonSchemaStringViewModel extends JsonSchemaDefinitionViewModel
 
   format: string | null;
   pattern: string | null;
+
+  /**
+   * Id of the controlled vocabulary the pattern comes from, null if it does not come from one.
+   */
+  controlledVocabularyId: string | null;
 }
 
 export interface JsonSchemaBooleanViewModel extends JsonSchemaDefinitionViewModel {
@@ -152,6 +157,13 @@ export interface JsonSchemaArrayViewModel extends JsonSchemaDefinitionViewModel 
 
   items: JsonSchemaDefinitionViewModel;
   contains: JsonSchemaDefinitionViewModel | null;
+
+  /**
+   * Items the array must contain, each required by a separate rule in
+   * allOf of the form "array containing at least one item of the given type".
+   * Such rules are listed here instead of in {@link allOf}. Null if there are none.
+   */
+  containsAll: JsonSchemaDefinitionViewModel[] | null;
 
   /**
    * @default 0

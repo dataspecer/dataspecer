@@ -2,7 +2,7 @@ import { isRdfsSnapshot } from "@dataspecer/rdfs/semantic-model";
 import { isCachedSubgraph } from "@dataspecer/core-v2/semantic-model/concepts";
 import { TagBadge, TagName } from "@/components/tag";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
+import { API_SPECIFICATION_MODEL, APPLICATION_GRAPH, CONTROLLED_VOCABULARY_MODEL, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, VISUAL_MODEL, V1 } from "@dataspecer/core-v2/model/known-models";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
 import { BookOpen, ChevronDown, ChevronRight, CircuitBoard, CloudDownload, Code, EllipsisVertical, FileText, Folder, FolderDown, History, Import, NotepadTextDashed, Pencil, Plus, RotateCw, Search, Shapes, Sparkles, Tag, Tags, Trash2, WandSparkles } from "lucide-react";
 import { useCallback, useContext, useDeferredValue, useEffect, useMemo, useState } from "react";
@@ -21,7 +21,7 @@ import { ProjectWizard } from "./dialog/project-wizard/project-wizard";
 import { RenameResourceDialog } from "./dialog/rename-resource";
 import { ResourceDetail } from "./dialog/resource-detail";
 import { useToggle } from "./hooks/use-toggle";
-import { getHistoryLink, ModelIcon, modelTypeToName } from "./known-models";
+import { getControlledVocabularyManagerLink, getHistoryLink, ModelIcon, modelTypeToName } from "./known-models";
 import { useBetterModal } from "./lib/better-modal";
 import { ResourcesContext, ensurePackageWorksForDSE, modifyUserMetadata, requestLoadPackage } from "./package";
 import { ModifyDocumentationTemplate } from "./dialog/modify-documentation-template";
@@ -136,6 +136,7 @@ const Row = React.memo(({ iri, parentIri, onTagSelect }: { iri: string, parentIr
       }}>{t("open")}</Button>}
       {resource.types.includes(VISUAL_MODEL) && <Button asChild variant={"ghost"} onClick={stopPropagation()}><a href={import.meta.env.VITE_CME + "/diagram?package-id=" + encodeURIComponent(parentIri ?? "") + "&view-id=" + encodeURIComponent(iri)}>{t("open")}</a></Button>}
       {resource.types.includes(API_SPECIFICATION_MODEL) && <Button asChild variant={"ghost"} onClick={stopPropagation()}><a href={import.meta.env.VITE_API_SPECIFICATION_APPLICATION + "?package-iri=" + encodeURIComponent(parentIri ?? "") + "&model-iri=" + encodeURIComponent(iri)}>{t("open")}</a></Button>}
+      {resource.types.includes(CONTROLLED_VOCABULARY_MODEL) && parentIri && <Button asChild variant={"ghost"} onClick={stopPropagation()}><a href={getControlledVocabularyManagerLink(parentIri, "edit/" + encodeURIComponent(iri), i18n.language, theme ?? "system")}>{t("edit-controlled-vocabulary")}</a></Button>}
 
       {resource.types.includes(LOCAL_PACKAGE) && (resource.userMetadata as any)?.importedFromUrl &&
         <Tooltip>

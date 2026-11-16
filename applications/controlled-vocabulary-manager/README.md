@@ -2,7 +2,7 @@
 
 The Controlled Vocabulary Manager (CVM) is a graphical interface component responsible for identifying, storing, and managing controlled vocabulary metadata within a specification project.
 
-*TBD:* It allows searching for commonly used controlled vocabularies by accessing the Czech National Open Data Catalog and EU Vocabularies through their SPARQL endpoints.
+*TBD:* It allows searching for commonly used controlled vocabularies by accessing the Czech National Data Catalog and EU Vocabularies through their SPARQL endpoints.
 
 Like the other front-end components, the CVM communicates with the Storage Backend via its REST API to persist controlled vocabulary metadata. The stored metadata is referenced by the [Conceptual Model Editor](../conceptual-model-editor) when linking class and relationship profiles to controlled vocabularies, and it is consumed by the Validation Schema Generator and the Documentation Generator when producing output artifacts.
 

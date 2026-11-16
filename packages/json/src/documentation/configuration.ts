@@ -59,6 +59,22 @@ export const defaultJsonPartials: Record<string, string> = {
   {{#with structureEntity}}
     (<a href="{{#with pimClass}}{{href pimIri}}{{/with}}">{{translate ./humanLabel}}</a>)
   {{/with}}
+  {{xof}}
+{{/def}}
+
+{{!-- Text describing an item whose string is matched against the pattern of a controlled vocabulary, called with the view model of the string. --}}
+{{#def "json-cv-string"}}
+  {{#if (cvTitle controlledVocabularyId)}}<a href="#{{cvAnchor controlledVocabularyId}}">{{cvTitle controlledVocabularyId}}</a>{{else}}<code>{{controlledVocabularyId}}</code>{{/if}}
+  ({{#iflng "cs"}}typ řetězec{{lng}}type string{{/iflng}}{{#if format}}, {{#iflng "cs"}}formát: <code>{{format}}</code>{{lng}}format: <code>{{format}}</code>{{/iflng}}{{/if}}{{#if pattern}}, {{#iflng "cs"}}dle regulárního výrazu{{lng}}by regular expression{{/iflng}}: <code>{{pattern}}</code>{{/if}})
+{{/def}}
+
+{{!-- Says what an item is: "of type ..." or "of controlled vocabulary ...", called with the view model of the item. --}}
+{{#def "json-item-type"}}
+  {{#if controlledVocabularyId}}
+    {{#iflng "cs"}}z řízeného slovníku{{lng}}of controlled vocabulary{{/iflng}} {{json-cv-string}}
+  {{else}}
+    {{#iflng "cs"}}typu{{lng}}of type{{/iflng}} {{json-tree-or-link}}
+  {{/if}}
 {{/def}}
 
 {{#def "json-tree-numeric"}}
@@ -83,9 +99,9 @@ export const defaultJsonPartials: Record<string, string> = {
             (<a href="{{href ./semanticEntity.pimIri}}" label="{{translate ./structureEntity.humanDescription}}">{{translate ./structureEntity.humanLabel}}</a>)
           {{/if}}
           {{#if required}}{{#iflng "cs"}}povinná{{lng}}required{{/iflng}}{{else}}{{#iflng "cs"}}nepovinná{{lng}}optional{{/iflng}}{{/if}}
-          {{#iflng "cs"}}položka typu{{lng}}item of type{{/iflng}}
+          {{#iflng "cs"}}položka{{lng}}item{{/iflng}}
 
-          {{#with value}}{{json-tree-or-link}}{{/with}}
+          {{#with value}}{{json-item-type}}{{/with}}
         </li>
       {{/each}}
     </ul>
@@ -116,7 +132,7 @@ export const defaultJsonPartials: Record<string, string> = {
     {{#iflng "cs"}}všechno z následujících{{lng}}all of the following{{/iflng}} (<code>allOf</code>):
     <ul>
       {{#each allOf}}
-        <li>{{json-tree-or-link}}</li>
+        <li>{{#if controlledVocabularyId}}{{#iflng "cs"}}řízený slovník{{lng}}controlled vocabulary{{/iflng}} {{json-cv-string}}{{else}}{{json-tree-or-link}}{{/if}}</li>
       {{/each}}
     </ul>
   {{/if}}
@@ -124,17 +140,35 @@ export const defaultJsonPartials: Record<string, string> = {
 
 {{#def "json-tree-array"}}
   {{#iflng "cs"}}
-    pole hodnot <code>{{cardinalityText}}</code> typu {{#with items}}{{json-tree-or-link}}{{/with}}
+    pole hodnot <code>{{cardinalityText}}</code> {{#with items}}{{json-item-type}}{{/with}}
     {{#if requiresStringConstantsOnly}} a musí obsahovat: {{#each requiresStringConstantsOnly}}<code>{{this}}</code>{{#unless @last}}, {{/unless}}{{/each}}
     {{else}}
-      {{#if contains}} a musí obsahovat alespoň jednu položku typu {{#with contains}}{{json-tree-or-link}}{{/with}}{{/if}}
+      {{#if contains}} a musí obsahovat alespoň jednu položku {{#with contains}}{{json-item-type}}{{/with}}{{/if}}
+      {{#if containsAll}}
+        a musí obsahovat:
+        <ul>
+          {{#each containsAll}}
+            <li>alespoň jednu položku {{json-item-type}}</li>
+          {{/each}}
+        </ul>
+      {{/if}}
     {{/if}}
+    {{xof}}
   {{lng}}
-    array of values <code>{{cardinalityText}}</code> of type {{#with items}}{{json-tree-or-link}}{{/with}}
+    array of values <code>{{cardinalityText}}</code> {{#with items}}{{json-item-type}}{{/with}}
     {{#if requiresStringConstantsOnly}} and must contain: {{#each requiresStringConstantsOnly}}<code>{{this}}</code>{{#unless @last}}, {{/unless}}{{/each}}
     {{else}}
-      {{#if contains}} and must contain at least one item of type {{#with contains}}{{json-tree-or-link}}{{/with}}{{/if}}
+      {{#if contains}} and must contain at least one item {{#with contains}}{{json-item-type}}{{/with}}{{/if}}
+      {{#if containsAll}}
+        and must contain:
+        <ul>
+          {{#each containsAll}}
+            <li>at least one item {{json-item-type}}</li>
+          {{/each}}
+        </ul>
+      {{/if}}
     {{/if}}
+    {{xof}}
   {{/iflng}}
 {{/def}}
 

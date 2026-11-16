@@ -8,9 +8,10 @@ interface VocabulariesContextValue {
   nestedPackages: NestedVocabularyPackage[]
   loading: boolean
   error: VocabulariesError | null
-  addVocabulary: (vocabulary: Omit<ControlledVocabulary, 'id' | 'type'>) => void
-  updateVocabulary: (id: string, vocabulary: Omit<ControlledVocabulary, 'id' | 'type'>) => void
-  deleteVocabulary: (id: string) => void
+  /** Resolves once the change is saved to the backend. */
+  addVocabulary: (vocabulary: Omit<ControlledVocabulary, 'id' | 'type'>) => Promise<void>
+  updateVocabulary: (id: string, vocabulary: Omit<ControlledVocabulary, 'id' | 'type'>) => Promise<void>
+  deleteVocabulary: (id: string) => Promise<void>
 }
 
 const VocabulariesContext = createContext<VocabulariesContextValue | null>(null)
