@@ -8,6 +8,7 @@ import { FederatedObservableStore } from "@dataspecer/federated-observable-store
 import { getSchemaArtifacts } from "./schema-artifacts.ts";
 import { DataSpecification } from "../specification/model.ts";
 import { getDefaultConfigurators } from "./artefact-generators.ts";
+import { resolveSpecificationUrls, type SpecificationUrls, type SpecificationUrlOverride } from "../specification-urls.ts";
 
 /**
  * This class is responsible for setting the artifacts definitions in
@@ -21,16 +22,10 @@ export class DefaultArtifactConfigurator {
   protected configurationObject: object;
   protected configurators: Configurator[];
 
-  /**
-   * Root URL for the generated artifacts.
-   * @example
-   * "/"
-   * @example
-   * "http://example.com/files/"
-   */
-  baseURL = "/";
+  urlOverrides: Record<string, SpecificationUrlOverride> = {};
 
-  queryParams: string = "";
+  documentationUrls: Record<string, string> = {};
+  readonly specificationUrls: Record<string, SpecificationUrls> = {};
 
   constructor(
     dataSpecifications: DataSpecification[],
@@ -47,7 +42,7 @@ export class DefaultArtifactConfigurator {
   /**
    * Sets {@link DataSpecification.artefacts} field for the given specification.
    * @param dataSpecificationIri Iri of the specification to set the artifacts for.
-   * @param singleSpecificationOnly This affects only the technical paths of the artifacts, not their public URLs.
+   * @param singleSpecificationOnly Omit the specification directory from output paths.
    */
   public async generateFor(
     dataSpecificationIri: string,
@@ -68,10 +63,12 @@ export class DefaultArtifactConfigurator {
     const dataSpecificationName = await this.getSpecificationDirectoryName(dataSpecificationIri);
 
     const dataSpecificationConfiguration = DataSpecificationConfigurator.getFromObject(configuration);
-    let baseFromConfig = dataSpecificationConfiguration.publicBaseUrl ? dataSpecificationConfiguration.publicBaseUrl : null;
-
-    // Base URL must end without slash
-    this.baseURL = baseFromConfig ?? `/${singleSpecificationOnly ? "" : dataSpecificationName}`; // This is only the fallback for base URLs in ZIP without real URLs
+    const urls = resolveSpecificationUrls({
+      publicBaseUrl: dataSpecificationConfiguration.publicBaseUrl,
+      documentationUrl: this.documentationUrls[dataSpecificationIri],
+      ...this.urlOverrides[dataSpecificationIri],
+    });
+    this.specificationUrls[dataSpecificationIri] = urls;
 
     // Generate schemas
 
@@ -93,10 +90,9 @@ export class DefaultArtifactConfigurator {
 
       currentSchemaArtefacts.push(...getSchemaArtifacts(
           psmSchemaIri,
-          mergePaths(this.baseURL, subdirectory, "/"),
+          urls.artifactUrl(subdirectory ? subdirectory + "/" : ""),
           ensureNonLeadingSlash(mergePaths(basePath, "/")),
           configuration,
-          this.queryParams,
       ));
     }
 
@@ -118,7 +114,7 @@ export class DefaultArtifactConfigurator {
    * @param dataSpecificationIri
    * @protected
    */
-  protected async getSpecificationDirectoryName(dataSpecificationIri: string) {
+  public async getSpecificationDirectoryName(dataSpecificationIri: string) {
     const dataSpecification = this.dataSpecifications.find(
         dataSpecification => dataSpecification.iri === dataSpecificationIri,
     ) as DataSpecification;

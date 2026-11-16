@@ -1,3 +1,4 @@
+import { resolveSpecificationUrls } from "../specification-urls.ts";
 import { DataSpecificationConfigurator } from "@dataspecer/core/data-specification/configuration";
 import { DataSpecificationArtefact } from "@dataspecer/core/data-specification/model/data-specification-artefact";
 import { DataSpecificationSchema } from "@dataspecer/core/data-specification/model/data-specification-schema";
@@ -12,7 +13,7 @@ import { XSLT_LIFTING, XSLT_LOWERING } from "@dataspecer/xml/xml-transformations
 
 /**
  * This is the place to register your own artefacts if you need to.
- * @param baseUrl Public base URL of generated artifacts. It is expected to end with slash.
+ * @param baseUrl Public base URL of generated artifacts, including any query parameters.
  * @param basePath Path to the base directory where the artifacts will be generated. Must end with slash or be empty.
  */
 export function getSchemaArtifacts(
@@ -20,8 +21,8 @@ export function getSchemaArtifacts(
     baseUrl: string,
     basePath: string,
     configuration: object,
-    queryParams: string = "",
 ) {
+    const urls = resolveSpecificationUrls({ baseUrl });
     const dataSpecificationConfiguration = DataSpecificationConfigurator.getFromObject(configuration);
     const generatorsEnabledByDefault = dataSpecificationConfiguration.generatorsEnabledByDefault!;
 
@@ -32,7 +33,7 @@ export function getSchemaArtifacts(
     jsonSchema.generator = JSON_SCHEMA.Generator;
     const jsonSchemaFileName = dataSpecificationConfiguration.renameArtifacts?.[jsonSchema.generator] ?? "schema.json";
     jsonSchema.outputPath = `${basePath}${jsonSchemaFileName}`;
-    jsonSchema.publicUrl = `${baseUrl}${jsonSchemaFileName}${queryParams}`;
+    jsonSchema.publicUrl = urls.artifactUrl(jsonSchemaFileName);
     jsonSchema.psm = psmSchemaIri;
     jsonSchema.configuration = configuration;
     if ((dataSpecificationConfiguration.useGenerators?.["json"] ?? generatorsEnabledByDefault) !== false) {
@@ -44,7 +45,7 @@ export function getSchemaArtifacts(
     jsonExample.generator = JsonExampleGenerator.IDENTIFIER;
     const jsonExampleFileName = dataSpecificationConfiguration.renameArtifacts?.[jsonExample.generator] ?? "example.json";
     jsonExample.outputPath = `${basePath}${jsonExampleFileName}`;
-    jsonExample.publicUrl = `${baseUrl}${jsonExampleFileName}${queryParams}`;
+    jsonExample.publicUrl = urls.artifactUrl(jsonExampleFileName);
     jsonExample.psm = psmSchemaIri;
     jsonExample.configuration = configuration;
     if ((dataSpecificationConfiguration.useGenerators?.["jsonExample"] ?? generatorsEnabledByDefault) !== false) {
@@ -56,7 +57,7 @@ export function getSchemaArtifacts(
     jsonLd.generator = JSON_LD_GENERATOR;
     const jsonLdFileName = dataSpecificationConfiguration.renameArtifacts?.[jsonLd.generator] ?? "context.jsonld";
     jsonLd.outputPath = `${basePath}${jsonLdFileName}`;
-    jsonLd.publicUrl = `${baseUrl}${jsonLdFileName}${queryParams}`;
+    jsonLd.publicUrl = urls.artifactUrl(jsonLdFileName);
     jsonLd.psm = psmSchemaIri;
     jsonLd.configuration = configuration;
     if ((dataSpecificationConfiguration.useGenerators?.["json"] ?? generatorsEnabledByDefault) !== false) {
@@ -68,7 +69,7 @@ export function getSchemaArtifacts(
     // xsdCoreSchema.generator = XML_COMMON_SCHEMA_GENERATOR;
     // xsdCoreSchema.iri = `${psmSchemaIri}#xsdCoreSchema`;
     // xsdCoreSchema.outputPath = xmlSchemaLocation ? null : `${basePath}2022-07.xsd`;
-    // xsdCoreSchema.publicUrl = xmlSchemaLocation ?? `${baseUrl}2022-07.xsd${queryParams}`;
+    // xsdCoreSchema.publicUrl = xmlSchemaLocation ?? urls.artifactUrl("2022-07.xsd");
     // xsdCoreSchema.psm = psmSchemaIri;
     // xsdCoreSchema.configuration = configuration;
     // if ((dataSpecificationConfiguration.useGenerators?.["xml"] ?? generatorsEnabledByDefault) !== false) {
@@ -80,7 +81,7 @@ export function getSchemaArtifacts(
     xmlSchema.generator = XML_SCHEMA.Generator;
     const xmlSchemaFileName = dataSpecificationConfiguration.renameArtifacts?.[xmlSchema.generator] ?? "schema.xsd";
     xmlSchema.outputPath = `${basePath}${xmlSchemaFileName}`;
-    xmlSchema.publicUrl = `${baseUrl}${xmlSchemaFileName}${queryParams}`;
+    xmlSchema.publicUrl = urls.artifactUrl(xmlSchemaFileName);
     xmlSchema.psm = psmSchemaIri;
     xmlSchema.configuration = configuration;
     if ((dataSpecificationConfiguration.useGenerators?.["xml"] ?? generatorsEnabledByDefault) !== false) {
@@ -92,7 +93,7 @@ export function getSchemaArtifacts(
     xsltLifting.generator = XSLT_LIFTING.Generator;
     const xsltLiftingFileName = dataSpecificationConfiguration.renameArtifacts?.[xsltLifting.generator] ?? "lifting.xslt";
     xsltLifting.outputPath = `${basePath}${xsltLiftingFileName}`;
-    xsltLifting.publicUrl = `${baseUrl}${xsltLiftingFileName}${queryParams}`;
+    xsltLifting.publicUrl = urls.artifactUrl(xsltLiftingFileName);
     xsltLifting.psm = psmSchemaIri;
     xsltLifting.configuration = configuration;
     if ((dataSpecificationConfiguration.useGenerators?.["xml"] ?? generatorsEnabledByDefault) !== false) {
@@ -104,7 +105,7 @@ export function getSchemaArtifacts(
     xsltLowering.generator = XSLT_LOWERING.Generator;
     const xsltLoweringFileName = dataSpecificationConfiguration.renameArtifacts?.[xsltLowering.generator] ?? "lowering.xslt";
     xsltLowering.outputPath = `${basePath}${xsltLoweringFileName}`;
-    xsltLowering.publicUrl = `${baseUrl}${xsltLoweringFileName}${queryParams}`;
+    xsltLowering.publicUrl = urls.artifactUrl(xsltLoweringFileName);
     xsltLowering.psm = psmSchemaIri;
     xsltLowering.configuration = configuration;
     if ((dataSpecificationConfiguration.useGenerators?.["xml"] ?? generatorsEnabledByDefault) !== false) {
@@ -116,7 +117,7 @@ export function getSchemaArtifacts(
     csvSchema.generator = CSV_SCHEMA.Generator;
     const csvSchemaFileName = dataSpecificationConfiguration.renameArtifacts?.[csvSchema.generator] ?? "schema.csv-metadata.json";
     csvSchema.outputPath = `${basePath}${csvSchemaFileName}`;
-    csvSchema.publicUrl = `${baseUrl}${csvSchemaFileName}${queryParams}`;
+    csvSchema.publicUrl = urls.artifactUrl(csvSchemaFileName);
     csvSchema.psm = psmSchemaIri;
     csvSchema.configuration = configuration;
     if ((dataSpecificationConfiguration.useGenerators?.["csv"] ?? generatorsEnabledByDefault) !== false) {
@@ -128,7 +129,7 @@ export function getSchemaArtifacts(
     rdfToCsv.generator = RDF_TO_CSV.Generator;
     const rdfToCsvFileName = dataSpecificationConfiguration.renameArtifacts?.[rdfToCsv.generator] ?? "rdf-to-csv/";
     rdfToCsv.outputPath = `${basePath}${rdfToCsvFileName}`;
-    rdfToCsv.publicUrl = `${baseUrl}${rdfToCsvFileName}${queryParams}`;
+    rdfToCsv.publicUrl = urls.artifactUrl(rdfToCsvFileName);
     rdfToCsv.psm = psmSchemaIri;
     rdfToCsv.configuration = configuration;
     if ((dataSpecificationConfiguration.useGenerators?.["csv"] ?? generatorsEnabledByDefault) !== false) {
@@ -140,7 +141,7 @@ export function getSchemaArtifacts(
     sparqlSchema.generator = SPARQL.Generator;
     const sparqlSchemaFileName = dataSpecificationConfiguration.renameArtifacts?.[sparqlSchema.generator] ?? "query.sparql";
     sparqlSchema.outputPath = `${basePath}${sparqlSchemaFileName}`;
-    sparqlSchema.publicUrl = `${baseUrl}${sparqlSchemaFileName}${queryParams}`;
+    sparqlSchema.publicUrl = urls.artifactUrl(sparqlSchemaFileName);
     sparqlSchema.psm = psmSchemaIri;
     sparqlSchema.configuration = configuration;
     if ((dataSpecificationConfiguration.useGenerators?.["sparql"] ?? generatorsEnabledByDefault) !== false) {
@@ -152,7 +153,7 @@ export function getSchemaArtifacts(
     shacl.generator = "https://schemas.dataspecer.com/generator/shacl";
     const shaclFileName = dataSpecificationConfiguration.renameArtifacts?.[shacl.generator] ?? "shacl-shapes.ttl";
     shacl.outputPath = `${basePath}${shaclFileName}`;
-    shacl.publicUrl = `${baseUrl}${shaclFileName}${queryParams}`;
+    shacl.publicUrl = urls.artifactUrl(shaclFileName);
     shacl.psm = psmSchemaIri;
     shacl.configuration = configuration;
     if ((dataSpecificationConfiguration.useGenerators?.["shacl"] ?? generatorsEnabledByDefault) !== false) {
@@ -164,7 +165,7 @@ export function getSchemaArtifacts(
     shex.generator = "https://schemas.dataspecer.com/generator/shex";
     const shexFileName = dataSpecificationConfiguration.renameArtifacts?.[shex.generator] ?? "validation.shex";
     shex.outputPath = `${basePath}${shexFileName}`;
-    shex.publicUrl = `${baseUrl}${shexFileName}${queryParams}`;
+    shex.publicUrl = urls.artifactUrl(shexFileName);
     shex.psm = psmSchemaIri;
     shex.configuration = configuration;
     if ((dataSpecificationConfiguration.useGenerators?.["shex"] ?? generatorsEnabledByDefault) !== false) {
@@ -176,7 +177,7 @@ export function getSchemaArtifacts(
     shexMap.generator = "https://schemas.dataspecer.com/generator/shex-map";
     const shexMapFileName = dataSpecificationConfiguration.renameArtifacts?.[shexMap.generator] ?? "validation.shexmap";
     shexMap.outputPath = `${basePath}${shexMapFileName}`;
-    shexMap.publicUrl = `${baseUrl}${shexMapFileName}${queryParams}`;
+    shexMap.publicUrl = urls.artifactUrl(shexMapFileName);
     shexMap.psm = psmSchemaIri;
     shexMap.configuration = configuration;
     if ((dataSpecificationConfiguration.useGenerators?.["shex"] ?? generatorsEnabledByDefault) !== false) {
@@ -188,7 +189,7 @@ export function getSchemaArtifacts(
     openapi.generator = "https://schemas.dataspecer.com/generator/openapi";
     const openapiFileName = dataSpecificationConfiguration.renameArtifacts?.[openapi.generator] ?? "openapi-specification.yaml";
     openapi.outputPath = `${basePath}${openapiFileName}`;
-    openapi.publicUrl = `${baseUrl}${openapiFileName}${queryParams}`;
+    openapi.publicUrl = urls.artifactUrl(openapiFileName);
     openapi.psm = psmSchemaIri;
     openapi.configuration = configuration;
     if ((dataSpecificationConfiguration.useGenerators?.["openapi"] ?? generatorsEnabledByDefault) !== false) {

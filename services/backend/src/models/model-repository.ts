@@ -20,6 +20,7 @@ import {
   isCreateProjectOperation,
   isRemoveModelOperation,
   type PackageEntity,
+  type ProjectModelEntity,
 } from "@dataspecer/core/project-model";
 import { v4 as uuidv4 } from "uuid";
 import configuration from "../configuration.ts";
@@ -433,9 +434,17 @@ export class ModelRepository implements ModelRepositoryType {
           } = (isUpdateEntityOperation(operation) ? operation.update : operation.entity) as Record<string, unknown> & {
             id: string;
           };
-          if ((await this.resourceModel.getResource(entityId)) === null) {
+          const resource = await this.resourceModel.getResource(entityId);
+          if (resource === null) {
             console.warn(`Cannot update metadata of resource "${entityId}" via the project model because it does not exist. The operation is only recorded.`);
             continue;
+          }
+          if (isSetEntityOperation(operation)) {
+            for (const key of Object.keys(resource.userMetadata)) {
+              if (!(key in userMetadata)) {
+                userMetadata[key] = undefined;
+              }
+            }
           }
           await this.resourceModel.updateResource(entityId, userMetadata);
           // Only the user metadata reaches the resource, so that is also all
@@ -587,20 +596,47 @@ export class ModelRepository implements ModelRepositoryType {
     }
 
     const workingStates: Record<string, EntityRecord> = {};
+    const removedResources = new Set<string>();
     const transactionsWithEvents = await this.buildTransactionsWithEvents(transactions, async (modelId, operations) => {
-      if (modelId === PROJECT_MODEL_ID) {
-        // TODO: Project model operations (model creation/removal) are only
-        // recorded on the evolution branch without events; whatever applies
-        // or merges the evolution must interpret them itself.
+      if (modelId !== PROJECT_MODEL_ID && removedResources.has(splitModelId(modelId).iri)) {
         return null;
       }
-
-      const { modelType, isBlob } = await this.getEventModelType(modelId);
-      const previousEntities = workingStates[modelId] ?? baseStates[modelId] ?? {};
+      const { modelType, isBlob } = modelId === PROJECT_MODEL_ID
+        ? { modelType: "", isBlob: false }
+        : await this.getEventModelType(modelId, workingStates[PROJECT_MODEL_ID] ?? baseStates[PROJECT_MODEL_ID]);
+      const previousEntities = workingStates[modelId] ?? baseStates[modelId]
+        ?? (modelId === PROJECT_MODEL_ID ? await buildProjectModelEntities(projectIri, (iri) => this.resourceModel.getPackage(iri)) : {});
       const nextEntities = applyOperationsToModelEntities(modelId, modelType, previousEntities, operations);
       workingStates[modelId] = nextEntities;
 
-      return [{ modelId, previousEntities, nextEntities, isBlob }];
+      const contributions: ModelEventsContribution[] = [{ modelId, previousEntities, nextEntities, isBlob }];
+      if (modelId === PROJECT_MODEL_ID) {
+        for (const iri of Object.keys(nextEntities)) {
+          removedResources.delete(iri);
+        }
+        for (const iri of Object.keys(previousEntities)) {
+          if (nextEntities[iri] !== undefined) {
+            continue;
+          }
+          removedResources.add(iri);
+          const resource = await this.resourceModel.getResource(iri);
+          const removedModelIds = new Set([iri, ...Object.keys(resource?.dataStores ?? {}).map((storeName) => composeModelId(iri, storeName))]);
+          for (const stateModelId of new Set([...Object.keys(baseStates), ...Object.keys(workingStates)])) {
+            if (splitModelId(stateModelId).iri === iri) {
+              removedModelIds.add(stateModelId);
+            }
+          }
+          for (const removedModelId of removedModelIds) {
+            const entities = workingStates[removedModelId] ?? baseStates[removedModelId] ?? await this.getModelEntities(removedModelId) ?? {};
+            workingStates[removedModelId] = {};
+            // Deletion has an explicit empty up state, including for blobs
+            // and named stores whose snapshots disappear with the resource.
+            contributions.push({ modelId: removedModelId, previousEntities: entities, nextEntities: {}, isBlob: false });
+          }
+        }
+      }
+
+      return contributions;
     });
 
     return await this.transactionModel.createEvolutionBranch(projectIri, resourceIri, transactionsWithEvents);
@@ -610,22 +646,23 @@ export class ModelRepository implements ModelRepositoryType {
    * Resolves how a model is treated when deriving transaction events: the
    * model type its operations are interpreted with, and whether it is a blob
    * model (recording only down events, see {@link isBlobModelType}). Named
-   * stores (model ids with a "#" suffix) are always blobs. A model whose
-   * resource does not exist (anymore, e.g. it was deleted during reload)
+   * stores (model ids with a "#" suffix) are always blobs. The pending project
+   * state supplies types for models not yet persisted. A model whose
+   * resource exists in neither the project state nor storage
    * cannot be typed: it is treated as a blob, and its operations are
    * interpreted as semantic ones, since diff-derived operations are either
    * generic (understood by every model type) or semantic.
    */
-  private async getEventModelType(modelId: string): Promise<{ modelType: string; isBlob: boolean }> {
+  private async getEventModelType(modelId: string, projectEntities?: EntityRecord): Promise<{ modelType: string; isBlob: boolean }> {
     const { iri, storeName } = splitModelId(modelId);
     if (storeName !== "model") {
       return { modelType: NAMED_BLOB_STORE_TYPE, isBlob: true };
     }
-    const resource = await this.resourceModel.getResource(iri);
-    if (resource === null) {
+    const projectEntity = projectEntities?.[iri] as ProjectModelEntity | undefined;
+    const modelType = projectEntity?.modelType ?? (await this.resourceModel.getResource(iri))?.types[0];
+    if (modelType === undefined) {
       return { modelType: LOCAL_SEMANTIC_MODEL, isBlob: true };
     }
-    const modelType = resource.types[0] ?? "";
     return { modelType, isBlob: isBlobModelType(modelType) };
   }
 

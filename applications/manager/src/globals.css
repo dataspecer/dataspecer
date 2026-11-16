@@ -161,14 +161,15 @@
 }
 
 @layer base {
-  html {
+  /* html {
     overflow-y: scroll;
   }
-
-  /* Let the scroll lock compensate for the scrollbar it removes. */
   html:has(body[data-scroll-locked]) {
     overflow-y: hidden;
   }
+  body[data-scroll-locked] {
+    overflow: clip !important;
+  } */
 
   * {
     @apply border-border;

@@ -8,7 +8,7 @@ import { BetterModalProps } from "@/lib/better-modal";
 import { packageService } from "@/package";
 import { LOCAL_SEMANTIC_MODEL, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { generateEntityId, type Entity } from "@dataspecer/core/entity-model";
-import { createSetEntityOperation, generateOperationId, type OperationInModel } from "@dataspecer/core/operation";
+import { createSetEntityOperation, createUpdateEntityOperation, generateOperationId, type OperationInModel } from "@dataspecer/core/operation";
 import { createCreateModelOperation, createCreateProjectOperation } from "@dataspecer/core/project-model";
 import { createSetLabelOperation } from "@dataspecer/visual-model";
 import { useState } from "react";
@@ -61,7 +61,7 @@ export const Vocabulary = ({ isOpen, resolve, defaultTag }: { iri: string; defau
       // The models and their initial content are created by a single transaction.
       const operations: OperationInModel[] = [
         { modelId: PROJECT_MODEL_ID, operation: createProject },
-        { modelId: PROJECT_MODEL_ID, operation: createSetEntityOperation({ id: projectId, type: [], tags: selectedTags } as Entity) },
+        { modelId: PROJECT_MODEL_ID, operation: createUpdateEntityOperation(projectId, { tags: selectedTags }) },
         { modelId: PROJECT_MODEL_ID, operation: createSemanticModel },
         { modelId: PROJECT_MODEL_ID, operation: createVisualModel },
         {

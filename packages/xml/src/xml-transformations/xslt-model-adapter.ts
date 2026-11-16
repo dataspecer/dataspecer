@@ -174,7 +174,8 @@ class XsltAdapter {
     const locations = Object.fromEntries(
       artifacts
         .map((importedArtifact) => {
-          return [importedArtifact.generator, pathRelative(this.currentPath(), importedArtifact.publicUrl)] as const;
+          return [importedArtifact.generator, pathRelative(this.currentPath(), importedArtifact.publicUrl,
+            resolvedSpecification !== this.model.specification && !this.specifications[resolvedSpecification]?.preferRelativeLinking)] as const;
         })
         .filter(([, relativePath]) => relativePath != null && relativePath !== "" && relativePath !== "."),
     );

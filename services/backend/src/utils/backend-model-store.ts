@@ -31,12 +31,17 @@ async function resolveModelEntities(modelType: string, entities: EntityRecord): 
  * the function on frontend where all models are similarly loaded as a set of
  * entities.
  *
+ * Set includeReusedProjects to false when comparing the owned resource tree,
+ * so removing a reuse link cannot be mistaken for deleting another project.
+ * Supply projectId when loading a subtree of a larger project.
+ *
  * @todo Add project revision id (branch or commit) parameter
  * @todo Add model type filter parameter
  */
 export async function getModelsForPackage(
   packageId: ModelIdentifier,
   modelRepository: Pick<ModelRepositoryType, "getPackage" | "getModelEntities">,
+  options: { includeReusedProjects?: boolean; projectId?: ModelIdentifier } = {},
 ): Promise<Record<ModelIdentifier, EntityRecord>> {
   const models: Record<string, EntityRecord> = {};
   const projectModelEntities: EntityRecord = {};
@@ -65,7 +70,7 @@ export async function getModelsForPackage(
     // the package's own model. They are listed among the sub-packages so that
     // clients that do not know about reuse treat them as any other sub-package.
     const reusedProjects: string[] = [];
-    for (const reusedProjectId of getReusedProjectIds(models[pkg.iri]?.[pkg.iri])) {
+    for (const reusedProjectId of options.includeReusedProjects !== false ? getReusedProjectIds(models[pkg.iri]?.[pkg.iri]) : []) {
       if (await loadPackageRecursively(reusedProjectId, reusedProjectId)) {
         reusedProjects.push(reusedProjectId);
       }
@@ -103,7 +108,7 @@ export async function getModelsForPackage(
     return true;
   }
 
-  await loadPackageRecursively(packageId, packageId);
+  await loadPackageRecursively(packageId, options.projectId ?? packageId);
   models[PROJECT_MODEL_ID] = projectModelEntities;
 
   return models;
