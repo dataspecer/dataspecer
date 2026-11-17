@@ -12,9 +12,9 @@ import {
 /**
  * Written XSD with the white space between the tags and the prefix xs of the tags removed.
  */
-async function write(types: XmlSchemaType[], targetNamespace: string | null = null): Promise<string> {
+async function write(types: XmlSchemaType[]): Promise<string> {
   const schema = {
-    targetNamespace,
+    targetNamespace: null,
     targetNamespacePrefix: null,
     defineLangString: false,
     imports: [],
@@ -50,8 +50,8 @@ function complexType(options: { assertions?: XmlSchemaAssertion[]; attributes?: 
   } as unknown as XmlSchemaComplexType;
 }
 
-function assertion(test: string, xpathDefaultNamespace: "##targetNamespace" | null = null): XmlSchemaAssertion {
-  return { test, xpathDefaultNamespace, controlledVocabularyId: null };
+function assertion(test: string): XmlSchemaAssertion {
+  return { test, controlledVocabularyId: null };
 }
 
 function attribute(name: string, type: XmlSchemaType): XmlSchemaAttribute {
@@ -105,16 +105,6 @@ describe("XSD of assertions on complex types", () => {
 
     // The writer escapes with numeric character references, which XML takes the same as &lt; and &amp;.
     expect(xsd).toContain('<assert test="count(p) &#60; 3 and p/@a = \'&#38;\'"/>');
-  });
-
-  it("writes the namespace of the names in the condition only when it is set", async () => {
-    const xsd = await write(
-      [complexType({ assertions: [assertion("not(p)", "##targetNamespace"), assertion("not(q)")] })],
-      "http://example.com/ns",
-    );
-
-    expect(xsd).toContain('<assert test="not(p)" xpathDefaultNamespace="##targetNamespace"/>');
-    expect(xsd).toContain('<assert test="not(q)"/>');
   });
 
   it("does not silently drop an assertion on a type that cannot have it", async () => {

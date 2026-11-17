@@ -3,7 +3,7 @@ import { DataPsmSchema } from "@dataspecer/core/data-psm/model";
 import { DataSpecificationSchema } from "@dataspecer/core/data-specification/model";
 import type { ArtefactGeneratorContext } from "@dataspecer/generators/generator/artefact-generator-context";
 import type { ConceptualModelControlledVocabularyAssignment } from "@dataspecer/generators/conceptual-model/model";
-import { StructureModel, StructureModelClass, StructureModelSchemaRoot } from "@dataspecer/generators/structure-model/model";
+import { StructureModel, StructureModelClass, StructureModelComplexType, StructureModelProperty, StructureModelSchemaRoot } from "@dataspecer/generators/structure-model/model";
 import { structureModelToXmlSchema } from "./xml-schema-model-adapter.ts";
 import {
   xmlSchemaComplexTypeDefinitionIsSequence,
@@ -99,6 +99,34 @@ function typeSummary(schema: XmlSchema) {
   });
 }
 
+/**
+ * Property of the root class whose value is an object of a class with the given controlled vocabularies.
+ */
+function propertyWithValueOf(label: string, assignments: ConceptualModelControlledVocabularyAssignment[], configure: (valueClass: StructureModelClass) => void = () => {}): StructureModelProperty {
+  const valueClass = new StructureModelClass();
+  valueClass.psmIri = `class-${label}`;
+  valueClass.technicalLabel = label;
+  valueClass.iris = [`http://example.com/${label}`];
+  valueClass.isClosed = true;
+  valueClass.controlledVocabularies = assignments;
+  configure(valueClass);
+
+  const property = new StructureModelProperty();
+  property.psmIri = `property-${label}`;
+  property.technicalLabel = label;
+  property.cardinalityMin = 0;
+  property.cardinalityMax = null;
+  property.dataTypes = [Object.assign(new StructureModelComplexType(), { dataType: valueClass })];
+  return property;
+}
+
+/**
+ * Assertions on the complex type of the root class.
+ */
+function assertionsOf(schema: XmlSchema) {
+  return (schema.types.find((type) => type.name?.[1] === "dataset") as XmlSchemaComplexType).assertions;
+}
+
 describe("type of the IRI in the generated schema", () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -179,5 +207,67 @@ describe("type of the IRI in the generated schema", () => {
 
     expect(iriElementOf(schema)).toBeUndefined();
     expect(simpleTypesOf(schema)).toStrictEqual([]);
+  });
+});
+
+describe("assertions on the type of the class in the generated schema", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("requires a value of a controlled vocabulary among the values of a property of the class", async () => {
+    const schema = await generate((structureClass) => {
+      structureClass.properties = [propertyWithValueOf("distribution", [assignment("at-least-one", PATTERN_A, "vocabulary-a")])];
+    });
+
+    expect(assertionsOf(schema)).toStrictEqual([{
+      test: "not(*:distribution) or *:distribution/*:iri[matches(., '^(http://example\\.com/cv-a/[a-z]+)$')]",
+      controlledVocabularyId: "vocabulary-a",
+    }]);
+  });
+
+  it("leaves the IRI of the value as it is, as the rule is about all the values together", async () => {
+    const schema = await generate((structureClass) => {
+      structureClass.properties = [propertyWithValueOf("distribution", [assignment("at-least-one", PATTERN_A, "vocabulary-a")])];
+    });
+
+    expect(simpleTypesOf(schema)).toStrictEqual([]);
+  });
+
+  it("restricts every value by the type of the IRI and requires one by the assertion for rules of both kinds", async () => {
+    const schema = await generate((structureClass) => {
+      structureClass.properties = [propertyWithValueOf("distribution", [
+        assignment("must", PATTERN_A, "vocabulary-a"),
+        assignment("at-least-one", PATTERN_B, "vocabulary-b"),
+      ])];
+    });
+
+    expect(typeSummary(schema)).toStrictEqual([
+      [[null, "distribution-iri"], ["xs", "anyURI"], "http://example\\.com/cv-a/[a-z]+", "vocabulary-a"],
+    ]);
+    expect(assertionsOf(schema)!.map((assertion) => assertion.controlledVocabularyId)).toStrictEqual(["vocabulary-b"]);
+  });
+
+  it("has no assertions for a class without such rules", async () => {
+    const schema = await generate((structureClass) => {
+      structureClass.properties = [propertyWithValueOf("distribution", [assignment("must", PATTERN_A, "vocabulary-a")])];
+    });
+
+    expect(assertionsOf(schema)).toStrictEqual([]);
+  });
+
+  it("warns about a rule that cannot be written and writes the others", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const schema = await generate((structureClass) => {
+      structureClass.properties = [
+        propertyWithValueOf("withoutIri", [assignment("at-least-one", PATTERN_A, "vocabulary-a")], (valueClass) => { valueClass.instancesHaveIdentity = "NEVER"; }),
+        propertyWithValueOf("distribution", [assignment("at-least-one", PATTERN_B, "vocabulary-b")]),
+      ];
+    });
+
+    expect(assertionsOf(schema)!.map((assertion) => assertion.controlledVocabularyId)).toStrictEqual(["vocabulary-b"]);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]![0]).toContain("property withoutIri of class dataset has a class without an IRI");
   });
 });

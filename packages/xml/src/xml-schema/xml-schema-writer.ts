@@ -402,9 +402,6 @@ async function writeAssertion(
 ): Promise<void> {
   await writer.writeElementFull("xs", "assert")(async writer => {
     await writer.writeLocalAttributeValue("test", assertion.test);
-    if (assertion.xpathDefaultNamespace !== null) {
-      await writer.writeLocalAttributeValue("xpathDefaultNamespace", assertion.xpathDefaultNamespace);
-    }
   });
 }
 

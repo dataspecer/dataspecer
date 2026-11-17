@@ -46,6 +46,7 @@ import {
   type XmlSchemaComplexSimpleContent,
 } from "./xml-schema-model.ts";
 import { XML_SCHEMA } from "./xml-schema-vocabulary.ts";
+import { createAtLeastOneAssertions } from "./xml-schema-assertions.ts";
 import { createIriType } from "./xml-schema-iri-type.ts";
 import { getXmlSchemaRules } from "./xml-schema-rules.ts";
 
@@ -883,6 +884,11 @@ class XmlSchemaAdapter {
       if (iriAsAttribute) {
         attributes.unshift(iriAsAttribute);
       }
+      // Requiring a value of a controlled vocabulary among the values of a property is a condition on all of them.
+      const { assertions, unsupported } = createAtLeastOneAssertions(cls, this.options.elementIriAsAttribute);
+      for (const description of unsupported) {
+        console.warn(`XSD generator skipped the rule requiring a value of a controlled vocabulary on ${description}.`);
+      }
       const type = {
         entityType: "type",
         name: [null, cls.technicalLabel],
@@ -891,6 +897,7 @@ class XmlSchemaAdapter {
         abstract: null,
         complexDefinition,
         attributes,
+        assertions,
       } satisfies XmlSchemaComplexType;
       return type;
     }

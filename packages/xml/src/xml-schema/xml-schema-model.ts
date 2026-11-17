@@ -207,17 +207,11 @@ export class XmlSchemaComplexType extends XmlSchemaType {
 export interface XmlSchemaAssertion {
   /**
    * XPath 2.0 expression that is true when the content is valid. It is
-   * evaluated with the element of the type as the context.
+   * evaluated with the element of the type as the context. A name without a
+   * prefix matches only elements in no namespace, so use `*:name` to match
+   * elements in a target namespace of the schema or in another one.
    */
   test: string;
-
-  /**
-   * Namespace of the element names without a prefix in {@link test}.
-   * When the names are in the target namespace of the schema, it has to be
-   * `##targetNamespace`, as otherwise they would not match any element.
-   * Null for names that are not in a namespace.
-   */
-  xpathDefaultNamespace: "##targetNamespace" | null;
 
   /**
    * Controlled vocabulary the condition comes from, null when it does not come from one.
