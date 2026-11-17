@@ -46,6 +46,8 @@ import {
   type XmlSchemaComplexSimpleContent,
 } from "./xml-schema-model.ts";
 import { XML_SCHEMA } from "./xml-schema-vocabulary.ts";
+import { createIriType } from "./xml-schema-iri-type.ts";
+import { getXmlSchemaRules } from "./xml-schema-rules.ts";
 
 export const GEO_SPARQL_WKT_LITERAL = "http://www.opengis.net/ont/geosparql#wktLiteral";
 
@@ -547,23 +549,19 @@ class XmlSchemaAdapter {
       this.getAndImportHelperNamespace("common", true);
     }
 
-    const type = forStructureModelClass.regex
-      ? ({
-          entityType: "type",
-          name: null,
-          annotation: null,
-          simpleDefinition: {
-            xsType: "restriction",
-            base: [this.getAndImportHelperNamespace("xsd", true), "anyURI"],
-            pattern: forStructureModelClass.regex,
-            contents: [],
-          } as XmlSchemaSimpleItemRestriction,
-        } satisfies XmlSchemaSimpleType)
-      : ({
-          entityType: "type",
-          name: [this.getAndImportHelperNamespace("xsd", true), "anyURI"],
-          annotation: null,
-        } satisfies XmlSchemaType);
+    const rules = getXmlSchemaRules(forStructureModelClass);
+    for (const skipped of rules.skipped) {
+      const origin = skipped.vocabularyId === null ? "the regular expression of the class" : `the controlled vocabulary ${skipped.vocabularyId}`;
+      console.warn(`XSD generator skipped the pattern "${skipped.sourcePattern}" of ${origin} on the IRI of class ${forStructureModelClass.technicalLabel}: ${skipped.reason}.`);
+    }
+    const { definitions, type } = createIriType(rules.everyValue, {
+      classLabel: forStructureModelClass.technicalLabel,
+      xsdPrefix: this.getAndImportHelperNamespace("xsd", true),
+      schemaPrefix: this.namespaceModel.namespacePrefix,
+    });
+    // A schema can define only one type of a name. A class used in several places defines the
+    // same types again, they are the same because they come from the same class, so they replace each other.
+    Object.assign(this.types, definitions);
 
     if (useElementInsteadOfAttribute) {
       return {

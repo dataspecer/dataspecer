@@ -1,0 +1,183 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { DataPsmSchema } from "@dataspecer/core/data-psm/model";
+import { DataSpecificationSchema } from "@dataspecer/core/data-specification/model";
+import type { ArtefactGeneratorContext } from "@dataspecer/generators/generator/artefact-generator-context";
+import type { ConceptualModelControlledVocabularyAssignment } from "@dataspecer/generators/conceptual-model/model";
+import { StructureModel, StructureModelClass, StructureModelSchemaRoot } from "@dataspecer/generators/structure-model/model";
+import { structureModelToXmlSchema } from "./xml-schema-model-adapter.ts";
+import {
+  xmlSchemaComplexTypeDefinitionIsSequence,
+  xmlSchemaSimpleTypeDefinitionIsRestriction,
+  xmlSchemaTypeIsComplex,
+  type XmlSchema,
+  type XmlSchemaComplexContentElement,
+  type XmlSchemaComplexType,
+  type XmlSchemaSimpleType,
+} from "./xml-schema-model.ts";
+
+const PATTERN_A = "^http://example\\.com/cv-a/[a-z]+$";
+const PATTERN_B = "^http://example\\.com/cv-b/[0-9]+$";
+
+function assignment(qualifier: "must" | "at-least-one" | "recommended" | "may", pattern: string, id: string): ConceptualModelControlledVocabularyAssignment {
+  return {
+    id: `assignment-${id}`,
+    qualifier,
+    vocabulary: { id, iri: null, title: {}, pattern, references: "", conformsToSkos: false },
+  };
+}
+
+/**
+ * Generates the schema of a structure with a root class that has no properties but
+ * the IRI, so everything in the schema comes from the rules on the IRI.
+ */
+async function generate(
+  configure: (structureClass: StructureModelClass) => void,
+): Promise<XmlSchema> {
+  const structureClass = new StructureModelClass();
+  structureClass.psmIri = "class";
+  structureClass.technicalLabel = "dataset";
+  structureClass.iris = ["http://example.com/Dataset"];
+  structureClass.isClosed = true;
+  configure(structureClass);
+
+  const root = new StructureModelSchemaRoot();
+  root.psmIri = "root";
+  root.technicalLabel = "dataset";
+  root.classes = [structureClass];
+
+  const model = new StructureModel();
+  model.psmIri = "schema";
+  model.roots = [root];
+
+  const schema = new DataPsmSchema("schema");
+  const context = {
+    // The adapter reads the PSM schema of the structure for the namespace of the XML.
+    reader: { readResource: (iri: string) => (iri === "schema" ? schema : null) },
+    structureModels: {},
+    specifications: {},
+  } as unknown as ArtefactGeneratorContext;
+
+  const artifact = new DataSpecificationSchema();
+  artifact.psm = "schema";
+  artifact.publicUrl = "https://example.com/schema.xsd";
+  artifact.configuration = {};
+
+  const [result] = await structureModelToXmlSchema(context, artifact, model);
+  return result!;
+}
+
+/**
+ * The <iri> element of the root class of the generated schema.
+ */
+function iriElementOf(schema: XmlSchema): XmlSchemaComplexContentElement | undefined {
+  // The element of the root refers to the complex type of the class, which is defined next to it.
+  const rootType = schema.types.find((type) => type.name?.[1] === "dataset");
+  const definition = xmlSchemaTypeIsComplex(rootType ?? null) ? (rootType as XmlSchemaComplexType).complexDefinition : null;
+  if (definition === null || !xmlSchemaComplexTypeDefinitionIsSequence(definition)) {
+    return undefined;
+  }
+  return (definition.contents as XmlSchemaComplexContentElement[]).find((item) => item.element?.name[1] === "iri");
+}
+
+/**
+ * Simple types defined in the schema. The complex type of the root class is left out.
+ */
+function simpleTypesOf(schema: XmlSchema) {
+  return schema.types.filter((type) => "simpleDefinition" in type);
+}
+
+/**
+ * Simple types of the schema as [name, base, pattern, controlled vocabulary].
+ */
+function typeSummary(schema: XmlSchema) {
+  return simpleTypesOf(schema).map((type) => {
+    const definition = (type as XmlSchemaSimpleType).simpleDefinition;
+    if (!xmlSchemaSimpleTypeDefinitionIsRestriction(definition)) {
+      throw new Error("Expected a simple type restriction.");
+    }
+    return [type.name, definition.base, definition.pattern, definition.controlledVocabularyId];
+  });
+}
+
+describe("type of the IRI in the generated schema", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("is xs:anyURI and defines no type for a class without rules", async () => {
+    const schema = await generate(() => {});
+
+    expect(iriElementOf(schema)?.element.type?.name).toStrictEqual(["xs", "anyURI"]);
+    expect(simpleTypesOf(schema)).toStrictEqual([]);
+  });
+
+  it("is a named type with the pattern of the class regex converted to XML Schema", async () => {
+    const schema = await generate((structureClass) => {
+      structureClass.regex = "^http://example\\.com/.*$";
+    });
+
+    expect(typeSummary(schema)).toStrictEqual([
+      [[null, "dataset-iri"], ["xs", "anyURI"], "http://example\\.com/.*", null],
+    ]);
+    expect(iriElementOf(schema)?.element.type?.name).toStrictEqual([null, "dataset-iri"]);
+  });
+
+  it("chains the class regex and the controlled vocabulary patterns so that all of them apply", async () => {
+    const schema = await generate((structureClass) => {
+      structureClass.regex = "^http://example\\.com/.*$";
+      structureClass.controlledVocabularies = [assignment("must", PATTERN_A, "vocabulary-a")];
+    });
+
+    expect(typeSummary(schema)).toStrictEqual([
+      [[null, "dataset-iri-1"], ["xs", "anyURI"], "http://example\\.com/.*", null],
+      [[null, "dataset-iri"], [null, "dataset-iri-1"], "http://example\\.com/cv-a/[a-z]+", "vocabulary-a"],
+    ]);
+    expect(iriElementOf(schema)?.element.type?.name).toStrictEqual([null, "dataset-iri"]);
+  });
+
+  it("follows the options of the class for a recommended vocabulary", async () => {
+    const restricted = await generate((structureClass) => {
+      structureClass.controlledVocabularies = [assignment("recommended", PATTERN_A, "vocabulary-a")];
+      structureClass.restrictToRecommendedControlledVocabulary = true;
+    });
+    const notRestricted = await generate((structureClass) => {
+      structureClass.controlledVocabularies = [assignment("recommended", PATTERN_A, "vocabulary-a")];
+    });
+
+    expect(simpleTypesOf(restricted)).toHaveLength(1);
+    expect(simpleTypesOf(notRestricted)).toHaveLength(0);
+  });
+
+  it("does not constrain the IRI by the rule that needs at least one value", async () => {
+    const schema = await generate((structureClass) => {
+      structureClass.controlledVocabularies = [assignment("at-least-one", PATTERN_B, "vocabulary-b")];
+    });
+
+    expect(simpleTypesOf(schema)).toStrictEqual([]);
+    expect(iriElementOf(schema)?.element.type?.name).toStrictEqual(["xs", "anyURI"]);
+  });
+
+  it("leaves out a pattern that XML Schema cannot express and warns about it", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const schema = await generate((structureClass) => {
+      structureClass.controlledVocabularies = [assignment("must", "^(?=a)b$", "vocabulary-a"), assignment("must", PATTERN_B, "vocabulary-b")];
+    });
+
+    expect(typeSummary(schema)).toStrictEqual([
+      [[null, "dataset-iri"], ["xs", "anyURI"], "http://example\\.com/cv-b/[0-9]+", "vocabulary-b"],
+    ]);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]![0]).toContain("vocabulary-a");
+  });
+
+  it("has no IRI and no type when the instances of the class have no identity", async () => {
+    const schema = await generate((structureClass) => {
+      structureClass.instancesHaveIdentity = "NEVER";
+      structureClass.controlledVocabularies = [assignment("must", PATTERN_A, "vocabulary-a")];
+    });
+
+    expect(iriElementOf(schema)).toBeUndefined();
+    expect(simpleTypesOf(schema)).toStrictEqual([]);
+  });
+});

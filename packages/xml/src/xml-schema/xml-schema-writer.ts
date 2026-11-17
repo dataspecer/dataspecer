@@ -23,6 +23,7 @@ import {
   XmlSchemaAttribute,
   xmlSchemaTypeIsLangString,
   xmlSchemaComplexTypeDefinitionIsSimpleContent,
+  type XmlSchemaAssertion,
 } from "./xml-schema-model.ts";
 
 import { XmlWriter, XmlStreamWriter } from "../xml/xml-writer.ts";
@@ -310,15 +311,21 @@ async function writeAttribute(
     }
     await writer.writeLocalAttributeValue("name", attribute.name[1]);
     const type = attribute.type;
-    if (!xmlSchemaTypeIsComplex(type) && !xmlSchemaTypeIsSimple(type)) {
+    if (xmlSchemaTypeIsSimple(type)) {
+      // The type is defined inline, it follows the annotation.
+      await writeAnnotation(attribute, writer);
+      await writeSimpleType(type, writer);
+    } else if (!xmlSchemaTypeIsComplex(type)) {
       await writer.writeLocalAttributeValue(
         "type",
         writer.getQName(...type.name)
       );
+      await writeAnnotation(attribute, writer);
     } else {
+      // An attribute cannot have a complex type.
       await writeUnrecognizedObject(type, writer);
+      await writeAnnotation(attribute, writer);
     }
-    await writeAnnotation(attribute, writer);
   });
 }
 
@@ -353,6 +360,11 @@ async function writeComplexType(
       await writer.writeLocalAttributeValue("abstract", "true");
     }
     await writeTypeAttributes(type, writer);
+    const assertions = type.assertions ?? [];
+    if (assertions.length > 0 && (xmlSchemaComplexTypeDefinitionIsExtension(definition) || xmlSchemaComplexTypeDefinitionIsSimpleContent(definition))) {
+      // Leaving the conditions out would silently stop checking them.
+      throw new Error("Assertions are supported only on complex types with a sequence, choice or all.");
+    }
     if (xmlSchemaComplexTypeDefinitionIsExtension(definition)) {
       await writer.writeElementFull("xs", "complexContent")(async writer => {
         await writeComplexContent(definition, null, writer);
@@ -373,6 +385,25 @@ async function writeComplexType(
     }
     for (const attribute of type.attributes) {
       await writeAttribute(attribute, writer);
+    }
+    // The assertions follow the attributes.
+    for (const assertion of assertions) {
+      await writeAssertion(assertion, writer);
+    }
+  });
+}
+
+/**
+ * Writes out an xs:assert of an xs:complexType.
+ */
+async function writeAssertion(
+  assertion: XmlSchemaAssertion,
+  writer: XmlWriter
+): Promise<void> {
+  await writer.writeElementFull("xs", "assert")(async writer => {
+    await writer.writeLocalAttributeValue("test", assertion.test);
+    if (assertion.xpathDefaultNamespace !== null) {
+      await writer.writeLocalAttributeValue("xpathDefaultNamespace", assertion.xpathDefaultNamespace);
     }
   });
 }
