@@ -449,7 +449,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
       <tr id="{{cvAnchor id}}">
         <td>{{cvTitle id}}</td>
         <td class="cv-center">{{#if conformsToSkos}}{{#iflng "cs"}}ano{{lng}}yes{{/iflng}}{{else}}{{#iflng "cs"}}ne{{lng}}no{{/iflng}}{{/if}}</td>
-        <td class="cv-iri">{{#if conformsToSkos}}<a href="{{{references}}}"><code>{{references}}</code></a>{{else}}-{{/if}}</td>
+        <td class="cv-iri">{{#if conformsToSkos}}<a href="{{{references}}}"><code>{{references}}</code></a>{{else}}–{{/if}}</td>
         <td>
           {{> controlled-vocabulary-access-link}}
           {{#if documentation}}{{> controlled-vocabulary-documentation-link}}{{/if}}
