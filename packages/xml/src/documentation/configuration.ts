@@ -49,6 +49,44 @@ export const defaultXmlPartials: Record<string, string> = {
   {{/if}}
 {{/def}}
 
+{{#def "xml-cv-link" "id"}}{{#if (cvTitle id)}}<a href="#{{cvAnchor id}}">{{cvTitle id}}</a>{{else}}<code>{{id}}</code>{{/if}}{{/def}}
+
+{{#def "xml-simple-definition"}}
+  {{#simpleDefinition}}
+    <dt>{{#iflng "cs"}}Obsah{{lng}}Content{{/iflng}}</dt>
+    {{#if (equals xsType "restriction")}}
+      <dd>
+        {{#iflng "cs"}}Obsahem elementu je jednoduchý typ{{lng}}The content of the element is a simple type{{/iflng}} <code>{{xml-qname base}}</code>
+        {{#if controlledVocabularyId}}
+          {{#iflng "cs"}}omezený na hodnoty z řízeného slovníku{{lng}}restricted to values of controlled vocabulary{{/iflng}} {{xml-cv-link controlledVocabularyId}} ({{#iflng "cs"}}dle regulárního výrazu{{lng}}by the regular expression{{/iflng}} <code>{{pattern}}</code>).
+        {{else}}
+          {{#iflng "cs"}}s omezením na hodnoty dané regulárním výrazem{{lng}}with restriction by the regular expression{{/iflng}} <code>{{pattern}}</code>.
+        {{/if}}
+      </dd>
+    {{else}}
+      <dd>
+        {{#iflng "cs"}}Obsahem elementu je jednoduchý typ{{lng}}The content of the element is a simple type{{/iflng}} <code>{{xml-qname xsType}}</code>.
+      </dd>
+    {{/if}}
+  {{/simpleDefinition}}
+{{/def}}
+
+{{#def "xml-assertions"}}
+  {{#if assertions}}
+    <dt>{{#iflng "cs"}}Podmínky{{lng}}Conditions{{/iflng}}</dt>
+    {{#each assertions}}
+      <dd>
+        {{#if controlledVocabularyId}}
+          {{#iflng "cs"}}Alespoň jedna hodnota{{lng}}At least one value{{/iflng}}{{#if elementName}} {{#iflng "cs"}}elementu{{lng}}of element{{/iflng}} <code>&lt;{{elementName}}&gt;</code>{{/if}} {{#iflng "cs"}}musí být z řízeného slovníku{{lng}}must be of controlled vocabulary{{/iflng}} {{xml-cv-link controlledVocabularyId}}
+          (XPath: <code>{{test}}</code>)
+        {{else}}
+          XPath: <code>{{test}}</code>
+        {{/if}}
+      </dd>
+    {{/each}}
+  {{/if}}
+{{/def}}
+
 {{#def "xml-type"}}
   <div style="margin-left: 40px;">
     {{#if (and (not simpleDefinition) (not complexDefinition))}}
@@ -62,18 +100,7 @@ export const defaultXmlPartials: Record<string, string> = {
       </dd>
     {{/if}}
 
-    {{#simpleDefinition}}
-      <dt>{{#iflng "cs"}}Obsah{{lng}}Content{{/iflng}}</dt>
-      {{#if (equals xsType "restriction")}}
-        <dd>
-          {{#iflng "cs"}}Obsahem elementu je jednoduchý typ{{lng}}The content of the element is a simple type{{/iflng}} <code>{{xml-qname base}}</code> {{#iflng "cs"}}s omezením na hodnoty dané regulárním výrazem{{lng}}with restriction by the regular expression{{/iflng}} <code>{{pattern}}</code>.
-        </dd>
-      {{else}}
-        <dd>
-          {{#iflng "cs"}}Obsahem elementu je jednoduchý typ{{lng}}The content of the element is a simple type{{/iflng}} <code>{{xml-qname xsType}}</code>.
-        </dd>
-      {{/if}}
-    {{/simpleDefinition}}
+    {{xml-simple-definition}}
 
     {{xml-meaning annotation}}
 
@@ -87,6 +114,8 @@ export const defaultXmlPartials: Record<string, string> = {
     {{/complexDefinition}}
 
     {{xml-complex-definition complexDefinition}}
+
+    {{xml-assertions}}
   </div>
 {{/def}}
 
@@ -265,7 +294,11 @@ export const defaultXmlPartials: Record<string, string> = {
   <dl>
     {{xml-meaning annotation}}
 
+    {{xml-simple-definition}}
+
     {{xml-complex-definition complexDefinition}}
+
+    {{xml-assertions}}
   </dl>
 </section>
 {{#linkedChildElements}}{{xml-non-root-element .}}{{/linkedChildElements}}

@@ -217,6 +217,11 @@ export interface XmlSchemaAssertion {
    * Controlled vocabulary the condition comes from, null when it does not come from one.
    */
   controlledVocabularyId: string | null;
+
+  /**
+   * Name of the element whose values the condition is about, shown in the documentation.
+   */
+  elementName?: string | null;
 }
 
 /**

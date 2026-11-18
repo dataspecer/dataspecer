@@ -47,6 +47,7 @@ describe("assertions requiring at least one value of a controlled vocabulary", (
       assertions: [{
         test: "not(*:distribution) or *:distribution/*:iri[matches(., '^(http://example\\.com/cv-a/[a-z]+)$')]",
         controlledVocabularyId: "vocabulary-a",
+        elementName: "distribution",
       }],
       unsupported: [],
     });
@@ -85,7 +86,7 @@ describe("assertions requiring at least one value of a controlled vocabulary", (
 
     const { assertions } = createAtLeastOneAssertions(parent, false);
 
-    expect(assertions.map((assertion) => assertion.test.match(/\*:(\w+)\/\*:iri/)![1])).toStrictEqual(["first", "second"]);
+    expect(assertions.map((assertion) => assertion.elementName)).toStrictEqual(["first", "second"]);
   });
 
   it("follows the option of the class for a recommended vocabulary", () => {

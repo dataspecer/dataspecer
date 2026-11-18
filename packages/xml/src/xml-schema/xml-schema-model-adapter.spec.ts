@@ -223,6 +223,7 @@ describe("assertions on the type of the class in the generated schema", () => {
     expect(assertionsOf(schema)).toStrictEqual([{
       test: "not(*:distribution) or *:distribution/*:iri[matches(., '^(http://example\\.com/cv-a/[a-z]+)$')]",
       controlledVocabularyId: "vocabulary-a",
+      elementName: "distribution",
     }]);
   });
 

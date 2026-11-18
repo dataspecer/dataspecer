@@ -65,6 +65,7 @@ export function createAtLeastOneAssertions(structureClass: StructureModelClass, 
       result.assertions.push({
         test: `not(${value}) or ${value}/${iri}[matches(., '${pattern}')]`,
         controlledVocabularyId: rule.vocabularyId,
+        elementName: property.technicalLabel,
       });
     }
   }
