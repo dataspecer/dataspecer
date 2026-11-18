@@ -4,6 +4,7 @@ import { DataSpecificationSchema } from "@dataspecer/core/data-specification/mod
 import type { ArtefactGeneratorContext } from "@dataspecer/generators/generator/artefact-generator-context";
 import type { ConceptualModelControlledVocabularyAssignment } from "@dataspecer/generators/conceptual-model/model";
 import { StructureModel, StructureModelClass, StructureModelComplexType, StructureModelProperty, StructureModelSchemaRoot } from "@dataspecer/generators/structure-model/model";
+import { structureModelTransformPrimitiveTypes } from "@dataspecer/generators/structure-model/transformation";
 import { structureModelToXmlSchema } from "./xml-schema-model-adapter.ts";
 import {
   xmlSchemaComplexTypeDefinitionIsSequence,
@@ -32,6 +33,7 @@ function assignment(qualifier: "must" | "at-least-one" | "recommended" | "may", 
  */
 async function generate(
   configure: (structureClass: StructureModelClass) => void,
+  transform: (model: StructureModel) => StructureModel = (model) => model,
 ): Promise<XmlSchema> {
   const structureClass = new StructureModelClass();
   structureClass.psmIri = "class";
@@ -62,7 +64,7 @@ async function generate(
   artifact.publicUrl = "https://example.com/schema.xsd";
   artifact.configuration = {};
 
-  const [result] = await structureModelToXmlSchema(context, artifact, model);
+  const [result] = await structureModelToXmlSchema(context, artifact, transform(model));
   return result!;
 }
 
@@ -270,5 +272,94 @@ describe("assertions on the type of the class in the generated schema", () => {
     expect(assertionsOf(schema)!.map((assertion) => assertion.controlledVocabularyId)).toStrictEqual(["vocabulary-b"]);
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn.mock.calls[0]![0]).toContain("property withoutIri of class dataset has a class without an IRI");
+  });
+});
+
+/**
+ * The property element of the root class in the generated schema.
+ */
+function propertyElementOf(schema: XmlSchema, label: string): XmlSchemaComplexContentElement | undefined {
+  const rootType = schema.types.find((type) => type.name?.[1] === "dataset") as XmlSchemaComplexType;
+  const definition = rootType.complexDefinition;
+  return xmlSchemaComplexTypeDefinitionIsSequence(definition)
+    ? (definition.contents as XmlSchemaComplexContentElement[]).find((item) => item.element?.name[1] === label)
+    : undefined;
+}
+
+/**
+ * The XML generator turns a property whose value is a class without properties into a property with the
+ * IRI as its simple value, before the adapter gets the structure. The rules of the class must still apply.
+ */
+describe("values that are classes without properties, as the generator transforms them", () => {
+  const generateLikeGenerator = (configure: (structureClass: StructureModelClass) => void) => generate(configure, structureModelTransformPrimitiveTypes);
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("has the IRI as the content of the element of the property", async () => {
+    const schema = await generateLikeGenerator((structureClass) => {
+      structureClass.properties = [propertyWithValueOf("distribution", [])];
+    });
+
+    expect(propertyElementOf(schema, "distribution")?.element.type?.name).toStrictEqual(["xs", "anyURI"]);
+    expect(simpleTypesOf(schema)).toStrictEqual([]);
+  });
+
+  it("restricts the content by the pattern of the controlled vocabulary", async () => {
+    const schema = await generateLikeGenerator((structureClass) => {
+      structureClass.properties = [propertyWithValueOf("distribution", [assignment("must", PATTERN_A, "vocabulary-a")])];
+    });
+
+    const summary = typeSummary(schema);
+    expect(summary).toHaveLength(1);
+    expect(summary[0]!.slice(1)).toStrictEqual([["xs", "anyURI"], "http://example\\.com/cv-a/[a-z]+", "vocabulary-a"]);
+    expect(propertyElementOf(schema, "distribution")?.element.type?.name).toStrictEqual(summary[0]![0]);
+  });
+
+  it("restricts the content by the regex of the class", async () => {
+    const schema = await generateLikeGenerator((structureClass) => {
+      structureClass.properties = [propertyWithValueOf("distribution", [], (valueClass) => { valueClass.regex = "^http://example\\.com/cv-a/r.*$"; })];
+    });
+
+    const summary = typeSummary(schema);
+    expect(summary).toHaveLength(1);
+    expect(summary[0]!.slice(1)).toStrictEqual([["xs", "anyURI"], "http://example\\.com/cv-a/r.*", null]);
+    expect(propertyElementOf(schema, "distribution")?.element.type?.name).toStrictEqual(summary[0]![0]);
+  });
+
+  it("restricts the type of the class regex by the controlled vocabulary pattern so that both apply", async () => {
+    const schema = await generateLikeGenerator((structureClass) => {
+      structureClass.properties = [propertyWithValueOf("distribution", [assignment("must", PATTERN_A, "vocabulary-a")], (valueClass) => {
+        valueClass.regex = "^http://example\\.com/cv-a/r.*$";
+      })];
+    });
+
+    const summary = typeSummary(schema);
+    expect(summary.map((type) => type[3])).toStrictEqual([null, "vocabulary-a"]);
+    expect(summary[1]![1]).toStrictEqual(summary[0]![0]);
+  });
+
+  it("follows the option of the class for a recommended vocabulary", async () => {
+    const schema = await generateLikeGenerator((structureClass) => {
+      structureClass.properties = [propertyWithValueOf("distribution", [assignment("recommended", PATTERN_A, "vocabulary-a")], (valueClass) => {
+        valueClass.restrictToRecommendedControlledVocabulary = true;
+      })];
+    });
+
+    expect(typeSummary(schema)).toHaveLength(1);
+  });
+
+  it("requires a value among the values of the property by an assertion on the content", async () => {
+    const schema = await generateLikeGenerator((structureClass) => {
+      structureClass.properties = [propertyWithValueOf("distribution", [assignment("at-least-one", PATTERN_A, "vocabulary-a")])];
+    });
+
+    expect(assertionsOf(schema)).toStrictEqual([{
+      test: "not(*:distribution) or *:distribution[matches(., '^(http://example\\.com/cv-a/[a-z]+)$')]",
+      controlledVocabularyId: "vocabulary-a",
+      elementName: "distribution",
+    }]);
+    expect(simpleTypesOf(schema)).toStrictEqual([]);
   });
 });

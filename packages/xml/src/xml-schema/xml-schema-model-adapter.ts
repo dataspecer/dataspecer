@@ -530,6 +530,47 @@ class XmlSchemaAdapter {
   }
 
   /**
+   * Defines the named simple types that make an IRI match the regular expression and the
+   * controlled vocabularies of its class, and returns the type of the IRI.
+   *
+   * A schema can define only one type of a name. Where the same name comes with the same definitions,
+   * as for a class used in several places, the types are shared.
+   * If the types differ, the name gets a number.
+   *
+   * @param rulesSource The class, or the type of an IRI made from a class without properties.
+   * @param label Technical label that names the types.
+   * @param description What the IRI is, for the warning about a pattern that is left out.
+   */
+  private defineIriType(
+    rulesSource: Parameters<typeof getXmlSchemaRules>[0],
+    label: string,
+    description: string,
+  ): XmlSchemaType {
+    const rules = getXmlSchemaRules(rulesSource);
+    for (const skipped of rules.skipped) {
+      const origin = skipped.vocabularyId === null ? "the regular expression" : `the controlled vocabulary ${skipped.vocabularyId}`;
+      console.warn(`XSD generator skipped the pattern "${skipped.sourcePattern}" of ${origin} on ${description}: ${skipped.reason}.`);
+    }
+    const parameters = {
+      xsdPrefix: this.getAndImportHelperNamespace("xsd", true),
+      schemaPrefix: this.namespaceModel.namespacePrefix,
+    };
+    for (let attempt = 1; ; attempt++) {
+      const { definitions, type } = createIriType(rules.everyValue, {
+        ...parameters,
+        classLabel: attempt === 1 ? label : `${label}-${attempt}`,
+      });
+      // The definitions are plain data created in the same order of fields, so comparing their JSON tells whether they are equal.
+      const isFree = Object.entries(definitions).every(([name, definition]) =>
+        this.types[name] === undefined || JSON.stringify(this.types[name]) === JSON.stringify(definition));
+      if (isFree) {
+        Object.assign(this.types, definitions);
+        return type;
+      }
+    }
+  }
+
+  /**
    * Returns <iri> element for given class or null if the element should be skipped.
    */
   private getIriElementOrAttribute(forStructureModelClass: StructureModelClass): XmlSchemaComplexContentElement | XmlSchemaAttribute | null {
@@ -550,19 +591,7 @@ class XmlSchemaAdapter {
       this.getAndImportHelperNamespace("common", true);
     }
 
-    const rules = getXmlSchemaRules(forStructureModelClass);
-    for (const skipped of rules.skipped) {
-      const origin = skipped.vocabularyId === null ? "the regular expression of the class" : `the controlled vocabulary ${skipped.vocabularyId}`;
-      console.warn(`XSD generator skipped the pattern "${skipped.sourcePattern}" of ${origin} on the IRI of class ${forStructureModelClass.technicalLabel}: ${skipped.reason}.`);
-    }
-    const { definitions, type } = createIriType(rules.everyValue, {
-      classLabel: forStructureModelClass.technicalLabel,
-      xsdPrefix: this.getAndImportHelperNamespace("xsd", true),
-      schemaPrefix: this.namespaceModel.namespacePrefix,
-    });
-    // A schema can define only one type of a name. A class used in several places defines the
-    // same types again, they are the same because they come from the same class, so they replace each other.
-    Object.assign(this.types, definitions);
+    const type = this.defineIriType(forStructureModelClass, forStructureModelClass.technicalLabel, `the IRI of class ${forStructureModelClass.technicalLabel}`);
 
     if (useElementInsteadOfAttribute) {
       return {
@@ -1213,6 +1242,11 @@ class XmlSchemaAdapter {
         // Uses xml lang
         this.getAndImportHelperNamespace("xml", true);
         return langStringType;
+      }
+
+      if (dataTypes[0].dataType === OFN.url) {
+        // The IRI of a class without properties has the rules of the class.
+        return this.defineIriType(dataTypes[0], propertyData.technicalLabel, `the IRI in property ${propertyData.technicalLabel}`);
       }
 
       if (dataTypes[0].regex && [XSD.string, XSD.anyURI, XSD.anyURI].includes(dataTypes[0].dataType)) {

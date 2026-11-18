@@ -1,4 +1,5 @@
 import type { StructureModelClass, StructureModelProperty } from "@dataspecer/generators/structure-model/model";
+import { OFN } from "@dataspecer/core/well-known";
 import type { XmlSchemaAssertion } from "./xml-schema-model.ts";
 import { getXmlSchemaRules } from "./xml-schema-rules.ts";
 
@@ -18,12 +19,15 @@ export interface AtLeastOneAssertions {
  * A pattern of one value is not enough for that, as a rule on the type of the
  * value can only restrict every value.
  *
- * Each rule is an assertion of its own. A property without a value satisfiesit,
+ * Each rule is an assertion of its own. A property without a value satisfies it,
  * as the property is optional or its cardinality has its own checks.
  * Names are matched in any namespace (`*:name`), so the assertion does not
  * depend on the namespace of the schema or on the profiling that put the
  * element elsewhere. The pattern is wrapped as `^(pattern)$`, as in XPath
  * it is not anchored by default.
+ *
+ * For a value that is the IRI of a class without properties, the element of
+ * the property holds the IRI itself, so the pattern is checked on it.
  *
  * Properties of containers (xs:choice and xs:sequence) are in the same
  * element, so they are included. The rule cannot be written for a property that
@@ -38,9 +42,14 @@ export function createAtLeastOneAssertions(structureClass: StructureModelClass, 
     if (property.xmlIsAttribute) {
       continue;
     }
-    const valueClasses = property.dataTypes.filter((type) => type.isAssociation()).map((type) => type.dataType);
-    const rulesOfClasses = valueClasses.map((valueClass) => ({ valueClass, rules: getXmlSchemaRules(valueClass).atLeastOne }));
-    if (rulesOfClasses.every(({ rules }) => rules.length === 0)) {
+    const rulesOfTypes = property.dataTypes.map((type) => {
+      if (type.isAssociation()) {
+        return { valueClass: type.dataType, rules: getXmlSchemaRules(type.dataType).atLeastOne };
+      }
+      // The IRI of a class without properties is the value itself, it has no iri element.
+      return { valueClass: null, rules: type.isAttribute() && type.dataType === OFN.url ? getXmlSchemaRules(type).atLeastOne : [] };
+    });
+    if (rulesOfTypes.every(({ rules }) => rules.length === 0)) {
       continue;
     }
 
@@ -49,21 +58,24 @@ export function createAtLeastOneAssertions(structureClass: StructureModelClass, 
       result.unsupported.push(`${description} has several types`);
       continue;
     }
-    const { valueClass, rules } = rulesOfClasses[0]!;
-    if (valueClass.isReferenced) {
-      result.unsupported.push(`${description} has a class that comes from another schema`);
-      continue;
-    }
-    if (valueClass.instancesHaveIdentity === "NEVER" || !valueClass.iris?.length) {
-      result.unsupported.push(`${description} has a class without an IRI`);
-      continue;
+    const { valueClass, rules } = rulesOfTypes[0]!;
+    if (valueClass !== null) {
+      if (valueClass.isReferenced) {
+        result.unsupported.push(`${description} has a class that comes from another schema`);
+        continue;
+      }
+      if (valueClass.instancesHaveIdentity === "NEVER" || !valueClass.iris?.length) {
+        result.unsupported.push(`${description} has a class without an IRI`);
+        continue;
+      }
     }
 
+    const value = `*:${property.technicalLabel}`;
+    const checked = valueClass === null ? value : `${value}/${iri}`;
     for (const rule of rules) {
       const pattern = `^(${rule.pattern})$`.replaceAll("'", "''");
-      const value = `*:${property.technicalLabel}`;
       result.assertions.push({
-        test: `not(${value}) or ${value}/${iri}[matches(., '${pattern}')]`,
+        test: `not(${value}) or ${checked}[matches(., '${pattern}')]`,
         controlledVocabularyId: rule.vocabularyId,
         elementName: property.technicalLabel,
       });
