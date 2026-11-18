@@ -75,7 +75,7 @@ export function changesToEntityOperations(
  * @param dangerouslySkipUndefined If set to true, the patch will not contain
  * properties that are undefined in `next`.
  */
-export function createPatch<T extends Entity>(prev: T, next: T, dangerouslySkipUndefined?: boolean): Partial<T> {
+export function createPatch<T extends object>(prev: T, next: T, dangerouslySkipUndefined?: boolean): Partial<T> {
   const patch: Partial<T> = {};
 
   for (const key in next) {

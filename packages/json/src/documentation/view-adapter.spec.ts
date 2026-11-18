@@ -52,7 +52,7 @@ function viewModelOf(root: JsonSchemaDefinition) {
     jsonSchema,
     configuration: DefaultJsonConfiguration,
     context: {} as ArtefactGeneratorContext,
-    artefact: {} as DataSpecificationArtefact,
+    documentationArtifact: {} as DataSpecificationArtefact,
     languages: ["en"],
   });
 }

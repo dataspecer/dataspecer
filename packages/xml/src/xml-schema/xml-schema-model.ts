@@ -193,6 +193,35 @@ export class XmlSchemaComplexType extends XmlSchemaType {
   abstract: boolean;
 
   attributes: XmlSchemaAttribute[];
+
+  /**
+   * Conditions that the content of the type must satisfy, in addition to its
+   * structure. They are written as xs:assert, which is a part of XML Schema 1.1.
+   */
+  assertions?: XmlSchemaAssertion[];
+}
+
+/**
+ * Represents an xs:assert of an xs:complexType.
+ */
+export interface XmlSchemaAssertion {
+  /**
+   * XPath 2.0 expression that is true when the content is valid. It is
+   * evaluated with the element of the type as the context. A name without a
+   * prefix matches only elements in no namespace, so use `*:name` to match
+   * elements in a target namespace of the schema or in another one.
+   */
+  test: string;
+
+  /**
+   * Controlled vocabulary the condition comes from, null when it does not come from one.
+   */
+  controlledVocabularyId: string | null;
+
+  /**
+   * Name of the element whose values the condition is about, shown in the documentation.
+   */
+  elementName?: string | null;
 }
 
 /**
@@ -359,6 +388,11 @@ export class XmlSchemaSimpleItemRestriction extends XmlSchemaSimpleItem {
   base: QName;
 
   pattern: string | null;
+
+  /**
+   * Controlled vocabulary the pattern comes from, null when it does not come from one.
+   */
+  controlledVocabularyId?: string | null;
 }
 
 export function xmlSchemaSimpleTypeDefinitionIsRestriction(

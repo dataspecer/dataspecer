@@ -1,13 +1,11 @@
 import { LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
 import type { LanguageString } from "@dataspecer/core/core/core-resource";
-import type { Entity } from "@dataspecer/core/entity-model";
-import { createSetEntityOperation, generateOperationId, type OperationInModel, type Transaction } from "@dataspecer/core/operation";
+import { createSetEntityOperation, createUpdateEntityOperation, generateOperationId, type OperationInModel, type Transaction } from "@dataspecer/core/operation";
 import {
   createCreateModelOperation,
   createCreateProjectOperation,
   isCreateModelOperation,
   isCreateProjectOperation,
-  PROJECT_MODEL_MODEL_ENTITY,
 } from "@dataspecer/core/project-model";
 import JSZip from "jszip";
 import { composeModelId, PROJECT_MODEL_ID } from "../models/model-id.ts";
@@ -146,10 +144,9 @@ export class PackageImporter {
     const operations: OperationInModel[] = [{ modelId: PROJECT_MODEL_ID, operation: createOperation }];
 
     // Only the label and description are part of the creation operation, the
-    // rest of the user metadata is set on the resource's project model entity.
+    // rest is merged into the resource's project model entity.
     if (Object.keys(otherMetadata).length > 0) {
-      const entity = { ...otherMetadata, id: iri, type: [PROJECT_MODEL_MODEL_ENTITY] } as Entity;
-      operations.push({ modelId: PROJECT_MODEL_ID, operation: createSetEntityOperation(entity) });
+      operations.push({ modelId: PROJECT_MODEL_ID, operation: createUpdateEntityOperation(iri, otherMetadata) });
     }
 
     for (const { storeName, data } of stores) {

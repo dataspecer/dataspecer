@@ -63,6 +63,7 @@ function getLastChunkFromIri(iri: string | null | undefined): string | null {
 interface ModelDescription {
   isPrimary: boolean;
   documentationUrl: string | null;
+  preferDocumentationUrl?: boolean;
   entities: Record<string, SemanticModelEntity>;
   baseIri: string | null;
 }
@@ -507,10 +508,10 @@ export async function generateDocumentation(
         let externalDocumentationUrl = getExternalDocumentationUrl(entity);
         const isRelative = externalDocumentationUrl?.startsWith("#");
 
-        if (externalDocumentationUrl && !isRelative) {
+        if (externalDocumentationUrl && !isRelative && !inModel.preferDocumentationUrl) {
           return externalDocumentationUrl;
         }
-        if (inModel.documentationUrl) {
+        if (inModel.documentationUrl !== null) {
           const anchor = getAnchorForLocalEntity(entity);
           return inModel.documentationUrl + "#" + anchor;
         } else {
