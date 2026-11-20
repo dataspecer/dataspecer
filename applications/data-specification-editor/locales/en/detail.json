@@ -8,6 +8,8 @@
   "cardinality custom title": "Custom cardinality",
   "cardinality infinity": "infinity",
   "cardinality unset": "without change",
+  "cardinality constraint": "This cardinality option is not available because of constraints from the profiled entity. The profiled entity requires minimum cardinality of {{min}} and maximum cardinality of {{max}}.",
+  "cardinality constraint no max": "This cardinality option is not available because of constraints from the profiled entity. The profiled entity requires minimum cardinality of {{min}}.",
   "class-closed": {
     "help": "Specifies whether additional properties that are not defined in the schema can be used in the data. If no, then these extra undefined properties are forbidden.",
     "implicit": "default value",
