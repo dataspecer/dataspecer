@@ -11,7 +11,6 @@ import {
   CmeOperationResult,
   InvalidOperationArguments,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   findWritableVisualModel,
   getVisualEntity,
@@ -21,15 +20,6 @@ import {
   removeVisualEntities,
 } from "./visual-model-removal";
 import { copyVisualEntities } from "./copy-visual-entities";
-
-export function collapseIntoVisualDiagramNodeOperation(
-  args: Omit<CollapseIntoVisualDiagramNodeArguments, "type">,
-): CmeOperation<CollapseIntoVisualDiagramNodeArguments, CollapseIntoVisualDiagramNodeResult> {
-  return {
-    type: CollapseIntoVisualDiagramNodeType,
-    ...args,
-  };
-}
 
 const CollapseIntoVisualDiagramNodeType =
   "collapse-into-visual-diagram-node-operation";
@@ -71,10 +61,17 @@ interface CollapseIntoVisualDiagramNodeResult
 
 }
 
-cmeOperationExecutorRegistry.register(
-  CollapseIntoVisualDiagramNodeType,
-  collapseIntoVisualDiagramNodeOperation,
-  { execute: collapseIntoVisualDiagramNodeExecutor });
+export const collapseIntoVisualDiagramNodeOperation: CmeOperation<
+  CollapseIntoVisualDiagramNodeArguments, CollapseIntoVisualDiagramNodeResult> = {
+  metadata: {
+    type: CollapseIntoVisualDiagramNodeType,
+  },
+  create: (_context, parameters) => ({
+    type: CollapseIntoVisualDiagramNodeType,
+    ...parameters,
+  }),
+  execute: collapseIntoVisualDiagramNodeExecutor,
+};
 
 /**
  * Edges between a moved node and a node which stays are rerouted
@@ -82,7 +79,7 @@ cmeOperationExecutorRegistry.register(
  *
  * @throws CmeOperationExecutionFailed
  */
-export async function collapseIntoVisualDiagramNodeExecutor(
+async function collapseIntoVisualDiagramNodeExecutor(
   context: CmeExecutionContext,
   args: CollapseIntoVisualDiagramNodeArguments,
 ): Promise<CollapseIntoVisualDiagramNodeResult> {

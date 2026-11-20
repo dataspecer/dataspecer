@@ -18,21 +18,11 @@ import {
   CmeOperationResult,
   InvalidEntity,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   findWritableVisualModel,
   getEntity,
   getVisualNode,
 } from "./visual-model-utilities";
-
-export function showAttributeOperation(
-  args: Omit<ShowAttributeArguments, "type">,
-): CmeOperation<ShowAttributeArguments, ShowAttributeResult> {
-  return {
-    type: ShowAttributeType,
-    ...args,
-  };
-}
 
 const ShowAttributeType =
   "show-attribute-operation";
@@ -72,15 +62,21 @@ interface ShowAttributeResult
 
 }
 
-cmeOperationExecutorRegistry.register(
-  ShowAttributeType,
-  showAttributeOperation,
-  { execute: showAttributeExecutor });
+export const showAttributeOperation: CmeOperation<ShowAttributeArguments, ShowAttributeResult> = {
+  metadata: {
+    type: ShowAttributeType,
+  },
+  create: (_context, parameters) => ({
+    type: ShowAttributeType,
+    ...parameters,
+  }),
+  execute: showAttributeExecutor,
+};
 
 /**
  * @throws CmeOperationExecutionFailed
  */
-export async function showAttributeExecutor(
+async function showAttributeExecutor(
   context: CmeExecutionContext,
   args: ShowAttributeArguments,
 ): Promise<ShowAttributeResult> {

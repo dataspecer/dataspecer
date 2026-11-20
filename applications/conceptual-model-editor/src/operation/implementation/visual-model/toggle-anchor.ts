@@ -8,21 +8,11 @@ import {
   CmeOperationResult,
   InvalidEntity,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   findWritableVisualModel,
   getVisualEntity,
   isVisualEdgeEnd,
 } from "./visual-model-utilities";
-
-export function toggleAnchorOperation(
-  args: Omit<ToggleAnchorArguments, "type">,
-): CmeOperation<ToggleAnchorArguments, ToggleAnchorResult> {
-  return {
-    type: ToggleAnchorType,
-    ...args,
-  };
-}
 
 const ToggleAnchorType =
   "toggle-anchor-operation";
@@ -48,17 +38,23 @@ interface ToggleAnchorArguments extends CmeOperationArguments {
 type ToggleAnchorResult =
   CmeOperationResult<ToggleAnchorArguments>;
 
-cmeOperationExecutorRegistry.register(
-  ToggleAnchorType,
-  toggleAnchorOperation,
-  { execute: toggleAnchorExecutor });
+export const toggleAnchorOperation: CmeOperation<ToggleAnchorArguments, ToggleAnchorResult> = {
+  metadata: {
+    type: ToggleAnchorType,
+  },
+  create: (_context, parameters) => ({
+    type: ToggleAnchorType,
+    ...parameters,
+  }),
+  execute: toggleAnchorExecutor,
+};
 
 /**
  * For a group the same value is set to all of its content.
  *
  * @throws CmeOperationExecutionFailed
  */
-export async function toggleAnchorExecutor(
+async function toggleAnchorExecutor(
   context: CmeExecutionContext,
   args: ToggleAnchorArguments,
 ): Promise<ToggleAnchorResult> {

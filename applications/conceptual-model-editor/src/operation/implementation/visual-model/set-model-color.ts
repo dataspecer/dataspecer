@@ -5,17 +5,7 @@ import {
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import { findWritableVisualModel } from "./visual-model-utilities";
-
-export function setModelColorOperation(
-  args: Omit<SetModelColorArguments, "type">,
-): CmeOperation<SetModelColorArguments, SetModelColorResult> {
-  return {
-    type: SetModelColorType,
-    ...args,
-  };
-}
 
 const SetModelColorType =
   "set-model-color-operation";
@@ -41,15 +31,21 @@ interface SetModelColorArguments extends CmeOperationArguments {
 type SetModelColorResult =
   CmeOperationResult<SetModelColorArguments>;
 
-cmeOperationExecutorRegistry.register(
-  SetModelColorType,
-  setModelColorOperation,
-  { execute: setModelColorExecutor });
+export const setModelColorOperation: CmeOperation<SetModelColorArguments, SetModelColorResult> = {
+  metadata: {
+    type: SetModelColorType,
+  },
+  create: (_context, parameters) => ({
+    type: SetModelColorType,
+    ...parameters,
+  }),
+  execute: setModelColorExecutor,
+};
 
 /**
  * @throws CmeOperationExecutionFailed
  */
-export async function setModelColorExecutor(
+async function setModelColorExecutor(
   context: CmeExecutionContext,
   args: SetModelColorArguments,
 ): Promise<SetModelColorResult> {

@@ -23,7 +23,6 @@ import {
   CmeOperationResult,
   InvalidEntity,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   EntityWithModel,
   findEntity,
@@ -42,15 +41,6 @@ import {
   isClassOrClassProfile,
   isSemanticConnection,
 } from "./visual-model-additions";
-
-export function showEntityNeighborhoodOperation(
-  args: Omit<ShowEntityNeighborhoodArguments, "type">,
-): CmeOperation<ShowEntityNeighborhoodArguments, ShowEntityNeighborhoodResult> {
-  return {
-    type: ShowEntityNeighborhoodType,
-    ...args,
-  };
-}
 
 const ShowEntityNeighborhoodType =
   "show-entity-neighborhood-operation";
@@ -78,10 +68,17 @@ interface ShowEntityNeighborhoodArguments extends CmeOperationArguments {
 type ShowEntityNeighborhoodResult =
   CmeOperationResult<ShowEntityNeighborhoodArguments>;
 
-cmeOperationExecutorRegistry.register(
-  ShowEntityNeighborhoodType,
-  showEntityNeighborhoodOperation,
-  { execute: showEntityNeighborhoodExecutor });
+export const showEntityNeighborhoodOperation: CmeOperation<
+  ShowEntityNeighborhoodArguments, ShowEntityNeighborhoodResult> = {
+  metadata: {
+    type: ShowEntityNeighborhoodType,
+  },
+  create: (_context, parameters) => ({
+    type: ShowEntityNeighborhoodType,
+    ...parameters,
+  }),
+  execute: showEntityNeighborhoodExecutor,
+};
 
 /**
  * For classes the neighborhood are directly connected classes.
@@ -90,7 +87,7 @@ cmeOperationExecutorRegistry.register(
  *
  * @throws CmeOperationExecutionFailed
  */
-export async function showEntityNeighborhoodExecutor(
+async function showEntityNeighborhoodExecutor(
   context: CmeExecutionContext,
   args: ShowEntityNeighborhoodArguments,
 ): Promise<ShowEntityNeighborhoodResult> {

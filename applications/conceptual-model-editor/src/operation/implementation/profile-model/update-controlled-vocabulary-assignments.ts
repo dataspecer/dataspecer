@@ -19,20 +19,10 @@ import {
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   executeCreateProfileOperation,
   findProfileModel,
 } from "../operation-utilities";
-
-export function updateControlledVocabularyAssignmentsOperation(
-  args: Omit<UpdateControlledVocabularyAssignmentsArguments, "type">,
-): CmeOperation<UpdateControlledVocabularyAssignmentsArguments, UpdateControlledVocabularyAssignmentsResult> {
-  return {
-    type: UpdateControlledVocabularyAssignmentsType,
-    ...args,
-  };
-}
 
 const UpdateControlledVocabularyAssignmentsType =
   "update-controlled-vocabulary-assignments-operation";
@@ -93,10 +83,17 @@ interface UpdateControlledVocabularyAssignmentsResult
 
 }
 
-cmeOperationExecutorRegistry.register(
-  UpdateControlledVocabularyAssignmentsType,
-  updateControlledVocabularyAssignmentsOperation,
-  { execute: updateControlledVocabularyAssignmentsExecutor });
+export const updateControlledVocabularyAssignmentsOperation: CmeOperation<
+  UpdateControlledVocabularyAssignmentsArguments, UpdateControlledVocabularyAssignmentsResult> = {
+  metadata: {
+    type: UpdateControlledVocabularyAssignmentsType,
+  },
+  create: (_context, parameters) => ({
+    type: UpdateControlledVocabularyAssignmentsType,
+    ...parameters,
+  }),
+  execute: updateControlledVocabularyAssignmentsExecutor,
+};
 
 const factory = createDefaultSemanticModelProfileOperationFactory();
 
@@ -107,7 +104,7 @@ const factory = createDefaultSemanticModelProfileOperationFactory();
  *
  * @throws CmeOperationExecutionFailed
  */
-export async function updateControlledVocabularyAssignmentsExecutor(
+async function updateControlledVocabularyAssignmentsExecutor(
   context: CmeExecutionContext,
   args: UpdateControlledVocabularyAssignmentsArguments,
 ): Promise<UpdateControlledVocabularyAssignmentsResult> {

@@ -16,18 +16,8 @@ import {
   DataspecerOperationFailed,
   ModelIsNotWritable,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import { findSemanticModel } from "../operation-utilities";
 import { isInMemorySemanticModel } from "../../../dataspecer/semantic-model";
-
-export function updateSpecializationOperation(
-  args: Omit<UpdateSpecializationArguments, "type">,
-): CmeOperation<UpdateSpecializationArguments, UpdateSpecializationResult> {
-  return {
-    type: UpdateSpecializationType,
-    ...args,
-  };
-}
 
 interface UpdateSpecializationArguments extends CmeOperationArguments {
 
@@ -98,15 +88,22 @@ interface UpdateSpecializationResult
 
 }
 
-cmeOperationExecutorRegistry.register(
-  UpdateSpecializationType,
-  updateSpecializationOperation,
-  { execute: updateSpecializationExecutor });
+export const updateSpecializationOperation: CmeOperation<
+  UpdateSpecializationArguments, UpdateSpecializationResult> = {
+  metadata: {
+    type: UpdateSpecializationType,
+  },
+  create: (_context, parameters) => ({
+    type: UpdateSpecializationType,
+    ...parameters,
+  }),
+  execute: updateSpecializationExecutor,
+};
 
 /**
  * @throws CmeOperationExecutionFailed
  */
-export async function updateSpecializationExecutor(
+async function updateSpecializationExecutor(
   context: CmeExecutionContext,
   args: UpdateSpecializationArguments,
 ): Promise<UpdateSpecializationResult> {

@@ -6,7 +6,6 @@ import { SemanticProfileModelOperations } from "@dataspecer/profile-model";
 import { Entity } from "@dataspecer/core-v2";
 
 import { findProfileModel } from "../operation-utilities";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   CmeExecutionContext,
   CmeOperation,
@@ -15,15 +14,6 @@ import {
   ModelIsNotWritable,
 } from "../../operation";
 import { isInMemoryProfileModel } from "../../../dataspecer/profile-model";
-
-export function profileEntitiesOperation(
-  args: Omit<ProfileEntitiesArguments, "type">,
-): CmeOperation<ProfileEntitiesArguments, ProfileEntitiesResult> {
-  return {
-    type: ProfileEntitiesType,
-    ...args,
-  };
-}
 
 export interface ProfileEntitiesArguments extends CmeOperationArguments {
 
@@ -54,13 +44,19 @@ interface ProfileEntitiesResult
 
 };
 
-cmeOperationExecutorRegistry.register(
-  ProfileEntitiesType,
-  profileEntitiesOperation,
-  { execute: createProfilesExecutor },
-)
+export const profileEntitiesOperation: CmeOperation<
+  ProfileEntitiesArguments, ProfileEntitiesResult> = {
+  metadata: {
+    type: ProfileEntitiesType,
+  },
+  create: (_context, parameters) => ({
+    type: ProfileEntitiesType,
+    ...parameters,
+  }),
+  execute: createProfilesExecutor,
+};
 
-export async function createProfilesExecutor(
+async function createProfilesExecutor(
   context: CmeExecutionContext,
   args: ProfileEntitiesArguments,
 ): Promise<ProfileEntitiesResult> {

@@ -17,21 +17,11 @@ import {
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   findEntity,
   findWritableVisualModel,
   getVisualNode,
 } from "./visual-model-utilities";
-
-export function hideAttributesOperation(
-  args: Omit<HideAttributesArguments, "type">,
-): CmeOperation<HideAttributesArguments, HideAttributesResult> {
-  return {
-    type: HideAttributesType,
-    ...args,
-  };
-}
 
 const HideAttributesType =
   "hide-attributes-operation";
@@ -58,15 +48,22 @@ interface HideAttributesArguments extends CmeOperationArguments {
 type HideAttributesResult =
   CmeOperationResult<HideAttributesArguments>;
 
-cmeOperationExecutorRegistry.register(
-  HideAttributesType,
-  hideAttributesOperation,
-  { execute: hideAttributesExecutor });
+export const hideAttributesOperation: CmeOperation<
+  HideAttributesArguments, HideAttributesResult> = {
+  metadata: {
+    type: HideAttributesType,
+  },
+  create: (_context, parameters) => ({
+    type: HideAttributesType,
+    ...parameters,
+  }),
+  execute: hideAttributesExecutor,
+};
 
 /**
  * @throws CmeOperationExecutionFailed
  */
-export async function hideAttributesExecutor(
+async function hideAttributesExecutor(
   context: CmeExecutionContext,
   args: HideAttributesArguments,
 ): Promise<HideAttributesResult> {

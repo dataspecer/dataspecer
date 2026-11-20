@@ -8,17 +8,7 @@ import {
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import { findVisualModel } from "../operation-utilities";
-
-export function showSemanticClassOperation(
-  args: Omit<ShowSemanticClassArguments, "type">,
-): CmeOperation<ShowSemanticClassArguments, ShowSemanticClassResult> {
-  return {
-    type: ShowSemanticClassType,
-    ...args,
-  };
-}
 
 const ShowSemanticClassType =
   "show-semantic-class-operation";
@@ -42,10 +32,17 @@ interface ShowSemanticClassArguments extends CmeOperationArguments {
 type ShowSemanticClassResult =
   CmeOperationResult<ShowSemanticClassArguments>;
 
-cmeOperationExecutorRegistry.register(
-  ShowSemanticClassType,
-  showSemanticClassOperation,
-  { execute: showSemanticClassExecutor });
+export const showSemanticClassOperation: CmeOperation<
+  ShowSemanticClassArguments, ShowSemanticClassResult> = {
+  metadata: {
+    type: ShowSemanticClassType,
+  },
+  create: (_context, parameters) => ({
+    type: ShowSemanticClassType,
+    ...parameters,
+  }),
+  execute: showSemanticClassExecutor,
+};
 
 async function showSemanticClassExecutor(
   context: CmeExecutionContext,

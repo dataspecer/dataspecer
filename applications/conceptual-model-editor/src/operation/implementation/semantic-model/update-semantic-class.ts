@@ -11,20 +11,10 @@ import {
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   executeCreateSemanticOperation,
   findSemanticModel,
 } from "../operation-utilities";
-
-export function updateSemanticClassOperation(
-  args: Omit<UpdateSemanticClassArguments, "type">,
-): CmeOperation<UpdateSemanticClassArguments, UpdateSemanticClassResult> {
-  return {
-    type: UpdateSemanticClassType,
-    ...args,
-  };
-}
 
 const UpdateSemanticClassType =
   "update-semantic-class-operation";
@@ -52,15 +42,22 @@ interface UpdateSemanticClassArguments extends CmeOperationArguments {
 type UpdateSemanticClassResult =
   CmeOperationResult<UpdateSemanticClassArguments>;
 
-cmeOperationExecutorRegistry.register(
-  UpdateSemanticClassType,
-  updateSemanticClassOperation,
-  { execute: updateSemanticClassExecutor });
+export const updateSemanticClassOperation: CmeOperation<
+  UpdateSemanticClassArguments, UpdateSemanticClassResult> = {
+  metadata: {
+    type: UpdateSemanticClassType,
+  },
+  create: (_context, parameters) => ({
+    type: UpdateSemanticClassType,
+    ...parameters,
+  }),
+  execute: updateSemanticClassExecutor,
+};
 
 /**
  * @throws CmeOperationExecutionFailed
  */
-export async function updateSemanticClassExecutor(
+async function updateSemanticClassExecutor(
   context: CmeExecutionContext,
   args: UpdateSemanticClassArguments,
 ): Promise<UpdateSemanticClassResult> {

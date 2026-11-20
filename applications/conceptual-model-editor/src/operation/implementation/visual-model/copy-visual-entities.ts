@@ -15,21 +15,11 @@ import {
   CmeOperationResult,
   InvalidOperationArguments,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   doesAddingVisualModelCauseSelfReference,
   findWritableVisualModel,
   getWritableVisualModels,
 } from "./visual-model-utilities";
-
-export function copyVisualEntitiesOperation(
-  args: Omit<CopyVisualEntitiesArguments, "type">,
-): CmeOperation<CopyVisualEntitiesArguments, CopyVisualEntitiesResult> {
-  return {
-    type: CopyVisualEntitiesType,
-    ...args,
-  };
-}
 
 const CopyVisualEntitiesType =
   "copy-visual-entities-operation";
@@ -67,17 +57,24 @@ interface CopyVisualEntitiesResult
 
 }
 
-cmeOperationExecutorRegistry.register(
-  CopyVisualEntitiesType,
-  copyVisualEntitiesOperation,
-  { execute: copyVisualEntitiesExecutor });
+export const copyVisualEntitiesOperation: CmeOperation<
+  CopyVisualEntitiesArguments, CopyVisualEntitiesResult> = {
+  metadata: {
+    type: CopyVisualEntitiesType,
+  },
+  create: (_context, parameters) => ({
+    type: CopyVisualEntitiesType,
+    ...parameters,
+  }),
+  execute: copyVisualEntitiesExecutor,
+};
 
 /**
  * Use to fill a newly created visual model from a selection.
  *
  * @throws CmeOperationExecutionFailed
  */
-export async function copyVisualEntitiesExecutor(
+async function copyVisualEntitiesExecutor(
   context: CmeExecutionContext,
   args: CopyVisualEntitiesArguments,
 ): Promise<CopyVisualEntitiesResult> {

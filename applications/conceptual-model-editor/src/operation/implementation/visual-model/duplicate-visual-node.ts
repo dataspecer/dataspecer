@@ -22,7 +22,6 @@ import {
   CmeOperationResult,
   InvalidEntity,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   findWritableVisualModel,
   getNodeWidth,
@@ -31,15 +30,6 @@ import {
   NodeDimensions,
   VisualEdgeEndPoint,
 } from "./visual-model-utilities";
-
-export function duplicateVisualNodeOperation(
-  args: Omit<DuplicateVisualNodeArguments, "type">,
-): CmeOperation<DuplicateVisualNodeArguments, DuplicateVisualNodeResult> {
-  return {
-    type: DuplicateVisualNodeType,
-    ...args,
-  };
-}
 
 const DuplicateVisualNodeType =
   "duplicate-visual-node-operation";
@@ -69,15 +59,22 @@ interface DuplicateVisualNodeResult
 
 }
 
-cmeOperationExecutorRegistry.register(
-  DuplicateVisualNodeType,
-  duplicateVisualNodeOperation,
-  { execute: duplicateVisualNodeExecutor });
+export const duplicateVisualNodeOperation: CmeOperation<
+  DuplicateVisualNodeArguments, DuplicateVisualNodeResult> = {
+  metadata: {
+    type: DuplicateVisualNodeType,
+  },
+  create: (_context, parameters) => ({
+    type: DuplicateVisualNodeType,
+    ...parameters,
+  }),
+  execute: duplicateVisualNodeExecutor,
+};
 
 /**
  * @throws CmeOperationExecutionFailed
  */
-export async function duplicateVisualNodeExecutor(
+async function duplicateVisualNodeExecutor(
   context: CmeExecutionContext,
   args: DuplicateVisualNodeArguments,
 ): Promise<DuplicateVisualNodeResult> {

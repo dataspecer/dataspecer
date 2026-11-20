@@ -27,7 +27,6 @@ import {
   InvalidEntity,
   MissingModel,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   createNodeDimensionQueryHandler,
   findWritableVisualModel,
@@ -49,15 +48,6 @@ import {
 } from "./visual-model-removal";
 
 const LOG = createLogger(import.meta.url);
-
-export function dissolveVisualDiagramNodeOperation(
-  args: Omit<DissolveVisualDiagramNodeArguments, "type">,
-): CmeOperation<DissolveVisualDiagramNodeArguments, DissolveVisualDiagramNodeResult> {
-  return {
-    type: DissolveVisualDiagramNodeType,
-    ...args,
-  };
-}
 
 const DissolveVisualDiagramNodeType =
   "dissolve-visual-diagram-node-operation";
@@ -81,10 +71,17 @@ interface DissolveVisualDiagramNodeArguments extends CmeOperationArguments {
 type DissolveVisualDiagramNodeResult =
   CmeOperationResult<DissolveVisualDiagramNodeArguments>;
 
-cmeOperationExecutorRegistry.register(
-  DissolveVisualDiagramNodeType,
-  dissolveVisualDiagramNodeOperation,
-  { execute: dissolveVisualDiagramNodeExecutor });
+export const dissolveVisualDiagramNodeOperation: CmeOperation<
+  DissolveVisualDiagramNodeArguments, DissolveVisualDiagramNodeResult> = {
+  metadata: {
+    type: DissolveVisualDiagramNodeType,
+  },
+  create: (_context, parameters) => ({
+    type: DissolveVisualDiagramNodeType,
+    ...parameters,
+  }),
+  execute: dissolveVisualDiagramNodeExecutor,
+};
 
 /**
  * The content is centered at the position of the visual diagram node,
@@ -94,7 +91,7 @@ cmeOperationExecutorRegistry.register(
  *
  * @throws CmeOperationExecutionFailed
  */
-export async function dissolveVisualDiagramNodeExecutor(
+async function dissolveVisualDiagramNodeExecutor(
   context: CmeExecutionContext,
   args: DissolveVisualDiagramNodeArguments,
 ): Promise<DissolveVisualDiagramNodeResult> {

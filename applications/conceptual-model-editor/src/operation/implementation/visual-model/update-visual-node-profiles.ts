@@ -13,18 +13,8 @@ import {
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import { findWritableVisualModel } from "./visual-model-utilities";
 import { addVisualProfileRelationships } from "./visual-model-additions";
-
-export function updateVisualNodeProfilesOperation(
-  args: Omit<UpdateVisualNodeProfilesArguments, "type">,
-): CmeOperation<UpdateVisualNodeProfilesArguments, UpdateVisualNodeProfilesResult> {
-  return {
-    type: UpdateVisualNodeProfilesType,
-    ...args,
-  };
-}
 
 const UpdateVisualNodeProfilesType =
   "update-visual-node-profiles-operation";
@@ -60,10 +50,17 @@ interface UpdateVisualNodeProfilesArguments extends CmeOperationArguments {
 type UpdateVisualNodeProfilesResult =
   CmeOperationResult<UpdateVisualNodeProfilesArguments>;
 
-cmeOperationExecutorRegistry.register(
-  UpdateVisualNodeProfilesType,
-  updateVisualNodeProfilesOperation,
-  { execute: updateVisualNodeProfilesExecutor });
+export const updateVisualNodeProfilesOperation: CmeOperation<
+  UpdateVisualNodeProfilesArguments, UpdateVisualNodeProfilesResult> = {
+  metadata: {
+    type: UpdateVisualNodeProfilesType,
+  },
+  create: (_context, parameters) => ({
+    type: UpdateVisualNodeProfilesType,
+    ...parameters,
+  }),
+  execute: updateVisualNodeProfilesExecutor,
+};
 
 /**
  * Adds profile edges for new profiled entities, removes edges of removed ones.
@@ -71,7 +68,7 @@ cmeOperationExecutorRegistry.register(
  *
  * @throws CmeOperationExecutionFailed
  */
-export async function updateVisualNodeProfilesExecutor(
+async function updateVisualNodeProfilesExecutor(
   context: CmeExecutionContext,
   args: UpdateVisualNodeProfilesArguments,
 ): Promise<UpdateVisualNodeProfilesResult> {

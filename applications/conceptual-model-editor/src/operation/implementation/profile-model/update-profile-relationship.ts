@@ -12,7 +12,6 @@ import {
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   executeCreateProfileOperation,
   findProfileModel,
@@ -21,15 +20,6 @@ import {
   createRelationshipProfileEnds,
   RelationshipProfileValues,
 } from "./relationship-profile-utilities";
-
-export function updateProfileRelationshipOperation(
-  args: Omit<UpdateProfileRelationshipArguments, "type">,
-): CmeOperation<UpdateProfileRelationshipArguments, UpdateProfileRelationshipResult> {
-  return {
-    type: UpdateProfileRelationshipType,
-    ...args,
-  };
-}
 
 const UpdateProfileRelationshipType =
   "update-profile-relationship-operation";
@@ -48,17 +38,24 @@ interface UpdateProfileRelationshipArguments
 type UpdateProfileRelationshipResult =
   CmeOperationResult<UpdateProfileRelationshipArguments>;
 
-cmeOperationExecutorRegistry.register(
-  UpdateProfileRelationshipType,
-  updateProfileRelationshipOperation,
-  { execute: updateProfileRelationshipExecutor });
+export const updateProfileRelationshipOperation: CmeOperation<
+  UpdateProfileRelationshipArguments, UpdateProfileRelationshipResult> = {
+  metadata: {
+    type: UpdateProfileRelationshipType,
+  },
+  create: (_context, parameters) => ({
+    type: UpdateProfileRelationshipType,
+    ...parameters,
+  }),
+  execute: updateProfileRelationshipExecutor,
+};
 
 const factory = createDefaultSemanticModelProfileOperationFactory();
 
 /**
  * @throws CmeOperationExecutionFailed
  */
-export async function updateProfileRelationshipExecutor(
+async function updateProfileRelationshipExecutor(
   context: CmeExecutionContext,
   args: UpdateProfileRelationshipArguments,
 ): Promise<UpdateProfileRelationshipResult> {

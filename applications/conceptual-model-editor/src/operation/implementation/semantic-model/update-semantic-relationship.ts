@@ -11,20 +11,10 @@ import {
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   executeCreateSemanticOperation,
   findSemanticModel,
 } from "../operation-utilities";
-
-export function updateSemanticRelationshipOperation(
-  args: Omit<UpdateSemanticRelationshipArguments, "type">,
-): CmeOperation<UpdateSemanticRelationshipArguments, UpdateSemanticRelationshipResult> {
-  return {
-    type: UpdateSemanticRelationshipType,
-    ...args,
-  };
-}
 
 const UpdateSemanticRelationshipType =
   "update-semantic-relationship-operation";
@@ -60,15 +50,22 @@ interface UpdateSemanticRelationshipArguments extends CmeOperationArguments {
 type UpdateSemanticRelationshipResult =
   CmeOperationResult<UpdateSemanticRelationshipArguments>;
 
-cmeOperationExecutorRegistry.register(
-  UpdateSemanticRelationshipType,
-  updateSemanticRelationshipOperation,
-  { execute: updateSemanticRelationshipExecutor });
+export const updateSemanticRelationshipOperation: CmeOperation<
+  UpdateSemanticRelationshipArguments, UpdateSemanticRelationshipResult> = {
+  metadata: {
+    type: UpdateSemanticRelationshipType,
+  },
+  create: (_context, parameters) => ({
+    type: UpdateSemanticRelationshipType,
+    ...parameters,
+  }),
+  execute: updateSemanticRelationshipExecutor,
+};
 
 /**
  * @throws CmeOperationExecutionFailed
  */
-export async function updateSemanticRelationshipExecutor(
+async function updateSemanticRelationshipExecutor(
   context: CmeExecutionContext,
   args: UpdateSemanticRelationshipArguments,
 ): Promise<UpdateSemanticRelationshipResult> {

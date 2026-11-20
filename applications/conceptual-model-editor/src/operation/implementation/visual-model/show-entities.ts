@@ -12,7 +12,6 @@ import {
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   EntityWithModel,
   findEntity,
@@ -30,15 +29,6 @@ import {
 } from "./visual-model-additions";
 
 const LOG = createLogger(import.meta.url);
-
-export function showEntitiesOperation(
-  args: Omit<ShowEntitiesArguments, "type">,
-): CmeOperation<ShowEntitiesArguments, ShowEntitiesResult> {
-  return {
-    type: ShowEntitiesType,
-    ...args,
-  };
-}
 
 const ShowEntitiesType =
   "show-entities-operation";
@@ -87,15 +77,21 @@ interface ShowEntitiesResult
 
 }
 
-cmeOperationExecutorRegistry.register(
-  ShowEntitiesType,
-  showEntitiesOperation,
-  { execute: showEntitiesExecutor });
+export const showEntitiesOperation: CmeOperation<ShowEntitiesArguments, ShowEntitiesResult> = {
+  metadata: {
+    type: ShowEntitiesType,
+  },
+  create: (_context, parameters) => ({
+    type: ShowEntitiesType,
+    ...parameters,
+  }),
+  execute: showEntitiesExecutor,
+};
 
 /**
  * @throws CmeOperationExecutionFailed
  */
-export async function showEntitiesExecutor(
+async function showEntitiesExecutor(
   context: CmeExecutionContext,
   args: ShowEntitiesArguments,
 ): Promise<ShowEntitiesResult> {

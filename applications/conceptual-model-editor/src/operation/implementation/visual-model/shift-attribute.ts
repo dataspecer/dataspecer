@@ -9,20 +9,10 @@ import {
   CmeOperationResult,
   InvalidOperationArguments,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   findWritableVisualModel,
   getVisualNode,
 } from "./visual-model-utilities";
-
-export function shiftAttributeOperation(
-  args: Omit<ShiftAttributeArguments, "type">,
-): CmeOperation<ShiftAttributeArguments, ShiftAttributeResult> {
-  return {
-    type: ShiftAttributeType,
-    ...args,
-  };
-}
 
 const ShiftAttributeType =
   "shift-attribute-operation";
@@ -48,15 +38,22 @@ interface ShiftAttributeArguments extends CmeOperationArguments {
 type ShiftAttributeResult =
   CmeOperationResult<ShiftAttributeArguments>;
 
-cmeOperationExecutorRegistry.register(
-  ShiftAttributeType,
-  shiftAttributeOperation,
-  { execute: shiftAttributeExecutor });
+export const shiftAttributeOperation: CmeOperation<
+  ShiftAttributeArguments, ShiftAttributeResult> = {
+  metadata: {
+    type: ShiftAttributeType,
+  },
+  create: (_context, parameters) => ({
+    type: ShiftAttributeType,
+    ...parameters,
+  }),
+  execute: shiftAttributeExecutor,
+};
 
 /**
  * @throws CmeOperationExecutionFailed
  */
-export async function shiftAttributeExecutor(
+async function shiftAttributeExecutor(
   context: CmeExecutionContext,
   args: ShiftAttributeArguments,
 ): Promise<ShiftAttributeResult> {

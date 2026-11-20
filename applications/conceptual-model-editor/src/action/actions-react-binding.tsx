@@ -132,11 +132,9 @@ import {
 } from "./create-visual-diagram-node-for-existing-model";
 import { putVisualDiagramNodeContentToVisualModelAction } from "./put-visual-diagram-node-content-to-visual-model";
 import {
-  addSemanticClassSurroundingsOperation,
+  cmeOperations,
   createCmeOperationExecutor,
-  releaseSemanticClassSurroundingsOperation,
 } from "../operation";
-import { cmeOperationExecutorRegistry } from "../operation/operation-registry";
 import { createNewEntityIdentifier } from "./utilities/create-new-entity-identifier";
 import { openProfileModelDialogAction } from "./open-profile-model-dialog";
 
@@ -1115,9 +1113,10 @@ function createActionsContext(
     semanticModel: ModelDsIdentifier, entity: EntityDsIdentifier,
   ) => {
     const executor = createCmeOperationExecutor(
-      cmeOperationExecutorRegistry, classes.semanticModelsList,
+      cmeOperations, classes.semanticModelsList,
       classes.visualModelsList, createNewEntityIdentifier);
-    const result = await executor.execute(addSemanticClassSurroundingsOperation({
+    const result = await executor.execute(cmeOperations.addSemanticClassSurroundings.create(
+      executor.createContext, {
       semanticModel,
       entity,
     }));
@@ -1130,9 +1129,10 @@ function createActionsContext(
     semanticModel: ModelDsIdentifier, entity: EntityDsIdentifier,
   ) => {
     const executor = createCmeOperationExecutor(
-      cmeOperationExecutorRegistry, [...classes.semanticModels.values()],
+      cmeOperations, [...classes.semanticModels.values()],
       classes.visualModelsList, createNewEntityIdentifier);
-    const result = await executor.execute(releaseSemanticClassSurroundingsOperation({
+    const result = await executor.execute(cmeOperations.releaseSemanticClassSurroundings.create(
+      executor.createContext, {
       semanticModel,
       entity,
     }));
@@ -1144,7 +1144,7 @@ function createActionsContext(
   const openProfileModelDialog = async (model: ModelDsIdentifier) => {
     withVisualModel(notifications, useGraph, (visualModel) => {
       const executor = createCmeOperationExecutor(
-        cmeOperationExecutorRegistry, [...classes.semanticModels.values()],
+        cmeOperations, [...classes.semanticModels.values()],
         classes.visualModelsList, createNewEntityIdentifier);
       openProfileModelDialogAction(
         executor, options, dialogs, notifications, classes,

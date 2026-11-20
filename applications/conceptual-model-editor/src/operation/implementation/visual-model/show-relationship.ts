@@ -16,21 +16,11 @@ import {
   CmeOperationResult,
   InvalidEntity,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   findWritableVisualModel,
   getEntity,
 } from "./visual-model-utilities";
 import { addVisualConnection } from "./visual-model-additions";
-
-export function showRelationshipOperation(
-  args: Omit<ShowRelationshipArguments, "type">,
-): CmeOperation<ShowRelationshipArguments, ShowRelationshipResult> {
-  return {
-    type: ShowRelationshipType,
-    ...args,
-  };
-}
 
 const ShowRelationshipType =
   "show-relationship-operation";
@@ -58,15 +48,22 @@ interface ShowRelationshipResult
 
 }
 
-cmeOperationExecutorRegistry.register(
-  ShowRelationshipType,
-  showRelationshipOperation,
-  { execute: showRelationshipExecutor });
+export const showRelationshipOperation: CmeOperation<
+  ShowRelationshipArguments, ShowRelationshipResult> = {
+  metadata: {
+    type: ShowRelationshipType,
+  },
+  create: (_context, parameters) => ({
+    type: ShowRelationshipType,
+    ...parameters,
+  }),
+  execute: showRelationshipExecutor,
+};
 
 /**
  * @throws CmeOperationExecutionFailed
  */
-export async function showRelationshipExecutor(
+async function showRelationshipExecutor(
   context: CmeExecutionContext,
   args: ShowRelationshipArguments,
 ): Promise<ShowRelationshipResult> {

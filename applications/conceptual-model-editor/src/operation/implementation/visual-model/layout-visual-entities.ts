@@ -17,7 +17,6 @@ import {
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   createNodeDimensionQueryHandler,
   findWritableVisualModel,
@@ -26,15 +25,6 @@ import {
   NodeDimensions,
 } from "./visual-model-utilities";
 import { applyLayout } from "./layout-visual-model";
-
-export function layoutVisualEntitiesOperation(
-  args: Omit<LayoutVisualEntitiesArguments, "type">,
-): CmeOperation<LayoutVisualEntitiesArguments, LayoutVisualEntitiesResult> {
-  return {
-    type: LayoutVisualEntitiesType,
-    ...args,
-  };
-}
 
 const LayoutVisualEntitiesType =
   "layout-visual-entities-operation";
@@ -62,15 +52,22 @@ interface LayoutVisualEntitiesResult
 
 }
 
-cmeOperationExecutorRegistry.register(
-  LayoutVisualEntitiesType,
-  layoutVisualEntitiesOperation,
-  { execute: layoutVisualEntitiesExecutor });
+export const layoutVisualEntitiesOperation: CmeOperation<
+  LayoutVisualEntitiesArguments, LayoutVisualEntitiesResult> = {
+  metadata: {
+    type: LayoutVisualEntitiesType,
+  },
+  create: (_context, parameters) => ({
+    type: LayoutVisualEntitiesType,
+    ...parameters,
+  }),
+  execute: layoutVisualEntitiesExecutor,
+};
 
 /**
  * @throws CmeOperationExecutionFailed
  */
-export async function layoutVisualEntitiesExecutor(
+async function layoutVisualEntitiesExecutor(
   context: CmeExecutionContext,
   args: LayoutVisualEntitiesArguments,
 ): Promise<LayoutVisualEntitiesResult> {

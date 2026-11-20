@@ -7,17 +7,7 @@ import {
   CmeOperationResult,
   ModelIsNotWritable,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import { findSemanticModel } from "../operation-utilities";
-
-export function updateSemanticModelOperation(
-  args: Omit<UpdateSemanticModelArguments, "type">,
-): CmeOperation<UpdateSemanticModelArguments, UpdateSemanticModelResult> {
-  return {
-    type: UpdateSemanticModelType,
-    ...args,
-  };
-}
 
 const UpdateSemanticModelType =
   "update-semantic-model-operation";
@@ -37,15 +27,22 @@ interface UpdateSemanticModelArguments extends CmeOperationArguments {
 type UpdateSemanticModelResult =
   CmeOperationResult<UpdateSemanticModelArguments>;
 
-cmeOperationExecutorRegistry.register(
-  UpdateSemanticModelType,
-  updateSemanticModelOperation,
-  { execute: updateSemanticModelExecutor });
+export const updateSemanticModelOperation: CmeOperation<
+  UpdateSemanticModelArguments, UpdateSemanticModelResult> = {
+  metadata: {
+    type: UpdateSemanticModelType,
+  },
+  create: (_context, parameters) => ({
+    type: UpdateSemanticModelType,
+    ...parameters,
+  }),
+  execute: updateSemanticModelExecutor,
+};
 
 /**
  * @throws CmeOperationExecutionFailed
  */
-export async function updateSemanticModelExecutor(
+async function updateSemanticModelExecutor(
   context: CmeExecutionContext,
   args: UpdateSemanticModelArguments,
 ): Promise<UpdateSemanticModelResult> {

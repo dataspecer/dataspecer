@@ -16,20 +16,10 @@ import {
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   executeCreateProfileOperation,
   findProfileModel,
 } from "../operation-utilities";
-
-export function createProfileClassOperation(
-  args: Omit<CreateProfileClassArguments, "type">,
-): CmeOperation<CreateProfileClassArguments, CreateProfileClassResult> {
-  return {
-    type: CreateProfileClassType,
-    ...args,
-  };
-}
 
 const CreateProfileClassType =
   "create-profile-class-operation";
@@ -37,6 +27,11 @@ const CreateProfileClassType =
 interface CreateProfileClassArguments extends CmeOperationArguments {
 
   type: typeof CreateProfileClassType;
+
+  /**
+   * Identifier of the created entity.
+   */
+  identifier: EntityDsIdentifier;
 
   profileModel: ModelDsIdentifier;
 
@@ -69,23 +64,33 @@ interface CreateProfileClassResult
 
 }
 
-cmeOperationExecutorRegistry.register(
-  CreateProfileClassType,
-  createProfileClassOperation,
-  { execute: createProfileClassExecutor });
+export const createProfileClassOperation: CmeOperation<
+  CreateProfileClassArguments, CreateProfileClassResult,
+  Omit<CreateProfileClassArguments, "type" | "identifier">> = {
+  metadata: {
+    type: CreateProfileClassType,
+  },
+  create: (context, parameters) => ({
+    type: CreateProfileClassType,
+    ...parameters,
+    identifier: context.createEntityIdentifier(parameters.profileModel),
+  }),
+  execute: createProfileClassExecutor,
+};
 
 const factory = createDefaultSemanticModelProfileOperationFactory();
 
 /**
  * @throws DataspecerError
  */
-export async function createProfileClassExecutor(
+async function createProfileClassExecutor(
   context: CmeExecutionContext,
   args: CreateProfileClassArguments,
 ): Promise<CreateProfileClassResult> {
   const model = findProfileModel(context, args.profileModel);
 
   const operation = factory.createClassProfile({
+    id: args.identifier,
     iri: args.iri,
     profiling: args.profileOf,
     name: args.name,
