@@ -1,4 +1,4 @@
-import React, { useContext, useMemo } from "react";
+import React, { useContext, useMemo, useRef, useState } from "react";
 
 import {
   AggregatedEntityWrapper,
@@ -14,6 +14,33 @@ import { deleteEntityModel } from "../dataspecer/visual-model/operation/delete-e
 import { createDefaultWritableVisualModel } from "../dataspecer/visual-model/visual-model-factory";
 import { ModelDsIdentifier } from "../dataspecer/entity-model";
 import { QueryParamsContextType } from "./query-params-context";
+import {
+  CmeOperationExecutor,
+  cmeOperations,
+  createCmeEntityIdentifier,
+  createCmeOperationExecutor,
+} from "../operation";
+
+/**
+ * Create executor with all operations, which reads the models
+ * using given functions on every execution.
+ *
+ * This function is exported to be used in tests.
+ */
+export function createModelGraphExecutor(
+  getModels: () => EntityModel[],
+  getVisualModels: () => VisualModel[],
+): CmeOperationExecutor {
+  return createCmeOperationExecutor(cmeOperations, {
+    get entityModels() {
+      return getModels();
+    },
+    get visualModels() {
+      return getVisualModels();
+    },
+    createNewEntityIdentifier: createCmeEntityIdentifier,
+  });
+}
 
 /**
  * Provides all models and visual models we work with
@@ -111,6 +138,7 @@ export function modelGraphContextToUse(context: ModelGraphContext): UseModelGrap
     subscribeToChanges(callback) {
       return aggregatorView.subscribeToChanges(callback);
     },
+    executor: () => context.executor,
   };
 }
 
@@ -145,6 +173,11 @@ export interface UseModelGraphContextType {
 
   onVisualModelDidChange: () => void;
 
+  /**
+   * Executor for CME operations.
+   */
+  executor: () => CmeOperationExecutor;
+
 }
 
 const _semanticModelAggregator = new SemanticModelAggregator();
@@ -158,6 +191,8 @@ interface ModelGraphContext {
   models: Map<string, EntityModel>;
 
   visualModels: Map<string, WritableVisualModel>;
+
+  executor: CmeOperationExecutor;
 
   // Actions
 
@@ -201,6 +236,19 @@ export function ModelContextProvider(props: {
     (model) => [model.getIdentifier(), model])),
     [visualModels]);
 
+  // Models for the executor.
+  // React state is updated on the next render, so add and delete below
+  // update these lists right away, so an operation executed in the same
+  // action already sees the change. On render we take the lists from
+  // the props, which by then contain the same changes.
+  const executorModels = useRef({ models, visualModels });
+  executorModels.current = { models, visualModels };
+
+  // One executor for the whole life of the provider.
+  const [executor] = useState(() => createModelGraphExecutor(
+    () => executorModels.current.models,
+    () => executorModels.current.visualModels));
+
   //
 
   const context = useMemo(() => {
@@ -208,6 +256,7 @@ export function ModelContextProvider(props: {
       aggregatorView,
       models: modelMap,
       visualModels: visualModelMap,
+      executor,
       reloadView: function (): void {
         setAggregatorView(aggregator.getView());
       },
@@ -219,10 +268,14 @@ export function ModelContextProvider(props: {
       addSemanticModel: function (model: EntityModel): void {
         aggregator.addModel(model);
         setModels(prev => [...prev, model]);
+        const current = executorModels.current;
+        current.models = [...current.models, model];
       },
       addVisualModel: function (model: WritableVisualModel): void {
         aggregator.addModel(model);
         setVisualModels(prev => [...prev, model]);
+        const current = executorModels.current;
+        current.visualModels = [...current.visualModels, model];
       },
       deleteModel: (identifier: ModelDsIdentifier) => {
         const model = modelMap.get(identifier);
@@ -231,6 +284,8 @@ export function ModelContextProvider(props: {
         }
         aggregator.deleteModel(model);
         setModels(prev => prev.filter(item => item !== model));
+        const current = executorModels.current;
+        current.models = current.models.filter(item => item !== model);
       },
       deleteVisualModel: (identifier: ModelDsIdentifier) => {
         const model = visualModelMap.get(identifier);
@@ -239,12 +294,14 @@ export function ModelContextProvider(props: {
         }
         aggregator.deleteModel(model);
         setVisualModels(prev => prev.filter(item => item !== model));
+        const current = executorModels.current;
+        current.visualModels = current.visualModels.filter(item => item !== model);
       },
     } satisfies ModelGraphContext;
   }, [
     aggregator, aggregatorView, setAggregatorView,
     modelMap, setModels, visualModelMap, setVisualModels,
-    queryParamsContext,
+    queryParamsContext, executor,
   ]);
 
   return React.createElement(
