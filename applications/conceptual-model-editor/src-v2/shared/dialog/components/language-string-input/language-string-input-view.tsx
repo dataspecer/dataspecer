@@ -53,7 +53,8 @@ export function LanguageStringInput(props: {
           placeholder={props.placeholder}
           disabled={props.disabled}
           value={value}
-          className="w-full"
+          rows={3}
+          className="w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm text-foreground shadow-xs transition-colors placeholder:text-muted-foreground/60 focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
           onChange={event => presenter.onChange(event.target.value)}
         />
         :
@@ -63,7 +64,7 @@ export function LanguageStringInput(props: {
           disabled={props.disabled}
           type="text"
           value={value}
-          className="w-full"
+          className="w-full rounded-md border border-input bg-background/50 px-3 py-1.5 text-sm text-foreground shadow-xs transition-colors placeholder:text-muted-foreground/60 focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
           onChange={event => presenter.onChange(event.target.value)}
         />
       }
