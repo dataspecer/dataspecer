@@ -13,32 +13,39 @@ import {
 import { EntityDsIdentifier } from "../dataspecer/entity-model";
 
 /**
+ * State the executor works with.
+ *
+ * The executor reads the values on every execution, it does not copy them.
+ * To change the models, update the properties of the same object,
+ * so existing executors see the change as well.
+ */
+export interface CmeOperationExecutorState {
+
+  entityModels: EntityModel[];
+
+  visualModels: VisualModel[];
+
+  createNewEntityIdentifier: () => EntityDsIdentifier;
+
+}
+
+/**
  * @param operations Operations the executor can execute, use cmeOperations.
+ * @param state Read on every execution, see {@link CmeOperationExecutorState}.
  * @throws Error When two operations share the same type.
  */
 export function createCmeOperationExecutor(
   operations: Record<string, CmeOperation<any, any, any>>,
-  entityModels: EntityModel[],
-  visualModels: VisualModel[],
-  createNewEntityIdentifier: () => EntityDsIdentifier,
+  state: CmeOperationExecutorState,
 ): CmeOperationExecutor {
   const operationsByType = createOperationsByType(operations);
 
-  const entityModelRecord = Object.fromEntries(
-    entityModels.map(model => [model.getId(), wrapLegacyEntityModel(model)]));
-
-  const context: CmeExecutionContext = {
-    semanticModels: entityModelRecord,
-    profileModels: entityModelRecord,
-    visualModels: Object.fromEntries(
-      visualModels.map(model => [model.getIdentifier(), model])),
-    createNewEntityIdentifier,
-  };
   const createContext: CmeCreateContext = {
-    createEntityIdentifier: () => createNewEntityIdentifier(),
+    createEntityIdentifier: () => state.createNewEntityIdentifier(),
   };
 
   const executeSingle = async (
+    context: CmeExecutionContext,
     args: CmeOperationArguments,
   ): Promise<CmeOperationOutcome<CmeOperationArguments>> => {
     const operation = operationsByType.get(args.type);
@@ -56,6 +63,8 @@ export function createCmeOperationExecutor(
   const executeBatch = async (
     batch: CmeOperationBatch<CmeOperationArguments[]>,
   ): Promise<CmeOperationBatchOutcome<CmeOperationArguments[]>> => {
+    // All operations of the batch share the same context.
+    const context = createExecutionContext(state);
     const results: AnyOutcome[] = [];
     let exception: CmeOperationExecutionFailed | undefined = undefined;
     for (const args of batch.operations) {
@@ -63,7 +72,7 @@ export function createCmeOperationExecutor(
         results.push({ status: "ignored", args });
         continue;
       }
-      const outcome = await executeSingle(args);
+      const outcome = await executeSingle(context, args);
       results.push(outcome);
       exception = outcome.exception;
     }
@@ -74,9 +83,24 @@ export function createCmeOperationExecutor(
     createContext,
     // Implementation of the overloads, the types are checked by the interface.
     execute: ((value: CmeOperationArguments | CmeOperationBatch<CmeOperationArguments[]>) =>
-      isCmeOperationBatch(value) ? executeBatch(value) : executeSingle(value)
+      isCmeOperationBatch(value) ? executeBatch(value)
+        : executeSingle(createExecutionContext(state), value)
     ) as CmeOperationExecutor["execute"],
     batch: () => new CmeOperationBatchBuilder(createContext),
+  };
+}
+
+function createExecutionContext(
+  state: CmeOperationExecutorState,
+): CmeExecutionContext {
+  const entityModelRecord = Object.fromEntries(
+    state.entityModels.map(model => [model.getId(), wrapLegacyEntityModel(model)]));
+  return {
+    semanticModels: entityModelRecord,
+    profileModels: entityModelRecord,
+    visualModels: Object.fromEntries(
+      state.visualModels.map(model => [model.getIdentifier(), model])),
+    createNewEntityIdentifier: () => state.createNewEntityIdentifier(),
   };
 }
 

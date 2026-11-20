@@ -14,7 +14,7 @@ import {
 } from "@dataspecer/core-v2/semantic-model/concepts";
 
 import {
-  CmeOperationExecutor, createCmeOperationExecutor,
+  CmeOperationExecutor, CmeOperationExecutorState, createCmeOperationExecutor,
 } from "../operation-executor";
 import { cmeOperations } from "../operations";
 import {
@@ -35,9 +35,11 @@ function createContext(): TestContext {
   const factory = createDefaultVisualModelFactory();
   const visualModel = factory.createNewWritableVisualModelSync(null);
   const otherVisualModel = factory.createNewWritableVisualModelSync(null);
-  const executor = createCmeOperationExecutor(
-    cmeOperations, [semanticModel], [visualModel, otherVisualModel],
-    () => crypto.randomUUID());
+  const executor = createCmeOperationExecutor(cmeOperations, {
+    entityModels: [semanticModel],
+    visualModels: [visualModel, otherVisualModel],
+    createNewEntityIdentifier: () => crypto.randomUUID(),
+  });
   return {
     semanticModel, visualModel, otherVisualModel, executor,
     createContext: executor.createContext,
@@ -155,7 +157,36 @@ describe("Operation executor", () => {
   test("Executor rejects operations with the same type.", () => {
     const operation = cmeOperations.createSemanticClass;
     expect(() => createCmeOperationExecutor(
-      { first: operation, second: operation }, [], [], () => "")).toThrow();
+      { first: operation, second: operation },
+      { entityModels: [], visualModels: [], createNewEntityIdentifier: () => "" })).toThrow();
+  });
+
+  test("Executor reads the state on every execution.", async () => {
+    const semanticModel = new InMemorySemanticModel();
+    const state: CmeOperationExecutorState = {
+      entityModels: [],
+      visualModels: [],
+      createNewEntityIdentifier: () => "first",
+    };
+    const executor = createCmeOperationExecutor(cmeOperations, state);
+    const parameters = {
+      semanticModel: semanticModel.getId(),
+      iri: null,
+      name: null,
+      description: null,
+      externalDocumentationUrl: null,
+    };
+    // There is no model yet.
+    const before = await executor.execute(cmeOperations.createSemanticClass.create(
+      executor.createContext, parameters));
+    expect(before.exception).toBeInstanceOf(MissingModel);
+    // Update the state, the existing executor sees the change.
+    state.entityModels = [semanticModel];
+    state.createNewEntityIdentifier = () => "second";
+    const after = await executor.execute(cmeOperations.createSemanticClass.create(
+      executor.createContext, parameters));
+    expect(after.exception).toBeUndefined();
+    expect(semanticModel.getEntities()["second"]).toBeDefined();
   });
 
 });
