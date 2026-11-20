@@ -32,6 +32,19 @@
       "must": "Values must come from the vocabulary",
       "recommended": "Values should come from the vocabulary"
     },
+    "recommended usage": {
+      "default": "default value",
+      "no": "no",
+      "require value": {
+        "help": "Applies to a controlled vocabulary assigned with the usage \"recommended\". When enabled, the data must contain a value from the vocabulary. The default is set in the specification configuration.",
+        "title": "Require a value from the recommended vocabulary"
+      },
+      "restrict values": {
+        "help": "Applies to a controlled vocabulary assigned with the usage \"recommended\". When enabled, the data must not contain values from outside of the vocabulary. The default is set in the specification configuration.",
+        "title": "Allow only values from the recommended vocabulary"
+      },
+      "yes": "yes"
+    },
     "reference": "Reference",
     "replaces assigned from profiled": "replaces assignment from profiled",
     "scheme": "Concept scheme",

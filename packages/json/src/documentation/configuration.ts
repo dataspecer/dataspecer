@@ -1,30 +1,48 @@
 export const MAIN_JSON_PARTIAL = "json-documentation";
 
 export const defaultJsonPartials: Record<string, string> = {
-  [MAIN_JSON_PARTIAL]: `<section id="{{anchor}}">
-
-{{#def "json-tree-or-link"}}
-  {{#if isMain}}
+  [MAIN_JSON_PARTIAL]: `{{#def "json-tree-or-link"}}
+  {{#if isMain~}}
     <a href="#{{./anchor}}"></a>
-  {{else}}
+  {{~else~}}
     {{json-tree}}
+  {{~/if}}
+{{/def}}
+
+{{~#def "json-tree"}}
+  {{#if (equals type "object")}}
+    {{~json-tree-object~}}
+  {{/if}}
+  {{#if (equals type "const")}}
+    {{~json-tree-const~}}
+  {{/if}}
+  {{#if (equals type "array")}}
+    {{~json-tree-array~}}
+  {{/if}}
+  {{#if (equals type "string")}}
+    {{~json-tree-string~}}
+  {{/if}}
+  {{#if (equals type "boolean")}}
+    {{#iflng "cs"}}boolean (ano/ne){{lng}}boolean (yes/no){{/iflng}}
+  {{/if}}
+  {{#if (equals type "enum")}}
+    {{#iflng "cs"}}výčet s hodnotami: {{#each values}}<code>{{this}}</code>{{#unless @last}}, {{/unless}}{{/each}}{{lng}}enum with values: {{#each values}}<code>{{this}}</code>{{#unless @last}}, {{/unless}}{{/each}}{{/iflng}}
+  {{/if}}
+  {{#if (equals type "ref")}}
+    {{~json-tree-ref~}}
+  {{/if}}
+  {{#if (equals type "numeric")}}
+    {{~json-tree-numeric~}}
+  {{/if}}
+  {{#if (equals type "any")}}
+    {{~json-tree-any~}}
+  {{/if}}
+  {{#if (and (not (equals type "object")) examples)}}
+    {{json-examples}}
   {{/if}}
 {{/def}}
 
-{{#def "json-tree"}}
-  {{#if (equals type "object")}}{{json-tree-object}}{{/if}}
-  {{#if (equals type "const")}}{{json-tree-const}}{{/if}}
-  {{#if (equals type "array")}}{{json-tree-array}}{{/if}}
-  {{#if (equals type "string")}}{{json-tree-string}}{{/if}}
-  {{#if (equals type "boolean")}}{{#iflng "cs"}}boolean (ano/ne){{lng}}boolean (yes/no){{/iflng}}{{/if}}
-  {{#if (equals type "enum")}}{{#iflng "cs"}}výčet s hodnotami: {{#each values}}<code>{{this}}</code>{{#unless @last}}, {{/unless}}{{/each}}{{lng}}enum with values: {{#each values}}<code>{{this}}</code>{{#unless @last}}, {{/unless}}{{/each}}{{/iflng}}{{/if}}
-  {{#if (equals type "ref")}}{{json-tree-ref}}{{/if}}
-  {{#if (equals type "numeric")}}{{json-tree-numeric}}{{/if}}
-  {{#if (equals type "any")}}{{json-tree-any}}{{/if}}
-  {{#unless (equals type "object")}}{{json-examples}}{{/unless}}
-{{/def}}
-
-{{#def "json-tree-ref"}}
+{{~#def "json-tree-ref"}}
   {{#if fromExternalSpecification}}
     {{#iflng "cs"}}jež je definován v referencovaném schématu <a href="{{{link}}}">{{link}}</a>.{{lng}}which is defined in the referenced schema <a href="{{{link}}}">{{link}}</a>.{{/iflng}}
   {{else}}
@@ -32,8 +50,8 @@ export const defaultJsonPartials: Record<string, string> = {
   {{/if}}
 {{/def}}
 
-{{#def "json-tree-any"}}
-  {{xof}}
+{{~#def "json-tree-any"}}
+  {{~xof~}}
 {{/def}}
 
 {{~#def "json-examples"}}
@@ -42,7 +60,7 @@ export const defaultJsonPartials: Record<string, string> = {
   {{/if}}
 {{/def}}
 
-{{#def "json-tree-const"}}
+{{~#def "json-tree-const"}}
   {{#iflng "cs"}}konstantní hodnota{{lng}}constant value{{/iflng}}
   {{#if multiline}}
     <pre><code>{{const}}</code></pre>
@@ -51,17 +69,36 @@ export const defaultJsonPartials: Record<string, string> = {
   {{/if}}
 {{/def}}
 
-{{#def "json-tree-string"}}
+{{~#def "json-tree-string"}}
   {{#iflng "cs"}}řetězec{{lng}}string{{/iflng}}
-  {{#if format}}({{#iflng "cs"}}formát: <code>{{format}}</code>{{lng}}format: <code>{{format}}</code>{{/iflng}}){{/if}}
-  {{#if pattern}}({{#iflng "cs"}}dle regulárního výrazu{{lng}}by regular expression{{/iflng}}: <code>{{pattern}}</code>){{/if}}
-
+  {{#if format}}
+    ({{#iflng "cs"}}formát: <code>{{format}}</code>{{lng}}format: <code>{{format}}</code>{{/iflng}})
+  {{/if}}
+  {{#if pattern}}
+    ({{#iflng "cs"}}dle regulárního výrazu{{lng}}by regular expression{{/iflng}}: <code>{{pattern}}</code>)
+  {{/if}}
   {{#with structureEntity}}
     (<a href="{{#with pimClass}}{{href pimIri}}{{/with}}">{{translate ./humanLabel}}</a>)
   {{/with}}
+  {{~xof~}}
 {{/def}}
 
-{{#def "json-tree-numeric"}}
+{{~!-- Text describing an item whose string is matched against the pattern of a controlled vocabulary, called with the view model of the string. --}}
+{{~#def "json-cv-string"~}}
+  {{#if (cvTitle controlledVocabularyId)}}<a href="#{{cvAnchor controlledVocabularyId}}">{{cvTitle controlledVocabularyId}}</a>{{else}}<code>{{controlledVocabularyId}}</code>{{/if}}
+  {{~#iflng "cs"}} (typ řetězec{{lng}} (type string{{/iflng}}{{#if format}}, {{#iflng "cs"}}formát: <code>{{format}}</code>{{lng}}format: <code>{{format}}</code>{{/iflng}}{{/if}}{{#if pattern}}, {{#iflng "cs"}}dle regulárního výrazu{{lng}}by regular expression{{/iflng}}: <code>{{pattern}}</code>{{/if}})
+{{~/def}}
+
+{{~!-- Says what an item is: "of type ..." or "of controlled vocabulary ...", called with the view model of the item. --}}
+{{~#def "json-item-type"}}
+  {{#if controlledVocabularyId~}}
+    {{#iflng "cs"}}z řízeného slovníku{{lng}}of controlled vocabulary{{/iflng}} {{json-cv-string}}
+  {{~else~}}
+    {{#iflng "cs"}}typu{{lng}}of type{{/iflng}} {{json-tree-or-link}}
+  {{~/if}}
+{{/def}}
+
+{{~#def "json-tree-numeric"}}
   {{#iflng "cs"}}
     číslo {{#if integerOnly}}(pouze celé číslo){{else}}(vč. desetinného){{/if}}
   {{lng}}
@@ -69,10 +106,8 @@ export const defaultJsonPartials: Record<string, string> = {
   {{/iflng}}
 {{/def}}
 
-{{#def "json-tree-object"}}
-  <strong>
-    {{#iflng "cs"}}objekt{{lng}}object{{/iflng}}
-  </strong>
+{{~#def "json-tree-object"}}
+  <strong>{{#iflng "cs"}}objekt{{lng}}object{{/iflng}}</strong>
   {{#if properties}}
     {{#iflng "cs"}}s vlastnostmi{{lng}}with properties{{/iflng}} (<code>properties</code>):
     <ul>
@@ -82,19 +117,18 @@ export const defaultJsonPartials: Record<string, string> = {
           {{#if ./semanticEntity}}
             (<a href="{{href ./semanticEntity.pimIri}}" label="{{translate ./structureEntity.humanDescription}}">{{translate ./structureEntity.humanLabel}}</a>)
           {{/if}}
-          {{#if required}}{{#iflng "cs"}}povinná{{lng}}required{{/iflng}}{{else}}{{#iflng "cs"}}nepovinná{{lng}}optional{{/iflng}}{{/if}}
-          {{#iflng "cs"}}položka typu{{lng}}item of type{{/iflng}}
-
-          {{#with value}}{{json-tree-or-link}}{{/with}}
+          {{#if required}}{{#iflng "cs"}}povinná{{lng}}required{{/iflng}}{{else}}{{#iflng "cs"}}nepovinná{{lng}}optional{{/iflng}}{{/if}} {{#iflng "cs"}}položka{{lng}}item{{/iflng}}
+          {{~#with value}} {{json-item-type}}{{/with}}
         </li>
       {{/each}}
     </ul>
   {{/if}}
-  {{xof}}
+  {{~xof~}}
 {{/def}}
 
-{{#def "xof"}}
+{{~#def "xof"}}
   {{#if oneOf}}
+
     {{#iflng "cs"}}právě jedno z následujících{{lng}}exactly one of the following{{/iflng}} (<code>oneOf</code>):
     <ul>
       {{#each oneOf}}
@@ -102,8 +136,8 @@ export const defaultJsonPartials: Record<string, string> = {
       {{/each}}
     </ul>
   {{/if}}
-
   {{#if anyOf}}
+
     {{#iflng "cs"}}alespoň jedno z následujících{{lng}}at least one of the following{{/iflng}} (<code>anyOf</code>):
     <ul>
       {{#each anyOf}}
@@ -111,40 +145,57 @@ export const defaultJsonPartials: Record<string, string> = {
       {{/each}}
     </ul>
   {{/if}}
-
   {{#if allOf}}
+
     {{#iflng "cs"}}všechno z následujících{{lng}}all of the following{{/iflng}} (<code>allOf</code>):
     <ul>
       {{#each allOf}}
-        <li>{{json-tree-or-link}}</li>
+        <li>{{#if controlledVocabularyId}}{{#iflng "cs"}}řízený slovník{{lng}}controlled vocabulary{{/iflng}} {{json-cv-string}}{{else}}{{json-tree-or-link}}{{/if}}</li>
       {{/each}}
     </ul>
   {{/if}}
 {{/def}}
 
-{{#def "json-tree-array"}}
-  {{#iflng "cs"}}
-    pole hodnot <code>{{cardinalityText}}</code> typu {{#with items}}{{json-tree-or-link}}{{/with}}
-    {{#if requiresStringConstantsOnly}} a musí obsahovat: {{#each requiresStringConstantsOnly}}<code>{{this}}</code>{{#unless @last}}, {{/unless}}{{/each}}
+{{~#def "json-tree-array"~}}
+  {{#iflng "cs"}}pole hodnot <code>{{cardinalityText}}</code> {{#with items}}{{json-item-type}}{{/with}}
+    {{#if requiresStringConstantsOnly}}
+      a musí obsahovat: {{#each requiresStringConstantsOnly}}<code>{{this}}</code>{{#unless @last}}, {{/unless}}{{/each}}
     {{else}}
-      {{#if contains}} a musí obsahovat alespoň jednu položku typu {{#with contains}}{{json-tree-or-link}}{{/with}}{{/if}}
+      {{#if contains}}
+        a musí obsahovat alespoň jednu položku {{#with contains}}{{json-item-type}}{{/with}}
+      {{/if}}
+      {{#if containsAll}}
+        a musí obsahovat:
+        <ul>
+          {{#each containsAll}}
+            <li>alespoň jednu položku {{json-item-type}}</li>
+          {{/each}}
+        </ul>
+      {{/if}}
     {{/if}}
-  {{lng}}
-    array of values <code>{{cardinalityText}}</code> of type {{#with items}}{{json-tree-or-link}}{{/with}}
-    {{#if requiresStringConstantsOnly}} and must contain: {{#each requiresStringConstantsOnly}}<code>{{this}}</code>{{#unless @last}}, {{/unless}}{{/each}}
+    {{~xof~}}
+  {{lng}}array of values <code>{{cardinalityText}}</code> {{#with items}}{{json-item-type}}{{/with}}
+    {{#if requiresStringConstantsOnly}}
+      and must contain: {{#each requiresStringConstantsOnly}}<code>{{this}}</code>{{#unless @last}}, {{/unless}}{{/each}}
     {{else}}
-      {{#if contains}} and must contain at least one item of type {{#with contains}}{{json-tree-or-link}}{{/with}}{{/if}}
+      {{#if contains}}
+        and must contain at least one item {{#with contains}}{{json-item-type}}{{/with}}
+      {{/if}}
+      {{#if containsAll}}
+        and must contain:
+        <ul>
+          {{#each containsAll}}
+            <li>at least one item {{json-item-type}}</li>
+          {{/each}}
+        </ul>
+      {{/if}}
     {{/if}}
+    {{~xof~}}
   {{/iflng}}
 {{/def}}
-
-
+<section id="{{anchor}}">
   <h1>
-    {{#iflng "cs"}}
-      JSON struktura pro{{lng}}
-      JSON structure for
-    {{/iflng}}
-    {{translate structureModel.humanLabel}}
+    {{#iflng "cs"}}JSON struktura pro{{lng}}JSON structure for{{/iflng}} {{translate structureModel.humanLabel}}
   </h1>
 
     <dl>

@@ -1,4 +1,4 @@
-import { CONTROLLED_VOCABULARY_MODEL } from "@dataspecer/core-v2/model/known-models";
+import { CONTROLLED_VOCABULARY_MODEL, LOCAL_PACKAGE } from "@dataspecer/core-v2/model/known-models";
 import { CoreResourceReader } from "@dataspecer/core/core/core-reader";
 import { LanguageString } from "@dataspecer/core/core";
 import { InputStream } from "@dataspecer/core/io/stream/input-stream";
@@ -57,8 +57,8 @@ class SingleFileStreamDictionary implements StreamDictionary {
 async function generateArtifacts(
   packageIri: string,
   streamDictionary: StreamDictionary,
-  queryParams: string = "",
   singleFilePath: string | null = null,
+  previewBaseUrl: string | null = null,
 ) {
   const allModels = await getModelsForPackage(packageIri, modelRepository);
 
@@ -100,8 +100,19 @@ async function generateArtifacts(
       })),
     };
   }
-  await generator.prepare(Object.keys(dataSpecifications), undefined, queryParams);
-  await generator.build(streamDictionary, singleFilePath, queryParams, packageIri);
+  await generator.prepare(Object.keys(dataSpecifications), undefined, {
+    specificationId: packageIri,
+    baseUrl: previewBaseUrl === null ? null : previewBaseUrl + "?iri=" + encodeURIComponent(packageIri),
+    specificationOverrides: previewBaseUrl === null ? {} : Object.fromEntries(
+      Object.values(allModels[PROJECT_MODEL_ID] as Record<string, ProjectModelEntity>)
+        .filter((entity) => entity.modelType === LOCAL_PACKAGE)
+        .map((entity) => [entity.id, {
+          baseUrl: previewBaseUrl + "?iri=" + encodeURIComponent(entity.id),
+          preferRelativeLinking: true,
+        }]),
+    ),
+  });
+  await generator.build(streamDictionary, singleFilePath, packageIri);
 }
 
 export const getZip = asyncHandler(async (request: express.Request, response: express.Response) => {
@@ -161,8 +172,8 @@ export const getSingleFile = asyncHandler(async (request: express.Request, respo
   await generateArtifacts(
     query.iri,
     streamDictionary,
-    query.raw ? "" : "?iri=" + encodeURIComponent(query.iri),
     path,
+    query.raw ? null : request.baseUrl + request.route.path.replace("{*splat}", ""),
   );
 
   if (streamDictionary.requestedFileContents === null) {

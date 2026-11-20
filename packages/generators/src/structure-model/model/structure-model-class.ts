@@ -1,4 +1,5 @@
 import {LanguageString} from "@dataspecer/core/core";
+import {ConceptualModelControlledVocabularyAssignment} from "../../conceptual-model/model/conceptual-model-controlled-vocabulary.ts";
 import {StructureModelProperty} from "./structure-model-property.ts";
 
 export class StructureModelClass {
@@ -86,6 +87,25 @@ export class StructureModelClass {
   codelistUrl: string[] = [];
 
   regex: string | null = null;
+
+  /**
+   * Controlled vocabularies assigned to the class profile,
+   * both its own and the ones assigned from the profiled entities.
+   * Use {@link getControlledVocabularyPatterns} to get the patterns they require.
+   */
+  controlledVocabularies: ConceptualModelControlledVocabularyAssignment[] = [];
+
+  /**
+   * Whether data must contain a value from the controlled vocabulary assigned with the usage "recommended".
+   * Null until the default of the data specification is applied.
+   */
+  requireRecommendedControlledVocabularyValue: boolean | null = null;
+
+  /**
+   * Whether data must not contain values from outside of the controlled vocabulary assigned with the usage "recommended".
+   * Null until the default of the data specification is applied.
+   */
+  restrictToRecommendedControlledVocabulary: boolean | null = null;
 
   example: unknown[] | null = null;
 

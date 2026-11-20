@@ -130,6 +130,8 @@ export const SET_PROFILING = OPERATION + "set-profiling";
 
 export const SET_ID_TYPE = OPERATION + "set-id-type";
 
+export const SET_RECOMMENDED_CONTROLLED_VOCABULARY_USAGE = OPERATION + "set-recommended-controlled-vocabulary-usage";
+
 export const SET_INSTANCES_HAVE_IDENTITY = OPERATION + "set-instances-have-identity";
 
 export const SET_INSTANCES_SPECIFY_TYPES = OPERATION + "set-instances-specify-types";

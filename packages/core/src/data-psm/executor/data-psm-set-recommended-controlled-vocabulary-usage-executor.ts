@@ -1,0 +1,31 @@
+import { CoreExecutorResult, CoreResourceReader, CreateNewIdentifier } from "../../core/index.ts";
+import { DataPsmSetRecommendedControlledVocabularyUsage } from "../operation/index.ts";
+import { DataPsmClass } from "../model/index.ts";
+
+export function executeDataPsmSetRecommendedControlledVocabularyUsage(
+  reader: CoreResourceReader,
+  createNewIdentifier: CreateNewIdentifier,
+  operation: DataPsmSetRecommendedControlledVocabularyUsage
+): CoreExecutorResult {
+  const resource = reader.readResource(operation.entityId);
+  if (resource == null) {
+    return CoreExecutorResult.createError(
+      `Missing data-psm resource '${operation.entityId}'.`
+    );
+  }
+
+  if (!DataPsmClass.is(resource)) {
+    return CoreExecutorResult.createError("Invalid resource type.");
+  }
+
+  return CoreExecutorResult.createSuccess(
+    [],
+    [
+      {
+        ...resource,
+        requireRecommendedControlledVocabularyValue: operation.requireRecommendedControlledVocabularyValue,
+        restrictToRecommendedControlledVocabulary: operation.restrictToRecommendedControlledVocabulary,
+      } as DataPsmClass,
+    ]
+  );
+}

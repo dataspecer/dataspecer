@@ -172,6 +172,8 @@ class StructureModelAdapter {
       model.isClosed = classData.dataPsmIsClosed;
       model.instancesHaveIdentity = classData.instancesHaveIdentity;
       model.instancesSpecifyTypes = classData.instancesSpecifyTypes;
+      model.requireRecommendedControlledVocabularyValue = classData.requireRecommendedControlledVocabularyValue ?? null;
+      model.restrictToRecommendedControlledVocabulary = classData.restrictToRecommendedControlledVocabulary ?? null;
       model.jsonSchemaPrefixesInIriRegex = classData.jsonSchemaPrefixesInIriRegex ?? {
         usePrefixes: "ALWAYS",
         includeParentPrefixes: true,

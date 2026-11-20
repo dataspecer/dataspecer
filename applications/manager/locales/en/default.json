@@ -38,6 +38,7 @@
   },
   "conceptual editor button": "Edit vocabularies and application profiles",
   "controlled-vocabularies": "Controlled vocabularies",
+  "edit-controlled-vocabulary": "Edit",
   "created": "Created on {{val, datetime(dateStyle: short)}}",
   "data specification button": "Edit data structures",
   "data specification reload": "Reload data specification",

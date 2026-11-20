@@ -5,8 +5,8 @@ export const defaultConfiguration: DocumentationConfiguration = {
     // [DOCUMENTATION_MAIN_TEMPLATE_PARTIAL]
     abstract: `<section id="abstract">
   <p>
-  {{#iflng "cs"}}Tento soubor dokumentuje{{lng}}This file documents{{/iflng}}
-  {{#translate label}}<strong>{{translation}}</strong>{{#if otherLang}} (@{{otherLang}}){{/if}}{{else}}<i>{{#iflng "cs"}}beze jména{{lng}}without assigned name{{/iflng}}</i>{{/translate}}.</p>
+    {{#iflng "cs"}}Tento soubor dokumentuje{{lng}}This file documents{{/iflng}} {{#translate label}}<strong>{{translation}}</strong>{{#if otherLang}} (@{{otherLang}}){{/if}}{{else}}<i>{{#iflng "cs"}}beze jména{{lng}}without assigned name{{/iflng}}</i>{{/translate}}.
+  </p>
 </section>`,
     introduction: `{{!--
 <section>
@@ -49,36 +49,38 @@ export const defaultConfiguration: DocumentationConfiguration = {
 
     <section>
       <h2>{{#iflng "cs"}}Přehled{{lng}}Overview{{/iflng}}</h2>
-
       {{#each externalArtifacts.svg}}
+
         <figure>
           <img src="{{{relativePath URL}}}" alt="{{translate ./label}}" />
           <figcaption><a href="{{{relativePath URL}}}">{{translate ./label}}</a></figcaption>
         </figure>
       {{/each}}
     </section>
-
     {{#if classProfilesByTags.[https://w3id.org/dsv/class-role#main]}}
+
       <section>
         <h2>{{#iflng "cs"}}Hlavní profily tříd{{lng}}Main class profiles{{/iflng}}</h2>
 
         {{#each classProfilesByTags.[https://w3id.org/dsv/class-role#main]}}
           {{> class-profile}}
+
         {{/each}}
       </section>
     {{/if}}
-
     {{#if classProfilesByTags.[https://w3id.org/dsv/class-role#supportive]}}
+
       <section>
         <h2>{{#iflng "cs"}}Podpůrné profily třídy{{lng}}Supportive class profiles{{/iflng}}</h2>
 
         {{#each classProfilesByTags.[https://w3id.org/dsv/class-role#supportive]}}
           {{> class-profile}}
+
         {{/each}}
       </section>
     {{/if}}
-
     {{#if (non-empty classProfilesByTags.default)}}
+
       <section>
         {{#if (or classProfilesByTags.[https://w3id.org/dsv/class-role#main] classProfilesByTags.[https://w3id.org/dsv/class-role#supportive])}}
           <h2>{{#iflng "cs"}}Nezařazené profily tříd{{lng}}Other class profiles{{/iflng}}</h2>
@@ -88,42 +90,49 @@ export const defaultConfiguration: DocumentationConfiguration = {
 
         {{#each classProfilesByTags.default}}
           {{> class-profile}}
+
         {{/each}}
       </section>
     {{/if}}
-
     {{#if semanticEntitiesByType.classes}}
+
       <section>
         <h2>{{#iflng "cs"}}Třídy{{lng}}Classes{{/iflng}}</h2>
 
         {{#each locallyDefinedSemanticEntity}}
           {{#ifEquals type.[0] "class"}}
             {{> semantic-model-class}}
+
           {{/ifEquals}}
         {{/each}}
       </section>
     {{/if}}
-
     {{#if semanticEntitiesByType.relationships}}
+
       <section>
         <h2>{{#iflng "cs"}}Vlastnosti{{lng}}Properties{{/iflng}}</h2>
         {{#each locallyDefinedSemanticEntity}}
           {{#ifEquals type.[0] "relationship"}}
             {{> semantic-model-relationship}}
+
           {{/ifEquals}}
         {{/each}}
       </section>
     {{/if}}
-
     {{#structureModels}}
+
       <section id="{{anchor}}">
       <h2>
-        {{#iflng "cs"}}Specifikace struktury pro{{lng}}Data structure specification for{{/iflng}}
-        {{translate humanLabel}}
+        {{#iflng "cs"}}Specifikace struktury pro{{lng}}Data structure specification for{{/iflng}} {{translate humanLabel}}
       </h2>
       <p>{{translate humanDescription}}</p>
 
-      {{#artifacts}}{{#getDocumentation}}{{> (useTemplate)}}{{/getDocumentation}}{{/artifacts}}
+      {{#artifacts}}
+        {{#getDocumentation}}
+          {{> (useTemplate)}}
+
+        {{/getDocumentation}}
+      {{/artifacts}}
       </section>
     {{/structureModels}}
 
@@ -207,17 +216,13 @@ export const defaultConfiguration: DocumentationConfiguration = {
     <tr>
       <td>{{#iflng "cs"}}Definiční obor{{lng}}Domain{{/iflng}}</td>
       <td>
-        <a href="{{{href ends.0.concept}}}">{{#semanticEntity ends.0.concept}}{{#translate name}}{{translation}}{{#if otherLang}} (@{{otherLang}}){{/if}}{{else}}<i>{{#iflng "cs"}}beze jména{{lng}}without assigned name{{/iflng}}</i>{{/translate}}{{/semanticEntity}}</a>
-
-        {{cardinality ends.0.cardinality}}
+        <a href="{{{href ends.0.concept}}}">{{#semanticEntity ends.0.concept}}{{#translate name}}{{translation}}{{#if otherLang}} (@{{otherLang}}){{/if}}{{else}}<i>{{#iflng "cs"}}beze jména{{lng}}without assigned name{{/iflng}}</i>{{/translate}}{{/semanticEntity}}</a> {{cardinality ends.0.cardinality}}
       </td>
     </tr>
     <tr>
       <td>{{#iflng "cs"}}Obor hodnot{{lng}}Range{{/iflng}}</td>
       <td>
-        <a href="{{{href ends.1.concept}}}">{{#semanticEntity ends.1.concept}}{{#translate name}}{{translation}}{{#if otherLang}} (@{{otherLang}}){{/if}}{{else}}<i>{{#iflng "cs"}}beze jména{{lng}}without assigned name{{/iflng}}</i>{{/translate}}{{else}}{{prefixed .}}{{/semanticEntity}}</a>
-
-        {{cardinality ends.1.cardinality}}
+        <a href="{{{href ends.1.concept}}}">{{#semanticEntity ends.1.concept}}{{#translate name}}{{translation}}{{#if otherLang}} (@{{otherLang}}){{/if}}{{else}}<i>{{#iflng "cs"}}beze jména{{lng}}without assigned name{{/iflng}}</i>{{/translate}}{{else}}{{prefixed .}}{{/semanticEntity}}</a> {{cardinality ends.1.cardinality}}
       </td>
       {{regex-and-examples aggregation.ends.[1]}}
       </tr>
@@ -286,7 +291,9 @@ export const defaultConfiguration: DocumentationConfiguration = {
       <td>{{#iflng "cs"}}IRI profilovaných tříd{{lng}}Profiled class IRI(s){{/iflng}}</td>
       <td>
         {{#each aggregation.conceptIris}}
-          {{#if @index}}<br />{{/if}}
+          {{#if @index}}
+            <br />
+          {{/if}}
           <a href="{{{.}}}">{{prefixed .}}</a>
         {{/each}}
       </td>
@@ -308,14 +315,14 @@ export const defaultConfiguration: DocumentationConfiguration = {
     </tr>
     {{/translate}}
     {{regex-and-examples aggregation}}
-    {{#def "profilesClassChain" "isGeneralization"}}
-      {{#if isGeneralization}}
-        {{#iflng "cs"}}specializuje{{lng}}specializes{{/iflng}}
-        {{else}}
-        {{#iflng "cs"}}profiluje{{lng}}profiles{{/iflng}}
-      {{/if}}
-      {{#ifEquals ./type.[0] "class"}}{{#iflng "cs"}}třídu{{lng}}class{{/iflng}}{{/ifEquals}}
-      {{#ifEquals ./type.[0] "class-profile"}}{{#iflng "cs"}}profil{{lng}}class profile{{/iflng}}{{/ifEquals}}
+    {{~#def "profilesClassChain" "isGeneralization"}}
+      {{#if isGeneralization~}}
+        {{#iflng "cs"}}specializuje {{lng}}specializes {{/iflng}}
+      {{~else~}}
+        {{#iflng "cs"}}profiluje {{lng}}profiles {{/iflng}}
+      {{~/if~}}
+      {{#ifEquals ./type.[0] "class"}}{{#iflng "cs"}}třídu {{lng}}class {{/iflng}}{{/ifEquals~}}
+      {{#ifEquals ./type.[0] "class-profile"}}{{#iflng "cs"}}profil {{lng}}class profile {{/iflng}}{{/ifEquals~}}
       {{class}} (<a href="{{{./iri}}}">{{prefixed ./iri}}</a>)
       {{#if (and (not ./descriptionFromProfiled) (non-empty ./description))}}
         <br />{{#iflng "cs"}}Definice: {{lng}}Definition: {{/iflng}}<i>{{translate ./description}}</i>
@@ -338,7 +345,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
           {{/each}}
         </ul>
       {{/if}}
-    {{/def}}
+    {{/def~}}
 
     {{#if (or ./aggregationParents (parentClasses ./id))}}
       <tr>
@@ -384,7 +391,6 @@ export const defaultConfiguration: DocumentationConfiguration = {
     <p><strong>{{#iflng "cs"}}Vlastnosti{{lng}}Properties{{/iflng}}</strong></p>
     <p>{{#iflng "cs"}}Pro tento profil třídy jsou definovány následující vlastnosti: {{lng}}For this class profile the following properties are defined: {{/iflng}}{{#each relationships}}{{relation}}{{#unless @last}}, {{/unless}}{{#if @last}}.{{/if}}{{/each}}</p>
   {{/if}}
-
   {{#if backwardsRelationships}}
     <p><strong>{{#iflng "cs"}}Zpětné asociace{{lng}}Backwards associations{{/iflng}}</strong></p>
     <ul>
@@ -393,11 +399,10 @@ export const defaultConfiguration: DocumentationConfiguration = {
       {{/each}}
     </ul>
   {{/if}}
-
   {{#each relationships}}
     {{> relationship-profile}}
-  {{/each}}
 
+  {{/each}}
 </section>`,
 
     "controlled-vocabulary-list": `{{#if (equals vocabularies.length 1)}}
@@ -541,7 +546,9 @@ export const defaultConfiguration: DocumentationConfiguration = {
       <td>{{#iflng "cs"}}IRI profilovaných vztahů{{lng}}Profiled relationship IRI(s){{/iflng}}</td>
       <td>
         {{#each aggregation.ends.1.conceptIris}}
-          {{#if @index}}<br />{{/if}}
+          {{#if @index}}
+            <br />
+          {{/if}}
           <a href="{{{.}}}">{{prefixed .}}</a>
         {{/each}}
       </td>
@@ -565,29 +572,25 @@ export const defaultConfiguration: DocumentationConfiguration = {
     <tr>
       <td>{{#iflng "cs"}}Definiční obor{{lng}}Domain{{/iflng}}</td>
       <td>
-        <a href="{{{href aggregation.ends.0.concept}}}">{{#semanticEntity aggregation.ends.0.concept}}{{#translate aggregation.name}}{{translation}}{{#if otherLang}} (@{{otherLang}}){{/if}}{{else}}<i>{{#iflng "cs"}}beze jména{{lng}}without assigned name{{/iflng}}</i>{{/translate}}{{/semanticEntity}}</a>
-
-        {{cardinality aggregation.ends.0.cardinality}}
+        <a href="{{{href aggregation.ends.0.concept}}}">{{#semanticEntity aggregation.ends.0.concept}}{{#translate aggregation.name}}{{translation}}{{#if otherLang}} (@{{otherLang}}){{/if}}{{else}}<i>{{#iflng "cs"}}beze jména{{lng}}without assigned name{{/iflng}}</i>{{/translate}}{{/semanticEntity}}</a> {{cardinality aggregation.ends.0.cardinality}}
       </td>
     </tr>
     <tr>
       <td>{{#iflng "cs"}}Obor hodnot{{lng}}Range{{/iflng}}</td>
       <td>
-        <a href="{{{href aggregation.ends.1.concept}}}">{{#semanticEntity aggregation.ends.1.concept}}{{#translate aggregation.name}}{{translation}}{{#if otherLang}} (@{{otherLang}}){{/if}}{{else}}<i>{{#iflng "cs"}}beze jména{{lng}}without assigned name{{/iflng}}</i>{{/translate}}{{else}}{{prefixed .}}{{/semanticEntity}}</a>
-
-        {{cardinality aggregation.ends.1.cardinality}}
+        <a href="{{{href aggregation.ends.1.concept}}}">{{#semanticEntity aggregation.ends.1.concept}}{{#translate aggregation.name}}{{translation}}{{#if otherLang}} (@{{otherLang}}){{/if}}{{else}}<i>{{#iflng "cs"}}beze jména{{lng}}without assigned name{{/iflng}}</i>{{/translate}}{{else}}{{prefixed .}}{{/semanticEntity}}</a> {{cardinality aggregation.ends.1.cardinality}}
     </td>
     </tr>
     {{regex-and-examples aggregation.ends.[1]}}
 
-    {{#def "profilesRelationshipChain" "isGeneralization"}}
-      {{#if isGeneralization}}
-        {{#iflng "cs"}}specializuje{{lng}}specializes{{/iflng}}
-        {{else}}
-        {{#iflng "cs"}}profiluje{{lng}}profiles{{/iflng}}
-      {{/if}}
-      {{#ifEquals type.[0] "relationship"}}{{#iflng "cs"}}vlastnost{{lng}}property{{/iflng}}{{/ifEquals}}
-      {{#ifEquals type.[0] "relationship-profile"}}{{#iflng "cs"}}profil{{lng}}property profile{{/iflng}}{{/ifEquals}}
+    {{~#def "profilesRelationshipChain" "isGeneralization"}}
+      {{#if isGeneralization~}}
+        {{#iflng "cs"}}specializuje {{lng}}specializes {{/iflng}}
+      {{~else~}}
+        {{#iflng "cs"}}profiluje {{lng}}profiles {{/iflng}}
+      {{~/if~}}
+      {{#ifEquals type.[0] "relationship"}}{{#iflng "cs"}}vlastnost {{lng}}property {{/iflng}}{{/ifEquals~}}
+      {{#ifEquals type.[0] "relationship-profile"}}{{#iflng "cs"}}profil {{lng}}property profile {{/iflng}}{{/ifEquals~}}
       {{relation}} (<a href="{{{ends.1.iri}}}">{{prefixed ends.1.iri}}</a>)
       {{#if (and (not ./ends.1.descriptionFromProfiled) (non-empty ./ends.1.description))}}
         <br />{{#iflng "cs"}}Definice: {{lng}}Definition: {{/iflng}}<i>{{translate ./ends.1.description}}</i>
@@ -610,7 +613,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
           {{/each}}
         </ul>
       {{/if}}
-    {{/def}}
+    {{/def~}}
 
 
     {{#if (or ./aggregationParents (parentClasses ./id))}}
@@ -654,12 +657,12 @@ export const defaultConfiguration: DocumentationConfiguration = {
   </table>
 </section>`,
 
-    definitions: `{{#def "class"}}<a href="{{{href aggregation.id}}}">{{#translate aggregation.name}}{{translation}}{{#if otherLang}} (@{{otherLang}}){{/if}}{{else}}<i>{{#iflng "cs"}}beze jména{{lng}}without assigned name{{/iflng}}</i>{{/translate}}</a>{{/def}}
-{{#def "relation"}}<a href="{{{href aggregation.ends.1.iri}}}">{{#translate aggregation.ends.1.name}}{{translation}}{{#if otherLang}} (@{{otherLang}}){{/if}}{{else}}<i>{{#iflng "cs"}}beze jména{{lng}}without assigned name{{/iflng}}</i>{{/translate}}</a>{{/def}}
+    definitions: `{{#def "class"}}<a href="{{{href aggregation.id}}}">{{#translate aggregation.name}}{{translation}}{{#if otherLang}} (@{{otherLang}}){{/if}}{{else}}<i>{{#iflng "cs"}}beze jména{{lng}}without assigned name{{/iflng}}</i>{{/translate}}</a>{{/def~}}
+{{#def "relation"}}<a href="{{{href aggregation.ends.1.iri}}}">{{#translate aggregation.ends.1.name}}{{translation}}{{#if otherLang}} (@{{otherLang}}){{/if}}{{else}}<i>{{#iflng "cs"}}beze jména{{lng}}without assigned name{{/iflng}}</i>{{/translate}}</a>{{/def~}}
 {{#def "cardinality"}}
-  {{#if args.[0]}}
+  {{#if args.[0]~}}
     [{{args.[0].[0]}}..{{#if args.[0].[1]}}{{args.[0].[1]}}{{else}}*{{/if}}]
-  {{/if}}
+  {{~/if}}
 {{/def}}
 {{#def "regex-and-examples" "entity"}}
   {{#if entity.regex}}

@@ -12,6 +12,14 @@ import { getArtefactGenerators, getDefaultConfigurators } from "./artefact-gener
 import { generateSpecification, type GenerateSpecificationContext } from "../specification.ts";
 import { DataSpecification } from "../specification/model.ts";
 import { getPartialDocumentationConfiguration } from "@dataspecer/documentation";
+import type { SpecificationUrls, SpecificationUrlOverride } from "../specification-urls.ts";
+
+export interface ArtifactBuilderUrlOptions {
+    specificationId: string;
+    /** Includes query parameters; null uses the specification's configured base or `/`. */
+    baseUrl: string | null;
+    specificationOverrides?: Record<string, SpecificationUrlOverride>;
+}
 
 /**
  * Class handling a construction of the zip file. Configuration, helper files, etc.
@@ -26,6 +34,8 @@ export class DefaultArtifactBuilder {
     private readonly httpFetch: HttpFetch;
     private readonly configurator: Configurator[];
     private readonly models: Record<string, EntityRecord>;
+    private specificationUrls: Record<string, SpecificationUrls> = {};
+    private specificationUrlOverrides: Record<string, SpecificationUrlOverride> = {};
 
     /**
      * Whether to generate a single specification only. This will affect the file structure.
@@ -59,7 +69,7 @@ export class DefaultArtifactBuilder {
     public async prepare(
       dataSpecificationIris: string[],
       reportCallback: ((report: GenerateReport) => void) | undefined = undefined,
-      queryParams: string = "",
+      urls?: ArtifactBuilderUrlOptions,
     ) {
         this.dataSpecificationIris = dataSpecificationIris;
         this.reportCallback = reportCallback;
@@ -72,12 +82,25 @@ export class DefaultArtifactBuilder {
             this.configurator,
         );
 
-        artifactConfigurator.queryParams = queryParams;
+        this.specificationUrlOverrides = { ...urls?.specificationOverrides };
+        if (urls) {
+            this.specificationUrlOverrides[urls.specificationId] = {
+                preferRelativeLinking: this.specificationUrlOverrides[urls.specificationId]?.preferRelativeLinking,
+                baseUrl: urls.baseUrl ?? undefined,
+            };
+        }
+        artifactConfigurator.urlOverrides = this.specificationUrlOverrides;
+        for (const [id, entity] of Object.entries(this.models._project_model ?? {})) {
+            if ("documentBaseUrl" in entity && typeof entity.documentBaseUrl === "string") {
+                artifactConfigurator.documentationUrls[id] = entity.documentBaseUrl;
+            }
+        }
 
         for (const dataSpecificationIri of dataSpecificationIris) {
             this.dataSpecifications[dataSpecificationIri]!.artefacts =
               await artifactConfigurator.generateFor(dataSpecificationIri, this.singleSpecificationOnly);
         }
+        this.specificationUrls = artifactConfigurator.specificationUrls;
 
         this.artifactReport = dataSpecificationIris
           .flatMap(dataSpecificationIri => this.dataSpecifications[dataSpecificationIri]!.artefacts.filter((a: any) => a.outputPath).map((artifact: any) => ({
@@ -93,14 +116,13 @@ export class DefaultArtifactBuilder {
      * final zip. The build process is split into individual artifacts in a way
      * that if one fails, other can still be generated.
      */
-    public async build(dictionary: StreamDictionary, singleFileArtifact: string | null = null, queryParams: string = "", singleSpecificationId: string | null = null): Promise<void> {
-        await this.writeArtifacts(dictionary, singleFileArtifact, queryParams, singleSpecificationId ?? undefined);
+    public async build(dictionary: StreamDictionary, singleFileArtifact: string | null = null, singleSpecificationId: string | null = null): Promise<void> {
+        await this.writeArtifacts(dictionary, singleFileArtifact, singleSpecificationId ?? undefined);
     }
 
     private async writeArtifacts(
       zip: StreamDictionary,
       singleFileArtifact: string | null = null,
-      queryParams: string = "",
       singleSpecificationId?: string,
     ) {
         // Convert data specification
@@ -112,6 +134,7 @@ export class DefaultArtifactBuilder {
             type: CoreDataSpecification.TYPE_DOCUMENTATION,
             importsDataSpecifications: specification.importsDataSpecificationIds,
             artefacts: specification.artefacts,
+            preferRelativeLinking: this.specificationUrls[specification.id]?.preferRelativeLinking,
             // @ts-ignore
             artefactConfiguration: specification.artefactConfiguration,
             cimAdapters: [],
@@ -157,6 +180,8 @@ export class DefaultArtifactBuilder {
                     output: zip,
                     history: this.history,
                     defaultDocumentationConfiguration: getPartialDocumentationConfiguration(this.configuration),
+                    specificationUrls: this.specificationUrls,
+                    specificationUrlOverrides: this.specificationUrlOverrides,
 
                     fetch: this.httpFetch,
 
@@ -168,7 +193,6 @@ export class DefaultArtifactBuilder {
                 },
                 {
                     subdirectory: newGeneratorsPath,
-                    queryParams
                 }
             );
         }

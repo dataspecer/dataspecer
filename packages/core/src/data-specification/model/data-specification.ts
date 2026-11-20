@@ -26,6 +26,9 @@ export class DataSpecification {
    */
   artefacts: DataSpecificationArtefact[] = [];
 
+  /** Allows other specifications to use relative HTTP(S) links to this specification. */
+  preferRelativeLinking?: boolean;
+
   /**
    * Specifies properties for artifacts builders that can extend {@link artefacts} field by adding other artefacts on
    * the fly. This allows user to dynamically add schemas without the need to manually specify the artifacts.

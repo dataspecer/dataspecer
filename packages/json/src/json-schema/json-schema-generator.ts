@@ -109,8 +109,9 @@ export class JsonSchemaGenerator implements ArtefactGenerator {
     callerContext: unknown,
   ): Promise<unknown | null> {
     if (documentationIdentifier === "https://schemas.dataspecer.com/generator/template-artifact") {
-      const { partial } = callerContext as {
+      const { partial, artifact: documentationArtifact } = callerContext as {
         partial: (template: string) => string;
+        artifact: DataSpecificationArtefact;
       };
 
       const { structureModel, jsonSchema, mergedConceptualModel, configuration } = await this.generateToObject(context, artefact, specification, false);
@@ -121,7 +122,7 @@ export class JsonSchemaGenerator implements ArtefactGenerator {
         jsonSchema,
         configuration,
         context,
-        artefact,
+        documentationArtifact,
         languages: ["en"],
       });
 
