@@ -1,3 +1,4 @@
+import { addSemanticClassOperation } from "./implementation/external-semantic-model/add-semantic-class";
 import { addSemanticClassSurroundingsOperation } from "./implementation/external-semantic-model/add-semantic-class-surroundings";
 import { releaseSemanticClassSurroundingsOperation } from "./implementation/external-semantic-model/release-semantic-class-surroundings";
 import { createProfileClassOperation } from "./implementation/profile-model/create-profile-class";
@@ -48,6 +49,7 @@ import { showRelatedEntitiesOperation } from "./implementation/visual-model/show
 import { showRelationshipOperation } from "./implementation/visual-model/show-relationship";
 import { showSemanticClassOperation } from "./implementation/visual-model/show-semantic-class";
 import { showSemanticModelOperation } from "./implementation/visual-model/show-semantic-model";
+import { showVisualEdgeOperation } from "./implementation/visual-model/show-visual-edge";
 import { toggleAnchorOperation } from "./implementation/visual-model/toggle-anchor";
 import { updateVisualModelLabelOperation } from "./implementation/visual-model/update-visual-model-label";
 import { updateVisualNodeContentOperation } from "./implementation/visual-model/update-visual-node-content";
@@ -59,6 +61,7 @@ import { updateVisualNodeProfilesOperation } from "./implementation/visual-model
  * for the executor.
  */
 export const cmeOperations = {
+  addSemanticClass: addSemanticClassOperation,
   addSemanticClassSurroundings: addSemanticClassSurroundingsOperation,
   releaseSemanticClassSurroundings: releaseSemanticClassSurroundingsOperation,
   createProfileClass: createProfileClassOperation,
@@ -109,6 +112,7 @@ export const cmeOperations = {
   showRelationship: showRelationshipOperation,
   showSemanticClass: showSemanticClassOperation,
   showSemanticModel: showSemanticModelOperation,
+  showVisualEdge: showVisualEdgeOperation,
   toggleAnchor: toggleAnchorOperation,
   updateVisualModelLabel: updateVisualModelLabelOperation,
   updateVisualNodeContent: updateVisualNodeContentOperation,

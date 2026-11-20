@@ -1,4 +1,8 @@
 import {
+  isSemanticModelClass,
+} from "@dataspecer/core-v2/semantic-model/concepts";
+
+import {
   EntityDsIdentifier,
   ModelDsIdentifier,
 } from "../../../dataspecer/entity-model";
@@ -7,8 +11,17 @@ import {
   CmeOperation,
   CmeOperationArguments,
   CmeOperationResult,
+  InvalidEntity,
 } from "../../operation";
-import { findVisualModel } from "../operation-utilities";
+import {
+  findWritableVisualModel,
+  getAllEntities,
+  getEntity,
+} from "./visual-model-utilities";
+import {
+  addRelatedEntities,
+  addVisualNodeForEntity,
+} from "./visual-model-additions";
 
 const ShowSemanticClassType =
   "show-semantic-class-operation";
@@ -19,8 +32,6 @@ interface ShowSemanticClassArguments extends CmeOperationArguments {
 
   visualModel: ModelDsIdentifier;
 
-  semanticModel: ModelDsIdentifier;
-
   entity: EntityDsIdentifier;
 
   x: number;
@@ -29,8 +40,12 @@ interface ShowSemanticClassArguments extends CmeOperationArguments {
 
 }
 
-type ShowSemanticClassResult =
-  CmeOperationResult<ShowSemanticClassArguments>;
+interface ShowSemanticClassResult
+  extends CmeOperationResult<ShowSemanticClassArguments> {
+
+  created: string;
+
+}
 
 export const showSemanticClassOperation: CmeOperation<
   ShowSemanticClassArguments, ShowSemanticClassResult> = {
@@ -44,28 +59,28 @@ export const showSemanticClassOperation: CmeOperation<
   execute: showSemanticClassExecutor,
 };
 
+/**
+ * Add a visual node for the class, with all its attributes as content,
+ * and connect it to related entities already in the visual model.
+ * The model of the node is the model owning the class.
+ *
+ * @throws CmeOperationExecutionFailed
+ */
 async function showSemanticClassExecutor(
   context: CmeExecutionContext,
   args: ShowSemanticClassArguments,
 ): Promise<ShowSemanticClassResult> {
-  const model = findVisualModel(context, args.visualModel);
+  const visualModel = findWritableVisualModel(context, args.visualModel);
+  const semanticClass = getEntity(context, args.entity);
+  if (!isSemanticModelClass(semanticClass.entity)) {
+    throw new InvalidEntity("Expected a class.");
+  }
 
-  // TODO: Provided content here.
-  //    getVisualNodeContentBasedOnExistingEntities
-  const content: string[] = [];
+  const entities = getAllEntities(context);
+  const created = addVisualNodeForEntity(
+    entities.map(item => item.entity), visualModel,
+    semanticClass.entity.id, semanticClass.model, args, null);
+  addRelatedEntities(entities, visualModel, semanticClass);
 
-  //
-  model.addVisualNode({
-    model: args.semanticModel,
-    representedEntity: args.entity,
-    position: {
-      x: args.x,
-      y: args.y,
-      anchored: null,
-    },
-    content,
-    visualModels: [],
-  });
-  return { args };
+  return { args, created };
 }
-

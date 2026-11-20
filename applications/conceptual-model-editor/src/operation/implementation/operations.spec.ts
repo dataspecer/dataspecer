@@ -19,7 +19,7 @@ import {
 import { cmeOperations } from "../operations";
 import {
   CmeCreateContext, CmeOperationArguments, CmeOperationResultOf,
-  MissingCmeExecutor, MissingModel,
+  InvalidEntity, MissingCmeExecutor, MissingModel,
 } from "../operation";
 
 interface TestContext {
@@ -95,14 +95,13 @@ async function createRelationship(
 async function showClass(
   context: TestContext, entity: string, x: number,
 ): Promise<VisualNode> {
-  await run(context, cmeOperations.showSemanticClass.create(context.createContext, {
+  const result = await run(context, cmeOperations.showSemanticClass.create(context.createContext, {
     visualModel: context.visualModel.getId(),
-    semanticModel: context.semanticModel.getId(),
     entity,
     x,
     y: 0,
   }));
-  return context.visualModel.getVisualEntitiesForRepresented(entity)[0] as VisualNode;
+  return context.visualModel.getVisualEntity(result.created) as VisualNode;
 }
 
 function visualRelationships(visualModel: WritableVisualModel) {
@@ -209,7 +208,6 @@ describe("Operation batch", () => {
       .addArguments(createArgs)
       .add(cmeOperations.showSemanticClass, {
         visualModel: context.visualModel.getId(),
-        semanticModel: context.semanticModel.getId(),
         entity: createArgs.identifier,
         x: 0,
         y: 0,
@@ -355,6 +353,115 @@ describe("Visual model operations", () => {
       entity: relationship,
     }));
     expect(visualRelationships(context.visualModel).length).toBe(2);
+  });
+
+  test("Show class adds attributes and related edges.", async () => {
+    const context = createContext();
+    const first = await createClass(context, "first");
+    const second = await createClass(context, "second");
+    await createRelationship(context, first, second, "rel");
+    // Relationship with a primitive type range is an attribute.
+    const attribute = await createRelationship(
+      context, first, "http://www.w3.org/2001/XMLSchema#string", "attr");
+
+    const firstNode = await showClass(context, first, 0);
+    expect(firstNode.content).toEqual([attribute]);
+    expect(visualRelationships(context.visualModel).length).toBe(0);
+
+    await showClass(context, second, 500);
+    expect(visualRelationships(context.visualModel).length).toBe(1);
+  });
+
+  test("Show visual edge connects only the given visual ends.", async () => {
+    const context = createContext();
+    const first = await createClass(context, "first");
+    const second = await createClass(context, "second");
+    await showClass(context, first, 0);
+    // Second visual node of the same class.
+    const firstCopy = await showClass(context, first, 200);
+    const secondNode = await showClass(context, second, 500);
+    // Create the relationship after the nodes, so showing a class
+    // does not add the edges on its own.
+    const relationship = await createRelationship(context, first, second, "rel");
+
+    const created = await run(context, cmeOperations.showVisualEdge.create(context.createContext, {
+      visualModel: context.visualModel.getId(),
+      entity: relationship,
+      visualSource: firstCopy.id,
+      visualTarget: secondNode.id,
+    }));
+    expect(created.created).toBe(true);
+    const edges = visualRelationships(context.visualModel);
+    expect(edges.length).toBe(1);
+    expect(edges[0].visualSource).toBe(firstCopy.id);
+    expect(edges[0].visualTarget).toBe(secondNode.id);
+
+    // Showing again returns the existing edge.
+    const again = await run(context, cmeOperations.showVisualEdge.create(context.createContext, {
+      visualModel: context.visualModel.getId(),
+      entity: relationship,
+      visualSource: firstCopy.id,
+      visualTarget: secondNode.id,
+    }));
+    expect(again.created).toBe(false);
+    expect(again.visualEdge).toBe(created.visualEdge);
+    expect(visualRelationships(context.visualModel).length).toBe(1);
+  });
+
+  test("Show visual edge creates profile edge for a class profile.", async () => {
+    const context = createContext();
+    const first = await createClass(context, "first");
+    const firstNode = await showClass(context, first, 0);
+    const profile = await run(context, cmeOperations.createProfileClass.create(context.createContext, {
+      profileModel: context.semanticModel.getId(),
+      profileOf: [first],
+      iri: null,
+      name: null,
+      nameSource: first,
+      description: null,
+      descriptionSource: first,
+      usageNote: null,
+      usageNoteSource: null,
+      externalDocumentationUrl: null,
+      tags: [],
+    }));
+    await run(context, cmeOperations.showProfileClass.create(context.createContext, {
+      visualModel: context.visualModel.getId(),
+      entity: profile.created,
+      x: 0,
+      y: 300,
+    }));
+    const profileNode = context.visualModel
+      .getVisualEntitiesForRepresented(profile.created)[0] as VisualNode;
+    // Showing the class profile adds the profile edge, remove it
+    // so we start from a clean state.
+    [...context.visualModel.getVisualEntities().values()]
+      .filter(isVisualProfileRelationship)
+      .forEach(item => context.visualModel.deleteVisualEntity(item.id));
+
+    const result = await run(context, cmeOperations.showVisualEdge.create(context.createContext, {
+      visualModel: context.visualModel.getId(),
+      entity: profile.created,
+      visualSource: profileNode.id,
+      visualTarget: firstNode.id,
+    }));
+    expect(result.created).toBe(true);
+    const edge = context.visualModel.getVisualEntity(result.visualEdge);
+    expect(edge !== null && isVisualProfileRelationship(edge)).toBe(true);
+  });
+
+  test("Show visual edge rejects a class.", async () => {
+    const context = createContext();
+    const first = await createClass(context, "first");
+    const firstNode = await showClass(context, first, 0);
+    const result = await context.executor.execute(cmeOperations.showVisualEdge.create(context.createContext, {
+      visualModel: context.visualModel.getId(),
+      entity: first,
+      visualSource: firstNode.id,
+      visualTarget: firstNode.id,
+    }));
+    expect(result.exception).toBeInstanceOf(InvalidEntity);
+    expect(visualRelationships(context.visualModel).length).toBe(0);
   });
 
   test("Show entities adds nodes with related edges.", async () => {
