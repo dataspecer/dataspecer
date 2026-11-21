@@ -394,6 +394,8 @@ function createDiagramNode(
       classesContext, options, visualModel,
       semanticModels, entities, visualNode),
     vocabulary,
+    controlledVocabularyCount: isProfile
+      ? (entity.controlledVocabularies?.length ?? 0) : 0,
   };
 }
 

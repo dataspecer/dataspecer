@@ -82,6 +82,12 @@ export type Node = {
   }[];
 
   /**
+   * Number of controlled vocabulary assignments of a class profile,
+   * including the inherited ones. Always zero for classes.
+   */
+  controlledVocabularyCount: number;
+
+  /**
    * Node content, i.e. attributes, properties.
    */
   items: NodeItem[];

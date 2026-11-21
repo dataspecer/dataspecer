@@ -6,6 +6,7 @@ import {
   NodeToolbar,
   Position,
 } from "@xyflow/react";
+import { BookOpen } from "lucide-react";
 
 import {
   DiagramOptions,
@@ -76,7 +77,12 @@ export const EntityNode = (props: NodeProps<Node<ApiNode>>) => {
             title={description}
           >
             <div className="relative flex w-full flex-row justify-between">
-              <div>{label}</div>
+              <div className="flex items-center gap-1">
+                <div>{label}</div>
+                {data.controlledVocabularyCount > 0
+                  ? <ControlledVocabularyTag count={data.controlledVocabularyCount} />
+                  : null}
+              </div>
               {data.position.anchored ? <div>⚓</div> : null}
             </div>
             <ProfileOf
@@ -148,6 +154,18 @@ function prepareLabel(
       .filter(item => item !== null)
       .join(", ");
   }
+}
+
+/**
+ * Small tag indicating that a class profile has controlled vocabulary assignments.
+ */
+function ControlledVocabularyTag({ count }: { count: number }) {
+  return (
+    <span className="inline-flex items-center gap-0.5 rounded-sm border border-gray-500 bg-white/60 px-1 text-xs text-gray-600">
+      <BookOpen className="h-3 w-3" />
+      {count}
+    </span>
+  );
 }
 
 function ProfileOf({ options, profileOf }: {
