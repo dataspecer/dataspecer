@@ -1,4 +1,3 @@
-import _ from "lodash";
 import { ElkConfigurationsContainer } from "../../configurations/configurations-container.ts";
 import { Graph } from "../../graph/representation/graph.ts";
 import { ElkLayout } from "./elk-layout.ts";

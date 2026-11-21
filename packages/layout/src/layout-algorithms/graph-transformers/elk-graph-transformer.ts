@@ -9,7 +9,6 @@ import { ALGORITHM_TO_ELK_ALGORITHM_MAP, CONFIG_TO_ELK_CONFIG_MAP } from "../../
 import { ReactflowDimensionsConstantEstimator, XY } from "../../index.ts";
 import { VisualEntities } from "../../migration-to-cme-v2.ts";
 import { EdgeEndPoint } from "../../graph/representation/edge.ts";
-import _ from "lodash";
 import { SemanticModelClassProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { UserGivenAlgorithmConfigurationBase } from "../../configurations/user-algorithm-configurations.ts";
 import { AlgorithmConfiguration } from "../../configurations/algorithm-configurations.ts";

@@ -7,7 +7,6 @@ import {
   UserGivenAlgorithmConfigurations,
   getDefaultUserGivenAlgorithmConfigurationsFull,
 } from "@dataspecer/layout";
-import _ from "lodash";
 import LayeredAlgorithmDirectionDropdown from "./direction-graphic-combobox/react-combobox";
 
 type MainType = "main";
@@ -22,7 +21,7 @@ export const useConfigDialog = () => {
   const [config, setConfig] = useState<UserGivenAlgorithmConfigurations>(getDefaultUserGivenAlgorithmConfigurationsFull());
 
   const getConfig = () => {
-    return _.cloneDeep(config);
+    return structuredClone(config);
   };
 
 

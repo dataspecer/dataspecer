@@ -1,7 +1,6 @@
 import { DeepPartial } from "@dataspecer/core/core/utilities/deep-partial";
 import { DataSpecificationConfiguration } from "@dataspecer/core/data-specification/configuration";
 import { FormControl, FormGroup, FormHelperText, Input, InputLabel, Typography } from "@mui/material";
-import { cloneDeep } from "lodash";
 import { FC, useContext } from "react";
 import { useSearchParams } from "react-router-dom";
 import { DefaultConfigurationContext } from "../../../../application";
@@ -89,7 +88,7 @@ export const ArtifactNames: FC<{
   const dataSpecificationIri = searchParams.get("dataSpecificationIri");
 
   const [currentArtifactConfiguration] = useAsyncMemo(async () => {
-    const clonedSpecification = cloneDeep(specification);
+    const clonedSpecification = structuredClone(specification);
     console.log("clonedSpecification", clonedSpecification);
 
     // @ts-ignore

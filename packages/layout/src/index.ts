@@ -1,4 +1,5 @@
 import { isSemanticModelGeneralization, isSemanticModelRelationship, SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
+import { clone } from "@dataspecer/core/core";
 import { Position, VisualModel } from "@dataspecer/visual-model";
 
 import {
@@ -33,7 +34,6 @@ export { type Node };
 import { GraphFactory } from "./graph/representation/graph-factory.ts";
 import { ALGORITHM_NAME_TO_LAYOUT_MAPPING, AlgorithmName } from "./layout-algorithms/list-of-layout-algorithms.ts";
 import { LayoutAlgorithm } from "./layout-algorithms/layout-algorithms-interfaces.ts";
-import _ from "lodash";
 import { UserGivenAlgorithmConfigurations } from "./configurations/user-algorithm-configurations.ts";
 import { DefaultAlgorithmConfiguration } from "./configurations/algorithm-configurations.ts";
 import { isSemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
@@ -260,7 +260,7 @@ const performLayoutingBasedOnConfigurations = async (
 	let workGraph = graph;
 	for(const action of configurations.layoutActionsIteratorBefore) {
 		if (action.shouldCreateNewGraph) {
-			workGraph = _.cloneDeep(workGraph);
+			workGraph = clone(workGraph);
 	 	}
 
 		if(action instanceof DefaultGraphConversionActionConfiguration) {
@@ -333,7 +333,7 @@ const runMainLayoutAlgorithm = async (
 		let layoutedGraphPromise: Promise<MainGraph>;
 		for(const action of configurations.layoutActionsIterator) {
 			if (action.shouldCreateNewGraph) {
- 				workGraph = _.cloneDeep(workGraph);
+				workGraph = clone(workGraph);
 			}
 			if(action instanceof DefaultGraphConversionActionConfiguration) {
 				layoutedGraphPromise = SPECIFIC_ALGORITHM_CONVERSIONS_MAP[action.actionName](action, workGraph);

@@ -1,5 +1,4 @@
 import {Button, Dialog, DialogActions, DialogContent, DialogTitle} from "@mui/material";
-import {clone} from "lodash";
 import {FC, useContext, useEffect, useState} from "react";
 import {DefaultConfigurationContext} from "../../../application";
 import {ConfigureArtifactsConfiguration} from "./configure-artifacts-configuration";
@@ -14,10 +13,10 @@ export const ConfigureArtifactsDialog: FC<{
   configuration: object,
 }> = ({isOpen, close, onChange, configuration}) => {
   const defaultConfiguration = useContext(DefaultConfigurationContext);
-  const [localConfiguration, setLocalConfiguration] = useState(() => clone(configuration));
+  const [localConfiguration, setLocalConfiguration] = useState(() => ({...configuration}));
   useEffect(() => {
     if (isOpen) {
-      setLocalConfiguration(clone(configuration))
+      setLocalConfiguration({...configuration});
     }
   }, [isOpen, configuration]);
 

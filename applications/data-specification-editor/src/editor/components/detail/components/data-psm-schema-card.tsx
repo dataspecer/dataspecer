@@ -3,7 +3,7 @@ import { DataPsmSchemaXmlExtension } from "@dataspecer/core/data-psm/xml-extensi
 import { useFederatedObservableStore } from "@dataspecer/federated-observable-store-react/store";
 import { useResource } from "@dataspecer/federated-observable-store-react/use-resource";
 import { Alert, Box, Collapse, FormControl, FormControlLabel, FormLabel, Grid, Radio, RadioGroup, Switch, TextField, Typography } from "@mui/material";
-import { isEqual } from "lodash";
+import { deepEqual } from "@dataspecer/utilities";
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation, Trans } from "react-i18next";
 import { InfoHelp } from "../../../../components/info-help";
@@ -92,7 +92,7 @@ export const DataPsmSchemaCard: React.FC<{ iri: string; onClose: () => void }> =
   }, [resource]);
 
   useSaveHandler(
-    resource && !isEqual(cardinality, cardinalityFromPsm(resource)),
+    resource && !deepEqual(cardinality, cardinalityFromPsm(resource)),
     useCallback(
       async () =>
         resource &&
@@ -122,7 +122,7 @@ export const DataPsmSchemaCard: React.FC<{ iri: string; onClose: () => void }> =
   }, [resource]);
   useSaveHandler(
     resource &&
-      !isEqual(rootCollection, {
+      !deepEqual(rootCollection, {
         enforce: resource.dataPsmEnforceCollection,
         technicalLabel: resource.dataPsmCollectionTechnicalLabel,
       }),
@@ -167,7 +167,7 @@ export const DataPsmSchemaCard: React.FC<{ iri: string; onClose: () => void }> =
     }
   }, [resource]);
   useSaveHandler(
-    resource && !isEqual(resource.jsonLdDefinedPrefixes ?? {}, jsonPrefixes),
+    resource && !deepEqual(resource.jsonLdDefinedPrefixes ?? {}, jsonPrefixes),
     () => store.executeComplexOperation(new SetJsonPrefixes(iri, jsonPrefixes))
   );
   // endregion
@@ -181,7 +181,7 @@ export const DataPsmSchemaCard: React.FC<{ iri: string; onClose: () => void }> =
     }
   }, [resource]);
   useSaveHandler(
-    resource && !isEqual(resource.jsonLdDefinedTypeMapping ?? {}, jsonTypeMapping),
+    resource && !deepEqual(resource.jsonLdDefinedTypeMapping ?? {}, jsonTypeMapping),
     () => store.executeComplexOperation(new SetJsonTypeMapping(iri, jsonTypeMapping))
   );
   // endregion
@@ -336,7 +336,7 @@ export const DataPsmSchemaCard: React.FC<{ iri: string; onClose: () => void }> =
                 <InfoHelp text={t("XML root container name help")} />
               </Typography>
 
-              <Collapse in={!isEqual(cardinality, cardinalityFromPsm()) && !rootCollection.enforce}>
+              <Collapse in={!deepEqual(cardinality, cardinalityFromPsm()) && !rootCollection.enforce}>
                 <Alert severity="info">
                   <Trans i18nKey="XML root container alert" t={t} values={{ container: currentXmlContainer }}>
                     <code />

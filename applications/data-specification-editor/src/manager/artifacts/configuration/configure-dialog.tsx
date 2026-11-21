@@ -1,5 +1,4 @@
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Tab, Tabs } from "@mui/material";
-import { clone } from "lodash";
 import { FC, useContext, useEffect, useState } from "react";
 import { DefaultConfigurationContext } from "../../../application";
 import { ClientConfiguration, ClientConfigurator } from "../../../configuration";
@@ -15,10 +14,10 @@ export const ConfigureDialog: FC<{
   configuration: object,
 }> = ({isOpen, close, onChange, configuration}) => {
   const defaultConfiguration = useContext(DefaultConfigurationContext);
-  const [localConfiguration, setLocalConfiguration] = useState(() => clone(configuration));
+  const [localConfiguration, setLocalConfiguration] = useState(() => ({...configuration}));
   useEffect(() => {
     if (isOpen) {
-      setLocalConfiguration(clone(configuration))
+      setLocalConfiguration({...configuration});
     }
   }, [isOpen, configuration]);
 

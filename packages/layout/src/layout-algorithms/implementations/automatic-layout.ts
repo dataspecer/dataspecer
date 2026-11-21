@@ -1,4 +1,4 @@
-import _ from "lodash";
+import { clone } from "@dataspecer/core/core";
 import { AlgorithmName, getBestMetricResultAggregation, performLayoutFromGraph } from "../../index.ts";
 import { ConfigurationsContainer } from "../../configurations/configurations-container.ts";
 import { Graph, MainGraph } from "../../graph/representation/graph.ts";
@@ -19,7 +19,7 @@ export class AutomaticLayout implements LayoutAlgorithm {
       const algorithmsToTry = getAlgorithmsToTry(this.configurations.currentLayoutAction.action.userGivenConfiguration.min_distance_between_nodes);
       let best = 10000000;
       for(const algorithmToTry of algorithmsToTry) {
-        const graphCopy = _.cloneDeep(this.graph.mainGraph);
+        const graphCopy = clone(this.graph.mainGraph);
         const result = await performLayoutFromGraph(graphCopy, algorithmToTry);
         const currentMetricResult = getBestMetricResultAggregation(result);
         // TODO Hard to solve by myself - Radstr: If we swap to relativeValue we have to use < and change the best to -1000...
