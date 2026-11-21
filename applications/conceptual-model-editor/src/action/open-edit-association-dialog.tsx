@@ -2,7 +2,6 @@ import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-mem
 import { VisualModel } from "@dataspecer/visual-model";
 
 import { DialogApiContextType } from "../dialog/dialog-service";
-import { UseModelGraphContextType } from "../context/model-context";
 import { Options } from "../application";
 import { SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
 import {
@@ -18,11 +17,13 @@ import {
 import { LabelResolver } from "../dependency-tracker";
 import { ClassesContext } from "../context/classes-context";
 import { applyVisualColorFromDialog } from "./utilities/visual-color-utilities";
+import { CmeOperationExecutor } from "../operation";
 
 /**
  * Open and handle edit association dialog.
  */
 export function openEditAssociationDialogAction(
+  executor: CmeOperationExecutor,
   cmeExecutor: CmeModelOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
@@ -48,7 +49,7 @@ export function openEditAssociationDialogAction(
       initialState.specializations, state.specializations);
 
     applyVisualColorFromDialog(
-      classes, visualModel, entity.id, initialState, state);
+      executor, visualModel, entity.id, initialState, state);
   };
 
   dialogs.openDialog(createEditAssociationDialog(initialState, onConfirm));

@@ -23,6 +23,7 @@ import { createLogger } from "../application";
 import { InvalidState } from "../application/error";
 import { LabelResolver } from "../dependency-tracker";
 import { applyVisualColorFromDialog } from "./utilities/visual-color-utilities";
+import { CmeOperationExecutor } from "../operation";
 
 const LOG = createLogger(import.meta.url);
 
@@ -30,6 +31,7 @@ const LOG = createLogger(import.meta.url);
  * Open and handle edit association dialog.
  */
 export function openEditAssociationProfileDialogAction(
+  executor: CmeOperationExecutor,
   cmeExecutor: CmeModelOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
@@ -65,7 +67,7 @@ export function openEditAssociationProfileDialogAction(
       initialState.specializations, state.specializations);
 
     applyVisualColorFromDialog(
-      classes, visualModel, entity.id, initialState, state);
+      executor, visualModel, entity.id, initialState, state);
   };
 
   dialogs.openDialog(createEditAssociationProfileDialog(initialState, onConfirm));

@@ -13,8 +13,10 @@ import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-ope
 import { createVisualModelOperationExecutor } from "../dataspecer/visual-model/visual-model-operation-executor";
 import { LabelResolver } from "../dependency-tracker";
 import { applyVisualColorFromDialog } from "./utilities/visual-color-utilities";
+import { CmeOperationExecutor } from "../operation";
 
 export function openEditClassDialogAction(
+  executor: CmeOperationExecutor,
   cmeExecutor: CmeModelOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
@@ -50,7 +52,7 @@ export function openEditClassDialogAction(
     }
 
     applyVisualColorFromDialog(
-      classes, visualModel, entity.id, initialState, state);
+      executor, visualModel, entity.id, initialState, state);
   };
 
   dialogs.openDialog(createEditClassDialog(initialState, onConfirm));

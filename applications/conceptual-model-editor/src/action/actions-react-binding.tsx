@@ -131,11 +131,7 @@ import {
   addVisualDiagramNodeForExistingModelToVisualModelAction,
 } from "./create-visual-diagram-node-for-existing-model";
 import { putVisualDiagramNodeContentToVisualModelAction } from "./put-visual-diagram-node-content-to-visual-model";
-import {
-  cmeOperations,
-  createCmeOperationExecutor,
-  createCmeEntityIdentifier,
-} from "../operation";
+import { cmeOperations } from "../operation";
 import { openProfileModelDialogAction } from "./open-profile-model-dialog";
 
 const LOG = createLogger(import.meta.url);
@@ -1112,11 +1108,7 @@ function createActionsContext(
   const addSemanticClassSurroundings = async (
     semanticModel: ModelDsIdentifier, entity: EntityDsIdentifier,
   ) => {
-    const executor = createCmeOperationExecutor(cmeOperations, {
-      entityModels: classes.semanticModelsList,
-      visualModels: classes.visualModelsList,
-      createNewEntityIdentifier: createCmeEntityIdentifier,
-    });
+    const executor = useGraph.executor();
     const result = await executor.execute(cmeOperations.addSemanticClassSurroundings.create(
       executor.createContext, {
       semanticModel,
@@ -1130,11 +1122,7 @@ function createActionsContext(
   const releaseSemanticClassSurroundings = async (
     semanticModel: ModelDsIdentifier, entity: EntityDsIdentifier,
   ) => {
-    const executor = createCmeOperationExecutor(cmeOperations, {
-      entityModels: [...classes.semanticModels.values()],
-      visualModels: classes.visualModelsList,
-      createNewEntityIdentifier: createCmeEntityIdentifier,
-    });
+    const executor = useGraph.executor();
     const result = await executor.execute(cmeOperations.releaseSemanticClassSurroundings.create(
       executor.createContext, {
       semanticModel,
@@ -1147,11 +1135,7 @@ function createActionsContext(
 
   const openProfileModelDialog = async (model: ModelDsIdentifier) => {
     withVisualModel(notifications, useGraph, (visualModel) => {
-      const executor = createCmeOperationExecutor(cmeOperations, {
-        entityModels: [...classes.semanticModels.values()],
-        visualModels: classes.visualModelsList,
-        createNewEntityIdentifier: createCmeEntityIdentifier,
-      });
+      const executor = useGraph.executor();
       openProfileModelDialogAction(
         executor, options, dialogs, notifications, classes,
         visualModel, model);
@@ -1413,12 +1397,12 @@ function createActionsContext(
             visualModel, model, entity, labelResolver);
         } else if (isSemanticModelRelationship(entity)) {
           openEditAssociationDialogAction(
-            cmeExecutor, options, dialogs, classes,
+            useGraph.executor(), cmeExecutor, options, dialogs, classes,
             visualModel, model, entity, dialogTracker, labelResolver);
         } else if (isSemanticModelRelationshipProfile(entity)) {
           openEditAssociationProfileDialogAction(
-            cmeExecutor, options, dialogs, classes, useGraph,
-            visualModel, model, entity, dialogTracker, labelResolver);
+            useGraph.executor(), cmeExecutor, options, dialogs, classes,
+            useGraph, visualModel, model, entity, dialogTracker, labelResolver);
         } else {
           notifications.error("Can not edit given item.");
         }

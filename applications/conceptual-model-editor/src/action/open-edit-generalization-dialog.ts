@@ -3,7 +3,6 @@ import { SemanticModelGeneralization } from "@dataspecer/core-v2/semantic-model/
 import { VisualModel } from "@dataspecer/visual-model";
 
 import { DialogApiContextType } from "../dialog/dialog-service";
-import { ClassesContext } from "../context/classes-context";
 import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import {
   createEditGeneralizationDialogState,
@@ -11,15 +10,16 @@ import {
 } from "../dialog/generalization/edit-generalization-dialog-state";
 import { createEditGeneralizationDialog } from "../dialog/generalization/edit-generalization-dialog";
 import { applyVisualColorFromDialog } from "./utilities/visual-color-utilities";
+import { CmeOperationExecutor } from "../operation";
 
 /**
  * Generalization has only visual properties to edit, so it must be
  * shown in the visual model.
  */
 export function openEditGeneralizationDialogAction(
+  executor: CmeOperationExecutor,
   dialogs: DialogApiContextType,
   notifications: UseNotificationServiceWriterType,
-  classes: ClassesContext,
   visualModel: VisualModel | null,
   model: InMemorySemanticModel,
   entity: SemanticModelGeneralization,
@@ -34,7 +34,7 @@ export function openEditGeneralizationDialogAction(
 
   const onConfirm = (state: GeneralizationDialogState) => {
     applyVisualColorFromDialog(
-      classes, visualModel, entity.id, initialState, state);
+      executor, visualModel, entity.id, initialState, state);
   };
 
   dialogs.openDialog(createEditGeneralizationDialog(initialState, onConfirm));
