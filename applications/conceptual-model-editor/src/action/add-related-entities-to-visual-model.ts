@@ -1,5 +1,4 @@
 import { VisualModel, WritableVisualModel } from "@dataspecer/visual-model";
-import { EntityModel } from "@dataspecer/core-v2";
 import { AggregatedEntityWrapper } from "@dataspecer/core-v2/semantic-model/aggregator";
 import {
   SemanticModelEntity,
@@ -24,6 +23,7 @@ import {
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { createVisualModelOperationExecutor } from "../dataspecer/visual-model/visual-model-operation-executor";
 import { ClassesContext } from "../context/classes-context";
+import { findSourceModelOfEntity } from "./utilities";
 
 /**
  * For given entity make sure, that all related entities
@@ -38,14 +38,11 @@ export function addRelatedEntitiesAction(
   classes: ClassesContext,
   visualModel: WritableVisualModel,
   entities: AggregatedEntityWrapper[],
-  models: Map<string, EntityModel>,
+  // Model owning the entity, the ClassesContext may not know it yet.
+  entityModel: string,
   entity: SemanticModelEntity,
 ) {
   const identifier = entity.id;
-  const entityModel = models.get(classes.sourceModelOfEntityMap.get(identifier) ?? "");
-  if (entityModel === undefined) {
-    return;
-  }
 
   const visualOperationExecutor = createVisualModelOperationExecutor(visualModel);
 
@@ -55,27 +52,27 @@ export function addRelatedEntitiesAction(
     if (candidate === null) {
       continue;
     }
-    const candidateModel = models.get(classes.sourceModelOfEntityMap.get(candidate.id) ?? "");
-    if (candidateModel === undefined) {
+    const candidateModel = findSourceModelOfEntity(classes, candidate.id, entityModel);
+    if (candidateModel === null) {
       continue;
     }
     //
     if (isSemanticModelGeneralization(candidate)) {
       if (shouldAddGeneralization(visualModel, identifier, candidate)) {
         addSemanticGeneralizationToVisualModelAction(
-          notifications, graph, visualModel, candidate.id, candidateModel.getId());
+          notifications, graph, visualModel, candidate.id, candidateModel);
       }
     }
     if (isSemanticModelRelationship(candidate)) {
       if (shouldAddRelationship(visualModel, identifier, candidate)) {
         addSemanticRelationshipToVisualModelAction(
-          notifications, graph, visualModel, candidate.id, candidateModel.getId());
+          notifications, graph, visualModel, candidate.id, candidateModel);
       }
     }
     if (isSemanticModelRelationshipProfile(candidate)) {
       if (shouldAddRelationshipUsageOrProfile(visualModel, identifier, candidate)) {
         addSemanticRelationshipProfileToVisualModelAction(
-          notifications, graph, visualModel, candidate.id, candidateModel.getId());
+          notifications, graph, visualModel, candidate.id, candidateModel);
       }
     }
     if (isSemanticModelClassProfile(candidate)) {
@@ -83,19 +80,19 @@ export function addRelatedEntitiesAction(
         // "candidate" is profile of "entity"
         visualOperationExecutor.tryAddProfile({
           identifier: candidate.id,
-          model: candidateModel.getId(),
+          model: candidateModel,
         }, {
           identifier: entity.id,
-          model: entityModel.getId(),
+          model: entityModel,
         });
       } else if (addingProfile && shouldAddProfile(visualModel, candidate.id, entity)) {
         // "entity" is profile of "candidate"
         visualOperationExecutor.tryAddProfile({
           identifier: entity.id,
-          model: entityModel.getId(),
+          model: entityModel,
         }, {
           identifier: candidate.id,
-          model: candidateModel.getId(),
+          model: candidateModel,
         });
       }
     }
@@ -105,10 +102,10 @@ export function addRelatedEntitiesAction(
         // "entity" is profile of "candidate"
         visualOperationExecutor.tryAddProfile({
           identifier: entity.id,
-          model: entityModel.getId(),
+          model: entityModel,
         }, {
           identifier: candidate.id,
-          model: candidateModel.getId(),
+          model: candidateModel,
         });
       }
     }

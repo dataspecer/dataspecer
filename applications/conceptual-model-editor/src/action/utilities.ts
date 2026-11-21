@@ -578,3 +578,46 @@ export function getVisualNodeContentBasedOnExistingEntities(
 
   return nodeContent;
 }
+
+/**
+ * Returns identifier of the semantic model owning the entity, or null.
+ *
+ * The {@link ClassesContext} is a React state, so it can be one render behind.
+ * An entity created in the same action is not in the
+ * {@link ClassesContext.sourceModelOfEntityMap} yet.
+ * As a fallback we search the entities of the models directly.
+ * A model created in the same action is not in the
+ * {@link ClassesContext.semanticModels} either; callers should fall back to
+ * the model identifier they were given.
+ *
+ * The lookup order is:
+ * 1. {@link ClassesContext.sourceModelOfEntityMap}.
+ * 2. The {@link suggestedModel}, if it contains the entity.
+ * 3. All other models, which is slow.
+ */
+export function findSourceModelOfEntity(
+  classes: ClassesContext,
+  entityIdentifier: string,
+  suggestedModel: string | null,
+): string | null {
+  const known = classes.sourceModelOfEntityMap.get(entityIdentifier);
+  if (known !== undefined) {
+    return known;
+  }
+  if (suggestedModel !== null) {
+    const model = classes.semanticModels.get(suggestedModel);
+    if (model?.getEntities()[entityIdentifier] !== undefined) {
+      return suggestedModel;
+    }
+  }
+  for (const model of classes.semanticModels.values()) {
+    if (model.getId() === suggestedModel) {
+      // Already checked.
+      continue;
+    }
+    if (model.getEntities()[entityIdentifier] !== undefined) {
+      return model.getId();
+    }
+  }
+  return null;
+}

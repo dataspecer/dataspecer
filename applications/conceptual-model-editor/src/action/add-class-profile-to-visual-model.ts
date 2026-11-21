@@ -11,7 +11,7 @@ import {
   isSemanticModelClassProfile,
   SemanticModelClassProfile
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { getVisualNodeContentBasedOnExistingEntities } from "./utilities";
+import { findSourceModelOfEntity, getVisualNodeContentBasedOnExistingEntities } from "./utilities";
 
 const LOG = createLogger(import.meta.url);
 
@@ -22,9 +22,7 @@ export async function addSemanticClassProfileToVisualModelAction(
   visualModel: WritableVisualModel,
   diagram: UseDiagramType,
   entityIdentifier: string,
-  // We ignore following property, as we may get invalid model.
-  // Sometimes, it is a model of the profiled entity not the profile.
-  _modelIdentifier: string,
+  modelIdentifier: string,
   position: { x: number, y: number } | null,
 ) {
   const entities = graph.getAggregatedEntities();
@@ -34,12 +32,7 @@ export async function addSemanticClassProfileToVisualModelAction(
     position = positions[entityIdentifier];
   }
 
-  const model = classes.sourceModelOfEntityMap.get(entityIdentifier);
-  if (model === undefined) {
-    LOG.error("Operation ignored, we fail to find model for given entity.", { identifier: entityIdentifier });
-    notifications.error("Can not find model for given entity");
-    return;
-  }
+  const model = findSourceModelOfEntity(classes, entityIdentifier, modelIdentifier) ?? modelIdentifier;
 
   const entity = entities[entityIdentifier].aggregatedEntity;
   if (entity === undefined || entity === null) {
@@ -54,7 +47,7 @@ export async function addSemanticClassProfileToVisualModelAction(
       position);
     addRelatedEntitiesAction(
       notifications, graph, classes, visualModel, Object.values(entities),
-      classes.semanticModels, entity);
+      model, entity);
   } else {
     LOG.invalidEntity(entityIdentifier, "Entity is not of an expected type.", { entity });
     notifications.error("Invalid entity type!");
