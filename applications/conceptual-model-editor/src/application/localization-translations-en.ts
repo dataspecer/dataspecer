@@ -432,6 +432,8 @@ export const english: Record<string, string | Function> = {
   "node-connection-handle": "Drag from this button to create connection (Dragging to canvas shows menu)",
   "node-add-attribute": "Add a new attribute",
   "node-add-attribute-profile": "Add an attribute profile",
+  "node-controlled-vocabulary-assignment-one": "Contains 1 controlled vocabulary assignment",
+  "node-controlled-vocabulary-assignment-many": "Contains {count} controlled vocabulary assignments",
   //
   "selection-action-button": "Show menu with actions, which can be performed on a selection",
   "selection-layout-button": "Show menu with layout actions, which can be performed on a selection",

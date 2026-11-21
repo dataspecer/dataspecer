@@ -160,8 +160,14 @@ function prepareLabel(
  * Small tag indicating that a class profile has controlled vocabulary assignments.
  */
 function ControlledVocabularyTag({ count }: { count: number }) {
+  const title = count === 1
+    ? t("node-controlled-vocabulary-assignment-one")
+    : t("node-controlled-vocabulary-assignment-many").replace("{count}", String(count));
   return (
-    <span className="inline-flex items-center gap-0.5 rounded-sm border border-gray-500 bg-white/60 px-1 text-xs text-gray-600">
+    <span
+      title={title}
+      className="inline-flex items-center gap-0.5 rounded-sm border border-gray-500 bg-white/60 px-1 text-xs text-gray-600"
+    >
       <BookOpen className="h-3 w-3" />
       {count}
     </span>
