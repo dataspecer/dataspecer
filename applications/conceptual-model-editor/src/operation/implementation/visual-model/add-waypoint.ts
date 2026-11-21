@@ -7,18 +7,8 @@ import {
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import { findWritableVisualModel } from "./visual-model-utilities";
 import { getVisualEdge } from "./visual-edge-utilities";
-
-export function addWaypointOperation(
-  args: Omit<AddWaypointArguments, "type">,
-): CmeOperation<AddWaypointArguments, AddWaypointResult> {
-  return {
-    type: AddWaypointType,
-    ...args,
-  };
-}
 
 const AddWaypointType =
   "add-waypoint-operation";
@@ -45,15 +35,21 @@ interface AddWaypointArguments extends CmeOperationArguments {
 type AddWaypointResult =
   CmeOperationResult<AddWaypointArguments>;
 
-cmeOperationExecutorRegistry.register(
-  AddWaypointType,
-  addWaypointOperation,
-  { execute: addWaypointExecutor });
+export const addWaypointOperation: CmeOperation<AddWaypointArguments, AddWaypointResult> = {
+  metadata: {
+    type: AddWaypointType,
+  },
+  create: (_context, parameters) => ({
+    type: AddWaypointType,
+    ...parameters,
+  }),
+  execute: addWaypointExecutor,
+};
 
 /**
  * @throws CmeOperationExecutionFailed
  */
-export async function addWaypointExecutor(
+async function addWaypointExecutor(
   context: CmeExecutionContext,
   args: AddWaypointArguments,
 ): Promise<AddWaypointResult> {

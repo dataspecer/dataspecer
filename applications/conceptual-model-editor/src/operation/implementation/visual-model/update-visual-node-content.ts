@@ -8,20 +8,10 @@ import {
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   findWritableVisualModel,
   getVisualNode,
 } from "./visual-model-utilities";
-
-export function updateVisualNodeContentOperation(
-  args: Omit<UpdateVisualNodeContentArguments, "type">,
-): CmeOperation<UpdateVisualNodeContentArguments, UpdateVisualNodeContentResult> {
-  return {
-    type: UpdateVisualNodeContentType,
-    ...args,
-  };
-}
 
 const UpdateVisualNodeContentType =
   "update-visual-node-content-operation";
@@ -44,15 +34,22 @@ interface UpdateVisualNodeContentArguments extends CmeOperationArguments {
 type UpdateVisualNodeContentResult =
   CmeOperationResult<UpdateVisualNodeContentArguments>;
 
-cmeOperationExecutorRegistry.register(
-  UpdateVisualNodeContentType,
-  updateVisualNodeContentOperation,
-  { execute: updateVisualNodeContentExecutor });
+export const updateVisualNodeContentOperation: CmeOperation<
+  UpdateVisualNodeContentArguments, UpdateVisualNodeContentResult> = {
+  metadata: {
+    type: UpdateVisualNodeContentType,
+  },
+  create: (_context, parameters) => ({
+    type: UpdateVisualNodeContentType,
+    ...parameters,
+  }),
+  execute: updateVisualNodeContentExecutor,
+};
 
 /**
  * @throws CmeOperationExecutionFailed
  */
-export async function updateVisualNodeContentExecutor(
+async function updateVisualNodeContentExecutor(
   context: CmeExecutionContext,
   args: UpdateVisualNodeContentArguments,
 ): Promise<UpdateVisualNodeContentResult> {

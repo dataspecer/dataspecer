@@ -13,7 +13,6 @@ import {
   CmeOperationResult,
   MissingModel,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   findWritableVisualModel,
   getAllEntities,
@@ -23,15 +22,6 @@ import {
 } from "./visual-model-utilities";
 import { isClassOrClassProfile } from "./visual-model-additions";
 import { EntityToShow, showEntities } from "./show-entities";
-
-export function showSemanticModelOperation(
-  args: Omit<ShowSemanticModelArguments, "type">,
-): CmeOperation<ShowSemanticModelArguments, ShowSemanticModelResult> {
-  return {
-    type: ShowSemanticModelType,
-    ...args,
-  };
-}
 
 const ShowSemanticModelType =
   "show-semantic-model-operation";
@@ -59,10 +49,17 @@ interface ShowSemanticModelArguments extends CmeOperationArguments {
 type ShowSemanticModelResult =
   CmeOperationResult<ShowSemanticModelArguments>;
 
-cmeOperationExecutorRegistry.register(
-  ShowSemanticModelType,
-  showSemanticModelOperation,
-  { execute: showSemanticModelExecutor });
+export const showSemanticModelOperation: CmeOperation<
+  ShowSemanticModelArguments, ShowSemanticModelResult> = {
+  metadata: {
+    type: ShowSemanticModelType,
+  },
+  create: (_context, parameters) => ({
+    type: ShowSemanticModelType,
+    ...parameters,
+  }),
+  execute: showSemanticModelExecutor,
+};
 
 /**
  * Relationships are shown when classes are added, relationship profiles
@@ -71,7 +68,7 @@ cmeOperationExecutorRegistry.register(
  *
  * @throws CmeOperationExecutionFailed
  */
-export async function showSemanticModelExecutor(
+async function showSemanticModelExecutor(
   context: CmeExecutionContext,
   args: ShowSemanticModelArguments,
 ): Promise<ShowSemanticModelResult> {

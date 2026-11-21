@@ -6,21 +6,11 @@ import {
   CmeOperationResult,
   InvalidOperationArguments,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   doesAddingVisualModelCauseSelfReference,
   findWritableVisualModel,
   getWritableVisualModels,
 } from "./visual-model-utilities";
-
-export function createVisualDiagramNodeOperation(
-  args: Omit<CreateVisualDiagramNodeArguments, "type">,
-): CmeOperation<CreateVisualDiagramNodeArguments, CreateVisualDiagramNodeResult> {
-  return {
-    type: CreateVisualDiagramNodeType,
-    ...args,
-  };
-}
 
 const CreateVisualDiagramNodeType =
   "create-visual-diagram-node-operation";
@@ -49,16 +39,23 @@ interface CreateVisualDiagramNodeResult
 
 }
 
-cmeOperationExecutorRegistry.register(
-  CreateVisualDiagramNodeType,
-  createVisualDiagramNodeOperation,
-  { execute: createVisualDiagramNodeExecutor });
+export const createVisualDiagramNodeOperation: CmeOperation<
+  CreateVisualDiagramNodeArguments, CreateVisualDiagramNodeResult> = {
+  metadata: {
+    type: CreateVisualDiagramNodeType,
+  },
+  create: (_context, parameters) => ({
+    type: CreateVisualDiagramNodeType,
+    ...parameters,
+  }),
+  execute: createVisualDiagramNodeExecutor,
+};
 
 /**
  * @throws InvalidOperationArguments When the node would cause a cycle.
  * @throws CmeOperationExecutionFailed
  */
-export async function createVisualDiagramNodeExecutor(
+async function createVisualDiagramNodeExecutor(
   context: CmeExecutionContext,
   args: CreateVisualDiagramNodeArguments,
 ): Promise<CreateVisualDiagramNodeResult> {

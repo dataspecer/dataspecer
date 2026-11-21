@@ -7,17 +7,23 @@ export const defaultXmlPartials: Record<string, string> = {
     {{#if (or (non-empty annotation.metaTitle) (non-empty annotation.metaDescription))}}
       <dd>
         <a href="{{#get-semantic-class annotation}}{{href pimIri}}{{/get-semantic-class}}">{{translate annotation.metaTitle}}</a>
-        {{#if (non-empty annotation.metaDescription)}}({{translate annotation.metaDescription}}){{/if}}
+        {{#if (non-empty annotation.metaDescription)}}
+          ({{translate annotation.metaDescription}})
+        {{/if}}
       </dd>
     {{/if}}
   {{/if}}
 {{/def}}
 
-{{#def "xml-qname" "name"}}{{#if name.[0]}}{{name.[0]}}:{{/if}}{{name.[1]}}{{/def}}
+{{#def "xml-qname" "name"}}{{#if name.[0]}}{{name.[0]}}:{{/if}}{{name.[1]}}{{/def~}}
 
 {{#def "xml-content-type" "type"}}
-{{#if (equals type "choice")}} - {{#iflng "cs"}}výběr jednoho elementu z množiny{{lng}}choice of one element from the set{{/iflng}}{{/if}}
-{{#if (equals type "sequence")}} - {{#iflng "cs"}}elementy v tomto pořadí{{lng}}elements in this order{{/iflng}}{{/if}}
+  {{#if (equals type "choice")}}
+    - {{#iflng "cs"}}výběr jednoho elementu z množiny{{lng}}choice of one element from the set{{/iflng}}
+  {{/if}}
+  {{#if (equals type "sequence")}}
+    - {{#iflng "cs"}}elementy v tomto pořadí{{lng}}elements in this order{{/iflng}}
+  {{/if}}
 {{/def}}
 
 {{#def "xml-schema-complex-content" "contents"}}
@@ -228,15 +234,25 @@ export const defaultXmlPartials: Record<string, string> = {
     <dd>
       {{#each pathFromParentEntity}}
         <i>
-          {{#if (equals type "class")}}{{#iflng "cs"}}odkazující na třídu{{lng}}referring to class{{/iflng}}{{/if}}
-          {{#if (equals type "property")}}{{#if @first}}{{#iflng "cs"}}vlastnost{{lng}}property{{/iflng}}{{else}}{{#iflng "cs"}}mající vlastnost{{lng}}having property{{/iflng}}{{/if}}{{/if}}
-          {{#if (equals type "generalization")}}{{#if @first}}{{#iflng "cs"}}z obecnější třídy{{lng}}from a more general class{{/iflng}}{{else}}{{#iflng "cs"}}mající obecnější třídu{{lng}}having a more general class{{/iflng}}{{/if}}{{/if}}
-          {{#if (equals type "specialization")}}{{#if @first}}{{#iflng "cs"}}z konkrétnější třídy{{lng}}from a more specific class{{/iflng}}{{else}}{{#iflng "cs"}}mající konkrétnější třídu{{lng}}having a more specific class{{/iflng}}{{/if}}{{/if}}
+          {{#if (equals type "class")}}
+            {{#iflng "cs"}}odkazující na třídu{{lng}}referring to class{{/iflng}}
+          {{/if}}
+          {{#if (equals type "property")}}
+            {{#if @first}}{{#iflng "cs"}}vlastnost{{lng}}property{{/iflng}}{{else}}{{#iflng "cs"}}mající vlastnost{{lng}}having property{{/iflng}}{{/if}}
+          {{/if}}
+          {{#if (equals type "generalization")}}
+            {{#if @first}}{{#iflng "cs"}}z obecnější třídy{{lng}}from a more general class{{/iflng}}{{else}}{{#iflng "cs"}}mající obecnější třídu{{lng}}having a more general class{{/iflng}}{{/if}}
+          {{/if}}
+          {{#if (equals type "specialization")}}
+            {{#if @first}}{{#iflng "cs"}}z konkrétnější třídy{{lng}}from a more specific class{{/iflng}}{{else}}{{#iflng "cs"}}mající konkrétnější třídu{{lng}}having a more specific class{{/iflng}}{{/if}}
+          {{/if}}
         </i>
 
         {{#with entity}}
           <a href="{{href pimIri}}"><strong>{{translate humanLabel}}</strong></a>
-          {{#if (non-empty humanDescription)}}({{translate humanDescription}}){{/if}}
+          {{#if (non-empty humanDescription)}}
+            ({{translate humanDescription}})
+          {{/if}}
         {{/with}}
 
         {{#if (not @last)}}
@@ -254,10 +270,12 @@ export const defaultXmlPartials: Record<string, string> = {
       <dd><a href="{{xml-href .}}"></a></dd>
     {{/parentEntityInDocumentation}}
 
-    {{#if type}}{{#with type}}
-      <dt>{{#iflng "cs"}}Typ elementu{{lng}}Element type{{/iflng}}</dt>
-      {{xml-type}}
-    {{/with}}{{else}}
+    {{#if type}}
+      {{#with type}}
+        <dt>{{#iflng "cs"}}Typ elementu{{lng}}Element type{{/iflng}}</dt>
+        {{xml-type}}
+      {{/with}}
+    {{else}}
       <i>{{#iflng "cs"}}Element nemá definovaný typ.{{lng}}The element has no defined type.{{/iflng}}</i>
     {{/if}}
 
@@ -277,15 +295,19 @@ export const defaultXmlPartials: Record<string, string> = {
   <dl>
     {{xml-meaning annotation}}
 
-    {{#if type}}{{#with type}}
-      <dt>{{#iflng "cs"}}Typ elementu{{lng}}Element type{{/iflng}}</dt>
-      {{xml-type}}
-    {{/with}}{{else}}
+    {{#if type}}
+      {{#with type}}
+        <dt>{{#iflng "cs"}}Typ elementu{{lng}}Element type{{/iflng}}</dt>
+        {{xml-type}}
+      {{/with}}
+    {{else}}
       <dd><i>{{#iflng "cs"}}Element nemá definovaný typ.{{lng}}The element has no defined type.{{/iflng}}</i></dd>
     {{/if}}
   </dl>
 </section>
-{{#linkedChildElements}}{{xml-non-root-element .}}{{/linkedChildElements}}
+{{#linkedChildElements}}
+  {{xml-non-root-element .}}
+{{/linkedChildElements}}
 {{/rootElements}}
 
 {{#rootTypes}}
@@ -301,7 +323,9 @@ export const defaultXmlPartials: Record<string, string> = {
     {{xml-assertions}}
   </dl>
 </section>
-{{#linkedChildElements}}{{xml-non-root-element .}}{{/linkedChildElements}}
+{{#linkedChildElements}}
+  {{xml-non-root-element .}}
+{{/linkedChildElements}}
 {{/rootTypes}}
 </section>`,
 };

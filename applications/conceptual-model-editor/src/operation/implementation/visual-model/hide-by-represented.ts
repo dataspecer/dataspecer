@@ -8,7 +8,6 @@ import {
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   findWritableVisualModel,
   getAllEntities,
@@ -19,15 +18,6 @@ import {
   collectInvalidVisualDiagramNodeEdges,
   removeVisualEntities,
 } from "./visual-model-removal";
-
-export function hideByRepresentedOperation(
-  args: Omit<HideByRepresentedArguments, "type">,
-): CmeOperation<HideByRepresentedArguments, HideByRepresentedResult> {
-  return {
-    type: HideByRepresentedType,
-    ...args,
-  };
-}
 
 const HideByRepresentedType =
   "hide-by-represented-operation";
@@ -48,10 +38,17 @@ interface HideByRepresentedArguments extends CmeOperationArguments {
 type HideByRepresentedResult =
   CmeOperationResult<HideByRepresentedArguments>;
 
-cmeOperationExecutorRegistry.register(
-  HideByRepresentedType,
-  hideByRepresentedOperation,
-  { execute: hideByRepresentedExecutor });
+export const hideByRepresentedOperation: CmeOperation<
+  HideByRepresentedArguments, HideByRepresentedResult> = {
+  metadata: {
+    type: HideByRepresentedType,
+  },
+  create: (_context, parameters) => ({
+    type: HideByRepresentedType,
+    ...parameters,
+  }),
+  execute: hideByRepresentedExecutor,
+};
 
 /**
  * Edges from visual diagram nodes, which contain the hidden classes,
@@ -59,7 +56,7 @@ cmeOperationExecutorRegistry.register(
  *
  * @throws CmeOperationExecutionFailed
  */
-export async function hideByRepresentedExecutor(
+async function hideByRepresentedExecutor(
   context: CmeExecutionContext,
   args: HideByRepresentedArguments,
 ): Promise<HideByRepresentedResult> {

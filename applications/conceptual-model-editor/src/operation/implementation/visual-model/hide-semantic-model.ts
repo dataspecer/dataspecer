@@ -6,7 +6,6 @@ import {
   CmeOperationResult,
   MissingModel,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   findWritableVisualModel,
   getAllEntities,
@@ -19,15 +18,6 @@ import {
   collectInvalidVisualDiagramNodeEdges,
   removeVisualEntities,
 } from "./visual-model-removal";
-
-export function hideSemanticModelOperation(
-  args: Omit<HideSemanticModelArguments, "type">,
-): CmeOperation<HideSemanticModelArguments, HideSemanticModelResult> {
-  return {
-    type: HideSemanticModelType,
-    ...args,
-  };
-}
 
 const HideSemanticModelType =
   "hide-semantic-model-operation";
@@ -45,17 +35,24 @@ interface HideSemanticModelArguments extends CmeOperationArguments {
 type HideSemanticModelResult =
   CmeOperationResult<HideSemanticModelArguments>;
 
-cmeOperationExecutorRegistry.register(
-  HideSemanticModelType,
-  hideSemanticModelOperation,
-  { execute: hideSemanticModelExecutor });
+export const hideSemanticModelOperation: CmeOperation<
+  HideSemanticModelArguments, HideSemanticModelResult> = {
+  metadata: {
+    type: HideSemanticModelType,
+  },
+  create: (_context, parameters) => ({
+    type: HideSemanticModelType,
+    ...parameters,
+  }),
+  execute: hideSemanticModelExecutor,
+};
 
 /**
  * Connected edges are removed together with the nodes.
  *
  * @throws CmeOperationExecutionFailed
  */
-export async function hideSemanticModelExecutor(
+async function hideSemanticModelExecutor(
   context: CmeExecutionContext,
   args: HideSemanticModelArguments,
 ): Promise<HideSemanticModelResult> {

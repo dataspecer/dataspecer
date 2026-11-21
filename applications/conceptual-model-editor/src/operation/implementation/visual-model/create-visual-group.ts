@@ -5,22 +5,12 @@ import {
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   findTopLevelGroup,
   findWritableVisualModel,
   getGroupMappings,
 } from "./visual-model-utilities";
 import { setAnchor } from "./toggle-anchor";
-
-export function createVisualGroupOperation(
-  args: Omit<CreateVisualGroupArguments, "type">,
-): CmeOperation<CreateVisualGroupArguments, CreateVisualGroupResult> {
-  return {
-    type: CreateVisualGroupType,
-    ...args,
-  };
-}
 
 const CreateVisualGroupType =
   "create-visual-group-operation";
@@ -45,10 +35,17 @@ interface CreateVisualGroupResult
 
 }
 
-cmeOperationExecutorRegistry.register(
-  CreateVisualGroupType,
-  createVisualGroupOperation,
-  { execute: createVisualGroupExecutor });
+export const createVisualGroupOperation: CmeOperation<
+  CreateVisualGroupArguments, CreateVisualGroupResult> = {
+  metadata: {
+    type: CreateVisualGroupType,
+  },
+  create: (_context, parameters) => ({
+    type: CreateVisualGroupType,
+    ...parameters,
+  }),
+  execute: createVisualGroupExecutor,
+};
 
 /**
  * A node which is part of a group is replaced by its top level group.
@@ -56,7 +53,7 @@ cmeOperationExecutorRegistry.register(
  *
  * @throws CmeOperationExecutionFailed
  */
-export async function createVisualGroupExecutor(
+async function createVisualGroupExecutor(
   context: CmeExecutionContext,
   args: CreateVisualGroupArguments,
 ): Promise<CreateVisualGroupResult> {

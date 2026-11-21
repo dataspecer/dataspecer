@@ -15,17 +15,7 @@ import {
   CmeOperationExecutionFailed,
   CmeOperationResult,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import { findVisualModel } from "../operation-utilities";
-
-export function setVisualEntityColorOperation(
-  args: Omit<SetVisualEntityColorArguments, "type">,
-): CmeOperation<SetVisualEntityColorArguments, SetVisualEntityColorResult> {
-  return {
-    type: SetVisualEntityColorType,
-    ...args,
-  };
-}
 
 interface SetVisualEntityColorArguments extends CmeOperationArguments {
 
@@ -54,15 +44,22 @@ type ColorableVisualEntity =
 type SetVisualEntityColorResult =
   CmeOperationResult<SetVisualEntityColorArguments>;
 
-cmeOperationExecutorRegistry.register(
-  SetVisualEntityColorType,
-  setVisualEntityColorOperation,
-  { execute: setVisualEntityColorExecutor });
+export const setVisualEntityColorOperation: CmeOperation<
+  SetVisualEntityColorArguments, SetVisualEntityColorResult> = {
+  metadata: {
+    type: SetVisualEntityColorType,
+  },
+  create: (_context, parameters) => ({
+    type: SetVisualEntityColorType,
+    ...parameters,
+  }),
+  execute: setVisualEntityColorExecutor,
+};
 
 /**
  * @throws CmeOperationExecutionFailed
  */
-export async function setVisualEntityColorExecutor(
+async function setVisualEntityColorExecutor(
   context: CmeExecutionContext,
   args: SetVisualEntityColorArguments,
 ): Promise<SetVisualEntityColorResult> {

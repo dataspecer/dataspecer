@@ -7,18 +7,8 @@ import {
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import { findWritableVisualModel } from "./visual-model-utilities";
 import { getVisualEdge } from "./visual-edge-utilities";
-
-export function moveWaypointsOperation(
-  args: Omit<MoveWaypointsArguments, "type">,
-): CmeOperation<MoveWaypointsArguments, MoveWaypointsResult> {
-  return {
-    type: MoveWaypointsType,
-    ...args,
-  };
-}
 
 const MoveWaypointsType =
   "move-waypoints-operation";
@@ -39,17 +29,23 @@ interface MoveWaypointsArguments extends CmeOperationArguments {
 type MoveWaypointsResult =
   CmeOperationResult<MoveWaypointsArguments>;
 
-cmeOperationExecutorRegistry.register(
-  MoveWaypointsType,
-  moveWaypointsOperation,
-  { execute: moveWaypointsExecutor });
+export const moveWaypointsOperation: CmeOperation<MoveWaypointsArguments, MoveWaypointsResult> = {
+  metadata: {
+    type: MoveWaypointsType,
+  },
+  create: (_context, parameters) => ({
+    type: MoveWaypointsType,
+    ...parameters,
+  }),
+  execute: moveWaypointsExecutor,
+};
 
 /**
  * All edges are validated before any is changed.
  *
  * @throws CmeOperationExecutionFailed
  */
-export async function moveWaypointsExecutor(
+async function moveWaypointsExecutor(
   context: CmeExecutionContext,
   args: MoveWaypointsArguments,
 ): Promise<MoveWaypointsResult> {

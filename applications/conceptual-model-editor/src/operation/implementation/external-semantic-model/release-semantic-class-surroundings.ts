@@ -4,7 +4,6 @@ import {
 } from "../../../dataspecer/entity-model";
 
 import { isExternalSemanticModel } from "../../../dataspecer/semantic-model";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import { findSemanticModel } from "../operation-utilities";
 import {
   CmeExecutionContext,
@@ -13,15 +12,6 @@ import {
   CmeOperationResult,
   ModelIsNotWritable,
 } from "../../operation";
-
-export function releaseSemanticClassSurroundingsOperation(
-  args: Omit<ReleaseSemanticClassSurroundingsArguments, "type">,
-): CmeOperation<ReleaseSemanticClassSurroundingsArguments, ReleaseClassSurroundingsResult> {
-  return {
-    type: ReleaseSemanticClassSurroundingsType,
-    ...args,
-  };
-}
 
 export interface ReleaseSemanticClassSurroundingsArguments
   extends CmeOperationArguments {
@@ -40,13 +30,19 @@ const ReleaseSemanticClassSurroundingsType =
 type ReleaseClassSurroundingsResult =
   CmeOperationResult<ReleaseSemanticClassSurroundingsArguments>;
 
-cmeOperationExecutorRegistry.register(
-  ReleaseSemanticClassSurroundingsType,
-  releaseSemanticClassSurroundingsOperation,
-  { execute: releaseClassSurroundingsExecutor },
-)
+export const releaseSemanticClassSurroundingsOperation: CmeOperation<
+  ReleaseSemanticClassSurroundingsArguments, ReleaseClassSurroundingsResult> = {
+  metadata: {
+    type: ReleaseSemanticClassSurroundingsType,
+  },
+  create: (_context, parameters) => ({
+    type: ReleaseSemanticClassSurroundingsType,
+    ...parameters,
+  }),
+  execute: releaseClassSurroundingsExecutor,
+};
 
-export async function releaseClassSurroundingsExecutor(
+async function releaseClassSurroundingsExecutor(
   context: CmeExecutionContext,
   args: ReleaseSemanticClassSurroundingsArguments,
 ): Promise<ReleaseClassSurroundingsResult> {

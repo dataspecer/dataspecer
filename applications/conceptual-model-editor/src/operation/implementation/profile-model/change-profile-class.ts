@@ -16,20 +16,10 @@ import {
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   executeCreateProfileOperation,
   findProfileModel,
 } from "../operation-utilities";
-
-export function changeProfileClassOperation(
-  args: Omit<ChangeProfileClassArguments, "type">,
-): CmeOperation<ChangeProfileClassArguments, ChangeProfileClassResult> {
-  return {
-    type: ChangeProfileClassType,
-    ...args,
-  };
-}
 
 const ChangeProfileClassType =
   "change-profile-class-operation";
@@ -64,17 +54,24 @@ interface ChangeProfileClassArguments extends CmeOperationArguments {
 type ChangeProfileClassResult =
   CmeOperationResult<ChangeProfileClassArguments>;
 
-cmeOperationExecutorRegistry.register(
-  ChangeProfileClassType,
-  changeProfileClassOperation,
-  { execute: changeProfileClassExecutor });
+export const changeProfileClassOperation: CmeOperation<
+  ChangeProfileClassArguments, ChangeProfileClassResult> = {
+  metadata: {
+    type: ChangeProfileClassType,
+  },
+  create: (_context, parameters) => ({
+    type: ChangeProfileClassType,
+    ...parameters,
+  }),
+  execute: changeProfileClassExecutor,
+};
 
 const factory = createDefaultSemanticModelProfileOperationFactory();
 
 /**
  * @throws CmeOperationExecutionFailed
  */
-export async function changeProfileClassExecutor(
+async function changeProfileClassExecutor(
   context: CmeExecutionContext,
   args: ChangeProfileClassArguments,
 ): Promise<ChangeProfileClassResult> {

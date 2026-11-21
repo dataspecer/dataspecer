@@ -22,7 +22,11 @@ import {
   createRelationship
 } from "@dataspecer/core-v2/semantic-model/operations";
 import { addSemanticRelationshipToVisualModelAction } from "./add-relationship-to-visual-model";
-import { modelGraphContextToUse, UseModelGraphContextType } from "../context/model-context";
+import {
+  createModelGraphExecutor,
+  modelGraphContextToUse,
+  UseModelGraphContextType,
+} from "../context/model-context";
 import { SemanticModelAggregator, SemanticModelAggregatorView } from "@dataspecer/core-v2/semantic-model/aggregator";
 import { SetStateAction } from "react";
 import { createVisualEdgeEndpointDuplicateAction } from "./create-visual-edge-endpoint-duplicate";
@@ -440,6 +444,8 @@ const prepareVisualModelWithFourNodes = () => {
     selectActiveVisualModel() {
       throw Error("Not supported");
     },
+    executor: createModelGraphExecutor(
+      () => [...models.values()], () => [...visualModels.values()]),
   });
 
   return {

@@ -13,20 +13,10 @@ import {
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   executeCreateSemanticOperation,
   findSemanticModel,
 } from "../operation-utilities";
-
-export function createSemanticGeneralizationOperation(
-  args: Omit<CreateSemanticGeneralizationArguments, "type">,
-): CmeOperation<CreateSemanticGeneralizationArguments, CreateSemanticGeneralizationResult> {
-  return {
-    type: CreateSemanticGeneralizationType,
-    ...args,
-  };
-}
 
 const CreateSemanticGeneralizationType =
   "create-semantic-generalization-operation";
@@ -34,6 +24,11 @@ const CreateSemanticGeneralizationType =
 interface CreateSemanticGeneralizationArguments extends CmeOperationArguments {
 
   type: typeof CreateSemanticGeneralizationType;
+
+  /**
+   * Identifier of the created entity.
+   */
+  identifier: EntityDsIdentifier;
 
   semanticModel: ModelDsIdentifier;
 
@@ -52,21 +47,31 @@ interface CreateSemanticGeneralizationResult
 
 }
 
-cmeOperationExecutorRegistry.register(
-  CreateSemanticGeneralizationType,
-  createSemanticGeneralizationOperation,
-  { execute: createSemanticGeneralizationExecutor });
+export const createSemanticGeneralizationOperation: CmeOperation<
+  CreateSemanticGeneralizationArguments, CreateSemanticGeneralizationResult,
+  Omit<CreateSemanticGeneralizationArguments, "type" | "identifier">> = {
+  metadata: {
+    type: CreateSemanticGeneralizationType,
+  },
+  create: (context, parameters) => ({
+    type: CreateSemanticGeneralizationType,
+    ...parameters,
+    identifier: context.createEntityIdentifier(parameters.semanticModel),
+  }),
+  execute: createSemanticGeneralizationExecutor,
+};
 
 /**
  * @throws CmeOperationExecutionFailed
  */
-export async function createSemanticGeneralizationExecutor(
+async function createSemanticGeneralizationExecutor(
   context: CmeExecutionContext,
   args: CreateSemanticGeneralizationArguments,
 ): Promise<CreateSemanticGeneralizationResult> {
   const model = findSemanticModel(context, args.semanticModel);
 
   const operation = createGeneralization({
+    id: args.identifier,
     iri: args.iri,
     child: args.child,
     parent: args.parent,

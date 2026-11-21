@@ -5,18 +5,8 @@ import {
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import { findWritableVisualModel } from "./visual-model-utilities";
 import { getVisualEdge } from "./visual-edge-utilities";
-
-export function deleteWaypointOperation(
-  args: Omit<DeleteWaypointArguments, "type">,
-): CmeOperation<DeleteWaypointArguments, DeleteWaypointResult> {
-  return {
-    type: DeleteWaypointType,
-    ...args,
-  };
-}
 
 const DeleteWaypointType =
   "delete-waypoint-operation";
@@ -36,15 +26,22 @@ interface DeleteWaypointArguments extends CmeOperationArguments {
 type DeleteWaypointResult =
   CmeOperationResult<DeleteWaypointArguments>;
 
-cmeOperationExecutorRegistry.register(
-  DeleteWaypointType,
-  deleteWaypointOperation,
-  { execute: deleteWaypointExecutor });
+export const deleteWaypointOperation: CmeOperation<
+  DeleteWaypointArguments, DeleteWaypointResult> = {
+  metadata: {
+    type: DeleteWaypointType,
+  },
+  create: (_context, parameters) => ({
+    type: DeleteWaypointType,
+    ...parameters,
+  }),
+  execute: deleteWaypointExecutor,
+};
 
 /**
  * @throws CmeOperationExecutionFailed
  */
-export async function deleteWaypointExecutor(
+async function deleteWaypointExecutor(
   context: CmeExecutionContext,
   args: DeleteWaypointArguments,
 ): Promise<DeleteWaypointResult> {

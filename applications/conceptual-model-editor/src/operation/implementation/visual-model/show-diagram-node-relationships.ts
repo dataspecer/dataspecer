@@ -13,7 +13,6 @@ import {
   CmeOperationResult,
   InvalidEntity,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   findWritableVisualModel,
   getAllEntities,
@@ -24,15 +23,6 @@ import {
   isVisualEdgeEnd,
 } from "./visual-model-utilities";
 import { isSemanticConnection } from "./visual-model-additions";
-
-export function showDiagramNodeRelationshipsOperation(
-  args: Omit<ShowDiagramNodeRelationshipsArguments, "type">,
-): CmeOperation<ShowDiagramNodeRelationshipsArguments, ShowDiagramNodeRelationshipsResult> {
-  return {
-    type: ShowDiagramNodeRelationshipsType,
-    ...args,
-  };
-}
 
 const ShowDiagramNodeRelationshipsType =
   "show-diagram-node-relationships-operation";
@@ -53,10 +43,17 @@ interface ShowDiagramNodeRelationshipsArguments extends CmeOperationArguments {
 type ShowDiagramNodeRelationshipsResult =
   CmeOperationResult<ShowDiagramNodeRelationshipsArguments>;
 
-cmeOperationExecutorRegistry.register(
-  ShowDiagramNodeRelationshipsType,
-  showDiagramNodeRelationshipsOperation,
-  { execute: showDiagramNodeRelationshipsExecutor });
+export const showDiagramNodeRelationshipsOperation: CmeOperation<
+  ShowDiagramNodeRelationshipsArguments, ShowDiagramNodeRelationshipsResult> = {
+  metadata: {
+    type: ShowDiagramNodeRelationshipsType,
+  },
+  create: (_context, parameters) => ({
+    type: ShowDiagramNodeRelationshipsType,
+    ...parameters,
+  }),
+  execute: showDiagramNodeRelationshipsExecutor,
+};
 
 /**
  * Visual profile relationships are not added,
@@ -64,7 +61,7 @@ cmeOperationExecutorRegistry.register(
  *
  * @throws CmeOperationExecutionFailed
  */
-export async function showDiagramNodeRelationshipsExecutor(
+async function showDiagramNodeRelationshipsExecutor(
   context: CmeExecutionContext,
   args: ShowDiagramNodeRelationshipsArguments,
 ): Promise<ShowDiagramNodeRelationshipsResult> {

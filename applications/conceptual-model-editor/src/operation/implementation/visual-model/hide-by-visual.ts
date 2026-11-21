@@ -5,21 +5,11 @@ import {
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import { findWritableVisualModel } from "./visual-model-utilities";
 import {
   collectDirectVisualEntitiesToRemove,
   removeVisualEntities,
 } from "./visual-model-removal";
-
-export function hideByVisualOperation(
-  args: Omit<HideByVisualArguments, "type">,
-): CmeOperation<HideByVisualArguments, HideByVisualResult> {
-  return {
-    type: HideByVisualType,
-    ...args,
-  };
-}
 
 const HideByVisualType =
   "hide-by-visual-operation";
@@ -40,17 +30,23 @@ interface HideByVisualArguments extends CmeOperationArguments {
 type HideByVisualResult =
   CmeOperationResult<HideByVisualArguments>;
 
-cmeOperationExecutorRegistry.register(
-  HideByVisualType,
-  hideByVisualOperation,
-  { execute: hideByVisualExecutor });
+export const hideByVisualOperation: CmeOperation<HideByVisualArguments, HideByVisualResult> = {
+  metadata: {
+    type: HideByVisualType,
+  },
+  create: (_context, parameters) => ({
+    type: HideByVisualType,
+    ...parameters,
+  }),
+  execute: hideByVisualExecutor,
+};
 
 /**
  * Groups are reduced, a group left with a single member is removed.
  *
  * @throws CmeOperationExecutionFailed
  */
-export async function hideByVisualExecutor(
+async function hideByVisualExecutor(
   context: CmeExecutionContext,
   args: HideByVisualArguments,
 ): Promise<HideByVisualResult> {

@@ -4,7 +4,6 @@ import {
 } from "../../../dataspecer/entity-model";
 
 import { isExternalSemanticModel } from "../../../dataspecer/semantic-model";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import { findSemanticModel } from "../operation-utilities";
 import {
   CmeExecutionContext,
@@ -13,15 +12,6 @@ import {
   CmeOperationResult,
   ModelIsNotWritable,
 } from "../../operation";
-
-export function addSemanticClassSurroundingsOperation(
-  args: Omit<AddSemanticClassSurroundingsArguments, "type">,
-): CmeOperation<AddSemanticClassSurroundingsArguments, AddClassSurroundingsResult> {
-  return {
-    type: AddSemanticClassSurroundingsType,
-    ...args,
-  };
-}
 
 interface AddSemanticClassSurroundingsArguments extends CmeOperationArguments {
 
@@ -39,13 +29,19 @@ const AddSemanticClassSurroundingsType =
 type AddClassSurroundingsResult =
   CmeOperationResult<AddSemanticClassSurroundingsArguments>;
 
-cmeOperationExecutorRegistry.register(
-  AddSemanticClassSurroundingsType,
-  addSemanticClassSurroundingsOperation,
-  { execute: addSemanticClassSurroundingsExecutor },
-)
+export const addSemanticClassSurroundingsOperation: CmeOperation<
+  AddSemanticClassSurroundingsArguments, AddClassSurroundingsResult> = {
+  metadata: {
+    type: AddSemanticClassSurroundingsType,
+  },
+  create: (_context, parameters) => ({
+    type: AddSemanticClassSurroundingsType,
+    ...parameters,
+  }),
+  execute: addSemanticClassSurroundingsExecutor,
+};
 
-export async function addSemanticClassSurroundingsExecutor(
+async function addSemanticClassSurroundingsExecutor(
   context: CmeExecutionContext,
   args: AddSemanticClassSurroundingsArguments,
 ): Promise<AddClassSurroundingsResult> {

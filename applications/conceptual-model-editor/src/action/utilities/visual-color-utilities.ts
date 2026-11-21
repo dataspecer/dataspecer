@@ -3,11 +3,10 @@ import { VisualModel } from "@dataspecer/visual-model";
 import { createLogger } from "../../application";
 import { ClassesContext } from "../../context/classes-context";
 import {
+  cmeOperations,
   createCmeOperationExecutor,
-  setVisualEntityColorOperation,
+  createCmeEntityIdentifier,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation/operation-registry";
-import { createNewEntityIdentifier } from "./create-new-entity-identifier";
 import {
   selectColorableVisualEntities,
   VisualColorDialogState,
@@ -37,10 +36,13 @@ export function applyVisualColorFromDialog(
   }
   const visualEntities = selectColorableVisualEntities(visualModel, represented)
     .map(item => item.id);
-  const executor = createCmeOperationExecutor(
-    cmeOperationExecutorRegistry, classes.semanticModelsList,
-    classes.visualModelsList, createNewEntityIdentifier);
-  executor.execute(setVisualEntityColorOperation({
+  const executor = createCmeOperationExecutor(cmeOperations, {
+    entityModels: classes.semanticModelsList,
+    visualModels: classes.visualModelsList,
+    createNewEntityIdentifier: createCmeEntityIdentifier,
+  });
+  executor.execute(cmeOperations.setVisualEntityColor.create(
+      executor.createContext, {
     visualModel: visualModel.getId(),
     visualEntities,
     color: state.visualColor,

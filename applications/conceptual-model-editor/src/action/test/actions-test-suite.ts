@@ -44,7 +44,11 @@ import {
   SemanticModelAggregatorView
 } from "@dataspecer/core-v2/semantic-model/aggregator";
 import { XY } from "@dataspecer/layout";
-import { modelGraphContextToUse, UseModelGraphContextType } from "../../context/model-context";
+import {
+  createModelGraphExecutor,
+  modelGraphContextToUse,
+  UseModelGraphContextType,
+} from "../../context/model-context";
 import { CmeSpecialization } from "../../dataspecer/cme-model/model";
 import { addVisualDiagramNode } from "../../dataspecer/visual-model/operation/add-visual-diagram-node";
 import {
@@ -446,6 +450,8 @@ export class ActionsTestSuite {
       selectActiveVisualModel() {
         throw Error("Not supported");
       },
+      executor: createModelGraphExecutor(
+        () => [...models.values()], () => [...visualModels.values()]),
     });
 
     // Fill with data

@@ -15,7 +15,6 @@ import {
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   executeCreateProfileOperation,
   findProfileModel,
@@ -25,15 +24,6 @@ import {
   RelationshipProfileValues,
 } from "./relationship-profile-utilities";
 
-export function createProfileRelationshipOperation(
-  args: Omit<CreateProfileRelationshipArguments, "type">,
-): CmeOperation<CreateProfileRelationshipArguments, CreateProfileRelationshipResult> {
-  return {
-    type: CreateProfileRelationshipType,
-    ...args,
-  };
-}
-
 const CreateProfileRelationshipType =
   "create-profile-relationship-operation";
 
@@ -41,6 +31,11 @@ interface CreateProfileRelationshipArguments
   extends CmeOperationArguments, RelationshipProfileValues {
 
   type: typeof CreateProfileRelationshipType;
+
+  /**
+   * Identifier of the created entity.
+   */
+  identifier: EntityDsIdentifier;
 
   profileModel: ModelDsIdentifier;
 
@@ -53,23 +48,33 @@ interface CreateProfileRelationshipResult
 
 }
 
-cmeOperationExecutorRegistry.register(
-  CreateProfileRelationshipType,
-  createProfileRelationshipOperation,
-  { execute: createProfileRelationshipExecutor });
+export const createProfileRelationshipOperation: CmeOperation<
+  CreateProfileRelationshipArguments, CreateProfileRelationshipResult,
+  Omit<CreateProfileRelationshipArguments, "type" | "identifier">> = {
+  metadata: {
+    type: CreateProfileRelationshipType,
+  },
+  create: (context, parameters) => ({
+    type: CreateProfileRelationshipType,
+    ...parameters,
+    identifier: context.createEntityIdentifier(parameters.profileModel),
+  }),
+  execute: createProfileRelationshipExecutor,
+};
 
 const factory = createDefaultSemanticModelProfileOperationFactory();
 
 /**
  * @throws CmeOperationExecutionFailed
  */
-export async function createProfileRelationshipExecutor(
+async function createProfileRelationshipExecutor(
   context: CmeExecutionContext,
   args: CreateProfileRelationshipArguments,
 ): Promise<CreateProfileRelationshipResult> {
   const model = findProfileModel(context, args.profileModel);
 
   const operation = factory.createRelationshipProfile({
+    id: args.identifier,
     ends: createRelationshipProfileEnds(args),
   });
 

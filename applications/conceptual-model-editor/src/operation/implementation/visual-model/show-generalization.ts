@@ -13,21 +13,11 @@ import {
   CmeOperationResult,
   InvalidEntity,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   findWritableVisualModel,
   getEntity,
 } from "./visual-model-utilities";
 import { addVisualConnection } from "./visual-model-additions";
-
-export function showGeneralizationOperation(
-  args: Omit<ShowGeneralizationArguments, "type">,
-): CmeOperation<ShowGeneralizationArguments, ShowGeneralizationResult> {
-  return {
-    type: ShowGeneralizationType,
-    ...args,
-  };
-}
 
 const ShowGeneralizationType =
   "show-generalization-operation";
@@ -52,15 +42,22 @@ interface ShowGeneralizationResult
 
 }
 
-cmeOperationExecutorRegistry.register(
-  ShowGeneralizationType,
-  showGeneralizationOperation,
-  { execute: showGeneralizationExecutor });
+export const showGeneralizationOperation: CmeOperation<
+  ShowGeneralizationArguments, ShowGeneralizationResult> = {
+  metadata: {
+    type: ShowGeneralizationType,
+  },
+  create: (_context, parameters) => ({
+    type: ShowGeneralizationType,
+    ...parameters,
+  }),
+  execute: showGeneralizationExecutor,
+};
 
 /**
  * @throws CmeOperationExecutionFailed
  */
-export async function showGeneralizationExecutor(
+async function showGeneralizationExecutor(
   context: CmeExecutionContext,
   args: ShowGeneralizationArguments,
 ): Promise<ShowGeneralizationResult> {

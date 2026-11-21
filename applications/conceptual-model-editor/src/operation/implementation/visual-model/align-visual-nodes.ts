@@ -8,7 +8,6 @@ import {
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   findWritableVisualModel,
   getBotRightPosition,
@@ -19,15 +18,6 @@ import {
   isVisualEdgeEnd,
   NodeDimensions,
 } from "./visual-model-utilities";
-
-export function alignVisualNodesOperation(
-  args: Omit<AlignVisualNodesArguments, "type">,
-): CmeOperation<AlignVisualNodesArguments, AlignVisualNodesResult> {
-  return {
-    type: AlignVisualNodesType,
-    ...args,
-  };
-}
 
 const AlignVisualNodesType =
   "align-visual-nodes-operation";
@@ -61,15 +51,22 @@ interface AlignVisualNodesArguments extends CmeOperationArguments {
 type AlignVisualNodesResult =
   CmeOperationResult<AlignVisualNodesArguments>;
 
-cmeOperationExecutorRegistry.register(
-  AlignVisualNodesType,
-  alignVisualNodesOperation,
-  { execute: alignVisualNodesExecutor });
+export const alignVisualNodesOperation: CmeOperation<
+  AlignVisualNodesArguments, AlignVisualNodesResult> = {
+  metadata: {
+    type: AlignVisualNodesType,
+  },
+  create: (_context, parameters) => ({
+    type: AlignVisualNodesType,
+    ...parameters,
+  }),
+  execute: alignVisualNodesExecutor,
+};
 
 /**
  * @throws CmeOperationExecutionFailed
  */
-export async function alignVisualNodesExecutor(
+async function alignVisualNodesExecutor(
   context: CmeExecutionContext,
   args: AlignVisualNodesArguments,
 ): Promise<AlignVisualNodesResult> {

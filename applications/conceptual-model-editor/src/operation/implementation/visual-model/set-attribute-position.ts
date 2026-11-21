@@ -9,20 +9,10 @@ import {
   CmeOperationResult,
   InvalidOperationArguments,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   findWritableVisualModel,
   getVisualNode,
 } from "./visual-model-utilities";
-
-export function setAttributePositionOperation(
-  args: Omit<SetAttributePositionArguments, "type">,
-): CmeOperation<SetAttributePositionArguments, SetAttributePositionResult> {
-  return {
-    type: SetAttributePositionType,
-    ...args,
-  };
-}
 
 const SetAttributePositionType =
   "set-attribute-position-operation";
@@ -44,15 +34,22 @@ interface SetAttributePositionArguments extends CmeOperationArguments {
 type SetAttributePositionResult =
   CmeOperationResult<SetAttributePositionArguments>;
 
-cmeOperationExecutorRegistry.register(
-  SetAttributePositionType,
-  setAttributePositionOperation,
-  { execute: setAttributePositionExecutor });
+export const setAttributePositionOperation: CmeOperation<
+  SetAttributePositionArguments, SetAttributePositionResult> = {
+  metadata: {
+    type: SetAttributePositionType,
+  },
+  create: (_context, parameters) => ({
+    type: SetAttributePositionType,
+    ...parameters,
+  }),
+  execute: setAttributePositionExecutor,
+};
 
 /**
  * @throws CmeOperationExecutionFailed
  */
-export async function setAttributePositionExecutor(
+async function setAttributePositionExecutor(
   context: CmeExecutionContext,
   args: SetAttributePositionArguments,
 ): Promise<SetAttributePositionResult> {

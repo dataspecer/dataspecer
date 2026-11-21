@@ -13,16 +13,6 @@ import {
 } from "../../operation";
 import { getEntityModels } from "../visual-model/visual-model-utilities";
 import { InMemorySemanticModel } from "../../../dataspecer/profile-model";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
-
-export function deleteSemanticEntitiesOperation(
-  args: Omit<DeleteSemanticEntitiesArguments, "type">,
-): CmeOperation<DeleteSemanticEntitiesArguments, DeleteSemanticEntitiesResult> {
-  return {
-    type: DeleteSemanticEntitiesType,
-    ...args,
-  };
-}
 
 /**
  * TODO This action delete both from visual and from profile models.
@@ -57,16 +47,23 @@ interface DeleteSemanticEntitiesResult
 
 }
 
-cmeOperationExecutorRegistry.register(
-  DeleteSemanticEntitiesType,
-  deleteSemanticEntitiesOperation,
-  { execute: deleteSemanticEntitiesExecutor });
+export const deleteSemanticEntitiesOperation: CmeOperation<
+  DeleteSemanticEntitiesArguments, DeleteSemanticEntitiesResult> = {
+  metadata: {
+    type: DeleteSemanticEntitiesType,
+  },
+  create: (_context, parameters) => ({
+    type: DeleteSemanticEntitiesType,
+    ...parameters,
+  }),
+  execute: deleteSemanticEntitiesExecutor,
+};
 
 /**
  * Entities are not removed from visual models,
  * use the hide operations for that.
  */
-export async function deleteSemanticEntitiesExecutor(
+async function deleteSemanticEntitiesExecutor(
   context: CmeExecutionContext,
   args: DeleteSemanticEntitiesArguments,
 ): Promise<DeleteSemanticEntitiesResult> {

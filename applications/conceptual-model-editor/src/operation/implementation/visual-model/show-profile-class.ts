@@ -13,7 +13,6 @@ import {
   CmeOperationResult,
   InvalidEntity,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   findWritableVisualModel,
   getAllEntities,
@@ -23,15 +22,6 @@ import {
   addRelatedEntities,
   addVisualNodeForEntity,
 } from "./visual-model-additions";
-
-export function showProfileClassOperation(
-  args: Omit<ShowProfileClassArguments, "type">,
-): CmeOperation<ShowProfileClassArguments, ShowProfileClassResult> {
-  return {
-    type: ShowProfileClassType,
-    ...args,
-  };
-}
 
 const ShowProfileClassType =
   "show-profile-class-operation";
@@ -57,17 +47,24 @@ interface ShowProfileClassResult
 
 }
 
-cmeOperationExecutorRegistry.register(
-  ShowProfileClassType,
-  showProfileClassOperation,
-  { execute: showProfileClassExecutor });
+export const showProfileClassOperation: CmeOperation<
+  ShowProfileClassArguments, ShowProfileClassResult> = {
+  metadata: {
+    type: ShowProfileClassType,
+  },
+  create: (_context, parameters) => ({
+    type: ShowProfileClassType,
+    ...parameters,
+  }),
+  execute: showProfileClassExecutor,
+};
 
 /**
  * The model of the node is the model owning the class profile.
  *
  * @throws CmeOperationExecutionFailed
  */
-export async function showProfileClassExecutor(
+async function showProfileClassExecutor(
   context: CmeExecutionContext,
   args: ShowProfileClassArguments,
 ): Promise<ShowProfileClassResult> {

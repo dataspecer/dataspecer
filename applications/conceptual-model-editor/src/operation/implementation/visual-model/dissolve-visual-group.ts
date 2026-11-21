@@ -6,21 +6,11 @@ import {
   CmeOperationResult,
   InvalidEntity,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   findTopLevelGroupInVisualModel,
   findWritableVisualModel,
 } from "./visual-model-utilities";
 import { removeGroup } from "./visual-model-removal";
-
-export function dissolveVisualGroupOperation(
-  args: Omit<DissolveVisualGroupArguments, "type">,
-): CmeOperation<DissolveVisualGroupArguments, DissolveVisualGroupResult> {
-  return {
-    type: DissolveVisualGroupType,
-    ...args,
-  };
-}
 
 const DissolveVisualGroupType =
   "dissolve-visual-group-operation";
@@ -45,15 +35,22 @@ interface DissolveVisualGroupResult
 
 }
 
-cmeOperationExecutorRegistry.register(
-  DissolveVisualGroupType,
-  dissolveVisualGroupOperation,
-  { execute: dissolveVisualGroupExecutor });
+export const dissolveVisualGroupOperation: CmeOperation<
+  DissolveVisualGroupArguments, DissolveVisualGroupResult> = {
+  metadata: {
+    type: DissolveVisualGroupType,
+  },
+  create: (_context, parameters) => ({
+    type: DissolveVisualGroupType,
+    ...parameters,
+  }),
+  execute: dissolveVisualGroupExecutor,
+};
 
 /**
  * @throws CmeOperationExecutionFailed
  */
-export async function dissolveVisualGroupExecutor(
+async function dissolveVisualGroupExecutor(
   context: CmeExecutionContext,
   args: DissolveVisualGroupArguments,
 ): Promise<DissolveVisualGroupResult> {

@@ -8,21 +8,11 @@ import {
   CmeOperationResult,
   InvalidEntity,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   findWritableVisualModel,
   getVisualEntity,
   isVisualEdgeEnd,
 } from "./visual-model-utilities";
-
-export function moveVisualNodesOperation(
-  args: Omit<MoveVisualNodesArguments, "type">,
-): CmeOperation<MoveVisualNodesArguments, MoveVisualNodesResult> {
-  return {
-    type: MoveVisualNodesType,
-    ...args,
-  };
-}
 
 const MoveVisualNodesType =
   "move-visual-nodes-operation";
@@ -43,17 +33,24 @@ interface MoveVisualNodesArguments extends CmeOperationArguments {
 type MoveVisualNodesResult =
   CmeOperationResult<MoveVisualNodesArguments>;
 
-cmeOperationExecutorRegistry.register(
-  MoveVisualNodesType,
-  moveVisualNodesOperation,
-  { execute: moveVisualNodesExecutor });
+export const moveVisualNodesOperation: CmeOperation<
+  MoveVisualNodesArguments, MoveVisualNodesResult> = {
+  metadata: {
+    type: MoveVisualNodesType,
+  },
+  create: (_context, parameters) => ({
+    type: MoveVisualNodesType,
+    ...parameters,
+  }),
+  execute: moveVisualNodesExecutor,
+};
 
 /**
  * All nodes are validated before any is moved.
  *
  * @throws CmeOperationExecutionFailed
  */
-export async function moveVisualNodesExecutor(
+async function moveVisualNodesExecutor(
   context: CmeExecutionContext,
   args: MoveVisualNodesArguments,
 ): Promise<MoveVisualNodesResult> {

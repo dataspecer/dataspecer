@@ -8,22 +8,12 @@ import {
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   findWritableVisualModel,
   getAllEntities,
   getEntity,
 } from "./visual-model-utilities";
 import { addRelatedEntities } from "./visual-model-additions";
-
-export function showRelatedEntitiesOperation(
-  args: Omit<ShowRelatedEntitiesArguments, "type">,
-): CmeOperation<ShowRelatedEntitiesArguments, ShowRelatedEntitiesResult> {
-  return {
-    type: ShowRelatedEntitiesType,
-    ...args,
-  };
-}
 
 const ShowRelatedEntitiesType =
   "show-related-entities-operation";
@@ -44,15 +34,22 @@ interface ShowRelatedEntitiesArguments extends CmeOperationArguments {
 type ShowRelatedEntitiesResult =
   CmeOperationResult<ShowRelatedEntitiesArguments>;
 
-cmeOperationExecutorRegistry.register(
-  ShowRelatedEntitiesType,
-  showRelatedEntitiesOperation,
-  { execute: showRelatedEntitiesExecutor });
+export const showRelatedEntitiesOperation: CmeOperation<
+  ShowRelatedEntitiesArguments, ShowRelatedEntitiesResult> = {
+  metadata: {
+    type: ShowRelatedEntitiesType,
+  },
+  create: (_context, parameters) => ({
+    type: ShowRelatedEntitiesType,
+    ...parameters,
+  }),
+  execute: showRelatedEntitiesExecutor,
+};
 
 /**
  * @throws CmeOperationExecutionFailed
  */
-export async function showRelatedEntitiesExecutor(
+async function showRelatedEntitiesExecutor(
   context: CmeExecutionContext,
   args: ShowRelatedEntitiesArguments,
 ): Promise<ShowRelatedEntitiesResult> {

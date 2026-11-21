@@ -5,17 +5,7 @@ import {
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import { getWritableVisualModels } from "./visual-model-utilities";
-
-export function removeSemanticModelFromVisualModelsOperation(
-  args: Omit<RemoveSemanticModelFromVisualModelsArguments, "type">,
-): CmeOperation<RemoveSemanticModelFromVisualModelsArguments, RemoveSemanticModelFromVisualModelsResult> {
-  return {
-    type: RemoveSemanticModelFromVisualModelsType,
-    ...args,
-  };
-}
 
 const RemoveSemanticModelFromVisualModelsType =
   "remove-semantic-model-from-visual-models-operation";
@@ -35,10 +25,17 @@ interface RemoveSemanticModelFromVisualModelsArguments
 type RemoveSemanticModelFromVisualModelsResult =
   CmeOperationResult<RemoveSemanticModelFromVisualModelsArguments>;
 
-cmeOperationExecutorRegistry.register(
-  RemoveSemanticModelFromVisualModelsType,
-  removeSemanticModelFromVisualModelsOperation,
-  { execute: removeSemanticModelFromVisualModelsExecutor });
+export const removeSemanticModelFromVisualModelsOperation: CmeOperation<
+  RemoveSemanticModelFromVisualModelsArguments, RemoveSemanticModelFromVisualModelsResult> = {
+  metadata: {
+    type: RemoveSemanticModelFromVisualModelsType,
+  },
+  create: (_context, parameters) => ({
+    type: RemoveSemanticModelFromVisualModelsType,
+    ...parameters,
+  }),
+  execute: removeSemanticModelFromVisualModelsExecutor,
+};
 
 /**
  * Removes visual entities and color of the model.
@@ -46,7 +43,7 @@ cmeOperationExecutorRegistry.register(
  *
  * @throws CmeOperationExecutionFailed
  */
-export async function removeSemanticModelFromVisualModelsExecutor(
+async function removeSemanticModelFromVisualModelsExecutor(
   context: CmeExecutionContext,
   args: RemoveSemanticModelFromVisualModelsArguments,
 ): Promise<RemoveSemanticModelFromVisualModelsResult> {

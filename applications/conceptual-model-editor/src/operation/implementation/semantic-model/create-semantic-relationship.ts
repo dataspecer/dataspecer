@@ -14,20 +14,10 @@ import {
   CmeOperationArguments,
   CmeOperationResult,
 } from "../../operation";
-import { cmeOperationExecutorRegistry } from "../../operation-registry";
 import {
   executeCreateSemanticOperation,
   findSemanticModel,
 } from "../operation-utilities";
-
-export function createSemanticRelationshipOperation(
-  args: Omit<CreateSemanticRelationshipArguments, "type">,
-): CmeOperation<CreateSemanticRelationshipArguments, CreateSemanticRelationshipResult> {
-  return {
-    type: CreateSemanticRelationshipType,
-    ...args,
-  };
-}
 
 const CreateSemanticRelationshipType =
   "create-semantic-relationship-operation";
@@ -35,6 +25,11 @@ const CreateSemanticRelationshipType =
 interface CreateSemanticRelationshipArguments extends CmeOperationArguments {
 
   type: typeof CreateSemanticRelationshipType;
+
+  /**
+   * Identifier of the created entity.
+   */
+  identifier: EntityDsIdentifier;
 
   semanticModel: ModelDsIdentifier;
 
@@ -65,21 +60,31 @@ interface CreateSemanticRelationshipResult
 
 }
 
-cmeOperationExecutorRegistry.register(
-  CreateSemanticRelationshipType,
-  createSemanticRelationshipOperation,
-  { execute: createSemanticRelationshipExecutor });
+export const createSemanticRelationshipOperation: CmeOperation<
+  CreateSemanticRelationshipArguments, CreateSemanticRelationshipResult,
+  Omit<CreateSemanticRelationshipArguments, "type" | "identifier">> = {
+  metadata: {
+    type: CreateSemanticRelationshipType,
+  },
+  create: (context, parameters) => ({
+    type: CreateSemanticRelationshipType,
+    ...parameters,
+    identifier: context.createEntityIdentifier(parameters.semanticModel),
+  }),
+  execute: createSemanticRelationshipExecutor,
+};
 
 /**
  * @throws CmeOperationExecutionFailed
  */
-export async function createSemanticRelationshipExecutor(
+async function createSemanticRelationshipExecutor(
   context: CmeExecutionContext,
   args: CreateSemanticRelationshipArguments,
 ): Promise<CreateSemanticRelationshipResult> {
   const model = findSemanticModel(context, args.semanticModel);
 
   const operation = createRelationship({
+    id: args.identifier,
     ends: [{
       iri: null,
       name: {},
