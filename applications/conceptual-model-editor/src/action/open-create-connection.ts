@@ -19,12 +19,8 @@ import {
   isSemanticModelClassProfile,
   SemanticModelClassProfile,
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import {
-  createVisualModelOperationExecutor,
-  VisualModelOperationExecutor,
-} from "../dataspecer/visual-model/visual-model-operation-executor";
 import { withErrorBoundary } from "./utilities/error-utilities";
-import { CmeOperationExecutor, cmeOperations } from "../operation";
+import { CmeOperationBatchBuilder, CmeOperationExecutor, cmeOperations } from "../operation";
 import { reportFailure } from "./utilities/report-failure";
 import { ClassesContext } from "../context/classes-context";
 
@@ -70,20 +66,24 @@ function openCreateConnectionDialogActionInternal(
 ) {
   const { source, target } =
     findSourceAndTarget(graph, semanticSource, semanticTarget);
-  //
-  const visualExecutor = createVisualModelOperationExecutor(visualModel);
+  const visualEnds: VisualEnds = {
+    visualModel: visualModel.getIdentifier(),
+    visualSource,
+    visualTarget,
+  };
   // We decide based on source and target type.
   if (isSemanticModelClass(source)
     && isSemanticModelClass(target)) {
     // Can be a relationship or generalization.
     openRelationshipOrGeneralizationDialog(
-      options, dialogs, notifications, visualExecutor, classes, executor,
-      source, target, visualSource, visualTarget);
+      options, dialogs, notifications, classes, executor,
+      source, target, visualEnds);
   }
   else if (isSemanticModelClassProfile(source)
     && isSemanticModelClass(target)) {
     // Create a profile from class to the profile.
-    void createProfile(executor, notifications, classes, visualExecutor, source, target);
+    void createProfile(
+      executor, notifications, classes, visualEnds.visualModel, source, target);
   }
   else if (isSemanticModelClassProfile(source)
     && isSemanticModelClassProfile(target)) {
@@ -106,13 +106,25 @@ function openCreateConnectionDialogActionInternal(
     }
 
     void createGeneralizationWithVisualEnds(
-      executor, notifications, visualExecutor, sourceModel,
-      source.id, target.id, visualSource, visualTarget);
+      executor, notifications, sourceModel, source.id, target.id, visualEnds);
   }
   else {
     // We do not know.
     throw new UnsupportedOperationException();
   }
+}
+
+/**
+ * The visual nodes the user connected.
+ */
+interface VisualEnds {
+
+  visualModel: string;
+
+  visualSource: string;
+
+  visualTarget: string;
+
 }
 
 /**
@@ -138,24 +150,21 @@ function openRelationshipOrGeneralizationDialog(
   options: Options,
   dialogs: DialogApiContextType,
   notifications: UseNotificationServiceWriterType,
-  visualExecutor: VisualModelOperationExecutor,
   classesContext: ClassesContext,
   executor: CmeOperationExecutor,
   source: SemanticModelClass,
   target: SemanticModelClass,
-  visualSource: string,
-  visualTarget: string,
+  visualEnds: VisualEnds,
 ) {
   const onConfirm = async (state: CreateConnectionState) => {
     switch (state.type) {
     case ConnectionType.Association:
-      await createRelationship(
-        executor, notifications, visualExecutor, state, visualSource, visualTarget);
+      await createRelationship(executor, notifications, state, visualEnds);
       break;
     case ConnectionType.Generalization:
       await createGeneralizationWithVisualEnds(
-        executor, notifications, visualExecutor, state.model.getId(),
-        state.source.id, state.target.id, visualSource, visualTarget);
+        executor, notifications, state.model.getId(),
+        state.source.id, state.target.id, visualEnds);
       break;
     }
   };
@@ -168,10 +177,8 @@ function openRelationshipOrGeneralizationDialog(
 async function createRelationship(
   executor: CmeOperationExecutor,
   notifications: UseNotificationServiceWriterType,
-  visualExecutor: VisualModelOperationExecutor,
   state: CreateConnectionState,
-  visualSource: string,
-  visualTarget: string,
+  visualEnds: VisualEnds,
 ) {
   const args = cmeOperations.createSemanticRelationship.create(executor.createContext, {
     semanticModel: state.model.getId(),
@@ -185,25 +192,21 @@ async function createRelationship(
     externalDocumentationUrl: null,
     order: null,
   });
-  const outcome = await executor.execute(args);
-  if (reportFailure(notifications, outcome, "Can not create the association.")) {
-    return;
-  }
-  withErrorBoundary(notifications, () =>
-    visualExecutor.addRelationshipWithSpecifiedVisualEnds(
-      { identifier: args.identifier, model: args.semanticModel },
-      [visualSource], [visualTarget]));
+  const batch = new CmeOperationBatchBuilder(executor.createContext)
+    .addArguments(args)
+    .add(cmeOperations.showVisualEdge, { ...visualEnds, entity: args.identifier })
+    .build();
+  const outcome = await executor.execute(batch);
+  reportFailure(notifications, outcome, "Can not create the association.");
 }
 
 async function createGeneralizationWithVisualEnds(
   executor: CmeOperationExecutor,
   notifications: UseNotificationServiceWriterType,
-  visualExecutor: VisualModelOperationExecutor,
   model: string,
   child: string,
   parent: string,
-  visualSource: string,
-  visualTarget: string,
+  visualEnds: VisualEnds,
 ) {
   const args = cmeOperations.createSemanticGeneralization.create(executor.createContext, {
     semanticModel: model,
@@ -212,56 +215,50 @@ async function createGeneralizationWithVisualEnds(
     child,
     parent,
   });
-  const outcome = await executor.execute(args);
-  if (reportFailure(notifications, outcome, "Can not create the generalization.")) {
-    return;
-  }
-  withErrorBoundary(notifications, () =>
-    visualExecutor.addGeneralizationWithSpecifiedVisualEnds(
-      { identifier: args.identifier, model },
-      [visualSource], [visualTarget]));
+  const batch = new CmeOperationBatchBuilder(executor.createContext)
+    .addArguments(args)
+    .add(cmeOperations.showVisualEdge, { ...visualEnds, entity: args.identifier })
+    .build();
+  const outcome = await executor.execute(batch);
+  reportFailure(notifications, outcome, "Can not create the generalization.");
 }
 
 async function createProfile(
   executor: CmeOperationExecutor,
   notifications: UseNotificationServiceWriterType,
   classes: ClassesContext,
-  visualExecutor: VisualModelOperationExecutor,
+  visualModel: string,
   source: SemanticModelClassProfile,
   target: SemanticModelClass,
 ) {
-
   const sourceModel = classes.sourceModelOfEntityMap.get(source.id);
-  const targetModel = classes.sourceModelOfEntityMap.get(target.id);
-
-  if (sourceModel === undefined || targetModel === undefined) {
-    LOG.error("Missing model for entity.",
-      { source, target, sourceModel, targetModel });
-    notifications.error("Can not find the model of the class profile or the class.");
+  if (sourceModel === undefined) {
+    LOG.error("Missing model for entity.", { source, target, sourceModel });
+    notifications.error("Can not find the model of the class profile.");
     return;
   }
 
-  const prevProfiles = source.profiling;
-  if (!prevProfiles.includes(target.id)) {
-    // We update the class profile.
-    const outcome = await executor.execute(
-      cmeOperations.changeProfileClass.create(executor.createContext, {
-        profileModel: sourceModel,
-        entity: source.id,
-        changes: { profileOf: [...prevProfiles, target.id] },
-      }));
-    if (reportFailure(notifications, outcome, "Can not update the class profile.")) {
-      return;
-    }
+  const previous = source.profiling;
+  if (previous.includes(target.id)) {
+    // Already a profile, the visual model shows it already.
+    return;
   }
+  const next = [...previous, target.id];
 
-  // Now we add to the visual.
-  withErrorBoundary(notifications, () =>
-    visualExecutor.addProfile({
-      identifier: source.id,
+  const batch = new CmeOperationBatchBuilder(executor.createContext)
+    .add(cmeOperations.changeProfileClass, {
+      profileModel: sourceModel,
+      entity: source.id,
+      changes: { profileOf: next },
+    })
+    .add(cmeOperations.updateVisualNodeProfiles, {
+      visualModel,
+      entity: source.id,
       model: sourceModel,
-    }, {
-      identifier: target.id,
-      model: targetModel,
-    }));
+      previous,
+      next,
+    })
+    .build();
+  const outcome = await executor.execute(batch);
+  reportFailure(notifications, outcome, "Can not update the class profile.");
 }

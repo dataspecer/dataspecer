@@ -45,9 +45,7 @@ export async function addSemanticClassProfileToVisualModelAction(
     addSemanticClassProfileToVisualModelCommand(
       classes, visualModel, entity, model,
       position);
-    addRelatedEntitiesAction(
-      notifications, graph, classes, visualModel, Object.values(entities),
-      model, entity);
+    await addRelatedEntitiesAction(notifications, graph, visualModel, entity.id);
   } else {
     LOG.invalidEntity(entityIdentifier, "Entity is not of an expected type.", { entity });
     notifications.error("Invalid entity type!");

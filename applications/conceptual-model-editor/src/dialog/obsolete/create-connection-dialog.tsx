@@ -83,7 +83,7 @@ export const createConnectionDialog = (
     validate: null,
     onConfirm: (state) => {
       nextOpenConnectionType = state.type;
-      onConfirm(state);
+      return onConfirm(state);
     },
     onClose: null,
   };

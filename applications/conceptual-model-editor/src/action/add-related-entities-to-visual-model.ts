@@ -1,178 +1,31 @@
-import { VisualModel, WritableVisualModel } from "@dataspecer/visual-model";
-import { AggregatedEntityWrapper } from "@dataspecer/core-v2/semantic-model/aggregator";
-import {
-  SemanticModelEntity,
-  SemanticModelGeneralization,
-  SemanticModelRelationship,
-  isSemanticModelClass,
-  isSemanticModelGeneralization,
-  isSemanticModelRelationship,
-} from "@dataspecer/core-v2/semantic-model/concepts";
+import { WritableVisualModel } from "@dataspecer/visual-model";
 
 import type { UseNotificationServiceWriterType } from "../notification/notification-service-context";
-import { getDomainAndRange } from "../util/relationship-utils";
-import { addSemanticGeneralizationToVisualModelAction } from "./add-generalization-to-visual-model";
-import { addSemanticRelationshipToVisualModelAction } from "./add-relationship-to-visual-model";
-import { addSemanticRelationshipProfileToVisualModelAction } from "./add-relationship-profile-to-visual-model";
 import { UseModelGraphContextType } from "../context/model-context";
-import {
-  isSemanticModelClassProfile,
-  isSemanticModelRelationshipProfile,
-  SemanticModelClassProfile,
-  SemanticModelRelationshipProfile,
-} from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { createVisualModelOperationExecutor } from "../dataspecer/visual-model/visual-model-operation-executor";
-import { ClassesContext } from "../context/classes-context";
-import { findSourceModelOfEntity } from "./utilities";
+import { cmeOperations } from "../operation";
+import { reportFailure } from "./utilities/report-failure";
 
 /**
- * For given entity make sure, that all related entities
+ * For given class or class profile make sure, that all related entities
  * are added to the visual model.
  *
  * For example when a second end of relationship is added to the visual model,
  * this function also add the relationship.
+ *
+ * The related entities are read from the models of the executor,
+ * so entities created in the same action are found too.
  */
-export function addRelatedEntitiesAction(
+export async function addRelatedEntitiesAction(
   notifications: UseNotificationServiceWriterType,
   graph: UseModelGraphContextType,
-  classes: ClassesContext,
   visualModel: WritableVisualModel,
-  entities: AggregatedEntityWrapper[],
-  // Model owning the entity, the ClassesContext may not know it yet.
-  entityModel: string,
-  entity: SemanticModelEntity,
-) {
-  const identifier = entity.id;
-
-  const visualOperationExecutor = createVisualModelOperationExecutor(visualModel);
-
-  const addingProfile = isSemanticModelClassProfile(entity);
-  for (const wrapper of entities) {
-    const candidate = wrapper.aggregatedEntity;
-    if (candidate === null) {
-      continue;
-    }
-    const candidateModel = findSourceModelOfEntity(classes, candidate.id, entityModel);
-    if (candidateModel === null) {
-      continue;
-    }
-    //
-    if (isSemanticModelGeneralization(candidate)) {
-      if (shouldAddGeneralization(visualModel, identifier, candidate)) {
-        addSemanticGeneralizationToVisualModelAction(
-          notifications, graph, visualModel, candidate.id, candidateModel);
-      }
-    }
-    if (isSemanticModelRelationship(candidate)) {
-      if (shouldAddRelationship(visualModel, identifier, candidate)) {
-        addSemanticRelationshipToVisualModelAction(
-          notifications, graph, visualModel, candidate.id, candidateModel);
-      }
-    }
-    if (isSemanticModelRelationshipProfile(candidate)) {
-      if (shouldAddRelationshipUsageOrProfile(visualModel, identifier, candidate)) {
-        addSemanticRelationshipProfileToVisualModelAction(
-          notifications, graph, visualModel, candidate.id, candidateModel);
-      }
-    }
-    if (isSemanticModelClassProfile(candidate)) {
-      if (shouldAddProfile(visualModel, identifier, candidate)) {
-        // "candidate" is profile of "entity"
-        visualOperationExecutor.tryAddProfile({
-          identifier: candidate.id,
-          model: candidateModel,
-        }, {
-          identifier: entity.id,
-          model: entityModel,
-        });
-      } else if (addingProfile && shouldAddProfile(visualModel, candidate.id, entity)) {
-        // "entity" is profile of "candidate"
-        visualOperationExecutor.tryAddProfile({
-          identifier: entity.id,
-          model: entityModel,
-        }, {
-          identifier: candidate.id,
-          model: candidateModel,
-        });
-      }
-    }
-    if (addingProfile && isSemanticModelClass(candidate)) {
-      // We are adding profile, candidate is a class, it could profiled class.
-      if (entity.profiling.includes(candidate.id)) {
-        // "entity" is profile of "candidate"
-        visualOperationExecutor.tryAddProfile({
-          identifier: entity.id,
-          model: entityModel,
-        }, {
-          identifier: candidate.id,
-          model: candidateModel,
-        });
-      }
-    }
-  }
-}
-
-function shouldAddGeneralization(
-  visualModel: VisualModel,
-  identifier: string,
-  candidate: SemanticModelGeneralization,
-): boolean {
-  if (candidate.parent === identifier) {
-    return visualModel.hasVisualEntityForRepresented(candidate.child);
-  } else if (candidate.child === identifier) {
-    return visualModel.hasVisualEntityForRepresented(candidate.parent);
-  } else {
-    return false;
-  }
-}
-
-function shouldAddRelationship(
-  visualModel: VisualModel,
-  identifier: string,
-  candidate: SemanticModelRelationship,
-): boolean {
-  const { domain, range } = getDomainAndRange(candidate);
-  if (domain?.concept === identifier) {
-    const other = range?.concept ?? null;
-    return other !== null && visualModel.hasVisualEntityForRepresented(other);
-  } else if (range?.concept === identifier) {
-    const other = domain?.concept ?? null;
-    return other !== null && visualModel.hasVisualEntityForRepresented(other);
-  } else {
-    return false;
-  }
-}
-
-function shouldAddRelationshipUsageOrProfile(
-  visualModel: VisualModel,
-  identifier: string,
-  candidate: SemanticModelRelationshipProfile,
-): boolean {
-  const { domain, range } = getDomainAndRange(candidate);
-  if (domain?.concept === identifier) {
-    const other = range?.concept ?? null;
-    return other !== null && visualModel.hasVisualEntityForRepresented(other);
-  } else if (range?.concept === identifier) {
-    const other = domain?.concept ?? null;
-    return other !== null && visualModel.hasVisualEntityForRepresented(other);
-  } else {
-    return false;
-  }
-}
-
-function shouldAddProfile(
-  visualModel: VisualModel,
-  profiled: string,
-  profile: SemanticModelClassProfile,
-): boolean {
-  if (profile.id === profiled) {
-    // We do not support self profiles.
-    return false;
-  }
-  // The candidate may be specialization of what we are adding.
-  if (profile.profiling.includes(profiled)) {
-    // We return true if the other is in the visual model.
-    return visualModel.hasVisualEntityForRepresented(profile.id);
-  }
-  return false;
+  entityIdentifier: string,
+): Promise<void> {
+  const executor = graph.executor();
+  const outcome = await executor.execute(
+    cmeOperations.showRelatedEntities.create(executor.createContext, {
+      visualModel: visualModel.getIdentifier(),
+      entity: entityIdentifier,
+    }));
+  reportFailure(notifications, outcome, "Can not add the related entities to the visual model.");
 }

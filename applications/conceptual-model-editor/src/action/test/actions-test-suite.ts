@@ -989,7 +989,7 @@ export class ActionsTestSuite {
     return visualId;
   }
 
-  static addTestRelationshipToVisualModel(
+  static async addTestRelationshipToVisualModel(
     graph: UseModelGraphContextType,
     visualModel: WritableVisualModel,
     modelDsIdentifier: string,
@@ -1000,7 +1000,7 @@ export class ActionsTestSuite {
   ) {
     if (visualSources === null || visualTargets === null) {
       if(relationshipToTestType === TestedSemanticConnectionType.Generalization) {
-        addSemanticGeneralizationToVisualModelAction(
+        await addSemanticGeneralizationToVisualModelAction(
           notificationMockup, graph, visualModel,
           relationshipIdentifier, modelDsIdentifier);
       }

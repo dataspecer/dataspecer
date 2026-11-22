@@ -825,7 +825,7 @@ function createActionsContext(
     identifier: string,
   ): void => {
     withVisualModel(notifications, useGraph, (visualModel) => {
-      addSemanticGeneralizationToVisualModelAction(
+      void addSemanticGeneralizationToVisualModelAction(
         notifications, useGraph, visualModel, identifier, model);
     });
   }

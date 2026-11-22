@@ -77,6 +77,6 @@ async function createGeneralizationToCreatedClass(
   }
   const result = { identifier: args.identifier, model: createdClassData.model };
 
-  addSemanticGeneralizationToVisualModelAction(
+  await addSemanticGeneralizationToVisualModelAction(
     notifications, graph, visualModel, result.identifier, result.model);
 }
