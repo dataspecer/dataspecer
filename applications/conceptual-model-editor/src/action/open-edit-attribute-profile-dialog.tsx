@@ -38,7 +38,7 @@ export function openEditAttributeProfileDialogAction(
 
   const onConfirm = async (state: AttributeProfileDialogState) => {
     const outcome = await executor.execute(createUpdateRelationshipProfileBatch(
-      executor.batch(), entity.id, initialState, state));
+      executor.createContext, entity.id, initialState, state));
     reportFailure(notifications, outcome, "Can not update the attribute profile.");
   };
 

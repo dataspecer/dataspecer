@@ -4,7 +4,7 @@ import {
   SemanticModelRelationship,
 } from "@dataspecer/core-v2/semantic-model/concepts";
 
-import { createUpdateRelationshipBatch } from "./update-relationship-batch";
+import { createCreateRelationshipBatch, createUpdateRelationshipBatch } from "./update-relationship-batch";
 import { NewCmeSpecialization } from "../../dataspecer/cme-model/model";
 import {
   createClass,
@@ -29,7 +29,7 @@ describe("createUpdateRelationshipBatch", () => {
       specializations: [specialization("parent-2", null)],
     });
 
-    const batch = createUpdateRelationshipBatch(context.executor.batch(), "entity", initial, state);
+    const batch = createUpdateRelationshipBatch(context.createContext, "entity", initial, state);
 
     expect(batch.operations).toMatchObject([{
       semanticModel: model,
@@ -73,7 +73,7 @@ describe("createUpdateRelationshipBatch", () => {
     });
 
     const outcome = await context.executor.execute(
-      createUpdateRelationshipBatch(context.executor.batch(), relationship, initial, state));
+      createUpdateRelationshipBatch(context.createContext, relationship, initial, state));
 
     expect(outcome.exception).toBeUndefined();
     const entity = context.semanticModel.getEntities()[relationship] as SemanticModelRelationship;
@@ -81,6 +81,34 @@ describe("createUpdateRelationshipBatch", () => {
       iri: "http://example.com/r", name: { en: "Relationship" }, order: "3", cardinality: [1, null],
     });
     expect(parentsOf(context, relationship).sort()).toEqual([added, kept].sort());
+  });
+
+});
+
+describe("createCreateRelationshipBatch", () => {
+
+  test("Executed batch creates the relationship and its specializations.", async () => {
+    const context = createOperationTestContext();
+    const model = context.semanticModel.getId();
+    const a = await createClass(context, "a");
+    const b = await createClass(context, "b");
+    const parent = await createRelationship(context, a, b, "parent");
+    const state = createState(model, {
+      domain: { identifier: a }, range: { identifier: b }, order: "1",
+      specializations: [specialization(parent, null)],
+    });
+
+    const { batch, created } = createCreateRelationshipBatch(context.createContext, state);
+    const outcome = await context.executor.execute(batch);
+
+    expect(outcome.exception).toBeUndefined();
+    expect(created.model).toBe(model);
+    const entity = context.semanticModel.getEntities()[created.identifier] as SemanticModelRelationship;
+    expect(entity.ends[0]).toMatchObject({ concept: a, cardinality: [0, 1] });
+    expect(entity.ends[1]).toMatchObject({
+      concept: b, cardinality: [1, null], iri: "http://example.com/r", name: { en: "Relationship" }, order: "1",
+    });
+    expect(parentsOf(context, created.identifier)).toEqual([parent]);
   });
 
 });

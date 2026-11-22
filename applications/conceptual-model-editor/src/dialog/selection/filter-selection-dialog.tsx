@@ -18,7 +18,7 @@ type CheckboxData = {
 }
 
 export const createFilterSelectionDialog = (
-  onConfirm: ((state: SelectionFilterState) => void) | null,
+  onConfirm: ((state: SelectionFilterState) => void | Promise<void>) | null,
   selections: SelectionsWithIdInfo,
   setSelectionInDiagram: (selections: Selections) => void,
 ): DialogWrapper<SelectionFilterState> => {

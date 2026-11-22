@@ -5,7 +5,7 @@ import { EditSemanticModelDialog } from "./edit-semantic-model-dialog-view";
 
 export const createEditSemanticModelDialog = (
   state: EditSemanticModelDialogState,
-  onConfirm: ((state: EditSemanticModelDialogState) => void) | null,
+  onConfirm: ((state: EditSemanticModelDialogState) => void | Promise<void>) | null,
 ): DialogWrapper<EditSemanticModelDialogState> => {
   return {
     label: "edit-semantic-model-dialog.title",

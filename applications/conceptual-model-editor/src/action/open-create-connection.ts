@@ -24,13 +24,14 @@ import {
   VisualModelOperationExecutor,
 } from "../dataspecer/visual-model/visual-model-operation-executor";
 import { withErrorBoundary } from "./utilities/error-utilities";
-import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
+import { CmeOperationExecutor, cmeOperations } from "../operation";
+import { reportFailure } from "./utilities/report-failure";
 import { ClassesContext } from "../context/classes-context";
 
 const LOG = createLogger(import.meta.url);
 
 export function openCreateConnectionDialogAction(
-  cmeExecutor: CmeModelOperationExecutor,
+  executor: CmeOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
   notifications: UseNotificationServiceWriterType,
@@ -45,7 +46,7 @@ export function openCreateConnectionDialogAction(
 ) {
   withErrorBoundary(notifications,
     () => openCreateConnectionDialogActionInternal(
-      cmeExecutor, options, dialogs, graph, classes, visualModel,
+      executor, options, dialogs, notifications, graph, classes, visualModel,
       semanticSource, semanticTarget, visualSource, visualTarget
     ));
 }
@@ -54,9 +55,10 @@ export function openCreateConnectionDialogAction(
  * Handle situation when user drag a connection from one node to another.
  */
 function openCreateConnectionDialogActionInternal(
-  cmeExecutor: CmeModelOperationExecutor,
+  executor: CmeOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
+  notifications: UseNotificationServiceWriterType,
   graph: UseModelGraphContextType,
   classes: ClassesContext,
   visualModel: WritableVisualModel,
@@ -75,13 +77,13 @@ function openCreateConnectionDialogActionInternal(
     && isSemanticModelClass(target)) {
     // Can be a relationship or generalization.
     openRelationshipOrGeneralizationDialog(
-      options, dialogs, visualExecutor, classes, cmeExecutor,
+      options, dialogs, notifications, visualExecutor, classes, executor,
       source, target, visualSource, visualTarget);
   }
   else if (isSemanticModelClassProfile(source)
     && isSemanticModelClass(target)) {
     // Create a profile from class to the profile.
-    createProfile(cmeExecutor, classes, visualExecutor, source, target);
+    void createProfile(executor, notifications, classes, visualExecutor, source, target);
   }
   else if (isSemanticModelClassProfile(source)
     && isSemanticModelClassProfile(target)) {
@@ -103,16 +105,9 @@ function openCreateConnectionDialogActionInternal(
       return;
     }
 
-    const generalization = cmeExecutor.createGeneralization({
-      model: sourceModel,
-      // https://github.com/dataspecer/dataspecer/issues/537
-      iri: null,
-      childIdentifier: source.id,
-      parentIdentifier: target.id,
-    });
-
-    visualExecutor.addGeneralizationWithSpecifiedVisualEnds(
-      generalization, [visualSource], [visualTarget]);
+    void createGeneralizationWithVisualEnds(
+      executor, notifications, visualExecutor, sourceModel,
+      source.id, target.id, visualSource, visualTarget);
   }
   else {
     // We do not know.
@@ -142,21 +137,25 @@ function findSourceAndTarget(
 function openRelationshipOrGeneralizationDialog(
   options: Options,
   dialogs: DialogApiContextType,
+  notifications: UseNotificationServiceWriterType,
   visualExecutor: VisualModelOperationExecutor,
   classesContext: ClassesContext,
-  cmeExecutor: CmeModelOperationExecutor,
+  executor: CmeOperationExecutor,
   source: SemanticModelClass,
   target: SemanticModelClass,
   visualSource: string,
   visualTarget: string,
 ) {
-  const onConfirm = (state: CreateConnectionState) => {
+  const onConfirm = async (state: CreateConnectionState) => {
     switch (state.type) {
     case ConnectionType.Association:
-      createRelationship(cmeExecutor, visualExecutor, state, visualSource, visualTarget);
+      await createRelationship(
+        executor, notifications, visualExecutor, state, visualSource, visualTarget);
       break;
     case ConnectionType.Generalization:
-      createGeneralization(cmeExecutor, visualExecutor, state, visualSource, visualTarget);
+      await createGeneralizationWithVisualEnds(
+        executor, notifications, visualExecutor, state.model.getId(),
+        state.source.id, state.target.id, visualSource, visualTarget);
       break;
     }
   };
@@ -166,15 +165,16 @@ function openRelationshipOrGeneralizationDialog(
 
 }
 
-function createRelationship(
-  cmeExecutor: CmeModelOperationExecutor,
+async function createRelationship(
+  executor: CmeOperationExecutor,
+  notifications: UseNotificationServiceWriterType,
   visualExecutor: VisualModelOperationExecutor,
   state: CreateConnectionState,
   visualSource: string,
   visualTarget: string,
 ) {
-  const relationship = cmeExecutor.createRelationship({
-    model: state.model.getId(),
+  const args = cmeOperations.createSemanticRelationship.create(executor.createContext, {
+    semanticModel: state.model.getId(),
     iri: state.iri,
     name: state.name,
     description: state.description ?? null,
@@ -183,33 +183,48 @@ function createRelationship(
     range: state.target.id,
     rangeCardinality: state.targetCardinality,
     externalDocumentationUrl: null,
+    order: null,
   });
-
-  visualExecutor.addRelationshipWithSpecifiedVisualEnds(
-    relationship, [visualSource], [visualTarget]);
+  const outcome = await executor.execute(args);
+  if (reportFailure(notifications, outcome, "Can not create the association.")) {
+    return;
+  }
+  withErrorBoundary(notifications, () =>
+    visualExecutor.addRelationshipWithSpecifiedVisualEnds(
+      { identifier: args.identifier, model: args.semanticModel },
+      [visualSource], [visualTarget]));
 }
 
-function createGeneralization(
-  cmeExecutor: CmeModelOperationExecutor,
+async function createGeneralizationWithVisualEnds(
+  executor: CmeOperationExecutor,
+  notifications: UseNotificationServiceWriterType,
   visualExecutor: VisualModelOperationExecutor,
-  state: CreateConnectionState,
+  model: string,
+  child: string,
+  parent: string,
   visualSource: string,
   visualTarget: string,
 ) {
-  const generalization = cmeExecutor.createGeneralization({
-    model: state.model.getId(),
+  const args = cmeOperations.createSemanticGeneralization.create(executor.createContext, {
+    semanticModel: model,
     // https://github.com/dataspecer/dataspecer/issues/537
     iri: null,
-    childIdentifier: state.source.id,
-    parentIdentifier: state.target.id,
+    child,
+    parent,
   });
-
-  visualExecutor.addGeneralizationWithSpecifiedVisualEnds(
-    generalization, [visualSource], [visualTarget]);
+  const outcome = await executor.execute(args);
+  if (reportFailure(notifications, outcome, "Can not create the generalization.")) {
+    return;
+  }
+  withErrorBoundary(notifications, () =>
+    visualExecutor.addGeneralizationWithSpecifiedVisualEnds(
+      { identifier: args.identifier, model },
+      [visualSource], [visualTarget]));
 }
 
-function createProfile(
-  cmeExecutor: CmeModelOperationExecutor,
+async function createProfile(
+  executor: CmeOperationExecutor,
+  notifications: UseNotificationServiceWriterType,
   classes: ClassesContext,
   visualExecutor: VisualModelOperationExecutor,
   source: SemanticModelClassProfile,
@@ -222,26 +237,31 @@ function createProfile(
   if (sourceModel === undefined || targetModel === undefined) {
     LOG.error("Missing model for entity.",
       { source, target, sourceModel, targetModel });
-    throw new InvalidState();
+    notifications.error("Can not find the model of the class profile or the class.");
+    return;
   }
 
   const prevProfiles = source.profiling;
   if (!prevProfiles.includes(target.id)) {
     // We update the class profile.
-    cmeExecutor.changeClassProfile({
-      identifier: source.id,
-      model: sourceModel,
-      profileOf: [...prevProfiles, target.id],
-    });
+    const outcome = await executor.execute(
+      cmeOperations.changeProfileClass.create(executor.createContext, {
+        profileModel: sourceModel,
+        entity: source.id,
+        changes: { profileOf: [...prevProfiles, target.id] },
+      }));
+    if (reportFailure(notifications, outcome, "Can not update the class profile.")) {
+      return;
+    }
   }
 
   // Now we add to the visual.
-  visualExecutor.addProfile({
-    identifier: source.id,
-    model: sourceModel,
-  }, {
-    identifier: target.id,
-    model: targetModel,
-  });
-
+  withErrorBoundary(notifications, () =>
+    visualExecutor.addProfile({
+      identifier: source.id,
+      model: sourceModel,
+    }, {
+      identifier: target.id,
+      model: targetModel,
+    }));
 }

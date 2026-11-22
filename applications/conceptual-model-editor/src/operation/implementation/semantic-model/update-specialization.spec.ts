@@ -6,6 +6,7 @@ import {
 import { cmeOperations } from "../../operations";
 import {
   createClass,
+  createGeneralization,
   createOperationTestContext,
   run,
 } from "../operation-test-utilities";
@@ -55,6 +56,40 @@ describe("updateSpecialization", () => {
       .filter(isSemanticModelGeneralization);
     expect(generalizations.length).toBe(1);
     expect(generalizations[0].parent).toBe(first);
+  });
+
+  test("Created and removed generalizations are prepared before execution.", async () => {
+    const context = createOperationTestContext();
+    const model = context.semanticModel.getId();
+    const child = await createClass(context, "child");
+    const kept = await createClass(context, "kept");
+    const dropped = await createClass(context, "dropped");
+    const added = await createClass(context, "added");
+    const keptGeneralization = await createGeneralization(context, child, kept);
+    const droppedGeneralization = await createGeneralization(context, child, dropped);
+    const keptSpecialization = {
+      iri: null, specializationOf: kept, generalization: { identifier: keptGeneralization, model },
+    };
+
+    const args = cmeOperations.updateSpecialization.create(context.createContext, {
+      entity: child,
+      model,
+      previous: [keptSpecialization, {
+        iri: null, specializationOf: dropped, generalization: { identifier: droppedGeneralization, model },
+      }],
+      next: [keptSpecialization, { iri: "added-iri", specializationOf: added, generalization: null }],
+    });
+    const result = await run(context, args);
+
+    expect(args.created).toEqual([{
+      identifier: expect.any(String), model, iri: "added-iri", child, parent: added,
+    }]);
+    expect(args.removed).toEqual([{ identifier: droppedGeneralization, model }]);
+    expect(result.created).toEqual(args.created);
+    const entities = context.semanticModel.getEntities();
+    expect(entities[args.created[0].identifier]).toMatchObject({ child, parent: added, iri: "added-iri" });
+    expect(entities[droppedGeneralization]).toBeUndefined();
+    expect(entities[keptGeneralization]).toBeDefined();
   });
 
 });

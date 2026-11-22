@@ -12,8 +12,9 @@ import { UseDiagramType } from "../diagram/diagram-hook";
 import { ClassDialogState, createNewClassDialogState } from "../dialog/class/edit-class-dialog-state";
 import { DialogSemanticTracker } from "../dialog-v2/dialog-semantic-tracker";
 import { createNewClassDialog } from "../dialog/class/edit-class-dialog";
-import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
-import { classDialogStateToNewCmeClass } from "../dialog/class/edit-class-dialog-state-adapter";
+import { CmeOperationExecutor } from "../operation";
+import { createCreateClassBatch } from "./utilities/update-class-batch";
+import { reportFailure } from "./utilities/report-failure";
 import { CmeReference } from "../dataspecer/cme-model/model";
 import { LabelResolver } from "../dependency-tracker";
 
@@ -21,7 +22,7 @@ import { LabelResolver } from "../dependency-tracker";
  * Open and handle create class dialog.
  */
 export function openCreateClassDialogAction(
-  cmeExecutor: CmeModelOperationExecutor,
+  executor: CmeOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
   classes: ClassesContext,
@@ -31,7 +32,7 @@ export function openCreateClassDialogAction(
   diagram: UseDiagramType,
   defaultModel: InMemorySemanticModel | null,
   position: { x: number, y: number } | null,
-  onConfirmCallback: ((created: CmeReference, state: ClassDialogState) => void) | null,
+  onConfirmCallback: ((created: CmeReference, state: ClassDialogState) => void | Promise<void>) | null,
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
 ) {
@@ -45,23 +46,23 @@ export function openCreateClassDialogAction(
   const initialState = createNewClassDialogState(
     visualModel, options.language, model.getId(), tracker, labelResolver);
 
-  const onConfirm = (state: ClassDialogState) => {
-
-    const result = cmeExecutor.createClass(
-      classDialogStateToNewCmeClass(state));
-    cmeExecutor.updateSpecialization(result, state.model.identifier,
-      initialState.specializations, state.specializations);
+  const onConfirm = async (state: ClassDialogState) => {
+    const { batch, created: result } = createCreateClassBatch(executor.createContext, state);
+    const outcome = await executor.execute(batch);
+    if (reportFailure(notifications, outcome, "Can not create the class.")) {
+      return;
+    }
 
     // Add to visual model if possible.
     if (isWritableVisualModel(visualModel)) {
       // TODO PeSk Update visual model
-      addSemanticClassToVisualModelAction(
+      await addSemanticClassToVisualModelAction(
         notifications, graph, classes, visualModel, diagram,
         result.identifier, result.model,
         position);
     }
 
-    onConfirmCallback?.(result, state);
+    await onConfirmCallback?.(result, state);
   };
 
   dialogs.openDialog(createNewClassDialog(initialState, onConfirm));

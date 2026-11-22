@@ -72,7 +72,7 @@ export const createConnectionDialog = (
   source: SemanticModelClass,
   target: SemanticModelClass,
   language: string,
-  onConfirm: (state: CreateConnectionState) => void,
+  onConfirm: (state: CreateConnectionState) => void | Promise<void>,
 ): DialogWrapper<CreateConnectionState> => {
   return {
     label: "create-connection-dialog.label",

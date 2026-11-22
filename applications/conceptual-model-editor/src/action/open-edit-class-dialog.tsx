@@ -1,5 +1,5 @@
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
-import { isWritableVisualModel, VisualModel } from "@dataspecer/visual-model";
+import { VisualModel } from "@dataspecer/visual-model";
 import { SemanticModelClass } from "@dataspecer/core-v2/semantic-model/concepts";
 
 import { DialogApiContextType } from "../dialog/dialog-service";
@@ -8,16 +8,16 @@ import { Options } from "../application";
 import { ClassDialogState, createEditClassDialogState } from "../dialog/class/edit-class-dialog-state";
 import { DialogSemanticTracker } from "../dialog-v2/dialog-semantic-tracker";
 import { createEditClassDialog } from "../dialog/class/edit-class-dialog";
-import { classDialogStateToNewCmeClass } from "../dialog/class/edit-class-dialog-state-adapter";
-import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
-import { createVisualModelOperationExecutor } from "../dataspecer/visual-model/visual-model-operation-executor";
 import { LabelResolver } from "../dependency-tracker";
-import { applyVisualColorFromDialog } from "./utilities/visual-color-utilities";
+import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { CmeOperationExecutor } from "../operation";
+import { applyVisualColorFromDialog } from "./utilities/visual-color-utilities";
+import { createUpdateClassBatch } from "./utilities/update-class-batch";
+import { reportFailure } from "./utilities/report-failure";
 
 export function openEditClassDialogAction(
   executor: CmeOperationExecutor,
-  cmeExecutor: CmeModelOperationExecutor,
+  notifications: UseNotificationServiceWriterType,
   options: Options,
   dialogs: DialogApiContextType,
   classes: ClassesContext,
@@ -31,26 +31,12 @@ export function openEditClassDialogAction(
     visualModel, options.language, model, entity, classes.semanticModels, tracker,
     labelResolver);
 
-  const onConfirm = (state: ClassDialogState) => {
-    cmeExecutor.updateClass({
-      identifier: entity.id,
-      ...classDialogStateToNewCmeClass(state),
-    });
-
-    const { created, removed } = cmeExecutor.updateSpecialization(
-      { identifier: entity.id, model: model.getId() },
-      state.model.identifier,
-      initialState.specializations, state.specializations);
-
-    if (isWritableVisualModel(visualModel)) {
-      const visualExecutor = createVisualModelOperationExecutor(visualModel);
-      removed.forEach(item => visualExecutor.deleteEntity(item));
-      created.forEach(item => {
-        visualExecutor.addGeneralization(
-          item, item.childIdentifier, item.parentIdentifier);
-      });
+  const onConfirm = async (state: ClassDialogState) => {
+    const outcome = await executor.execute(createUpdateClassBatch(
+      executor.createContext, visualModel, entity.id, initialState, state));
+    if (reportFailure(notifications, outcome, "Can not update the class.")) {
+      return;
     }
-
     applyVisualColorFromDialog(
       executor, visualModel, entity.id, initialState, state);
   };

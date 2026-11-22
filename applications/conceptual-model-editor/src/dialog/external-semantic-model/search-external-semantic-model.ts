@@ -4,7 +4,7 @@ import { SearchExternalSemanticModelDialog } from "./search-external-semantic-mo
 
 export const createSearchExternalSemanticDialog = (
   state: SearchExternalSemanticModelState,
-  onConfirm: ((state: SearchExternalSemanticModelState) => void) | null,
+  onConfirm: ((state: SearchExternalSemanticModelState) => void | Promise<void>) | null,
 ): DialogWrapper<SearchExternalSemanticModelState> => {
   return {
     label: "search-external-semantic-model-dialog.title",

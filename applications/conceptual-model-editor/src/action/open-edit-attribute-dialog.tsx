@@ -35,7 +35,7 @@ export function openEditAttributeDialogAction(
 
   const onConfirm = async (state: AttributeDialogState) => {
     const outcome = await executor.execute(createUpdateRelationshipBatch(
-      executor.batch(), entity.id, initialState, state));
+      executor.createContext, entity.id, initialState, state));
     reportFailure(notifications, outcome, "Can not update the attribute.");
   };
 

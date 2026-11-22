@@ -57,7 +57,7 @@ export function openEditAssociationProfileDialogAction(
 
   const onConfirm = async (state: AssociationProfileDialogState) => {
     const outcome = await executor.execute(createUpdateRelationshipProfileBatch(
-      executor.batch(), entity.id, initialState, state));
+      executor.createContext, entity.id, initialState, state));
     if (reportFailure(notifications, outcome, "Can not update the association profile.")) {
       return;
     }

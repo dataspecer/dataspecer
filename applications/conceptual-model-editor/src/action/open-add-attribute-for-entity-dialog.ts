@@ -17,12 +17,11 @@ import {
   SemanticModelClassProfile,
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { createAddAttributeProfileDialog } from "../dialog/attribute-profile/edit-attribute-profile-dialog";
-import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
+import { CmeOperationExecutor } from "../operation";
+import { createCreateRelationshipBatch } from "./utilities/update-relationship-batch";
+import { createCreateRelationshipProfileBatch } from "./utilities/update-relationship-profile-batch";
+import { reportFailure } from "./utilities/report-failure";
 import { addSemanticAttributeToVisualModelAction } from "./add-semantic-attribute-to-visual-model";
-import { attributeDialogStateToNewCmeRelationship } from "../dialog/attribute/edit-attribute-dialog-state-adapter";
-import {
-  attributeProfileDialogStateToNewCmeRelationshipProfile,
-} from "../dialog/attribute-profile/edit-attribute-profile-dialog-state-adapter";
 import { LabelResolver } from "../dependency-tracker";
 
 const LOG = createLogger(import.meta.url);
@@ -35,7 +34,7 @@ type ConfirmationCallback =
  * Open and handle create attribute dialog for a node.
  */
 export function openCreateAttributeForEntityDialogAction(
-  cmeExecutor: CmeModelOperationExecutor,
+  executor: CmeOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
   classes: ClassesContext,
@@ -55,11 +54,11 @@ export function openCreateAttributeForEntityDialogAction(
   }
 
   if (isSemanticModelClass(entity)) {
-    handleCreateClassAttribute(cmeExecutor, options, dialogs,
+    handleCreateClassAttribute(executor, options, dialogs,
       classes, graph, notifications, visualModel, entity, onConfirmCallback,
     labelResolver);
   } else if (isSemanticModelClassProfile(entity)) {
-    handleCreateClassProfileAttribute(cmeExecutor, options, dialogs,
+    handleCreateClassProfileAttribute(executor, options, dialogs,
       classes, graph, notifications, visualModel, entity, onConfirmCallback,
       labelResolver);
   } else {
@@ -69,7 +68,7 @@ export function openCreateAttributeForEntityDialogAction(
 }
 
 function handleCreateClassAttribute(
-  cmeExecutor: CmeModelOperationExecutor,
+  executor: CmeOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
   classes: ClassesContext,
@@ -84,12 +83,12 @@ function handleCreateClassAttribute(
     classes, graph, visualModel, options.language, aggregate,
     labelResolver);
 
-  const onConfirm = (state: AttributeDialogState) => {
-
-    const result = cmeExecutor.createRelationship(
-      attributeDialogStateToNewCmeRelationship(state));
-    cmeExecutor.updateSpecialization(result, state.model.identifier,
-      initialState.specializations, state.specializations);
+  const onConfirm = async (state: AttributeDialogState) => {
+    const { batch, created: result } = createCreateRelationshipBatch(executor.createContext, state);
+    const outcome = await executor.execute(batch);
+    if (reportFailure(notifications, outcome, "Can not create the attribute.")) {
+      return;
+    }
 
     if (isWritableVisualModel(visualModel)) {
       // TODO PeSk Update visual model
@@ -105,7 +104,7 @@ function handleCreateClassAttribute(
 }
 
 function handleCreateClassProfileAttribute(
-  cmeExecutor: CmeModelOperationExecutor,
+  executor: CmeOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
   classes: ClassesContext,
@@ -120,12 +119,12 @@ function handleCreateClassProfileAttribute(
     classes, graph, visualModel, options.language, aggregate.id,
     labelResolver);
 
-  const onConfirm = (state: AttributeProfileDialogState) => {
-
-    const result = cmeExecutor.createRelationshipProfile(
-      attributeProfileDialogStateToNewCmeRelationshipProfile(state));
-    cmeExecutor.updateSpecialization(result, state.model.identifier,
-      initialState.specializations, state.specializations);
+  const onConfirm = async (state: AttributeProfileDialogState) => {
+    const { batch, created: result } = createCreateRelationshipProfileBatch(executor.createContext, state);
+    const outcome = await executor.execute(batch);
+    if (reportFailure(notifications, outcome, "Can not create the attribute profile.")) {
+      return;
+    }
 
     if (isWritableVisualModel(visualModel)) {
       // TODO PeSk Update visual model

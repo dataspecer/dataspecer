@@ -1,5 +1,4 @@
 import {
-  CreatedEntityOperationResult,
   createGeneralization,
   deleteEntity,
 } from "@dataspecer/core-v2/semantic-model/operations";
@@ -43,6 +42,17 @@ interface UpdateSpecializationArguments extends CmeOperationArguments {
    */
   next: Specialization[];
 
+  /**
+   * Generalizations to create, prepared from {@link next}.
+   */
+  created: CreatedGeneralization[];
+
+  /**
+   * Generalizations to remove, the ones in {@link previous}
+   * missing in {@link next}.
+   */
+  removed: GeneralizationReference[];
+
 }
 
 const UpdateSpecializationType =
@@ -63,42 +73,78 @@ interface Specialization {
   /**
    * Existing generalization, null for a new specialization.
    */
-  generalization: {
-    identifier: EntityDsIdentifier,
-    model: ModelDsIdentifier,
-  } | null;
+  generalization: GeneralizationReference | null;
+
+}
+
+interface GeneralizationReference {
+
+  identifier: EntityDsIdentifier;
+
+  model: ModelDsIdentifier;
+
+}
+
+interface CreatedGeneralization extends GeneralizationReference {
+
+  iri: string | null;
+
+  child: EntityDsIdentifier;
+
+  parent: EntityDsIdentifier;
 
 }
 
 interface UpdateSpecializationResult
   extends CmeOperationResult<UpdateSpecializationArguments> {
 
-  created: {
-    identifier: EntityDsIdentifier,
-    model: ModelDsIdentifier,
-    iri: string | null,
-    child: EntityDsIdentifier,
-    parent: EntityDsIdentifier,
-  }[];
+  created: CreatedGeneralization[];
 
-  removed: {
-    identifier: EntityDsIdentifier,
-    model: ModelDsIdentifier,
-  }[];
+  removed: GeneralizationReference[];
 
 }
 
+/**
+ * The created and removed generalizations are prepared in create,
+ * so operations in the same batch can use them.
+ */
 export const updateSpecializationOperation: CmeOperation<
-  UpdateSpecializationArguments, UpdateSpecializationResult> = {
+  UpdateSpecializationArguments, UpdateSpecializationResult,
+  Omit<UpdateSpecializationArguments, "type" | "created" | "removed">> = {
   metadata: {
     type: UpdateSpecializationType,
   },
-  create: (_context, parameters) => ({
+  create: (context, parameters) => ({
     type: UpdateSpecializationType,
     ...parameters,
+    created: parameters.next
+      .filter(item => item.generalization === null)
+      .map(item => ({
+        identifier: context.createEntityIdentifier(parameters.model),
+        model: parameters.model,
+        iri: item.iri,
+        child: parameters.entity,
+        parent: item.specializationOf,
+      })),
+    removed: selectRemoved(parameters.previous, parameters.next),
   }),
   execute: updateSpecializationExecutor,
 };
+
+function selectRemoved(
+  previous: Specialization[],
+  next: Specialization[],
+): GeneralizationReference[] {
+  const kept = new Set(next
+    .map(item => item.generalization)
+    .filter(item => item !== null)
+    .map(item => item.model + " " + item.identifier));
+  return previous
+    .map(item => item.generalization)
+    .filter(item => item !== null)
+    .filter(item => !kept.has(item.model + " " + item.identifier))
+    .map(item => ({ identifier: item.identifier, model: item.model }));
+}
 
 /**
  * @throws CmeOperationExecutionFailed
@@ -115,40 +161,19 @@ async function updateSpecializationExecutor(
   }
 
   // Create new.
-  const toCreate = args.next.filter(item => item.generalization === null);
-  const operations = toCreate.map(item => createGeneralization({
-    iri: item.iri,
-    parent: item.specializationOf,
-    child: args.entity,
-  }));
-  const results = writeModel.executeOperations(operations);
-  const created = toCreate.map((item, index) => {
-    const result = results[index] as CreatedEntityOperationResult;
-    if (result?.success === false) {
-      throw new DataspecerOperationFailed();
-    }
-    return {
-      identifier: result.id,
-      model: writeModel.getId(),
+  const results = writeModel.executeOperations(args.created.map(
+    item => createGeneralization({
+      id: item.identifier,
       iri: item.iri,
-      child: args.entity,
-      parent: item.specializationOf,
-    };
-  });
+      parent: item.parent,
+      child: item.child,
+    })));
+  if (results.some(item => item.success === false)) {
+    throw new DataspecerOperationFailed();
+  }
 
   // Remove previous that are not part of next.
-  const kept = new Set(args.next
-    .map(item => item.generalization)
-    .filter(item => item !== null)
-    .map(item => item.model + " " + item.identifier));
-  const removed: UpdateSpecializationResult["removed"] = [];
-  for (const { generalization } of args.previous) {
-    if (generalization === null) {
-      continue;
-    }
-    if (kept.has(generalization.model + " " + generalization.identifier)) {
-      continue;
-    }
+  for (const generalization of args.removed) {
     // TODO Here we abuse the facts,
     //  that semantic and profile models array are the same.
     const model = findSemanticModel(context, generalization.model);
@@ -160,8 +185,7 @@ async function updateSpecializationExecutor(
     if (result.success === false) {
       throw new DataspecerOperationFailed();
     }
-    removed.push({ ...generalization });
   }
 
-  return { args, created, removed };
+  return { args, created: args.created, removed: args.removed };
 }

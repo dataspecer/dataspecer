@@ -39,7 +39,7 @@ export function openEditAssociationDialogAction(
 
   const onConfirm = async (state: AssociationDialogState) => {
     const outcome = await executor.execute(createUpdateRelationshipBatch(
-      executor.batch(), entity.id, initialState, state));
+      executor.createContext, entity.id, initialState, state));
     if (reportFailure(notifications, outcome, "Can not update the association.")) {
       return;
     }

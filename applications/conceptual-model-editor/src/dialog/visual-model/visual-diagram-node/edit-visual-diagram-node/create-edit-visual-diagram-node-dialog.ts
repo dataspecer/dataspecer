@@ -18,7 +18,7 @@ export function createEditVisualDiagramNodeDialogState(
 
 export const createEditVisualDiagramNodeDialog = (
   state: EditVisualDiagramNodeDialogState,
-  onConfirm: ((state: EditVisualDiagramNodeDialogState) => void) | null,
+  onConfirm: ((state: EditVisualDiagramNodeDialogState) => void | Promise<void>) | null,
 ): DialogWrapper<EditVisualDiagramNodeDialogState> => {
   return {
     label: "dialog.visual-diagram-node.label-edit",

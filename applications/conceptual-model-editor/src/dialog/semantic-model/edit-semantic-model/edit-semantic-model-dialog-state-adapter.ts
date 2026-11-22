@@ -1,6 +1,5 @@
 import {
   CmeSemanticModel,
-  CmeSemanticModelChange,
   CmeSemanticModelNameLanguage,
   CmeSemanticModelType,
 } from "../../../dataspecer/cme-model";
@@ -39,14 +38,4 @@ export function createEditSemanticModelDialogState(
     label: semanticModel.name[CmeSemanticModelNameLanguage],
     labelDisabled,
   };
-}
-
-export function editSemanticModelDialogStateToCmeSemanticModelChange(
-  state: EditSemanticModelDialogState,
-): CmeSemanticModelChange {
-  return {
-    identifier: state.identifier,
-    name: { [CmeSemanticModelNameLanguage]: state.label },
-    baseIri: state.baseIri,
-  }
 }

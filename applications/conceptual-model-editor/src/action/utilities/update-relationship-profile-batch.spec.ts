@@ -2,7 +2,10 @@ import { describe, expect, test } from "vitest";
 import { isSemanticModelGeneralization } from "@dataspecer/core-v2/semantic-model/concepts";
 import { SemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 
-import { createUpdateRelationshipProfileBatch } from "./update-relationship-profile-batch";
+import {
+  createCreateRelationshipProfileBatch,
+  createUpdateRelationshipProfileBatch,
+} from "./update-relationship-profile-batch";
 import { CmeRelationshipProfileMandatoryLevel, NewCmeSpecialization } from "../../dataspecer/cme-model/model";
 import { cmeOperations } from "../../operation";
 import {
@@ -29,7 +32,7 @@ describe("createUpdateRelationshipProfileBatch", () => {
       specializations: [specialization("parent", null)],
     });
 
-    const batch = createUpdateRelationshipProfileBatch(context.executor.batch(), "entity", state, state);
+    const batch = createUpdateRelationshipProfileBatch(context.createContext, "entity", state, state);
 
     expect(batch.operations).toMatchObject([{
       profileModel: model,
@@ -61,7 +64,7 @@ describe("createUpdateRelationshipProfileBatch", () => {
     const context = createOperationTestContext();
     const state = createState(context.semanticModel.getId(), { mandatoryLevel: "undefined" });
 
-    const batch = createUpdateRelationshipProfileBatch(context.executor.batch(), "entity", state, state);
+    const batch = createUpdateRelationshipProfileBatch(context.createContext, "entity", state, state);
 
     expect(batch.operations[0].mandatoryLevel).toBeNull();
   });
@@ -88,7 +91,7 @@ describe("createUpdateRelationshipProfileBatch", () => {
     });
 
     const outcome = await context.executor.execute(
-      createUpdateRelationshipProfileBatch(context.executor.batch(), profile, initial, state));
+      createUpdateRelationshipProfileBatch(context.createContext, profile, initial, state));
 
     expect(outcome.exception).toBeUndefined();
     const entity = context.semanticModel.getEntities()[profile] as SemanticModelRelationshipProfile;
@@ -97,6 +100,32 @@ describe("createUpdateRelationshipProfileBatch", () => {
       tags: [CmeRelationshipProfileMandatoryLevel.Mandatory], order: "2",
     });
     expect(parentsOf(context, profile)).toEqual([other]);
+  });
+
+});
+
+describe("createCreateRelationshipProfileBatch", () => {
+
+  test("Given ends replace the domain and range of the state.", async () => {
+    const context = createOperationTestContext();
+    const model = context.semanticModel.getId();
+    const a = await createClass(context, "a");
+    const b = await createClass(context, "b");
+    const ab = await createRelationship(context, a, b, "a-b");
+    const profileA = await createClassProfile(context, a);
+    const profileB = await createClassProfile(context, b);
+    const state = createState(model, { profiles: [{ identifier: ab }] });
+
+    const { batch, created } = createCreateRelationshipProfileBatch(
+      context.createContext, state, { domain: profileA, range: profileB });
+    const outcome = await context.executor.execute(batch);
+
+    expect(outcome.exception).toBeUndefined();
+    const entity = context.semanticModel.getEntities()[created.identifier] as SemanticModelRelationshipProfile;
+    expect(entity.ends[0].concept).toBe(profileA);
+    expect(entity.ends[1]).toMatchObject({
+      concept: profileB, profiling: [ab], tags: [CmeRelationshipProfileMandatoryLevel.Mandatory],
+    });
   });
 
 });

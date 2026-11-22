@@ -4,8 +4,6 @@ import {
 } from "@dataspecer/visual-model";
 
 import {
-  CmeModelOperationExecutor,
-  CmeSemanticModelType,
   semanticModelToCmeSemanticModel,
 } from "../dataspecer/cme-model";
 import { ModelDsIdentifier } from "../dataspecer/entity-model";
@@ -17,11 +15,15 @@ import {
   createEditSemanticModelDialog,
   createEditSemanticModelDialogState,
   EditSemanticModelDialogState,
-  editSemanticModelDialogStateToCmeSemanticModelChange,
 } from "../dialog/semantic-model/edit-semantic-model";
+import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
+import { CmeOperationExecutor } from "../operation";
+import { createUpdateSemanticModelBatch } from "./utilities/update-semantic-model-batch";
+import { reportFailure } from "./utilities/report-failure";
 
 export function openEditSemanticModelDialogAction(
-  cmeExecutor: CmeModelOperationExecutor,
+  executor: CmeOperationExecutor,
+  notifications: UseNotificationServiceWriterType,
   options: Options,
   dialogs: DialogApiContextType,
   classes: ClassesContext,
@@ -40,15 +42,12 @@ export function openEditSemanticModelDialogAction(
   const initialState = createEditSemanticModelDialogState(
     options.language, semanticModel);
 
-  const onConfirm = (state: EditSemanticModelDialogState) => {
-    if (isWritableVisualModel(visualModel)) {
-      visualModel.setModelColor(state.identifier, state.color);
-    }
-    // We can modify only the InMemorySemanticModel.
-    if (state.modelType === CmeSemanticModelType.InMemorySemanticModel) {
-      cmeExecutor.updateSemanticModel(
-        editSemanticModelDialogStateToCmeSemanticModelChange(state));
-    }
+  const onConfirm = async (state: EditSemanticModelDialogState) => {
+    const outcome = await executor.execute(createUpdateSemanticModelBatch(
+      executor.createContext,
+      isWritableVisualModel(visualModel) ? visualModel : null,
+      state));
+    reportFailure(notifications, outcome, "Can not update the model.");
   };
 
   dialogs.openDialog(createEditSemanticModelDialog(initialState, onConfirm));
