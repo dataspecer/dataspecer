@@ -90,6 +90,28 @@ export function resolveControlledVocabularyIri(
   return iri.includes("://") ? iri : baseIri + iri;
 }
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const ABSOLUTE_IRI_PATTERN = /^[a-z][a-z0-9+.-]*:/i;
+
+/**
+ * Absolute IRI standing in for a controlled vocabulary that is not available,
+ * e.g. because it has been deleted while assignments still refer to it.
+ * The bare identifier would be written as a relative IRI.
+ *
+ * - An identifier that already is an absolute IRI (for example one kept from
+ *   an imported DSV, or a urn produced here earlier) is returned unchanged.
+ * - A UUID becomes `urn:uuid:<id>`.
+ * - Any other identifier is encoded into a `urn:dataspecer:` urn.
+ */
+export function missingControlledVocabularyIri(vocabularyId: string): string {
+  if (ABSOLUTE_IRI_PATTERN.test(vocabularyId)) {
+    return vocabularyId;
+  }
+  return UUID_PATTERN.test(vocabularyId)
+    ? `urn:uuid:${vocabularyId}`
+    : `urn:dataspecer:controlled-vocabulary:${encodeURIComponent(vocabularyId)}`;
+}
+
 /**
  * Helper function to create {@link EntityListContainerToDsvContext}.
  * Provides defaults, functionality can be changed using the arguments.
@@ -367,7 +389,7 @@ class EntityListContainerToDsv {
     const vocabularyEntity = this.identifierToEntity(assignment.vocabulary);
     const controlledVocabularyIri = vocabularyEntity !== null
       ? this.entityToIri(vocabularyEntity)
-      : assignment.vocabulary;
+      : missingControlledVocabularyIri(assignment.vocabulary);
     return {
       iri,
       controlledVocabularyIri,
@@ -413,7 +435,7 @@ class EntityListContainerToDsv {
     const vocabularyEntity = this.identifierToEntity(assignment.vocabulary);
     const vocabularyIri = vocabularyEntity !== null
       ? this.entityToIri(vocabularyEntity)
-      : assignment.vocabulary;
+      : missingControlledVocabularyIri(assignment.vocabulary);
     // The vocabulary IRI is embedded as a path segment, so it must be
     // URL-encoded - otherwise characters like "#" or "/" in it would
     // corrupt the resulting IRI (e.g. producing a second "#").
