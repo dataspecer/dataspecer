@@ -1390,7 +1390,7 @@ function createActionsContext(
             visualModel, model, entity, labelResolver);
         } else if (isSemanticModelAttributeProfile(entity)) {
           openEditAttributeProfileDialogAction(
-            cmeExecutor, options, dialogs, classes, useGraph,
+            useGraph.executor(), notifications, options, dialogs, classes, useGraph,
             visualModel, model, entity, labelResolver);
         } else if (isSemanticModelRelationship(entity)) {
           openEditAssociationDialogAction(
@@ -1398,7 +1398,7 @@ function createActionsContext(
             visualModel, model, entity, dialogTracker, labelResolver);
         } else if (isSemanticModelRelationshipProfile(entity)) {
           openEditAssociationProfileDialogAction(
-            useGraph.executor(), cmeExecutor, options, dialogs, classes,
+            useGraph.executor(), notifications, options, dialogs, classes,
             useGraph, visualModel, model, entity, dialogTracker, labelResolver);
         } else {
           notifications.error("Can not edit given item.");

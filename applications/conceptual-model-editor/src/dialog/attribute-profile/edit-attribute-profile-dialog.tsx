@@ -199,7 +199,7 @@ export const EditAttributeProfileDialog = (props: DialogProps<AttributeProfileDi
 
 export const createNewAttributeProfileDialog = (
   state: AttributeProfileDialogState,
-  onConfirm: (state: AttributeProfileDialogState) => void,
+  onConfirm: (state: AttributeProfileDialogState) => void | Promise<void>,
 ): DialogWrapper<AttributeProfileDialogState> => {
   return {
     label: "dialog.attribute-profile.label-create",
@@ -217,7 +217,7 @@ export const createNewAttributeProfileDialog = (
 
 export const createEditAttributeProfileDialog = (
   state: AttributeProfileDialogState,
-  onConfirm: (state: AttributeProfileDialogState) => void,
+  onConfirm: (state: AttributeProfileDialogState) => void | Promise<void>,
 ): DialogWrapper<AttributeProfileDialogState> => {
   return {
     label: "dialog.attribute-profile.label-edit",
@@ -235,7 +235,7 @@ export const createEditAttributeProfileDialog = (
 
 export const createAddAttributeProfileDialog = (
   state: AttributeProfileDialogState,
-  onConfirm: (state: AttributeProfileDialogState) => void,
+  onConfirm: (state: AttributeProfileDialogState) => void | Promise<void>,
 ): DialogWrapper<AttributeProfileDialogState> => {
   return {
     label: "dialog.attribute-profile.label-create",

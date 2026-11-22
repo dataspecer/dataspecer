@@ -204,7 +204,7 @@ export const EditAssociationProfileDialog = (props: DialogProps<AssociationProfi
 
 export const createNewAssociationProfileDialog = (
   state: AssociationProfileDialogState,
-  onConfirm: (state: AssociationProfileDialogState) => void,
+  onConfirm: (state: AssociationProfileDialogState) => void | Promise<void>,
 ): DialogWrapper<AssociationProfileDialogState> => {
   return {
     label: "dialog.association-profile.label-create",
@@ -222,7 +222,7 @@ export const createNewAssociationProfileDialog = (
 
 export const createEditAssociationProfileDialog = (
   state: AssociationProfileDialogState,
-  onConfirm: (state: AssociationProfileDialogState) => void,
+  onConfirm: (state: AssociationProfileDialogState) => void | Promise<void>,
 ): DialogWrapper<AssociationProfileDialogState> => {
   return {
     label: "dialog.association-profile.label-edit",

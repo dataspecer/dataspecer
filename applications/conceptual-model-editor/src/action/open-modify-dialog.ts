@@ -80,7 +80,7 @@ export function openModifyDialogAction(
     return;
   } else if (isSemanticModelAttributeProfile(entity)) {
     openEditAttributeProfileDialogAction(
-      cmeExecutor, options, dialogs, classes, graph, visualModel,
+      graph.executor(), notifications, options, dialogs, classes, graph, visualModel,
       model, aggregate.rawEntity as SemanticModelRelationshipProfile,
       labelResolver);
     return;
@@ -91,7 +91,7 @@ export function openModifyDialogAction(
     return;
   } else if (isSemanticModelRelationshipProfile(entity)) {
     openEditAssociationProfileDialogAction(
-      graph.executor(), cmeExecutor, options, dialogs, classes, graph,
+      graph.executor(), notifications, options, dialogs, classes, graph,
       visualModel, model, aggregate.rawEntity as SemanticModelRelationshipProfile,
       tracker, labelResolver);
     return;
