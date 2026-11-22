@@ -1386,7 +1386,7 @@ function createActionsContext(
 
         if (isSemanticModelAttribute(entity)) {
           openEditAttributeDialogAction(
-            cmeExecutor, options, dialogs, classes, useGraph,
+            useGraph.executor(), notifications, options, dialogs, classes, useGraph,
             visualModel, model, entity, labelResolver);
         } else if (isSemanticModelAttributeProfile(entity)) {
           openEditAttributeProfileDialogAction(
@@ -1394,7 +1394,7 @@ function createActionsContext(
             visualModel, model, entity, labelResolver);
         } else if (isSemanticModelRelationship(entity)) {
           openEditAssociationDialogAction(
-            useGraph.executor(), cmeExecutor, options, dialogs, classes,
+            useGraph.executor(), notifications, options, dialogs, classes,
             visualModel, model, entity, dialogTracker, labelResolver);
         } else if (isSemanticModelRelationshipProfile(entity)) {
           openEditAssociationProfileDialogAction(

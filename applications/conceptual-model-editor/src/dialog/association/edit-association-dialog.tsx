@@ -130,7 +130,7 @@ export const EditAssociationDialog = (props: DialogProps<AssociationDialogState>
 
 export const createNewAssociationDialog = (
   state: AssociationDialogState,
-  onConfirm: (state: AssociationDialogState) => void,
+  onConfirm: (state: AssociationDialogState) => void | Promise<void>,
 ): DialogWrapper<AssociationDialogState> => {
   return {
     label: "dialog.association.label-create",
@@ -148,7 +148,7 @@ export const createNewAssociationDialog = (
 
 export const createEditAssociationDialog = (
   state: AssociationDialogState,
-  onConfirm: (state: AssociationDialogState) => void,
+  onConfirm: (state: AssociationDialogState) => void | Promise<void>,
 ): DialogWrapper<AssociationDialogState> => {
   return {
     label: "dialog.association.label-edit",

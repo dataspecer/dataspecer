@@ -125,7 +125,7 @@ export const AttributeDialog = (props: DialogProps<AttributeDialogState>) => {
 
 export const createNewAttributeDialog = (
   state: AttributeDialogState,
-  onConfirm: (state: AttributeDialogState) => void,
+  onConfirm: (state: AttributeDialogState) => void | Promise<void>,
 ): DialogWrapper<AttributeDialogState> => {
   return {
     label: "dialog.attribute.label-create",
@@ -143,7 +143,7 @@ export const createNewAttributeDialog = (
 
 export const createEditAttributeDialog = (
   state: AttributeDialogState,
-  onConfirm: (state: AttributeDialogState) => void,
+  onConfirm: (state: AttributeDialogState) => void | Promise<void>,
 ): DialogWrapper<AttributeDialogState> => {
   return {
     label: "dialog.attribute.label-edit",
@@ -161,7 +161,7 @@ export const createEditAttributeDialog = (
 
 export const createAddAttributeDialog = (
   state: AttributeDialogState,
-  onConfirm: (state: AttributeDialogState) => void,
+  onConfirm: (state: AttributeDialogState) => void | Promise<void>,
 ): DialogWrapper<AttributeDialogState> => {
   return {
     label: "dialog.attribute.label-create",

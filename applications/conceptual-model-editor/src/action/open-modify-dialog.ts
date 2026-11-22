@@ -75,7 +75,7 @@ export function openModifyDialogAction(
     return;
   } else if (isSemanticModelAttribute(entity)) {
     openEditAttributeDialogAction(
-      cmeExecutor, options, dialogs, classes, graph,
+      graph.executor(), notifications, options, dialogs, classes, graph,
       visualModel, model, entity, labelResolver);
     return;
   } else if (isSemanticModelAttributeProfile(entity)) {
@@ -86,7 +86,7 @@ export function openModifyDialogAction(
     return;
   } else if (isSemanticModelRelationship(entity)) {
     openEditAssociationDialogAction(
-      graph.executor(), cmeExecutor, options, dialogs, classes,
+      graph.executor(), notifications, options, dialogs, classes,
       visualModel, model, entity, tracker, labelResolver);
     return;
   } else if (isSemanticModelRelationshipProfile(entity)) {
