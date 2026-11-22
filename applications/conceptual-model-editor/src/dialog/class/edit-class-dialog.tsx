@@ -92,7 +92,7 @@ const ClassDialog = (props: DialogProps<ClassDialogState>) => {
 
 export const createNewClassDialog = (
   state: ClassDialogState,
-  onConfirm: (state: ClassDialogState) => void | null,
+  onConfirm: ((state: ClassDialogState) => void | Promise<void>) | null,
 ): DialogWrapper<ClassDialogState> => {
   return {
     label: "dialog.class.label-create",
@@ -108,7 +108,7 @@ export const createNewClassDialog = (
 
 export const createEditClassDialog = (
   state: ClassDialogState,
-  onConfirm: (state: ClassDialogState) => void | null,
+  onConfirm: ((state: ClassDialogState) => void | Promise<void>) | null,
 ): DialogWrapper<ClassDialogState> => {
   return {
     label: "dialog.class.label-edit",

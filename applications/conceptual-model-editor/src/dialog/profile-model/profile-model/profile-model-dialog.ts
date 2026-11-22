@@ -4,7 +4,7 @@ import { ProfileModelDialog } from "./profile-model-dialog-view";
 
 export const createProfileModelDialog = (
   state: ProfileModelState,
-  onConfirm: (state: ProfileModelState) => void | null,
+  onConfirm: ((state: ProfileModelState) => void | Promise<void>) | null,
 ): DialogWrapper<ProfileModelState> => {
   return {
     label: "profile-model-dialog.label",

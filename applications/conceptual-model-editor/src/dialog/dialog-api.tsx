@@ -40,8 +40,11 @@ export interface DialogWrapper<S> {
 
   /**
    * Called when user confirmed the dialog.
+   * When it returns a promise, the dialog stays open until the promise settles
+   * and ignores confirm and close in the meantime.
+   * The dialog closes even when the promise rejects.
    */
-  onConfirm: null | ((state: S) => void);
+  onConfirm: null | ((state: S) => void | Promise<void>);
 
   /**
    * Called when dialog is about to be closed without user confirming the action.

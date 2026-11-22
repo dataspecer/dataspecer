@@ -12,7 +12,7 @@ import {
 } from "./create-semantic-model-dialog-controller";
 
 export const createAddModelDialog = (
-  onConfirm: (state: CreateModelState) => void | null,
+  onConfirm: ((state: CreateModelState) => void | Promise<void>) | null,
 ): DialogWrapper<CreateModelState> => {
   return {
     label: "add-model-dialog.label",
