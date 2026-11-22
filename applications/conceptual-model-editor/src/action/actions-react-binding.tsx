@@ -133,6 +133,7 @@ import {
 import { putVisualDiagramNodeContentToVisualModelAction } from "./put-visual-diagram-node-content-to-visual-model";
 import { cmeOperations } from "../operation";
 import { openProfileModelDialogAction } from "./open-profile-model-dialog";
+import { reportFailure } from "./utilities/report-failure";
 
 const LOG = createLogger(import.meta.url);
 
@@ -1114,9 +1115,7 @@ function createActionsContext(
       semanticModel,
       entity,
     }));
-    if (result.exception !== undefined) {
-      LOG.error("Can not add class surroundings.", result.exception);
-    }
+    reportFailure(notifications, result, "Can not add class surroundings.");
   }
 
   const releaseSemanticClassSurroundings = async (
@@ -1128,9 +1127,7 @@ function createActionsContext(
       semanticModel,
       entity,
     }));
-    if (result.exception !== undefined) {
-      LOG.error("Can not release class surroundings.", result.exception);
-    }
+    reportFailure(notifications, result, "Can not release class surroundings.");
   }
 
   const openProfileModelDialog = async (model: ModelDsIdentifier) => {
