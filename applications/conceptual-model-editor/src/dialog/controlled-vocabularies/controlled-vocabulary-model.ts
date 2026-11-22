@@ -4,6 +4,27 @@ import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-mod
 
 export type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 
+/**
+ * Reference from an assignment to a controlled vocabulary. The vocabulary
+ * may not be available, e.g. when it has been deleted, while the assignment
+ * itself still exists.
+ */
+export type ControlledVocabularyReference = {
+  state: 'found',
+  vocabulary: ControlledVocabulary,
+} | {
+  state: 'not_found',
+  vocabularyId: EntityDsIdentifier,
+};
+
+export function getReferencedVocabularyId(
+  reference: ControlledVocabularyReference,
+): EntityDsIdentifier {
+  return reference.state === "found"
+    ? reference.vocabulary.id
+    : reference.vocabularyId;
+}
+
 export interface ControlledVocabularyUsage {
 
   /**
@@ -13,7 +34,7 @@ export interface ControlledVocabularyUsage {
    */
   assignmentId: EntityDsIdentifier;
 
-  vocabulary: ControlledVocabulary;
+  vocabulary: ControlledVocabularyReference;
 
   qualifier: Qualifier;
 

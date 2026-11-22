@@ -1,7 +1,7 @@
 import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
 import { CmeReference } from "../dataspecer/cme-model/model";
 import { EntityDsIdentifier } from "../dataspecer/entity-model";
-import { VocabularyItemState } from "../dialog/controlled-vocabularies";
+import { getReferencedVocabularyId, VocabularyItemState } from "../dialog/controlled-vocabularies";
 
 /**
  * A row is "own" (persisted, or to be persisted, as this class profile's
@@ -48,7 +48,7 @@ export function applyControlledVocabularySelection(
     }
     if (item.entityId === null) {
       cmeExecutor.createControlledVocabularyAssignment(classProfile, {
-        vocabulary: item.vocabulary.id,
+        vocabulary: getReferencedVocabularyId(item.vocabulary),
         qualifier: item.qualifier,
         replaces: item.inherited === null
           ? null

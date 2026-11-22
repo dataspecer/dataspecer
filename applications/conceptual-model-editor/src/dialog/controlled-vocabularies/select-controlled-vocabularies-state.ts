@@ -1,5 +1,6 @@
 import {
   ControlledVocabulary,
+  getReferencedVocabularyId,
   ControlledVocabularyOverride,
   ControlledVocabularyUsage,
 } from "./controlled-vocabulary-model";
@@ -85,7 +86,7 @@ export function findDuplicateVocabularyItemIds(
 ): Set<string> {
   const groups = new Map<string, VocabularyItemState[]>();
   for (const item of state.items) {
-    const groupKey = item.vocabulary.id;
+    const groupKey = getReferencedVocabularyId(item.vocabulary);
     const group = groups.get(groupKey) ?? [];
     group.push(item);
     groups.set(groupKey, group);

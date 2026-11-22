@@ -14,17 +14,27 @@ export function VocabularyItemView(props: {
   const inherited = props.state.inherited;
   const qualifierDisabled = inherited !== null && !inherited.overrideEnabled;
   const effectiveQualifier = qualifierDisabled ? null : props.state.qualifier;
+  const reference = props.state.vocabulary;
+  const isMissing = reference.state === "not_found";
 
   return (
     <div
       className={`rounded border p-3 ${
-        props.isDuplicate ? "border-red-400 bg-red-50" : "bg-white"
+        props.isDuplicate || isMissing ? "border-red-400 bg-red-50" : "bg-white"
       }`}
     >
       <div className="flex items-start justify-between">
         <div className="flex items-baseline gap-2 min-w-0">
-          <p className="font-semibold shrink-0">{getLocalizedStringFromLanguageString(props.state.vocabulary.title, language)}</p>
-          <p className="text-sm text-gray-500 truncate">{props.state.vocabulary.references}</p>
+          {reference.state === "not_found" ? (
+            <p className="font-semibold truncate" title={reference.vocabularyId}>
+              {reference.vocabularyId}
+            </p>
+          ) : (
+            <>
+              <p className="font-semibold shrink-0">{getLocalizedStringFromLanguageString(reference.vocabulary.title, language)}</p>
+              <p className="text-sm text-gray-500 truncate">{reference.vocabulary.references}</p>
+            </>
+          )}
         </div>
         {props.onRemove && (
           <button
@@ -35,6 +45,12 @@ export function VocabularyItemView(props: {
           </button>
         )}
       </div>
+      {isMissing && (
+        <p className="mt-1 text-sm text-red-600">
+          Vocabulary not found. It may have been deleted.
+          {inherited !== null && " It is inherited, remove it in the profiled class."}
+        </p>
+      )}
       <div className="mt-2 flex items-center gap-4">
         <SelectQualifier
           value={effectiveQualifier}

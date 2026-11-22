@@ -1,6 +1,6 @@
 import type { Qualifier } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import type { EntityDsIdentifier } from "../../dataspecer/entity-model";
-import { ControlledVocabulary } from "./controlled-vocabulary-model";
+import { ControlledVocabularyReference } from "./controlled-vocabulary-model";
 
 export interface VocabularyItemState {
 
@@ -18,7 +18,7 @@ export interface VocabularyItemState {
    */
   entityId: EntityDsIdentifier | null;
 
-  vocabulary: ControlledVocabulary;
+  vocabulary: ControlledVocabularyReference;
 
   /**
    * Currently effective qualifier
@@ -47,12 +47,4 @@ export interface InheritedQualifierState {
 
   overrideEnabled: boolean;
 
-}
-
-export function createVocabularyItemState(
-  vocabulary: ControlledVocabulary,
-  qualifier: Qualifier,
-  inherited: InheritedQualifierState | null,
-): VocabularyItemState {
-  return { id: crypto.randomUUID(), entityId: null, vocabulary, qualifier, inherited };
 }
