@@ -188,9 +188,10 @@ function MissingControlledVocabularyWarning({ count }: { count: number }) {
   return (
     <span
       title={title}
-      className="inline-flex items-center rounded-sm border border-red-600 bg-white/80 px-0.5 text-red-600"
+      className="inline-flex items-center gap-0.5 rounded-sm border border-red-600 bg-white/60 px-1 text-xs text-red-600"
     >
       <TriangleAlert className="h-3 w-3" />
+      {count}
     </span>
   );
 }
