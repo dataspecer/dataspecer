@@ -1,5 +1,7 @@
+import { useState } from "react"
 import { Plus, Link, BookOpen } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { DeleteVocabularyDialog } from "./delete-vocabulary-dialog"
 import { Breadcrumb } from "@/components/layout/breadcrumb"
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
@@ -29,9 +31,18 @@ export function VocabularyListPage({
   const { managerUrl } = useConfig()
   const { own, nestedPackages } = useVocabulariesContext()
   const selectPackageLabel = createStringSelector([i18n.language, 'en'])
+  const [vocabularyToDelete, setVocabularyToDelete] = useState<ControlledVocabulary | null>(null)
 
   return (
     <>
+      <DeleteVocabularyDialog
+        vocabulary={vocabularyToDelete}
+        onCancel={() => setVocabularyToDelete(null)}
+        onConfirm={(vocabulary) => {
+          setVocabularyToDelete(null)
+          onDelete(vocabulary.id)
+        }}
+      />
       <Breadcrumb
         items={[
           { label: t("breadcrumb.packageManager"), href: managerUrl },
@@ -58,7 +69,7 @@ export function VocabularyListPage({
               vocabulary={vocab}
               onView={() => onView(vocab)}
               onEdit={() => onEdit(vocab)}
-              onDelete={() => onDelete(vocab.id)}
+              onDelete={() => setVocabularyToDelete(vocab)}
             />
           ))}
         </div>
