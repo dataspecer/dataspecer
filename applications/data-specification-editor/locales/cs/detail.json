@@ -50,7 +50,7 @@
     "scheme": "Schéma konceptů",
     "title": "Řízené slovníky",
     "usage": "Použití",
-    "vocabulary not found": "Řízený slovník nenalezen:"
+    "vocabulary not found": "Chybějící/smazaný slovník:"
   },
   "dematerialization": {
     "cardinality restriction": "Dematerializovat lze pouze ty asociace, které nemají kardinalitu vyšší než 1.",

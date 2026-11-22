@@ -50,7 +50,7 @@
     "scheme": "Concept scheme",
     "title": "Controlled vocabularies",
     "usage": "Usage",
-    "vocabulary not found": "Controlled vocabulary not found:"
+    "vocabulary not found": "Missing/Deleted vocabulary:"
   },
   "dematerialization": {
     "cardinality restriction": "Only those associations that do not have a cardinality higher than 1 can be dematerialized.",
