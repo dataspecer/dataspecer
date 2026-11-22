@@ -6,7 +6,7 @@ import {
   NodeToolbar,
   Position,
 } from "@xyflow/react";
-import { BookOpen } from "lucide-react";
+import { BookOpen, TriangleAlert } from "lucide-react";
 
 import {
   DiagramOptions,
@@ -81,6 +81,9 @@ export const EntityNode = (props: NodeProps<Node<ApiNode>>) => {
                 <div>{label}</div>
                 {data.controlledVocabularyCount > 0
                   ? <ControlledVocabularyTag count={data.controlledVocabularyCount} />
+                  : null}
+                {data.controlledVocabularyMissingCount > 0
+                  ? <MissingControlledVocabularyWarning count={data.controlledVocabularyMissingCount} />
                   : null}
               </div>
               {data.position.anchored ? <div>⚓</div> : null}
@@ -170,6 +173,24 @@ function ControlledVocabularyTag({ count }: { count: number }) {
     >
       <BookOpen className="h-3 w-3" />
       {count}
+    </span>
+  );
+}
+
+/**
+ * Warning that some controlled vocabulary assignments of a class profile
+ * refer to a vocabulary that no longer exists.
+ */
+function MissingControlledVocabularyWarning({ count }: { count: number }) {
+  const title = count === 1
+    ? t("node-controlled-vocabulary-missing-one")
+    : t("node-controlled-vocabulary-missing-many").replace("{count}", String(count));
+  return (
+    <span
+      title={title}
+      className="inline-flex items-center rounded-sm border border-red-600 bg-white/80 px-0.5 text-red-600"
+    >
+      <TriangleAlert className="h-3 w-3" />
     </span>
   );
 }

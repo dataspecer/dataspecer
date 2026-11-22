@@ -62,6 +62,12 @@ import { dataTypeUriToName, SemanticModel } from "./dataspecer/semantic-model";
 import { CmeRelationshipProfileMandatoryLevel } from "./dataspecer/cme-model";
 import { asMandatoryLevel, selectDomainAndRange } from "./dataspecer/cme-model/adapter/adapter-utilities";
 
+import {
+  countMissingControlledVocabularies,
+  useAvailableControlledVocabulariesContext,
+  useAvailableControlledVocabulariesLoaded,
+} from "./dialog/controlled-vocabularies";
+
 import "./visualization.css";
 import { isInMemorySemanticModel } from "./dataspecer/semantic-model";
 import { validateVisualModel } from "./visualization-validation";
@@ -72,6 +78,10 @@ const DEFAULT_MODEL_COLOR = configuration().defaultModelColor;
 
 type ExtendedOptions = {
   language: string
+  /**
+   * Ids of the available controlled vocabularies, null while they are loading.
+   */
+  controlledVocabularyIds: ReadonlySet<string> | null,
 } & DiagramOptions;
 
 type SemanticModelMap = Map<string, EntityModel>;
@@ -83,6 +93,11 @@ export const Visualization = () => {
   const graph = useModelGraphContext();
   const actions = useActions();
   const classesContext = useClassesContext();
+  const availableVocabularies = useAvailableControlledVocabulariesContext();
+  const vocabulariesLoaded = useAvailableControlledVocabulariesLoaded();
+  const controlledVocabularyIds = useMemo(
+    () => vocabulariesLoaded ? new Set(availableVocabularies.map(item => item.id)) : null,
+    [availableVocabularies, vocabulariesLoaded]);
 
   const activeVisualModel = useMemo(
     () => graph.getActiveVisualModel(),
@@ -90,9 +105,10 @@ export const Visualization = () => {
 
   const extendedOptions: ExtendedOptions = useMemo(() => ({
     language: options.language,
+    controlledVocabularyIds,
     ...options.visualOptions,
     profileOfLabel: tData("diagram.profile-of", options.language),
-  }), [options.language, options.visualOptions]);
+  }), [options.language, options.visualOptions, controlledVocabularyIds]);
 
   useEffect(() => {
     const previousEntities = graph.getAggregatedEntities();
@@ -130,7 +146,7 @@ export const Visualization = () => {
       unsubscribeCanvasCallback?.();
     };
 
-  }, [options, activeVisualModel, actions, graph]);
+  }, [options, extendedOptions, activeVisualModel, actions, graph]);
 
   // Update canvas content on view change.
   useEffect(() => {
@@ -396,6 +412,10 @@ function createDiagramNode(
     vocabulary,
     controlledVocabularyCount: isProfile
       ? (entity.controlledVocabularies?.length ?? 0) : 0,
+    controlledVocabularyMissingCount: isProfile
+      ? countMissingControlledVocabularies(
+        entity.controlledVocabularies, entities, options.controlledVocabularyIds)
+      : 0,
   };
 }
 

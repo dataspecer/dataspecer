@@ -88,6 +88,12 @@ export type Node = {
   controlledVocabularyCount: number;
 
   /**
+   * Number of controlled vocabulary assignments, including the inherited
+   * ones, that refer to a vocabulary that no longer exists.
+   */
+  controlledVocabularyMissingCount: number;
+
+  /**
    * Node content, i.e. attributes, properties.
    */
   items: NodeItem[];

@@ -434,6 +434,8 @@ export const english: Record<string, string | Function> = {
   "node-add-attribute-profile": "Add an attribute profile",
   "node-controlled-vocabulary-assignment-one": "Contains 1 controlled vocabulary assignment",
   "node-controlled-vocabulary-assignment-many": "Contains {count} controlled vocabulary assignments",
+  "node-controlled-vocabulary-missing-one": "1 controlled vocabulary assignment refers to a vocabulary that no longer exists",
+  "node-controlled-vocabulary-missing-many": "{count} controlled vocabulary assignments refer to vocabularies that no longer exist",
   //
   "selection-action-button": "Show menu with actions, which can be performed on a selection",
   "selection-layout-button": "Show menu with layout actions, which can be performed on a selection",

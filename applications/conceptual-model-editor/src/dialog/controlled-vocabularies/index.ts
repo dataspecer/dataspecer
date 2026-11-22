@@ -1,4 +1,6 @@
 export * from "./controlled-vocabulary-model";
+export * from "./available-controlled-vocabularies-context";
+export * from "./utils";
 export * from "./vocabulary-item-state";
 export * from "./vocabulary-item-presenter";
 export * from "./vocabulary-item-view";

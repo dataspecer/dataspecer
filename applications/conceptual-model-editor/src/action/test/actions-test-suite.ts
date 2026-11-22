@@ -233,6 +233,7 @@ export class ActionsTestSuite {
       profileOf: [],
       vocabulary: [],
       controlledVocabularyCount: 0,
+      controlledVocabularyMissingCount: 0,
       options: {} as any,
       items: []
     };
