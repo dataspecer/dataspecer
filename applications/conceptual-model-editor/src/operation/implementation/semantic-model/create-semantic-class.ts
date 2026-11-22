@@ -38,6 +38,8 @@ interface CreateSemanticClassArguments extends CmeOperationArguments {
 
   externalDocumentationUrl: string | null;
 
+  order: string | null;
+
 }
 
 const CreateSemanticClassType =
@@ -83,6 +85,7 @@ async function createSemanticClassExecutor(
     name: args.name ?? undefined,
     description: args.description ?? undefined,
     externalDocumentationUrl: args.externalDocumentationUrl ?? null,
+    order: args.order ?? undefined,
   });
 
   const result = await executeCreateSemanticOperation(model, operation);

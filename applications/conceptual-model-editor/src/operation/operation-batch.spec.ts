@@ -13,6 +13,7 @@ const classParameters = (context: OperationTestContext, iri: string) => ({
   name: null,
   description: null,
   externalDocumentationUrl: null,
+  order: null,
 });
 
 describe("CmeOperationBatchBuilder", () => {

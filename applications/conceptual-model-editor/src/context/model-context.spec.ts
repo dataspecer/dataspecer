@@ -107,4 +107,5 @@ const createClassIn = (graph: UseModelGraphContextType, model: EntityModel) =>
     name: null,
     description: null,
     externalDocumentationUrl: null,
+    order: null,
   }));

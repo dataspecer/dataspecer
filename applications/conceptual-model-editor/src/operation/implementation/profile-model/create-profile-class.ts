@@ -55,6 +55,8 @@ interface CreateProfileClassArguments extends CmeOperationArguments {
 
   tags: string[];
 
+  order: string | null;
+
 }
 
 interface CreateProfileClassResult
@@ -101,6 +103,7 @@ async function createProfileClassExecutor(
     usageNoteFromProfiled: args.usageNoteSource,
     externalDocumentationUrl: args.externalDocumentationUrl,
     tags: args.tags,
+    order: args.order ?? undefined,
     controlledVocabularies: [],
   });
 

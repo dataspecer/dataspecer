@@ -20,6 +20,7 @@ describe("createSemanticClass", () => {
       name: { en: "A" },
       description: { en: "Description" },
       externalDocumentationUrl: "http://example.com/doc",
+      order: "2",
     }));
 
     expect(result.created).toBe(result.args.identifier);
@@ -29,6 +30,7 @@ describe("createSemanticClass", () => {
       name: { en: "A" },
       description: { en: "Description" },
       externalDocumentationUrl: "http://example.com/doc",
+      order: "2",
     });
   });
 
@@ -43,6 +45,7 @@ describe("createSemanticClass", () => {
         name: null,
         description: null,
         externalDocumentationUrl: null,
+        order: null,
       }));
 
     expect(result.exception).toBeInstanceOf(ModelIsNotWritable);
