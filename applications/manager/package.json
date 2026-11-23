@@ -14,7 +14,6 @@
     "@dataspecer/core": "*",
     "@dataspecer/core-v2": "*",
     "@dataspecer/documentation": "*",
-    "@dataspecer/layout": "*",
     "@dataspecer/ofn-vocabularies": "*",
     "@dataspecer/rdfs": "*",
     "@dataspecer/specification": "*",
