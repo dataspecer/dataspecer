@@ -123,12 +123,13 @@ export class ShaclAdapter {
   constructor(
     model: StructureModel,
     context: ArtefactGeneratorContext | null,
-    artefact: DataSpecificationArtefact
+    artefact: DataSpecificationArtefact,
+      publicBaseUrl: string | null,
   ) {
     this.model = model;
     this.context = context;
     this.artefact = artefact;
-    this.baseURL = this.artefact.configuration["publicBaseUrl"];
+    this.baseURL = publicBaseUrl;
     // UNCOMMENT WHEN N3.Writer handles baseIRI properly and delete the next line
     //this.writer  =  (this.baseURL != null) ? new N3.Writer({ prefixes: { sh: 'http://www.w3.org/ns/shacl#', rdfs: "http://www.w3.org/2000/01/rdf-schema#"}, baseIRI: this.baseURL  }) : new N3.Writer({ prefixes: { sh: 'http://www.w3.org/ns/shacl#', rdfs: "http://www.w3.org/2000/01/rdf-schema#"}});
       this.writer  =  new N3.Writer({ prefixes: { sh: 'http://www.w3.org/ns/shacl#', rdfs: "http://www.w3.org/2000/01/rdf-schema#"}});

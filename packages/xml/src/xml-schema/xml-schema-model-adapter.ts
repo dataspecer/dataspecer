@@ -1,5 +1,5 @@
 import { pathRelative } from "@dataspecer/core/core/utilities/path-relative";
-import { DataSpecificationConfiguration, DataSpecificationConfigurator, DefaultDataSpecificationConfiguration } from "@dataspecer/core/data-specification/configuration";
+import { DataSpecificationConfiguration, resolveDataSpecificationConfig } from "@dataspecer/core/data-specification/configuration";
 import { DataSpecificationArtefact, DataSpecificationSchema } from "@dataspecer/core/data-specification/model";
 import { ArtefactGeneratorContext } from "@dataspecer/generators/generator";
 import {
@@ -12,7 +12,7 @@ import {
 } from "@dataspecer/generators/structure-model/model";
 import { structureModelAddDefaultValues } from "@dataspecer/generators/structure-model/transformation/add-default-values";
 import { OFN, XSD, XSD_PREFIX } from "@dataspecer/core/well-known";
-import { DefaultXmlConfiguration, XmlConfiguration, XmlConfigurator } from "../configuration.ts";
+import { XmlConfiguration, resolveXmlConfig } from "../configuration.ts";
 import { commonXmlNamespace, commonXmlPrefix, iriElementName, langStringName, QName, simpleTypeMapQName } from "../conventions.ts";
 import { structureModelAddXmlProperties } from "../xml-structure-model/add-xml-properties.ts";
 import { XmlStructureModel } from "../xml-structure-model/model/xml-structure-model.ts";
@@ -115,10 +115,7 @@ export function collectProfilingChain(model: StructureModel, context: ArtefactGe
   while (currentModelId) {
     const structureModel = currentModelId === model.psmIri ? model : context.structureModels[currentModelId];
 
-    const configuration = DataSpecificationConfigurator.merge(
-      DefaultDataSpecificationConfiguration,
-      DataSpecificationConfigurator.getFromObject(mainArtifact.configuration), // todo
-    ) as DataSpecificationConfiguration;
+    const configuration = resolveDataSpecificationConfig(mainArtifact.configurationChain);
 
     const profiledModel = prepareStructureModel(structureModel, context, configuration) as XmlStructureModel;
     chain.push(profiledModel);
@@ -176,7 +173,7 @@ export async function structureModelToXmlSchema(
   }
 
   // TODO: options should be per model, but for now we use the same options for all
-  const options = XmlConfigurator.merge(DefaultXmlConfiguration, XmlConfigurator.getFromObject(artifact.configuration)) as XmlConfiguration;
+  const options = resolveXmlConfig(artifact.configurationChain);
 
   const commonXmlSchemaLocation = null;
 

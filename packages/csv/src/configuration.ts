@@ -1,36 +1,23 @@
-import {DeepPartial} from "@dataspecer/core/core/utilities/deep-partial";
+import { resolveConfigurationHelper, mergeShallowConfigurationHelper, type Configuration, type ConfigurationChain } from "@dataspecer/core/configuration";
 
-export const DefaultCsvConfiguration =  {
-    enableMultipleTableSchema: false,
-}
+export const DefaultCsvConfiguration = {
+  enableMultipleTableSchema: false,
+};
 
 export type CsvConfiguration = typeof DefaultCsvConfiguration;
 
-export interface ConfigurationWithCsv {
-    [CsvConfigurator.KEY]?: DeepPartial<CsvConfiguration>;
+export type CsvConfigurationInput = Partial<CsvConfiguration>;
+
+export const CSV_CONFIGURATION_KEY = "csv";
+
+export function getCsvConfigInput(configuration: Configuration): CsvConfigurationInput {
+  return configuration?.[CSV_CONFIGURATION_KEY] ?? {};
 }
 
-export class CsvConfigurator {
-    static KEY = "csv" as const;
+export function csvConfig(input: CsvConfigurationInput): { csv: CsvConfigurationInput } {
+  return { csv: input };
+}
 
-    static getFromObject(configurationObject: object | null): DeepPartial<CsvConfiguration> {
-        return configurationObject?.[CsvConfigurator.KEY] ?? {};
-    }
-
-    static setToObject(configurationObject: object, options: DeepPartial<CsvConfiguration>): ConfigurationWithCsv {
-        return {...configurationObject, [CsvConfigurator.KEY]: options};
-    }
-
-    static merge(...options: DeepPartial<CsvConfiguration>[]): DeepPartial<CsvConfiguration> {
-        let result: DeepPartial<CsvConfiguration> = {};
-        for (const option of options) {
-            result = {...result, ...option};
-        }
-
-        return result;
-    }
-
-    static getDefault() {
-        return DefaultCsvConfiguration;
-    }
+export function resolveCsvConfig(configurations: ConfigurationChain): CsvConfiguration {
+  return resolveConfigurationHelper(configurations, getCsvConfigInput, () => ({ ...DefaultCsvConfiguration }), mergeShallowConfigurationHelper);
 }

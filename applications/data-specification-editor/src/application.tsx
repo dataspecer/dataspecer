@@ -1,25 +1,24 @@
-import { getDefaultConfiguration, mergeConfigurations } from "@dataspecer/core/configuration/utils";
+import type { ConfigurationChain } from "@dataspecer/core/configuration";
 import { createTheme, CssBaseline, ThemeProvider } from "@mui/material";
 import { SnackbarProvider } from "notistack";
 import React, { createContext, StrictMode, useEffect, useMemo, useState } from "react";
 import { BrowserRouter, useRoutes } from "react-router-dom";
 import { AppThemeProvider, useAppTheme } from "./components/theme-context";
-import { getDefaultConfigurators } from "./configurators";
 import EditorPage from "./editor/components/App";
 import ManagerPage from "./manager/app";
 import { Specification } from "./manager/routes/specification/specification";
 
 /**
- * Contains merged default configuration from the source code and the configuration from the backend.
+ * Instance configuration layers; scope defaults are supplied by each resolver.
  */
-export const DefaultConfigurationContext = createContext<object>(null as unknown as object);
+export const DefaultConfigurationContext = createContext<ConfigurationChain>([]);
 
 const useDefaultConfiguration = () => {
-  const [context, setContext] = useState<object>(() => getDefaultConfiguration(getDefaultConfigurators()));
+  const [context, setContext] = useState<ConfigurationChain>([]);
   useEffect(() => {
     fetch(import.meta.env.VITE_BACKEND + "/default-configuration")
       .then((response) => response.json())
-      .then((configuration) => setContext(mergeConfigurations(getDefaultConfigurators(), getDefaultConfiguration(getDefaultConfigurators()), configuration)));
+      .then((configuration) => setContext([configuration]));
   }, []);
   return context;
 };

@@ -2,7 +2,7 @@ import { DataSpecification, DataSpecificationArtefact, DataSpecificationSchema }
 import { ArtefactGenerator, ArtefactGeneratorContext } from "@dataspecer/generators/generator";
 import { MemoryStreamDictionary } from "@dataspecer/core/io/stream/memory-stream-dictionary.js";
 import { StreamDictionary } from "@dataspecer/core/io/stream/stream-dictionary.js";
-import { DefaultJsonConfiguration, JsonConfiguration, JsonConfigurator } from "@dataspecer/json/configuration";
+import { jsonConfig, resolveJsonConfig } from "@dataspecer/json/configuration";
 import { JsonLdGenerator } from "@dataspecer/json/json-ld";
 import { JSON_SCHEMA, JsonSchemaGenerator } from "@dataspecer/json/json-schema";
 import { JsonExampleAdapter } from "./json-example-adapter.ts";
@@ -24,9 +24,10 @@ export class JsonExampleGenerator implements ArtefactGenerator {
 
   async generateToObject(context: ArtefactGeneratorContext, artefact: DataSpecificationArtefact, specification: DataSpecification): Promise<JsonExampleGeneratorObject | null> {
     const schemaArtefact = artefact as DataSpecificationSchema;
-    const jsonConfiguration = { ...DefaultJsonConfiguration };
-    jsonConfiguration.dereferenceContext = true;
-    const configuration = JsonConfigurator.merge(jsonConfiguration, JsonConfigurator.getFromObject(schemaArtefact.configuration)) as JsonConfiguration;
+    const configuration = resolveJsonConfig([
+      jsonConfig({ dereferenceContext: true }),
+      ...schemaArtefact.configurationChain,
+    ]);
 
     const jsonGenerator = new JsonSchemaGenerator();
 
@@ -34,7 +35,7 @@ export class JsonExampleGenerator implements ArtefactGenerator {
     jsonSchema.outputPath = `schema.json`;
     jsonSchema.generator = JSON_SCHEMA.Generator;
     jsonSchema.psm = schemaArtefact.psm;
-    jsonSchema.configuration = {};
+    jsonSchema.configurationChain = [];
 
     const streamDictionary = new MemoryStreamDictionary();
     await jsonGenerator.generateToStream(context, artefact, specification, streamDictionary);

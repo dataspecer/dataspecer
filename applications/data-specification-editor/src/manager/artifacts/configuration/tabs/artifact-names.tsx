@@ -1,14 +1,13 @@
-import { DeepPartial } from "@dataspecer/core/core/utilities/deep-partial";
-import { DataSpecificationConfiguration } from "@dataspecer/core/data-specification/configuration";
+import { DataSpecificationConfiguration, DataSpecificationConfigurationInput } from "@dataspecer/core/data-specification/configuration";
 import { FormControl, FormGroup, FormHelperText, Input, InputLabel, Typography } from "@mui/material";
 import { FC, useContext } from "react";
 import { useSearchParams } from "react-router-dom";
 import { DefaultConfigurationContext } from "../../../../application";
-import { getDefaultConfigurators } from "../../../../configurators";
 import { getConfiguration } from "../../../../configuration/provided-configuration";
 import { useAsyncMemo } from "../../../../editor/hooks/use-async-memo";
 import { ArtifactConfigurator } from "@dataspecer/specification/v1";
 import { SpecificationContext } from "../../../routes/specification/specification";
+import type { Configuration } from "@dataspecer/core/configuration";
 
 const artefactTitle = {
   "http://example.com/generator/json-schema": {
@@ -75,11 +74,11 @@ const artefactTitle = {
 };
 
 export const ArtifactNames: FC<{
-  input: DeepPartial<DataSpecificationConfiguration>,
+  input: DataSpecificationConfigurationInput,
   defaultObject?: DataSpecificationConfiguration
-  onChange: (options: DeepPartial<DataSpecificationConfiguration>) => void,
+  onChange: (options: DataSpecificationConfigurationInput) => void,
 
-  currentConfiguration: object,
+  currentConfiguration: Configuration,
   //fullCurrentConfiguration: object,
 }> = ({input, onChange, defaultObject, currentConfiguration}) => {
   const specification = useContext(SpecificationContext);
@@ -91,8 +90,7 @@ export const ArtifactNames: FC<{
     const clonedSpecification = structuredClone(specification);
     console.log("clonedSpecification", clonedSpecification);
 
-    // @ts-ignore
-    clonedSpecification.artefactConfiguration = currentConfiguration;
+    clonedSpecification.configurationChain = [...clonedSpecification.configurationChain.slice(0, -1), currentConfiguration];
 
     const { store } = await getConfiguration(specification.id, "");
 
@@ -101,7 +99,6 @@ export const ArtifactNames: FC<{
       [clonedSpecification],
       store,
       defaultConfiguration,
-      getDefaultConfigurators(),
     );
 
     const artifacts = await configurator.generateFor(dataSpecificationIri);

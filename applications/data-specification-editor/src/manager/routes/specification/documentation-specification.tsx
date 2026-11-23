@@ -1,5 +1,5 @@
 import { createStructureModel } from "@dataspecer/core/data-psm";
-import { DataSpecificationConfigurator } from "@dataspecer/core/data-specification/configuration";
+import { resolveDataSpecificationConfig } from "@dataspecer/core/data-specification/configuration";
 import { type ProjectModelEntity } from "@dataspecer/core/project-model";
 import { useModelStoreEntity } from "@dataspecer/model-store/react";
 import { ArtifactConfigurator, DefaultArtifactBuilder, GenerateReport, type SpecificationUrlOverride } from "@dataspecer/specification/v1";
@@ -76,8 +76,7 @@ export const DocumentationSpecification = memo(() => {
     const artifactConfigurator = new ArtifactConfigurator(Object.values(dataSpecifications), federatedStore, defaultConfiguration);
     const specificationOverrides: Record<string, SpecificationUrlOverride> = {};
     for (const ds of Object.values(dataSpecifications)) {
-      // @ts-expect-error The adapter attaches the generator configuration to the specification.
-      const publicBaseUrl = DataSpecificationConfigurator.getFromObject(ds.artefactConfiguration).publicBaseUrl;
+      const publicBaseUrl = resolveDataSpecificationConfig([...defaultConfiguration, ...ds.configurationChain]).publicBaseUrl;
       if (overrideBasePathsToNull || !publicBaseUrl) {
         specificationOverrides[ds.id] = {
           baseUrl: "/" + await artifactConfigurator.getSpecificationDirectoryName(ds.id) + "/",

@@ -2,7 +2,7 @@ import { useAsyncMemo } from "@/editor/hooks/use-async-memo";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
 import { createDSEModelStore } from "@dataspecer/model-store/implementation";
 import { getDataSpecificationWithModels, type DataSpecification } from "@dataspecer/specification/specification";
-import { ClientConfigurator, DefaultClientConfiguration } from "../configuration";
+import { resolveClientConfig } from "../configuration";
 import { OperationContext } from "../editor/operations/context/operation-context";
 import { Configuration } from "./configuration";
 
@@ -61,10 +61,7 @@ export async function getConfiguration(dataSpecificationIri: string | null, data
 }
 
 export function getOperationContext(dataSpecification: DataSpecification): OperationContext {
-  const configurationForContext = ClientConfigurator.merge(
-    DefaultClientConfiguration,
-    ClientConfigurator.getFromObject(dataSpecification.userPreferences)
-  );
+  const configurationForContext = resolveClientConfig([dataSpecification.userPreferences]);
   const operationContext = new OperationContext();
   operationContext.labelRules = {
     languages: [configurationForContext.technicalLabelLanguages],

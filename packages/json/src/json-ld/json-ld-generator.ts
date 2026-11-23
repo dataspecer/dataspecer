@@ -1,5 +1,5 @@
 import { assertFailed, assertNot } from "@dataspecer/core/core";
-import { DataSpecificationConfiguration, DataSpecificationConfigurator, DefaultDataSpecificationConfiguration } from "@dataspecer/core/data-specification/configuration";
+import { resolveDataSpecificationConfig } from "@dataspecer/core/data-specification/configuration";
 import { DataSpecification, DataSpecificationArtefact, DataSpecificationSchema } from "@dataspecer/core/data-specification/model";
 import { ArtefactGenerator, ArtefactGeneratorContext } from "@dataspecer/generators/generator";
 import { StreamDictionary } from "@dataspecer/core/io/stream/stream-dictionary";
@@ -51,11 +51,7 @@ export class JsonLdGenerator implements ArtefactGenerator {
     //   model,
     //   Object.values(context.specifications)
     // );
-    // Global options for the data specification
-    const globalConfiguration = DataSpecificationConfigurator.merge(
-        DefaultDataSpecificationConfiguration,
-        DataSpecificationConfigurator.getFromObject(schemaArtefact.configuration)
-    ) as DataSpecificationConfiguration;
+    const globalConfiguration = resolveDataSpecificationConfig(schemaArtefact.configurationChain);
 
     const mergedConceptualModel = {...conceptualModel};
     mergedConceptualModel.classes = Object.fromEntries(Object.values(context.conceptualModels).map(cm => Object.entries(cm.classes)).flat());

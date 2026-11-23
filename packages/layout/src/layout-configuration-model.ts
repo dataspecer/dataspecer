@@ -1,12 +1,20 @@
-import { applyConfigurationModelSimple, interpretConfigurationModelSimple, ReadableConfigurationModel, WritableConfigurationModel } from "@dataspecer/core-v2/configuration-model";
-import { getDefaultUserGivenAlgorithmConfigurationsFull, UserGivenAlgorithmConfigurations } from "./configurations/user-algorithm-configurations.ts";
+import { mergeConfigurationPatch, resolveConfigurationHelper, type Configuration, type ConfigurationChain } from "@dataspecer/core/configuration";
+import type { DeepPartial } from "@dataspecer/core/core/utilities/deep-partial";
+import { getDefaultUserGivenAlgorithmConfigurationsFull, type UserGivenAlgorithmConfigurations } from "./configurations/user-algorithm-configurations.ts";
 
-export function createLayoutConfiguration(configuration: ReadableConfigurationModel): UserGivenAlgorithmConfigurations {
-  return interpretConfigurationModelSimple<UserGivenAlgorithmConfigurations>(configuration, LAYOUT_ALGORITHM_CONFIGURATION_IRI, getDefaultUserGivenAlgorithmConfigurationsFull());
-}
-
-export function applyLayoutConfiguration(configurationModel: WritableConfigurationModel, configuration: UserGivenAlgorithmConfigurations) {
-  applyConfigurationModelSimple(configurationModel, LAYOUT_ALGORITHM_CONFIGURATION_IRI, configuration);
-}
+export type LayoutConfiguration = UserGivenAlgorithmConfigurations;
+export type LayoutConfigurationInput = DeepPartial<LayoutConfiguration>;
 
 export const LAYOUT_ALGORITHM_CONFIGURATION_IRI = "http://dataspecer.com/resources/local/layout-configuration";
+
+export function getLayoutConfigInput(configuration: Configuration): LayoutConfigurationInput {
+  return configuration?.[LAYOUT_ALGORITHM_CONFIGURATION_IRI] ?? {};
+}
+
+export function layoutConfig(input: LayoutConfigurationInput): { [LAYOUT_ALGORITHM_CONFIGURATION_IRI]: LayoutConfigurationInput } {
+  return { [LAYOUT_ALGORITHM_CONFIGURATION_IRI]: input };
+}
+
+export function resolveLayoutConfig(configurations: ConfigurationChain): LayoutConfiguration {
+  return resolveConfigurationHelper(configurations, getLayoutConfigInput, getDefaultUserGivenAlgorithmConfigurationsFull, mergeConfigurationPatch);
+}

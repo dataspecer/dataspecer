@@ -1,12 +1,12 @@
 import { ConceptualModel } from "@dataspecer/generators/conceptual-model";
 import { assertFailed, assertNot, createStringSelector, LanguageString } from "@dataspecer/core/core";
-import { DataSpecificationConfiguration, DataSpecificationConfigurator, DefaultDataSpecificationConfiguration } from "@dataspecer/core/data-specification/configuration";
+import { DataSpecificationConfiguration, resolveDataSpecificationConfig } from "@dataspecer/core/data-specification/configuration";
 import { DataSpecification, DataSpecificationArtefact, DataSpecificationSchema } from "@dataspecer/core/data-specification/model";
 import { ArtefactGenerator, ArtefactGeneratorContext } from "@dataspecer/generators/generator";
 import { StreamDictionary } from "@dataspecer/core/io/stream/stream-dictionary";
 import { StructureModel } from "@dataspecer/generators/structure-model/model";
 import { structureModelAddDefaultValues, transformStructureModel } from "@dataspecer/generators/structure-model/transformation";
-import { DefaultJsonConfiguration, JsonConfiguration, JsonConfigurator } from "../configuration.ts";
+import { JsonConfiguration, resolveJsonConfig } from "../configuration.ts";
 import { MAIN_JSON_PARTIAL } from "../documentation/configuration.ts";
 import { createJsonSchemaViewModel } from "../documentation/view-adapter.ts";
 import { structureModelAddJsonProperties } from "../json-structure-model/add-json-properties.ts";
@@ -62,13 +62,8 @@ export class JsonSchemaGenerator implements ArtefactGenerator {
     }
     const schemaArtefact = artefact as DataSpecificationSchema;
     const conceptualModel = context.conceptualModels[specification.pim];
-    // Options for the JSON generator
-    const configuration = JsonConfigurator.merge(DefaultJsonConfiguration, JsonConfigurator.getFromObject(schemaArtefact.configuration)) as JsonConfiguration;
-    // Global options for the data specification
-    const globalConfiguration = DataSpecificationConfigurator.merge(
-      DefaultDataSpecificationConfiguration,
-      DataSpecificationConfigurator.getFromObject(schemaArtefact.configuration),
-    ) as DataSpecificationConfiguration;
+    const jsonConfiguration = resolveJsonConfig(schemaArtefact.configurationChain);
+    const dataSpecificationConfiguration = resolveDataSpecificationConfig(schemaArtefact.configurationChain);
     assertNot(conceptualModel === undefined, `Missing conceptual model ${specification.pim}.`);
     let structureModel = context.structureModels[schemaArtefact.psm];
     assertNot(structureModel === undefined, `Missing structure model ${schemaArtefact.psm}.`);
@@ -80,25 +75,25 @@ export class JsonSchemaGenerator implements ArtefactGenerator {
         .flat(),
     );
     structureModel = transformStructureModel(mergedConceptualModel, structureModel, Object.values(context.specifications));
-    structureModel = structureModelAddDefaultValues(structureModel, globalConfiguration);
+    structureModel = structureModelAddDefaultValues(structureModel, dataSpecificationConfiguration);
     structureModel = shortenByIriPrefixes(mergedConceptualModel, structureModel);
 
     // Semantic model from aggregators
     const semanticModel = getAggregatedSemanticModel(specification);
 
     if (!skipIdAndTypeProperties) {
-      structureModel = structureModelAddIdAndTypeProperties(structureModel, configuration, semanticModel);
+      structureModel = structureModelAddIdAndTypeProperties(structureModel, jsonConfiguration, semanticModel);
     }
     const jsonSchema = structureModelToJsonSchema(
       context.specifications,
       specification,
       structureModel,
-      configuration,
+      jsonConfiguration,
       artefact,
-      createStringSelector([configuration.jsonLabelLanguage]),
+      createStringSelector([jsonConfiguration.jsonLabelLanguage]),
     );
 
-    return { structureModel, jsonSchema, mergedConceptualModel, configuration, globalConfiguration };
+    return { structureModel, jsonSchema, mergedConceptualModel, configuration: jsonConfiguration, globalConfiguration: dataSpecificationConfiguration };
   }
 
   async generateForDocumentation(

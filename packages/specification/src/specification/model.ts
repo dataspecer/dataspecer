@@ -1,3 +1,4 @@
+import type { Configuration, ConfigurationChain } from "@dataspecer/core/configuration";
 import { Package } from "@dataspecer/core-v2/project";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
 
@@ -31,7 +32,9 @@ export type DataSpecification = Package & {
   /**
    * Additional data that can be used to store user preferences.
    */
-  userPreferences: object;
+  userPreferences: Configuration;
+
+  configurationChain: ConfigurationChain;
 };
 
 export type DataSpecificationStructure = {

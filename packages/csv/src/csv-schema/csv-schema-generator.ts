@@ -16,11 +16,7 @@ import {
 import { transformStructureModel } from "@dataspecer/generators/structure-model/transformation";
 import { CsvSchema } from "./csv-schema-model.ts";
 import { structureModelToCsvSchema } from "./csv-schema-model-adapter.ts";
-import {
-    CsvConfiguration,
-    CsvConfigurator,
-    DefaultCsvConfiguration
-} from "../configuration.ts";
+import { resolveCsvConfig } from "../configuration.ts";
 import { isRecursive } from "@dataspecer/generators/structure-model/helper/is-recursive";
 
 export class CsvSchemaGenerator implements ArtefactGenerator {
@@ -51,10 +47,7 @@ export class CsvSchemaGenerator implements ArtefactGenerator {
         }
         const schemaArtefact = artefact as DataSpecificationSchema;
         const conceptualModel = context.conceptualModels[specification.pim];
-        const configuration = CsvConfigurator.merge(
-            DefaultCsvConfiguration,
-            CsvConfigurator.getFromObject(schemaArtefact.configuration)
-        ) as CsvConfiguration;
+        const configuration = resolveCsvConfig(schemaArtefact.configurationChain);
         assertNot(
             conceptualModel === undefined,
             `Missing conceptual model ${specification.pim}.`);

@@ -1,3 +1,4 @@
+import { resolveConfigurationHelper, type Configuration, type ConfigurationChain } from "@dataspecer/core/configuration";
 import type { SemanticModelsToShaclConfiguration } from "@dataspecer/shacl-v2";
 
 /**
@@ -16,7 +17,7 @@ export interface ShaclConfiguration {
   files: Record<ShaclFileKey, SemanticModelsToShaclConfiguration>;
 }
 
-export interface PartialShaclConfiguration {
+export interface ShaclConfigurationInput {
   files?: Record<ShaclFileKey, Partial<SemanticModelsToShaclConfiguration>>;
 }
 
@@ -35,41 +36,34 @@ export const DefaultShaclConfiguration: ShaclConfiguration = {
   },
 };
 
-export interface ConfigurationWithShaclV2 {
-  [ShaclV2Configurator.KEY]?: PartialShaclConfiguration;
+export const SHACL_CONFIGURATION_KEY = "shacl-v2";
+
+export function getShaclConfigInput(configuration: Configuration): ShaclConfigurationInput {
+  return configuration?.[SHACL_CONFIGURATION_KEY] ?? {};
 }
 
-export class ShaclV2Configurator {
-  static KEY = "shacl-v2" as const;
+export function shaclConfig(input: ShaclConfigurationInput): { "shacl-v2": ShaclConfigurationInput } {
+  return { "shacl-v2": input };
+}
 
-  static getFromObject(configurationObject: object | null): PartialShaclConfiguration {
-    return (configurationObject as any)?.[ShaclV2Configurator.KEY] ?? {};
-  }
-
-  static setToObject(configurationObject: object, options: PartialShaclConfiguration): ConfigurationWithShaclV2 {
-    return { ...configurationObject, [ShaclV2Configurator.KEY]: options };
-  }
-
-  static merge(...options: [ShaclConfiguration, ...PartialShaclConfiguration[]]): ShaclConfiguration {
-    let result = { ...options[0] };
-
-    for (const option of options) {
-      if (option.files) {
-        const previousDefault = result.files[DefaultShaclFileKey] ?? DefaultShaclConfiguration.files[DefaultShaclFileKey]!;
-        result.files = {};
-
-        for (const [key, fileConfig] of Object.entries(option.files)) {
-          result.files[key] = {
-            ...previousDefault,
-            ...fileConfig,
-          };
-        }
+export function resolveShaclConfig(configurations: ConfigurationChain): ShaclConfiguration {
+  return resolveConfigurationHelper<ShaclConfigurationInput, ShaclConfiguration>(
+    configurations,
+    getShaclConfigInput,
+    () => ({ files: Object.fromEntries(Object.entries(DefaultShaclConfiguration.files).map(([key, file]) => [
+      key, { ...file, languages: [...file.languages] },
+    ])) }),
+    (current, input) => {
+      if (!input.files) {
+        return current;
       }
-    }
-    return result;
-  }
-
-  static getDefault(): ShaclConfiguration {
-    return DefaultShaclConfiguration;
-  }
+      const previousDefault = current.files[DefaultShaclFileKey] ?? DefaultShaclConfiguration.files[DefaultShaclFileKey]!;
+      return {
+        files: Object.fromEntries(Object.entries(input.files).map(([key, file]) => [key, {
+          ...previousDefault,
+          ...file,
+        }])),
+      };
+    },
+  );
 }

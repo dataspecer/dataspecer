@@ -29,13 +29,13 @@ import { DataSpecification, DataSpecificationArtefact, DataSpecificationSchema }
 import { pathRelative } from "@dataspecer/core/core/utilities/path-relative";
 import { ArtefactGeneratorContext } from "@dataspecer/generators/generator";
 import { OFN } from "@dataspecer/core/well-known";
-import { DefaultXmlConfiguration, XmlConfiguration, XmlConfigurator } from "../configuration.ts";
+import { XmlConfiguration, resolveXmlConfig } from "../configuration.ts";
 import { iriElementName, namespaceFromIri, QName, simpleTypeMapIri } from "../conventions.ts";
 import { buildEntityOriginMap, type EntityOriginMap } from "../xml-schema/utils/entity-origin-map.ts";
 import { collectProfilingChain, GEO_SPARQL_WKT_LITERAL } from "../xml-schema/xml-schema-model-adapter.ts";
 import { structureModelAddXmlProperties } from "../xml-structure-model/add-xml-properties.ts";
 import { XSLT_LIFTING, XSLT_LOWERING } from "./xslt-vocabulary.ts";
-import { DataSpecificationConfigurator, DefaultDataSpecificationConfiguration, type DataSpecificationConfiguration } from "@dataspecer/core/data-specification/configuration";
+import { resolveDataSpecificationConfig, type DataSpecificationConfiguration } from "@dataspecer/core/data-specification/configuration";
 import { DataPsmXmlEnvelopeType, isGmlLiteral, RDF_GEOSPARQL_GML_LITERAL, XML_GML_NAMESPACE } from "../xml-schema/gml-support.ts";
 
 /**
@@ -89,8 +89,8 @@ class XsltAdapter {
     this.model = model;
     this.profilingChainModels = profilingChainModels;
     this.entityOriginMap = buildEntityOriginMap(profilingChainModels);
-    this.options = XmlConfigurator.merge(DefaultXmlConfiguration, XmlConfigurator.getFromObject(artifact.configuration)) as XmlConfiguration;
-    this.generalOptions = DataSpecificationConfigurator.merge(DefaultDataSpecificationConfiguration, DataSpecificationConfigurator.getFromObject(artifact.configuration)) as DataSpecificationConfiguration;
+    this.options = resolveXmlConfig(artifact.configurationChain);
+    this.generalOptions = resolveDataSpecificationConfig(artifact.configurationChain);
   }
 
   private getNamespacePrefixForSchema(structureSchema: string | null): string | null {

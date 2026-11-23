@@ -22,11 +22,7 @@ import {
     assertNot
 } from "@dataspecer/core/core";
 import { transformStructureModel } from "@dataspecer/generators/structure-model/transformation";
-import {
-    CsvConfiguration,
-    CsvConfigurator,
-    DefaultCsvConfiguration
-} from "../configuration.ts";
+import { resolveCsvConfig } from "../configuration.ts";
 
 export class RdfToCsvGenerator implements ArtefactGenerator {
 
@@ -67,10 +63,7 @@ export class RdfToCsvGenerator implements ArtefactGenerator {
         }
         const schemaArtefact = artefact as DataSpecificationSchema;
         const conceptualModel = context.conceptualModels[specification.pim];
-        const configuration = CsvConfigurator.merge(
-            DefaultCsvConfiguration,
-            CsvConfigurator.getFromObject(schemaArtefact.configuration)
-        ) as CsvConfiguration;
+        const configuration = resolveCsvConfig(schemaArtefact.configurationChain);
         assertNot(
             conceptualModel === undefined,
             `Missing conceptual model ${specification.pim}.`);

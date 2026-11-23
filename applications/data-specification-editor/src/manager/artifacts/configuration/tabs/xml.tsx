@@ -1,13 +1,12 @@
-import { DeepPartial } from "@dataspecer/core/core/utilities/deep-partial";
-import { XmlConfiguration } from "@dataspecer/xml/configuration";
+import { XmlConfiguration, XmlConfigurationInput } from "@dataspecer/xml/configuration";
 import { FormGroup, Typography, Grid } from "@mui/material";
 import { FC } from "react";
 import { SwitchWithDefault, TextFieldWithDefault } from "../ui-components/index";
 
 export const Xml: FC<{
-  input: DeepPartial<XmlConfiguration>;
+  input: XmlConfigurationInput;
   defaultObject?: XmlConfiguration;
-  onChange: (options: DeepPartial<XmlConfiguration>) => void;
+  onChange: (options: XmlConfigurationInput) => void;
 }> = ({ input, onChange, defaultObject }) => {
   return (
     <FormGroup>

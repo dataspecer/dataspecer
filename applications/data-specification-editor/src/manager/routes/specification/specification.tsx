@@ -1,9 +1,7 @@
-import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
 import type { ModelIdentifier } from "@dataspecer/core/model";
 import { createManagerModelStore, type DefaultFrontendModelStore } from "@dataspecer/model-store/implementation";
 import { ModelStoreContext } from "@dataspecer/model-store/react";
-import { type ProjectModelEntity } from "@dataspecer/core/project-model";
 import type { DataSpecification } from "@dataspecer/specification/specification";
 import { getDataSpecification } from "@dataspecer/specification/specification";
 import { Box, CircularProgress, Container, Typography } from "@mui/material";
@@ -59,10 +57,7 @@ export const Specification: FC = () => {
 
       const reloadSpecification = () => {
         const allEntities = modelStore.getAllEntities();
-        const projectModel = allEntities[PROJECT_MODEL_ID] as EntityRecord<ProjectModelEntity>;
-        const rootModel = allEntities[dataSpecificationIri as string] || null;
-
-        const dataSpecification = getDataSpecification(dataSpecificationIri, projectModel, rootModel);
+        const dataSpecification = getDataSpecification(dataSpecificationIri, allEntities);
         updateSpecification(dataSpecification);
       };
       reloadSpecification();

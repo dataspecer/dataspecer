@@ -1,7 +1,6 @@
-import { DeepPartial } from "@dataspecer/core/core/utilities/deep-partial"
 import { FormGroup, Grid, Typography } from "@mui/material"
 import { FC } from "react"
-import { ClientConfiguration } from "../../../../configuration"
+import { ClientConfiguration, ClientConfigurationInput } from "../../../../configuration"
 import { CASINGS } from "../../../../editor/operations/context/operation-context"
 import { SelectWithDefault, TextFieldWithDefault } from "../ui-components/index"
 
@@ -14,9 +13,9 @@ const specialCharactersOptions = {
 };
 
 export const Modeling: FC<{
-    input: DeepPartial<ClientConfiguration>,
+    input: ClientConfigurationInput,
     defaultObject?: ClientConfiguration
-    onChange: (options: DeepPartial<ClientConfiguration>) => void,
+    onChange: (options: ClientConfigurationInput) => void,
   }> = ({input, onChange, defaultObject}) => {
     return <FormGroup>
       <Typography variant="h6">Technical label naming options</Typography>

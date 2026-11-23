@@ -1,3 +1,4 @@
+import { getSpecificationConfigurationChain } from "../configuration.ts";
 import { AggregatorAsEntityModel, type ApplicationProfileAggregator, type SemanticModelAggregator } from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
 import { CONTROLLED_VOCABULARY_MODEL, LOCAL_PACKAGE, V1 } from "@dataspecer/core-v2/model/known-models";
 import { BaseResource, Package } from "@dataspecer/core-v2/project";
@@ -63,14 +64,7 @@ export function getDataSpecificationWithModels(
       dataStructureIds.push(structures.id);
     }
 
-    let configuration: any = {};
-    const configurationId = specification.artifactConfigurations[0]?.id;
-    if (configurationId) {
-      configuration = models[configurationId]?.[configurationId] ?? {};
-    }
 
-    // @ts-ignore This inserts the configuration into the specification
-    specification.artefactConfiguration = configuration;
   }
 
   // Every package has its own semantic model. All of them are registered so
@@ -247,7 +241,7 @@ function loadDataSpecifications(
   const dataSpecifications: { [iri: string]: DataSpecification } = {};
 
   for (const packageId of listPackages(rootDataSpecificationId, projectModel)) {
-    const specification = getDataSpecification(packageId, projectModel, models[packageId] ?? (null as EntityRecord | null));
+    const specification = getDataSpecification(packageId, models);
     if (specification.dataStructures.length > 0 || packageId === rootDataSpecificationId) {
       dataSpecifications[packageId] = specification;
     }
@@ -260,10 +254,11 @@ function loadDataSpecifications(
 /**
  * Returns metadata about the data specification.
  * @param projectId The ID of the data specification (project).
- * @param projectModel The project model containing the full hierarchy of models inside the project.
- * @param rootModel The root model may contain configuration for the data specification.
+ * @param models Models including the project hierarchy and configuration blobs.
  */
-export function getDataSpecification(projectId: string, projectModel: EntityRecord<ProjectModelEntity>, rootModel: EntityRecord | null): DataSpecification & Package {
+export function getDataSpecification(projectId: string, models: Record<ModelIdentifier, EntityRecord>): DataSpecification & Package {
+  const projectModel = models[PROJECT_MODEL_ID] as EntityRecord<ProjectModelEntity>;
+  const rootModel = models[projectId];
   const mainPackage = projectModel[projectId] as PackageEntity | undefined;
   const subResourceIds = mainPackage?.subModels ?? [];
   if (!rootModel) {
@@ -302,6 +297,7 @@ export function getDataSpecification(projectId: string, projectModel: EntityReco
 
     artifactConfigurations,
 
+    configurationChain: getSpecificationConfigurationChain(projectId, models),
     userPreferences: rawModelData.userPreferences ?? {},
   };
 }

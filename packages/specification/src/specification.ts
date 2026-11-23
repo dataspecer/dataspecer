@@ -1,3 +1,6 @@
+import type { ConfigurationChain } from "@dataspecer/core/configuration";
+import { resolveDataSpecificationConfig } from "@dataspecer/core/data-specification/configuration";
+import { getSpecificationConfigurationChain } from "./configuration.ts";
 import { controlledVocabulariesToDcatCatalog, controlledVocabularyCatalogIri, type ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 import { CONTROLLED_VOCABULARY_MODEL, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL, V1, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { getSemanticModelMainEntity, isMainSemanticModelEntity, isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship, SemanticModelEntity, type MainSemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
@@ -23,12 +26,11 @@ import {
   type VocabularySpecificationDocument,
 } from "@dataspecer/data-specification-vocabulary/specification-description";
 import { structureModelToRdf } from "@dataspecer/data-specification-vocabulary/structure-model";
-import type { PartialDocumentationConfiguration } from "@dataspecer/documentation";
 import { isRdfsSnapshot } from "@dataspecer/rdfs/semantic-model";
 import { canonicalizeIds, garbageCollect } from "@dataspecer/structure-model";
 import { generateApplicationProfileSvg } from "./application-profile-diagram.ts";
 import { ModelDescription, type StructureModelDescription } from "./model.ts";
-import { DefaultShaclConfiguration, DefaultShaclFileKey, ShaclV2Configurator } from "./shacl-v2.ts";
+import { DefaultShaclFileKey, resolveShaclConfig } from "./shacl-v2.ts";
 import {
   generateDsvApplicationProfile,
   generateHtmlDocumentation,
@@ -102,8 +104,8 @@ export interface GenerateSpecificationContext {
 
   fetch: HttpFetch;
 
-  /** Instance defaults, overridden by the package's documentation configuration. */
-  defaultDocumentationConfiguration?: PartialDocumentationConfiguration;
+  /** Instance defaults, overridden by persisted specification configuration. */
+  configurationDefaults?: ConfigurationChain;
 
   specificationUrls?: Record<string, SpecificationUrls>;
   specificationUrlOverrides?: Record<string, SpecificationUrlOverride>;
@@ -119,6 +121,8 @@ export interface GenerateSpecificationContext {
  * Additional configuration for generating the specification.
  */
 export interface GenerateSpecificationOptions {
+  configurationOverrides?: ConfigurationChain;
+
   /**
    * Generate only a single file specified by this local path.
    */
@@ -177,6 +181,11 @@ async function writeDcatCatalog(
  */
 export async function generateSpecification(packageId: string, context: GenerateSpecificationContext, options: GenerateSpecificationOptions = {}): Promise<void> {
   const subdirectory = options.subdirectory ?? "";
+  const configurationChain = [
+    ...context.configurationDefaults ?? [],
+    ...getSpecificationConfigurationChain(packageId, context.models),
+    ...options.configurationOverrides ?? [],
+  ];
 
   const allModels = context.models;
   const projectModel = (allModels[PROJECT_MODEL_ID] ?? {}) as Record<string, ProjectModelEntity>;
@@ -212,10 +221,13 @@ export async function generateSpecification(packageId: string, context: Generate
       throw new Error("Package does not exist.");
     }
     const children = getSubModelEntities(projectModel, packageIri);
-    const configurationId = children.find((child) => child.modelType === V1.GENERATOR_CONFIGURATION)?.id;
-    const configuration = configurationId ? getModelBlobData(allModels, configurationId) : {};
+    const configuration = resolveDataSpecificationConfig([
+      ...context.configurationDefaults ?? [],
+      ...getSpecificationConfigurationChain(packageIri, allModels),
+      ...options.configurationOverrides ?? [],
+    ]);
     specificationUrls[packageIri] ??= resolveSpecificationUrls({
-      publicBaseUrl: configuration?.["data-specification"]?.publicBaseUrl,
+      publicBaseUrl: configuration.publicBaseUrl,
       documentationUrl: (pckgEntity as any).documentBaseUrl,
       ...context.specificationUrlOverrides?.[packageIri],
     });
@@ -550,10 +562,7 @@ export async function generateSpecification(packageId: string, context: Generate
 
       // Create shacl shape(s) — one per entry in the ShaclConfiguration
       {
-        const shaclConfig = ShaclV2Configurator.merge(
-          DefaultShaclConfiguration,
-          ShaclV2Configurator.getFromObject(generatorConfiguration),
-        );
+        const shaclConfig = resolveShaclConfig(configurationChain);
         const shaclProfileExternalArtifacts: typeof externalArtifacts[keyof typeof externalArtifacts] = [];
         externalArtifacts["shacl-profile"] = shaclProfileExternalArtifacts;
         for (const [fileKey, fileConf] of Object.entries(shaclConfig.files)) {
@@ -837,6 +846,7 @@ export async function generateSpecification(packageId: string, context: Generate
         localizedModels,
         { externalArtifacts, dsv, language: lang, prefixMap },
         context,
+        configurationChain,
       ),
     );
     await documentation.close();

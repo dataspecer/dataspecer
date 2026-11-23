@@ -3,7 +3,7 @@ import {DataSpecification, DataSpecificationArtefact,DataSpecificationSchema} fr
 import {StreamDictionary} from "@dataspecer/core/io/stream/stream-dictionary.js";
 import {assertFailed, assertNot} from "@dataspecer/core/core";
 import {ShexMapAdapter} from "./shex-map-adapter.ts";
-import {DataSpecificationConfigurator, DefaultDataSpecificationConfiguration, DataSpecificationConfiguration} from "@dataspecer/core/data-specification/configuration";
+import { resolveDataSpecificationConfig } from "@dataspecer/core/data-specification/configuration";
 import {transformStructureModel, structureModelAddDefaultValues} from "@dataspecer/generators/structure-model/transformation";
 
 interface ShexGeneratorObject {
@@ -42,10 +42,7 @@ export class ShexMapGenerator implements ArtefactGenerator {
         `Missing structure model ${schemaArtefact.psm}.`
     );
 
-    const globalConfiguration = DataSpecificationConfigurator.merge(
-      DefaultDataSpecificationConfiguration,
-      DataSpecificationConfigurator.getFromObject(schemaArtefact.configuration)
-    ) as DataSpecificationConfiguration;
+    const globalConfiguration = resolveDataSpecificationConfig(schemaArtefact.configurationChain);
 
     model = Object.values(context.conceptualModels).reduce(
         (model, conceptualModel) => transformStructureModel(conceptualModel, model, Object.values(context.specifications)),
@@ -54,9 +51,7 @@ export class ShexMapGenerator implements ArtefactGenerator {
 
     model = structureModelAddDefaultValues(model, globalConfiguration);
 
-    artefact.configuration["publicBaseUrl"] = globalConfiguration.publicBaseUrl;
-
-    const adapter = new ShexMapAdapter(model, context, artefact);
+    const adapter = new ShexMapAdapter(model, context, artefact, globalConfiguration.publicBaseUrl);
     return adapter.generate();
   }
 

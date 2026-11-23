@@ -1,5 +1,4 @@
-import { mergeConfigurations } from "@dataspecer/core/configuration/utils";
-import { DataSpecificationConfigurator } from "@dataspecer/core/data-specification/configuration";
+import { resolveDataSpecificationConfig } from "@dataspecer/core/data-specification/configuration";
 import { DataSpecificationArtefact, DataSpecificationDocumentation } from "@dataspecer/core/data-specification/model";
 import { DefaultArtifactConfigurator } from "./default-artifact-configurator.ts";
 
@@ -18,13 +17,11 @@ export class ArtifactConfigurator extends DefaultArtifactConfigurator {
       throw new Error(`Data specification with IRI ${dataSpecificationIri} not found.`);
     }
 
-    // @ts-ignore
-    const localConfiguration = dataSpecification.artefactConfiguration;
-    const configuration = mergeConfigurations(this.configurators, this.configurationObject, localConfiguration);
+    const configuration = [...this.configurationDefaults, ...dataSpecification.configurationChain, ...this.configurationOverrides];
 
     const dataSpecificationName = await this.getSpecificationDirectoryName(dataSpecificationIri);
 
-    const dataSpecificationConfiguration = DataSpecificationConfigurator.getFromObject(configuration);
+    const dataSpecificationConfiguration = resolveDataSpecificationConfig(configuration);
 
     const baseOutputPath = singleSpecificationOnly ? "" : `${dataSpecificationName}/`;
 
@@ -35,7 +32,7 @@ export class ArtifactConfigurator extends DefaultArtifactConfigurator {
     htmlDoc.outputPath = `${baseOutputPath}${respecFileName}`;
     htmlDoc.publicUrl = this.specificationUrls[dataSpecificationIri]!.documentationUrl(respecFileName);
     htmlDoc.artefacts = artifacts.map(a => a.iri!);
-    htmlDoc.configuration = configuration;
+    htmlDoc.configurationChain = configuration;
     artifacts.push(htmlDoc);
 
     return artifacts;

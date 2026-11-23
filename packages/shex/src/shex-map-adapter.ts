@@ -28,13 +28,14 @@ import {
     constructor(
       model: StructureModel,
       context: ArtefactGeneratorContext | null,
-      artefact: DataSpecificationArtefact
+      artefact: DataSpecificationArtefact,
+      publicBaseUrl: string | null,
     ) {
       this.model = model;
       this.context = context;
       this.artefact = artefact;
 
-      this.baseURL = this.artefact.configuration["publicBaseUrl"];
+      this.baseURL = publicBaseUrl;
     }
 
     /**

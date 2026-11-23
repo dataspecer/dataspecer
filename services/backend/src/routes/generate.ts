@@ -81,7 +81,7 @@ async function generateArtifacts(
   }
 
   const { store, dataSpecifications } = getDataSpecificationWithModels(packageIri, allModels);
-  const generator = new DefaultArtifactBuilder(store as CoreResourceReader, dataSpecifications, configuration.configuration, fetch, allModels);
+  const generator = new DefaultArtifactBuilder(store as CoreResourceReader, dataSpecifications, [configuration.configuration ?? {}], fetch, allModels);
   generator.singleSpecificationOnly = true; // We want to generate only a single specification without extra directories.
 
   // The recorded transaction history (with the versions marked in it) is

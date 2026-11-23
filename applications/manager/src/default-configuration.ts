@@ -1,10 +1,10 @@
-import type { RawConfigurationData } from "@dataspecer/core-v2/configuration-model";
+import type { Configuration } from "@dataspecer/core/configuration";
 import { createContext, createElement, useEffect, useState, type ReactNode } from "react";
 
-export const DefaultConfigurationContext = createContext<RawConfigurationData | null>(null);
+export const DefaultConfigurationContext = createContext<Configuration | null>(null);
 
 export function DefaultConfigurationProvider({ children }: { children: ReactNode }) {
-  const [defaultConfiguration, setDefaultConfiguration] = useState<RawConfigurationData | null>(null);
+  const [defaultConfiguration, setDefaultConfiguration] = useState<Configuration | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -12,7 +12,7 @@ export function DefaultConfigurationProvider({ children }: { children: ReactNode
       if (!response.ok) {
         throw new Error(`Failed to load default configuration: ${response.status}`);
       }
-      const configuration: RawConfigurationData = await response.json();
+      const configuration: Configuration = await response.json();
       setDefaultConfiguration(configuration);
     })();
   }, []);
