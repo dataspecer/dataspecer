@@ -4,7 +4,7 @@ import { asyncHandler } from "../utils/async-handler.ts";
 import express from "express";
 import { z } from "zod";
 import { SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
-import { semanticModelToSimplifiedSemanticModel, simplifiedSemanticModelToSemanticModel } from "@dataspecer/core-v2/simplified-semantic-model";
+import { semanticModelToSimplifiedSemanticModel, simplifiedSemanticModelToSemanticModel } from "../models/simplified-semantic-model/adapter.ts";
 
 export const getSimplifiedSemanticModel = asyncHandler(async (request: express.Request, response: express.Response) => {
     const querySchema = z.object({

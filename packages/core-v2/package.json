@@ -32,7 +32,6 @@
     "./semantic-model/usage/concepts": "./lib/semantic-model/usage/concepts/index.js",
     "./semantic-model/usage/operations": "./lib/semantic-model/usage/operations/index.js",
     "./semantic-model/utils": "./lib/semantic-model/utils/index.js",
-    "./simplified-semantic-model": "./lib/simplified-semantic-model/index.js",
     "./utils/language": "./lib/utils/language.js",
     "./semantic-model/cim-adapter": "./lib/semantic-model/cim-adapter/index.js"
   },
