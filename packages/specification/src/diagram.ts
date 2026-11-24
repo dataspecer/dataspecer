@@ -8,22 +8,33 @@ import {
 import { isDataType } from "@dataspecer/core-v2/semantic-model/datatypes";
 import { isSemanticModelClassProfile, isSemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
-import { generateVisualModelSvg, measureVisualModelNodes, type SvgRenderOptions } from "@dataspecer/diagram";
+import { measureVisualModelNodes, type SvgRenderOptions } from "@dataspecer/diagram";
 import { Direction, getDefaultUserGivenAlgorithmConfigurationsFull, performLayoutOfSemanticModel } from "@dataspecer/layout";
 import { buildModelHierarchy } from "@dataspecer/model-hierarchy";
 import { isVisualNode, isVisualRelationship, type VisualEntity, type VisualNode, type VisualRelationship } from "@dataspecer/visual-model";
 import { build as buildSemanticModelAggregator } from "./aggregator-builder/semantic-model-aggregator-builder.ts";
 
-/**
- * Generates a diagram for an application profile that has no saved visual model.
- */
-export async function generateApplicationProfileSvg(
+export function prepareDiagramRendering(
   packageId: string,
-  modelId: string,
-  semanticModel: Record<string, SemanticModelEntity>,
   models: Record<string, EntityRecord>,
-  prefixes: Record<string, string>,
-): Promise<string> {
+) {
+  const hierarchy = buildModelHierarchy(packageId, models);
+  const aggregatedEntities = buildSemanticModelAggregator(packageId, hierarchy, models, undefined, undefined, { forcePassThrough: true }).getAggregatedEntities();
+  const diagramModels: Record<string, EntityRecord> = Object.fromEntries(
+    Object.entries(models).map(([id, entities]) => [
+      id,
+      Object.fromEntries(Object.entries(entities).map(([entityId, entity]) => [entityId, aggregatedEntities[entityId]?.aggregatedEntity ?? entity])),
+    ]),
+  );
+  return { diagramModels };
+}
+
+export async function generateSemanticModelVisualModel(
+  modelId: string,
+  semanticModel: EntityRecord<SemanticModelEntity>,
+  models: Record<string, EntityRecord>,
+  renderOptions: SvgRenderOptions,
+): Promise<EntityRecord<VisualEntity>> {
   const layoutConfiguration = getDefaultUserGivenAlgorithmConfigurationsFull();
   layoutConfiguration.chosenMainAlgorithm = "elk_stress"; // Use "elk_layered" for compact, wrapped layout.
   const minimumNodeGap = 80;
@@ -48,26 +59,12 @@ export async function generateApplicationProfileSvg(
     "org.eclipse.elk.spacing.componentComponent": String(spacing),
   };
 
-  const hierarchy = buildModelHierarchy(packageId, models);
-  const aggregatedEntities = buildSemanticModelAggregator(packageId, hierarchy, models, undefined, undefined, { forcePassThrough: true }).getAggregatedEntities();
   const layoutModel = addReferencedClasses(semanticModel, models);
-  const { attributesByClass, profileAttributeIds } = collectProfileAttributes(semanticModel);
+  const { attributesByClass, profileAttributeIds } = collectClassAttributes(semanticModel);
   for (const id of profileAttributeIds) delete layoutModel[id];
-  const diagramModels: Record<string, EntityRecord> = Object.fromEntries(
-    Object.entries(models).map(([id, entities]) => [
-      id,
-      Object.fromEntries(Object.entries(entities).map(([entityId, entity]) => [entityId, aggregatedEntities[entityId]?.aggregatedEntity ?? entity])),
-    ]),
-  );
-  diagramModels[modelId] = {
-    ...diagramModels[modelId],
-    ...Object.fromEntries(Object.entries(layoutModel).map(([id, entity]) => [id, aggregatedEntities[id]?.aggregatedEntity ?? entity])),
-  };
-  const renderOptions: SvgRenderOptions = {
-    prefixes,
-    profileOfMode: "hidden",
-    language: "cs",
-    showIris: false,
+  const diagramModels = {
+    ...models,
+    [modelId]: { ...layoutModel, ...models[modelId] },
   };
   const nodes: EntityRecord<VisualNode> = {};
   for (const entity of Object.values(layoutModel)) {
@@ -83,22 +80,21 @@ export async function generateApplicationProfileSvg(
     getWidth: (node) => dimensions[node.semanticEntityRepresentingNode!.id]!.width,
     getHeight: (node) => dimensions[node.semanticEntityRepresentingNode!.id]!.height,
   });
-  const visualModel = createApplicationProfileVisualModel(
+  return reconnectSemanticModelRelationships(
     Object.values(result).map(({ visualEntity }) => visualEntity),
     semanticModel,
     attributesByClass,
   );
-  return generateVisualModelSvg(visualModel, diagramModels, renderOptions);
 }
 
-/** Keeps profile entities and reconnects their relationships to profile nodes. */
-function createApplicationProfileVisualModel(
+/** Removes referenced classes added for layout and reconnects edges to retained nodes. */
+function reconnectSemanticModelRelationships(
   layoutEntities: VisualEntity[],
-  profile: Record<string, SemanticModelEntity>,
+  semanticModel: EntityRecord<SemanticModelEntity>,
   attributesByClass: Map<string, string[]>,
 ): EntityRecord<VisualEntity> {
   const nodes = layoutEntities
-    .filter((entity): entity is VisualNode => isVisualNode(entity) && profile[entity.representedEntity] !== undefined)
+    .filter((entity): entity is VisualNode => isVisualNode(entity) && semanticModel[entity.representedEntity] !== undefined)
     .map((node) => ({
       ...node,
       content: [...new Set([...node.content, ...(attributesByClass.get(node.representedEntity) ?? [])])],
@@ -108,7 +104,7 @@ function createApplicationProfileVisualModel(
   const sourceToProfileNode = new Map<string, VisualNode>();
 
   for (const node of nodes) {
-    const entity = profile[node.representedEntity];
+    const entity = semanticModel[node.representedEntity];
     if (entity && isSemanticModelClassProfile(entity)) {
       for (const sourceId of entity.profiling) {
         if (!sourceToProfileNode.has(sourceId)) sourceToProfileNode.set(sourceId, node);
@@ -118,7 +114,7 @@ function createApplicationProfileVisualModel(
 
   const result: EntityRecord<VisualEntity> = Object.fromEntries(nodes.map((node) => [node.id, node]));
   for (const edge of layoutEntities.filter((entity): entity is VisualRelationship => isVisualRelationship(entity))) {
-    if (profile[edge.representedRelationship] === undefined) continue;
+    if (semanticModel[edge.representedRelationship] === undefined) continue;
 
     const sourceEntityId = nodesById.get(edge.visualSource)?.representedEntity;
     const targetEntityId = nodesById.get(edge.visualTarget)?.representedEntity;
@@ -138,12 +134,12 @@ function createApplicationProfileVisualModel(
 }
 
 /** Collects primitive attributes for display inside their owning class nodes. */
-function collectProfileAttributes(profile: Record<string, SemanticModelEntity>): { attributesByClass: Map<string, string[]>; profileAttributeIds: Set<string> } {
-  const classes = Object.values(profile).filter((entity) => isSemanticModelClass(entity) || isSemanticModelClassProfile(entity));
+function collectClassAttributes(semanticModel: EntityRecord<SemanticModelEntity>): { attributesByClass: Map<string, string[]>; profileAttributeIds: Set<string> } {
+  const classes = Object.values(semanticModel).filter((entity) => isSemanticModelClass(entity) || isSemanticModelClassProfile(entity));
   const attributesByClass = new Map<string, string[]>();
   const profileAttributeIds = new Set<string>();
 
-  for (const entity of Object.values(profile)) {
+  for (const entity of Object.values(semanticModel)) {
     const isProfileAttribute = isSemanticModelRelationshipProfile(entity) && entity.ends.some((end) => !end.concept || isDataType(end.concept));
     if (isProfileAttribute) profileAttributeIds.add(entity.id);
     if (!isProfileAttribute && !isSemanticModelAttribute(entity)) continue;
@@ -165,11 +161,11 @@ function collectProfileAttributes(profile: Record<string, SemanticModelEntity>):
   return { attributesByClass, profileAttributeIds };
 }
 
-/** Adds profile-referenced classes that the layout engine needs for edge endpoints. */
-function addReferencedClasses(profile: Record<string, SemanticModelEntity>, models: Record<string, EntityRecord>): Record<string, SemanticModelEntity> {
-  const result = { ...profile };
+/** Adds referenced classes that the layout engine needs for edge endpoints. */
+function addReferencedClasses(semanticModel: EntityRecord<SemanticModelEntity>, models: Record<string, EntityRecord>): EntityRecord<SemanticModelEntity> {
+  const result = { ...semanticModel };
   const processed = new Set<string>();
-  const pending = Object.values(profile);
+  const pending = Object.values(semanticModel);
 
   while (pending.length > 0) {
     const entity = pending.pop()!;

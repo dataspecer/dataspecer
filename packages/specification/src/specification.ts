@@ -26,9 +26,10 @@ import {
   type VocabularySpecificationDocument,
 } from "@dataspecer/data-specification-vocabulary/specification-description";
 import { structureModelToRdf } from "@dataspecer/data-specification-vocabulary/structure-model";
+import { generateVisualModelSvg, type SvgRenderOptions } from "@dataspecer/diagram";
 import { isRdfsSnapshot } from "@dataspecer/rdfs/semantic-model";
 import { canonicalizeIds, garbageCollect } from "@dataspecer/structure-model";
-import { generateApplicationProfileSvg } from "./application-profile-diagram.ts";
+import { generateSemanticModelVisualModel, prepareDiagramRendering } from "./diagram.ts";
 import { ModelDescription, type StructureModelDescription } from "./model.ts";
 import { DefaultShaclFileKey, resolveShaclConfig } from "./shacl-v2.ts";
 import {
@@ -347,6 +348,17 @@ export async function generateSpecification(packageId: string, context: Generate
    * We use base URL as is. We transform base IRI to end with a slash for
    * everything else than the model.
    */
+
+  /**
+   * Currently we have hardcoded supported languages
+   */
+  const languages = ["en", "cs"];
+
+  /**
+   * Use this to generate multilingual files that will match later.
+   */
+  const langPlaceholder = "%%lang%%";
+  const replaceLang = (text: string, lang: string) => text.replaceAll(langPlaceholder, lang);
 
   /**
    * Global generator configuration for this specification.
@@ -702,70 +714,68 @@ export async function generateSpecification(packageId: string, context: Generate
     }
   }
 
-  // Process all SVGs. Because we do not know which svg belongs to which model,
+  // Generate all SVGs. Because we do not know which svg belongs to which model,
   // we assign all of them to all models.
-  // Also, currently SVGs are not language dependent, so we generate them to the root of the directory.
-  const visualModels = subResources.filter((r) => r.modelType === VISUAL_MODEL);
-  for (const visualModel of visualModels) {
-    const svgData = getModelBlobData(allModels, visualModel.id, "svg") as { svg: string } | undefined;
-    const svg = svgData ? svgData.svg : null;
 
-    if (svg) {
-      const resourceFileName = visualModel.id + ".svg";
-      const resourceUrl = urls.artifactUrl(resourceFileName);
+  // Default render options for SVG generation.
+  const renderOptions: SvgRenderOptions = {
+    prefixes: prefixMap,
+    //profileOfMode: "hidden",
+    language: "en",
+    //showIris: false,
+  };
 
-      await writeFile(resourceFileName, svg);
-      externalArtifacts["svg"] = [
-        ...(externalArtifacts["svg"] ?? []),
-        {
-          type: "svg",
-          URL: resourceUrl,
-          label: visualModel.label,
-        },
-      ];
-
-      const descriptor = {
-        iri: null,
-        url: resourceUrl,
-
-        role: dsvMetadataWellKnown.role.guidance,
-        formatMime: dsvMetadataWellKnown.formatMime.svg,
-        conformsTo: [dsvMetadataWellKnown.conformsTo.svg],
-        additionalRdfTypes: [],
-      } satisfies ResourceDescriptor;
-      allModelsHasResource.forEach((hasResource) => hasResource.push(descriptor));
+  const { diagramModels } = prepareDiagramRendering(packageId, allModels);
+  const visualModels = subResources.filter((r) => r.modelType === VISUAL_MODEL).map((model) => ({
+    id: model.id,
+    label: model.label,
+    entities: allModels[model.id] ?? {},
+  }));
+  if (visualModels.length === 0) {
+    for (const model of modelDescriptions) {
+      if (!model.isPrimary || !model.id) continue;
+      visualModels.push({
+        id: model.id,
+        label: model.title ?? {},
+        entities: await generateSemanticModelVisualModel(
+          model.id,
+          model.entities,
+          diagramModels,
+          renderOptions,
+        ),
+      });
     }
   }
 
-  if (visualModels.length === 0 && hasApplicationProfile) {
-    const applicationProfile = modelDescriptions.find((model) => model.isPrimary && isModelProfile(model.entities));
-    if (applicationProfile?.id) {
-      const svg = await generateApplicationProfileSvg(
-        packageId,
-        applicationProfile.id,
-        applicationProfile.entities,
-        allModels,
-        prefixMap,
-      );
-      const resourceFileName = packageId + ".svg";
-      const resourceUrl = urls.artifactUrl(resourceFileName);
+  for (const visualModel of visualModels) {
+    const resourceFileName = langPlaceholder + "/" + visualModel.id + ".svg";
+    const resourceUrl = urls.artifactUrl(resourceFileName);
 
-      await writeFile(resourceFileName, svg);
-      externalArtifacts["svg"] = [
-        ...(externalArtifacts["svg"] ?? []),
-        { type: "svg", URL: resourceUrl, label: rootPackageEntity.label },
-      ];
-
-      const descriptor = {
-        iri: null,
-        url: resourceUrl,
-        role: dsvMetadataWellKnown.role.guidance,
-        formatMime: dsvMetadataWellKnown.formatMime.svg,
-        conformsTo: [dsvMetadataWellKnown.conformsTo.svg],
-        additionalRdfTypes: [],
-      } satisfies ResourceDescriptor;
-      allModelsHasResource.forEach((hasResource) => hasResource.push(descriptor));
+    // Generate SVG for each language
+    for (const lang of languages) {
+      const langRenderOptions = { ...renderOptions, language: lang };
+      const svg = generateVisualModelSvg(visualModel.entities, diagramModels, langRenderOptions);
+      await writeFile(replaceLang(resourceFileName, lang), svg);
     }
+
+    externalArtifacts["svg"] = [
+      ...(externalArtifacts["svg"] ?? []),
+      {
+        type: "svg",
+        URL: resourceUrl,
+        label: visualModel.label,
+      },
+    ];
+
+    const descriptor = {
+      iri: null,
+      url: resourceUrl,
+      role: dsvMetadataWellKnown.role.guidance,
+      formatMime: dsvMetadataWellKnown.formatMime.svg,
+      conformsTo: [dsvMetadataWellKnown.conformsTo.svg],
+      additionalRdfTypes: [],
+    } satisfies ResourceDescriptor;
+    allModelsHasResource.forEach((hasResource) => hasResource.push(descriptor));
   }
 
   // Generate HTML document
@@ -802,12 +812,28 @@ export async function generateSpecification(packageId: string, context: Generate
     }
   }
 
-  for (const lang of ["cs", "en"]) {
+  for (const lang of languages) {
     // Generate the DSV Metadata serialization in JSON-LD string
     // Set correct URL for the documentation
     const documentationUrl = urls.artifactUrl(`${lang}/index.html`);
     htmlDescriptor.url = documentationUrl;
-    const dsv = await DSVMetadataToJsonLdString(specifications, {
+    const localizedSpecifications = specifications.map((specification) => ({
+      ...specification,
+      resources: specification.resources.map((resource) => ({
+        ...resource,
+        url: replaceLang(resource.url, lang),
+      })),
+    }));
+    const localizedExternalArtifacts = Object.fromEntries(
+      Object.entries(externalArtifacts).map(([type, artifacts]) => [
+        type,
+        artifacts.map((artifact) => ({
+          ...artifact,
+          URL: replaceLang(artifact.URL, lang),
+        })),
+      ]),
+    );
+    const dsv = await DSVMetadataToJsonLdString(localizedSpecifications, {
       rootHtmlDocumentIri: htmlDescriptor.iri,
       space: 2,
       useAbsoluteUrls: false,
@@ -844,7 +870,7 @@ export async function generateSpecification(packageId: string, context: Generate
       await generateHtmlDocumentation(
         { data: getModelBlobData(allModels, packageId), label: rootPackageEntity.label },
         localizedModels,
-        { externalArtifacts, dsv, language: lang, prefixMap },
+        { externalArtifacts: localizedExternalArtifacts, dsv, language: lang, prefixMap },
         context,
         configurationChain,
       ),
