@@ -297,7 +297,7 @@ function renderEdge(
     closed: generalization || profileLink,
     fill: generalization || profileLink ? options.palette.body : "none",
   });
-  const centerRows: Row[] = [];
+  const centerRows: Row[] = profileLink ? [{ text: "<<profile>>" }] : [];
   if (!profileLink && isRelationship(reference.entity)) {
     const label = model.label(reference);
     centerRows.push({ text: label });

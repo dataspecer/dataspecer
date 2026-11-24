@@ -32,7 +32,7 @@ import { ComputedMetricValues, Metric } from "./graph/graph-metrics/graph-metric
 import { Node } from "./graph/representation/node.ts";
 export { type Node };
 import { GraphFactory } from "./graph/representation/graph-factory.ts";
-import { ALGORITHM_NAME_TO_LAYOUT_MAPPING, AlgorithmName } from "./layout-algorithms/list-of-layout-algorithms.ts";
+import { createLayoutAlgorithms, AlgorithmName } from "./layout-algorithms/list-of-layout-algorithms.ts";
 import { LayoutAlgorithm } from "./layout-algorithms/layout-algorithms-interfaces.ts";
 import { UserGivenAlgorithmConfigurations } from "./configurations/user-algorithm-configurations.ts";
 import { DefaultAlgorithmConfiguration } from "./configurations/algorithm-configurations.ts";
@@ -257,6 +257,8 @@ const performLayoutingBasedOnConfigurations = async (
 	graph: MainGraph,
 	configurations: ConfigurationsContainer
 ): Promise<Record<string, MetricResultsAggregation>> => {
+	// Keep prepared state across phases without sharing it with concurrent layouts.
+	const layoutAlgorithms = createLayoutAlgorithms();
 	let workGraph = graph;
 	for(const action of configurations.layoutActionsIteratorBefore) {
 		if (action.shouldCreateNewGraph) {
@@ -267,7 +269,7 @@ const performLayoutingBasedOnConfigurations = async (
 			SPECIFIC_ALGORITHM_CONVERSIONS_MAP[action.actionName](action, workGraph);
 		}
 		else if(action instanceof DefaultAlgorithmConfiguration) {
-			const layoutAlgorithm: LayoutAlgorithm = ALGORITHM_NAME_TO_LAYOUT_MAPPING[action.algorithmName];
+			const layoutAlgorithm = layoutAlgorithms[action.algorithmName];
 			if(action.algorithmPhasesToCall === "ONLY-PREPARE" || action.algorithmPhasesToCall === "PREPARE-AND-RUN") {
 				layoutAlgorithm.prepareFromGraph(workGraph, configurations);
 			}
@@ -282,7 +284,7 @@ const performLayoutingBasedOnConfigurations = async (
 		}
 	}
 
-	return runMainLayoutAlgorithm(workGraph, configurations).then(aggregationResult => {
+	return runMainLayoutAlgorithm(workGraph, configurations, layoutAlgorithms).then(aggregationResult => {
 		return aggregationResult;
 	});
 
@@ -295,7 +297,8 @@ const performLayoutingBasedOnConfigurations = async (
  */
 const runMainLayoutAlgorithm = async (
 	graph: MainGraph,
-	configurations: ConfigurationsContainer
+	configurations: ConfigurationsContainer,
+	layoutAlgorithms: Record<AlgorithmName, LayoutAlgorithm>
 ): Promise<Record<string, MetricResultsAggregation>> => {
 	const metricsWithWeights: MetricWithWeight[] = [
 		{
@@ -340,7 +343,7 @@ const runMainLayoutAlgorithm = async (
 				workGraph = await layoutedGraphPromise;
 			}
 			else if(action instanceof DefaultAlgorithmConfiguration) {
-				const layoutAlgorithm: LayoutAlgorithm = ALGORITHM_NAME_TO_LAYOUT_MAPPING[action.algorithmName];
+				const layoutAlgorithm = layoutAlgorithms[action.algorithmName];
 				if(action.algorithmPhasesToCall === "ONLY-PREPARE" || action.algorithmPhasesToCall === "PREPARE-AND-RUN") {
 					layoutAlgorithm.prepareFromGraph(workGraph, configurations);
 				}

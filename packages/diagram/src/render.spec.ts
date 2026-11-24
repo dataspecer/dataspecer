@@ -241,12 +241,18 @@ describe("visual-model SVG", () => {
     const relation = data.models.vocabulary.worksFor as ReturnType<typeof relationship>;
     relation.ends.reverse();
     data.visual.profileRelation = edge("profileRelation", "employeeName", "profile", "employee", "organization");
-    const text = elements(generateVisualModelSvg(data.visual, data.models), "text")
+    const svg = generateVisualModelSvg(data.visual, data.models);
+    const text = elements(svg, "g")
+      .filter((element) => element.getAttribute("class") === "relationship")
+      .flatMap((element) => Array.from(element.getElementsByTagName("text")))
       .map((element) => element.textContent)
       .join("");
     expect(text).toContain("Works for");
     expect(text).toContain("Employee name(Name)<<mandatory>>");
     expect(text).not.toContain("<<profile>>");
+    expect(elements(svg, "g")
+      .filter((element) => element.getAttribute("class") === "profile-link")
+      .map((element) => element.textContent).join("")).toContain("<<profile>>");
     expect(text).toContain("[0..*]");
   });
 

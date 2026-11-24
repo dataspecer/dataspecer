@@ -87,8 +87,8 @@ export function labelPosition(points: Point[]): Point {
   return { x: (first.x + second.x) / 2, y: (first.y + second.y) / 2 };
 }
 
-/** Computes an arrowhead pointing along the final non-degenerate segment. */
-export function arrowhead(points: Point[], length = 16, width = 12): Point[] {
+/** Computes an arrowhead with a default 90° tip and 12-unit sides along the final non-degenerate segment. */
+export function arrowhead(points: Point[], length = 12 / Math.SQRT2, width = 2 * length): Point[] {
   if (points.length < 2) return [];
   const tip = points.at(-1)!;
   const previous = points.at(-2)!;
