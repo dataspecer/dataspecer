@@ -53,8 +53,8 @@ export const DSV = {
   "ObjectPropertyProfile": IRI(DSV_PREFIX + "ObjectPropertyProfile"),
   "DatatypePropertyProfile": IRI(DSV_PREFIX + "DatatypePropertyProfile"),
   "property": IRI(DSV_PREFIX + "property"),
-  "objectPropertyRange": IRI(DSV_PREFIX + "objectPropertyRange"),
-  "datatypePropertyRange": IRI(DSV_PREFIX + "datatypePropertyRange"),
+  "range": IRI(DSV_PREFIX + "range"),
+  "datatype": IRI(DSV_PREFIX + "datatype"),
   "profileOf": IRI(DSV_PREFIX + "profileOf"),
   "cardinality": IRI(DSV_PREFIX + "cardinality"),
   "reusesPropertyValue": IRI(DSV_PREFIX + "reusesPropertyValue"),
@@ -130,7 +130,7 @@ const OWL_PREFIX = "http://www.w3.org/2002/07/owl#";
 
 export const OWL = {
   "Ontology": IRI(OWL_PREFIX + "Ontology"),
-  "DataTypeProperty": IRI(OWL_PREFIX + "DataTypeProperty"),
+  "DatatypeProperty": IRI(OWL_PREFIX + "DatatypeProperty"),
   "ObjectProperty": IRI(OWL_PREFIX + "ObjectProperty"),
 };
 

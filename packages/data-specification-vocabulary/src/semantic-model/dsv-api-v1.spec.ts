@@ -397,7 +397,7 @@ test("Issue #1005", async () => {
     dsv:property :juicyWork;
     dsv:domain :bulkyForceProfile;
     a dsv:ObjectPropertyProfile;
-    dsv:objectPropertyRange :juicyBusinessProfile.
+    dsv:range :juicyBusinessProfile.
 :JuicyBusiness.juicyWorkSpecial dct:isPartOf <http://dcat/model/>;
     a dsv:TermProfile;
     skos:prefLabel "Juicy Work"@en;
@@ -405,7 +405,7 @@ test("Issue #1005", async () => {
     dsv:property :juicyWork;
     dsv:domain :bulkyForceProfile;
     a dsv:ObjectPropertyProfile;
-    dsv:objectPropertyRange :juicyBusinessProfile.
+    dsv:range :juicyBusinessProfile.
 `;
 
   expect(actualRdf).toStrictEqual(expectedRdf);

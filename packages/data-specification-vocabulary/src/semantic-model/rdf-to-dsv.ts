@@ -1,4 +1,4 @@
-import N3 from "n3";
+import N3, { DataFactory } from "n3";
 
 import {
   LanguageString,
@@ -285,7 +285,11 @@ class ProfileLoader {
       ...this.loadPropertyProfile(subject, reader, domain),
       // ObjectPropertyProfile
       type: [ObjectPropertyProfileType],
-      rangeClassIri: reader.iris(DSV.objectPropertyRange),
+      // Accept the legacy predicate only when dsv:range is absent.
+      // https://github.com/dataspecer/dataspecer/issues/1524
+      rangeClassIri: reader.quads(DSV.range).length > 0
+        ? reader.iris(DSV.range)
+        : reader.iris(DataFactory.namedNode("https://w3id.org/dsv#objectPropertyRange")),
     };
     this.addToApplicationProfile(
       reader, item => item.objectPropertyProfiles, profile);
@@ -316,7 +320,10 @@ class ProfileLoader {
       ...this.loadPropertyProfile(subject, reader, domain),
       // ObjectPropertyProfile
       type: [DatatypePropertyProfileType],
-      rangeDataTypeIri: reader.iris(DSV.datatypePropertyRange),
+      // Accept the legacy predicate only when dsv:datatype is absent.
+      rangeDataTypeIri: reader.quads(DSV.datatype).length > 0
+        ? reader.iris(DSV.datatype)
+        : reader.iris(DataFactory.namedNode("https://w3id.org/dsv#datatypePropertyRange")),
     };
     this.addToApplicationProfile(
       reader, item => item.datatypePropertyProfiles, profile);
