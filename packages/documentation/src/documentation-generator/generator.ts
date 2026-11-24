@@ -7,6 +7,7 @@ import { ControlledVocabulary, isControlledVocabulary } from "@dataspecer/contro
 import { getTranslation } from "@dataspecer/core-v2/utils/language";
 import { createHandlebarsAdapter } from "@dataspecer/handlebars-adapter";
 import { StructureModel } from '@dataspecer/generators/structure-model/model/structure-model';
+import { htmlBeautify } from "./js-beautify.ts";
 import { getView, type PackageContext } from "../views/views.ts";
 
 export interface DocumentationGeneratorConfiguration {
@@ -628,5 +629,13 @@ export async function generateDocumentation(
   };
 
   const result = await handlebarsAdapter.render(configuration.template, data, configuration.partials);
-  return result;
+  return htmlBeautify(result.trim(), {
+    indent_size: 2,
+    indent_inner_html: true,
+    preserve_newlines: false,
+    extra_liners: [],
+    indent_handlebars: false,
+    templating: ["none"],
+    content_unformatted: ["pre", "textarea", "code", "script", "style"],
+  });
 }
