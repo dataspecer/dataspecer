@@ -40,6 +40,7 @@ export interface Configuration {
 }
 
 const defaultConfiguration = {
+    configuration: {},
     payloadSizeLimit: "64mb",
     localRootIri: "http://dataspecer.com/packages/local-root",
     localRootMetadata: {
