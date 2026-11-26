@@ -11,7 +11,7 @@ import { getJsonConfigInput, jsonConfig, resolveJsonConfig } from "@dataspecer/j
 import { getXmlConfigInput, xmlConfig, resolveXmlConfig } from "@dataspecer/xml/configuration";
 import { ArtifactNames } from "./tabs/artifact-names";
 import { ShaclV2 } from "./tabs/shacl-v2";
-import { getShaclConfigInput, shaclConfig, resolveShaclConfig } from "@dataspecer/specification/shacl-v2";
+import { getShaclConfigInput, shaclConfig, resolveShaclConfig } from "@dataspecer/shacl-v2";
 
 /**
  * Component that renders the UI for configuration change. It is possible to pre-set default configuration, or keep it

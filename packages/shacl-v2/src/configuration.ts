@@ -1,5 +1,5 @@
 import { resolveConfigurationHelper, type Configuration, type ConfigurationChain } from "@dataspecer/core/configuration";
-import type { SemanticModelsToShaclConfiguration } from "@dataspecer/shacl-v2";
+import type { SemanticModelsToShaclConfiguration } from "./semantic-adapter/shacl-semantic-configuration.ts";
 
 /**
  * Key used for different SHACL files. The key will be used to create a file name.
@@ -38,15 +38,19 @@ export const DefaultShaclConfiguration: ShaclConfiguration = {
 
 export const SHACL_CONFIGURATION_KEY = "shacl-v2";
 
-export function getShaclConfigInput(configuration: Configuration): ShaclConfigurationInput {
+export type ConfigWithShacl = {
+  [SHACL_CONFIGURATION_KEY]?: ShaclConfigurationInput;
+};
+
+export function getShaclConfigInput(configuration: Configuration & ConfigWithShacl): ShaclConfigurationInput {
   return configuration?.[SHACL_CONFIGURATION_KEY] ?? {};
 }
 
-export function shaclConfig(input: ShaclConfigurationInput): { "shacl-v2": ShaclConfigurationInput } {
+export function shaclConfig(input: ShaclConfigurationInput): Required<ConfigWithShacl> {
   return { "shacl-v2": input };
 }
 
-export function resolveShaclConfig(configurations: ConfigurationChain): ShaclConfiguration {
+export function resolveShaclConfig(configurations: ConfigurationChain<Configuration & ConfigWithShacl>): ShaclConfiguration {
   return resolveConfigurationHelper<ShaclConfigurationInput, ShaclConfiguration>(
     configurations,
     getShaclConfigInput,

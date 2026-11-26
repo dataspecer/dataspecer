@@ -1,3 +1,4 @@
+import type { AllConfiguration } from "../all-configuration.ts";
 import type { ConfigurationChain } from "@dataspecer/core/configuration";
 import { CoreResourceReader } from "@dataspecer/core/core";
 import { DataSpecification as CoreDataSpecification } from "@dataspecer/core/data-specification/model";
@@ -29,9 +30,9 @@ export class DefaultArtifactBuilder {
     private dataSpecificationIris: string[] = [];
     private reportCallback: ((report: GenerateReport) => void) | undefined;
     private artifactReport: GenerateReport = [];
-    private configurationDefaults: ConfigurationChain;
+    private configurationDefaults: ConfigurationChain<AllConfiguration>;
     private readonly httpFetch: HttpFetch;
-    private readonly configurationOverrides: ConfigurationChain;
+    private readonly configurationOverrides: ConfigurationChain<AllConfiguration>;
     private readonly models: Record<string, EntityRecord>;
     private specificationUrls: Record<string, SpecificationUrls> = {};
     private specificationUrlOverrides: Record<string, SpecificationUrlOverride> = {};
@@ -51,10 +52,10 @@ export class DefaultArtifactBuilder {
     public constructor(
         store: CoreResourceReader,
         dataSpecifications: Record<string, DataSpecification>,
-        configurationDefaults: ConfigurationChain,
+        configurationDefaults: ConfigurationChain<AllConfiguration>,
         httpFetch: HttpFetch,
         models: Record<string, EntityRecord>,
-        configurationOverrides: ConfigurationChain = [],
+        configurationOverrides: ConfigurationChain<AllConfiguration> = [],
     ) {
         this.store = store;
         // @ts-ignore

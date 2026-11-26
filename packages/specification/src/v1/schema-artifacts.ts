@@ -1,3 +1,4 @@
+import type { AllConfiguration } from "../all-configuration.ts";
 import type { ConfigurationChain } from "@dataspecer/core/configuration";
 import { resolveSpecificationUrls } from "../specification-urls.ts";
 import { resolveDataSpecificationConfig } from "@dataspecer/core/data-specification/configuration";
@@ -21,7 +22,7 @@ export function getSchemaArtifacts(
     psmSchemaIri: string,
     baseUrl: string,
     basePath: string,
-    configuration: ConfigurationChain,
+    configuration: ConfigurationChain<AllConfiguration>,
 ) {
     const urls = resolveSpecificationUrls({ baseUrl });
     const dataSpecificationConfiguration = resolveDataSpecificationConfig(configuration);

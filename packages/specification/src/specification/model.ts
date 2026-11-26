@@ -1,3 +1,4 @@
+import type { AllConfiguration } from "../all-configuration.ts";
 import type { Configuration, ConfigurationChain } from "@dataspecer/core/configuration";
 import { Package } from "@dataspecer/core-v2/project";
 import { LanguageString } from "@dataspecer/core/core/core-resource";
@@ -34,7 +35,7 @@ export type DataSpecification = Package & {
    */
   userPreferences: Configuration;
 
-  configurationChain: ConfigurationChain;
+  configurationChain: ConfigurationChain<AllConfiguration>;
 };
 
 export type DataSpecificationStructure = {

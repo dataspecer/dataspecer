@@ -3,6 +3,14 @@ import { resolveConfigurationHelper } from "../configuration/utils.ts";
 
 export const DefaultDataSpecificationConfiguration = {
   /**
+   * If this config is on, than the semantic models (mainly the profile model)
+   * will be garbage collected from entities that are not used in the structure
+   * models of this data specification. This is useful for SDS that primarily
+   * target structure models and use profile models only as a helper layer.
+   */
+  cleanupSemanticModelForStructures: false,
+
+  /**
    * Base URL for the generated artefacts.
    */
   publicBaseUrl: null as string | null,
@@ -64,15 +72,19 @@ export type DataSpecificationConfigurationInput = Partial<DataSpecificationConfi
 
 export const DATA_SPECIFICATION_CONFIGURATION_KEY = "data-specification";
 
-export function getDataSpecificationConfigInput(configuration: Configuration): DataSpecificationConfigurationInput {
+export type ConfigWithDataSpecification = {
+  [DATA_SPECIFICATION_CONFIGURATION_KEY]?: DataSpecificationConfigurationInput;
+};
+
+export function getDataSpecificationConfigInput(configuration: Configuration & ConfigWithDataSpecification): DataSpecificationConfigurationInput {
   return configuration?.[DATA_SPECIFICATION_CONFIGURATION_KEY] ?? {};
 }
 
-export function dataSpecificationConfig(input: DataSpecificationConfigurationInput): { "data-specification": DataSpecificationConfigurationInput } {
+export function dataSpecificationConfig(input: DataSpecificationConfigurationInput): Required<ConfigWithDataSpecification> {
   return { "data-specification": input };
 }
 
-export function resolveDataSpecificationConfig(configurations: ConfigurationChain): DataSpecificationConfiguration {
+export function resolveDataSpecificationConfig(configurations: ConfigurationChain<Configuration & ConfigWithDataSpecification>): DataSpecificationConfiguration {
   return resolveConfigurationHelper(
     configurations,
     getDataSpecificationConfigInput,

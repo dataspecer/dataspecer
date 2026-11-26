@@ -10,14 +10,18 @@ export type CsvConfigurationInput = Partial<CsvConfiguration>;
 
 export const CSV_CONFIGURATION_KEY = "csv";
 
-export function getCsvConfigInput(configuration: Configuration): CsvConfigurationInput {
+export type ConfigWithCsv = {
+  [CSV_CONFIGURATION_KEY]?: CsvConfigurationInput;
+};
+
+export function getCsvConfigInput(configuration: Configuration & ConfigWithCsv): CsvConfigurationInput {
   return configuration?.[CSV_CONFIGURATION_KEY] ?? {};
 }
 
-export function csvConfig(input: CsvConfigurationInput): { csv: CsvConfigurationInput } {
+export function csvConfig(input: CsvConfigurationInput): Required<ConfigWithCsv> {
   return { csv: input };
 }
 
-export function resolveCsvConfig(configurations: ConfigurationChain): CsvConfiguration {
+export function resolveCsvConfig(configurations: ConfigurationChain<Configuration & ConfigWithCsv>): CsvConfiguration {
   return resolveConfigurationHelper(configurations, getCsvConfigInput, () => ({ ...DefaultCsvConfiguration }), mergeShallowConfigurationHelper);
 }

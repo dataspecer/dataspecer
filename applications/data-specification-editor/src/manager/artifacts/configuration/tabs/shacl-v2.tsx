@@ -1,6 +1,5 @@
 import { DeepPartial } from "@dataspecer/core/core/utilities/deep-partial";
-import type { SemanticModelsToShaclConfiguration } from "@dataspecer/shacl-v2";
-import type { ShaclConfigurationInput, ShaclConfiguration } from "@dataspecer/specification/shacl-v2";
+import type { SemanticModelsToShaclConfiguration, ShaclConfigurationInput, ShaclConfiguration } from "@dataspecer/shacl-v2";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";

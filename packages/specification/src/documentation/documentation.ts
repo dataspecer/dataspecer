@@ -1,9 +1,10 @@
-import type { ConfigurationChain } from "@dataspecer/core/configuration";
+import type { Configuration, ConfigurationChain } from "@dataspecer/core/configuration";
 import {
   DocumentationConfiguration,
   baseDefaultDocumentationConfiguration,
   resolveDocumentationConfig,
   documentationConfig,
+  type ConfigWithDocumentation,
 } from "@dataspecer/documentation";
 import { defaultJsonPartials } from "@dataspecer/json/documentation";
 import { defaultXmlPartials } from "@dataspecer/xml/documentation";
@@ -25,7 +26,7 @@ export const defaultDocumentationConfiguration: DocumentationConfiguration = {
  * Merges documentation configurations. It already includes the default configuration.
  * @returns Complete configuration for the documentation generator.
  */
-export function resolveSpecificationDocumentationConfig(configurations: ConfigurationChain): DocumentationConfiguration {
+export function resolveSpecificationDocumentationConfig(configurations: ConfigurationChain<Configuration & ConfigWithDocumentation>): DocumentationConfiguration {
   return resolveDocumentationConfig([documentationConfig(defaultDocumentationConfiguration), ...configurations]);
 }
 

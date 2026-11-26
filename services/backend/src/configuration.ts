@@ -1,6 +1,6 @@
 // @ts-ignore
 import configuration from "../main.config.js";
-import type { Configuration as GeneratorConfiguration } from "@dataspecer/core/configuration";
+import type { AllConfiguration as GeneratorConfiguration } from "@dataspecer/specification";
 
 export interface Configuration {
     /**

@@ -83,14 +83,18 @@ export type JsonConfigurationInput = Partial<JsonConfiguration>;
 
 export const JSON_CONFIGURATION_KEY = "json";
 
-export function getJsonConfigInput(configuration: Configuration): JsonConfigurationInput {
+export type ConfigWithJson = {
+  [JSON_CONFIGURATION_KEY]?: JsonConfigurationInput;
+};
+
+export function getJsonConfigInput(configuration: Configuration & ConfigWithJson): JsonConfigurationInput {
   return configuration?.[JSON_CONFIGURATION_KEY] ?? {};
 }
 
-export function jsonConfig(input: JsonConfigurationInput): { json: JsonConfigurationInput } {
+export function jsonConfig(input: JsonConfigurationInput): Required<ConfigWithJson> {
   return { json: input };
 }
 
-export function resolveJsonConfig(configurations: ConfigurationChain): JsonConfiguration {
+export function resolveJsonConfig(configurations: ConfigurationChain<Configuration & ConfigWithJson>): JsonConfiguration {
   return resolveConfigurationHelper(configurations, getJsonConfigInput, () => ({ ...DefaultJsonConfiguration }), mergeShallowConfigurationHelper);
 }

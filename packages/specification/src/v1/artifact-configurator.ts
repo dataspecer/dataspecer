@@ -1,6 +1,7 @@
 import { resolveDataSpecificationConfig } from "@dataspecer/core/data-specification/configuration";
 import { DataSpecificationArtefact, DataSpecificationDocumentation } from "@dataspecer/core/data-specification/model";
 import { DefaultArtifactConfigurator } from "./default-artifact-configurator.ts";
+import { expandSpecificationConfiguration } from "../expand-specification-configuration.ts";
 
 export class ArtifactConfigurator extends DefaultArtifactConfigurator {
   public async generateFor(
@@ -17,7 +18,7 @@ export class ArtifactConfigurator extends DefaultArtifactConfigurator {
       throw new Error(`Data specification with IRI ${dataSpecificationIri} not found.`);
     }
 
-    const configuration = [...this.configurationDefaults, ...dataSpecification.configurationChain, ...this.configurationOverrides];
+    const configuration = expandSpecificationConfiguration([...this.configurationDefaults, ...dataSpecification.configurationChain, ...this.configurationOverrides]);
 
     const dataSpecificationName = await this.getSpecificationDirectoryName(dataSpecificationIri);
 

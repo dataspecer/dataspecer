@@ -5,7 +5,7 @@ import {
   DefaultShaclFileKey,
   resolveShaclConfig,
   shaclConfig,
-} from "./shacl-v2.ts";
+} from "./configuration.ts";
 
 describe("resolveShaclConfig", () => {
 

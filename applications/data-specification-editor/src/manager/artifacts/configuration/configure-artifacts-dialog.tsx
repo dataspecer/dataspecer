@@ -1,4 +1,5 @@
 import type { Configuration } from "@dataspecer/core/configuration";
+import { expandSpecificationConfiguration } from "@dataspecer/specification";
 import { SpecificationContext } from "../../routes/specification/specification";
 import {Button, Dialog, DialogActions, DialogContent, DialogTitle} from "@mui/material";
 import {FC, useContext, useEffect, useState} from "react";
@@ -16,7 +17,7 @@ export const ConfigureArtifactsDialog: FC<{
 }> = ({isOpen, close, onChange, configuration}) => {
   const instanceDefaults = useContext(DefaultConfigurationContext);
   const specification = useContext(SpecificationContext);
-  const defaultConfiguration = [...instanceDefaults, specification.configurationChain[0] ?? {}];
+  const defaultConfiguration = expandSpecificationConfiguration([...instanceDefaults, ...specification.configurationChain.slice(0, -1)]);
   const [localConfiguration, setLocalConfiguration] = useState(() => ({...configuration}));
   useEffect(() => {
     if (isOpen) {

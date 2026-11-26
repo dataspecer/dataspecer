@@ -1,3 +1,4 @@
+import type { AllConfiguration } from "../all-configuration.ts";
 import type { ConfigurationChain } from "@dataspecer/core/configuration";
 import { CoreResourceReader, LanguageString } from "@dataspecer/core/core";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model";
@@ -7,6 +8,7 @@ import { FederatedObservableStore } from "@dataspecer/federated-observable-store
 import { getSchemaArtifacts } from "./schema-artifacts.ts";
 import { DataSpecification } from "../specification/model.ts";
 import { resolveSpecificationUrls, type SpecificationUrls, type SpecificationUrlOverride } from "../specification-urls.ts";
+import { expandSpecificationConfiguration } from "../expand-specification-configuration.ts";
 
 /**
  * This class is responsible for setting the artifacts definitions in
@@ -17,8 +19,8 @@ import { resolveSpecificationUrls, type SpecificationUrls, type SpecificationUrl
 export class DefaultArtifactConfigurator {
   protected readonly dataSpecifications: DataSpecification[];
   protected readonly store: CoreResourceReader;
-  protected configurationDefaults: ConfigurationChain;
-  protected configurationOverrides: ConfigurationChain;
+  protected configurationDefaults: ConfigurationChain<AllConfiguration>;
+  protected configurationOverrides: ConfigurationChain<AllConfiguration>;
 
   urlOverrides: Record<string, SpecificationUrlOverride> = {};
 
@@ -28,8 +30,8 @@ export class DefaultArtifactConfigurator {
   constructor(
     dataSpecifications: DataSpecification[],
     store: FederatedObservableStore,
-    configurationDefaults: ConfigurationChain,
-    configurationOverrides: ConfigurationChain = [],
+    configurationDefaults: ConfigurationChain<AllConfiguration>,
+    configurationOverrides: ConfigurationChain<AllConfiguration> = [],
   ) {
     this.dataSpecifications = dataSpecifications;
     this.store = store as CoreResourceReader;
@@ -54,7 +56,7 @@ export class DefaultArtifactConfigurator {
       throw new Error(`Data specification with IRI ${dataSpecificationIri} not found.`);
     }
 
-    const configuration = [...this.configurationDefaults, ...dataSpecification.configurationChain, ...this.configurationOverrides];
+    const configuration = expandSpecificationConfiguration([...this.configurationDefaults, ...dataSpecification.configurationChain, ...this.configurationOverrides]);
 
     const dataSpecificationName = await this.getSpecificationDirectoryName(dataSpecificationIri);
 

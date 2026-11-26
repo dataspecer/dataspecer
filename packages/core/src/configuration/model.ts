@@ -11,6 +11,6 @@ export type Configuration = Record<string, unknown>;
  * a resolver to resolve the final configuration for a given scope by merging
  * the configurations in the chain with the default config.
  */
-export type ConfigurationChain = readonly Configuration[];
+export type ConfigurationChain<Layer extends Configuration = Configuration> = readonly Layer[];
 
 export type ConfigurationResolver<Result> = (configurations: ConfigurationChain) => Result;

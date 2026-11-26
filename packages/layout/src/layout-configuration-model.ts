@@ -7,14 +7,18 @@ export type LayoutConfigurationInput = DeepPartial<LayoutConfiguration>;
 
 export const LAYOUT_ALGORITHM_CONFIGURATION_IRI = "http://dataspecer.com/resources/local/layout-configuration";
 
-export function getLayoutConfigInput(configuration: Configuration): LayoutConfigurationInput {
+export type ConfigWithLayout = {
+  [LAYOUT_ALGORITHM_CONFIGURATION_IRI]?: LayoutConfigurationInput;
+};
+
+export function getLayoutConfigInput(configuration: Configuration & ConfigWithLayout): LayoutConfigurationInput {
   return configuration?.[LAYOUT_ALGORITHM_CONFIGURATION_IRI] ?? {};
 }
 
-export function layoutConfig(input: LayoutConfigurationInput): { [LAYOUT_ALGORITHM_CONFIGURATION_IRI]: LayoutConfigurationInput } {
+export function layoutConfig(input: LayoutConfigurationInput): Required<ConfigWithLayout> {
   return { [LAYOUT_ALGORITHM_CONFIGURATION_IRI]: input };
 }
 
-export function resolveLayoutConfig(configurations: ConfigurationChain): LayoutConfiguration {
+export function resolveLayoutConfig(configurations: ConfigurationChain<Configuration & ConfigWithLayout>): LayoutConfiguration {
   return resolveConfigurationHelper(configurations, getLayoutConfigInput, getDefaultUserGivenAlgorithmConfigurationsFull, mergeConfigurationPatch);
 }

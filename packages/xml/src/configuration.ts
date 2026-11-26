@@ -26,15 +26,19 @@ export type XmlConfigurationInput = Partial<XmlConfiguration>;
 
 export const XML_CONFIGURATION_KEY = "xml";
 
-export function getXmlConfigInput(configuration: Configuration): XmlConfigurationInput {
+export type ConfigWithXml = {
+  [XML_CONFIGURATION_KEY]?: XmlConfigurationInput;
+};
+
+export function getXmlConfigInput(configuration: Configuration & ConfigWithXml): XmlConfigurationInput {
   return configuration?.[XML_CONFIGURATION_KEY] ?? {};
 }
 
-export function xmlConfig(input: XmlConfigurationInput): { xml: XmlConfigurationInput } {
+export function xmlConfig(input: XmlConfigurationInput): Required<ConfigWithXml> {
   return { xml: input };
 }
 
-export function resolveXmlConfig(configurations: ConfigurationChain): XmlConfiguration {
+export function resolveXmlConfig(configurations: ConfigurationChain<Configuration & ConfigWithXml>): XmlConfiguration {
   return resolveConfigurationHelper(
     configurations,
     getXmlConfigInput,

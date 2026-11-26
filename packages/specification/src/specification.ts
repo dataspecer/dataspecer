@@ -1,3 +1,4 @@
+import type { AllConfiguration } from "./all-configuration.ts";
 import type { ConfigurationChain } from "@dataspecer/core/configuration";
 import { resolveDataSpecificationConfig } from "@dataspecer/core/data-specification/configuration";
 import { getSpecificationConfigurationChain } from "./configuration.ts";
@@ -26,12 +27,12 @@ import {
   type VocabularySpecificationDocument,
 } from "@dataspecer/data-specification-vocabulary/specification-description";
 import { structureModelToRdf } from "@dataspecer/data-specification-vocabulary/structure-model";
-import { generateVisualModelSvg, type SvgRenderOptions } from "@dataspecer/diagram";
+import { generateVisualModelSvg, resolveDiagramConfig, type SvgRenderOptions } from "@dataspecer/diagram";
 import { isRdfsSnapshot } from "@dataspecer/rdfs/semantic-model";
-import { canonicalizeIds, garbageCollect } from "@dataspecer/structure-model";
+import { canonicalizeIds, garbageCollectProfileModel, garbageCollectStructureModel } from "@dataspecer/structure-model";
 import { generateSemanticModelVisualModel, prepareDiagramRendering } from "./diagram.ts";
 import { ModelDescription, type StructureModelDescription } from "./model.ts";
-import { DefaultShaclFileKey, resolveShaclConfig } from "./shacl-v2.ts";
+import { DefaultShaclFileKey, resolveShaclConfig } from "@dataspecer/shacl-v2";
 import {
   generateDsvApplicationProfile,
   generateHtmlDocumentation,
@@ -44,6 +45,7 @@ import {
 import { artefactToDsv } from "./v1/artefact-to-dsv.ts";
 import { pathRelative } from "@dataspecer/core/core/utilities/path-relative";
 import { resolveSpecificationUrls, type SpecificationUrls, type SpecificationUrlOverride } from "./specification-urls.ts";
+import { expandSpecificationConfiguration } from "./expand-specification-configuration.ts";
 
 /**
  * Id under which the project model (the package hierarchy) is stored in the
@@ -106,7 +108,7 @@ export interface GenerateSpecificationContext {
   fetch: HttpFetch;
 
   /** Instance defaults, overridden by persisted specification configuration. */
-  configurationDefaults?: ConfigurationChain;
+  configurationDefaults?: ConfigurationChain<AllConfiguration>;
 
   specificationUrls?: Record<string, SpecificationUrls>;
   specificationUrlOverrides?: Record<string, SpecificationUrlOverride>;
@@ -122,7 +124,7 @@ export interface GenerateSpecificationContext {
  * Additional configuration for generating the specification.
  */
 export interface GenerateSpecificationOptions {
-  configurationOverrides?: ConfigurationChain;
+  configurationOverrides?: ConfigurationChain<AllConfiguration>;
 
   /**
    * Generate only a single file specified by this local path.
@@ -182,13 +184,14 @@ async function writeDcatCatalog(
  */
 export async function generateSpecification(packageId: string, context: GenerateSpecificationContext, options: GenerateSpecificationOptions = {}): Promise<void> {
   const subdirectory = options.subdirectory ?? "";
-  const configurationChain = [
+  const configurationChain = expandSpecificationConfiguration([
     ...context.configurationDefaults ?? [],
     ...getSpecificationConfigurationChain(packageId, context.models),
     ...options.configurationOverrides ?? [],
-  ];
+  ]);
 
-  const allModels = context.models;
+  const { cleanupSemanticModelForStructures } = resolveDataSpecificationConfig(configurationChain);
+  const allModels = { ...context.models };
   const projectModel = (allModels[PROJECT_MODEL_ID] ?? {}) as Record<string, ProjectModelEntity>;
 
   const rootPackageEntity = projectModel[packageId] as PackageEntity | undefined;
@@ -222,11 +225,11 @@ export async function generateSpecification(packageId: string, context: Generate
       throw new Error("Package does not exist.");
     }
     const children = getSubModelEntities(projectModel, packageIri);
-    const configuration = resolveDataSpecificationConfig([
+    const configuration = resolveDataSpecificationConfig(expandSpecificationConfiguration([
       ...context.configurationDefaults ?? [],
       ...getSpecificationConfigurationChain(packageIri, allModels),
       ...options.configurationOverrides ?? [],
-    ]);
+    ]));
     specificationUrls[packageIri] ??= resolveSpecificationUrls({
       publicBaseUrl: configuration.publicBaseUrl,
       documentationUrl: (pckgEntity as any).documentBaseUrl,
@@ -234,9 +237,18 @@ export async function generateSpecification(packageId: string, context: Generate
     });
     const semanticModels = children.filter((r) => r.modelType === LOCAL_SEMANTIC_MODEL);
     for (const semanticModel of semanticModels) {
-      const modelEntities = allModels[semanticModel.id] ?? {};
+      let modelEntities = allModels[semanticModel.id] ?? {};
       const mainEntity = modelEntities[semanticModel.id] as MainSemanticModelEntity | undefined;
       const isSourced = !!mainEntity?.source;
+      const isPrimary = isRoot && !isSourced;
+      if (cleanupSemanticModelForStructures && isPrimary && isModelProfile(modelEntities)) {
+        const structures = Object.fromEntries(children
+          .filter(model => model.modelType === V1.PSM)
+          .map(model => [model.id, allModels[model.id] ?? {}]));
+        modelEntities = garbageCollectProfileModel(modelEntities, structures);
+        // All artifact generators see the same cleaned primary profile; other models stay intact.
+        allModels[semanticModel.id] = modelEntities;
+      }
       if (!isSourced) {
         semanticModelOwningPackage.set(semanticModel.id, packageIri);
       }
@@ -251,7 +263,7 @@ export async function generateSpecification(packageId: string, context: Generate
       modelDescriptions.push({
         id: semanticModel.id,
         entities: Object.fromEntries(Object.entries(entities).map(([id, entity]) => [id, withAbsoluteIri(entity as SemanticModelEntity, baseIri ?? undefined)])),
-        isPrimary: isRoot && !isSourced,
+        isPrimary,
         documentationUrl: null,
         baseIri,
         title: semanticModel.label,
@@ -471,6 +483,7 @@ export async function generateSpecification(packageId: string, context: Generate
 
   // For each model we need to decide whether it is a standalone vocabulary of application profile
   for (const model of modelDescriptions.filter((m) => m.isPrimary)) {
+    const isProfile = isModelProfile(model.id ? context.models[model.id] ?? {} : model.entities);
     // Resource ID of the Model
     const modelIri = model.baseIri ?? (baseIri + isModelVocabulary(model.entities) ? "vocabulary" : "profile");
     const fileName = isModelVocabulary(model.entities) ? "model.owl.ttl" : "dsv.ttl";
@@ -526,7 +539,7 @@ export async function generateSpecification(packageId: string, context: Generate
     }
 
     // Process application profile model as a standalone application profile - we do not need to see additional vocabularies for it.
-    if (isModelProfile(model.entities)) {
+    if (isProfile) {
       hasApplicationProfile = true;
 
       const hasResource: ResourceDescriptor[] = [];
@@ -599,7 +612,7 @@ export async function generateSpecification(packageId: string, context: Generate
     // Publish the operations of the model as an LDES stream. This is a proof
     // of concept: the descriptor is not registered in the DSV metadata yet as
     // PROF has no suitable role for a change log.
-    if (isModelVocabulary(model.entities) || isModelProfile(model.entities)) {
+    if (isModelVocabulary(model.entities) || isProfile) {
       const ldesFileName = isModelVocabulary(model.entities) ? "model.owl.ldes.ttl" : "dsv.ldes.ttl";
       const ldesUrl = urls.artifactUrl(ldesFileName);
       // We need to use empty IRI because LDES consumers we tested require the IRI to match the URL
@@ -623,8 +636,8 @@ export async function generateSpecification(packageId: string, context: Generate
    * their IDs and exports them as individual Turtle files.
    */
 
-  let structureModels = primaryStructureModels.map((sm) => Object.values(sm.entities as unknown as Record<string, CoreResource>));
-  structureModels = structureModels.map((sm) => garbageCollect(sm));
+  const structureModels = primaryStructureModels.map(model =>
+    Object.values(garbageCollectStructureModel(allModels[model.id] ?? {})) as unknown as CoreResource[]);
   const processedStructureModels = canonicalizeIds(structureModels, idToIriMapping, baseIri);
 
   if (processedStructureModels.length > 0) {
@@ -718,11 +731,11 @@ export async function generateSpecification(packageId: string, context: Generate
   // we assign all of them to all models.
 
   // Default render options for SVG generation.
+  const diagramConfiguration = resolveDiagramConfig(configurationChain);
   const renderOptions: SvgRenderOptions = {
-    prefixes: prefixMap,
-    //profileOfMode: "hidden",
+    ...diagramConfiguration,
+    prefixes: { ...prefixMap, ...diagramConfiguration.prefixes },
     language: "en",
-    //showIris: false,
   };
 
   const { diagramModels } = prepareDiagramRendering(packageId, allModels);
