@@ -12,6 +12,8 @@ import {
 } from "@dataspecer/core/data-specification/model";
 import {fixPrefixPosition, fixTurtleFileWithBase, isUniqueClass, hasUniquePredicates, getUniquePredicate, anyPredicateHasUniqueType, anyPredicateHasUniquePredicates,
   getAnyPredicateUniquePredicate, getAnyPredicateUniqueType} from "./shacl-support.ts";
+import { getControlledVocabularyRules } from "@dataspecer/generators/structure-model/helper/controlled-vocabulary-rules";
+import type { ControlledVocabularyRule } from "@dataspecer/generators/conceptual-model/model";
 import { OFN } from "@dataspecer/core/well-known";
 import * as N3 from "n3";
 import { LanguageString } from "@dataspecer/core/core";
@@ -120,12 +122,19 @@ export class ShaclAdapter {
   protected rootName = null;
   protected addedXSDPrefix = false;
 
+  /**
+   * When true, a value of a SKOS-based controlled vocabulary has to state the concept scheme of the vocabulary using skos:inScheme.
+   */
+  protected controlledVocabularyScheme: boolean = false;
+
   constructor(
     model: StructureModel,
     context: ArtefactGeneratorContext | null,
     artefact: DataSpecificationArtefact,
       publicBaseUrl: string | null,
+    options: { controlledVocabularyScheme?: boolean } = {}
   ) {
+    this.controlledVocabularyScheme = options.controlledVocabularyScheme === true;
     this.model = model;
     this.context = context;
     this.artefact = artefact;
@@ -386,6 +395,8 @@ export class ShaclAdapter {
           // Add datatype for the PopertyNode
           this.getObjectForPropType(prop.dataTypes, nodeIRI, cimiri);
 
+          this.generateControlledVocabularyRules(prop, nodeIRI, classNameIri);
+
           // Add property to the parent class
           this.writer.addQuad(
             namedNode(classNameIri.toString()),
@@ -411,6 +422,142 @@ export class ShaclAdapter {
       ])
       );
     }
+  }
+
+  /**
+   * Generate the rules that the controlled vocabularies of the values of the property impose.
+   * The values are checked through the class they are instances of, or through the IRI type for a class without properties.
+   *
+   * Every rule gets a property shape of its own with the path of the property and the severity of the rule,
+   * because a severity applies to the whole shape. The shape is attached to the shape of the class
+   * that the property belongs to, otherwise it would not be validated.
+   *
+   * @param prop The property whose values are constrained.
+   * @param propertyNodeIRI IRI of the property shape generated for the property, the shapes of the rules are named after it.
+   * @param classNameIri IRI of the shape of the class that the property belongs to.
+   */
+  protected generateControlledVocabularyRules(prop: StructureModelProperty, propertyNodeIRI: string, classNameIri: string): void {
+    // With several types the class of the values is not known, so the vocabularies cannot be applied.
+    if (prop.dataTypes.length !== 1) {
+      return;
+    }
+    const [dataType] = prop.dataTypes;
+    let source: Parameters<typeof getControlledVocabularyRules>[0];
+    if (dataType.isAssociation()) {
+      const valueClass = (<StructureModelComplexType> dataType).dataType;
+      // Blank nodes have no IRI to check.
+      if (valueClass.instancesHaveIdentity === "NEVER") {
+        return;
+      }
+      source = valueClass;
+    } else if (dataType.isAttribute()) {
+      source = <StructureModelPrimitiveType> dataType;
+    } else {
+      return;
+    }
+
+    const { everyValue, atLeastOne } = getControlledVocabularyRules(source);
+    const applicable = (rules: ControlledVocabularyRule[]) => rules
+      .map(rule => ({ ...rule, schemeIri: this.controlledVocabularyScheme ? rule.schemeIri : null }))
+      .filter(rule => rule.pattern !== null || rule.schemeIri !== null);
+
+    let shapeCount = 0;
+    const addRuleShape = (rule: ControlledVocabularyRule) => {
+      const shapeIRI = `${propertyNodeIRI}ControlledVocabulary${++shapeCount}`;
+      this.addPropertyShape(shapeIRI, classNameIri, prop, rule.severity);
+      return shapeIRI;
+    };
+
+    for (const rule of applicable(everyValue)) {
+      const shapeIRI = addRuleShape(rule);
+      for (const { predicate, object } of this.getValueRulePredicates(rule)) {
+        this.writer.addQuad(namedNode( shapeIRI ), predicate, object);
+      }
+    }
+
+    for (const rule of applicable(atLeastOne)) {
+      const shapeIRI = addRuleShape(rule);
+      this.writer.addQuad(
+        namedNode( shapeIRI ),
+        namedNode('http://www.w3.org/ns/shacl#qualifiedValueShape'),
+        this.writer.blank(this.getValueRulePredicates(rule))
+      );
+      this.writer.addQuad(
+        namedNode( shapeIRI ),
+        namedNode('http://www.w3.org/ns/shacl#qualifiedMinCount'),
+        literal(1)
+      );
+    }
+  }
+
+  /**
+   * Add a property shape with the path of the property to the shape of the class.
+   *
+   * @param shapeIRI IRI of the new property shape.
+   * @param classNameIri IRI of the shape of the class that the property belongs to.
+   * @param prop The property whose path the shape has.
+   * @param severity Severity of the shape, a shape has a single severity for all its constraints.
+   */
+  protected addPropertyShape(shapeIRI: string, classNameIri: string, prop: StructureModelProperty, severity: "violation" | "warning"): void {
+    this.writer.addQuad(
+      namedNode( shapeIRI ),
+      namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+      namedNode('http://www.w3.org/ns/shacl#PropertyShape')
+    );
+    this.addPath(shapeIRI, prop);
+    this.writer.addQuad(
+      namedNode( shapeIRI ),
+      namedNode('http://www.w3.org/ns/shacl#severity'),
+      namedNode(severity === "violation" ? 'http://www.w3.org/ns/shacl#Violation' : 'http://www.w3.org/ns/shacl#Warning')
+    );
+    this.writer.addQuad(
+      namedNode( classNameIri ),
+      namedNode('http://www.w3.org/ns/shacl#property'),
+      namedNode( shapeIRI )
+    );
+  }
+
+  /**
+   * Predicates and objects that make a value satisfy the rule of a controlled vocabulary:
+   * its IRI matches the pattern and it is in the concept scheme.
+   */
+  protected getValueRulePredicates(rule: ControlledVocabularyRule) {
+    const result = [];
+    if (rule.pattern !== null) {
+      result.push({
+        predicate: namedNode('http://www.w3.org/ns/shacl#pattern'),
+        object: literal( rule.pattern ),
+      });
+    }
+    if (rule.schemeIri !== null) {
+      result.push({
+        predicate: namedNode('http://www.w3.org/ns/shacl#property'),
+        object: this.writer.blank([{
+          predicate: namedNode('http://www.w3.org/ns/shacl#path'),
+          object:    namedNode('http://www.w3.org/2004/02/skos/core#inScheme'),
+        }, {
+          predicate: namedNode('http://www.w3.org/ns/shacl#hasValue'),
+          object:    namedNode( rule.schemeIri ),
+        }]),
+      });
+    }
+    return result;
+  }
+
+  /**
+   * Add the path of the property to the shape.
+   */
+  protected addPath(shapeIRI: string, prop: StructureModelProperty): void {
+    this.writer.addQuad(
+      namedNode( shapeIRI ),
+      namedNode('http://www.w3.org/ns/shacl#path'),
+      prop.isReverse
+        ? this.writer.blank([{
+          predicate: namedNode('http://www.w3.org/ns/shacl#inversePath'),
+          object:    namedNode( prop.cimIri )}
+        ])
+        : namedNode( prop.cimIri )
+    );
   }
 
   /**
