@@ -449,9 +449,9 @@ export const defaultConfiguration: DocumentationConfiguration = {
   <thead>
     <tr>
       <th>{{#iflng "cs"}}Název{{lng}}Name{{/iflng}}</th>
-      <th class="cv-center">SKOS</th>
+      <th class="cv-center cv-narrow">SKOS</th>
       <th>{{#iflng "cs"}}IRI schématu konceptů{{lng}}Concept Scheme IRI{{/iflng}}</th>
-      <th>{{#iflng "cs"}}Odkazy{{lng}}Links{{/iflng}}</th>
+      <th class="cv-narrow">{{#iflng "cs"}}Odkazy{{lng}}Links{{/iflng}}</th>
     </tr>
   </thead>
   <tbody>
@@ -459,7 +459,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
       <tr id="{{cvAnchor id}}">
         <td>{{cvTitle id}}</td>
         <td class="cv-center">{{#if conformsToSkos}}{{#iflng "cs"}}ano{{lng}}yes{{/iflng}}{{else}}{{#iflng "cs"}}ne{{lng}}no{{/iflng}}{{/if}}</td>
-        <td class="cv-iri">{{#if conformsToSkos}}{{references}}{{else}}–{{/if}}</td>
+        <td class="cv-iri">{{#if conformsToSkos}}<a href="{{{references}}}"><code>{{references}}</code></a>{{else}}–{{/if}}</td>
         <td>
           {{> controlled-vocabulary-access-link}}
           {{#if documentation}}{{> controlled-vocabulary-documentation-link}}{{/if}}
@@ -816,9 +816,17 @@ var respecConfig = {
     padding: 3px 10px;
   }
 
-  /* An IRI has no spaces to break at, so it may wrap anywhere instead of widening the table. */
+  /* The IRI column takes the space the other columns leave, up to a limit. An IRI has no spaces to break at, so beyond it the IRI wraps anywhere. */
   table.def.cv-list .cv-iri {
+    min-width: 16em;
+    max-width: 36em;
     overflow-wrap: anywhere;
+  }
+
+  /* Columns with a short content are as narrow as the content. */
+  table.def.cv-list .cv-narrow {
+    width: 1%;
+    white-space: nowrap;
   }
 
   /* ReSpec shows the header row of a definition table as an italic body row, so it is marked out as a header. */

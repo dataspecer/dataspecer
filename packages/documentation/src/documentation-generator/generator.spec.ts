@@ -389,7 +389,7 @@ describe("generateDocumentation controlled vocabularies", () => {
       ));
 
       expect(html.match(/<tr id=/g)).toHaveLength(1);
-      expect(html).toContain('<tr id="cv-Vocabulary-A"> <td>Vocabulary A</td> <td class="cv-center">yes</td> <td class="cv-iri">https://example.com/scheme</td>');
+      expect(html).toContain('<tr id="cv-Vocabulary-A"> <td>Vocabulary A</td> <td class="cv-center">yes</td> <td class="cv-iri"><a href="https://example.com/scheme"><code>https://example.com/scheme</code></a></td>');
       expect(html).toMatch(/<a class="cv-link" href="https:\/\/example.com\/voc-a" title="Access URL" aria-label="Access URL"><svg /);
       expect(html).toMatch(/<a class="cv-link" href="https:\/\/example.com\/docs" title="Documentation" aria-label="Documentation"><svg /);
     });

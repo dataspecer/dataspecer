@@ -1,5 +1,6 @@
 import {StructureModelClass} from "./structure-model-class.ts";
 import { SemanticPathStep } from "./structure-model-property.ts";
+import {ConceptualModelControlledVocabularyAssignment} from "../../conceptual-model/model/conceptual-model-controlled-vocabulary.ts";
 
 export interface StructureModelType {
   isAttribute(): this is StructureModelPrimitiveType;
@@ -23,6 +24,24 @@ export class StructureModelPrimitiveType implements StructureModelType {
    * Set of examples of values of this property.
    */
   example: unknown[] | null = null;
+
+  /**
+   * If this primitive type is the IRI of a class without properties,
+   * these are the controlled vocabularies of that class. They constrain the IRI.
+   */
+  controlledVocabularies: ConceptualModelControlledVocabularyAssignment[] = [];
+
+  /**
+   * The option of the class for recommended controlled vocabularies, see {@link StructureModelClass}.
+   * Null until the default of the data specification is applied.
+   */
+  requireRecommendedControlledVocabularyValue: boolean | null = null;
+
+  /**
+   * The option of the class for recommended controlled vocabularies, see {@link StructureModelClass}.
+   * Null until the default of the data specification is applied.
+   */
+  restrictToRecommendedControlledVocabulary: boolean | null = null;
 
   /**
    * Json specific property

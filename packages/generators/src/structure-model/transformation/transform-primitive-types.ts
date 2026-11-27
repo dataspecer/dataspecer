@@ -19,6 +19,9 @@ export function structureModelTransformPrimitiveTypes(
           dt.dataType = OFN.url;
           dt.regex = dataType.dataType.regex;
           dt.example = dataType.dataType.example;
+          dt.controlledVocabularies = dataType.dataType.controlledVocabularies;
+          dt.requireRecommendedControlledVocabularyValue = dataType.dataType.requireRecommendedControlledVocabularyValue;
+          dt.restrictToRecommendedControlledVocabulary = dataType.dataType.restrictToRecommendedControlledVocabulary;
           return dt;
         }
         return dataType;

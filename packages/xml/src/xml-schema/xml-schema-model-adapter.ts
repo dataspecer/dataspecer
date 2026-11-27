@@ -46,6 +46,9 @@ import {
   type XmlSchemaComplexSimpleContent,
 } from "./xml-schema-model.ts";
 import { XML_SCHEMA } from "./xml-schema-vocabulary.ts";
+import { createAtLeastOneAssertions } from "./xml-schema-assertions.ts";
+import { createIriType } from "./xml-schema-iri-type.ts";
+import { getXmlSchemaRules } from "./xml-schema-rules.ts";
 
 export const GEO_SPARQL_WKT_LITERAL = "http://www.opengis.net/ont/geosparql#wktLiteral";
 
@@ -524,6 +527,47 @@ class XmlSchemaAdapter {
   }
 
   /**
+   * Defines the named simple types that make an IRI match the regular expression and the
+   * controlled vocabularies of its class, and returns the type of the IRI.
+   *
+   * A schema can define only one type of a name. Where the same name comes with the same definitions,
+   * as for a class used in several places, the types are shared.
+   * If the types differ, the name gets a number.
+   *
+   * @param rulesSource The class, or the type of an IRI made from a class without properties.
+   * @param label Technical label that names the types.
+   * @param description What the IRI is, for the warning about a pattern that is left out.
+   */
+  private defineIriType(
+    rulesSource: Parameters<typeof getXmlSchemaRules>[0],
+    label: string,
+    description: string,
+  ): XmlSchemaType {
+    const rules = getXmlSchemaRules(rulesSource);
+    for (const skipped of rules.skipped) {
+      const origin = skipped.vocabularyId === null ? "the regular expression" : `the controlled vocabulary ${skipped.vocabularyId}`;
+      console.warn(`XSD generator skipped the pattern "${skipped.sourcePattern}" of ${origin} on ${description}: ${skipped.reason}.`);
+    }
+    const parameters = {
+      xsdPrefix: this.getAndImportHelperNamespace("xsd", true),
+      schemaPrefix: this.namespaceModel.namespacePrefix,
+    };
+    for (let attempt = 1; ; attempt++) {
+      const { definitions, type } = createIriType(rules.everyValue, {
+        ...parameters,
+        classLabel: attempt === 1 ? label : `${label}-${attempt}`,
+      });
+      // The definitions are plain data created in the same order of fields, so comparing their JSON tells whether they are equal.
+      const isFree = Object.entries(definitions).every(([name, definition]) =>
+        this.types[name] === undefined || JSON.stringify(this.types[name]) === JSON.stringify(definition));
+      if (isFree) {
+        Object.assign(this.types, definitions);
+        return type;
+      }
+    }
+  }
+
+  /**
    * Returns <iri> element for given class or null if the element should be skipped.
    */
   private getIriElementOrAttribute(forStructureModelClass: StructureModelClass): XmlSchemaComplexContentElement | XmlSchemaAttribute | null {
@@ -544,23 +588,7 @@ class XmlSchemaAdapter {
       this.getAndImportHelperNamespace("common", true);
     }
 
-    const type = forStructureModelClass.regex
-      ? ({
-          entityType: "type",
-          name: null,
-          annotation: null,
-          simpleDefinition: {
-            xsType: "restriction",
-            base: [this.getAndImportHelperNamespace("xsd", true), "anyURI"],
-            pattern: forStructureModelClass.regex,
-            contents: [],
-          } as XmlSchemaSimpleItemRestriction,
-        } satisfies XmlSchemaSimpleType)
-      : ({
-          entityType: "type",
-          name: [this.getAndImportHelperNamespace("xsd", true), "anyURI"],
-          annotation: null,
-        } satisfies XmlSchemaType);
+    const type = this.defineIriType(forStructureModelClass, forStructureModelClass.technicalLabel, `the IRI of class ${forStructureModelClass.technicalLabel}`);
 
     if (useElementInsteadOfAttribute) {
       return {
@@ -882,6 +910,11 @@ class XmlSchemaAdapter {
       if (iriAsAttribute) {
         attributes.unshift(iriAsAttribute);
       }
+      // Requiring a value of a controlled vocabulary among the values of a property is a condition on all of them.
+      const { assertions, unsupported } = createAtLeastOneAssertions(cls, this.options.elementIriAsAttribute);
+      for (const description of unsupported) {
+        console.warn(`XSD generator skipped the rule requiring a value of a controlled vocabulary on ${description}.`);
+      }
       const type = {
         entityType: "type",
         name: [null, cls.technicalLabel],
@@ -890,6 +923,7 @@ class XmlSchemaAdapter {
         abstract: null,
         complexDefinition,
         attributes,
+        assertions,
       } satisfies XmlSchemaComplexType;
       return type;
     }
@@ -1205,6 +1239,11 @@ class XmlSchemaAdapter {
         // Uses xml lang
         this.getAndImportHelperNamespace("xml", true);
         return langStringType;
+      }
+
+      if (dataTypes[0].dataType === OFN.url) {
+        // The IRI of a class without properties has the rules of the class.
+        return this.defineIriType(dataTypes[0], propertyData.technicalLabel, `the IRI in property ${propertyData.technicalLabel}`);
       }
 
       if (dataTypes[0].regex && [XSD.string, XSD.anyURI, XSD.anyURI].includes(dataTypes[0].dataType)) {
