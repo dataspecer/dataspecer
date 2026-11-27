@@ -1,0 +1,10 @@
+@prefix ex: <https://example.org/> .
+@prefix lic: <https://example.org/licenses/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+ex:dataset a ex:Dataset ;
+    ex:license lic:a, lic:b .
+
+lic:a skos:inScheme ex:scheme .
+lic:b skos:inScheme ex:scheme .
