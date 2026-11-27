@@ -5,6 +5,7 @@ import type { ConfigWithDiagram } from "@dataspecer/diagram";
 import type { ConfigWithDocumentation } from "@dataspecer/documentation";
 import type { ConfigWithJson } from "@dataspecer/json/configuration";
 import type { ConfigWithLayout } from "@dataspecer/layout";
+import type { ConfigWithStructuralShacl } from "@dataspecer/shacl/configuration";
 import type { ConfigWithShacl } from "@dataspecer/shacl-v2";
 import type { ConfigWithXml } from "@dataspecer/xml/configuration";
 
@@ -26,4 +27,5 @@ export type AllConfiguration = /* Configuration & */
   ConfigWithJson &
   ConfigWithLayout &
   ConfigWithShacl &
+  ConfigWithStructuralShacl &
   ConfigWithXml;

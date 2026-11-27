@@ -39,63 +39,87 @@ export interface ConceptualModelControlledVocabularyAssignment {
 }
 
 /**
- * Metadata relevant for controlled vocabulary pattern validation
+ * Severity of a controlled vocabulary rule violation.
+ * Only the qualifier "must" is a violation, the others are warnings, as in DCAT-AP.
  */
-export interface ControlledVocabularyPattern {
-  pattern: string;
+export type ControlledVocabularySeverity = "violation" | "warning";
 
+/**
+ * Metadata relevant for controlled vocabulary pattern validation
+ * A generator decides which of the information it can express,
+ * for example pattern validation does not use the scheme or the severity.
+ */
+export interface ControlledVocabularyRule {
   /**
-   * Id of the controlled vocabulary that defines the pattern.
-   * When several vocabularies have the same pattern, it is the first of the (unlikelly in practice)
+   * Id of the controlled vocabulary that defines the rule.
+   * When several vocabularies define the same rule, it is the first of them (unlikely in practice).
    */
   vocabularyId: string;
+
+  /**
+   * Regular expression that the IRI of the value must match, null if the vocabulary has none.
+   */
+  pattern: string | null;
+
+  /**
+   * IRI of the skos:ConceptScheme the value must belong to,
+   * null if the vocabulary does not conform to SKOS.
+   */
+  schemeIri: string | null;
+
+  severity: ControlledVocabularySeverity;
 }
 
 /**
- * Patterns of the IRIs of values that a class profile with the given
- * controlled vocabulary assignments expects, sorted by the qualifier of the
- * assignment. Each pattern is a rule of its own, a generator decides how the
- * rules combine.
+ * Rules of the controlled vocabulary assignments of a class profile,
+ * sorted by the qualifier of the assignment.
+ * Each rule is a rule of its own, a generator decides how the rules combine.
  */
-export interface ControlledVocabularyPatterns {
+export interface ControlledVocabularyRulesByQualifier {
   /**
-   * Every value must match the pattern.
+   * Every value must satisfy the rule.
    */
-  must: ControlledVocabularyPattern[];
+  must: ControlledVocabularyRule[];
 
   /**
-   * At least one value must match the pattern.
+   * At least one value must satisfy the rule.
    */
-  atLeastOne: ControlledVocabularyPattern[];
+  atLeastOne: ControlledVocabularyRule[];
 
   /**
-   * Values should match the pattern. Whether a generator enforces it is up to
+   * Values should satisfy the rule. Whether a generator enforces it is up to
    * its configuration.
    */
-  recommended: ControlledVocabularyPattern[];
+  recommended: ControlledVocabularyRule[];
 }
 
 /**
- * Collects the patterns of the assignments by their qualifiers.
+ * Collects the rules of the assignments by their qualifiers.
  * Qualifier "may" does not validate anything, so it is not included.
- * Vocabularies without a pattern do not constrain anything either.
- * Each pattern is listed once per qualifier to avoid duplicate regexes in docs.
+ * Vocabularies with neither a pattern nor a scheme do not constrain anything either.
+ * Each combination of a pattern and a scheme is listed once per qualifier to avoid duplicate rules in docs.
  */
-export function getControlledVocabularyPatterns(
+export function getControlledVocabularyRulesByQualifier(
   assignments: readonly ConceptualModelControlledVocabularyAssignment[],
-): ControlledVocabularyPatterns {
-  const result: ControlledVocabularyPatterns = { must: [], atLeastOne: [], recommended: [] };
+): ControlledVocabularyRulesByQualifier {
+  const result: ControlledVocabularyRulesByQualifier = { must: [], atLeastOne: [], recommended: [] };
   for (const { qualifier, vocabulary } of assignments) {
-    const pattern = vocabulary.pattern;
-    if (pattern === null || pattern === "") {
+    const pattern = vocabulary.pattern === null || vocabulary.pattern === "" ? null : vocabulary.pattern;
+    const schemeIri = vocabulary.conformsToSkos && vocabulary.references ? vocabulary.references : null;
+    if (pattern === null && schemeIri === null) {
       continue;
     }
     const target = qualifier === "must" ? result.must
       : qualifier === "at-least-one" ? result.atLeastOne
         : qualifier === "recommended" ? result.recommended
           : null;
-    if (target !== null && !target.some((existing) => existing.pattern === pattern)) {
-      target.push({ pattern, vocabularyId: vocabulary.id });
+    if (target !== null && !target.some((existing) => existing.pattern === pattern && existing.schemeIri === schemeIri)) {
+      target.push({
+        vocabularyId: vocabulary.id,
+        pattern,
+        schemeIri,
+        severity: qualifier === "must" ? "violation" : "warning",
+      });
     }
   }
   return result;

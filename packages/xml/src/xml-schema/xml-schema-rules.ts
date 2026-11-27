@@ -1,5 +1,5 @@
 import type { StructureModelClass } from "@dataspecer/generators/structure-model/model";
-import { getControlledVocabularyRules } from "@dataspecer/generators/structure-model/helper/controlled-vocabulary-rules";
+import { getControlledVocabularyRules, rulesWithPattern } from "@dataspecer/generators/structure-model/helper/controlled-vocabulary-rules";
 
 /**
  * Rule on the IRI of a value, with the pattern converted to the regular
@@ -286,10 +286,10 @@ export function getXmlSchemaRules(
   if (structureClass.regex) {
     add(result.everyValue, structureClass.regex, null);
   }
-  for (const rule of controlledVocabularyRules.everyValue) {
+  for (const rule of rulesWithPattern(controlledVocabularyRules.everyValue)) {
     add(result.everyValue, rule.pattern, rule.vocabularyId);
   }
-  for (const rule of controlledVocabularyRules.atLeastOne) {
+  for (const rule of rulesWithPattern(controlledVocabularyRules.atLeastOne)) {
     add(result.atLeastOne, rule.pattern, rule.vocabularyId);
   }
   return result;

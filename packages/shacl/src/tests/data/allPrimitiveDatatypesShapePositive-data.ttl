@@ -18,6 +18,6 @@
                                         ex:datum_nastupu "2002-09-24"^^xsd:date;
                                         ex:zacatek_vyuky "09:00:00"^^xsd:time;
                                         ex:cas_zalozeni "2002-09-24T09:00:00Z"^^xsd:dateTimeStamp;
-                                        ex:profil "profil.com"^^xsd:anyURI;
+                                        ex:profil <https://profil.com>;
                                         ex:slovni_hodnoceni "Slovní hodnocení studenta"^^xsd:string
                                         .

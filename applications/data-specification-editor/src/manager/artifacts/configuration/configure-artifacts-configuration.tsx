@@ -1,6 +1,6 @@
 import type { Configuration, ConfigurationChain } from "@dataspecer/core/configuration";
 import {useState} from "react";
-import {Box, Tab, Tabs} from "@mui/material";
+import {Box, Divider, Tab, Tabs, Typography} from "@mui/material";
 import {DataSpecification} from "./tabs/data-specification";
 import {Json} from "./tabs/json";
 import {Csv} from "./tabs/csv";
@@ -12,6 +12,8 @@ import { getXmlConfigInput, xmlConfig, resolveXmlConfig } from "@dataspecer/xml/
 import { ArtifactNames } from "./tabs/artifact-names";
 import { ShaclV2 } from "./tabs/shacl-v2";
 import { getShaclConfigInput, shaclConfig, resolveShaclConfig } from "@dataspecer/shacl-v2";
+import { ShaclStructural } from "./tabs/shacl-structural";
+import { getStructuralShaclConfigInput, structuralShaclConfig, resolveStructuralShaclConfig } from "@dataspecer/shacl/configuration";
 
 /**
  * Component that renders the UI for configuration change. It is possible to pre-set default configuration, or keep it
@@ -63,11 +65,21 @@ export const ConfigureArtifactsConfiguration = ({defaultConfiguration, configura
             />
         }
         {currentTab === 4 &&
-            <ShaclV2
-                input={getShaclConfigInput(configuration)}
-                onChange={u => onConfigurationChange({ ...configuration, ...shaclConfig(u) })}
-                defaultObject={defaultConfiguration ? resolveShaclConfig(defaultConfiguration) : undefined}
-            />
+            <>
+                <Typography variant="h6" component="h3" sx={{ mb: 1 }}>Data structures</Typography>
+                <ShaclStructural
+                    input={getStructuralShaclConfigInput(configuration)}
+                    onChange={u => onConfigurationChange({ ...configuration, ...structuralShaclConfig(u) })}
+                    defaultObject={defaultConfiguration ? resolveStructuralShaclConfig(defaultConfiguration) : undefined}
+                />
+                <Divider sx={{ my: 3 }} />
+                <Typography variant="h6" component="h3" sx={{ mb: 1 }}>Application profile</Typography>
+                <ShaclV2
+                    input={getShaclConfigInput(configuration)}
+                    onChange={u => onConfigurationChange({ ...configuration, ...shaclConfig(u) })}
+                    defaultObject={defaultConfiguration ? resolveShaclConfig(defaultConfiguration) : undefined}
+                />
+            </>
         }
         {currentTab === 5 &&
             <ArtifactNames

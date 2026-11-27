@@ -24,7 +24,7 @@
     sh:name "Surname"@en, "Příjmení"@cs;
     sh:minCount 1;
     sh:path <https://slovník.gov.cz/veřejný-sektor/pojem/příjmení>.
-<6b43c794b32fafd3abea73c44e217793surnameShape> sh:datatype xsd:anyURI;
+<6b43c794b32fafd3abea73c44e217793surnameShape> sh:nodeKind sh:IRI;
     sh:pattern "^[A-Z][a-z]*$".
 <aec2db2a67ade8d68945158048f1088apersonShape> sh:property <6b43c794b32fafd3abea73c44e217793surnameShape>.
 <e4b5012e40ff23016694d283210090a0ageShape> a sh:PropertyShape;

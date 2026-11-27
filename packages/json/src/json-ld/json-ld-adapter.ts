@@ -3,7 +3,7 @@ import { pathRelative } from "@dataspecer/core/core/utilities/path-relative";
 import { DataSpecificationArtefact, DataSpecificationSchema } from "@dataspecer/core/data-specification/model";
 import { ArtefactGeneratorContext } from "@dataspecer/generators/generator";
 import { StructureModel, StructureModelClass, StructureModelComplexType, StructureModelProperty } from "@dataspecer/generators/structure-model/model";
-import { OFN } from "@dataspecer/core/well-known";
+import { OFN, XSD } from "@dataspecer/core/well-known";
 import { JsonConfiguration, resolveJsonConfig } from "../configuration.ts";
 import { JSON_LD_GENERATOR } from "./json-ld-generator.ts";
 import { AggregatedEntityInApplicationProfileAggregator, LocalEntityWrapped, splitProfileToSingleConcepts } from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
@@ -385,6 +385,8 @@ const typeMapping: Record<string, string> = {
   [OFN.dateTime]: "http://www.w3.org/2001/XMLSchema#dateTimeStamp",
   [OFN.integer]: "http://www.w3.org/2001/XMLSchema#integer",
   [OFN.decimal]: "http://www.w3.org/2001/XMLSchema#decimal",
-  [OFN.url]: "http://www.w3.org/2001/XMLSchema#anyURI",
+  // URI values are IRI nodes, not literals.
+  [OFN.url]: "@id",
+  [XSD.anyURI]: "@id",
   [OFN.string]: "http://www.w3.org/2001/XMLSchema#string",
 };
