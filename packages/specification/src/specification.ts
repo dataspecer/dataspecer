@@ -2,7 +2,7 @@ import type { AllConfiguration } from "./all-configuration.ts";
 import type { ConfigurationChain } from "@dataspecer/core/configuration";
 import { resolveDataSpecificationConfig } from "@dataspecer/core/data-specification/configuration";
 import { getSpecificationConfigurationChain } from "./configuration.ts";
-import { controlledVocabulariesToDcatCatalog, controlledVocabularyCatalogIri, type ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
+import { controlledVocabulariesToDcatCatalog, controlledVocabularyCatalogIri, controlledVocabularyDatasetIri, type ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 import { CONTROLLED_VOCABULARY_MODEL, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL, V1, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { getSemanticModelMainEntity, isMainSemanticModelEntity, isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship, SemanticModelEntity, type MainSemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
 import { isModelProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
@@ -144,17 +144,26 @@ export interface GenerateSpecificationOptions {
  * when there are no controlled vocabularies in the project, in which case
  * the caller should not register the file anywhere.
  */
-async function writeDcatCatalog(
+export async function writeDcatCatalog(
   projectModel: Record<string, ProjectModelEntity>,
   allModels: Record<string, EntityRecord>,
   writeFile: (path: string, data: string) => Promise<void>,
   fileName: string,
   catalogIri: string,
+  controlledVocabularyCatalogIris: Map<string, string> = new Map(),
 ): Promise<boolean> {
   const vocabularies = Object.values(projectModel)
     .filter((entity) => entity.modelType === CONTROLLED_VOCABULARY_MODEL)
     .map((entity) => allModels[entity.id]?.[entity.id] as ControlledVocabulary | undefined)
-    .filter((vocabulary): vocabulary is ControlledVocabulary => vocabulary !== undefined);
+    .filter((vocabulary): vocabulary is ControlledVocabulary => vocabulary !== undefined)
+    // A vocabulary without an IRI of its own is named after the catalog of the package
+    // owning it, the same way class profile assignments reference it.
+    .map((vocabulary) => {
+      const ownerCatalogIri = controlledVocabularyCatalogIris.get(vocabulary.id);
+      return vocabulary.iri === null && ownerCatalogIri !== undefined
+        ? { ...vocabulary, iri: controlledVocabularyDatasetIri(ownerCatalogIri, vocabulary.id) }
+        : vocabulary;
+    });
 
   if (vocabularies.length === 0) {
     return false;
@@ -703,7 +712,7 @@ export async function generateSpecification(packageId: string, context: Generate
   {
     const fileName = "controlled_vocabulary_catalog.ttl";
     const url = urls.artifactUrl(fileName);
-    const wrote = await writeDcatCatalog(projectModel, allModels, writeFile, fileName, ownCatalogIri);
+    const wrote = await writeDcatCatalog(projectModel, allModels, writeFile, fileName, ownCatalogIri, controlledVocabularyCatalogIris);
     if (wrote) {
       const descriptor = {
         iri: null,

@@ -65,22 +65,24 @@ export async function dsvToRdf(
       ...(configuration.prefixes || {}),
     },
   };
-  const embedsCatalog = !!(effectiveConfiguration.controlledVocabularies?.length && effectiveConfiguration.controlledVocabularyCatalogIri);
+  // The catalog is embedded only when there are vocabularies to put in it and an IRI to name it.
+  const catalog = effectiveConfiguration.controlledVocabularies?.length && effectiveConfiguration.controlledVocabularyCatalogIri
+    ? {
+      iri: effectiveConfiguration.controlledVocabularyCatalogIri,
+      vocabularies: effectiveConfiguration.controlledVocabularies,
+    }
+    : null;
   const prefixes = {
     ...(model.iri ? {"": model.iri} : {}),
     ...effectiveConfiguration.prefixes,
     // Only relevant (and only added) when a catalog is actually embedded -
     // an otherwise-unused prefix on every dsv.ttl would be noise.
-    ...(embedsCatalog ? { "dcat": "http://www.w3.org/ns/dcat#", "sh": "http://www.w3.org/ns/shacl#" } : {}),
+    ...(catalog ? { "dcat": "http://www.w3.org/ns/dcat#", "sh": "http://www.w3.org/ns/shacl#" } : {}),
   };
   const n3Writer = new N3.Writer({ prefixes });
-  (new DsvWriter(n3Writer, model)).writeConceptualModel();
-  if (embedsCatalog) {
-    writeControlledVocabularyCatalogQuads(
-      n3Writer,
-      effectiveConfiguration.controlledVocabularyCatalogIri!,
-      effectiveConfiguration.controlledVocabularies!,
-    );
+  (new DsvWriter(n3Writer, model, catalog?.iri)).writeConceptualModel();
+  if (catalog) {
+    writeControlledVocabularyCatalogQuads(n3Writer, catalog.iri, catalog.vocabularies);
   }
   // Convert to a string.
   return new Promise((resolve, reject) => n3Writer.end((error, result) => {
@@ -120,14 +122,23 @@ export class DsvWriter {
 
   private model: ApplicationProfile;
 
-  constructor(writer: N3.Writer, model: ApplicationProfile) {
+  /**
+   * IRI of the controlled vocabulary catalog embedded in the same document, if any.
+   */
+  private embeddedCatalogIri: string | undefined;
+
+  constructor(writer: N3.Writer, model: ApplicationProfile, embeddedCatalogIri?: string) {
     this.writer = writer;
     this.model = model;
+    this.embeddedCatalogIri = embeddedCatalogIri;
   }
 
   writeConceptualModel(): void {
     this.addType(this.model.iri, PROF.Profile);
     this.addType(this.model.iri, DSV.ApplicationProfile);
+    if (this.embeddedCatalogIri) {
+      this.addIri(this.model.iri, DSV.controlledVocabularies, this.embeddedCatalogIri);
+    }
     this.model.classProfiles
       .forEach(item => this.writeClassProfile(item));
     this.model.objectPropertyProfiles

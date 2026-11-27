@@ -84,6 +84,7 @@ export const DSV = {
   "ControlledVocabularyAssignment": IRI(DSV_PREFIX + "ControlledVocabularyAssignment"),
   "classProfile": IRI(DSV_PREFIX + "classProfile"),
   "controlledVocabulary": IRI(DSV_PREFIX + "controlledVocabulary"),
+  "controlledVocabularies": IRI(DSV_PREFIX + "controlledVocabularies"),
   "usageExpectation": IRI(DSV_PREFIX + "usageExpectation"),
   "replaces": IRI(DSV_PREFIX + "replaces"),
 };
