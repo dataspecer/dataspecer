@@ -25,7 +25,7 @@
         },
         "text_adresy": {
           "@id": "https://slovník.gov.cz/generický/adresy/pojem/text-adresy",
-          "@type": "xsd:anyURI"
+          "@type": "@id"
         },
         "typ_čísla_domovního": {
           "@id": "https://slovník.gov.cz/generický/adresy/pojem/typ-čísla-domovního",

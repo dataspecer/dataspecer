@@ -637,7 +637,19 @@ export class ShaclAdapter {
       } else if(dt.isAttribute() == true){
         // If the datatype is set, try to match it to xsd datatypes. If unable, use its IRI.
         const dtcasted = <StructureModelPrimitiveType> dt;
-        if(dtcasted != null){
+        if(dtcasted != null && isIriType(dtcasted)){
+          // IRI values are IRI nodes, not literals.
+          this.writer.addQuad(
+            namedNode( propertyNodeIRI ),
+            namedNode('http://www.w3.org/ns/shacl#nodeKind'),
+            namedNode('http://www.w3.org/ns/shacl#IRI'));
+          if(dtcasted.regex != null && dtcasted.regex != undefined && dtcasted.regex != ""){
+            this.writer.addQuad(
+              namedNode( propertyNodeIRI ),
+              namedNode('http://www.w3.org/ns/shacl#pattern'),
+              literal(dtcasted.regex.toString()));
+          }
+        } else if(dtcasted != null){
           const datatypeFromMap = simpleTypeMapQName[dtcasted.dataType];
           var datatypeString = "";
           //console.log("Datatype from map consideration: " + dtcasted.dataType);
@@ -655,14 +667,6 @@ export class ShaclAdapter {
               namedNode( propertyNodeIRI ),
               namedNode('http://www.w3.org/ns/shacl#datatype'),
               namedNode( simpleTypeMapIRI[dtcasted.dataType] ));
-            if(simpleTypeMapIRI[dtcasted.dataType] == "http://www.w3.org/2001/XMLSchema#anyURI"){
-              if(dtcasted.regex != null && dtcasted.regex != undefined && dtcasted.regex != ""){
-                this.writer.addQuad(
-                  namedNode( propertyNodeIRI ),
-                  namedNode('http://www.w3.org/ns/shacl#pattern'),
-                  literal(dtcasted.regex.toString()));
-              }
-            }
           } else{
             if(dtcasted.dataType != null){
               if(dtcasted.dataType.includes("http://www.w3.org/2001/XMLSchema#") && !this.addedXSDPrefix){
@@ -724,6 +728,13 @@ export class ShaclAdapter {
     }
   }
 }
+// Data types whose values are IRIs
+const iriDataTypes: string[] = [OFN.url, "http://www.w3.org/2001/XMLSchema#anyURI"];
+
+function isIriType(type: StructureModelPrimitiveType): boolean {
+  return iriDataTypes.includes(type.dataType);
+}
+
 // Types for specification in sh:datatype
 const simpleTypeMapQName: Record<string, QName> = {
   [OFN.boolean]: ["xsd", "boolean"],
@@ -732,7 +743,6 @@ const simpleTypeMapQName: Record<string, QName> = {
   [OFN.dateTime]: ["xsd", "dateTimeStamp"],
   [OFN.integer]: ["xsd", "integer"],
   [OFN.decimal]: ["xsd", "decimal"],
-  [OFN.url]: ["xsd", "anyURI"],
   [OFN.string]: ["xsd", "string"],
   [OFN.text]: ["rdf", "langString"],
 };
@@ -745,7 +755,6 @@ const simpleTypeMapIRI: Record<string, string> = {
   [OFN.dateTime]: "http://www.w3.org/2001/XMLSchema#dateTimeStamp",
   [OFN.integer]: "http://www.w3.org/2001/XMLSchema#integer",
   [OFN.decimal]: "http://www.w3.org/2001/XMLSchema#decimal",
-  [OFN.url]: "http://www.w3.org/2001/XMLSchema#anyURI",
   [OFN.string]: "http://www.w3.org/2001/XMLSchema#string",
   [OFN.text]: "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString",
 };

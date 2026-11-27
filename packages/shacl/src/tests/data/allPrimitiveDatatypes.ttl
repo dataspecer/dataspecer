@@ -10,5 +10,5 @@ base:adresa a legsb:adresa;
     genadr:znak-čísla-orientačního "1938-05-24"^^xsd:date;
     legsb:má-název-katastrálního-území "08:21:19.365Z"^^<http://www.w3.org/2001/XMLSchema#time>;
     legsb:má-název-okresu "1893-12-23T13:13:10.0Z"^^<http://www.w3.org/2001/XMLSchema#dateTimeStamp>;
-    genadr:text-adresy "https://EmXlmwuwQvtihvXvExwYMketvvozLv.avIndVLvOPFIuf64-byM1i8l0ZBOUjXogKarc.WaiTYMUUvuWHy"^^<http://www.w3.org/2001/XMLSchema#anyURI>;
+    genadr:text-adresy <https://EmXlmwuwQvtihvXvExwYMketvvozLv.avIndVLvOPFIuf64-byM1i8l0ZBOUjXogKarc.WaiTYMUUvuWHy>;
     genadr:název-městského-obvodu-městské-části "Název městské části".

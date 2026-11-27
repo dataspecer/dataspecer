@@ -2,7 +2,7 @@
     <https://slovník.gov.cz/generický/adresy/pojem/má-kód-adresního-místa> true;
     <https://slovník.gov.cz/generický/adresy/pojem/název-městského-obvodu-městské-části> "proident non";
     <https://slovník.gov.cz/generický/adresy/pojem/poštovní-směrovací-číslo> -13233192;
-    <https://slovník.gov.cz/generický/adresy/pojem/text-adresy> "https://EmXlmwuwQvtihvXvExwYMketvvozLv.avIndVLvOPFIuf64-byM1i8l0ZBOUjXogKarc.WaiTYMUUvuWHy"^^<http://www.w3.org/2001/XMLSchema#anyURI>;
+    <https://slovník.gov.cz/generický/adresy/pojem/text-adresy> <https://EmXlmwuwQvtihvXvExwYMketvvozLv.avIndVLvOPFIuf64-byM1i8l0ZBOUjXogKarc.WaiTYMUUvuWHy>;
     <https://slovník.gov.cz/generický/adresy/pojem/typ-čísla-domovního> "-4.7043929721552097"^^<http://www.w3.org/2001/XMLSchema#decimal>;
     <https://slovník.gov.cz/generický/adresy/pojem/znak-čísla-orientačního> "1938-05-24"^^<http://www.w3.org/2001/XMLSchema#date>;
     <https://slovník.gov.cz/legislativní/sbírka/111/2009/pojem/má-název-katastrálního-území> "08:21:19.365Z"^^<http://www.w3.org/2001/XMLSchema#time>;
