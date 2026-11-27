@@ -26,8 +26,7 @@ import {
   StructureModelProperty,
   type StructureModelComplexType,
 } from "@dataspecer/generators/structure-model/model";
-import type { ControlledVocabularyPattern } from "@dataspecer/generators/conceptual-model/model";
-import { getControlledVocabularyRules } from "@dataspecer/generators/structure-model/helper/controlled-vocabulary-rules";
+import { getControlledVocabularyRules, rulesWithPattern, type ControlledVocabularyPatternRule } from "@dataspecer/generators/structure-model/helper/controlled-vocabulary-rules";
 import { XSD, OFN, OFN_LABELS } from "@dataspecer/core/well-known";
 import {
   DataSpecification,
@@ -405,7 +404,7 @@ function structureModelClassPrimitive(modelClass: StructureModelClass): JsonSche
   // Every pattern is a rule of its own, a value must match all of them.
   const rules: { pattern: string; vocabularyId: string | null }[] = [
     ...(modelClass.regex ? [{ pattern: modelClass.regex, vocabularyId: null }] : []),
-    ...getControlledVocabularyRules(modelClass).everyValue,
+    ...rulesWithPattern(getControlledVocabularyRules(modelClass).everyValue),
   ];
   if (rules.length === 1) {
     str.pattern = rules[0].pattern;
@@ -432,7 +431,7 @@ function stringWithPattern(pattern: string, vocabularyId: string | null): JsonSc
  *
  * @returns Null if the values of the class do not have an IRI in the schema.
  */
-function valueWithIriMatching(modelClass: StructureModelClass, rule: ControlledVocabularyPattern): JsonSchemaDefinition | null {
+function valueWithIriMatching(modelClass: StructureModelClass, rule: ControlledVocabularyPatternRule): JsonSchemaDefinition | null {
   if (modelClass.properties.length === 0 && !modelClass.emptyAsComplex) {
     return stringWithPattern(rule.pattern, rule.vocabularyId);
   }
@@ -456,7 +455,7 @@ function getValuesRulesOfControlledVocabularies(property: StructureModelProperty
   if (property.dataTypes.length !== 1 || !dataType.isAssociation()) {
     return [];
   }
-  return getControlledVocabularyRules(dataType.dataType).atLeastOne
+  return rulesWithPattern(getControlledVocabularyRules(dataType.dataType).atLeastOne)
     .map(rule => valueWithIriMatching(dataType.dataType, rule))
     .filter((rule): rule is JsonSchemaDefinition => rule !== null);
 }

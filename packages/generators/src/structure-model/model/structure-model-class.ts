@@ -91,7 +91,7 @@ export class StructureModelClass {
   /**
    * Controlled vocabularies assigned to the class profile,
    * both its own and the ones assigned from the profiled entities.
-   * Use {@link getControlledVocabularyPatterns} to get the patterns they require.
+   * Use {@link getControlledVocabularyRules} to get the rules they impose.
    */
   controlledVocabularies: ConceptualModelControlledVocabularyAssignment[] = [];
 
