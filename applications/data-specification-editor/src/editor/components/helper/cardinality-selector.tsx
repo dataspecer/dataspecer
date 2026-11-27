@@ -3,7 +3,7 @@ import React, {useEffect} from "react";
 import {useTranslation} from "react-i18next";
 import {dialog, DialogParameters, useDialog} from "../../dialog";
 import {DialogTitle} from "../detail/common";
-import {isEqual} from "lodash";
+import { deepEqual } from "@dataspecer/utilities";
 import { DataPsmAttribute } from "@dataspecer/core/data-psm/model/data-psm-attribute";
 import { DataPsmAssociationEnd } from "@dataspecer/core/data-psm/model/data-psm-association-end";
 
@@ -193,7 +193,7 @@ export const CardinalitySelector: React.FC<CardinalitySelectorProps> = ({value, 
     const customIsUnique = custom && !cardinalityToKnown(custom);
 
     useEffect(() => {
-        if (!cardinalityToKnown(value) && !isEqual(custom, value)) {
+        if (!cardinalityToKnown(value) && !deepEqual(custom, value)) {
             setCustom(value);
         }
     }, [value, custom]);

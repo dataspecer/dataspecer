@@ -58,7 +58,7 @@ import { ReactPrevSetStateType } from "./utilities";
 import { GroupMenu } from "./node/group-menu";
 import { findTopLevelGroup } from "../action/utilities";
 import { GeneralCanvasMenuComponentProps } from "./canvas/canvas-menu-general";
-import { isEqual, omit } from "lodash";
+import { deepEqual } from "@dataspecer/utilities";
 import { VisualModelNodeName } from "./node/visual-model-diagram-node";
 import { AlignmentMenu } from "./node/alignment-actions-menu";
 
@@ -939,7 +939,7 @@ const artificialChange: NodePositionChange = {
  * If so it is removed true is returned.
  */
 const isOnNodesChangeArtificiallyCalled = (changes: NodeChange[]) => {
-  if (changes.length > 0 && isEqual(changes[0], artificialChange)) {
+  if (changes.length > 0 && deepEqual(changes[0], artificialChange)) {
     changes.shift();
     return true;
   }
@@ -1434,10 +1434,12 @@ const shouldBreakSelection = (
   nextNode: NodeType
 ) => {
 
-  const shouldBreak = !isEqual(omit(prevNode.data, ["position"]), omit(nextNode.data, ["position"])) ||
+  const { position: prevPosition, ...prevData } = prevNode.data;
+  const { position: nextPosition, ...nextData } = nextNode.data;
+  const shouldBreak = !deepEqual(prevData, nextData) ||
     nextNode.position.x !== prevNode.position.x ||
     nextNode.position.y !== prevNode.position.y ||
-    nextNode.data.position.anchored !== prevNode.data.position.anchored;
+    nextPosition.anchored !== prevPosition.anchored;
   return shouldBreak;
 }
 

@@ -5,7 +5,6 @@ import type {
     ELK as ELKType,
 } from "elkjs";
 import ELK from "elkjs/lib/elk.bundled.js";
-import _ from "lodash";
 import { ConfigurationsContainer, ElkConfigurationsContainer } from "../../configurations/configurations-container.ts";
 import { Graph, isSubgraph, MainGraph } from "../../graph/representation/graph.ts";
 import { ElkGraphTransformer } from "../graph-transformers/elk-graph-transformer.ts";
@@ -135,7 +134,7 @@ export class ElkLayout implements LayoutAlgorithm {
     protected graph: Graph;
     protected graphInElk: ElkNode;
     private getGraphInElk(): ElkNode {
-        return _.cloneDeep(this.graphInElk);
+        return structuredClone(this.graphInElk);
     }
     protected configurations: ConfigurationsContainer;
     private elkGraphTransformer: ElkGraphTransformer;

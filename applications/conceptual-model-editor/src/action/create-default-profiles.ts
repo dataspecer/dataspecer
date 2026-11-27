@@ -16,14 +16,15 @@ import { UseDiagramType } from "../diagram/diagram-hook";
 import { addSemanticRelationshipProfileToVisualModelAction } from "./add-relationship-profile-to-visual-model";
 import { findAnyWritableModelFromRawInput } from "../dataspecer/cme-model/cme-model-utilities";
 import { CmeSemanticModel } from "../dataspecer/cme-model";
-import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
+import { CmeOperationBatchBuilder, CmeOperationExecutor, cmeOperations } from "../operation";
+import { classProfileDialogStateToValues } from "./utilities/update-class-profile-batch";
+import { dialogVocabulariesToOperation } from "./utilities/controlled-vocabulary-adapter";
+import { createCreateRelationshipProfileBatch } from "./utilities/update-relationship-profile-batch";
+import { reportFailure } from "./utilities/report-failure";
 import {
   ClassProfileDialogState,
   createNewProfileClassDialogState,
 } from "../dialog/class-profile/edit-class-profile-dialog-state";
-import {
-  classProfileDialogStateToNewCmeClassProfile,
-} from "../dialog/class-profile/edit-class-profile-dialog-state-adapter";
 import {
   isSemanticModelClassProfile,
   isSemanticModelRelationshipProfile,
@@ -34,12 +35,8 @@ import {
   createNewAssociationProfileDialogState,
 } from "../dialog/association-profile/edit-association-profile-dialog-state";
 import { Language } from "../configuration";
-import {
-  associationProfileDialogStateToNewCmeRelationshipProfileWithOverriddenEnds,
-} from "../dialog/association-profile/edit-association-profile-dialog-state-adapter";
 import { DialogSemanticTracker } from "../dialog-v2/dialog-semantic-tracker";
 import { LabelResolver } from "../dependency-tracker";
-import { applyControlledVocabularySelection } from "./apply-controlled-vocabulary-selection";
 import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 
 /**
@@ -47,7 +44,7 @@ import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-mod
  * The exact behavior is described here: https://github.com/dataspecer/dataspecer/pull/1201
  */
 export async function createDefaultProfilesAction(
-  cmeExecutor: CmeModelOperationExecutor,
+  executor: CmeOperationExecutor,
   notifications: UseNotificationServiceWriterType,
   graph: UseModelGraphContextType,
   diagram: UseDiagramType,
@@ -68,12 +65,12 @@ export async function createDefaultProfilesAction(
   }
   // We have to wait otherwise we might start creating relation profiles for non-existing class profiles
   const createdClassProfiles = await createDefaultClassProfiles(
-    cmeExecutor, notifications, graph, diagram, options.language, classesContext,
+    executor, notifications, graph, diagram, options.language, classesContext,
     visualModel, semanticClassesToProfile, shouldBeAddedToVisualModel, tracker,
     labelResolver, availableVocabularies);
   createDefaultRelationshipProfiles(
     notifications, classesContext, graph, diagram, options.language, visualModel,
-    writableSemanticModel, cmeExecutor, semanticRelationshipsToProfile,
+    writableSemanticModel, executor, semanticRelationshipsToProfile,
     createdClassProfiles, shouldBeAddedToVisualModel, tracker, labelResolver,
     availableVocabularies);
 };
@@ -86,7 +83,7 @@ export async function createDefaultProfilesAction(
  *  Or null, if it is explicitly null, then it means that we failed to create the class profile for some reason.
  */
 async function createDefaultClassProfiles(
-  cmeExecutor: CmeModelOperationExecutor,
+  executor: CmeOperationExecutor,
   notifications: UseNotificationServiceWriterType,
   graph: UseModelGraphContextType,
   diagram: UseDiagramType,
@@ -102,7 +99,7 @@ async function createDefaultClassProfiles(
   const createdClassProfiles: Record<string, (string | null)[]> = {};
   for (const entityToProfile of classesAndClassProfilesToProfile) {
     const createdClassProfile = await createDefaultClassProfile(
-      cmeExecutor, notifications, graph, diagram, language, classesContext,
+      executor, notifications, graph, diagram, language, classesContext,
       visualModel, entityToProfile, shouldBeAddedToVisualModel, tracker,
       labelResolver, availableVocabularies);
 
@@ -121,7 +118,7 @@ async function createDefaultClassProfiles(
  * @returns The identifier of the created class profile or null if the creation of profile failed
  */
 async function createDefaultClassProfile(
-  cmeExecutor: CmeModelOperationExecutor,
+  executor: CmeOperationExecutor,
   notifications: UseNotificationServiceWriterType,
   graph: UseModelGraphContextType,
   diagram: UseDiagramType,
@@ -149,7 +146,11 @@ async function createDefaultClassProfile(
   const profileClassState = createNewProfileClassDialogState(
     visualModel, language, [classOrClassProfileToBeProfiled.id], tracker,
     labelResolver, graph, availableVocabularies);
-  const createdClassProfile = createClassProfile(profileClassState, cmeExecutor);
+  const createdClassProfile = await createClassProfile(
+    executor, notifications, profileClassState);
+  if (createdClassProfile === null) {
+    return null;
+  }
   if (shouldBeAddedToVisualModel) {
     if (isWritableVisualModel(visualModel)) {
       const visualNode = visualModel.getVisualEntitiesForRepresented(entityToProfile)?.[0] ?? null;
@@ -167,15 +168,32 @@ async function createDefaultClassProfile(
   return createdClassProfile.identifier;
 }
 
-function createClassProfile(
+/**
+ * @returns Reference of the created class profile or null on failure.
+ */
+async function createClassProfile(
+  executor: CmeOperationExecutor,
+  notifications: UseNotificationServiceWriterType,
   state: ClassProfileDialogState,
-  cmeExecutor: CmeModelOperationExecutor
 ) {
-  const result = cmeExecutor.createClassProfile(
-    classProfileDialogStateToNewCmeClassProfile(state));
-  applyControlledVocabularySelection(
-    cmeExecutor, result, [], state.controlledVocabularies.items);
-  return result;
+  // Specializations are not created here, as in the legacy implementation.
+  const create = cmeOperations.createProfileClass.create(executor.createContext, {
+    profileModel: state.model.identifier,
+    ...classProfileDialogStateToValues(state),
+  });
+  const outcome = await executor.execute(new CmeOperationBatchBuilder(executor.createContext)
+    .addArguments(create)
+    .add(cmeOperations.updateControlledVocabularyAssignments, {
+      profileModel: state.model.identifier,
+      entity: create.identifier,
+      previous: [],
+      next: dialogVocabulariesToOperation(state.controlledVocabularies.items),
+    })
+    .build());
+  if (reportFailure(notifications, outcome, "Can not create the class profile.")) {
+    return null;
+  }
+  return { identifier: create.identifier, model: state.model.identifier };
 }
 
 function createDefaultRelationshipProfiles(
@@ -186,7 +204,7 @@ function createDefaultRelationshipProfiles(
   language: Language,
   visualModel: VisualModel | null,
   writableCmeModel: CmeSemanticModel,
-  cmeExecutor: CmeModelOperationExecutor,
+  executor: CmeOperationExecutor,
   edgesToProfile: string[],
   createdClassProfiles: Record<string, (string | null)[]>,
   shouldBeAddedToVisualModel: boolean,
@@ -199,7 +217,7 @@ function createDefaultRelationshipProfiles(
   for (const edgeToProfile of edgesToProfile) {
     createDefaultRelationshipProfile(
       notifications, classesContext, graph, diagram, language,
-      writableSemanticModel, cmeExecutor, visualModel,
+      writableSemanticModel, executor, visualModel,
       edgeToProfile, createdClassProfiles, shouldBeAddedToVisualModel, tracker,
       labelResolver, availableVocabularies);
   }
@@ -217,7 +235,7 @@ async function createDefaultRelationshipProfile(
   diagram: UseDiagramType,
   language: Language,
   model: InMemorySemanticModel,
-  cmeExecutor: CmeModelOperationExecutor,
+  executor: CmeOperationExecutor,
   visualModel: VisualModel | null,
   entityToProfile: string,
   createdClassProfiles: Record<string, (string | null)[]>,
@@ -245,7 +263,7 @@ async function createDefaultRelationshipProfile(
     let relationshipProfileEnd: string;
     if (createdClassProfiles[end.concept] === undefined || createdClassProfiles[end.concept].length > 1) {
       const possibleEnd = await createDefaultClassProfile(
-        cmeExecutor, notifications, graph, diagram, language, classesContext,
+        executor, notifications, graph, diagram, language, classesContext,
         visualModel, end.concept, shouldBeAddedToVisualModel, tracker,
         labelResolver, availableVocabularies);
 
@@ -282,11 +300,13 @@ async function createDefaultRelationshipProfile(
   const relationshipProfileState = createNewAssociationProfileDialogState(
     visualModel, language, [relationshipToProfile.id], tracker, labelResolver);
 
-  const result = cmeExecutor.createRelationshipProfile(
-    associationProfileDialogStateToNewCmeRelationshipProfileWithOverriddenEnds(
-      relationshipProfileState, ends[0].concept, ends[1].concept));
-  cmeExecutor.updateSpecialization(result, relationshipProfileState.model.identifier,
-    [], relationshipProfileState.specializations);
+  const { batch, created: result } = createCreateRelationshipProfileBatch(
+    executor.createContext, relationshipProfileState,
+    { domain: ends[0].concept, range: ends[1].concept });
+  const outcome = await executor.execute(batch);
+  if (reportFailure(notifications, outcome, "Can not create the relationship profile.")) {
+    return;
+  }
 
   if (shouldBeAddedToVisualModel) {
     if (isWritableVisualModel(visualModel)) {

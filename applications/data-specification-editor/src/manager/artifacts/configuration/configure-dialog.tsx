@@ -1,8 +1,8 @@
+import type { Configuration } from "@dataspecer/core/configuration";
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Tab, Tabs } from "@mui/material";
-import { clone } from "lodash";
 import { FC, useContext, useEffect, useState } from "react";
 import { DefaultConfigurationContext } from "../../../application";
-import { ClientConfiguration, ClientConfigurator } from "../../../configuration";
+import { getClientConfigInput, clientConfig, resolveClientConfig } from "../../../configuration";
 import { Modeling } from "./tabs/modeling";
 
 /**
@@ -11,14 +11,14 @@ import { Modeling } from "./tabs/modeling";
 export const ConfigureDialog: FC<{
   isOpen: boolean,
   close: () => void,
-  onChange: (configuration: object) => void,
-  configuration: object,
+  onChange: (configuration: Configuration) => void,
+  configuration: Configuration,
 }> = ({isOpen, close, onChange, configuration}) => {
   const defaultConfiguration = useContext(DefaultConfigurationContext);
-  const [localConfiguration, setLocalConfiguration] = useState(() => clone(configuration));
+  const [localConfiguration, setLocalConfiguration] = useState(() => ({...configuration}));
   useEffect(() => {
     if (isOpen) {
-      setLocalConfiguration(clone(configuration))
+      setLocalConfiguration({...configuration});
     }
   }, [isOpen, configuration]);
 
@@ -41,9 +41,9 @@ export const ConfigureDialog: FC<{
       </Box>
       {currentTab === 0 &&
         <Modeling
-            input={ClientConfigurator.getFromObject(localConfiguration)}
-            onChange={u => setLocalConfiguration(ClientConfigurator.setToObject(localConfiguration, u))}
-            defaultObject={ClientConfigurator.getFromObject(defaultConfiguration) as ClientConfiguration}
+            input={getClientConfigInput(localConfiguration)}
+            onChange={u => setLocalConfiguration({ ...localConfiguration, ...clientConfig(u) })}
+            defaultObject={resolveClientConfig(defaultConfiguration)}
         />
       }
 

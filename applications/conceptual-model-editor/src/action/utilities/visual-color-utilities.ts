@@ -1,12 +1,7 @@
 import { VisualModel } from "@dataspecer/visual-model";
 
 import { createLogger } from "../../application";
-import { ClassesContext } from "../../context/classes-context";
-import {
-  cmeOperations,
-  createCmeOperationExecutor,
-  createCmeEntityIdentifier,
-} from "../../operation";
+import { CmeOperationExecutor, cmeOperations } from "../../operation";
 import {
   selectColorableVisualEntities,
   VisualColorDialogState,
@@ -24,7 +19,7 @@ const LOG = createLogger(import.meta.url);
  * visual dialogs and support for per-class visual information to visual model.
  */
 export function applyVisualColorFromDialog(
-  classes: ClassesContext,
+  executor: CmeOperationExecutor,
   visualModel: VisualModel | null,
   represented: string,
   initialState: VisualColorDialogState,
@@ -36,11 +31,6 @@ export function applyVisualColorFromDialog(
   }
   const visualEntities = selectColorableVisualEntities(visualModel, represented)
     .map(item => item.id);
-  const executor = createCmeOperationExecutor(cmeOperations, {
-    entityModels: classes.semanticModelsList,
-    visualModels: classes.visualModelsList,
-    createNewEntityIdentifier: createCmeEntityIdentifier,
-  });
   executor.execute(cmeOperations.setVisualEntityColor.create(
       executor.createContext, {
     visualModel: visualModel.getId(),

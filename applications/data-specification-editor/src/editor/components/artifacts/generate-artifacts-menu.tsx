@@ -22,10 +22,9 @@ import { Button, CardContent, Checkbox, DialogActions, DialogContent, Divider, I
 import { styled } from "@mui/material/styles";
 import copy from "copy-to-clipboard";
 import FileSaver from "file-saver";
-import { uniqueId } from "lodash";
 import mime from "mime/lite";
 import { useSnackbar } from "notistack";
-import React, { useCallback, useContext, useMemo, useRef, useState } from "react";
+import React, { useCallback, useContext, useId, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { DefaultConfigurationContext } from "../../../application";
 import { dialog, useDialog } from "../../dialog";
@@ -238,7 +237,7 @@ export const GenerateArtifactsMenu: React.FC<{
     setArtifactPreview: (value: string[]) => void
 }> = ({setArtifactPreview, artifactPreview}) => {
     const {isOpen, open, close} = useToggle();
-    const [ id ] = useState(() => uniqueId());
+    const id = useId();
     const ref = useRef(null);
     const {t} = useTranslation("artifacts");
 
@@ -310,7 +309,7 @@ export const GenerateArtifactsMenu: React.FC<{
                     <Typography variant={"h5"} component={"div"}>{t("title generate artifacts")}</Typography>
                 </CardContent>
 
-                {filteredItems.map(item => item === DIVIDER ? <Divider key={uniqueId()}/> : (
+                {filteredItems.map((item, index) => item === DIVIDER ? <Divider key={`divider-${index}`}/> : (
                     <GeneratedArtifactItem
                         key={item.generator}
                         title={item.title}

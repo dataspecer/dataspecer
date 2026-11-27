@@ -1,3 +1,4 @@
+import type { Configuration } from "@dataspecer/core/configuration";
 import SettingsIcon from "@mui/icons-material/Settings";
 import type { Entity } from "@dataspecer/core/entity-model";
 import { createUpdateEntityOperation } from "@dataspecer/core/operation";
@@ -20,7 +21,7 @@ export const ConfigureButton: FC = () => {
   const configuration = specification?.userPreferences ?? {};
 
   const update = useCallback(
-    async (configuration: object) => {
+    async (configuration: Configuration) => {
       const userPreferences = { ...specification.userPreferences, ...configuration };
       modelStore.transaction([{
         modelId: specification.iri,

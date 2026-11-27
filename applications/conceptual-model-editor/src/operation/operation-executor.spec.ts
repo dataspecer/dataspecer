@@ -18,6 +18,7 @@ describe("CmeOperationExecutor", () => {
       name: null,
       description: null,
       externalDocumentationUrl: null,
+      order: null,
     }));
     expect(result.exception).toBeInstanceOf(MissingModel);
     expect(result.args.semanticModel).toBe("missing-model");
@@ -40,6 +41,7 @@ describe("CmeOperationExecutor", () => {
       name: null,
       description: null,
       externalDocumentationUrl: null,
+      order: null,
     });
     expect(args.identifier).toBe("prepared-identifier");
     // Executing the arguments creates the entity with the prepared identifier.
@@ -73,6 +75,7 @@ describe("CmeOperationExecutor", () => {
       name: null,
       description: null,
       externalDocumentationUrl: null,
+      order: null,
     };
     // There is no model yet.
     const before = await executor.execute(cmeOperations.createSemanticClass.create(

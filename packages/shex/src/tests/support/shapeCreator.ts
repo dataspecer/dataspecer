@@ -7,8 +7,7 @@ class ShapeCreator{
 
     async createShexShape(sm : StructureModel) : Promise<String> {
         var artefact = new DataSpecificationArtefact();
-        artefact.configuration = {publicBaseUrl: 'https://example.org/'};
-        const adapter = new ShexAdapter(sm, null, artefact);
+        const adapter = new ShexAdapter(sm, null, artefact, "https://example.org/");
         const data =  (await adapter.generate()).data;
 
         return data;
@@ -16,8 +15,7 @@ class ShapeCreator{
 
     async createShexMap(sm : StructureModel) : Promise<String> {
         var artefact = new DataSpecificationArtefact();
-        artefact.configuration = {publicBaseUrl: 'https://example.org/'};
-        const adapter = new ShexMapAdapter(sm, null, artefact);
+        const adapter = new ShexMapAdapter(sm, null, artefact, "https://example.org/");
         const data =  (await adapter.generate()).data;
 
         return data;

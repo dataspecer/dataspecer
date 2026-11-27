@@ -12,8 +12,7 @@
   },
   "exports": {
     ".": "./lib/index.js",
-    "./configuration/configurator": "./lib/configuration/configurator.js",
-    "./configuration/utils": "./lib/configuration/utils.js",
+    "./configuration": "./lib/configuration/index.js",
     "./core/adapter/rdf": "./lib/core/adapter/rdf/index.js",
     "./core/adapter/rdf/rdf-source-wrap": "./lib/core/adapter/rdf/rdf-source-wrap.js",
     "./core/core-reader": "./lib/core/core-reader.js",

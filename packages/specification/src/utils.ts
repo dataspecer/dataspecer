@@ -1,6 +1,7 @@
+import type { AllConfiguration } from "./all-configuration.ts";
+import type { ConfigurationChain } from "@dataspecer/core/configuration";
 import { isModelProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import type { Entity } from "@dataspecer/core-v2";
-import { createDefaultConfigurationModelFromJsonObject } from "@dataspecer/core-v2/configuration-model";
 import { isSemanticModelClass, isSemanticModelRelationship, SemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
 import { isSemanticModelRelationshipProfile } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { isControlledVocabulary, type ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
@@ -9,9 +10,9 @@ import type { EntityRecord } from "@dataspecer/core/entity-model";
 import { createSetEntityOperation, generateOperationId, type Transaction } from "@dataspecer/core/operation";
 import { ldesToRdf, profileTransactionsToLdes, vocabularyTransactionsToLdes } from "@dataspecer/data-specification-vocabulary/ldes";
 import * as DataSpecificationVocabulary from "@dataspecer/data-specification-vocabulary/semantic-model";
-import { DOCUMENTATION_MAIN_TEMPLATE_PARTIAL, generateDocumentation, getPartialDocumentationConfiguration } from "@dataspecer/documentation";
+import { DOCUMENTATION_MAIN_TEMPLATE_PARTIAL, generateDocumentation } from "@dataspecer/documentation";
 import { generateLightweightOwl as generateLightweightOwlInternal } from "@dataspecer/lightweight-owl";
-import { mergeDocumentationConfigurations } from "./documentation/documentation.ts";
+import { resolveSpecificationDocumentationConfig } from "./documentation/documentation.ts";
 import { ModelDescription } from "./model.ts";
 import { GenerateSpecificationContext } from "./specification.ts";
 import { semanticModelsToShacl, shaclToRdf, type SemanticModelsToShaclConfiguration } from "@dataspecer/shacl-v2";
@@ -269,15 +270,11 @@ export async function generateHtmlDocumentation(
     prefixMap?: Record<string, string>;
   } = {},
   generatorContext: GenerateSpecificationContext,
+  configurationChain: ConfigurationChain<AllConfiguration>,
 ): Promise<string> {
   const externalArtifacts = options.externalArtifacts ?? {};
 
-  const configuration = createDefaultConfigurationModelFromJsonObject(rootPackage.data as object);
-  const documentationConfiguration = getPartialDocumentationConfiguration(configuration.getRawData());
-  const fullConfiguration = mergeDocumentationConfigurations([
-    generatorContext.defaultDocumentationConfiguration ?? {},
-    documentationConfiguration,
-  ]);
+  const fullConfiguration = resolveSpecificationDocumentationConfig(configurationChain);
 
   const context = {
     label: rootPackage.label ?? {},
@@ -295,9 +292,9 @@ export async function generateHtmlDocumentation(
   return await generateDocumentation(
     context,
     {
+      ...fullConfiguration,
       template: fullConfiguration.partials[DOCUMENTATION_MAIN_TEMPLATE_PARTIAL]!,
       language: options.language ?? "en",
-      partials: fullConfiguration.partials,
     },
   );
 }

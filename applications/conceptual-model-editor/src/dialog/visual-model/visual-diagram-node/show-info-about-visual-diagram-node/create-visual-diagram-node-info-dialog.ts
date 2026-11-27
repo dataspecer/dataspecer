@@ -6,7 +6,7 @@ import { VisualDiagramNodeInfoDialog } from "./visual-diagram-node-info-dialog";
 
 export const createVisualDiagramNodeInfoDialog = (
   state: EditVisualDiagramNodeDialogState,
-  onConfirm: ((state: EditVisualDiagramNodeDialogState) => void) | null,
+  onConfirm: ((state: EditVisualDiagramNodeDialogState) => void | Promise<void>) | null,
 ): DialogWrapper<EditVisualDiagramNodeDialogState> => {
   return {
     label: "dialog.visual-diagram-node.label-info",

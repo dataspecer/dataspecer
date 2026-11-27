@@ -1,5 +1,4 @@
-import { DeepPartial } from "@dataspecer/core/core/utilities/deep-partial";
-import { DataSpecificationConfiguration } from "@dataspecer/core/data-specification/configuration";
+import { DataSpecificationConfiguration, DataSpecificationConfigurationInput } from "@dataspecer/core/data-specification/configuration";
 import { Box, FormGroup, Grid, Typography } from "@mui/material";
 import { FC } from "react";
 import { useTranslation } from "react-i18next";
@@ -7,9 +6,9 @@ import { InfoHelp } from "../../../../components/info-help";
 import { SelectWithDefault, SwitchWithDefault, TextFieldWithDefault } from "../ui-components/index";
 
 export const DataSpecification: FC<{
-  input: DeepPartial<DataSpecificationConfiguration>,
+  input: DataSpecificationConfigurationInput,
   defaultObject?: DataSpecificationConfiguration,
-  onChange: (options: DeepPartial<DataSpecificationConfiguration>) => void,
+  onChange: (options: DataSpecificationConfigurationInput) => void,
 }> = ({ input, onChange, defaultObject }) => {
   const {t} = useTranslation("detail");
 

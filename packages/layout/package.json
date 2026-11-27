@@ -12,10 +12,10 @@
     ".": "./lib/index.js"
   },
   "dependencies": {
+    "@dataspecer/core": "*",
     "@dataspecer/core-v2": "*",
     "@dataspecer/visual-model": "*",
-    "elkjs": "0.12.0",
-    "lodash": "^4.18.1"
+    "elkjs": "0.12.0"
   },
   "devDependencies": {
     "@types/node": "^26.6.4",

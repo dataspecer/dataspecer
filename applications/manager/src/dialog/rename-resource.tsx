@@ -5,10 +5,10 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { BetterModalProps } from "@/lib/better-modal"
 import { LanguageString } from "@dataspecer/core/core/core-resource"
-import _uniqueId from 'lodash/uniqueId'
 import { Plus, X } from "lucide-react"
 import { useLayoutEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { v4 as uuidv4 } from "uuid"
 
 interface LS {
   key: string;
@@ -31,15 +31,15 @@ export const RenameResourceDialog = ({ inputLabel, inputDescription, isOpen, res
 
   const [labels, setLabels] = useState<LS[]>(() => {
     if (inputLabel && Object.keys(inputLabel).length > 0) {
-      return Object.entries(inputLabel).map(([lang, value]) => ({ lang, value, key: _uniqueId() }));
+      return Object.entries(inputLabel).map(([lang, value]) => ({ lang, value, key: uuidv4() }));
     }
-    return [{ lang: "cs", value: "", key: _uniqueId() }];
+    return [{ lang: "cs", value: "", key: uuidv4() }];
   });
   const [description, setDescription] = useState<LS[]>(() => {
     if (inputDescription && Object.keys(inputDescription).length > 0) {
-      return Object.entries(inputDescription).map(([lang, value]) => ({ lang, value, key: _uniqueId() }));
+      return Object.entries(inputDescription).map(([lang, value]) => ({ lang, value, key: uuidv4() }));
     }
-    return [{ lang: "cs", value: "", key: _uniqueId() }];
+    return [{ lang: "cs", value: "", key: uuidv4() }];
   });
 
   useLayoutEffect(() => {
@@ -51,7 +51,7 @@ export const RenameResourceDialog = ({ inputLabel, inputDescription, isOpen, res
   const removeName = (key: string) => {
     let newNames = labels.filter(i => i.key !== key);
     if (newNames.length === 0) {
-      newNames.push({ lang: "cs", value: "", key: _uniqueId() });
+      newNames.push({ lang: "cs", value: "", key: uuidv4() });
     }
     setLabels(newNames);
   }
@@ -59,7 +59,7 @@ export const RenameResourceDialog = ({ inputLabel, inputDescription, isOpen, res
   const removeDescription = (key: string) => {
     let newDescription = description.filter(i => i.key !== key);
     if (newDescription.length === 0) {
-      newDescription.push({ lang: "cs", value: "", key: _uniqueId() });
+      newDescription.push({ lang: "cs", value: "", key: uuidv4() });
     }
     setDescription(newDescription);
   }
@@ -82,8 +82,8 @@ export const RenameResourceDialog = ({ inputLabel, inputDescription, isOpen, res
         <form className="contents" onSubmit={(event) => { event.preventDefault(); closeWithSuccess(); }}>
           <ModalBody>
             <div className="flex justify-end">
-              <Button type="button" variant="ghost" onClick={() => setLabels([...labels, { lang: "cs", value: "", key: _uniqueId() }])}><Plus className="mr-2 h-4 w-4" /> {t("rename-resource.add-name")}</Button>
-              <Button type="button" variant="ghost" onClick={() => setDescription([...description, { lang: "cs", value: "", key: _uniqueId() }])}><Plus className="mr-2 h-4 w-4" /> {t("rename-resource.add-description")}</Button>
+              <Button type="button" variant="ghost" onClick={() => setLabels([...labels, { lang: "cs", value: "", key: uuidv4() }])}><Plus className="mr-2 h-4 w-4" /> {t("rename-resource.add-name")}</Button>
+              <Button type="button" variant="ghost" onClick={() => setDescription([...description, { lang: "cs", value: "", key: uuidv4() }])}><Plus className="mr-2 h-4 w-4" /> {t("rename-resource.add-description")}</Button>
             </div>
             <div className="grid gap-4">
               {labels.map(name => (

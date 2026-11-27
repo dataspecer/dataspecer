@@ -10,11 +10,10 @@ import { UseDiagramType } from "../diagram/diagram-hook";
 import { Position } from "../diagram";
 import { ClassDialogState } from "../dialog/class/edit-class-dialog-state";
 import { createNewAssociationDialogState } from "../dialog/association/edit-association-dialog-state";
-import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
+import { CmeOperationExecutor } from "../operation";
+import { createCreateRelationshipBatch } from "./utilities/update-relationship-batch";
+import { reportFailure } from "./utilities/report-failure";
 import { DialogSemanticTracker } from "../dialog-v2/dialog-semantic-tracker";
-import {
-  associationDialogStateToNewCmeRelationship,
-} from "../dialog/association/edit-association-dialog-state-adapter";
 import { CmeReference } from "../dataspecer/cme-model/model";
 import { addSemanticRelationshipToVisualModelAction } from "./add-relationship-to-visual-model";
 import { LabelResolver } from "../dependency-tracker";
@@ -25,7 +24,7 @@ import { LabelResolver } from "../dependency-tracker";
  * Direction is decided by {@link isCreatedClassTarget}
  */
 export function openCreateClassDialogAndCreateAssociationAction(
-  cmeExecutor: CmeModelOperationExecutor,
+  executor: CmeOperationExecutor,
   notifications: UseNotificationServiceWriterType,
   dialogs: DialogApiContextType,
   classes: ClassesContext,
@@ -39,21 +38,20 @@ export function openCreateClassDialogAndCreateAssociationAction(
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
 ) {
-  const onConfirm = (created: CmeReference, state: ClassDialogState) => {
+  const onConfirm = (created: CmeReference, state: ClassDialogState) =>
     createAssociationToCreatedClass(
-      cmeExecutor, notifications, options, graph, classes, visualModel,
+      executor, notifications, options, graph, classes, visualModel,
       nodeIdentifier, isCreatedClassTarget, created, state, tracker,
       labelResolver);
-  }
 
   openCreateClassDialogWithModelDerivedFromClassAction(
-    cmeExecutor, notifications, graph, dialogs, classes, options,
+    executor, notifications, graph, dialogs, classes, options,
     diagram, visualModel, nodeIdentifier, positionToPlaceClassOn, onConfirm,
     tracker, labelResolver);
 }
 
-function createAssociationToCreatedClass(
-  cmeExecutor: CmeModelOperationExecutor,
+async function createAssociationToCreatedClass(
+  executor: CmeOperationExecutor,
   notifications: UseNotificationServiceWriterType,
   options: Options,
   graph: UseModelGraphContextType,
@@ -119,10 +117,11 @@ function createAssociationToCreatedClass(
     state.range = range;
   }
 
-  const result = cmeExecutor.createRelationship(
-    associationDialogStateToNewCmeRelationship(state));
-  cmeExecutor.updateSpecialization(result, state.model.identifier,
-    [], state.specializations);
+  const { batch, created: result } = createCreateRelationshipBatch(executor.createContext, state);
+  const outcome = await executor.execute(batch);
+  if (reportFailure(notifications, outcome, "Can not create the association.")) {
+    return;
+  }
 
   addSemanticRelationshipToVisualModelAction(
     notifications, graph, visualModel, result.identifier, result.model);

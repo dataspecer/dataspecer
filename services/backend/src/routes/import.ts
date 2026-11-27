@@ -19,7 +19,7 @@ import type { OperationInModel } from "@dataspecer/core/operation";
 import { parseControlledVocabularyCatalog, type ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 import type { CoreResource } from "@dataspecer/core/core/core-resource";
 import { DataPsmSchema } from "@dataspecer/core/data-psm/model/data-psm-schema";
-import { DataSpecificationConfigurator } from "@dataspecer/core/data-specification/configuration";
+import { dataSpecificationConfig, getDataSpecificationConfigInput } from "@dataspecer/core/data-specification/configuration";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-nodejs";
 import { reloadCachedSemanticModel } from "@dataspecer/specification/aggregator-builder";
 import { turtleStringToGeneratorConfiguration } from "@dataspecer/data-specification-vocabulary/generator-configuration";
@@ -525,10 +525,13 @@ async function dsvImport(repository: ModelRepositoryType, store: N3.Store, url: 
     const configurationModelId = existingPackage?.subResources?.find((model) => model.types.includes(V1.GENERATOR_CONFIGURATION))?.iri ?? uuidv4();
     await ensureResource(repository, rootPackageId, configurationModelId, V1.GENERATOR_CONFIGURATION, {});
     touchedModelIds?.add(configurationModelId);
-    const configuration = DataSpecificationConfigurator.setToObject(configurationModel, {
-      ...DataSpecificationConfigurator.getFromObject(configurationModel),
-      publicBaseUrl: rootHref,
-    });
+    const configuration = {
+      ...configurationModel,
+      ...dataSpecificationConfig({
+        ...getDataSpecificationConfigInput(configurationModel),
+        publicBaseUrl: rootHref,
+      }),
+    };
     await repository.setModelJson(configurationModelId, configuration);
   }
 

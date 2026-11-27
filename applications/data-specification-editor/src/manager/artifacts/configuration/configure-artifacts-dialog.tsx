@@ -1,5 +1,7 @@
+import type { Configuration } from "@dataspecer/core/configuration";
+import { expandSpecificationConfiguration } from "@dataspecer/specification";
+import { SpecificationContext } from "../../routes/specification/specification";
 import {Button, Dialog, DialogActions, DialogContent, DialogTitle} from "@mui/material";
-import {clone} from "lodash";
 import {FC, useContext, useEffect, useState} from "react";
 import {DefaultConfigurationContext} from "../../../application";
 import {ConfigureArtifactsConfiguration} from "./configure-artifacts-configuration";
@@ -10,14 +12,16 @@ import {ConfigureArtifactsConfiguration} from "./configure-artifacts-configurati
 export const ConfigureArtifactsDialog: FC<{
   isOpen: boolean,
   close: () => void,
-  onChange: (configuration: object) => void,
-  configuration: object,
+  onChange: (configuration: Configuration) => void,
+  configuration: Configuration,
 }> = ({isOpen, close, onChange, configuration}) => {
-  const defaultConfiguration = useContext(DefaultConfigurationContext);
-  const [localConfiguration, setLocalConfiguration] = useState(() => clone(configuration));
+  const instanceDefaults = useContext(DefaultConfigurationContext);
+  const specification = useContext(SpecificationContext);
+  const defaultConfiguration = expandSpecificationConfiguration([...instanceDefaults, ...specification.configurationChain.slice(0, -1)]);
+  const [localConfiguration, setLocalConfiguration] = useState(() => ({...configuration}));
   useEffect(() => {
     if (isOpen) {
-      setLocalConfiguration(clone(configuration))
+      setLocalConfiguration({...configuration});
     }
   }, [isOpen, configuration]);
 

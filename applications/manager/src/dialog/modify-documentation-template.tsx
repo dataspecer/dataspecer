@@ -1,3 +1,4 @@
+import type { Configuration } from "@dataspecer/core/configuration";
 import { Modal, ModalBody, ModalContent, ModalHeader, ModalTitle } from "@/components/modal";
 import { MonacoEditorWithDiff } from "@/components/monaco-editor";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -12,9 +13,8 @@ import { DefaultConfigurationContext } from "@/default-configuration";
 import { preventDefault, stopPropagation } from "@/utils/events";
 import { Trash, Undo2 } from "lucide-react";
 import { useContext, useEffect, useRef, useState } from "react";
-import { createDefaultConfigurationModelFromJsonObject } from "@dataspecer/core-v2/configuration-model";
-import { applyPartialDocumentationConfiguration, getPartialDocumentationConfiguration, DOCUMENTATION_MAIN_TEMPLATE_PARTIAL } from "@dataspecer/documentation";
-import { documentationPartialsFromGenerators, mergeDocumentationConfigurations } from "@dataspecer/specification/documentation";
+import { documentationConfig, getDocumentationConfigInput, DOCUMENTATION_MAIN_TEMPLATE_PARTIAL } from "@dataspecer/documentation";
+import { documentationPartialsFromGenerators, resolveSpecificationDocumentationConfig } from "@dataspecer/specification/documentation";
 import { useOnBeforeUnload } from "@/hooks/use-on-before-unload";
 import { useOnKeyDown } from "@/hooks/use-on-key-down";
 import { toast } from "sonner";
@@ -137,16 +137,14 @@ export const ModifyDocumentationTemplate = ({ isOpen, resolve, iri }: { iri: str
   const save = async () => {
     if (isLoading) return;
     const data = (await packageService.getResourceJsonData(iri)) ?? {};
-    const configuration = createDefaultConfigurationModelFromJsonObject(data);
-    const documentationConfiguration = getPartialDocumentationConfiguration(configuration.getRawData());
-    documentationConfiguration.partials = currentPartials.current;
-    applyPartialDocumentationConfiguration(configuration, documentationConfiguration);
-    const result = configuration.serializeModelToApiJsonObject(data);
+    const configuration = (data as { configuration?: Configuration }).configuration ?? {};
+    const input = { ...getDocumentationConfigInput(configuration), partials: currentPartials.current };
+    const result = { ...data, configuration: { ...configuration, ...documentationConfig(input) } };
     await packageService.setResourceJsonData(iri, result);
     await requestLoadPackage(iri, true);
   };
 
-  const [defaultPartials, setDefaultPartials] = useState(() => mergeDocumentationConfigurations([]).partials);
+  const [defaultPartials, setDefaultPartials] = useState(() => resolveSpecificationDocumentationConfig([]).partials);
 
   const [isLoading, setIsLoading] = useState(true);
   const currentPartials = useRef<Record<string, string | false>>({});
@@ -162,11 +160,10 @@ export const ModifyDocumentationTemplate = ({ isOpen, resolve, iri }: { iri: str
     (async () => {
       const data = await packageService.getResourceJsonData(iri);
       if (!active) return;
-      const instanceDefaults = getPartialDocumentationConfiguration(defaultConfiguration);
-      const defaultPartials = mergeDocumentationConfigurations([instanceDefaults]).partials;
+      const defaultPartials = resolveSpecificationDocumentationConfig([defaultConfiguration]).partials;
       setDefaultPartials(defaultPartials);
-      const configuration = createDefaultConfigurationModelFromJsonObject(data ?? {});
-      const documentationConfiguration = getPartialDocumentationConfiguration(configuration.getRawData());
+      const configuration = (data as { configuration?: Configuration } | null)?.configuration ?? {};
+      const documentationConfiguration = getDocumentationConfigInput(configuration);
       currentPartials.current = structuredClone(documentationConfiguration.partials ?? {});
       setPartialsState(getNewPartialsState(defaultPartials, currentPartials.current));
       const mainTemplate = currentPartials.current[MAIN_TEMPLATE];

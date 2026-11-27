@@ -8,7 +8,8 @@ import { DialogApiContextType } from "../dialog/dialog-service";
 import { UseDiagramType } from "../diagram/diagram-hook";
 import { Position } from "../diagram";
 import { addSemanticGeneralizationToVisualModelAction } from "./add-generalization-to-visual-model";
-import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
+import { CmeOperationExecutor, cmeOperations } from "../operation";
+import { reportFailure } from "./utilities/report-failure";
 import { CmeReference } from "../dataspecer/cme-model/model";
 import { DialogSemanticTracker } from "../dialog-v2/dialog-semantic-tracker";
 import { LabelResolver } from "../dependency-tracker";
@@ -19,7 +20,7 @@ import { LabelResolver } from "../dependency-tracker";
  * Direction is decided by {@link isCreatedClassTarget}
  */
 export function openCreateClassDialogAndCreateGeneralizationAction(
-  cmeExecutor: CmeModelOperationExecutor,
+  executor: CmeOperationExecutor,
   notifications: UseNotificationServiceWriterType,
   dialogs: DialogApiContextType,
   classes: ClassesContext,
@@ -33,20 +34,19 @@ export function openCreateClassDialogAndCreateGeneralizationAction(
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
 ) {
-  const onConfirm = (createdClassData: CmeReference) => {
+  const onConfirm = (createdClassData: CmeReference) =>
     createGeneralizationToCreatedClass(
-      cmeExecutor, notifications, graph,
+      executor, notifications, graph,
       visualModel, nodeIdentifier, isCreatedClassParent, createdClassData);
-  }
 
   openCreateClassDialogWithModelDerivedFromClassAction(
-    cmeExecutor, notifications, graph, dialogs, classes, options,
+    executor, notifications, graph, dialogs, classes, options,
     diagram, visualModel, nodeIdentifier, positionToPlaceClassOn, onConfirm,
     tracker, labelResolver);
 }
 
-function createGeneralizationToCreatedClass(
-  cmeExecutor: CmeModelOperationExecutor,
+async function createGeneralizationToCreatedClass(
+  executor: CmeOperationExecutor,
   notifications: UseNotificationServiceWriterType,
   graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
@@ -65,13 +65,18 @@ function createGeneralizationToCreatedClass(
   }
   const sourceClassIdentifier = node.representedEntity;
 
-  const result = cmeExecutor.createGeneralization({
-    model: createdClassData.model,
+  const args = cmeOperations.createSemanticGeneralization.create(executor.createContext, {
+    semanticModel: createdClassData.model,
     iri: null,
-    childIdentifier: isCreatedClassParent ? sourceClassIdentifier : createdClassData.identifier,
-    parentIdentifier: isCreatedClassParent ? createdClassData.identifier : sourceClassIdentifier,
+    child: isCreatedClassParent ? sourceClassIdentifier : createdClassData.identifier,
+    parent: isCreatedClassParent ? createdClassData.identifier : sourceClassIdentifier,
   });
+  const outcome = await executor.execute(args);
+  if (reportFailure(notifications, outcome, "Can not create the generalization.")) {
+    return;
+  }
+  const result = { identifier: args.identifier, model: createdClassData.model };
 
-  addSemanticGeneralizationToVisualModelAction(
+  await addSemanticGeneralizationToVisualModelAction(
     notifications, graph, visualModel, result.identifier, result.model);
 }

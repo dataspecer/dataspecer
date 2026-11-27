@@ -13,7 +13,7 @@ import {
     TextField,
     Typography,
 } from "@mui/material";
-import { isEqual } from "lodash";
+import { deepEqual } from "@dataspecer/utilities";
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { InfoHelp } from "../../../../components/info-help";
@@ -133,7 +133,7 @@ export const RightPanel: React.FC<{ iri: string, close: () => void }> = memo(({i
         (resource.dataPsmDatatype !== getIriFromDatatypeSelectorValue(datatype) ||
         (
             isLanguageStringDatatype &&
-            !isEqual(new Set(semanticRelationshipEnd.languageStringRequiredLanguages ?? []), new Set(datatypeLangsArray))
+            new Set(semanticRelationshipEnd.languageStringRequiredLanguages ?? []).symmetricDifference(new Set(datatypeLangsArray)).size > 0
         )
         ),
         useCallback(async () => {
@@ -211,7 +211,7 @@ export const RightPanel: React.FC<{ iri: string, close: () => void }> = memo(({i
 
     const normalizedExamples = examples === null || examples.length === 0 ? null : examples;
     useSaveHandler(
-        ((isStringDatatype || isClass) && isInterpreted) && !isEqual(normalizedExamples, currentExamples),
+        ((isStringDatatype || isClass) && isInterpreted) && !deepEqual(normalizedExamples, currentExamples),
         useCallback(async () => {
             await store.executeComplexOperation(new SetExample(pimResource?.id as string, normalizedExamples));
         }, [normalizedExamples, pimResource?.id, store])
@@ -243,8 +243,8 @@ export const RightPanel: React.FC<{ iri: string, close: () => void }> = memo(({i
     const saveCardinalityPsm =
         async () => (isAttribute || isAssociationEnd || isContainer) && resource && await store.executeComplexOperation(new SetCardinalityPsm(resource.iri as string, psmCardinality));
 
-    useSaveHandler(usesSemanticCardinality && !isEqual(semanticCardinality, cardinalityFromPim(semanticRelationshipEnd)), saveCardinalityPim);
-    useSaveHandler((isAttribute || isAssociationEnd || isContainer) && !isEqual(psmCardinality, storedPsmCardinality), saveCardinalityPsm);
+    useSaveHandler(usesSemanticCardinality && !deepEqual(semanticCardinality, cardinalityFromPim(semanticRelationshipEnd)), saveCardinalityPim);
+    useSaveHandler((isAttribute || isAssociationEnd || isContainer) && !deepEqual(psmCardinality, storedPsmCardinality), saveCardinalityPsm);
 
     // region xml is attribute
 
@@ -338,7 +338,7 @@ export const RightPanel: React.FC<{ iri: string, close: () => void }> = memo(({i
     }, [isClass, resource, sourceRecommendedUsage.requireValue, sourceRecommendedUsage.restrictValues]);
 
     useSaveHandler(
-        isClass && !isEqual(sourceRecommendedUsage, recommendedUsage),
+        isClass && !deepEqual(sourceRecommendedUsage, recommendedUsage),
         useCallback(
             async () => resource && await store.executeComplexOperation(new SetRecommendedControlledVocabularyUsage(
                 resource.iri as string, recommendedUsage.requireValue, recommendedUsage.restrictValues)),

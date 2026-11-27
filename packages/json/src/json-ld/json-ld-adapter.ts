@@ -4,7 +4,7 @@ import { DataSpecificationArtefact, DataSpecificationSchema } from "@dataspecer/
 import { ArtefactGeneratorContext } from "@dataspecer/generators/generator";
 import { StructureModel, StructureModelClass, StructureModelComplexType, StructureModelProperty } from "@dataspecer/generators/structure-model/model";
 import { OFN } from "@dataspecer/core/well-known";
-import { DefaultJsonConfiguration, JsonConfiguration, JsonConfigurator } from "../configuration.ts";
+import { JsonConfiguration, resolveJsonConfig } from "../configuration.ts";
 import { JSON_LD_GENERATOR } from "./json-ld-generator.ts";
 import { AggregatedEntityInApplicationProfileAggregator, LocalEntityWrapped, splitProfileToSingleConcepts } from "@dataspecer/core-v2/hierarchical-semantic-aggregator";
 import { SemanticModelClass, SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
@@ -80,10 +80,7 @@ export class JsonLdAdapter {
     this.model = model;
     this.context = context;
     this.artefact = artefact;
-    this.configuration = JsonConfigurator.merge(
-        DefaultJsonConfiguration,
-        JsonConfigurator.getFromObject(artefact.configuration)
-    ) as JsonConfiguration;
+    this.configuration = resolveJsonConfig(artefact.configurationChain);
     this.semanticModel = semanticModel;
   }
 

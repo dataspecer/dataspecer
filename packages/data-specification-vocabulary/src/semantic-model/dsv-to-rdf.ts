@@ -249,7 +249,7 @@ export class DsvWriter {
   writeObjectPropertyProfile(profile: ObjectPropertyProfile) {
     this.writePropertyProfileBase(profile);
     this.addType(profile.iri, DSV.ObjectPropertyProfile);
-    this.addIris(profile.iri, DSV.objectPropertyRange, profile.rangeClassIri);
+    this.addIris(profile.iri, DSV.range, profile.rangeClassIri);
   }
 
   private writePropertyProfileBase(profile: PropertyProfile) {
@@ -278,7 +278,7 @@ export class DsvWriter {
   writeDatatypePropertyProfile(profile: DatatypePropertyProfile) {
     this.writePropertyProfileBase(profile);
     this.addType(profile.iri, DSV.DatatypePropertyProfile);
-    this.addIris(profile.iri, DSV.datatypePropertyRange, profile.rangeDataTypeIri);
+    this.addIris(profile.iri, DSV.datatype, profile.rangeDataTypeIri);
   }
 
 }

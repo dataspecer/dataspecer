@@ -19,7 +19,10 @@ import {
   isSemanticModelRelationshipProfile,
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
 import { isSemanticModelAttributeProfile } from "../dataspecer/semantic-model";
-import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
+import { CmeOperationExecutor } from "../operation";
+import { createCreateClassProfileBatch } from "./utilities/update-class-profile-batch";
+import { createCreateRelationshipProfileBatch } from "./utilities/update-relationship-profile-batch";
+import { reportFailure } from "./utilities/report-failure";
 import { DialogSemanticTracker } from "../dialog-v2/dialog-semantic-tracker";
 import { addSemanticAttributeToVisualModelAction } from "./add-semantic-attribute-to-visual-model";
 import {
@@ -37,21 +40,11 @@ import {
   createNewAssociationProfileDialogState,
 } from "../dialog/association-profile/edit-association-profile-dialog-state";
 import { createNewAssociationProfileDialog } from "../dialog/association-profile/edit-association-profile-dialog";
-import {
-  classProfileDialogStateToNewCmeClassProfile,
-} from "../dialog/class-profile/edit-class-profile-dialog-state-adapter";
-import {
-  attributeProfileDialogStateToNewCmeRelationshipProfile,
-} from "../dialog/attribute-profile/edit-attribute-profile-dialog-state-adapter";
-import {
-  associationProfileDialogStateToNewCmeRelationshipProfile,
-} from "../dialog/association-profile/edit-association-profile-dialog-state-adapter";
 import { LabelResolver } from "../dependency-tracker";
-import { applyControlledVocabularySelection } from "./apply-controlled-vocabulary-selection";
 import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 
 export function openCreateProfileDialogAction(
-  cmeExecutor: CmeModelOperationExecutor,
+  executor: CmeOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
   notifications: UseNotificationServiceWriterType,
@@ -75,22 +68,20 @@ export function openCreateProfileDialogAction(
     const initialState = createNewProfileClassDialogState(
       visualModel, options.language, [entity.id], tracker, labelResolver,
       graph, availableVocabularies);
-    const onConfirm = (state: ClassProfileDialogState) => {
-
-      const result = cmeExecutor.createClassProfile(
-        classProfileDialogStateToNewCmeClassProfile(state));
-      cmeExecutor.updateSpecialization(result, state.model.identifier,
-        [], state.specializations);
-      applyControlledVocabularySelection(
-        cmeExecutor, result, [], state.controlledVocabularies.items);
+    const onConfirm = async (state: ClassProfileDialogState) => {
+      const { batch, created: result } = createCreateClassProfileBatch(executor.createContext, state);
+      const outcome = await executor.execute(batch);
+      if (reportFailure(notifications, outcome, "Can not create the class profile.")) {
+        return;
+      }
 
       if (isWritableVisualModel(visualModel)) {
         // TODO PeSk Update visual model
-        addSemanticClassProfileToVisualModelAction(
+        await addSemanticClassProfileToVisualModelAction(
           notifications, graph, classes, visualModel, diagram,
           result.identifier, result.model,
           position);
-      };
+      }
     };
     dialogs.openDialog(createNewClassProfileDialog(initialState, onConfirm));
     return;
@@ -99,19 +90,16 @@ export function openCreateProfileDialogAction(
   if (isSemanticModelAttribute(entity) || isSemanticModelAttributeProfile(entity)) {
     const initialState = createNewAttributeProfileDialogState(
       classes, graph, visualModel, options.language, [entity.id], labelResolver);
-    const onConfirm = (state: AttributeProfileDialogState) => {
-
-      const result = cmeExecutor.createRelationshipProfile(
-        attributeProfileDialogStateToNewCmeRelationshipProfile(state));
-      cmeExecutor.updateSpecialization(result, state.model.identifier,
-        [], state.specializations);
-
-      if (result?.identifier !== undefined) {
-        // TODO PeSk Update visual model
-        addSemanticAttributeToVisualModelAction(
-          notifications, visualModel, state.domain.identifier,
-          result.identifier, true);
+    const onConfirm = async (state: AttributeProfileDialogState) => {
+      const { batch, created: result } = createCreateRelationshipProfileBatch(executor.createContext, state);
+      const outcome = await executor.execute(batch);
+      if (reportFailure(notifications, outcome, "Can not create the attribute profile.")) {
+        return;
       }
+      // TODO PeSk Update visual model
+      addSemanticAttributeToVisualModelAction(
+        notifications, visualModel, state.domain.identifier,
+        result.identifier, true);
     };
     dialogs.openDialog(createEditAttributeProfileDialog(initialState, onConfirm));
     return;
@@ -120,12 +108,12 @@ export function openCreateProfileDialogAction(
   if (isSemanticModelRelationship(entity) || isSemanticModelRelationshipProfile(entity)) {
     const initialState = createNewAssociationProfileDialogState(
       visualModel, options.language, [entity.id], tracker, labelResolver);
-    const onConfirm = (state: AssociationProfileDialogState) => {
-
-      const result = cmeExecutor.createRelationshipProfile(
-        associationProfileDialogStateToNewCmeRelationshipProfile(state));
-      cmeExecutor.updateSpecialization(result, state.model.identifier,
-        [], state.specializations);
+    const onConfirm = async (state: AssociationProfileDialogState) => {
+      const { batch, created: result } = createCreateRelationshipProfileBatch(executor.createContext, state);
+      const outcome = await executor.execute(batch);
+      if (reportFailure(notifications, outcome, "Can not create the association profile.")) {
+        return;
+      }
 
       if (isWritableVisualModel(visualModel)) {
         // TODO PeSk Update visual model

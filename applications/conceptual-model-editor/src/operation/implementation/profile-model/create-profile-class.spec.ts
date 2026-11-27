@@ -26,6 +26,7 @@ describe("createProfileClass", () => {
       usageNoteSource: null,
       externalDocumentationUrl: null,
       tags: ["role"],
+      order: "2",
     }));
 
     expect(result.created).toBe(result.args.identifier);
@@ -38,6 +39,7 @@ describe("createProfileClass", () => {
       descriptionFromProfiled: null,
       usageNote: { en: "Usage" },
       tags: ["role"],
+      order: "2",
     });
   });
 

@@ -1,3 +1,5 @@
+import type { ConfigurationChain } from "../../configuration/index.ts";
+
 export class DataSpecificationArtefact {
   iri: string | null = null;
 
@@ -25,10 +27,5 @@ export class DataSpecificationArtefact {
    */
   generator: string | null = null;
 
-  /**
-   * Configuration for given generator. While no strict restriction are forced
-   * on the configuration values, it is recommended to use primitive values
-   * as they are easier to convert to various representations.
-   */
-  configuration: object | null = null;
+  configurationChain: ConfigurationChain = [];
 }

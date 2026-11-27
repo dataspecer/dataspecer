@@ -1,3 +1,4 @@
+import type { Configuration } from "@dataspecer/core/configuration";
 import { createSgovModel } from "@dataspecer/sgov-adapter";
 import { useMemo } from "react";
 
@@ -5,8 +6,7 @@ import { type EntityModel } from "@dataspecer/core-v2/entity-model";
 import { BackendPackageService } from "@dataspecer/core-v2/project";
 import { httpFetch } from "@dataspecer/core/io/fetch/fetch-browser";
 import type { VisualModel } from "@dataspecer/visual-model";
-import { createLayoutConfiguration } from "@dataspecer/layout";
-import { createDefaultConfigurationModelFromJsonObject } from "@dataspecer/core-v2/configuration-model";
+import { resolveLayoutConfig } from "@dataspecer/layout";
 
 export const useBackendConnection = () => {
   // Should fail already when spinning up the next app
@@ -18,8 +18,8 @@ export const useBackendConnection = () => {
 
   const getLayoutConfigurationModelFromBackend = async (packageIdentifier: string) => {
     const configurationData = (await service.getResourceJsonData(packageIdentifier)) ?? {};
-    const configuration = createDefaultConfigurationModelFromJsonObject(configurationData);
-    const layoutConfiguration = createLayoutConfiguration(configuration);
+    const configuration = (configurationData as { configuration?: Configuration }).configuration ?? {};
+    const layoutConfiguration = resolveLayoutConfig([configuration]);
     return layoutConfiguration;
   };
 

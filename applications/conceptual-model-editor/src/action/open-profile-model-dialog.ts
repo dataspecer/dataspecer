@@ -11,9 +11,10 @@ import {
 } from "../dialog/profile-model/profile-model";
 import { Options } from "../application";
 import { CmeOperationExecutor, cmeOperations } from "../operation";
+import { reportFailure } from "./utilities/report-failure";
 
 export function openProfileModelDialogAction(
-  cmeExecutor: CmeOperationExecutor,
+  executor: CmeOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
   notifications: UseNotificationServiceWriterType,
@@ -24,23 +25,21 @@ export function openProfileModelDialogAction(
   const initialState = createProfileModelDialogState(
     classes.semanticModels, visualModel, options.language, model);
 
-  const onConfirm = (state: ProfileModelState) => {
+  const onConfirm = async (state: ProfileModelState) => {
     const semanticModel = classes.semanticModels.get(state.sourceModel.identifier);
     if (semanticModel === undefined) {
       notifications.error("Invalid semantic source model");
       return;
     }
-    cmeExecutor.execute(cmeOperations.profileEntities.create(
-      cmeExecutor.createContext, {
+    const outcome = await executor.execute(cmeOperations.profileEntities.create(
+      executor.createContext, {
       entities: Object.keys(semanticModel.getEntities()),
       profileModel: state.targetModel.identifier,
-    })).then(result => {
-      if (result.exception === undefined) {
-        notifications.success("Profiles has been created.");
-      } else {
-        notifications.error("Can not create profiles.");
-      }
-    });
+    }));
+    if (reportFailure(notifications, outcome, "Can not create profiles.")) {
+      return;
+    }
+    notifications.success("Profiles has been created.");
   };
 
   dialogs.openDialog(createProfileModelDialog(initialState, onConfirm));

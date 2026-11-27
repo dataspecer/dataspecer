@@ -1,3 +1,4 @@
+import type { ConfigurationChain } from "@dataspecer/core/configuration";
 import { DataSpecification as CoreDataSpecification, DataSpecificationArtefact } from "@dataspecer/core/data-specification/model";
 import { Generator } from "@dataspecer/generators/generator";
 import { MemoryStreamDictionary } from "@dataspecer/core/io/stream/memory-stream-dictionary";
@@ -21,7 +22,7 @@ export async function getSingleArtifact(
   forDataSpecificationIri: string,
   dataSpecifications: { [key: string]: DataSpecification },
   artifactSelector: (artifact: DataSpecificationArtefact) => boolean,
-  configuration: object,
+  configuration: ConfigurationChain,
 ): Promise<MemoryStreamDictionary> {
   // Generate artifacts definitions
 
@@ -53,8 +54,6 @@ export async function getSingleArtifact(
     importsDataSpecifications: specification.importsDataSpecificationIds,
     // @ts-ignore
     artefacts: specification.artefacts,
-    // @ts-ignore
-    artefactConfiguration: specification.artefactConfiguration,
     cimAdapters: [],
   })) as CoreDataSpecification[];
 

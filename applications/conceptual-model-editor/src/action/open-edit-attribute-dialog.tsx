@@ -1,22 +1,25 @@
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
 import { VisualModel } from "@dataspecer/visual-model";
+import { SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
 
 import { DialogApiContextType } from "../dialog/dialog-service";
 import { ClassesContext } from "../context/classes-context";
 import { UseModelGraphContextType } from "../context/model-context";
 import { Options } from "../application";
-import { SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
 import { AttributeDialogState, createEditAttributeDialogState } from "../dialog/attribute/edit-attribute-dialog-state";
 import { createEditAttributeDialog } from "../dialog/attribute/edit-attribute-dialog";
-import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
-import { attributeDialogStateToNewCmeRelationship } from "../dialog/attribute/edit-attribute-dialog-state-adapter";
 import { LabelResolver } from "../dependency-tracker";
+import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
+import { CmeOperationExecutor } from "../operation";
+import { createUpdateRelationshipBatch } from "./utilities/update-relationship-batch";
+import { reportFailure } from "./utilities/report-failure";
 
 /**
  * Open and handle edit Attribute dialog.
  */
 export function openEditAttributeDialogAction(
-  cmeExecutor: CmeModelOperationExecutor,
+  executor: CmeOperationExecutor,
+  notifications: UseNotificationServiceWriterType,
   options: Options,
   dialogs: DialogApiContextType,
   classes: ClassesContext,
@@ -30,15 +33,10 @@ export function openEditAttributeDialogAction(
     classes, graph, visualModel, options.language, model, entity,
     labelResolver);
 
-  const onConfirm = (state: AttributeDialogState) => {
-    cmeExecutor.updateRelationship({
-      identifier: entity.id,
-      ...attributeDialogStateToNewCmeRelationship(state),
-    });
-    cmeExecutor.updateSpecialization(
-      { identifier: entity.id, model: model.getId() },
-      state.model.identifier,
-      initialState.specializations, state.specializations);
+  const onConfirm = async (state: AttributeDialogState) => {
+    const outcome = await executor.execute(createUpdateRelationshipBatch(
+      executor.createContext, entity.id, initialState, state));
+    reportFailure(notifications, outcome, "Can not update the attribute.");
   };
 
   dialogs.openDialog(createEditAttributeDialog(initialState, onConfirm));

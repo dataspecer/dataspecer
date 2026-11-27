@@ -93,7 +93,6 @@ import { openEditAttributeProfileDialogAction } from "./open-edit-attribute-prof
 import { isInMemorySemanticModel } from "../dataspecer/semantic-model";
 import { isSemanticModelAttribute, isSemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
 import { isSemanticModelAttributeProfile } from "../dataspecer/semantic-model";
-import { createCmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
 import { createVisualEdgeEndpointDuplicateAction } from "./create-visual-edge-endpoint-duplicate";
 import { removeFromVisualModelByVisualAction } from "./remove-from-visual-model-by-visual";
 import { removeFromVisualModelByRepresentedAction } from "./remove-from-visual-model-by-represented";
@@ -131,12 +130,9 @@ import {
   addVisualDiagramNodeForExistingModelToVisualModelAction,
 } from "./create-visual-diagram-node-for-existing-model";
 import { putVisualDiagramNodeContentToVisualModelAction } from "./put-visual-diagram-node-content-to-visual-model";
-import {
-  cmeOperations,
-  createCmeOperationExecutor,
-  createCmeEntityIdentifier,
-} from "../operation";
+import { cmeOperations } from "../operation";
 import { openProfileModelDialogAction } from "./open-profile-model-dialog";
+import { reportFailure } from "./utilities/report-failure";
 
 const LOG = createLogger(import.meta.url);
 
@@ -581,7 +577,6 @@ function createActionsContext(
 
   // For now we create derived state here, till is is available as a context.
 
-  const cmeExecutor = createCmeModelOperationExecutor(classes.semanticModels);
   const labelResolver = createLabelResolver(
     configuration().prefixes, [options.language]);
 
@@ -591,7 +586,7 @@ function createActionsContext(
     withVisualModel(notifications, useGraph, (visualModel) => {
       const position = getViewportCenterForClassPlacement(diagram);
       openCreateProfileDialogAction(
-        cmeExecutor, options, dialogs, notifications, classes, useGraph,
+        useGraph.executor(), options, dialogs, notifications, classes, useGraph,
         visualModel, diagram, position, identifier, dialogTracker,
         labelResolver, availableVocabularies);
     });
@@ -610,7 +605,7 @@ function createActionsContext(
   ) => {
     withVisualModel(notifications, useGraph, (visualModel) => {
       openCreateConnectionDialogAction(
-        cmeExecutor, options, dialogs, notifications,
+        useGraph.executor(), options, dialogs, notifications,
         useGraph, classes, visualModel, semanticSource, semanticTarget,
         visualSource, visualTarget);
     });
@@ -714,7 +709,7 @@ function createActionsContext(
   ) => {
     withVisualModel(notifications, useGraph, (visualModel) => {
       openCreateAttributeForEntityDialogAction(
-        cmeExecutor, options, dialogs, classes, useGraph, notifications,
+        useGraph.executor(), options, dialogs, classes, useGraph, notifications,
         visualModel, classIdentifier, onConfirmCallback, labelResolver);
     });
   };
@@ -728,7 +723,7 @@ function createActionsContext(
   const openEditSemanticModelDialog = (identifier: string) => {
     withVisualModel(notifications, useGraph, (visualModel) => {
       openEditSemanticModelDialogAction(
-        cmeExecutor, options, dialogs, classes, visualModel, identifier);
+        useGraph.executor(), notifications, options, dialogs, classes, visualModel, identifier);
     });
   };
 
@@ -743,7 +738,7 @@ function createActionsContext(
   const openModifyDialog = (identifier: string) => {
     withVisualModel(notifications, useGraph, (visualModel) => {
       openModifyDialogAction(
-        cmeExecutor, options, dialogs, notifications, classes, useGraph,
+        options, dialogs, notifications, classes, useGraph,
         visualModel, identifier, dialogTracker, labelResolver,
         availableVocabularies);
     });
@@ -754,7 +749,7 @@ function createActionsContext(
     const modelInstance = classes.semanticModels.get(model);
     if (modelInstance === null || (modelInstance !== undefined && isInMemorySemanticModel(modelInstance))) {
       openCreateClassDialogAction(
-        cmeExecutor, options, dialogs, classes, useGraph, notifications, visualModel,
+        useGraph.executor(), options, dialogs, classes, useGraph, notifications, visualModel,
         diagram, modelInstance, null, null, dialogTracker, labelResolver);
     } else {
       notifications.error("Can not add to given model.");
@@ -766,7 +761,7 @@ function createActionsContext(
     const modelInstance = classes.semanticModels.get(model);
     if (modelInstance === null || (modelInstance !== undefined && isInMemorySemanticModel(modelInstance))) {
       openCreateAssociationDialogAction(
-        cmeExecutor, options, dialogs, classes, notifications, visualModel,
+        useGraph.executor(), options, dialogs, classes, notifications, visualModel,
         modelInstance, dialogTracker, labelResolver);
     } else {
       notifications.error("Can not add to given model.");
@@ -778,7 +773,7 @@ function createActionsContext(
     const modelInstance = classes.semanticModels.get(model);
     if (modelInstance === null || (modelInstance !== undefined && isInMemorySemanticModel(modelInstance))) {
       openCreateAttributeDialogAction(
-        cmeExecutor, options, dialogs, classes, useGraph, notifications,
+        useGraph.executor(), options, dialogs, classes, useGraph, notifications,
         visualModel, modelInstance, labelResolver);
     } else {
       notifications.error("Can not add to given model.");
@@ -830,7 +825,7 @@ function createActionsContext(
     identifier: string,
   ): void => {
     withVisualModel(notifications, useGraph, (visualModel) => {
-      addSemanticGeneralizationToVisualModelAction(
+      void addSemanticGeneralizationToVisualModelAction(
         notifications, useGraph, visualModel, identifier, model);
     });
   }
@@ -1112,46 +1107,30 @@ function createActionsContext(
   const addSemanticClassSurroundings = async (
     semanticModel: ModelDsIdentifier, entity: EntityDsIdentifier,
   ) => {
-    const executor = createCmeOperationExecutor(cmeOperations, {
-      entityModels: classes.semanticModelsList,
-      visualModels: classes.visualModelsList,
-      createNewEntityIdentifier: createCmeEntityIdentifier,
-    });
+    const executor = useGraph.executor();
     const result = await executor.execute(cmeOperations.addSemanticClassSurroundings.create(
       executor.createContext, {
       semanticModel,
       entity,
     }));
-    if (result.exception !== undefined) {
-      LOG.error("Can not add class surroundings.", result.exception);
-    }
+    reportFailure(notifications, result, "Can not add class surroundings.");
   }
 
   const releaseSemanticClassSurroundings = async (
     semanticModel: ModelDsIdentifier, entity: EntityDsIdentifier,
   ) => {
-    const executor = createCmeOperationExecutor(cmeOperations, {
-      entityModels: [...classes.semanticModels.values()],
-      visualModels: classes.visualModelsList,
-      createNewEntityIdentifier: createCmeEntityIdentifier,
-    });
+    const executor = useGraph.executor();
     const result = await executor.execute(cmeOperations.releaseSemanticClassSurroundings.create(
       executor.createContext, {
       semanticModel,
       entity,
     }));
-    if (result.exception !== undefined) {
-      LOG.error("Can not release class surroundings.", result.exception);
-    }
+    reportFailure(notifications, result, "Can not release class surroundings.");
   }
 
   const openProfileModelDialog = async (model: ModelDsIdentifier) => {
     withVisualModel(notifications, useGraph, (visualModel) => {
-      const executor = createCmeOperationExecutor(cmeOperations, {
-        entityModels: [...classes.semanticModels.values()],
-        visualModels: classes.visualModelsList,
-        createNewEntityIdentifier: createCmeEntityIdentifier,
-      });
+      const executor = useGraph.executor();
       openProfileModelDialogAction(
         executor, options, dialogs, notifications, classes,
         visualModel, model);
@@ -1334,7 +1313,7 @@ function createActionsContext(
     onCanvasOpenCreateClassDialog: (nodeIdentifier, positionToPlaceClassOn) => {
       withVisualModel(notifications, useGraph, (visualModel) => {
         openCreateClassDialogWithModelDerivedFromClassAction(
-          cmeExecutor, notifications, useGraph, dialogs, classes, options,
+          useGraph.executor(), notifications, useGraph, dialogs, classes, options,
           diagram, visualModel, nodeIdentifier, positionToPlaceClassOn, null,
           dialogTracker, labelResolver);
       });
@@ -1343,7 +1322,7 @@ function createActionsContext(
     onCanvasOpenCreateClassDialogWithAssociation: (nodeIdentifier, positionToPlaceClassOn, isCreatedClassTarget) => {
       withVisualModel(notifications, useGraph, (visualModel) => {
         openCreateClassDialogAndCreateAssociationAction(
-          cmeExecutor, notifications, dialogs, classes, options, useGraph,
+          useGraph.executor(), notifications, dialogs, classes, options, useGraph,
           diagram, visualModel, nodeIdentifier, isCreatedClassTarget,
           positionToPlaceClassOn, dialogTracker, labelResolver);
       });
@@ -1352,7 +1331,7 @@ function createActionsContext(
     onCanvasOpenCreateClassDialogWithGeneralization: (nodeIdentifier, positionToPlaceClassOn, isCreatedClassParent) => {
       withVisualModel(notifications, useGraph, (visualModel) => {
         openCreateClassDialogAndCreateGeneralizationAction(
-          cmeExecutor, notifications, dialogs, classes, options, useGraph, diagram,
+          useGraph.executor(), notifications, dialogs, classes, options, useGraph, diagram,
           visualModel, nodeIdentifier, isCreatedClassParent, positionToPlaceClassOn,
           dialogTracker, labelResolver);
       });
@@ -1367,7 +1346,7 @@ function createActionsContext(
       const { nodeSelection, edgeSelection } = getSelections(diagram, true, false);
       withVisualModel(notifications, useGraph, (visualModel) => {
         createDefaultProfilesAction(
-          cmeExecutor, notifications, useGraph, diagram, options, classes,
+          useGraph.executor(), notifications, useGraph, diagram, options, classes,
           visualModel, nodeSelection, edgeSelection, true, dialogTracker,
           labelResolver, availableVocabularies);
       });
@@ -1405,20 +1384,20 @@ function createActionsContext(
 
         if (isSemanticModelAttribute(entity)) {
           openEditAttributeDialogAction(
-            cmeExecutor, options, dialogs, classes, useGraph,
+            useGraph.executor(), notifications, options, dialogs, classes, useGraph,
             visualModel, model, entity, labelResolver);
         } else if (isSemanticModelAttributeProfile(entity)) {
           openEditAttributeProfileDialogAction(
-            cmeExecutor, options, dialogs, classes, useGraph,
+            useGraph.executor(), notifications, options, dialogs, classes, useGraph,
             visualModel, model, entity, labelResolver);
         } else if (isSemanticModelRelationship(entity)) {
           openEditAssociationDialogAction(
-            cmeExecutor, options, dialogs, classes,
+            useGraph.executor(), notifications, options, dialogs, classes,
             visualModel, model, entity, dialogTracker, labelResolver);
         } else if (isSemanticModelRelationshipProfile(entity)) {
           openEditAssociationProfileDialogAction(
-            cmeExecutor, options, dialogs, classes, useGraph,
-            visualModel, model, entity, dialogTracker, labelResolver);
+            useGraph.executor(), notifications, options, dialogs, classes,
+            useGraph, visualModel, model, entity, dialogTracker, labelResolver);
         } else {
           notifications.error("Can not edit given item.");
         }

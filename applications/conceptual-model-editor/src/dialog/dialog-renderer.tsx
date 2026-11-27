@@ -41,7 +41,13 @@ function Dialog({ reference, context }: {
     <dialog
       ref={reference}
       className={context.dialogClassNames === undefined ? defaultClassNames : context.dialogClassNames}
-      onCancel={context.close}
+      onCancel={(event) => {
+        if (context.pending) {
+          // Keep the native dialog open while confirm runs.
+          event.preventDefault();
+        }
+        context.close();
+      }}
     >
       <h1 className="text-xl">{t(context.label)}</h1>
       <hr className="my-2" />
@@ -54,13 +60,14 @@ function Dialog({ reference, context }: {
           <button
             className="p-2 text-green-700 hover:shadow"
             onClick={context.confirm}
-            disabled={!context.canConfirm}
+            disabled={!context.canConfirm || context.pending}
           >
             {t(context.confirmLabel)}
           </button>
         }
         <button
           className="p-2 text-red-700 hover:shadow"
+          disabled={context.pending}
           onClick={context.close}>
           {t(context.closeLabel)}
         </button>

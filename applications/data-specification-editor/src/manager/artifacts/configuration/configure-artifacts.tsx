@@ -1,3 +1,4 @@
+import type { Configuration } from "@dataspecer/core/configuration";
 import { createSetEntityOperation } from "@dataspecer/core/operation";
 import { Button } from "@mui/material";
 import { FC, useCallback, useEffect, useState } from "react";
@@ -17,17 +18,17 @@ export const ConfigureArtifacts: FC<{
   const {t} = useTranslation("ui");
   const modelStore = useModelStore();
 
-  const [configuration, setConfiguration] = useState<object>(null);
+  const [configuration, setConfiguration] = useState<Configuration | null>(null);
 
   useEffect(() => {
     const entity = modelStore.getAllEntities()[configurationId]?.[configurationId] as unknown as Record<string, unknown> | undefined;
-    const data: Record<string, unknown> = { ...entity };
+    const data: Configuration = { ...entity };
     delete data.id;
     delete data.type;
     setConfiguration(data);
   }, [modelStore, configurationId]);
 
-  const update = useCallback(async (configuration: object) => {
+  const update = useCallback(async (configuration: Configuration) => {
     setConfiguration(configuration);
     modelStore.transaction([{
       modelId: configurationId,

@@ -1,5 +1,4 @@
-import { DeepPartial } from "@dataspecer/core/core/utilities/deep-partial"
-import { CsvConfiguration } from "@dataspecer/csv/configuration"
+import { CsvConfiguration, CsvConfigurationInput } from "@dataspecer/csv/configuration"
 import { FormGroup } from "@mui/material"
 import { FC } from "react"
 import { SwitchWithDefault } from "../ui-components/index"
@@ -11,9 +10,9 @@ import { SwitchWithDefault } from "../ui-components/index"
  * @constructor
  */
 export const Csv: FC<{
-    input: DeepPartial<CsvConfiguration>,
+    input: CsvConfigurationInput,
     defaultObject?: CsvConfiguration
-    onChange: (options: DeepPartial<CsvConfiguration>) => void,
+    onChange: (options: CsvConfigurationInput) => void,
   }> = ({input, onChange, defaultObject}) => {
     return <FormGroup>
       <SwitchWithDefault

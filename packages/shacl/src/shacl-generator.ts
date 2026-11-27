@@ -8,7 +8,7 @@ import {StreamDictionary} from "@dataspecer/core/io/stream/stream-dictionary.js"
 import {assertFailed, assertNot} from "@dataspecer/core/core";
 import {transformStructureModel, structureModelAddDefaultValues} from "@dataspecer/generators/structure-model/transformation";
 import {ShaclAdapter} from "./shacl-adapter.ts";
-import {DataSpecificationConfigurator, DefaultDataSpecificationConfiguration, DataSpecificationConfiguration} from "@dataspecer/core/data-specification/configuration";
+import { resolveDataSpecificationConfig, DataSpecificationConfiguration } from "@dataspecer/core/data-specification/configuration";
 import {StructureModel} from "@dataspecer/generators/structure-model/model";
 import {clone} from "@dataspecer/core/core";
 
@@ -48,10 +48,7 @@ export class ShaclGenerator implements ArtefactGenerator {
         `Missing structure model ${schemaArtefact.psm}.`
     );
 
-    const globalConfiguration = DataSpecificationConfigurator.merge(
-      DefaultDataSpecificationConfiguration,
-      DataSpecificationConfigurator.getFromObject(schemaArtefact.configuration)
-  ) as DataSpecificationConfiguration;
+    const globalConfiguration = resolveDataSpecificationConfig(schemaArtefact.configurationChain);
 
     model = Object.values(context.conceptualModels).reduce(
         (model, conceptualModel) => transformStructureModel(conceptualModel, model, Object.values(context.specifications)),
@@ -60,9 +57,7 @@ export class ShaclGenerator implements ArtefactGenerator {
 
     model = structureModelAddDefaultValues(model, globalConfiguration);
 
-    artefact.configuration["publicBaseUrl"] = globalConfiguration.publicBaseUrl;
-
-    const adapter = new ShaclAdapter(model, context, artefact);
+    const adapter = new ShaclAdapter(model, context, artefact, globalConfiguration.publicBaseUrl);
     return adapter.generate();
   }
 

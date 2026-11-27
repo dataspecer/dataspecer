@@ -19,7 +19,7 @@ const GeneralizationDialog = (props: DialogProps<GeneralizationDialogState>) => 
 
 export const createEditGeneralizationDialog = (
   state: GeneralizationDialogState,
-  onConfirm: (state: GeneralizationDialogState) => void | null,
+  onConfirm: ((state: GeneralizationDialogState) => void | Promise<void>) | null,
 ): DialogWrapper<GeneralizationDialogState> => {
   return {
     label: "dialog.generalization.label-edit",

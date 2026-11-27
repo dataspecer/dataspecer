@@ -53,6 +53,3 @@ export interface CmeSemanticModel {
   baseIri: string | null;
 
 }
-
-export type CmeSemanticModelChange =
-  Omit<CmeSemanticModel, "modelType" | "color">;

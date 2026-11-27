@@ -15,10 +15,9 @@ import {
   addVisualRelationshipsWithSpecifiedVisualEnds,
 } from "../dataspecer/visual-model/operation/add-visual-relationships";
 import { createNewAssociationDialog } from "../dialog/association/edit-association-dialog";
-import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
-import {
-  associationDialogStateToNewCmeRelationship,
-} from "../dialog/association/edit-association-dialog-state-adapter";
+import { CmeOperationExecutor } from "../operation";
+import { createCreateRelationshipBatch } from "./utilities/update-relationship-batch";
+import { reportFailure } from "./utilities/report-failure";
 import { LabelResolver } from "../dependency-tracker";
 import { ClassesContext } from "../context/classes-context";
 
@@ -26,7 +25,7 @@ import { ClassesContext } from "../context/classes-context";
  * Open and handle create association dialog.
  */
 export function openCreateAssociationDialogAction(
-  cmeExecutor: CmeModelOperationExecutor,
+  executor: CmeOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
   classes: ClassesContext,
@@ -46,12 +45,12 @@ export function openCreateAssociationDialogAction(
   const initialState = createNewAssociationDialogState(
     visualModel, options.language, model.getId(), tracker, labelResolver);
 
-  const onConfirm = (state: AssociationDialogState) => {
-
-    const result = cmeExecutor.createRelationship(
-      associationDialogStateToNewCmeRelationship(state));
-    cmeExecutor.updateSpecialization(result, state.model.identifier,
-      initialState.specializations, state.specializations);
+  const onConfirm = async (state: AssociationDialogState) => {
+    const { batch, created: result } = createCreateRelationshipBatch(executor.createContext, state);
+    const outcome = await executor.execute(batch);
+    if (reportFailure(notifications, outcome, "Can not create the association.")) {
+      return;
+    }
 
     if (isWritableVisualModel(visualModel)) {
       const visualSources = visualModel.getVisualEntitiesForRepresented(state.domain.identifier);

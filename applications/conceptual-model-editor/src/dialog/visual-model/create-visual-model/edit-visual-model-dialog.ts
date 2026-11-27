@@ -4,7 +4,7 @@ import { CreateVisualModelDialogView } from "./edit-visual-model-dialog-view";
 
 export const createVisualModelDialog = (
   state: EditVisualModelDialogState,
-  onConfirm: ((state: EditVisualModelDialogState) => void) | null,
+  onConfirm: ((state: EditVisualModelDialogState) => void | Promise<void>) | null,
 ): DialogWrapper<EditVisualModelDialogState> => {
   return {
     label: "dialog.visual-model.label-create",
@@ -20,7 +20,7 @@ export const createVisualModelDialog = (
 
 export const editVisualModelDialog = (
   state: EditVisualModelDialogState,
-  onConfirm: ((state: EditVisualModelDialogState) => void) | null,
+  onConfirm: ((state: EditVisualModelDialogState) => void | Promise<void>) | null,
 ): DialogWrapper<EditVisualModelDialogState> => {
   return {
     label: "dialog.visual-model.label-edit",

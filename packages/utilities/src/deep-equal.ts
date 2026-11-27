@@ -10,6 +10,9 @@ export function deepEqual(a: unknown, b: unknown): boolean {
   if (typeof a !== "object" || a === null || typeof b !== "object" || b === null) {
     return false;
   }
+  if (Array.isArray(a) !== Array.isArray(b)) {
+    return false;
+  }
   if (Array.isArray(a) && Array.isArray(b)) {
     if (a.length !== b.length) {
       return false;

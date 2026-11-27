@@ -1,3 +1,4 @@
+import type { ConfigurationChain } from "../../configuration/index.ts";
 import { DataSpecificationArtefact } from "./data-specification-artefact.ts";
 
 export class DataSpecification {
@@ -33,7 +34,7 @@ export class DataSpecification {
    * Specifies properties for artifacts builders that can extend {@link artefacts} field by adding other artefacts on
    * the fly. This allows user to dynamically add schemas without the need to manually specify the artifacts.
    */
-  artefactConfiguration: object = {};
+  configurationChain: ConfigurationChain = [];
 
   /**
    * Configuration for CIM adapters.

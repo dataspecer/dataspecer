@@ -7,12 +7,14 @@ import { ControlledVocabulary, isControlledVocabulary } from "@dataspecer/contro
 import { getTranslation } from "@dataspecer/core-v2/utils/language";
 import { createHandlebarsAdapter } from "@dataspecer/handlebars-adapter";
 import { StructureModel } from '@dataspecer/generators/structure-model/model/structure-model';
+import { htmlBeautify } from "./js-beautify.ts";
 import { getView, type PackageContext } from "../views/views.ts";
+import type { DocumentationConfiguration } from "../configuration.ts";
 
-export interface DocumentationGeneratorConfiguration {
+export interface DocumentationGeneratorConfiguration extends DocumentationConfiguration {
+  /** Handlebars source of the entry template, usually the resolved "specification" partial. */
   template: string;
   language: string;
-  partials: Record<string, string>;
 }
 
 /**
@@ -341,6 +343,7 @@ export async function generateDocumentation(
   const data = {
     ...(inputModel.v1Context ? getView(inputModel.v1Context, handlebarsAdapter) : {}),
     label: inputModel.label,
+    options: configuration.options,
     locallyDefinedSemanticEntity: sortedSemanticModel,
     locallyDefinedSemanticEntityByTags,
 
@@ -628,5 +631,13 @@ export async function generateDocumentation(
   };
 
   const result = await handlebarsAdapter.render(configuration.template, data, configuration.partials);
-  return result;
+  return htmlBeautify(result.trim(), {
+    indent_size: 2,
+    indent_inner_html: true,
+    preserve_newlines: false,
+    extra_liners: [],
+    indent_handlebars: false,
+    templating: ["none"],
+    content_unformatted: ["pre", "textarea", "code", "script", "style"],
+  });
 }

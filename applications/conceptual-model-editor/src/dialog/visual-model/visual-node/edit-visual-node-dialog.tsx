@@ -146,7 +146,7 @@ const mandatoryLabelToLabel = (entity: ContentItem) => {
 export const createEditVisualNodeDialog = (
   state: EditVisualNodeDialogState,
   nodeName: string,
-  onConfirm: ((state: EditVisualNodeDialogState) => void) | null,
+  onConfirm: ((state: EditVisualNodeDialogState) => void | Promise<void>) | null,
 ): DialogWrapper<EditVisualNodeDialogState> => {
   return {
     // TODO This gets into translation process and fails as it is no longer a key.

@@ -1,22 +1,20 @@
-// @see {@link ../configuration/README.md}
-
-import {DeepPartial} from "@dataspecer/core/core/utilities/deep-partial";
+import { resolveConfigurationHelper, mergeShallowConfigurationHelper, type Configuration, type ConfigurationChain } from "@dataspecer/core/configuration";
 
 export const DefaultXmlConfiguration = {
-    generateElementAnnotations: true,
-    generateTypeAnnotations: true,
-    generateSawsdl: true,
-    extractAllTypes: false,
+  generateElementAnnotations: true,
+  generateTypeAnnotations: true,
+  generateSawsdl: true,
+  extractAllTypes: false,
 
-    /**
-     * Whether the iri of element should be generated as an attribute instead of a child element
-     */
-    elementIriAsAttribute: false,
+  /**
+   * Whether the iri of element should be generated as an attribute instead of a child element
+   */
+  elementIriAsAttribute: false,
 
-    /**
-     * If set, the common xml schema will be referenced instead of bundled.
-     */
-    commonXmlSchemaExternalLocation: null as string | null,
+  /**
+   * If set, the common xml schema will be referenced instead of bundled.
+   */
+  commonXmlSchemaExternalLocation: null as string | null,
 };
 
 /**
@@ -24,48 +22,27 @@ export const DefaultXmlConfiguration = {
  */
 export type XmlConfiguration = typeof DefaultXmlConfiguration;
 
-export interface ConfigurationWithXml {
-    [XmlConfigurator.KEY]?: DeepPartial<XmlConfiguration>;
+export type XmlConfigurationInput = Partial<XmlConfiguration>;
+
+export const XML_CONFIGURATION_KEY = "xml";
+
+export type ConfigWithXml = {
+  [XML_CONFIGURATION_KEY]?: XmlConfigurationInput;
+};
+
+export function getXmlConfigInput(configuration: Configuration & ConfigWithXml): XmlConfigurationInput {
+  return configuration?.[XML_CONFIGURATION_KEY] ?? {};
 }
 
-export class XmlConfigurator {
-    static KEY = "xml" as const;
+export function xmlConfig(input: XmlConfigurationInput): Required<ConfigWithXml> {
+  return { xml: input };
+}
 
-    static getFromObject(configurationObject: object | null): DeepPartial<XmlConfiguration> {
-        return configurationObject?.[XmlConfigurator.KEY] ?? {};
-    }
-
-    static setToObject(configurationObject: object, options: DeepPartial<XmlConfiguration>): ConfigurationWithXml {
-        return {...configurationObject, [XmlConfigurator.KEY]: options};
-    }
-
-    static merge(...options: DeepPartial<XmlConfiguration>[]): DeepPartial<XmlConfiguration> {
-        let result: DeepPartial<XmlConfiguration> = {};
-        for (const option of options) {
-            if (option.generateElementAnnotations !== undefined) {
-                result.generateElementAnnotations = option.generateElementAnnotations;
-            }
-            if (option.generateTypeAnnotations !== undefined) {
-                result.generateTypeAnnotations = option.generateTypeAnnotations;
-            }
-            if (option.generateSawsdl !== undefined) {
-                result.generateSawsdl = option.generateSawsdl;
-            }
-            if (option.extractAllTypes !== undefined) {
-                result.extractAllTypes = option.extractAllTypes;
-            }
-            if (option.elementIriAsAttribute !== undefined) {
-                result.elementIriAsAttribute = option.elementIriAsAttribute;
-            }
-            if (option.commonXmlSchemaExternalLocation !== undefined) {
-                result.commonXmlSchemaExternalLocation = option.commonXmlSchemaExternalLocation;
-            }
-        }
-
-        return result;
-    }
-
-    static getDefault() {
-        return DefaultXmlConfiguration;
-    }
+export function resolveXmlConfig(configurations: ConfigurationChain<Configuration & ConfigWithXml>): XmlConfiguration {
+  return resolveConfigurationHelper(
+    configurations,
+    getXmlConfigInput,
+    () => ({ ...DefaultXmlConfiguration }),
+    (current, input) => mergeShallowConfigurationHelper(current, Object.fromEntries(Object.keys(DefaultXmlConfiguration).map((key) => [key, input[key]])), "skip"),
+  );
 }

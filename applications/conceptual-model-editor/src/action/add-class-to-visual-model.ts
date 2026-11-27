@@ -26,6 +26,7 @@ export async function addSemanticClassToVisualModelAction(
       notifications, diagram, graph, visualModel, classes, entityIdentifier);
   }
 
+  let added = false;
   withAggregatedEntity(notifications, entities,
     entityIdentifier, modelIdentifier,
     isSemanticModelClass, (entity) => {
@@ -34,8 +35,9 @@ export async function addSemanticClassToVisualModelAction(
       addVisualNode(
         visualModel,
         entity, modelIdentifier, position, content);
-      addRelatedEntitiesAction(
-        notifications, graph, classes, visualModel, Object.values(entities),
-        modelIdentifier, entity);
+      added = true;
     });
+  if (added) {
+    await addRelatedEntitiesAction(notifications, graph, visualModel, entityIdentifier);
+  }
 }

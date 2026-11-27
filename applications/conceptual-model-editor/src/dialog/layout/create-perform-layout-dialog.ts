@@ -19,7 +19,7 @@ export function createPerformLayoutDialogState(
 
 export const createPerformLayoutDialog = (
   state: PerformLayoutDialogState,
-  onConfirm: ((state: PerformLayoutDialogState) => void) | null,
+  onConfirm: ((state: PerformLayoutDialogState) => void | Promise<void>) | null,
 ): DialogWrapper<PerformLayoutDialogState> => {
   return {
     label: "dialog.layout-visual-model.label-perform",

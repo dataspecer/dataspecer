@@ -28,6 +28,7 @@
     "@dataspecer/sparql-query": "*",
     "@dataspecer/specification": "*",
     "@dataspecer/structure-model": "*",
+    "@dataspecer/utilities": "*",
     "@dataspecer/xml": "*",
     "@emotion/react": "^11.10.6",
     "@emotion/styled": "^11.10.6",
@@ -45,7 +46,6 @@
     "i18next": "^25.7.4",
     "i18next-browser-languagedetector": "^8.2.0",
     "jszip": "^3.10.1",
-    "lodash": "^4.17.21",
     "lucide-react": "^0.368.0",
     "mime": "^4.1.0",
     "notistack": "^3.0.1",
@@ -62,7 +62,6 @@
   "devDependencies": {
     "@eslint/js": "^9.13.0",
     "@types/file-saver": "^2.0.5",
-    "@types/lodash": "^4.14.192",
     "@types/node": "^25.5.2",
     "@types/react": "^19.0.7",
     "@types/react-dom": "^19.0.3",

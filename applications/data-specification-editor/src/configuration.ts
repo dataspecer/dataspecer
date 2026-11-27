@@ -1,41 +1,28 @@
-import {DeepPartial} from "@dataspecer/core/core/utilities/deep-partial";
+import { resolveConfigurationHelper, mergeShallowConfigurationHelper, type Configuration, type ConfigurationChain } from "@dataspecer/core/configuration";
 import { CASINGS } from "./editor/operations/context/operation-context";
 
-export const DefaultClientConfiguration =  {
-    technicalLabelCasingConvention: "snake_case" as typeof CASINGS[number],
+export const DefaultClientConfiguration = {
+  technicalLabelCasingConvention: "snake_case" as (typeof CASINGS)[number],
 
-    technicalLabelSpecialCharacters: "allow" as "allow" | "remove-diacritics" | "remove-all",
+  technicalLabelSpecialCharacters: "allow" as "allow" | "remove-diacritics" | "remove-all",
 
-    technicalLabelLanguages: "cs",
-}
+  technicalLabelLanguages: "cs",
+};
 
 export type ClientConfiguration = typeof DefaultClientConfiguration;
 
-export class ClientConfigurator {
-    static KEY = "client" as const;
+export type ClientConfigurationInput = Partial<ClientConfiguration>;
 
-    static getFromObject(configurationObject: object | null): DeepPartial<ClientConfiguration> {
-        return configurationObject?.[ClientConfigurator.KEY] ?? {};
-    }
+export const CLIENT_CONFIGURATION_KEY = "client";
 
-    static setToObject(configurationObject: object, options: DeepPartial<ClientConfiguration>): ConfigurationWithJson {
-        return {...configurationObject, [ClientConfigurator.KEY]: options};
-    }
-
-    static merge(...options: DeepPartial<ClientConfiguration>[]): DeepPartial<ClientConfiguration> {
-        let result: DeepPartial<ClientConfiguration> = {};
-        for (const option of options) {
-            result = {...result, ...option};
-        }
-
-        return result;
-    }
-
-    static getDefault() {
-        return DefaultClientConfiguration;
-    }
+export function getClientConfigInput(configuration: Configuration): ClientConfigurationInput {
+  return configuration?.[CLIENT_CONFIGURATION_KEY] ?? {};
 }
 
-export interface ConfigurationWithJson {
-    [ClientConfigurator.KEY]?: DeepPartial<ClientConfiguration>;
+export function clientConfig(input: ClientConfigurationInput): { client: ClientConfigurationInput } {
+  return { client: input };
+}
+
+export function resolveClientConfig(configurations: ConfigurationChain): ClientConfiguration {
+  return resolveConfigurationHelper(configurations, getClientConfigInput, () => ({ ...DefaultClientConfiguration }), mergeShallowConfigurationHelper);
 }

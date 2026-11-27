@@ -3,3 +3,4 @@ export {
   semanticModelsToShacl,
 } from "./semantic-adapter/index.ts";
 export { shaclToRdf } from "./shacl-to-rdf.ts";
+export * from "./configuration.ts";

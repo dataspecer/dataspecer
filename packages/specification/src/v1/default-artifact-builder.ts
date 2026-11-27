@@ -1,4 +1,5 @@
-import { Configurator } from "@dataspecer/core/configuration/configurator";
+import type { AllConfiguration } from "../all-configuration.ts";
+import type { ConfigurationChain } from "@dataspecer/core/configuration";
 import { CoreResourceReader } from "@dataspecer/core/core";
 import { DataSpecification as CoreDataSpecification } from "@dataspecer/core/data-specification/model";
 import type { EntityRecord } from "@dataspecer/core/entity-model";
@@ -8,10 +9,9 @@ import { FederatedObservableStore } from "@dataspecer/federated-observable-store
 import { GenerateReport } from "./generate-report.ts";
 import { StreamDictionary } from "@dataspecer/core/io/stream/stream-dictionary";
 import { ArtifactConfigurator } from "./artifact-configurator.ts";
-import { getArtefactGenerators, getDefaultConfigurators } from "./artefact-generators.ts";
+import { getArtefactGenerators } from "./artefact-generators.ts";
 import { generateSpecification, type GenerateSpecificationContext } from "../specification.ts";
 import { DataSpecification } from "../specification/model.ts";
-import { getPartialDocumentationConfiguration } from "@dataspecer/documentation";
 import type { SpecificationUrls, SpecificationUrlOverride } from "../specification-urls.ts";
 
 export interface ArtifactBuilderUrlOptions {
@@ -30,9 +30,9 @@ export class DefaultArtifactBuilder {
     private dataSpecificationIris: string[] = [];
     private reportCallback: ((report: GenerateReport) => void) | undefined;
     private artifactReport: GenerateReport = [];
-    private configuration: object;
+    private configurationDefaults: ConfigurationChain<AllConfiguration>;
     private readonly httpFetch: HttpFetch;
-    private readonly configurator: Configurator[];
+    private readonly configurationOverrides: ConfigurationChain<AllConfiguration>;
     private readonly models: Record<string, EntityRecord>;
     private specificationUrls: Record<string, SpecificationUrls> = {};
     private specificationUrlOverrides: Record<string, SpecificationUrlOverride> = {};
@@ -52,17 +52,17 @@ export class DefaultArtifactBuilder {
     public constructor(
         store: CoreResourceReader,
         dataSpecifications: Record<string, DataSpecification>,
-        configuration: object,
+        configurationDefaults: ConfigurationChain<AllConfiguration>,
         httpFetch: HttpFetch,
         models: Record<string, EntityRecord>,
-        configurator?: Configurator[],
+        configurationOverrides: ConfigurationChain<AllConfiguration> = [],
     ) {
         this.store = store;
         // @ts-ignore
         this.dataSpecifications = dataSpecifications;
-        this.configuration = configuration;
+        this.configurationDefaults = configurationDefaults;
         this.httpFetch = httpFetch;
-        this.configurator = configurator ?? getDefaultConfigurators();
+        this.configurationOverrides = configurationOverrides;
         this.models = models;
     }
 
@@ -78,8 +78,8 @@ export class DefaultArtifactBuilder {
         const artifactConfigurator = new ArtifactConfigurator(
             Object.values(this.dataSpecifications),
             this.store as FederatedObservableStore,
-            this.configuration,
-            this.configurator,
+            this.configurationDefaults,
+            this.configurationOverrides,
         );
 
         this.specificationUrlOverrides = { ...urls?.specificationOverrides };
@@ -135,8 +135,6 @@ export class DefaultArtifactBuilder {
             importsDataSpecifications: specification.importsDataSpecificationIds,
             artefacts: specification.artefacts,
             preferRelativeLinking: this.specificationUrls[specification.id]?.preferRelativeLinking,
-            // @ts-ignore
-            artefactConfiguration: specification.artefactConfiguration,
             cimAdapters: [],
         })) as CoreDataSpecification[];
 
@@ -179,7 +177,7 @@ export class DefaultArtifactBuilder {
                     models: this.models,
                     output: zip,
                     history: this.history,
-                    defaultDocumentationConfiguration: getPartialDocumentationConfiguration(this.configuration),
+                    configurationDefaults: this.configurationDefaults,
                     specificationUrls: this.specificationUrls,
                     specificationUrlOverrides: this.specificationUrlOverrides,
 
@@ -193,6 +191,7 @@ export class DefaultArtifactBuilder {
                 },
                 {
                     subdirectory: newGeneratorsPath,
+                    configurationOverrides: this.configurationOverrides,
                 }
             );
         }

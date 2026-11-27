@@ -60,8 +60,14 @@ describe("edge geometry", () => {
   });
 
   it("orients arrowheads using the final segment", () => {
-    expect(arrowhead([{ x: 0, y: 0 }, { x: 100, y: 0 }]))
-      .toEqual([{ x: 84, y: -6 }, { x: 100, y: 0 }, { x: 84, y: 6 }]);
+    const [first, tip, second] = arrowhead([{ x: 0, y: 0 }, { x: 100, y: 0 }]);
+    expect(tip).toEqual({ x: 100, y: 0 });
+    for (const end of [first, second]) {
+      expect(Math.hypot(end.x - tip.x, end.y - tip.y)).toBeCloseTo(12);
+      expect(tip.x - end.x).toBeCloseTo(Math.abs(end.y - tip.y));
+    }
+    expect(first.y).toBeLessThan(tip.y);
+    expect(second.y).toBeGreaterThan(tip.y);
     expect(arrowhead([{ x: 0, y: 0 }])).toEqual([]);
     expect(arrowhead([{ x: 0, y: 0 }, { x: 0, y: 0 }])).toEqual([]);
   });

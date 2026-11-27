@@ -9,20 +9,20 @@ import {
   isSemanticModelRelationshipProfile,
   SemanticModelRelationshipProfile,
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
 import {
   AssociationProfileDialogState,
   createEditAssociationProfileDialogState,
 } from "../dialog/association-profile/edit-association-profile-dialog-state";
 import { DialogSemanticTracker } from "../dialog-v2/dialog-semantic-tracker";
 import { createEditAssociationProfileDialog } from "../dialog/association-profile/edit-association-profile-dialog";
-import {
-  associationProfileDialogStateToNewCmeRelationshipProfile,
-} from "../dialog/association-profile/edit-association-profile-dialog-state-adapter";
 import { createLogger } from "../application";
 import { InvalidState } from "../application/error";
 import { LabelResolver } from "../dependency-tracker";
 import { applyVisualColorFromDialog } from "./utilities/visual-color-utilities";
+import { CmeOperationExecutor } from "../operation";
+import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
+import { createUpdateRelationshipProfileBatch } from "./utilities/update-relationship-profile-batch";
+import { reportFailure } from "./utilities/report-failure";
 
 const LOG = createLogger(import.meta.url);
 
@@ -30,7 +30,8 @@ const LOG = createLogger(import.meta.url);
  * Open and handle edit association dialog.
  */
 export function openEditAssociationProfileDialogAction(
-  cmeExecutor: CmeModelOperationExecutor,
+  executor: CmeOperationExecutor,
+  notifications: UseNotificationServiceWriterType,
   options: Options,
   dialogs: DialogApiContextType,
   classes: ClassesContext,
@@ -54,18 +55,14 @@ export function openEditAssociationProfileDialogAction(
     visualModel, options.language, model, rawEntity, aggregatedEntity,
     classes.semanticModels, tracker, labelResolver);
 
-  const onConfirm = (state: AssociationProfileDialogState) => {
-    cmeExecutor.updateRelationshipProfile({
-      identifier: entity.id,
-      ...associationProfileDialogStateToNewCmeRelationshipProfile(state),
-    });
-    cmeExecutor.updateSpecialization(
-      { identifier: entity.id, model: model.getId() },
-      state.model.identifier,
-      initialState.specializations, state.specializations);
-
+  const onConfirm = async (state: AssociationProfileDialogState) => {
+    const outcome = await executor.execute(createUpdateRelationshipProfileBatch(
+      executor.createContext, entity.id, initialState, state));
+    if (reportFailure(notifications, outcome, "Can not update the association profile.")) {
+      return;
+    }
     applyVisualColorFromDialog(
-      classes, visualModel, entity.id, initialState, state);
+      executor, visualModel, entity.id, initialState, state);
   };
 
   dialogs.openDialog(createEditAssociationProfileDialog(initialState, onConfirm));

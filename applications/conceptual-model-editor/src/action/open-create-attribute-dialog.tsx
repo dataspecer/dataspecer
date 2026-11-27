@@ -10,15 +10,16 @@ import { firstInMemorySemanticModel } from "../utilities/model";
 import { addSemanticAttributeToVisualModelAction } from "./add-semantic-attribute-to-visual-model";
 import { AttributeDialogState, createNewAttributeDialogState } from "../dialog/attribute/edit-attribute-dialog-state";
 import { createNewAttributeDialog } from "../dialog/attribute/edit-attribute-dialog";
-import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
-import { attributeDialogStateToNewCmeRelationship } from "../dialog/attribute/edit-attribute-dialog-state-adapter";
+import { CmeOperationExecutor } from "../operation";
+import { createCreateRelationshipBatch } from "./utilities/update-relationship-batch";
+import { reportFailure } from "./utilities/report-failure";
 import { LabelResolver } from "../dependency-tracker";
 
 /**
  * Open and handle create attribute dialog.
  */
 export function openCreateAttributeDialogAction(
-  cmeExecutor: CmeModelOperationExecutor,
+  executor: CmeOperationExecutor,
   options: Options,
   dialogs: DialogApiContextType,
   classes: ClassesContext,
@@ -39,12 +40,12 @@ export function openCreateAttributeDialogAction(
     classes, graph, visualModel, options.language, model.getId(),
     labelResolver);
 
-  const onConfirm = (state: AttributeDialogState) => {
-
-    const result = cmeExecutor.createRelationship(
-      attributeDialogStateToNewCmeRelationship(state));
-    cmeExecutor.updateSpecialization(result, state.model.identifier,
-      initialState.specializations, state.specializations);
+  const onConfirm = async (state: AttributeDialogState) => {
+    const { batch, created: result } = createCreateRelationshipBatch(executor.createContext, state);
+    const outcome = await executor.execute(batch);
+    if (reportFailure(notifications, outcome, "Can not create the attribute.")) {
+      return;
+    }
 
     if(isWritableVisualModel(visualModel)) {
       // TODO PeSk Update visual model

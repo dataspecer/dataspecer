@@ -1,27 +1,26 @@
+import type { Configuration, ConfigurationChain } from "@dataspecer/core/configuration";
 import {useState} from "react";
 import {Box, Tab, Tabs} from "@mui/material";
 import {DataSpecification} from "./tabs/data-specification";
 import {Json} from "./tabs/json";
 import {Csv} from "./tabs/csv";
 import {Xml} from "./tabs/xml";
-import {
-    DataSpecificationConfiguration,
-    DataSpecificationConfigurator
-} from "@dataspecer/core/data-specification/configuration";
-import {CsvConfiguration, CsvConfigurator} from "@dataspecer/csv/configuration";
-import {JsonConfiguration, JsonConfigurator} from "@dataspecer/json/configuration";
-import {XmlConfiguration, XmlConfigurator} from "@dataspecer/xml/configuration";
+import { getDataSpecificationConfigInput, dataSpecificationConfig, resolveDataSpecificationConfig } from "@dataspecer/core/data-specification/configuration";
+import { getCsvConfigInput, csvConfig, resolveCsvConfig } from "@dataspecer/csv/configuration";
+import { getJsonConfigInput, jsonConfig, resolveJsonConfig } from "@dataspecer/json/configuration";
+import { getXmlConfigInput, xmlConfig, resolveXmlConfig } from "@dataspecer/xml/configuration";
 import { ArtifactNames } from "./tabs/artifact-names";
 import { ShaclV2 } from "./tabs/shacl-v2";
-import { ShaclV2Configurator, type ShaclConfiguration } from "@dataspecer/specification/shacl-v2";
+import { getShaclConfigInput, shaclConfig, resolveShaclConfig } from "@dataspecer/shacl-v2";
+
 /**
  * Component that renders the UI for configuration change. It is possible to pre-set default configuration, or keep it
  * undefined for setting only the temporary configuration.
  */
 export const ConfigureArtifactsConfiguration = ({defaultConfiguration, configuration, onConfigurationChange}: {
-    defaultConfiguration: object | undefined,
-    configuration: object,
-    onConfigurationChange: (configuration: object) => void,
+    defaultConfiguration: ConfigurationChain | undefined,
+    configuration: Configuration,
+    onConfigurationChange: (configuration: Configuration) => void,
 }) => {
     const [currentTab, setCurrentTab] = useState(0);
     return <div>
@@ -37,44 +36,44 @@ export const ConfigureArtifactsConfiguration = ({defaultConfiguration, configura
         </Box>
         {currentTab === 0 &&
             <DataSpecification
-                input={DataSpecificationConfigurator.getFromObject(configuration)}
-                onChange={u => onConfigurationChange(DataSpecificationConfigurator.setToObject(configuration, u))}
-                defaultObject={defaultConfiguration ? DataSpecificationConfigurator.getFromObject(defaultConfiguration) as DataSpecificationConfiguration : undefined}
+                input={getDataSpecificationConfigInput(configuration)}
+                onChange={u => onConfigurationChange({ ...configuration, ...dataSpecificationConfig(u) })}
+                defaultObject={defaultConfiguration ? resolveDataSpecificationConfig(defaultConfiguration) : undefined}
             />
         }
         {currentTab === 1 &&
             <Json
-                input={JsonConfigurator.getFromObject(configuration)}
-                onChange={u => onConfigurationChange(JsonConfigurator.setToObject(configuration, u))}
-                defaultObject={defaultConfiguration ? JsonConfigurator.getFromObject(defaultConfiguration) as JsonConfiguration : undefined}
+                input={getJsonConfigInput(configuration)}
+                onChange={u => onConfigurationChange({ ...configuration, ...jsonConfig(u) })}
+                defaultObject={defaultConfiguration ? resolveJsonConfig(defaultConfiguration) : undefined}
             />
         }
         {currentTab === 2 &&
             <Csv
-                input={CsvConfigurator.getFromObject(configuration)}
-                onChange={u => onConfigurationChange(CsvConfigurator.setToObject(configuration, u))}
-                defaultObject={defaultConfiguration ? CsvConfigurator.getFromObject(defaultConfiguration) as CsvConfiguration : undefined}
+                input={getCsvConfigInput(configuration)}
+                onChange={u => onConfigurationChange({ ...configuration, ...csvConfig(u) })}
+                defaultObject={defaultConfiguration ? resolveCsvConfig(defaultConfiguration) : undefined}
             />
         }
         {currentTab === 3 &&
             <Xml
-                input={XmlConfigurator.getFromObject(configuration)}
-                onChange={u => onConfigurationChange(XmlConfigurator.setToObject(configuration, u))}
-                defaultObject={defaultConfiguration ? XmlConfigurator.getFromObject(defaultConfiguration) as XmlConfiguration : undefined}
+                input={getXmlConfigInput(configuration)}
+                onChange={u => onConfigurationChange({ ...configuration, ...xmlConfig(u) })}
+                defaultObject={defaultConfiguration ? resolveXmlConfig(defaultConfiguration) : undefined}
             />
         }
         {currentTab === 4 &&
             <ShaclV2
-                input={ShaclV2Configurator.getFromObject(configuration)}
-                onChange={u => onConfigurationChange(ShaclV2Configurator.setToObject(configuration, u))}
-                defaultObject={defaultConfiguration ? ShaclV2Configurator.getFromObject(defaultConfiguration) as ShaclConfiguration : undefined}
+                input={getShaclConfigInput(configuration)}
+                onChange={u => onConfigurationChange({ ...configuration, ...shaclConfig(u) })}
+                defaultObject={defaultConfiguration ? resolveShaclConfig(defaultConfiguration) : undefined}
             />
         }
         {currentTab === 5 &&
             <ArtifactNames
-                input={DataSpecificationConfigurator.getFromObject(configuration)}
-                onChange={u => onConfigurationChange(DataSpecificationConfigurator.setToObject(configuration, u))}
-                defaultObject={defaultConfiguration ? DataSpecificationConfigurator.getFromObject(defaultConfiguration) as DataSpecificationConfiguration : undefined}
+                input={getDataSpecificationConfigInput(configuration)}
+                onChange={u => onConfigurationChange({ ...configuration, ...dataSpecificationConfig(u) })}
+                defaultObject={defaultConfiguration ? resolveDataSpecificationConfig(defaultConfiguration) : undefined}
 
                 currentConfiguration={configuration}
             />

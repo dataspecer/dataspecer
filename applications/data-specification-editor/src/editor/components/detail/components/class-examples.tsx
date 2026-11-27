@@ -19,7 +19,7 @@ import {dialog, DialogParameters, useDialog} from "../../../dialog";
 import {DialogWrapper} from "../common";
 import DeleteIcon from '@mui/icons-material/Delete';
 import {useSaveHandler} from "../../helper/save-handler";
-import {isEqual} from "lodash";
+import { deepEqual } from "@dataspecer/utilities";
 import {useFederatedObservableStore} from "@dataspecer/federated-observable-store-react/store";
 import {SetObjectExample} from "../../../operations/set-object-example";
 import { ExtendedSemanticModelClass, isSemanticModelClass } from "@dataspecer/core-v2/semantic-model/concepts";
@@ -64,7 +64,7 @@ export const ClassExamples = memo(({pimClassIri}: {pimClassIri: string | null | 
     const Dialog = useDialog(ExamplesDialog, ["examples", "setExamples"]);
 
     useSaveHandler(
-        resource && !isEqual(examples, resource.objectExample ?? []),
+        resource && !deepEqual(examples, resource.objectExample ?? []),
         async () =>
             resource &&
             await store.executeComplexOperation(new SetObjectExample(resource.iri, examples))
@@ -125,7 +125,7 @@ const DialogInner = (props: {examples: object[], setExamples: (examples: object[
 
     const parsed = examples.filter(e => e.trim() !== "").map(parseJson).filter(o => o !== undefined);
     useSaveHandler(
-        !isEqual(parsed, props.examples),
+        !deepEqual(parsed, props.examples),
         () => {
             props.setExamples(parsed);
         }

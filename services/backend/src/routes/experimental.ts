@@ -1,5 +1,5 @@
 import { generateLightweightOwl } from "@dataspecer/lightweight-owl";
-import { simplifiedSemanticModelToSemanticModel } from "@dataspecer/core-v2/simplified-semantic-model";
+import { simplifiedSemanticModelToSemanticModel } from "../models/simplified-semantic-model/adapter.ts";
 import express from "express";
 import { asyncHandler } from "../utils/async-handler.ts";
 

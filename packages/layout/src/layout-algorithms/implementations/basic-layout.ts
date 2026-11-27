@@ -1,6 +1,5 @@
 import { ConfigurationsContainer } from "../../configurations/configurations-container.ts";
 import { Graph, MainGraph, } from "../../graph/representation/graph.ts";
-import _ from "lodash";
 import { LayoutAlgorithm } from "../layout-algorithms-interfaces.ts";
 import { AllowedVisualsForNodes } from "../../graph/representation/node.ts";
 

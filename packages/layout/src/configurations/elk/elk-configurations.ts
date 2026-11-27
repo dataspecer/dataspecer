@@ -3,7 +3,6 @@ import {
     AffectedNodesGroupingsType,
 } from "../graph-conversion-action.ts";
 import { modifyElkDataObject } from "./elk-utils.ts";
-import _ from "lodash";
 import { Direction } from "../../util/utils.ts";
 import { UserGivenAlgorithmConfigurationElkForce, UserGivenAlgorithmConfigurationLayered, UserGivenAlgorithmConfigurationOverlapRemoval, UserGivenAlgorithmConfigurationRadial, UserGivenAlgorithmConfigurationStress, UserGivenAlgorithmConfigurationStressProfile, UserGivenAlgorithmConfigurationStressWithClusters } from "../user-algorithm-configurations.ts";
 import { AlgorithmPhases, DefaultAlgorithmConfiguration, LayeredConfiguration, RadialConfiguration, StressConfiguration } from "../algorithm-configurations.ts";

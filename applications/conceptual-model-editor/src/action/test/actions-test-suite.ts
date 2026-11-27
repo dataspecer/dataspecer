@@ -60,12 +60,11 @@ import {
 import { addSemanticGeneralizationToVisualModelAction } from "../add-generalization-to-visual-model";
 import { addSemanticRelationshipToVisualModelAction } from "../add-relationship-to-visual-model";
 import { addSemanticRelationshipProfileToVisualModelAction } from "../add-relationship-profile-to-visual-model";
-import { createCmeClassProfile } from "../../dataspecer/cme-model/operation/create-cme-class-profile";
-import { createCmeRelationshipProfile } from "../../dataspecer/cme-model/operation/create-cme-relationship-profile";
 import {
   addVisualRelationshipsWithSpecifiedVisualEnds
 } from "../../dataspecer/visual-model/operation/add-visual-relationships";
-import { createCmeModelOperationExecutor } from "../../dataspecer/cme-model";
+import { createDefaultSemanticModelProfileOperationFactory } from "@dataspecer/core-v2/semantic-model/profile/operations";
+import { createRelationshipProfileEnds } from "../../operation/implementation/profile-model/relationship-profile-utilities";
 import { representRdfsLiteral } from "../../dialog/utilities/dialog-utilities";
 
 export enum TestedSemanticConnectionType {
@@ -682,26 +681,28 @@ export class ActionsTestSuite {
   ): CreatedSemanticEntityData {
     const model: InMemorySemanticModel = models.get(modelDsIdentifier) as InMemorySemanticModel;
 
-    const result = createCmeRelationshipProfile(model, {
-      model: modelDsIdentifier,
-      profileOf,
-      iri: null,
-      name: null,
-      nameSource: null,
-      description: null,
-      descriptionSource: null,
-      usageNote: null,
-      usageNoteSource: null,
-      externalDocumentationUrl: null,
-      mandatoryLevel: null,
-      //
-      domain: domain,
-      domainCardinality: null,
-      range: range,
-      rangeCardinality: null,
+    const operation = createDefaultSemanticModelProfileOperationFactory().createRelationshipProfile({
+      ends: createRelationshipProfileEnds({
+        profileOf,
+        iri: null,
+        name: null,
+        nameSource: null,
+        description: null,
+        descriptionSource: null,
+        usageNote: null,
+        usageNoteSource: null,
+        //
+        domain,
+        domainCardinality: null,
+        range,
+        rangeCardinality: null,
+        externalDocumentationUrl: null,
+        mandatoryLevel: null,
+        order: null,
+      }),
     });
     return {
-      identifier: result.identifier,
+      identifier: (model.executeOperation(operation) as CreatedEntityOperationResult).id,
       model,
     };
   }
@@ -743,21 +744,21 @@ export class ActionsTestSuite {
   ) {
     const model = models.get(modelDsIdentifier) as InMemorySemanticModel;
 
-    const result = createCmeClassProfile(model, {
-      model: modelDsIdentifier,
-      profileOf,
+    const operation = createDefaultSemanticModelProfileOperationFactory().createClassProfile({
       iri: null,
+      profiling: profileOf,
       name: null,
-      nameSource: null,
+      nameFromProfiled: null,
       description: null,
-      descriptionSource: null,
+      descriptionFromProfiled: null,
       usageNote: null,
-      usageNoteSource: null,
+      usageNoteFromProfiled: null,
       externalDocumentationUrl: null,
-      role: null
+      tags: [],
+      controlledVocabularies: [],
     });
     return {
-      identifier: result.identifier,
+      identifier: (model.executeOperation(operation) as CreatedEntityOperationResult).id,
       model,
     };
   }
@@ -851,25 +852,29 @@ export class ActionsTestSuite {
     const range = representRdfsLiteral();
 
     const model: InMemorySemanticModel = models.get(modelDsIdentifier) as InMemorySemanticModel;
-    const executor = createCmeModelOperationExecutor(models);
-    const result = executor.createRelationshipProfile({
-      model: modelDsIdentifier,
-      profileOf: [domainAttribute],
-      iri: ActionsTestSuite.generateIriForName(domainAttribute),
-      name: null,
-      nameSource: null,
-      description: null,
-      descriptionSource: null,
-      usageNote: null,
-      usageNoteSource: null,
-      //
-      domain: domainConceptIdentifier,
-      domainCardinality: null,
-      range: range.identifier,
-      rangeCardinality: null,
-      externalDocumentationUrl: null,
-      mandatoryLevel: null,
+    const operation = createDefaultSemanticModelProfileOperationFactory().createRelationshipProfile({
+      ends: createRelationshipProfileEnds({
+        profileOf: [domainAttribute],
+        iri: ActionsTestSuite.generateIriForName(domainAttribute),
+        name: null,
+        nameSource: null,
+        description: null,
+        descriptionSource: null,
+        usageNote: null,
+        usageNoteSource: null,
+        //
+        domain: domainConceptIdentifier,
+        domainCardinality: null,
+        range: range.identifier,
+        rangeCardinality: null,
+        externalDocumentationUrl: null,
+        mandatoryLevel: null,
+        order: null,
+      }),
     });
+    const result = {
+      identifier: (model.executeOperation(operation) as CreatedEntityOperationResult).id,
+    };
 
     const createdAttributeProfile = model.getEntities()[result.identifier];
     if(!isSemanticModelRelationshipProfile(createdAttributeProfile)) {
@@ -986,7 +991,7 @@ export class ActionsTestSuite {
     return visualId;
   }
 
-  static addTestRelationshipToVisualModel(
+  static async addTestRelationshipToVisualModel(
     graph: UseModelGraphContextType,
     visualModel: WritableVisualModel,
     modelDsIdentifier: string,
@@ -997,7 +1002,7 @@ export class ActionsTestSuite {
   ) {
     if (visualSources === null || visualTargets === null) {
       if(relationshipToTestType === TestedSemanticConnectionType.Generalization) {
-        addSemanticGeneralizationToVisualModelAction(
+        await addSemanticGeneralizationToVisualModelAction(
           notificationMockup, graph, visualModel,
           relationshipIdentifier, modelDsIdentifier);
       }

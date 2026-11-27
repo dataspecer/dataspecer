@@ -86,7 +86,7 @@ class JsonSchemaCreator{
         artefact.outputPath = path.resolve("data-json-ld-generated.json");
         artefact.type = "schema";
         var customConfig = DefaultJsonConfiguration;
-        artefact.configuration = customConfig;
+        artefact.configurationChain = [customConfig];
         //console.log(artefact.outputPath);
         const output: StreamDictionary =  new MemoryStreamDictionary();
 

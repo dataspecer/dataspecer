@@ -43,6 +43,12 @@ export interface DialogRendererContextType<S> {
    */
   changeState: (next: S | ((prevState: S) => S)) => void;
 
+  /**
+   * True while an asynchronous {@link DialogWrapper.onConfirm} runs.
+   * Confirm and close are ignored in the meantime.
+   */
+  pending: boolean;
+
   confirm: () => void;
 
   close: () => void;
@@ -55,6 +61,21 @@ export interface DialogRendererContextType<S> {
 }
 
 /**
+ * Dialog in the stack of open dialogs.
+ */
+interface OpenDialog<S> extends DialogWrapper<S> {
+
+  /**
+   * Stays the same while the dialog is open, even when the state changes.
+   * Used to find the dialog after an asynchronous confirm.
+   */
+  identifier: number;
+
+  pending: boolean;
+
+}
+
+/**
  * Hold context internal data.
  * Here we use any as a type for generic as we can have different
  * types for different dialogs. As a result we need to disable
@@ -63,7 +84,7 @@ export interface DialogRendererContextType<S> {
  */
 interface State {
 
-  dialogs: DialogWrapper<any>[];
+  dialogs: OpenDialog<any>[];
 
 }
 
@@ -73,10 +94,24 @@ export const createInitialDialogContextStateType = (): State => {
   };
 };
 
+let nextDialogIdentifier = 0;
+
+/**
+ * Identifiers of dialogs whose confirm was called.
+ * The pending flag in the state is visible only after the next render,
+ * this guards against a second click before that.
+ */
+const confirmedDialogs = new Set<number>();
+
 export const createDialogApiContext = (setState: React.Dispatch<React.SetStateAction<State>>): DialogApiContextType => {
 
   const openDialog = (dialog: DialogWrapper<any>) => {
-    setState(previous => ({ ...previous, dialogs: [...previous.dialogs, dialog] }));
+    const open: OpenDialog<any> = {
+      ...dialog,
+      identifier: ++nextDialogIdentifier,
+      pending: false,
+    };
+    setState(previous => ({ ...previous, dialogs: [...previous.dialogs, open] }));
   };
 
   const closeDialog = () => {
@@ -106,43 +141,69 @@ export const createDialogRendererContext = <S>(
   state: State,
   setState: React.Dispatch<React.SetStateAction<State>>,
 ): DialogRendererContextType<S> | null => {
-  const dialog = state.dialogs.at(-1);
+  const dialog = state.dialogs.at(-1) as OpenDialog<S> | undefined;
   if (dialog === undefined) {
     return null;
   }
 
   // We use function as otherwise the <S> is detected as start of JSX.
   const changeState = (next: S | ((prevState: S) => S)) => {
-    setState((previous) => {
-      // We grab the last dialog we are working with.
-      let dialog = previous.dialogs.at(-1);
-      if (dialog === undefined) {
-        logger.error("An attempt was made to change state of dialog, when no dialog is open.");
-        return previous;
-      }
+    setState((previous) => updateDialog(previous, dialog.identifier, item => {
       if (typeof next === "function") {
         // Little help for TypeScript here.
         const setter: (prevState: S) => S = next as any;
-        dialog = { ...dialog, state: setter(dialog.state) };
+        return { ...item, state: setter(item.state) };
       } else {
-        dialog = { ...dialog, state: next };
+        return { ...item, state: next };
       }
-      return { ...state, dialogs: [...state.dialogs.slice(0, state.dialogs.length - 1), dialog] };
+    }));
+  };
+
+  const remove = () => {
+    setState(previous => {
+      confirmedDialogs.delete(dialog.identifier);
+      return {
+        ...previous,
+        dialogs: previous.dialogs.filter(item => item.identifier !== dialog.identifier),
+      };
     });
   };
 
   const confirm = () => {
-    if (dialog.onConfirm !== null) {
-      dialog.onConfirm(dialog.state);
+    if (confirmedDialogs.has(dialog.identifier)) {
+      return;
     }
-    setState({ ...state, dialogs: state.dialogs.slice(0, state.dialogs.length - 1) });
+    confirmedDialogs.add(dialog.identifier);
+    let result: void | Promise<void>;
+    try {
+      result = dialog.onConfirm?.(dialog.state);
+    } catch (error) {
+      // Synchronous failure keeps the dialog open, as before.
+      confirmedDialogs.delete(dialog.identifier);
+      throw error;
+    }
+    if (!(result instanceof Promise)) {
+      remove();
+      return;
+    }
+    // Wait for the confirm to finish, then close the dialog.
+    setState(previous => updateDialog(previous, dialog.identifier,
+      item => ({ ...item, pending: true })));
+    result
+      // We close the dialog even when the confirm fails,
+      // see "2026-11-22-dialog-backlog.md".
+      .catch(error => logger.error("Dialog confirm failed.", { error }))
+      .finally(remove);
   };
 
   const close = () => {
+    if (confirmedDialogs.has(dialog.identifier)) {
+      return;
+    }
     if (dialog.onClose !== null) {
       dialog.onClose(dialog.state);
     }
-    setState({ ...state, dialogs: state.dialogs.slice(0, state.dialogs.length - 1) });
+    remove();
   };
 
   return {
@@ -153,8 +214,27 @@ export const createDialogRendererContext = <S>(
     state: dialog.state,
     component: dialog.component,
     changeState,
+    pending: dialog.pending,
     confirm,
     close,
     dialogClassNames: dialog.dialogClassNames
   };
 };
+
+/**
+ * Replace dialog with given identifier, do nothing when it is not open.
+ */
+function updateDialog(
+  state: State,
+  identifier: number,
+  update: (dialog: OpenDialog<any>) => OpenDialog<any>,
+): State {
+  const index = state.dialogs.findIndex(item => item.identifier === identifier);
+  if (index === -1) {
+    logger.error("An attempt was made to change a dialog which is not open.");
+    return state;
+  }
+  const dialogs = [...state.dialogs];
+  dialogs[index] = update(dialogs[index]);
+  return { ...state, dialogs };
+}

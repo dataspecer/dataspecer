@@ -146,6 +146,7 @@ export async function createClass(
     name: { en: name },
     description: null,
     externalDocumentationUrl: null,
+    order: null,
   }));
   return result.created;
 }
@@ -206,6 +207,7 @@ export async function createClassProfile(
     usageNoteSource: null,
     externalDocumentationUrl: null,
     tags: [],
+    order: null,
   }));
   return result.created;
 }

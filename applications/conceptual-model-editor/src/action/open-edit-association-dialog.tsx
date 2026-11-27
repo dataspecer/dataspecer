@@ -1,29 +1,29 @@
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
 import { VisualModel } from "@dataspecer/visual-model";
+import { SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
 
 import { DialogApiContextType } from "../dialog/dialog-service";
-import { UseModelGraphContextType } from "../context/model-context";
 import { Options } from "../application";
-import { SemanticModelRelationship } from "@dataspecer/core-v2/semantic-model/concepts";
 import {
   AssociationDialogState,
   createEditAssociationDialogState,
 } from "../dialog/association/edit-association-dialog-state";
 import { DialogSemanticTracker } from "../dialog-v2/dialog-semantic-tracker";
 import { createEditAssociationDialog } from "../dialog/association/edit-association-dialog";
-import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
-import {
-  associationDialogStateToNewCmeRelationship,
-} from "../dialog/association/edit-association-dialog-state-adapter";
 import { LabelResolver } from "../dependency-tracker";
 import { ClassesContext } from "../context/classes-context";
+import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
+import { CmeOperationExecutor } from "../operation";
 import { applyVisualColorFromDialog } from "./utilities/visual-color-utilities";
+import { createUpdateRelationshipBatch } from "./utilities/update-relationship-batch";
+import { reportFailure } from "./utilities/report-failure";
 
 /**
  * Open and handle edit association dialog.
  */
 export function openEditAssociationDialogAction(
-  cmeExecutor: CmeModelOperationExecutor,
+  executor: CmeOperationExecutor,
+  notifications: UseNotificationServiceWriterType,
   options: Options,
   dialogs: DialogApiContextType,
   classes: ClassesContext,
@@ -37,18 +37,14 @@ export function openEditAssociationDialogAction(
     visualModel, options.language, model, entity, classes.semanticModels, tracker,
     labelResolver);
 
-  const onConfirm = (state: AssociationDialogState) => {
-    cmeExecutor.updateRelationship({
-      identifier: entity.id,
-      ...associationDialogStateToNewCmeRelationship(state),
-    });
-    cmeExecutor.updateSpecialization(
-      { identifier: entity.id, model: model.getId() },
-      state.model.identifier,
-      initialState.specializations, state.specializations);
-
+  const onConfirm = async (state: AssociationDialogState) => {
+    const outcome = await executor.execute(createUpdateRelationshipBatch(
+      executor.createContext, entity.id, initialState, state));
+    if (reportFailure(notifications, outcome, "Can not update the association.")) {
+      return;
+    }
     applyVisualColorFromDialog(
-      classes, visualModel, entity.id, initialState, state);
+      executor, visualModel, entity.id, initialState, state);
   };
 
   dialogs.openDialog(createEditAssociationDialog(initialState, onConfirm));

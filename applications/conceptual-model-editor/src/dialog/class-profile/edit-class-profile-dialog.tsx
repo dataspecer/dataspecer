@@ -173,7 +173,7 @@ function isClassProfileDialogStateValid(state: ClassProfileDialogState): boolean
 
 export const createNewClassProfileDialog = (
   state: ClassProfileDialogState,
-  onConfirm: (state: ClassProfileDialogState) => void | null,
+  onConfirm: ((state: ClassProfileDialogState) => void | Promise<void>) | null,
 ): DialogWrapper<ClassProfileDialogState> => {
   return {
     label: "dialog.class-profile.label-create",
@@ -189,7 +189,7 @@ export const createNewClassProfileDialog = (
 
 export const createEditClassProfileDialog = (
   state: ClassProfileDialogState,
-  onConfirm: (state: ClassProfileDialogState) => void | null,
+  onConfirm: ((state: ClassProfileDialogState) => void | Promise<void>) | null,
 ): DialogWrapper<ClassProfileDialogState> => {
   return {
     label: "dialog.class-profile.label-edit",

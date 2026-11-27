@@ -1,3 +1,7 @@
+import type { AllConfiguration } from "./all-configuration.ts";
+import type { ConfigurationChain } from "@dataspecer/core/configuration";
+import { resolveDataSpecificationConfig } from "@dataspecer/core/data-specification/configuration";
+import { getSpecificationConfigurationChain } from "./configuration.ts";
 import { controlledVocabulariesToDcatCatalog, controlledVocabularyCatalogIri, type ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 import { CONTROLLED_VOCABULARY_MODEL, LOCAL_PACKAGE, LOCAL_SEMANTIC_MODEL, QUERYABLE_MODEL, V1, VISUAL_MODEL } from "@dataspecer/core-v2/model/known-models";
 import { getSemanticModelMainEntity, isMainSemanticModelEntity, isSemanticModelClass, isSemanticModelGeneralization, isSemanticModelRelationship, SemanticModelEntity, type MainSemanticModelEntity } from "@dataspecer/core-v2/semantic-model/concepts";
@@ -23,12 +27,12 @@ import {
   type VocabularySpecificationDocument,
 } from "@dataspecer/data-specification-vocabulary/specification-description";
 import { structureModelToRdf } from "@dataspecer/data-specification-vocabulary/structure-model";
-import type { PartialDocumentationConfiguration } from "@dataspecer/documentation";
+import { generateVisualModelSvg, resolveDiagramConfig, type SvgRenderOptions } from "@dataspecer/diagram";
 import { isRdfsSnapshot } from "@dataspecer/rdfs/semantic-model";
-import { canonicalizeIds, garbageCollect } from "@dataspecer/structure-model";
-import { generateApplicationProfileSvg } from "./application-profile-diagram.ts";
+import { canonicalizeIds, garbageCollectProfileModel, garbageCollectStructureModel } from "@dataspecer/structure-model";
+import { generateSemanticModelVisualModel, prepareDiagramRendering } from "./diagram.ts";
 import { ModelDescription, type StructureModelDescription } from "./model.ts";
-import { DefaultShaclConfiguration, DefaultShaclFileKey, ShaclV2Configurator } from "./shacl-v2.ts";
+import { DefaultShaclFileKey, resolveShaclConfig } from "@dataspecer/shacl-v2";
 import {
   generateDsvApplicationProfile,
   generateHtmlDocumentation,
@@ -41,6 +45,7 @@ import {
 import { artefactToDsv } from "./v1/artefact-to-dsv.ts";
 import { pathRelative } from "@dataspecer/core/core/utilities/path-relative";
 import { resolveSpecificationUrls, type SpecificationUrls, type SpecificationUrlOverride } from "./specification-urls.ts";
+import { expandSpecificationConfiguration } from "./expand-specification-configuration.ts";
 
 /**
  * Id under which the project model (the package hierarchy) is stored in the
@@ -102,8 +107,8 @@ export interface GenerateSpecificationContext {
 
   fetch: HttpFetch;
 
-  /** Instance defaults, overridden by the package's documentation configuration. */
-  defaultDocumentationConfiguration?: PartialDocumentationConfiguration;
+  /** Instance defaults, overridden by persisted specification configuration. */
+  configurationDefaults?: ConfigurationChain<AllConfiguration>;
 
   specificationUrls?: Record<string, SpecificationUrls>;
   specificationUrlOverrides?: Record<string, SpecificationUrlOverride>;
@@ -119,6 +124,8 @@ export interface GenerateSpecificationContext {
  * Additional configuration for generating the specification.
  */
 export interface GenerateSpecificationOptions {
+  configurationOverrides?: ConfigurationChain<AllConfiguration>;
+
   /**
    * Generate only a single file specified by this local path.
    */
@@ -177,8 +184,14 @@ async function writeDcatCatalog(
  */
 export async function generateSpecification(packageId: string, context: GenerateSpecificationContext, options: GenerateSpecificationOptions = {}): Promise<void> {
   const subdirectory = options.subdirectory ?? "";
+  const configurationChain = expandSpecificationConfiguration([
+    ...context.configurationDefaults ?? [],
+    ...getSpecificationConfigurationChain(packageId, context.models),
+    ...options.configurationOverrides ?? [],
+  ]);
 
-  const allModels = context.models;
+  const { cleanupSemanticModelForStructures } = resolveDataSpecificationConfig(configurationChain);
+  const allModels = { ...context.models };
   const projectModel = (allModels[PROJECT_MODEL_ID] ?? {}) as Record<string, ProjectModelEntity>;
 
   const rootPackageEntity = projectModel[packageId] as PackageEntity | undefined;
@@ -212,18 +225,30 @@ export async function generateSpecification(packageId: string, context: Generate
       throw new Error("Package does not exist.");
     }
     const children = getSubModelEntities(projectModel, packageIri);
-    const configurationId = children.find((child) => child.modelType === V1.GENERATOR_CONFIGURATION)?.id;
-    const configuration = configurationId ? getModelBlobData(allModels, configurationId) : {};
+    const configuration = resolveDataSpecificationConfig(expandSpecificationConfiguration([
+      ...context.configurationDefaults ?? [],
+      ...getSpecificationConfigurationChain(packageIri, allModels),
+      ...options.configurationOverrides ?? [],
+    ]));
     specificationUrls[packageIri] ??= resolveSpecificationUrls({
-      publicBaseUrl: configuration?.["data-specification"]?.publicBaseUrl,
+      publicBaseUrl: configuration.publicBaseUrl,
       documentationUrl: (pckgEntity as any).documentBaseUrl,
       ...context.specificationUrlOverrides?.[packageIri],
     });
     const semanticModels = children.filter((r) => r.modelType === LOCAL_SEMANTIC_MODEL);
     for (const semanticModel of semanticModels) {
-      const modelEntities = allModels[semanticModel.id] ?? {};
+      let modelEntities = allModels[semanticModel.id] ?? {};
       const mainEntity = modelEntities[semanticModel.id] as MainSemanticModelEntity | undefined;
       const isSourced = !!mainEntity?.source;
+      const isPrimary = isRoot && !isSourced;
+      if (cleanupSemanticModelForStructures && isPrimary && isModelProfile(modelEntities)) {
+        const structures = Object.fromEntries(children
+          .filter(model => model.modelType === V1.PSM)
+          .map(model => [model.id, allModels[model.id] ?? {}]));
+        modelEntities = garbageCollectProfileModel(modelEntities, structures);
+        // All artifact generators see the same cleaned primary profile; other models stay intact.
+        allModels[semanticModel.id] = modelEntities;
+      }
       if (!isSourced) {
         semanticModelOwningPackage.set(semanticModel.id, packageIri);
       }
@@ -238,7 +263,7 @@ export async function generateSpecification(packageId: string, context: Generate
       modelDescriptions.push({
         id: semanticModel.id,
         entities: Object.fromEntries(Object.entries(entities).map(([id, entity]) => [id, withAbsoluteIri(entity as SemanticModelEntity, baseIri ?? undefined)])),
-        isPrimary: isRoot && !isSourced,
+        isPrimary,
         documentationUrl: null,
         baseIri,
         title: semanticModel.label,
@@ -335,6 +360,17 @@ export async function generateSpecification(packageId: string, context: Generate
    * We use base URL as is. We transform base IRI to end with a slash for
    * everything else than the model.
    */
+
+  /**
+   * Currently we have hardcoded supported languages
+   */
+  const languages = ["en", "cs"];
+
+  /**
+   * Use this to generate multilingual files that will match later.
+   */
+  const langPlaceholder = "%%lang%%";
+  const replaceLang = (text: string, lang: string) => text.replaceAll(langPlaceholder, lang);
 
   /**
    * Global generator configuration for this specification.
@@ -447,6 +483,7 @@ export async function generateSpecification(packageId: string, context: Generate
 
   // For each model we need to decide whether it is a standalone vocabulary of application profile
   for (const model of modelDescriptions.filter((m) => m.isPrimary)) {
+    const isProfile = isModelProfile(model.id ? context.models[model.id] ?? {} : model.entities);
     // Resource ID of the Model
     const modelIri = model.baseIri ?? (baseIri + isModelVocabulary(model.entities) ? "vocabulary" : "profile");
     const fileName = isModelVocabulary(model.entities) ? "model.owl.ttl" : "dsv.ttl";
@@ -502,7 +539,7 @@ export async function generateSpecification(packageId: string, context: Generate
     }
 
     // Process application profile model as a standalone application profile - we do not need to see additional vocabularies for it.
-    if (isModelProfile(model.entities)) {
+    if (isProfile) {
       hasApplicationProfile = true;
 
       const hasResource: ResourceDescriptor[] = [];
@@ -550,10 +587,7 @@ export async function generateSpecification(packageId: string, context: Generate
 
       // Create shacl shape(s) — one per entry in the ShaclConfiguration
       {
-        const shaclConfig = ShaclV2Configurator.merge(
-          DefaultShaclConfiguration,
-          ShaclV2Configurator.getFromObject(generatorConfiguration),
-        );
+        const shaclConfig = resolveShaclConfig(configurationChain);
         const shaclProfileExternalArtifacts: typeof externalArtifacts[keyof typeof externalArtifacts] = [];
         externalArtifacts["shacl-profile"] = shaclProfileExternalArtifacts;
         for (const [fileKey, fileConf] of Object.entries(shaclConfig.files)) {
@@ -578,7 +612,7 @@ export async function generateSpecification(packageId: string, context: Generate
     // Publish the operations of the model as an LDES stream. This is a proof
     // of concept: the descriptor is not registered in the DSV metadata yet as
     // PROF has no suitable role for a change log.
-    if (isModelVocabulary(model.entities) || isModelProfile(model.entities)) {
+    if (isModelVocabulary(model.entities) || isProfile) {
       const ldesFileName = isModelVocabulary(model.entities) ? "model.owl.ldes.ttl" : "dsv.ldes.ttl";
       const ldesUrl = urls.artifactUrl(ldesFileName);
       // We need to use empty IRI because LDES consumers we tested require the IRI to match the URL
@@ -602,8 +636,8 @@ export async function generateSpecification(packageId: string, context: Generate
    * their IDs and exports them as individual Turtle files.
    */
 
-  let structureModels = primaryStructureModels.map((sm) => Object.values(sm.entities as unknown as Record<string, CoreResource>));
-  structureModels = structureModels.map((sm) => garbageCollect(sm));
+  const structureModels = primaryStructureModels.map(model =>
+    Object.values(garbageCollectStructureModel(allModels[model.id] ?? {})) as unknown as CoreResource[]);
   const processedStructureModels = canonicalizeIds(structureModels, idToIriMapping, baseIri);
 
   if (processedStructureModels.length > 0) {
@@ -693,70 +727,68 @@ export async function generateSpecification(packageId: string, context: Generate
     }
   }
 
-  // Process all SVGs. Because we do not know which svg belongs to which model,
+  // Generate all SVGs. Because we do not know which svg belongs to which model,
   // we assign all of them to all models.
-  // Also, currently SVGs are not language dependent, so we generate them to the root of the directory.
-  const visualModels = subResources.filter((r) => r.modelType === VISUAL_MODEL);
-  for (const visualModel of visualModels) {
-    const svgData = getModelBlobData(allModels, visualModel.id, "svg") as { svg: string } | undefined;
-    const svg = svgData ? svgData.svg : null;
 
-    if (svg) {
-      const resourceFileName = visualModel.id + ".svg";
-      const resourceUrl = urls.artifactUrl(resourceFileName);
+  // Default render options for SVG generation.
+  const diagramConfiguration = resolveDiagramConfig(configurationChain);
+  const renderOptions: SvgRenderOptions = {
+    ...diagramConfiguration,
+    prefixes: { ...prefixMap, ...diagramConfiguration.prefixes },
+    language: "en",
+  };
 
-      await writeFile(resourceFileName, svg);
-      externalArtifacts["svg"] = [
-        ...(externalArtifacts["svg"] ?? []),
-        {
-          type: "svg",
-          URL: resourceUrl,
-          label: visualModel.label,
-        },
-      ];
-
-      const descriptor = {
-        iri: null,
-        url: resourceUrl,
-
-        role: dsvMetadataWellKnown.role.guidance,
-        formatMime: dsvMetadataWellKnown.formatMime.svg,
-        conformsTo: [dsvMetadataWellKnown.conformsTo.svg],
-        additionalRdfTypes: [],
-      } satisfies ResourceDescriptor;
-      allModelsHasResource.forEach((hasResource) => hasResource.push(descriptor));
+  const { diagramModels } = prepareDiagramRendering(packageId, allModels);
+  const visualModels = subResources.filter((r) => r.modelType === VISUAL_MODEL).map((model) => ({
+    id: model.id,
+    label: model.label,
+    entities: allModels[model.id] ?? {},
+  }));
+  if (visualModels.length === 0) {
+    for (const model of modelDescriptions) {
+      if (!model.isPrimary || !model.id) continue;
+      visualModels.push({
+        id: model.id,
+        label: model.title ?? {},
+        entities: await generateSemanticModelVisualModel(
+          model.id,
+          model.entities,
+          diagramModels,
+          renderOptions,
+        ),
+      });
     }
   }
 
-  if (visualModels.length === 0 && hasApplicationProfile) {
-    const applicationProfile = modelDescriptions.find((model) => model.isPrimary && isModelProfile(model.entities));
-    if (applicationProfile?.id) {
-      const svg = await generateApplicationProfileSvg(
-        packageId,
-        applicationProfile.id,
-        applicationProfile.entities,
-        allModels,
-        prefixMap,
-      );
-      const resourceFileName = packageId + ".svg";
-      const resourceUrl = urls.artifactUrl(resourceFileName);
+  for (const visualModel of visualModels) {
+    const resourceFileName = langPlaceholder + "/" + visualModel.id + ".svg";
+    const resourceUrl = urls.artifactUrl(resourceFileName);
 
-      await writeFile(resourceFileName, svg);
-      externalArtifacts["svg"] = [
-        ...(externalArtifacts["svg"] ?? []),
-        { type: "svg", URL: resourceUrl, label: rootPackageEntity.label },
-      ];
-
-      const descriptor = {
-        iri: null,
-        url: resourceUrl,
-        role: dsvMetadataWellKnown.role.guidance,
-        formatMime: dsvMetadataWellKnown.formatMime.svg,
-        conformsTo: [dsvMetadataWellKnown.conformsTo.svg],
-        additionalRdfTypes: [],
-      } satisfies ResourceDescriptor;
-      allModelsHasResource.forEach((hasResource) => hasResource.push(descriptor));
+    // Generate SVG for each language
+    for (const lang of languages) {
+      const langRenderOptions = { ...renderOptions, language: lang };
+      const svg = generateVisualModelSvg(visualModel.entities, diagramModels, langRenderOptions);
+      await writeFile(replaceLang(resourceFileName, lang), svg);
     }
+
+    externalArtifacts["svg"] = [
+      ...(externalArtifacts["svg"] ?? []),
+      {
+        type: "svg",
+        URL: resourceUrl,
+        label: visualModel.label,
+      },
+    ];
+
+    const descriptor = {
+      iri: null,
+      url: resourceUrl,
+      role: dsvMetadataWellKnown.role.guidance,
+      formatMime: dsvMetadataWellKnown.formatMime.svg,
+      conformsTo: [dsvMetadataWellKnown.conformsTo.svg],
+      additionalRdfTypes: [],
+    } satisfies ResourceDescriptor;
+    allModelsHasResource.forEach((hasResource) => hasResource.push(descriptor));
   }
 
   // Generate HTML document
@@ -793,12 +825,28 @@ export async function generateSpecification(packageId: string, context: Generate
     }
   }
 
-  for (const lang of ["cs", "en"]) {
+  for (const lang of languages) {
     // Generate the DSV Metadata serialization in JSON-LD string
     // Set correct URL for the documentation
     const documentationUrl = urls.artifactUrl(`${lang}/index.html`);
     htmlDescriptor.url = documentationUrl;
-    const dsv = await DSVMetadataToJsonLdString(specifications, {
+    const localizedSpecifications = specifications.map((specification) => ({
+      ...specification,
+      resources: specification.resources.map((resource) => ({
+        ...resource,
+        url: replaceLang(resource.url, lang),
+      })),
+    }));
+    const localizedExternalArtifacts = Object.fromEntries(
+      Object.entries(externalArtifacts).map(([type, artifacts]) => [
+        type,
+        artifacts.map((artifact) => ({
+          ...artifact,
+          URL: replaceLang(artifact.URL, lang),
+        })),
+      ]),
+    );
+    const dsv = await DSVMetadataToJsonLdString(localizedSpecifications, {
       rootHtmlDocumentIri: htmlDescriptor.iri,
       space: 2,
       useAbsoluteUrls: false,
@@ -835,8 +883,9 @@ export async function generateSpecification(packageId: string, context: Generate
       await generateHtmlDocumentation(
         { data: getModelBlobData(allModels, packageId), label: rootPackageEntity.label },
         localizedModels,
-        { externalArtifacts, dsv, language: lang, prefixMap },
+        { externalArtifacts: localizedExternalArtifacts, dsv, language: lang, prefixMap },
         context,
+        configurationChain,
       ),
     );
     await documentation.close();

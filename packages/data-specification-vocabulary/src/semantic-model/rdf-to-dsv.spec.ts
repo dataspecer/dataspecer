@@ -51,6 +51,81 @@ test("Round-trips every Cardinality, ClassRole, and RequirementLevel value throu
   expect(parsedModels[0]).toStrictEqual(model);
 });
 
+test.each([
+  {
+    predicates: "dsv:range :range1, :range2;",
+    expected: ["http://example.com/range1", "http://example.com/range2"],
+  },
+  {
+    predicates: "dsv:objectPropertyRange :legacyRange;",
+    expected: ["http://example.com/legacyRange"],
+  },
+  {
+    predicates: "dsv:objectPropertyRange :legacyRange; dsv:range :range1, :range2;",
+    expected: ["http://example.com/range1", "http://example.com/range2"],
+  },
+  {
+    predicates: 'dsv:range "invalid range"; dsv:objectPropertyRange :legacyRange;',
+    expected: [],
+  },
+  { predicates: "", expected: [] },
+])("#1524: Reads object property ranges with legacy fallback: $predicates", async ({ predicates, expected }) => {
+  const rdf = `@prefix : <http://example.com/>.
+@prefix dct: <http://purl.org/dc/terms/>.
+@prefix dsv: <https://w3id.org/dsv#>.
+
+:model a dsv:ApplicationProfile.
+:property a dsv:ObjectPropertyProfile;
+    dct:isPartOf :model;
+    ${predicates}
+    dsv:domain :domain.
+`;
+
+  const models = await rdfToDsv(rdf);
+  expect(models[0]?.objectPropertyProfiles[0]?.rangeClassIri).toStrictEqual(expected);
+});
+
+test.each([
+  {
+    predicates: "dsv:datatype xsd:string, xsd:integer;",
+    expected: ["http://www.w3.org/2001/XMLSchema#string", "http://www.w3.org/2001/XMLSchema#integer"],
+  },
+  {
+    predicates: "dsv:datatypePropertyRange xsd:boolean;",
+    expected: ["http://www.w3.org/2001/XMLSchema#boolean"],
+  },
+  {
+    predicates: "dsv:datatypePropertyRange xsd:boolean; dsv:datatype xsd:string, xsd:integer;",
+    expected: ["http://www.w3.org/2001/XMLSchema#string", "http://www.w3.org/2001/XMLSchema#integer"],
+  },
+  {
+    predicates: 'dsv:datatype "invalid datatype"; dsv:datatypePropertyRange xsd:boolean;',
+    expected: [],
+  },
+  { predicates: "", expected: [] },
+])("#1524: Reads datatypes with legacy fallback and exports the standard predicate: $predicates", async ({ predicates, expected }) => {
+  const rdf = `@prefix : <http://example.com/>.
+@prefix dct: <http://purl.org/dc/terms/>.
+@prefix dsv: <https://w3id.org/dsv#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+
+:model a dsv:ApplicationProfile.
+:property a dsv:DatatypePropertyProfile;
+    dct:isPartOf :model;
+    ${predicates}
+    dsv:domain :domain.
+`;
+
+  const models = await rdfToDsv(rdf);
+  expect(models[0]?.datatypePropertyProfiles[0]?.rangeDataTypeIri).toStrictEqual(expected);
+
+  const exportedRdf = await dsvToRdf(models[0]!, {});
+  const store = new N3.Store(new N3.Parser().parse(exportedRdf));
+  expect(store.getObjects("http://example.com/property", "https://w3id.org/dsv#datatype", null)
+    .map(object => object.value)).toStrictEqual(expected);
+  expect(store.getQuads(null, "https://w3id.org/dsv#datatypePropertyRange", null, null)).toHaveLength(0);
+});
+
 test("Embeds a DCAT catalog of controlled vocabularies in the output when given some, and it round-trips.", async () => {
   const model = createDefaultApplicationProfileBuilder({ iri: "http://example.com/model" }).build();
   const catalogIri = "http://example.com/model/controlled-vocabulary-catalog";

@@ -11,12 +11,12 @@ import { UseDiagramType } from "../diagram/diagram-hook";
 import { ClassDialogState } from "../dialog/class/edit-class-dialog-state";
 import { firstInMemorySemanticModel } from "../utilities/model";
 import { CmeReference } from "../dataspecer/cme-model/model";
-import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
+import { CmeOperationExecutor } from "../operation";
 import { DialogSemanticTracker } from "../dialog-v2/dialog-semantic-tracker";
 import { LabelResolver } from "../dependency-tracker";
 
 export function openCreateClassDialogWithModelDerivedFromClassAction(
-  cmeExecutor: CmeModelOperationExecutor,
+  executor: CmeOperationExecutor,
   notifications: UseNotificationServiceWriterType,
   graph: UseModelGraphContextType,
   dialogs: DialogApiContextType,
@@ -26,7 +26,7 @@ export function openCreateClassDialogWithModelDerivedFromClassAction(
   visualModel: WritableVisualModel,
   nodeIdentifier: string,
   positionToPlaceClassOn: Position,
-  onConfirmCallback: ((created: CmeReference, state: ClassDialogState) => void) | null,
+  onConfirmCallback: ((created: CmeReference, state: ClassDialogState) => void | Promise<void>) | null,
   tracker: DialogSemanticTracker,
   labelResolver: LabelResolver,
 ) {
@@ -50,7 +50,7 @@ export function openCreateClassDialogWithModelDerivedFromClassAction(
   placePositionOnGrid(
     positionToPlaceClassOn, configuration().xSnapGrid, configuration().ySnapGrid);
   openCreateClassDialogAction(
-    cmeExecutor, options, dialogs, classes, graph, notifications, visualModel,
+    executor, options, dialogs, classes, graph, notifications, visualModel,
     diagram, model, positionToPlaceClassOn, onConfirmCallback, tracker,
     labelResolver);
 }

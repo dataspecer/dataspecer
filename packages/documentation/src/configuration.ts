@@ -1,89 +1,64 @@
-import { applyConfigurationModelSimple, WritableConfigurationModel, type RawConfigurationData } from "@dataspecer/core-v2/configuration-model";
+import { resolveConfigurationHelper, type Configuration, type ConfigurationChain } from "@dataspecer/core/configuration";
 import { defaultConfiguration } from "./default-configuration.ts";
 
-/**
- * Configuration key for the documentation generator.
- */
 export const DOCUMENTATION_CONFIGURATION_KEY = "https://schemas.dataspecer.com/documentation-generator-config/";
-
-/**
- * Alternative configuration key for the documentation generator. Because the previous key was too long.
- */
 export const ALTERNATIVE_DOCUMENTATION_CONFIGURATION_KEY = "documentation";
-
 export const DOCUMENTATION_MAIN_TEMPLATE_PARTIAL = "specification";
 
-/**
- * Represents configuration for the documentation generator.
- */
-export interface DocumentationConfiguration extends PartialDocumentationConfiguration {
-  /**
-   * List of partials that can be used in the template.
-   * Some partials have pre-defined names and are used as the main template or the main template for other parts of the documentation.
-   */
+export interface DocumentationConfiguration {
+  /** {@link DocumentationOptions} */
+  options: DocumentationOptions;
   partials: Record<string, string>;
 }
 
-/**
- * Partial, non complete, configuration interpreted from a single configuration model.
- *
- * You need to merge this configuration to be complete!
- */
-export interface PartialDocumentationConfiguration {
-  /**
-   * List of partials that can be used in the template.
-   * Some partials have pre-defined names and are used as the main template or the main template for other parts of the documentation.
-   *
-   * If the partial is not present, the value can be derived from parent configuration.
-   * If the partial is set to false, the value is removed.
-   */
+export interface DocumentationConfigurationInput {
+  /** {@link DocumentationOptions} */
+  options?: Partial<DocumentationOptions>;
+  /** A false entry removes an inherited partial. */
   partials?: Record<string, string | false>;
 }
 
 /**
- * Returns partial documentation configuration (so not full, you still need to
- * merge it with the default one) from the configuration object.
+ * Structured options that can be used in template as `@root.options` to control
+ * the output of the documentation generator.
  */
-export function getPartialDocumentationConfiguration(rawConfiguration: RawConfigurationData): PartialDocumentationConfiguration {
-  rawConfiguration ||= {};
-  return rawConfiguration[DOCUMENTATION_CONFIGURATION_KEY] || rawConfiguration[ALTERNATIVE_DOCUMENTATION_CONFIGURATION_KEY] || {};
+export interface DocumentationOptions {
+  /**
+   * Show only the original semantic IRIs in class and relationship profile tables.
+   */
+  hideProfileIri: boolean;
 }
 
-export function applyPartialDocumentationConfiguration(configurationModel: WritableConfigurationModel, configuration: PartialDocumentationConfiguration) {
-  applyConfigurationModelSimple(configurationModel, DOCUMENTATION_CONFIGURATION_KEY, configuration);
+export type ConfigWithDocumentation = {
+  [DOCUMENTATION_CONFIGURATION_KEY]?: DocumentationConfigurationInput;
+  [ALTERNATIVE_DOCUMENTATION_CONFIGURATION_KEY]?: DocumentationConfigurationInput;
+};
+
+export function getDocumentationConfigInput(configuration: Configuration & ConfigWithDocumentation): DocumentationConfigurationInput {
+  return configuration?.[DOCUMENTATION_CONFIGURATION_KEY] || configuration?.[ALTERNATIVE_DOCUMENTATION_CONFIGURATION_KEY] || {};
 }
 
-/**
- * Default configuration for the documentation generator.
- *
- * @internal
- *
- * Because the default configuration is not complete due to other generators, you may need to merge it with other configurations to get a complete configuration.
- * @see defaultDocumentationConfiguration from {@link @dataspecer/specification}.
- */
+export function documentationConfig(input: DocumentationConfigurationInput): Required<Pick<ConfigWithDocumentation, typeof DOCUMENTATION_CONFIGURATION_KEY>> {
+  return { [DOCUMENTATION_CONFIGURATION_KEY]: input };
+}
+
 export const baseDefaultDocumentationConfiguration: DocumentationConfiguration = defaultConfiguration;
 
-/**
- * Merges documentation configurations into a final configuration. It already includes the default configuration.
- *
- * @internal
- *
- * Because the default configuration is not complete due to other generators, you may need to merge it with other configurations to get a complete configuration.
- * @see mergeDocumentationConfigurations from {@link @dataspecer/specification}.
- */
-export function internalMergeDocumentationConfigurations(configurations: PartialDocumentationConfiguration[]): DocumentationConfiguration {
-  const result: DocumentationConfiguration = structuredClone(baseDefaultDocumentationConfiguration);
-  for (const configuration of configurations) {
-    if (configuration.partials) {
-      for (const key in configuration.partials) {
-        if (configuration.partials[key] === false) {
-          delete result.partials[key];
+export function resolveDocumentationConfig(configurations: ConfigurationChain<Configuration & ConfigWithDocumentation>): DocumentationConfiguration {
+  return resolveConfigurationHelper(
+    configurations,
+    getDocumentationConfigInput,
+    () => ({ options: { ...baseDefaultDocumentationConfiguration.options }, partials: { ...baseDefaultDocumentationConfiguration.partials } }),
+    (current, input) => {
+      const partials = { ...current.partials };
+      for (const [key, value] of Object.entries(input.partials ?? {})) {
+        if (value === false) {
+          delete partials[key];
         } else {
-          result.partials[key] = configuration.partials[key];
+          partials[key] = value;
         }
       }
-    }
-  }
-
-  return result;
+      return { options: { ...current.options, ...input.options }, partials };
+    },
+  );
 }

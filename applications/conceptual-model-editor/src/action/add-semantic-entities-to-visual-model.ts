@@ -199,7 +199,7 @@ function addConnectionsToVisualModel(
         notifications, graph, visualModel, entity.id, modelIdentifier);
     }
     else if(isSemanticModelGeneralization(entity)) {
-      addSemanticGeneralizationToVisualModelAction(
+      void addSemanticGeneralizationToVisualModelAction(
         notifications, graph, visualModel, entity.id, modelIdentifier);
     }
   }

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { CONTROLLED_VOCABULARY_TYPE, DEFAULT_CONTROLLED_VOCABULARY, type ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 import { createDefaultProfileModelBuilder, type ProfileModelBuilder } from "@dataspecer/profile-model";
 import type { Qualifier } from "@dataspecer/core-v2/semantic-model/profile/concepts";
+import { resolveDocumentationConfig } from "../configuration.ts";
 import { defaultConfiguration } from "../default-configuration.ts";
 import { generateDocumentation } from "./generator.ts";
 
@@ -44,7 +45,7 @@ async function render(
       dsv: {},
       prefixMap: {},
     },
-    { template, language, partials: defaultConfiguration.partials },
+    { ...resolveDocumentationConfig([]), template, language },
   );
 }
 

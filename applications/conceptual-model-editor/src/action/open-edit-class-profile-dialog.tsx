@@ -1,5 +1,5 @@
 import { InMemorySemanticModel } from "@dataspecer/core-v2/semantic-model/in-memory";
-import { isWritableVisualModel, VisualModel } from "@dataspecer/visual-model";
+import { VisualModel } from "@dataspecer/visual-model";
 
 import { DialogApiContextType } from "../dialog/dialog-service";
 import { UseModelGraphContextType } from "../context/model-context";
@@ -9,29 +9,27 @@ import {
   isSemanticModelClassProfile,
   SemanticModelClassProfile,
 } from "@dataspecer/core-v2/semantic-model/profile/concepts";
-import { updateVisualNodeProfiles } from "../dataspecer/visual-model/operation/update-visual-node-profiles";
-import { CmeModelOperationExecutor } from "../dataspecer/cme-model/cme-model-operation-executor";
 import {
   ClassProfileDialogState,
   createEditClassProfileDialogState,
 } from "../dialog/class-profile/edit-class-profile-dialog-state";
 import { DialogSemanticTracker } from "../dialog-v2/dialog-semantic-tracker";
 import { createEditClassProfileDialog } from "../dialog/class-profile/edit-class-profile-dialog";
-import {
-  classProfileDialogStateToNewCmeClassProfile,
-} from "../dialog/class-profile/edit-class-profile-dialog-state-adapter";
 import { createLogger } from "../application";
 import { InvalidState } from "../application/error";
 import { LabelResolver } from "../dependency-tracker";
-import { CmeReference } from "../dataspecer/cme-model/model";
-import { applyControlledVocabularySelection } from "./apply-controlled-vocabulary-selection";
 import { applyVisualColorFromDialog } from "./utilities/visual-color-utilities";
+import { CmeOperationExecutor } from "../operation";
+import { UseNotificationServiceWriterType } from "../notification/notification-service-context";
+import { createUpdateClassProfileBatch } from "./utilities/update-class-profile-batch";
+import { reportFailure } from "./utilities/report-failure";
 import type { ControlledVocabulary } from "@dataspecer/controlled-vocabulary-model";
 
 const LOG = createLogger(import.meta.url);
 
 export function openEditClassProfileDialogAction(
-  cmeExecutor: CmeModelOperationExecutor,
+  executor: CmeOperationExecutor,
+  notifications: UseNotificationServiceWriterType,
   options: Options,
   dialogs: DialogApiContextType,
   classes: ClassesContext,
@@ -54,41 +52,14 @@ export function openEditClassProfileDialogAction(
     visualModel, options.language, model, rawEntity, classes.semanticModels, tracker,
     labelResolver, graph, availableVocabularies);
 
-  const onConfirm = (state: ClassProfileDialogState) => {
-    const classProfile: CmeReference = { identifier: entity.id, model: model.getId() };
-
-    cmeExecutor.updateClassProfile({
-      identifier: entity.id,
-      ...classProfileDialogStateToNewCmeClassProfile(state),
-    });
-    cmeExecutor.updateSpecialization(
-      classProfile,
-      state.model.identifier,
-      initialState.specializations, state.specializations);
-
-    applyControlledVocabularySelection(
-      cmeExecutor, classProfile,
-      initialState.controlledVocabularies.items, state.controlledVocabularies.items);
-
-    // We need to update visual model: profiles
-    if (isWritableVisualModel(visualModel)) {
-      updateVisualNodeProfiles(
-        visualModel, {
-        identifier: entity.id,
-        model: model.getId(),
-      },
-        state.profiles.map(item => ({
-          identifier: item.identifier,
-          model: item.model
-        })),
-        state.profiles.map(item => ({
-          identifier: item.identifier,
-          model: item.model
-        })));
+  const onConfirm = async (state: ClassProfileDialogState) => {
+    const outcome = await executor.execute(createUpdateClassProfileBatch(
+      executor.createContext, visualModel, entity.id, initialState, state));
+    if (reportFailure(notifications, outcome, "Can not update the class profile.")) {
+      return;
     }
-
     applyVisualColorFromDialog(
-      classes, visualModel, entity.id, initialState, state);
+      executor, visualModel, entity.id, initialState, state);
   };
 
   dialogs.openDialog(createEditClassProfileDialog(initialState, onConfirm));

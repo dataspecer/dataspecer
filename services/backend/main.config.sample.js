@@ -1,4 +1,4 @@
-export default {
+export default /** @satisfies {{ configuration: import("@dataspecer/specification").AllConfiguration } & Record<string, unknown>} */ ({
     // Server's public URL. Must not end with a slash
     host: "http://localhost:3100",
     // Local port to listen on
@@ -61,4 +61,4 @@ export default {
             //enableMultipleTableSchema: false,
         }
     }
-}
+});

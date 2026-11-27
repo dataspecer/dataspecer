@@ -1,6 +1,9 @@
 import { DocumentationConfiguration } from "./configuration.ts";
 
 export const defaultConfiguration: DocumentationConfiguration = {
+  options: {
+    hideProfileIri: false,
+  },
   partials: {
     // [DOCUMENTATION_MAIN_TEMPLATE_PARTIAL]
     abstract: `<section id="abstract">
@@ -288,7 +291,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
 
   <table class="def">
     <tr>
-      <td>{{#iflng "cs"}}IRI profilovaných tříd{{lng}}Profiled class IRI(s){{/iflng}}</td>
+      <td>{{#if @root.options.hideProfileIri}}IRI{{else}}{{#iflng "cs"}}IRI profilovaných tříd{{lng}}Profiled class IRI(s){{/iflng}}{{/if}}</td>
       <td>
         {{#each aggregation.conceptIris}}
           {{#if @index}}
@@ -298,10 +301,12 @@ export const defaultConfiguration: DocumentationConfiguration = {
         {{/each}}
       </td>
     </tr>
+    {{#unless @root.options.hideProfileIri}}
     <tr>
       <td>IRI</td>
       <td><a href="{{{iri}}}">{{prefixed iri}}</a></td>
     </tr>
+    {{/unless}}
     {{#translate aggregation.name}}
     <tr>
       <td>{{#iflng "cs"}}Název{{lng}}Label{{/iflng}}</td>
@@ -543,7 +548,7 @@ export const defaultConfiguration: DocumentationConfiguration = {
 
   <table class="def">
     <tr>
-      <td>{{#iflng "cs"}}IRI profilovaných vztahů{{lng}}Profiled relationship IRI(s){{/iflng}}</td>
+      <td>{{#if @root.options.hideProfileIri}}IRI{{else}}{{#iflng "cs"}}IRI profilovaných vztahů{{lng}}Profiled relationship IRI(s){{/iflng}}{{/if}}</td>
       <td>
         {{#each aggregation.ends.1.conceptIris}}
           {{#if @index}}
@@ -553,10 +558,12 @@ export const defaultConfiguration: DocumentationConfiguration = {
         {{/each}}
       </td>
     </tr>
+    {{#unless @root.options.hideProfileIri}}
     <tr>
       <td>IRI</td>
       <td><a href="{{{ends.1.iri}}}">{{prefixed ends.1.iri}}</a></td>
     </tr>
+    {{/unless}}
     {{#translate aggregation.ends.1.name}}
     <tr>
       <td>{{#iflng "cs"}}Název{{lng}}Label{{/iflng}}</td>

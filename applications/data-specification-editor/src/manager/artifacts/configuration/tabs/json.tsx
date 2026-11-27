@@ -1,15 +1,14 @@
-import { DeepPartial } from "@dataspecer/core/core/utilities/deep-partial";
-import { JsonConfiguration, JsonConfigurator } from "@dataspecer/json/configuration";
+import { JsonConfiguration, JsonConfigurationInput, jsonConfig, resolveJsonConfig } from "@dataspecer/json/configuration";
 import { FormGroup, Typography, Grid, Collapse } from "@mui/material";
 import { FC } from "react";
 import { SelectWithDefault, SwitchWithDefault, TextFieldWithDefault } from "../ui-components/index";
 
 export const Json: FC<{
-    input: DeepPartial<JsonConfiguration>,
+    input: JsonConfigurationInput,
     defaultObject?: JsonConfiguration,
-    onChange: (options: DeepPartial<JsonConfiguration>) => void,
+    onChange: (options: JsonConfigurationInput) => void,
   }> = ({input, onChange, defaultObject}) => {
-    const merged = JsonConfigurator.merge(defaultObject, input) as JsonConfiguration;
+    const merged = resolveJsonConfig([jsonConfig(defaultObject ?? {}), jsonConfig(input)]);
 
     return <FormGroup>
       <TextFieldWithDefault

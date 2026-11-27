@@ -3,7 +3,7 @@
   "packageManager": "npm@12.2.0",
   "scripts": {
     "build": "turbo build",
-    "test": "turbo test"
+    "test": "turbo test --continue"
   },
   "devDependencies": {
     "prettier": "^3.9.9",

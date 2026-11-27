@@ -1,29 +1,33 @@
-import { isSemanticModelGeneralization } from "@dataspecer/core-v2/semantic-model/concepts";
-
 import type { UseNotificationServiceWriterType } from "../notification/notification-service-context";
 import { UseModelGraphContextType } from "../context/model-context";
-import { withAggregatedEntity } from "./utilities";
-import { withErrorBoundary } from "./utilities/error-utilities";
 import { WritableVisualModel } from "@dataspecer/visual-model";
-import { createVisualModelOperationExecutor } from "../dataspecer/visual-model/visual-model-operation-executor";
+import { cmeOperations } from "../operation";
+import { reportFailure } from "./utilities/report-failure";
+import { t } from "../application";
 
-export function addSemanticGeneralizationToVisualModelAction(
+/**
+ * Shows the generalization between all visual nodes of the child and the parent.
+ * Nothing is added when the child or the parent is not in the visual model.
+ */
+export async function addSemanticGeneralizationToVisualModelAction(
   notifications: UseNotificationServiceWriterType,
   graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   entityIdentifier: string,
-  modelIdentifier: string,
-) {
-  const executor = createVisualModelOperationExecutor(visualModel);
-
-  const entities = graph.getAggregatedEntities();
-  withErrorBoundary(notifications, () =>
-    withAggregatedEntity(notifications, entities, entityIdentifier, modelIdentifier,
-      isSemanticModelGeneralization, (entity) => {
-        executor.addGeneralization({
-          identifier: entityIdentifier,
-          model: modelIdentifier,
-        }, entity.child, entity.parent);
-      })
-  );
+  // Kept for the callers, the operation reads the model from the entity.
+  _modelIdentifier: string,
+): Promise<void> {
+  const executor = graph.executor();
+  const outcome = await executor.execute(
+    cmeOperations.showGeneralization.create(executor.createContext, {
+      visualModel: visualModel.getIdentifier(),
+      entity: entityIdentifier,
+    }));
+  if (reportFailure(notifications, outcome, "Can not add the generalization to the visual model.")) {
+    return;
+  }
+  if (!outcome.shown) {
+    // Same message as the legacy action.
+    notifications.error(t("Source or target are not in the visual model."));
+  }
 }

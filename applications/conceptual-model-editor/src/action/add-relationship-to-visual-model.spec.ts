@@ -43,14 +43,14 @@ import { semanticModelMapToCmeSemanticModel } from "../dataspecer/cme-model/adap
 import { CmeSpecialization } from "../dataspecer/cme-model/model";
 
 test("Create single relationship - association", () => {
-  testCreateSingleRelationship(RelationshipToTestType.Association);
+  return testCreateSingleRelationship(RelationshipToTestType.Association);
 });
 
 test("Create single relationship - generalization", () => {
-  testCreateSingleRelationship(RelationshipToTestType.Generalization);
+  return testCreateSingleRelationship(RelationshipToTestType.Generalization);
 });
 
-function testCreateSingleRelationship(
+async function testCreateSingleRelationship(
   relationshipToTestType: RelationshipToTestType,
 ) {
   const {
@@ -65,7 +65,7 @@ function testCreateSingleRelationship(
     model: InMemorySemanticModel
   }[] = [];
   //
-  createdTestRelationships.push(createTestRelationshipOfGivenType(
+  createdTestRelationships.push(await createTestRelationshipOfGivenType(
     graph, visualModel, models, cmeModels[0].identifier, relationshipToTestType,
     "0", "1", "relationship-0", null, true, [], []));
   expect([...visualModel.getVisualEntities().entries()].length).toBe(5);
@@ -73,14 +73,14 @@ function testCreateSingleRelationship(
 }
 
 test("Create relationship then after that duplicate node - association", () => {
-  testCreateRelationshipWithNodeDuplicationAfter(RelationshipToTestType.Association);
+  return testCreateRelationshipWithNodeDuplicationAfter(RelationshipToTestType.Association);
 });
 
 test("Create relationship then after that duplicate node - generalization", () => {
-  testCreateRelationshipWithNodeDuplicationAfter(RelationshipToTestType.Generalization);
+  return testCreateRelationshipWithNodeDuplicationAfter(RelationshipToTestType.Generalization);
 });
 
-function testCreateRelationshipWithNodeDuplicationAfter(
+async function testCreateRelationshipWithNodeDuplicationAfter(
   relationshipToTestType: RelationshipToTestType,
 ) {
   const {
@@ -96,7 +96,7 @@ function testCreateRelationshipWithNodeDuplicationAfter(
     model: InMemorySemanticModel
   }[] = [];
   //
-  createdTestRelationships.push(createTestRelationshipOfGivenType(
+  createdTestRelationships.push(await createTestRelationshipOfGivenType(
     graph, visualModel, models, cmeModels[0].identifier, relationshipToTestType,
     "0", "1", "relationship-0", null, true, [], []));
   expect([...visualModel.getVisualEntities().entries()].length).toBe(5);
@@ -111,14 +111,14 @@ function testCreateRelationshipWithNodeDuplicationAfter(
 }
 
 test("Create node duplicate and after that create relationship from the original node - association", () => {
-  testCreatedNodeDuplicateAndCreateRelationshipAfter(RelationshipToTestType.Association);
+  return testCreatedNodeDuplicateAndCreateRelationshipAfter(RelationshipToTestType.Association);
 });
 
 test("Create node duplicate and after that create relationship from the original node - generalization", () => {
-  testCreatedNodeDuplicateAndCreateRelationshipAfter(RelationshipToTestType.Generalization);
+  return testCreatedNodeDuplicateAndCreateRelationshipAfter(RelationshipToTestType.Generalization);
 });
 
-function testCreatedNodeDuplicateAndCreateRelationshipAfter(
+async function testCreatedNodeDuplicateAndCreateRelationshipAfter(
   relationshipToTestType: RelationshipToTestType,
 ) {
   const {
@@ -135,7 +135,7 @@ function testCreatedNodeDuplicateAndCreateRelationshipAfter(
   }[] = [];
   //
 
-  createdTestRelationships.push(createTestRelationshipOfGivenType(
+  createdTestRelationships.push(await createTestRelationshipOfGivenType(
     graph, visualModel, models, cmeModels[0].identifier,
     relationshipToTestType, "0", "1", "relationship-0", null, false, [], []));
   createVisualEdgeEndpointDuplicateAction(
@@ -147,7 +147,7 @@ function testCreatedNodeDuplicateAndCreateRelationshipAfter(
   //
   const visualSource = visualModel.getVisualEntitiesForRepresented("0")[0];
   const visualTarget = visualModel.getVisualEntitiesForRepresented("1")[0];
-  addTestRelationshipToVisualModel(
+  await addTestRelationshipToVisualModel(
     graph, visualModel, cmeModels[0].identifier, relationshipToTestType,
     createdTestRelationships[0].identifier, [visualSource.id], [visualTarget.id]);
   expect([...visualModel.getVisualEntities().entries()].length).toBe(6);
@@ -160,15 +160,15 @@ function testCreatedNodeDuplicateAndCreateRelationshipAfter(
 
 test("Create node duplicate and after that create relationship from the original node without specifying visual ends" +
   " - it should create all the edges - association", () => {
-    testCreateNodeDuplicateAndCreateRelationshipAfterWithoutSpecifyingEnds(RelationshipToTestType.Association);
+    return testCreateNodeDuplicateAndCreateRelationshipAfterWithoutSpecifyingEnds(RelationshipToTestType.Association);
   });
 
 test("Create node duplicate and after that create relationship from the original node without specifying visual ends" +
   " - it should create all the edges - generalization", () => {
-    testCreateNodeDuplicateAndCreateRelationshipAfterWithoutSpecifyingEnds(RelationshipToTestType.Generalization);
+    return testCreateNodeDuplicateAndCreateRelationshipAfterWithoutSpecifyingEnds(RelationshipToTestType.Generalization);
   });
 
-function testCreateNodeDuplicateAndCreateRelationshipAfterWithoutSpecifyingEnds(
+async function testCreateNodeDuplicateAndCreateRelationshipAfterWithoutSpecifyingEnds(
   relationshipToTestType: RelationshipToTestType,
 ) {
   const {
@@ -184,7 +184,7 @@ function testCreateNodeDuplicateAndCreateRelationshipAfterWithoutSpecifyingEnds(
     model: InMemorySemanticModel
   }[] = [];
   //
-  createdTestRelationships.push(createTestRelationshipOfGivenType(
+  createdTestRelationships.push(await createTestRelationshipOfGivenType(
     graph, visualModel, models, cmeModels[0].identifier,
     relationshipToTestType, "0", "1", "relationship-0", null, false, [], []));
   createVisualEdgeEndpointDuplicateAction(
@@ -194,7 +194,7 @@ function testCreateNodeDuplicateAndCreateRelationshipAfterWithoutSpecifyingEnds(
   expect(visualModel.getVisualEntitiesForRepresented("0").length).toBe(2);
   expect(visualModel.getVisualEntitiesForRepresented(createdTestRelationships[0].identifier).length).toBe(0);
   //
-  addTestRelationshipToVisualModel(
+  await addTestRelationshipToVisualModel(
     graph, visualModel, cmeModels[0].identifier, relationshipToTestType,
     createdTestRelationships[0].identifier, [], []);
   expect([...visualModel.getVisualEntities().entries()].length).toBe(7);
@@ -224,14 +224,14 @@ function testCreateNodeDuplicateAndCreateRelationshipAfterWithoutSpecifyingEnds(
 }
 
 test("Create self loop relationship and after that create duplicate of that node - association", () => {
-  testCreateLoopAndDuplicateAfter(RelationshipToTestType.Association);
+  return testCreateLoopAndDuplicateAfter(RelationshipToTestType.Association);
 });
 
 test("Create self loop relationship and after that create duplicate of that node - generalization", () => {
-  testCreateLoopAndDuplicateAfter(RelationshipToTestType.Generalization);
+  return testCreateLoopAndDuplicateAfter(RelationshipToTestType.Generalization);
 });
 
-function testCreateLoopAndDuplicateAfter(
+async function testCreateLoopAndDuplicateAfter(
   relationshipToTestType: RelationshipToTestType,
 ) {
   const {
@@ -247,7 +247,7 @@ function testCreateLoopAndDuplicateAfter(
     model: InMemorySemanticModel
   }[] = [];
   //
-  createdTestRelationships.push(createTestRelationshipOfGivenType(
+  createdTestRelationships.push(await createTestRelationshipOfGivenType(
     graph, visualModel, models, cmeModels[0].identifier,
     relationshipToTestType, "0", "0", "relationship-0", null, true, [], []));
   expect([...visualModel.getVisualEntities().entries()].length).toBe(5);
@@ -264,16 +264,16 @@ function testCreateLoopAndDuplicateAfter(
 test(
   "Create node duplicate and after that create relationship from the original node to the duplicate - association",
   () => {
-    testCreateNodeDuplicateAndLoopAfter(RelationshipToTestType.Association);
+    return testCreateNodeDuplicateAndLoopAfter(RelationshipToTestType.Association);
   });
 
 test(
   "Create node duplicate and after that create relationship from the original node to the duplicate - generalization",
   () => {
-    testCreateNodeDuplicateAndLoopAfter(RelationshipToTestType.Generalization);
+    return testCreateNodeDuplicateAndLoopAfter(RelationshipToTestType.Generalization);
   });
 
-function testCreateNodeDuplicateAndLoopAfter(
+async function testCreateNodeDuplicateAndLoopAfter(
   relationshipToTestType: RelationshipToTestType,
 ) {
   const {
@@ -290,7 +290,7 @@ function testCreateNodeDuplicateAndLoopAfter(
   }[] = [];
   //
   // Just creating the semantic relationship, the visual comes later.
-  createdTestRelationships.push(createTestRelationshipOfGivenType(
+  createdTestRelationships.push(await createTestRelationshipOfGivenType(
     graph, visualModel, models, cmeModels[0].identifier,
     relationshipToTestType, "0", "0", "relationship-0", null, false, [], []));
   createVisualEdgeEndpointDuplicateAction(
@@ -302,7 +302,7 @@ function testCreateNodeDuplicateAndLoopAfter(
   //
   const visualSource = visualModel.getVisualEntitiesForRepresented("0")[0];
   const visualTarget = visualModel.getVisualEntitiesForRepresented("0")[1];
-  addTestRelationshipToVisualModel(
+  await addTestRelationshipToVisualModel(
     graph, visualModel, cmeModels[0].identifier, relationshipToTestType,
     createdTestRelationships[0].identifier, [visualSource.id], [visualTarget.id]);
   expect([...visualModel.getVisualEntities().entries()].length).toBe(6);
@@ -310,14 +310,14 @@ function testCreateNodeDuplicateAndLoopAfter(
 }
 
 test("Create new duplicate from already duplicated node each with different edges - association", () => {
-  testCreateNodeDuplicateOfNodeDuplicate(RelationshipToTestType.Association);
+  return testCreateNodeDuplicateOfNodeDuplicate(RelationshipToTestType.Association);
 });
 
 test("Create new duplicate from already duplicated node each with different edges - generalization", () => {
-  testCreateNodeDuplicateOfNodeDuplicate(RelationshipToTestType.Generalization);
+  return testCreateNodeDuplicateOfNodeDuplicate(RelationshipToTestType.Generalization);
 });
 
-function testCreateNodeDuplicateOfNodeDuplicate(
+async function testCreateNodeDuplicateOfNodeDuplicate(
   relationshipToTestType: RelationshipToTestType,
 ) {
   const {
@@ -334,10 +334,10 @@ function testCreateNodeDuplicateOfNodeDuplicate(
   }[] = [];
 
   // Create the semantic relationships in advance
-  createdTestRelationships.push(createTestRelationshipOfGivenType(
+  createdTestRelationships.push(await createTestRelationshipOfGivenType(
     graph, visualModel, models, cmeModels[0].identifier,
     relationshipToTestType, "0", "1", "relationship-0", null, false, [], []));
-  createdTestRelationships.push(createTestRelationshipOfGivenType(
+  createdTestRelationships.push(await createTestRelationshipOfGivenType(
     graph, visualModel, models, cmeModels[0].identifier,
     relationshipToTestType, "0", "2", "relationship-1", null, false, [], []));
 
@@ -351,10 +351,10 @@ function testCreateNodeDuplicateOfNodeDuplicate(
   const [visualSource1, visualSource2] = visualModel.getVisualEntitiesForRepresented("0");
   const visualTarget1 = visualModel.getVisualEntitiesForRepresented("1")[0];
   const visualTarget2 = visualModel.getVisualEntitiesForRepresented("2")[0];
-  addTestRelationshipToVisualModel(
+  await addTestRelationshipToVisualModel(
     graph, visualModel, cmeModels[0].identifier, relationshipToTestType,
     createdTestRelationships[0].identifier, [visualSource1.id], [visualTarget1.id]);
-  addTestRelationshipToVisualModel(
+  await addTestRelationshipToVisualModel(
     graph, visualModel, cmeModels[0].identifier, relationshipToTestType,
     createdTestRelationships[1].identifier, [visualSource2.id], [visualTarget2.id]);
   expect([...visualModel.getVisualEntities().entries()].length).toBe(7);
@@ -565,7 +565,7 @@ enum RelationshipToTestType {
  * @param visualTargets if of length zero then gets the identifiers based on the semantic ends of relationship.
  * @returns
  */
-function createTestRelationshipOfGivenType(
+async function createTestRelationshipOfGivenType(
   graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   models: Map<string, EntityModel>,
@@ -578,7 +578,7 @@ function createTestRelationshipOfGivenType(
   shouldAlsoAddTheCreatedRelationshipToVisualModel: boolean,
   visualSources: string[],
   visualTargets: string[],
-): CreatedRelationshipData {
+): Promise<CreatedRelationshipData> {
 
   let result: CreatedRelationshipData
   if (relationshipToTestType === RelationshipToTestType.Generalization) {
@@ -594,14 +594,14 @@ function createTestRelationshipOfGivenType(
   }
 
   if (shouldAlsoAddTheCreatedRelationshipToVisualModel) {
-    addTestRelationshipToVisualModel(
+    await addTestRelationshipToVisualModel(
       graph, visualModel, modelDsIdentifier, relationshipToTestType,
       result.identifier, visualSources, visualTargets);
   }
   return result;
 }
 
-function addTestRelationshipToVisualModel(
+async function addTestRelationshipToVisualModel(
   graph: UseModelGraphContextType,
   visualModel: WritableVisualModel,
   modelDsIdentifier: string,
@@ -612,7 +612,7 @@ function addTestRelationshipToVisualModel(
 ) {
   if (visualSourceIdentifiers.length === 0 || visualTargetIdentifiers.length === 0) {
     if (relationshipToTestType === RelationshipToTestType.Generalization) {
-      addSemanticGeneralizationToVisualModelAction(
+      await addSemanticGeneralizationToVisualModelAction(
         notificationMockup, graph, visualModel,
         relationshipIdentifier, modelDsIdentifier);
     }

@@ -1,6 +1,6 @@
 // @ts-ignore
 import configuration from "../main.config.js";
-import type { RawConfigurationData } from "@dataspecer/core-v2/configuration-model";
+import type { AllConfiguration as GeneratorConfiguration } from "@dataspecer/specification";
 
 export interface Configuration {
     /**
@@ -33,13 +33,14 @@ export interface Configuration {
     localRootMetadata: object;
 
     // Generator configuraion
-    configuration: RawConfigurationData;
+    configuration: GeneratorConfiguration;
 
     // Whether the server is running in Docker
     inDocker: boolean;
 }
 
 const defaultConfiguration = {
+    configuration: {},
     payloadSizeLimit: "64mb",
     localRootIri: "http://dataspecer.com/packages/local-root",
     localRootMetadata: {

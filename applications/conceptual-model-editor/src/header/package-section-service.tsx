@@ -1,3 +1,4 @@
+import type { Configuration } from "@dataspecer/core/configuration";
 import { useBackendConnection } from "../backend-connection";
 import { useOptions } from "../configuration/options";
 import { useModelGraphContext } from "../context/model-context";
@@ -7,9 +8,8 @@ import { getLocalizedStringFromLanguageString } from "../util/language-utils";
 import { type Package } from "@dataspecer/core-v2/project";
 import { useActions } from "../action/actions-react-binding";
 import { packageService } from "../header/package-service";
-import { createDefaultConfigurationModelFromJsonObject } from "@dataspecer/core-v2/configuration-model";
 import { useLayoutConfigurationContext } from "../context/layout-configuration-context";
-import { applyLayoutConfiguration } from "@dataspecer/layout";
+import { layoutConfig } from "@dataspecer/layout";
 import { useClassesContext } from "../context/classes-context";
 
 const MGR_REDIRECT_PATH = import.meta.env.VITE_PUBLIC_MANAGER_PATH;
@@ -34,9 +34,8 @@ export const usePackageSectionService = (): PackageSectionServiceType => {
 
   const saveLayoutConfiguration = async (packageIri: string) => {
     const configurationData = (await packageService.getPackageConfiguration(packageIri)) ?? {};
-    const configuration = createDefaultConfigurationModelFromJsonObject(configurationData);
-    applyLayoutConfiguration(configuration, layoutConfiguration);
-    const result = configuration.serializeModelToApiJsonObject(configurationData);
+    const configuration = (configurationData as { configuration?: Configuration }).configuration ?? {};
+    const result = { ...configurationData, configuration: { ...configuration, ...layoutConfig(layoutConfiguration) } };
     await packageService.savePackageConfiguration(packageIri, result);
   };
 
