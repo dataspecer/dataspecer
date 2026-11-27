@@ -62,7 +62,6 @@ async function generate(
   const artifact = new DataSpecificationSchema();
   artifact.psm = "schema";
   artifact.publicUrl = "https://example.com/schema.xsd";
-  artifact.configuration = {};
 
   const [result] = await structureModelToXmlSchema(context, artifact, transform(model));
   return result!;
