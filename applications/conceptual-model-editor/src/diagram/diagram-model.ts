@@ -82,6 +82,18 @@ export type Node = {
   }[];
 
   /**
+   * Number of controlled vocabulary assignments of a class profile,
+   * including the inherited ones. Always zero for classes.
+   */
+  controlledVocabularyCount: number;
+
+  /**
+   * Number of controlled vocabulary assignments, including the inherited
+   * ones, that refer to a vocabulary that no longer exists.
+   */
+  controlledVocabularyMissingCount: number;
+
+  /**
    * Node content, i.e. attributes, properties.
    */
   items: NodeItem[];

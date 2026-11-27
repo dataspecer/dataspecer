@@ -1,4 +1,4 @@
-import { VocabularyItemState } from "../../dialog/controlled-vocabularies";
+import { getReferencedVocabularyId, VocabularyItemState } from "../../dialog/controlled-vocabularies";
 import {
   OwnControlledVocabularyAssignment,
 } from "../../operation/implementation/profile-model/update-controlled-vocabulary-assignments";
@@ -18,7 +18,7 @@ export function dialogVocabulariesToOperation(
     .filter(item => item.inherited === null || item.inherited.overrideEnabled)
     .map(item => ({
       assignment: item.entityId,
-      vocabulary: item.vocabulary.id,
+      vocabulary: getReferencedVocabularyId(item.vocabulary),
       qualifier: item.qualifier,
       replaces: item.inherited === null
         ? null

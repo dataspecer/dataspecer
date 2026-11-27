@@ -10,6 +10,7 @@ import {
 import {
     createContext,
     entityListContainerToDsvModel,
+    missingControlledVocabularyIri,
 } from "./entity-model-to-dsv.ts";
 import { mergeEntityListContainers, toEntityListContainer } from "./entity-list-container-builder.ts";
 import { EntityListContainer } from "./entity-model.ts";
@@ -873,8 +874,42 @@ test("Controlled vocabulary assignment: a dangling local replaces target degrade
 
     const assignment = actual.classProfiles[0]!.controlledVocabularyAssignments[0]!;
     expect(assignment.replacesIri).toBeNull();
-    // Vocabulary entity missing from the container - degrades to the raw id.
-    expect(assignment.controlledVocabularyIri).toBe("voc-missing");
+    // Vocabulary entity missing from the container - degrades to an absolute urn.
+    expect(assignment.controlledVocabularyIri)
+        .toBe("urn:dataspecer:controlled-vocabulary:voc-missing");
+});
+
+test("Controlled vocabulary assignment: a missing vocabulary with a uuid id is referenced by urn:uuid, also in the generated assignment iri.", () => {
+    const vocabularyId = "aa77edc5-73f5-4635-8bf1-75107f24fd62";
+    const profile = createDefaultProfileModelBuilder({ baseIdentifier: "p#", baseIri: null });
+    profile.class({ id: "class-1", iri: "http://example.com/class-1", controlledVocabularies: ["cv-1"] });
+    const container = mergeEntityListContainers(
+        toEntityListContainer(profile.build()),
+        {
+            baseIri: null,
+            entities: [
+                controlledVocabularyAssignmentEntity({ vocabulary: vocabularyId }),
+            ],
+        },
+    );
+
+    const context = createContext([container]);
+    const actual = entityListContainerToDsvModel("http://example.com/", container, context);
+
+    const assignment = actual.classProfiles[0]!.controlledVocabularyAssignments[0]!;
+    expect(assignment.controlledVocabularyIri).toBe(`urn:uuid:${vocabularyId}`);
+    expect(assignment.iri).toContain(encodeURIComponent(`urn:uuid:${vocabularyId}`));
+});
+
+test("missingControlledVocabularyIri keeps an identifier that already is an absolute IRI, so the result is stable across re-export.", () => {
+    expect(missingControlledVocabularyIri("http://foreign.example.com/cv"))
+        .toBe("http://foreign.example.com/cv");
+    const urn = missingControlledVocabularyIri("aa77edc5-73f5-4635-8bf1-75107f24fd62");
+    expect(urn).toBe("urn:uuid:aa77edc5-73f5-4635-8bf1-75107f24fd62");
+    expect(missingControlledVocabularyIri(urn)).toBe(urn);
+    const encoded = missingControlledVocabularyIri("parent/controlled-vocabulary/x");
+    expect(encoded).toBe("urn:dataspecer:controlled-vocabulary:parent%2Fcontrolled-vocabulary%2Fx");
+    expect(missingControlledVocabularyIri(encoded)).toBe(encoded);
 });
 
 test("Controlled vocabulary assignment: an id that does not resolve to an assignment entity is skipped.", () => {

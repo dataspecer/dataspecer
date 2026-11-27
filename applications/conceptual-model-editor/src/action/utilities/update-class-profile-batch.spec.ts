@@ -155,7 +155,7 @@ function vocabulary(identifier: string, inheritedAssignment: string | null): Voc
   return {
     id: identifier,
     entityId: null,
-    vocabulary: { id: identifier },
+    vocabulary: { state: "found", vocabulary: { id: identifier } },
     qualifier: "must",
     inherited: inheritedAssignment === null ? null : {
       assignmentId: inheritedAssignment, overrideEnabled: false,

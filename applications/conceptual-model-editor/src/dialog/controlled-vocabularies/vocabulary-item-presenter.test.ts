@@ -17,7 +17,7 @@ describe("test createVocabularyItemPresenter", () => {
     let state: VocabularyItemState = {
       id: "1",
       entityId: null,
-      vocabulary: VOCABULARY,
+      vocabulary: { state: "found", vocabulary: VOCABULARY },
       qualifier: "must",
       inherited: { assignmentId: "cv-1", qualifier: "must", overrideEnabled: false },
     };
@@ -33,7 +33,7 @@ describe("test createVocabularyItemPresenter", () => {
     let state: VocabularyItemState = {
       id: "1",
       entityId: "own-1",
-      vocabulary: VOCABULARY,
+      vocabulary: { state: "found", vocabulary: VOCABULARY },
       qualifier: "recommended",
       inherited: { assignmentId: "cv-1", qualifier: "must", overrideEnabled: true },
     };
@@ -49,7 +49,7 @@ describe("test createVocabularyItemPresenter", () => {
     const initial: VocabularyItemState = {
       id: "1",
       entityId: "own-1",
-      vocabulary: VOCABULARY,
+      vocabulary: { state: "found", vocabulary: VOCABULARY },
       qualifier: "may",
       inherited: null,
     };
@@ -65,7 +65,7 @@ describe("test createVocabularyItemPresenter", () => {
     let state: VocabularyItemState = {
       id: "1",
       entityId: "own-1",
-      vocabulary: VOCABULARY,
+      vocabulary: { state: "found", vocabulary: VOCABULARY },
       qualifier: "must",
       inherited: { assignmentId: "cv-1", qualifier: "must", overrideEnabled: true },
     };
@@ -81,7 +81,7 @@ describe("test createVocabularyItemPresenter", () => {
     let state: VocabularyItemState = {
       id: "1",
       entityId: "own-1",
-      vocabulary: VOCABULARY,
+      vocabulary: { state: "found", vocabulary: VOCABULARY },
       qualifier: "at-least-one",
       inherited: null,
     };

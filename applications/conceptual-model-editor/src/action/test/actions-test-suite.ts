@@ -231,6 +231,8 @@ export class ActionsTestSuite {
       position: { x: 0, y: 0, anchored: true },
       profileOf: [],
       vocabulary: [],
+      controlledVocabularyCount: 0,
+      controlledVocabularyMissingCount: 0,
       options: {} as any,
       items: []
     };

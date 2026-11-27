@@ -6,6 +6,7 @@ import {
   NodeToolbar,
   Position,
 } from "@xyflow/react";
+import { BookOpen, TriangleAlert } from "lucide-react";
 
 import {
   DiagramOptions,
@@ -76,7 +77,15 @@ export const EntityNode = (props: NodeProps<Node<ApiNode>>) => {
             title={description}
           >
             <div className="relative flex w-full flex-row justify-between">
-              <div>{label}</div>
+              <div className="flex items-center gap-1">
+                <div>{label}</div>
+                {data.controlledVocabularyCount > 0
+                  ? <ControlledVocabularyTag count={data.controlledVocabularyCount} />
+                  : null}
+                {data.controlledVocabularyMissingCount > 0
+                  ? <MissingControlledVocabularyWarning count={data.controlledVocabularyMissingCount} />
+                  : null}
+              </div>
               {data.position.anchored ? <div>⚓</div> : null}
             </div>
             <ProfileOf
@@ -148,6 +157,43 @@ function prepareLabel(
       .filter(item => item !== null)
       .join(", ");
   }
+}
+
+/**
+ * Small tag indicating that a class profile has controlled vocabulary assignments.
+ */
+function ControlledVocabularyTag({ count }: { count: number }) {
+  const title = count === 1
+    ? t("node-controlled-vocabulary-assignment-one")
+    : t("node-controlled-vocabulary-assignment-many").replace("{count}", String(count));
+  return (
+    <span
+      title={title}
+      className="inline-flex items-center gap-0.5 rounded-sm border border-gray-500 bg-white/60 px-1 text-xs text-gray-600"
+    >
+      <BookOpen className="h-3 w-3" />
+      {count}
+    </span>
+  );
+}
+
+/**
+ * Warning that some controlled vocabulary assignments of a class profile
+ * refer to a vocabulary that no longer exists.
+ */
+function MissingControlledVocabularyWarning({ count }: { count: number }) {
+  const title = count === 1
+    ? t("node-controlled-vocabulary-missing-one")
+    : t("node-controlled-vocabulary-missing-many").replace("{count}", String(count));
+  return (
+    <span
+      title={title}
+      className="inline-flex items-center gap-0.5 rounded-sm border border-red-600 bg-white/60 px-1 text-xs text-red-600"
+    >
+      <TriangleAlert className="h-3 w-3" />
+      {count}
+    </span>
+  );
 }
 
 function ProfileOf({ options, profileOf }: {

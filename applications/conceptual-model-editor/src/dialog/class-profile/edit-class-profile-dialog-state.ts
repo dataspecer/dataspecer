@@ -124,11 +124,13 @@ function toControlledVocabularyUsages(
   for (const assignment of assignments) {
     const vocabulary = availableVocabularies.find(
       item => item.id === assignment.vocabulary);
-    if (vocabulary === undefined) {
-      continue;
-    }
+    // An assignment with a missing vocabulary (deleted) is kept, so the user can see it. 
     result.push({
-      assignmentId: assignment.id, vocabulary, qualifier: assignment.qualifier,
+      assignmentId: assignment.id,
+      vocabulary: vocabulary === undefined
+        ? { state: "not_found", vocabularyId: assignment.vocabulary }
+        : { state: "found", vocabulary },
+      qualifier: assignment.qualifier,
     });
   }
   return result;

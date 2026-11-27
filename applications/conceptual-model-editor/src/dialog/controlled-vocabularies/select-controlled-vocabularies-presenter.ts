@@ -7,6 +7,7 @@ import {
   createVocabularyItemPresenter,
   VocabularyItemPresenter,
 } from "./vocabulary-item-presenter";
+import { getReferencedVocabularyId } from "./controlled-vocabulary-model";
 import { SelectControlledVocabulariesState } from "./select-controlled-vocabularies-state";
 
 
@@ -64,7 +65,7 @@ export function createSelectControlledVocabulariesPresenter(
     },
     onOpenAddForm() {
       setState(state => {
-        const usedVocabularyIds = new Set(state.items.map(item => item.vocabulary.id));
+        const usedVocabularyIds = new Set(state.items.map(item => getReferencedVocabularyId(item.vocabulary)));
         const selectableVocabularies = state.availableVocabularies.filter(
           vocabulary => !usedVocabularyIds.has(vocabulary.id));
         return {
@@ -92,7 +93,7 @@ export function createSelectControlledVocabulariesPresenter(
           ...state,
           items: [
             ...state.items,
-            { id: crypto.randomUUID(), entityId: null, vocabulary, qualifier: addForm.qualifier, inherited: null },
+            { id: crypto.randomUUID(), entityId: null, vocabulary: { state: "found", vocabulary }, qualifier: addForm.qualifier, inherited: null },
           ],
           addForm: null,
         };
