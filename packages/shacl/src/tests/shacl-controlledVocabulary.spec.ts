@@ -16,9 +16,8 @@ async function validate(
   adapterOptions: { controlledVocabularyScheme?: boolean } = {},
 ): Promise<string[]> {
   const artefact = new DataSpecificationArtefact();
-  artefact.configuration = { publicBaseUrl: "https://example.org/shapes/" };
   const model = new ControlledVocabularyModelCreator(options).createModel();
-  const { data } = await new ShaclAdapter(model, null, artefact, adapterOptions).generate();
+  const { data } = await new ShaclAdapter(model, null, artefact, "https://example.org/shapes/", adapterOptions).generate();
 
   const shapes = await factory.dataset().import(new ParserN3({ factory }).import(Readable.from([data])) as any);
   const values = await loadDataset(`src/tests/data/controlledVocabulary/${dataName}.ttl`);
