@@ -9,6 +9,7 @@ import {assertFailed, assertNot} from "@dataspecer/core/core";
 import {transformStructureModel, structureModelAddDefaultValues} from "@dataspecer/generators/structure-model/transformation";
 import {ShaclAdapter} from "./shacl-adapter.ts";
 import { resolveDataSpecificationConfig, DataSpecificationConfiguration } from "@dataspecer/core/data-specification/configuration";
+import { resolveStructuralShaclConfig } from "./configuration.ts";
 import {StructureModel} from "@dataspecer/generators/structure-model/model";
 import {clone} from "@dataspecer/core/core";
 
@@ -57,7 +58,9 @@ export class ShaclGenerator implements ArtefactGenerator {
 
     model = structureModelAddDefaultValues(model, globalConfiguration);
 
-    const adapter = new ShaclAdapter(model, context, artefact, globalConfiguration.publicBaseUrl);
+    const shaclConfiguration = resolveStructuralShaclConfig(schemaArtefact.configurationChain);
+
+    const adapter = new ShaclAdapter(model, context, artefact, globalConfiguration.publicBaseUrl, shaclConfiguration);
     return adapter.generate();
   }
 

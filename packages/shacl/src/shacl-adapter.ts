@@ -457,10 +457,6 @@ export class ShaclAdapter {
     }
 
     const { everyValue, atLeastOne } = getControlledVocabularyRules(source);
-    const applicable = (rules: ControlledVocabularyRule[]) => rules
-      .map(rule => ({ ...rule, schemeIri: this.controlledVocabularyScheme ? rule.schemeIri : null }))
-      .filter(rule => rule.pattern !== null || rule.schemeIri !== null);
-
     let shapeCount = 0;
     const addRuleShape = (rule: ControlledVocabularyRule) => {
       const shapeIRI = `${propertyNodeIRI}ControlledVocabulary${++shapeCount}`;
@@ -468,19 +464,28 @@ export class ShaclAdapter {
       return shapeIRI;
     };
 
-    for (const rule of applicable(everyValue)) {
+    // A rule with nothing to validate gets no shape.
+    for (const rule of everyValue) {
+      const predicates = this.getValueRulePredicates(rule);
+      if (predicates.length === 0) {
+        continue;
+      }
       const shapeIRI = addRuleShape(rule);
-      for (const { predicate, object } of this.getValueRulePredicates(rule)) {
+      for (const { predicate, object } of predicates) {
         this.writer.addQuad(namedNode( shapeIRI ), predicate, object);
       }
     }
 
-    for (const rule of applicable(atLeastOne)) {
+    for (const rule of atLeastOne) {
+      const predicates = this.getValueRulePredicates(rule);
+      if (predicates.length === 0) {
+        continue;
+      }
       const shapeIRI = addRuleShape(rule);
       this.writer.addQuad(
         namedNode( shapeIRI ),
         namedNode('http://www.w3.org/ns/shacl#qualifiedValueShape'),
-        this.writer.blank(this.getValueRulePredicates(rule))
+        this.writer.blank(predicates)
       );
       this.writer.addQuad(
         namedNode( shapeIRI ),
@@ -519,7 +524,8 @@ export class ShaclAdapter {
 
   /**
    * Predicates and objects that make a value satisfy the rule of a controlled vocabulary:
-   * its IRI matches the pattern and it is in the concept scheme.
+   * its IRI matches the pattern and, if the check of concept schemes is enabled, it is in the concept scheme.
+   * Empty if there is nothing to validate.
    */
   protected getValueRulePredicates(rule: ControlledVocabularyRule) {
     const result = [];
@@ -529,7 +535,7 @@ export class ShaclAdapter {
         object: literal( rule.pattern ),
       });
     }
-    if (rule.schemeIri !== null) {
+    if (this.controlledVocabularyScheme && rule.schemeIri !== null) {
       result.push({
         predicate: namedNode('http://www.w3.org/ns/shacl#property'),
         object: this.writer.blank([{

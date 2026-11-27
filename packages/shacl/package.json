@@ -9,6 +9,10 @@
     "test": "vitest run --pass-with-no-tests"
   },
   "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./configuration": "./lib/configuration.js"
+  },
   "dependencies": {
     "@dataspecer/core": "*",
     "@dataspecer/generators": "^0.0.0",
